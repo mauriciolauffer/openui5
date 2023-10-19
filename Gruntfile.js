@@ -20,12 +20,27 @@ module.exports = function(grunt) {
 		color: 'cyan'
 	});
 
-	// Check for valid required Node.js version from package.json
-	// npm does not validate this within the project itself; only if this project would be installed as a dependency (which is not the case as of now)
-	var pkg = grunt.file.readJSON(__dirname + "/package.json");
-	if (pkg.engines && pkg.engines.node && !semver.satisfies(process.version, pkg.engines.node)) {
+	// Load config extension script to allow overrides to "grunt" and "gruntData"
+	var configExtensionFile = grunt.option("config-extension");
+
+	grunt.log.error('!!! WARNING !!!');
+	grunt.log.error('The Grunt.js-based development setup is deprecated!');
+	grunt.log.error('Please use the UI5 Tooling-based development setup!');
+	if (!configExtensionFile) {
+		grunt.log.error([
+			'For more information about the OpenUI5 development setup, check here:',
+			'https://github.com/SAP/openui5/blob/master/docs/developing.md',
+		].join("\n\t"));
+	}
+
+	// Check for required Node.js version for grunt setup.
+	// The "engines" entry from package.json is not used as it has been adopted for the non-grunt dev setup.
+	// But as there are still use-case via the "--config-extension" approach, the minimum version for grunt
+	// should not be raised.
+	var requiredNodeVersion = ">= 10";
+	if (!semver.satisfies(process.version, requiredNodeVersion)) {
 		grunt.log.error('!!! WARNING !!!');
-		grunt.log.error('Unsupported Node.js version: wanted "' + pkg.engines.node + '" (current: "' + process.version + '")');
+		grunt.log.error('Unsupported Node.js version: wanted "' + requiredNodeVersion + '" (current: "' + process.version + '")');
 		grunt.log.error('Please update your Node.js installation!');
 	}
 
@@ -124,7 +139,6 @@ module.exports = function(grunt) {
 						'!sap/ui/thirdparty/jszip.js',
 						'!sap/ui/thirdparty/klay.js',
 						'!sap/ui/thirdparty/less.js',
-						'!sap/ui/thirdparty/mobify-carousel.js',
 						'!sap/ui/thirdparty/mobiscroll/js/mobiscroll-core.js',
 						'!sap/ui/thirdparty/mobiscroll/js/mobiscroll-scroller.js',
 						'!sap/ui/thirdparty/mobiscroll/js/mobiscroll-datetime.js',
@@ -301,8 +315,6 @@ module.exports = function(grunt) {
 
 	};
 
-	// Load config extension script to allow overrides to "grunt" and "gruntData"
-	var configExtensionFile = grunt.option("config-extension");
 	if (configExtensionFile) {
 		configExtensionFile.split(',').forEach(file => require(path.resolve(file))(grunt, gruntData));
 	}

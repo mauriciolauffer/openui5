@@ -32,7 +32,7 @@
 								tooltip="{/#Product/ProductId/@sap:label}"
 								liveChange="handleLiveChange"
 								submit="handleSubmit"
-								fieldHelp="VH1">
+								valueHelp="VH1">
 								<mdcField:dependents>
 									<mdc:ValueHelp id="VH1" delegate='\{"name": "sap/ui/mdc/sample/field/ValueHelpODataV2.delegate"\}'>
 										<mdc:typeahead>
@@ -126,7 +126,7 @@
 								editMode="Display"
 								display="ValueDescription"
 								placeholder="Placeholder"
-								fieldHelp="VH1"
+								valueHelp="VH1"
 								liveChange="handleLiveChange"
 								submit="handleSubmit">
 							</mdcField:FieldBase>
@@ -139,7 +139,7 @@
 								placeholder="{/#Product/Description/@sap:label}"
 								liveChange="handleLiveChange"
 								submit="handleSubmit"
-								fieldHelp="VH-Conditions">
+								valueHelp="VH-Conditions">
 							</mdcField:FieldBase>
 						</form:FormElement>
 
@@ -161,7 +161,7 @@
 								placeholder="{/#Product/Name/@sap:label}"
 								liveChange="handleLiveChange"
 								submit="handleSubmit"
-								fieldHelp="VH2">
+								valueHelp="VH2">
 								<mdcField:dependents>
 									<mdc:ValueHelp id="VH2" delegate='\{"name": "sap/ui/mdc/sample/field/ValueHelpODataV2.delegate"\}'>
 										<mdc:typeahead>
@@ -266,6 +266,7 @@
 								dataType="Edm.DateTime"
 								dataTypeFormatOptions='\{"style": "short"\}'
 								dataTypeConstraints='\{"displayFormat": "Date"\}'
+								delegate='\{"name": "sap/ui/mdc/sample/field/FieldBaseODataV2.delegate"\}'
 								maxConditions="1"
 								placeholder="{/#Product/Date/@sap:label}"
 								liveChange="handleLiveChange"
@@ -279,6 +280,7 @@
 								dataType="Edm.DateTime"
 								dataTypeFormatOptions='\{"style": "long"\}'
 								dataTypeConstraints='\{"displayFormat": "Date"\}'
+								delegate='\{"name": "sap/ui/mdc/sample/field/FieldBaseODataV2.delegate"\}'
 								maxConditions="1"
 								editMode="Display"
 								placeholder="Placeholder"
@@ -291,6 +293,7 @@
 							<mdcField:FieldBase id="FB9"
 								conditions="{cm>/conditions/Quantity}"
 								dataType="Edm.Decimal"
+								delegate='\{"name": "sap/ui/mdc/sample/field/FieldBaseODataV2.delegate"\}'
 								maxConditions="1"
 								placeholder="{/#Product/Quantity/@sap:label}"
 								tooltip="{/#Product/Quantity/@sap:label}"
@@ -304,6 +307,7 @@
 							<mdcField:FieldBase id="FB9a"
 								conditions="{cm>/conditions/Quantity}"
 								dataType="Edm.Decimal"
+								delegate='\{"name": "sap/ui/mdc/sample/field/FieldBaseODataV2.delegate"\}'
 								maxConditions="1"
 								placeholder="{/#Product/Quantity/@sap:label}"
 								tooltip="{/#Product/Quantity/@sap:label}"
@@ -322,6 +326,7 @@
 							<mdcField:FieldBase id="FB9b"
 								conditions="{cm>/conditions/Quantity}"
 								dataType="Edm.Decimal"
+								delegate='\{"name": "sap/ui/mdc/sample/field/FieldBaseODataV2.delegate"\}'
 								maxConditions="1"
 								liveChange="handleLiveChange"
 								submit="handleSubmit">
@@ -335,10 +340,11 @@
 							<mdcField:FieldBase id="FB9c"
 								conditions="{cm>/conditions/Quantity}"
 								dataType="Edm.Decimal"
+								delegate='\{"name": "sap/ui/mdc/sample/field/FieldBaseODataV2.delegate"\}'
 								maxConditions="-1"
 								liveChange="handleLiveChange"
 								submit="handleSubmit"
-								fieldHelp="CFH1">
+								valueHelp="CFH1">
 								<mdcField:contentDisplay>
 									<m:SegmentedButton items="{path: '$field>/conditions'}">
 										<m:items>
@@ -391,11 +397,12 @@
 							<mdcField:FieldBase id="FB11"
 								conditions="{cm>/conditions/Quantity}"
 								dataType="Edm.Decimal"
+								delegate='\{"name": "sap/ui/mdc/sample/field/FieldBaseODataV2.delegate"\}'
 								maxConditions="-1"
 								placeholder="{/#Product/Quantity/@sap:label}"
 								liveChange="handleLiveChange"
 								submit="handleSubmit"
-								fieldHelp="VH3">
+								valueHelp="VH3">
 								<mdcField:dependents>
 									<mdc:ValueHelp id="VH3" validateInput="false" delegate='\{"name": "sap/ui/mdc/sample/field/ValueHelpODataV2.delegate"\}'>
 										<mdc:dialog>
@@ -426,7 +433,7 @@
 								display="DescriptionValue"
 								placeholder="{/#Product/Status/@sap:label}"
 								liveChange="handleLiveChange"
-								fieldHelp="VH-Status"
+								valueHelp="VH-Status"
 								submit="handleSubmit">
 								<mdcField:dependents>
 									<mdc:ValueHelp id="VH-Status"
@@ -456,7 +463,7 @@
 								placeholder="Placeholder"
 								liveChange="handleLiveChange"
 								submit="handleSubmit"
-								fieldHelp="VH-Status">
+								valueHelp="VH-Status">
 							</mdcField:FieldBase>
 						</form:FormElement>
 
@@ -477,6 +484,7 @@
 								conditions="{cm>/conditions/Important}"
 								dataType="sap.ui.model.odata.type.Boolean"
 								dataTypeConstraints='\{"nullable": false\}'
+								delegate='\{"name": "sap/ui/mdc/sample/field/FieldBaseODataV2.delegate"\}'
 								maxConditions="1"
 								display="Value"
 								placeholder="{/#Product/Important/@sap:label}"
@@ -498,6 +506,7 @@
 							<mdcField:FieldBase id="FB17"
 								conditions="{cm>/conditions/Important}"
 								dataType="Edm.Boolean"
+								delegate='\{"name": "sap/ui/mdc/sample/field/FieldBaseODataV2.delegate"\}'
 								maxConditions="1"
 								display="Description"
 								editMode="Display"
@@ -518,13 +527,13 @@
 								placeholder="{/#Product/WeightMeasure/@sap:label}"
 								liveChange="handleLiveChange"
 								submit="handleSubmit"
-								fieldHelp="VH-WeightUnit">
+								valueHelp="VH-WeightUnit">
 								<mdcField:dependents>
 									<mdc:ValueHelp id="VH-WeightUnit" delegate='\{"name": "sap/ui/mdc/sample/field/ValueHelpODataV2.delegate"\}'>
 										<mdc:typeahead>
 											<mdcValueHelp:Popover id="VH-WeightUnit-Pop">
 												<mdcValueHelpContent:FixedList id="VH-WeightUnit-FL" useFirstMatch="false" items="{view>/weightUnits}">
-													<mdcField:ListFieldHelpItem key="{view>id}" text="{view>unit}" additionalText="{view>text}"/>
+													<mdcValueHelpContent:FixedListItem key="{view>id}" text="{view>unit}" additionalText="{view>text}"/>
 												</mdcValueHelpContent:FixedList>
 											</mdcValueHelp:Popover>
 										</mdc:typeahead>
@@ -577,7 +586,7 @@
 								placeholder="{/#Product/CountryId/@sap:label}"
 								liveChange="handleLiveChange"
 								submit="handleSubmit"
-								fieldHelp="VH-Country">
+								valueHelp="VH-Country">
 								<mdcField:dependents>
 									<mdc:ValueHelp id="VH-Country" delegate='\{"name": "sap/ui/mdc/sample/field/ValueHelpODataV2.delegate"\}'>
 										<mdc:dialog>
@@ -654,7 +663,7 @@
 								placeholder="{/#Product/MatrId/@sap:label}"
 								liveChange="handleLiveChange"
 								submit="handleSubmit"
-								fieldHelp="VH-MatrId">
+								valueHelp="VH-MatrId">
 								<mdcField:dependents>
 									<mdc:ValueHelp id="VH-MatrId" delegate='\{"name": "sap/ui/mdc/sample/field/ValueHelpODataV2.delegate"\}'>
 										<mdc:typeahead>
@@ -718,7 +727,7 @@
 										<mdc:typeahead>
 											<mdcValueHelp:Popover id="VH-MatrId-FL-Pop">
 												<mdcValueHelpContent:FixedList id="VH-MatrId-FL-Pop-FL" useFirstMatch="false" items="{path: '/MaterialCollection'}" >
-													<mdcField:ListFieldHelpItem key="{MatrId}" text="{Text}" additionalText="{MatrId}"/>
+													<mdcValueHelpContent:FixedListItem key="{MatrId}" text="{Text}" additionalText="{MatrId}"/>
 												</mdcValueHelpContent:FixedList>
 											</mdcValueHelp:Popover>
 										</mdc:typeahead>

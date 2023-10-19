@@ -11,7 +11,10 @@ sap.ui.define([
 	"sap/m/library",
 	"sap/ui/Device",
 	"sap/base/Log",
-	"sap/m/IllustratedMessage"
+	"sap/m/IllustratedMessage",
+	"sap/m/SearchField",
+	"sap/ui/model/json/JSONModel",
+	"sap/ui/model/Filter"
 ], function(
 	Core,
 	ResponsivePopover,
@@ -22,22 +25,22 @@ sap.ui.define([
 	MLibrary,
 	Device,
 	Log,
-	IllustratedMessage
+	IllustratedMessage,
+	SearchField,
+	JSONModel,
+	Filter
 ) {
 	"use strict";
 
 	// shortcut for sap.m.PlacementType
-	var PlacementType = MLibrary.PlacementType;
-
-	// shortcut for sap.m.ListType
-	var ListType = MLibrary.ListType;
+	const PlacementType = MLibrary.PlacementType;
 
 	// shortcut for sap.m.ListMode
-	var ListMode = MLibrary.ListMode;
+	const ListMode = MLibrary.ListMode;
 
-	function _getDrillStackDimensions(oMDCChart) {
-		var aDrillStack = oMDCChart.getControlDelegate().getDrillStack(oMDCChart);
-		var aStackDimensions = [];
+	function _getDrillStackDimensions(oChart) {
+		const aDrillStack = oChart.getControlDelegate().getDrillStack(oChart);
+		const aStackDimensions = [];
 
 		aDrillStack.forEach(function(oStackEntry) {
 			// loop over nested dimension arrays
@@ -56,44 +59,83 @@ sap.ui.define([
 	 * including drill-downs, drill-ups and updating of depending controls
 	 * @constructor
 	 */
-	var DrillStackHandler = function() {
+	const DrillStackHandler = function() {
         //TODO: Refactor to DrillDownPopover (extending Popover; like Toolbar)
 	};
 
 	/**
 	 * Creates a drill down popover
-	 * @param oMDCChart
-	 * @returns the popover object
+	 * @param oChart
+	 * @returns {sap.ui.ResponsivePopover} the popover object
 	 *
 	 * @private
 	 * @ui5-restricted sap.ui.mdc
 	 */
-	DrillStackHandler.createDrillDownPopover = function(oMDCChart) {
+	DrillStackHandler.createDrillDownPopover = function(oChart) {
+		let oList = null;
+		const oRb = Core.getLibraryResourceBundle("sap.ui.mdc");
 
-		//var oSubHeader = new Bar();
-		var MDCRb = sap.ui.getCore().getLibraryResourceBundle("sap.ui.mdc");
-		var oPopover = new ResponsivePopover({
-			id: oMDCChart.getId() + "-drilldownPopover",
+		const oSearchField = new SearchField({
+			placeholder: oRb.getText("chart.CHART_DRILLDOWN_SEARCH"),
+			liveChange: function(oEvent) {
+
+				if (!oList) {
+					return;
+				}
+
+				const sSearchValue = oEvent.getParameter("newValue");
+				let oSearchFilter = [];
+				if (sSearchValue) {
+					oSearchFilter = new Filter("text", "Contains", sSearchValue);
+				}
+				oList.getBinding("items").filter(oSearchFilter);
+			}
+		});
+
+		const oPopover = new ResponsivePopover({
+			id: oChart.getId() + "-drilldownPopover",
 			contentWidth: "25rem",
 			contentHeight: "20rem",
-			placement: PlacementType.Bottom
-			//subHeader: oSubHeader
+			placement: PlacementType.VerticalPreferredBottom,
+			afterClose: function(){
+				oPopover.destroy();
+			}
 		});
-		var oList = new List({
-			noData: new IllustratedMessage({enableVerticalResponsiveness: true, title: MDCRb.getText("chart.NO_DRILLABLE_DIMENSION"), description: MDCRb.getText("chart.NO_DRILLABLE_DIMENSION_DESC"), illustrationType: MLibrary.IllustratedMessageType.NoDimensionsSet}),
+
+		// The ResponsivePopover only supports controls with sap.m.IBar interface, which is not the case when we place a SearchField as subHeader.
+		// On a Desktop we do not have any problem (the ResponsivePopoverRender is used in this case).
+		// On a Phone the Dialog renderer is used and the subHeader will not work. So we add the search field in this case into the content.
+		if (!Device.system.phone) {
+			oPopover.setSubHeader(oSearchField);
+		} else {
+			oPopover.addContent(oSearchField);
+		}
+
+		const oItemTemplate = new StandardListItem({
+			title: "{$ChartDrilldown>text}"
+		});
+
+		oList = new List({
+			noData: new IllustratedMessage({enableVerticalResponsiveness: true, title: oRb.getText("chart.NO_DRILLABLE_DIMENSION"), description: oRb.getText("chart.NO_DRILLABLE_DIMENSION_DESC"), illustrationType: MLibrary.IllustratedMessageType.NoDimensionsSet}),
 			mode: ListMode.SingleSelectMaster,
+			items: {
+				path: "$ChartDrilldown>/items",
+				template: oItemTemplate
+			},
 			selectionChange: function(oControlEvent) {
-				var oListItem = oControlEvent.getParameter("listItem");
+				const oListItem = oControlEvent.getParameter("listItem");
 
 				if (oListItem) {
-					//Call flex to capture current state before adding an item to the chart aggregation
+					const oContext = oListItem.getBindingContext("$ChartDrilldown");
+					const sDimensionName = oContext.getObject().id;
 
-					oMDCChart.getEngine().createChanges({
-						control: oMDCChart,
+					//Call flex to capture current state before adding an item to the chart aggregation
+					oChart.getEngine().createChanges({
+						control: oChart,
 						key: "Item",
 						state: [{
-							name: oListItem.data("dim").dim.name,
-							position: oMDCChart.getItems().length
+							name: sDimensionName,
+							position: oChart.getItems().length
 						}]
 					});
 				}
@@ -102,25 +144,10 @@ sap.ui.define([
 			}
 		});
 
-		oPopover.attachAfterClose(function(){
-			oPopover.destroy();
-		});
-
-		//TODO add search field
-		//var oSearchField = new SearchField({
-		//placeholder: this._oRb.getText("CHART_DRILLDOWN_SEARCH")
-		//});
-		//oSearchField.attachLiveChange(function(oEvent) {
-		//this._triggerSearchInDrillDownPopover(oEvent, oList);
-		//}.bind(this));
-
-
-		var oRb = Core.getLibraryResourceBundle("sap.ui.mdc");
-
 		//Show header only in mobile scenarios
 		//still support screen reader while on desktops.
 		if (Device.system.desktop) {
-			var oInvText = new InvisibleText({
+			const oInvText = new InvisibleText({
 				text: oRb.getText("chart.CHART_DRILLDOWN_TITLE")
 			});
 			oPopover.setShowHeader(false);
@@ -131,67 +158,39 @@ sap.ui.define([
 		}
 
 		oPopover.addContent(oList);
-		oMDCChart._oDrillDownPopover = oPopover;
+		oChart._oDrillDownPopover = oPopover;
 		return oPopover;
 	};
 
 	/**
 	 * Shows the drill-down popover on the toolbar button of an mdc.Chart instance
-	 * @param {sap.ui.mdc.Chart} oMDCChart
-     * @param {sap.m.Button} oDrillBtn
+	 * @param {sap.ui.mdc.Chart} oChart chart instance
+     * @param {sap.m.Button} oDrillBtn button which opens the popover
+	 * @returns {Promise} promise
 	 *
 	 * @experimental
 	 * @private
 	 * @ui5-restricted sap.ui.mdc
 	 */
-	DrillStackHandler.showDrillDownPopover = function(oMDCChart, oDrillBtn) {
+	DrillStackHandler.showDrillDownPopover = function(oChart, oDrillBtn) {
         //TODO: Rename "Measure" and "Dimensions"?
-		var pSortedDimensionsPromise = oMDCChart.getControlDelegate().getSortedDimensions(oMDCChart);
+		const pSortedDimensionsPromise = oChart.getControlDelegate().getSortedDimensions(oChart);
 		return pSortedDimensionsPromise.then(function(aSortedDimensions) {
-			//Remove all prior items from drill-down list
-			var oDrillDownPopover = oMDCChart._oDrillDownPopover;
-			var aIgnoreDimensions, oDimension, oListItem;
-
-			var aFilteredList = oDrillDownPopover.getContent().filter(function(oEntry){return oEntry.getMetadata().getClass() == List;});
-			var oDrillDownList = aFilteredList.length > 0 ? aFilteredList[0] : null;
-
-			if (!oDrillDownList){
-				Log.error("MDC Chart: Could not determine list to show drilldown. This should not happen. Did the application modify the drill-down popover?");
-				return;
-			}
-
-			oDrillDownList.destroyItems();
+			const oDrillDownPopover = oChart._oDrillDownPopover;
 
 			// Ignore currently applied dimensions from drill-stack for selection
-			aIgnoreDimensions = _getDrillStackDimensions(oMDCChart);
+			const aIgnoreDimensions = _getDrillStackDimensions(oChart);
+			aSortedDimensions = aSortedDimensions.filter(function(oDimension){ return aIgnoreDimensions.indexOf(oDimension.name) < 0; });
 
-			for (var i = 0; i < aSortedDimensions.length; i++) {
-				oDimension = aSortedDimensions[i];
+			const oData = { items : [] };
+			aSortedDimensions.forEach(function(oDimension) {
+				oData.items.push({ text: oDimension.label, id: oDimension.name });
+			});
+			oDrillDownPopover.setModel(new JSONModel(oData), "$ChartDrilldown");
 
-				if (aIgnoreDimensions.indexOf(oDimension.name) > -1) {
-					continue;
-				}
-
-				//TODO: Check if still valid
-				// If dimension is not filterable and datapoints are selected then skip
-				/*if (!oViewField.filterable && this._oChart.getSelectedDataPoints().count > 0) {
-					    continue;
-				}*/
-
-				oListItem = new StandardListItem({
-					title: oDimension.label,
-					type: ListType.Active
-				});
-
-				oListItem.data("dim", {dim: oDimension});
-
-				/*sTooltip = this._getFieldTooltip(oDimension.name);
-				if (sTooltip) {
-					  oListItem.setTooltip(sTooltip);
-				}*/
-
-				//Add item to list within popover
-				oDrillDownList.addItem(oListItem);
+			if (oData.items.length < 7) {
+				const oSearchField = oDrillDownPopover.getSubHeader() || oDrillDownPopover.getContent()[0];
+				oSearchField.setVisible(false);
 			}
 
 			return new Promise(function(resolve, reject) {

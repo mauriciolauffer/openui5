@@ -12,10 +12,10 @@ sap.ui.define([
 	"sap/ui/model/Filter",
 	"sap/ui/model/FilterOperator",
 	"sap/ui/model/Sorter",
-	"sap/base/util/Version",
 	"sap/ui/util/Storage",
 	"sap/ui/core/Core",
-	"sap/ui/documentation/sdk/controller/util/Highlighter"
+	"sap/ui/documentation/sdk/controller/util/Highlighter",
+	"sap/ui/core/Fragment"
 ], function(
 	jQuery,
 	Device,
@@ -26,10 +26,10 @@ sap.ui.define([
 	Filter,
 	FilterOperator,
 	Sorter,
-	Version,
 	Storage,
 	Core,
-	Highlighter
+	Highlighter,
+	Fragment
 ) {
 		"use strict";
 
@@ -55,7 +55,7 @@ sap.ui.define([
 				filter: {},
 				groupProperty: "category",
 				groupDescending: false,
-				version: Version(sap.ui.version).getMajor() + "." + Version(sap.ui.version).getMinor()
+				version: ''
 			},
 			_mGroupFunctions: {
 				"name": function (oContext) {
@@ -452,20 +452,33 @@ sap.ui.define([
 				this._updateView();
 			},
 
+			getViewSettingsDialog: function () {
+				return new Promise(function (fnResolve) {
+					if (!this._oVSDialog) {
+						Fragment.load({
+							id: this.getView().getId(),
+							name: "sap.ui.documentation.sdk.view.viewSettingsDialog",
+							controller: this
+						}).then(function (oDialog) {
+							this._oVSDialog = oDialog;
+							this.getView().addDependent(this._oVSDialog);
+							fnResolve(this._oVSDialog);
+						}.bind(this));
+					} else {
+						fnResolve(this._oVSDialog);
+					}
+				}.bind(this));
+			},
+
 			handleListSettings: function () {
-				// create dialog on demand
-				if (!this._oVSDialog) {
-					this._oVSDialog = sap.ui.xmlfragment(this.getView().getId(), "sap.ui.documentation.sdk.view.viewSettingsDialog", this);
-					this.getView().addDependent(this._oVSDialog);
-				}
+				this.getViewSettingsDialog().then(function (oDialog) {
+					oDialog.setSelectedFilterCompoundKeys(this._oListSettings.filter);
+					oDialog.setSelectedGroupItem(this._oListSettings.groupProperty);
+					oDialog.setGroupDescending(this._oListSettings.groupDescending);
 
-				this._oVSDialog.setSelectedFilterCompoundKeys(this._oListSettings.filter);
-				this._oVSDialog.setSelectedGroupItem(this._oListSettings.groupProperty);
-				this._oVSDialog.setGroupDescending(this._oListSettings.groupDescending);
-
-				// open
-				this._oVSDialog.open();
-
+					// open
+					oDialog.open();
+				}.bind(this));
 			},
 
 			handleListFilter: function (oEvent) {
@@ -485,8 +498,30 @@ sap.ui.define([
 					bFilterChanged = false,
 					bGroupChanged = false,
 					oList = this._oView.byId("exploredMasterList"),
-					oBinding = oList.getBinding("items");
+					oBinding = oList.getBinding("items"),
+					fnNumericSort;
 
+					// fnNumericSort is needed to sort the entities only if the numeric sorter is requiered -
+					// it is selected the items to be sorted by release
+					if (this._oListSettings.groupProperty === "since") {
+						fnNumericSort = function(a,b) {
+							const aVersionA = a.split('.').map(Number);
+							const aVersionB = b.split('.').map(Number);
+
+							for (let i = 0; i < Math.max(aVersionA.length, aVersionB.length); i++) {
+								const iPartA = aVersionA[i] || 0;
+								const iPartB = aVersionB[i] || 0;
+
+								if (iPartA < iPartB) {
+									return -1;
+								} else if (iPartA > iPartB) {
+									return 1;
+								}
+							}
+
+							return 0;
+						};
+					}
 				bFilterChanged = true;
 				aFilters.push(new Filter("searchTags", FilterOperator.Contains, this._sFilterValue));
 
@@ -522,7 +557,8 @@ sap.ui.define([
 					oSorter = new Sorter(
 						this._oListSettings.groupProperty,
 						this._oListSettings.groupDescending,
-						this._mGroupFunctions[this._oListSettings.groupProperty]);
+						this._mGroupFunctions[this._oListSettings.groupProperty],
+						fnNumericSort);
 					aSorters.push(oSorter);
 					aSorters.push(new Sorter("name", false));
 					oBinding.sort(aSorters);

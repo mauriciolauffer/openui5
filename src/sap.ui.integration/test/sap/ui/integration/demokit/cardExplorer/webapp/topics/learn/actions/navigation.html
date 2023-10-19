@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-	<title>Card Actions</title>
+	<title>Card Navigation Actions</title>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<script src="../../../scripts/boot.js"></script>
@@ -12,8 +12,7 @@
 
 	<div class="topic">
 		<div class="content">
-			<h1>Navigation</h1>
-			<h2 id="overview">Overview</h2>
+			<h1 id="overview">Navigation</h1>
 			<p>
 				Navigation action type allows to open URL or performs intent-based navigation supported by the host environment.
 				Parameters determine whether it is intent-based, or opens a URL.
@@ -25,7 +24,7 @@
 			</p>
 			<p>Default behavior: opens the given <code>URL</code> in the specified <code>target</code>.</p>
 
-			<h3>Parameters</h3>
+			<h3 id="parameters">Parameters</h3>
 			<div class="tableWrapper">
 				<table>
 					<tr>
@@ -67,10 +66,8 @@
 				In order for this mechanism to work, it is essential that the host environment supports it and the card developer knows exactly what parameters
 				the host environment expects. It is supported by environments like SAP Fiori Launchpad and SAP Work Zone.
 			</p>
-			<b>Note:</b> This navigation is experimental and may change!
-			<br>
-			<b>Note:</b> This navigation strongly depends on the host environment.
-			<h3>Parameters</h3>
+			<b>Note:</b> This navigation strongly depends on the host environment.<br>
+			<h3 id="intentBasedParameters">Parameters</h3>
 			<div class="tableWrapper">
 				<table>
 					<tr>
@@ -84,13 +81,11 @@
 					</tr>
 					<tr>
 						<td>ibnTarget</td>
-						<td><a href="#ibnTargetParams">IBNTarget</a></td>
+						<td><a href="#ibnTarget">IBNTarget</a></td>
 						<td></td>
 						<td>Yes</td>
 						<td>
 							Target for intent-based navigation.
-							<br>
-							<b>Note:</b> This property is experimental.
 						</td>
 						<td>1.41.0</td>
 						<td>1.102</td>
@@ -104,15 +99,13 @@
 							Map of parameters for intent-based navigation that define an instance of the semantic object. The parameter value can be a string or an array of strings.
 							<br>
 							For example <code>{ "employeeID": 4 }</code>
-							<br>
-							<b>Note:</b> This property is experimental.
 						</td>
 						<td>1.41.0</td>
 						<td>1.102</td>
 					</tr>
 				</table>
 			</div>
-			<h4 id="ibnTargetParams">Properties for IBNTarget</h4>
+			<h4 id="ibnTarget">Properties for IBNTarget</h4>
 			<div class="tableWrapper">
 				<table>
 					<tr>
@@ -147,11 +140,11 @@
 			<p>
 				See <a href="../../../index.html#/explore/cardActions/ibn" target="_parent">intent-based navigation example</a>.
 			</p>
-			<h3>Related information</h3>
+			<h3 id="relatedInformation">Related information</h3>
 			<ul>
 				<li>If you develop host environment, see how navigation can be handled <a target="_parent" href="../../../index.html#/integrate/handleActions/handleNavigationAction">here</a></li>
 				<li>
-					<a target="_blank" 
+					<a target="_blank"
 						href="https://help.sap.com/docs/SAP_HANA_PLATFORM/52715f71adba4aaeb480d946c742d1f6/5ff538515a2a455696f9c203939d9360.html?version=2.0.01"
 						rel="noopener noreferrer">
 						Intent-Based Navigation on SAP Hana Platform
@@ -209,13 +202,6 @@
 	}
 }</pre>
 			<a class="try-button" href="../../../index.html#/explore/cardActions" target="_parent">Try it Out</a>
-		</div>
-		<div class="navigation">
-			<h4>Table of Contents</h4>
-			<div><a href="#overview">Overview</a></div>
-			<div><a href="#usingUrl">Navigation Using a URL</a></div>
-			<div><a href="#intentBased">Intent-Based Navigation</a></div>
-			<div><a href="#examples">Examples</a></div>
 		</div>
 	</div>
 </body>

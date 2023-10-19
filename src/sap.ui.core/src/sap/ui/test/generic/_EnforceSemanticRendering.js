@@ -43,7 +43,7 @@ sap.ui.define(["sap/ui/core/Lib"], function(Library) {
 									var oRenderer = ControlClass.getMetadata().getRenderer();
 
 									if (oRenderer) {
-										oInfo.version = Object.prototype.hasOwnProperty.call(oRenderer, "apiVersion") ? oRenderer.apiVersion : 1;
+										oInfo.version = Object.hasOwn(oRenderer, "apiVersion") ? oRenderer.apiVersion : 1;
 
 										if (aExcludes.includes(sClass)) {
 											if (oInfo.version == 1) {

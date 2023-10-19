@@ -7,13 +7,14 @@ sap.ui.define([
 	'sap/ui/base/Object',
 	'sap/ui/core/Locale',
 	'sap/ui/core/LocaleData',
+	'sap/ui/core/Supportability',
 	'sap/base/Log',
 	'sap/base/assert',
 	'sap/base/util/extend',
 	'sap/ui/core/Configuration'
 
 ],
-	function(BaseObject, Locale, LocaleData, Log, assert, extend, Configuration) {
+	function(BaseObject, Locale, LocaleData, Supportability, Log, assert, extend, Configuration) {
 	"use strict";
 
 
@@ -46,6 +47,8 @@ sap.ui.define([
 
 	var rAllWhiteSpaces = /\s/g,
 		rDigit = /\d/,
+		// Regex for checking if a number has leading zeros
+		rLeadingZeros = /^(-?)0+(\d)/,
 		// Not matching Sc (currency symbol) and Z (separator) characters
 		// https://www.unicode.org/reports/tr44/#General_Category_Values
 		rNotSAndNotZ = /[^\$\xA2-\xA5\u058F\u060B\u09F2\u09F3\u09FB\u0AF1\u0BF9\u0E3F\u17DB\u20A0-\u20BD\uA838\uFDFC\uFE69\uFF04\uFFE0\uFFE1\uFFE5\uFFE6\u0020\xA0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000]/,
@@ -1475,7 +1478,9 @@ sap.ui.define([
 
 		if (oOptions.type === mNumberType.UNIT && !oOptions.showNumber) {
 			if (mUnitPatterns) {
-				sPluralCategory = this.oLocaleData.getPluralCategory(sIntegerPart + "." + sFractionPart);
+				// the plural category of a unit pattern is determined for the complete number, maybe as compact
+				// notation, e.g. "1.2M" must check "1.2c6"
+				sPluralCategory = this._getPluralCategory(sIntegerPart, sFractionPart, oShortFormat);
 
 				sPattern = mUnitPatterns["unitPattern-count-" + sPluralCategory];
 				if (!sPattern) {
@@ -1521,7 +1526,9 @@ sap.ui.define([
 
 		if (oShortFormat && oShortFormat.formatString && oOptions.showScale && oOptions.type !== mNumberType.CURRENCY) {
 			// Get correct format string based on actual decimal/fraction digits
-			sPluralCategory = this.oLocaleData.getPluralCategory(sIntegerPart + "." + sFractionPart);
+			// the plural category of a compact number is determined for the reduced short number without compact
+			// notation, e.g. "1.2M" must check "1.2" (see CLDR "decimalFormat-short" and "decimalFormat-long")
+			sPluralCategory = this._getPluralCategory(sIntegerPart, sFractionPart);
 			oShortFormat.formatString = this.oLocaleData.getDecimalFormat(oOptions.style, oShortFormat.key, sPluralCategory);
 			//inject formatted shortValue in the formatString
 			sResult = oShortFormat.formatString.replace(oShortFormat.valueSubString, sResult);
@@ -1544,7 +1551,9 @@ sap.ui.define([
 				}
 
 				// Get correct format string based on actual decimal/fraction digits
-				sPluralCategory = this.oLocaleData.getPluralCategory(sIntegerPart + "." + sFractionPart);
+				// the plural category of a compact currency is determined for the reduced short number without compact
+				// notation, e.g. "1.2M" must check "1.2" (see CLDR "currencyFormat-short")
+				sPluralCategory = this._getPluralCategory(sIntegerPart, sFractionPart);
 				if (bIndianCurrency) {
 					sPattern = getIndianCurrencyFormat(sStyle, oShortFormat.key, sPluralCategory);
 				} else {
@@ -1598,8 +1607,9 @@ sap.ui.define([
 		}
 
 		if (oOptions.showMeasure && sMeasure && oOptions.type === mNumberType.UNIT) {
-
-			sPluralCategory = this.oLocaleData.getPluralCategory(sIntegerPart + "." + sFractionPart);
+			// the plural category of a unit pattern is determined for the complete number, maybe as compact
+			// notation, e.g. "1.2M" must check "1.2c6"
+			sPluralCategory = this._getPluralCategory(sIntegerPart, sFractionPart, oShortFormat);
 
 			if (mUnitPatterns) {
 				sPattern = mUnitPatterns["unitPattern-count-" + sPluralCategory];
@@ -1618,8 +1628,36 @@ sap.ui.define([
 		return this._addOriginInfo(sResult);
 	};
 
+	/**
+	 * Gets the plural category for the given number information. With a given <code>oShortFormat</code>
+	 * the category is determined based on the compact notation.
+	 *
+	 * @param {int} sIntegerPart
+	 *   The integer part
+	 * @param {int} [sFractionPart]
+	 *   The fraction part
+	 * @param {{magnitude: int}} [oShortFormat]
+	 *   An object containing the <code>magnitude</code> information describing the factor of a compact number
+	 * @returns {string}
+	 *   The plural category
+	 *
+	 * @private
+	 */
+	NumberFormat.prototype._getPluralCategory = function (sIntegerPart, sFractionPart, oShortFormat) {
+		var sNumber = sIntegerPart;
+
+		if (sFractionPart) {
+			sNumber += "." + sFractionPart;
+		}
+		if (oShortFormat) {
+			sNumber += "c" + oShortFormat.magnitude.toExponential().slice(2);
+		}
+
+		return this.oLocaleData.getPluralCategory(sNumber);
+	};
+
 	NumberFormat.prototype._addOriginInfo = function(sResult) {
-		if (Configuration.getOriginInfo()) {
+		if (Supportability.collectOriginInfo()) {
 			// String object is created on purpose and must not be a string literal
 			// eslint-disable-next-line no-new-wrappers
 			sResult = new String(sResult);
@@ -2020,9 +2058,9 @@ sap.ui.define([
 		} else if (typeof vValue === "string") {
 			if (parseFloat(vValue) === 0 && iStep >= 0) {
 				// input "00000" should become "0"
-				// input "1e-1337" should remain "1e-1337"
-				// in order to keep the precision
-				return rOnlyZeros.test(vValue) ? "0" : vValue;
+				// input "000.000" should become "0.000" to keep precision of decimals
+				// input "1e-1337" should remain "1e-1337" in order to keep the precision
+				return vValue.replace(rLeadingZeros, "$1$2");
 			}
 			// In case of a negative value the leading minus needs to be cut off before shifting the decimal point.
 			// Otherwise the minus will affect the positioning by index 1.
@@ -2071,7 +2109,7 @@ sap.ui.define([
 			sDecimal = vValue.substring(iAfterMovePos);
 
 			// remove unnecessary leading zeros
-			sInt = sInt.replace(/^(-?)0+(\d)/, "$1$2");
+			sInt = sInt.replace(rLeadingZeros, "$1$2");
 
 			return sMinus + sInt + (sDecimal ? ("." + sDecimal) : "");
 		} else {

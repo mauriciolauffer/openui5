@@ -6,23 +6,24 @@ sap.ui.define([
 	"sap/base/security/encodeURL",
 	"sap/base/util/isEmptyObject",
 	"sap/m/DynamicDateRange",
+	"sap/m/library",
 	"sap/m/MessageBox",
 	"sap/m/MessageToast",
-	"sap/m/StandardDynamicDateRangeKeys",
 	"sap/ui/core/library",
-	"sap/ui/core/Core",
 	"sap/ui/core/Element",
+	"sap/ui/core/Messaging",
 	"sap/ui/core/message/Message",
 	"sap/ui/core/mvc/Controller",
 	"sap/ui/model/Filter",
 	"sap/ui/model/FilterOperator",
 	"sap/ui/model/Sorter",
 	"sap/ui/model/odata/ODataUtils"
-], function (Log, encodeURL, isEmptyObject, DynamicDateRange, MessageBox, MessageToast, StandardDynamicDateRangeKeys,
-		coreLibrary, Core, Element, Message, Controller, Filter, FilterOperator, Sorter, ODataUtils) {
+], function (Log, encodeURL, isEmptyObject, DynamicDateRange, mobileLibrary, MessageBox, MessageToast,
+		coreLibrary, Element, Messaging, Message, Controller, Filter, FilterOperator, Sorter, ODataUtils) {
 	"use strict";
 	var sClassname = "sap.ui.core.internal.samples.odata.v2.SalesOrders.Main.controller",
-		MessageType = coreLibrary.MessageType;
+		MessageType = coreLibrary.MessageType,
+		StandardDynamicDateRangeKeys = mobileLibrary.StandardDynamicDateRangeKeys;
 
 	return Controller.extend("sap.ui.core.internal.samples.odata.v2.SalesOrders.Main", {
 		/**
@@ -33,7 +34,7 @@ sap.ui.define([
 		clearPersistentMessages : function (bUnboundOnly) {
 			var aMessages = this.getView().getModel("messages").getObject("/");
 
-			Core.getMessageManager().removeMessages(aMessages.filter(function (oMessage) {
+			Messaging.removeMessages(aMessages.filter(function (oMessage) {
 				return (oMessage.technical || oMessage.persistent)
 					&& (!bUnboundOnly || !oMessage.target);
 			}));
@@ -105,7 +106,7 @@ sap.ui.define([
 				},
 				expand : "ToProduct,ToHeader",
 				method : "POST",
-				success : MessageToast.show.bind(null, "Successfully cloned item " + sItem),
+				success : MessageToast.show.bind(MessageToast, "Successfully cloned item " + sItem),
 				urlParameters : {
 					ItemPosition : encodeURL(sSalesOrderItemPosition),
 					SalesOrderID : encodeURL(sSalesOrderID)
@@ -452,7 +453,7 @@ sap.ui.define([
 
 		onMessageSelected : function (oEvent) {
 			var oMessage = oEvent.getParameter("item").getBindingContext("messages").getObject(),
-				oControl = Element.registry.get(oMessage.getControlId());
+				oControl = Element.getElementById(oMessage.getControlId());
 
 			if (oControl) {
 				this.getView().byId("page").scrollToElement(oControl.getDomRef(), 200, [0, -100]);
@@ -621,7 +622,12 @@ sap.ui.define([
 			}
 		},
 
-		onTriggerCreateActivateLineItem : function () {
+		onTriggerCreateActivateLineItem : function (oEvent) {
+			if (!oEvent.getParameter("context").getProperty("ProductID")) { // product id is required property
+				oEvent.preventDefault();
+				return;
+			}
+
 			this.createInactiveLineItem();
 		},
 

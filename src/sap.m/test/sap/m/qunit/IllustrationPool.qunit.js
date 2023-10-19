@@ -2,14 +2,14 @@
 sap.ui.define([
 	"sap/base/Log",
 	"sap/m/IllustrationPool",
-	"sap/ui/core/Core",
-	"sap/ui/thirdparty/jquery"
+	"sap/ui/thirdparty/jquery",
+	"sap/ui/core/StaticArea"
 ],
 function (
 	Log,
 	IllustrationPool,
-	Core,
-	jQuery
+	jQuery,
+	StaticArea
 ) {
 	"use strict";
 
@@ -61,6 +61,7 @@ function (
 			fnUpdateDomSpy = this.spy(IllustrationPool, "_updateDOMPool"),
 			sValidSet = SAP_ILLUSTRATION_SET_NAME,
 			sValidAsset = sValidSet + "-Spot-BeforeSearch",
+			sValidPrefix = "",
 			sInfoMsg = "The asset with ID '" + sValidAsset + "' is either loaded or being loaded.",
 			oRequireSVGPromise,
 			done = assert.async();
@@ -84,7 +85,7 @@ function (
 		assert.expect(7);
 		assert.ok(fnRequireSvgSpy.calledOnce, "asset is properly required once");
 		assert.ok(oRequireSVGPromise instanceof Promise, "returned value from _requireSVG is a Promise");
-		assert.ok(fnRequireSvgSpy.calledWithExactly(sValidSet, sValidAsset, undefined),
+		assert.ok(fnRequireSvgSpy.calledWithExactly(sValidSet, sValidAsset, undefined, sValidPrefix),
 			"asset is required with the correct via the _requireSVG method with the correct arguments");
 
 		// Act
@@ -95,6 +96,24 @@ function (
 		assert.ok(fnInfoStub.calledOnce, "information is logged once");
 		assert.ok(fnInfoStub.calledWithExactly(sInfoMsg), "information is logged with the correct info message");
 		assert.strictEqual(fnRequireSvgSpy.callCount, 0, "no svg is required if the asset is already required once");
+	});
+
+	QUnit.test("valid asset ID with prefix", function (assert) {
+		// Arrange
+		var fnRequireSvgSpy = this.spy(IllustrationPool, "_requireSVG"),
+			sValidSet = SAP_ILLUSTRATION_SET_NAME,
+			sValidAsset = sValidSet + "-Spot-FaceId",
+			sValidPrefix = "v5/";
+
+		// Act
+		IllustrationPool.loadAsset(sValidAsset, undefined, sValidPrefix);
+
+		// Assert
+		assert.expect(2);
+
+		assert.ok(fnRequireSvgSpy.calledOnce, "asset is properly required once");
+		assert.ok(fnRequireSvgSpy.calledWithExactly(sValidSet, sValidAsset, undefined, sValidPrefix),
+			"asset is required with the correct via the _requireSVG method with the correct arguments");
 	});
 
 	QUnit.module("registerIllustrationSet");
@@ -181,7 +200,7 @@ function (
 		var	fnLoadAssetSpy = this.spy(IllustrationPool, "loadAsset");
 
 		// Act Remove the Illustration Pool's DOM Ref from the Static Area
-		Core.getStaticAreaRef().removeChild(IllustrationPool._getDOMPool());
+		StaticArea.getDomRef().removeChild(IllustrationPool._getDOMPool());
 
 		// Assert
 		assert.notOk(jQuery("#" + SAP_ILLUSTRATION_POOL_ID)[0],
@@ -191,7 +210,7 @@ function (
 		IllustrationPool._getDOMPool();
 
 		// Assert
-		assert.ok(jQuery(Core.getStaticAreaRef()).children("#" + SAP_ILLUSTRATION_POOL_ID)[0],
+		assert.ok(jQuery(StaticArea.getDomRef()).children("#" + SAP_ILLUSTRATION_POOL_ID)[0],
 			"Illustration Pool's DOM Ref is created anew and it's a child of the Static Area");
 		assert.ok(fnLoadAssetSpy.calledOnce, "loadAsset is called once when we are creating the Illustration Pool's DOM Ref");
 		assert.ok(fnLoadAssetSpy.calledWithExactly(SAP_ILLUSTRATION_SET_NAME + SAP_ILLUSTRATION_PATTERNS_NAME),

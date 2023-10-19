@@ -4,7 +4,7 @@
 
 // Provides control sap.ui.webc.main.BreadcrumbsItem.
 sap.ui.define([
-	"sap/ui/webc/common/WebComponent",
+	"sap/ui/core/webc/WebComponent",
 	"./library",
 	"./thirdparty/BreadcrumbsItem"
 ], function(WebComponent, library) {
@@ -16,12 +16,12 @@ sap.ui.define([
 	 * @param {string} [sId] ID for the new control, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new control
 	 *
-	 * @extends sap.ui.webc.common.WebComponent
+	 * @extends sap.ui.core.webc.WebComponent
 	 * @class
 	 *
 	 * <h3>Overview</h3>
 	 *
-	 * The <code>sap.ui.webc.main.BreadcrumbsItem</code> component defines the content of an item in <code>ui5-breadcumbs</code>.
+	 * The <code>sap.ui.webc.main.BreadcrumbsItem</code> component defines the content of an item in <code>sap.ui.webc.main.Breadcrumbs</code>.
 	 *
 	 * @author SAP SE
 	 * @version ${version}
@@ -43,7 +43,7 @@ sap.ui.define([
 			properties: {
 
 				/**
-				 * Defines the accessible aria name of the item.
+				 * Defines the accessible ARIA name of the item.
 				 */
 				accessibleName: {
 					type: "string",

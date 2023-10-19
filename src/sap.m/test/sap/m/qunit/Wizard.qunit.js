@@ -1,6 +1,7 @@
 /*global QUnit */
 sap.ui.define([
 	"sap/base/Log",
+	"sap/ui/base/DesignTime",
 	"sap/ui/core/Core",
 	"sap/m/Wizard",
 	"sap/m/WizardStep",
@@ -8,11 +9,14 @@ sap.ui.define([
 	"sap/ui/base/ObjectPool",
 	"sap/m/library",
 	"sap/ui/thirdparty/jquery"
-], function(Log, Core, Wizard, WizardStep, Button, ObjectPool, library, jQuery) {
+], function(Log, DesignTime, Core, Wizard, WizardStep, Button, ObjectPool, library, jQuery) {
 	"use strict";
 
 	// shortcut for sap.m.PageBackgroundDesign
 	var PageBackgroundDesign = library.PageBackgroundDesign;
+
+	// shortcut for sap.m.WizardRenderMode
+	var WizardRenderMode = library.WizardRenderMode;
 
 	QUnit.module("Wizard Public API", {
 		sWizardId: "wizard-id",
@@ -82,6 +86,26 @@ sap.ui.define([
 			this.oWizard = null;
 		}
 	});
+
+	QUnit.test("stepTitleLevel property", function (assert) {
+		//assert
+		assert.strictEqual(this.oWizard.getStepTitleLevel(), "H3", "default steps title level is correct");
+
+		//act
+		this.oWizard.setStepTitleLevel(sap.ui.core.TitleLevel.H5);
+		Core.applyChanges();
+
+		//assert
+		assert.strictEqual(this.oWizard.getStepTitleLevel(), "H5", "steps title level is updated");
+
+		//arrange
+		var sWizardFirstStepId = this.oWizard.getSteps()[0].getId(),
+		oTitleDomRef = document.getElementById(sWizardFirstStepId + "-Title");
+
+		//assert
+		assert.strictEqual(oTitleDomRef.tagName, "H5", "HTML element is changed");
+	});
+
 
 	QUnit.test("getId() should return correct id", function (assert) {
 		var sId = this.oWizard.getId();
@@ -593,6 +617,29 @@ sap.ui.define([
 		assert.ok(!$oDomRef.hasClass("sapMWizardBgStandard"), "HTML class for Standard is not set");
 		assert.ok(!$oDomRef.hasClass("sapMWizardBgTransparent"), "HTML class for Transparent is not set");
 		assert.ok($oDomRef.hasClass("sapMWizardBgList"), "HTML class for List is set");
+	});
+
+	QUnit.test("insertStep should work when designMode is true", function (assert) {
+		this.stub(DesignTime, "isDesignModeEnabled").returns(true);
+		var oWizard = new Wizard();
+		var oFirstStep = new WizardStep({ title: "First" });
+		var oSecondStep = new WizardStep({ title: "Second" });
+
+		oWizard.insertStep(oFirstStep);
+		oWizard.insertStep(oSecondStep, 0);
+
+		assert.strictEqual(oWizard.getSteps().length, 2, "two steps should be in the wizard");
+		assert.strictEqual(oWizard.getSteps()[0], oSecondStep, "Second step should be inserted on 0 position");
+	});
+
+	QUnit.test("removeStep should work when designMode is true", function (assert) {
+		this.stub(DesignTime, "isDesignModeEnabled").returns(true);
+		var oStep = new WizardStep({ title: "First" });
+		var oWizard = new Wizard({ steps: [oStep] });
+
+		oWizard.removeStep(oStep);
+
+		assert.strictEqual(oWizard.getSteps().length, 0, "No steps should be in the wizard");
 	});
 
 	QUnit.module("Methods");
@@ -1280,8 +1327,8 @@ sap.ui.define([
 				oBtn
 			]
 		});
-		var oWizard = new sap.m.Wizard({
-			renderMode: sap.m.WizardRenderMode.Page,
+		var oWizard = new Wizard({
+			renderMode: WizardRenderMode.Page,
 			steps: [
 				new WizardStep({
 					title:"Step 1"

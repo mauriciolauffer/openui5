@@ -1,4 +1,4 @@
-/* global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/ui/dt/plugin/ControlDragDrop",
@@ -14,8 +14,8 @@ sap.ui.define([
 	"sap/ui/qunit/QUnitUtils",
 	"sap/ui/events/KeyCodes",
 	"sap/ui/thirdparty/sinon-4",
-	"sap/ui/core/Core"
-], function (
+	"sap/ui/qunit/utils/nextUIUpdate"
+], function(
 	ControlDragDrop,
 	CutPaste,
 	OverlayRegistry,
@@ -29,7 +29,7 @@ sap.ui.define([
 	QUnitUtils,
 	KeyCodes,
 	sinon,
-	oCore
+	nextUIUpdate
 ) {
 	"use strict";
 
@@ -38,19 +38,19 @@ sap.ui.define([
 			currentTarget: {
 				id: oOverlay.getId()
 			},
-			preventDefault: function() {
+			preventDefault() {
 			},
-			stopPropagation: function() {
+			stopPropagation() {
 			}
 		};
 	}
 
 	QUnit.module("Given overlays are created for controls that fit into aggregations of each other and don't fit to the other control", {
-		beforeEach: function (assert) {
+		async beforeEach(assert) {
 			var fnDone = assert.async();
 
-			//Test Setup:
-			//VerticalLayout
+			// Test Setup:
+			// VerticalLayout
 			//	content
 			//		ObjectHeader
 			//			attributes
@@ -84,7 +84,7 @@ sap.ui.define([
 			this.oParentLayout = new VerticalLayout({content: [this.oLayout, this.oEmptyLayout]});
 
 			this.oParentLayout.placeAt("qunit-fixture");
-			oCore.applyChanges();
+			await nextUIUpdate();
 
 			this.oControlDragDrop = new ControlDragDrop({
 				draggableTypes: aAllMovableTypes
@@ -94,7 +94,7 @@ sap.ui.define([
 				movableTypes: aAllMovableTypes
 			});
 
-			var fnCheckMovable = function (oOverlay) {
+			var fnCheckMovable = function(oOverlay) {
 				if (oOverlay.getElement() === this.oNotMovableButton) {
 					return Promise.resolve(false);
 				}
@@ -112,8 +112,8 @@ sap.ui.define([
 				]
 			});
 
-			this.oDesignTime.attachEventOnce("synced", function() {
-				oCore.applyChanges();
+			this.oDesignTime.attachEventOnce("synced", async function() {
+				await nextUIUpdate();
 
 				this.oLayoutOverlay = OverlayRegistry.getOverlay(this.oLayout);
 				this.oLayoutAggregationOverlay = this.oLayoutOverlay.getAggregationOverlay("content");
@@ -128,13 +128,13 @@ sap.ui.define([
 				fnDone();
 			}, this);
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oDesignTime.destroy();
 			this.oParentLayout.destroy();
 			this.checkMovableDragStub.restore();
 			this.checkMovableCutStub.restore();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("when the dragstart is triggered on a button overlay, that doesn't fit to ObjectHeader", function(assert) {
 			var done = assert.async();
 			this.oControlDragDrop._onDragStart(stubEventFor(this.oButtonOverlay));
@@ -389,11 +389,11 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given overlays are created for a control with two aggregations", {
-		beforeEach: function (assert) {
+		async beforeEach(assert) {
 			var fnDone = assert.async();
 
-			//Test Setup:
-			//SplitPage
+			// Test Setup:
+			// SplitPage
 			//	masterPages
 			//		Page
 			//	detailPages
@@ -412,7 +412,7 @@ sap.ui.define([
 			});
 
 			this.oSplitContainer.placeAt("qunit-fixture");
-			oCore.applyChanges();
+			await nextUIUpdate();
 
 			this.oControlDragDrop = new ControlDragDrop({
 				draggableTypes: aAllMovableTypes
@@ -421,7 +421,6 @@ sap.ui.define([
 			this.oCutPaste = new CutPaste({
 				movableTypes: aAllMovableTypes
 			});
-
 
 			this.oDesignTime = new DesignTime({
 				rootElements: [
@@ -433,8 +432,8 @@ sap.ui.define([
 				]
 			});
 
-			this.oDesignTime.attachEventOnce("synced", function() {
-				oCore.applyChanges();
+			this.oDesignTime.attachEventOnce("synced", async function() {
+				await nextUIUpdate();
 
 				this.oSplitContainerOverlay = OverlayRegistry.getOverlay(this.oSplitContainer);
 				this.oSplitContainerMasterPagesAggregationOverlay = this.oSplitContainerOverlay.getAggregationOverlay("masterPages");
@@ -446,13 +445,13 @@ sap.ui.define([
 				fnDone();
 			}, this);
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oDesignTime.destroy();
 			this.oSplitContainer.destroy();
 			this.oControlDragDrop.destroy();
 			this.oCutPaste.destroy();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("when the dragstart is triggered on the page overlay, that fit into both aggregations", function(assert) {
 			var done = assert.async();
 			this.oControlDragDrop._onDragStart(stubEventFor(this.oPage1Overlay));
@@ -496,7 +495,7 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

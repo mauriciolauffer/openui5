@@ -13,20 +13,19 @@ sap.ui.define([
 	'sap/ui/model/type/Integer',
 	'sap/ui/model/type/Time',
 	'./utils/TableUtils',
-	'./AnalyticalColumnMenu'
-],
-	function(
-		Column,
-		library,
-		Element,
-		BooleanType,
-		DateTime,
-		Float,
-		Integer,
-		Time,
-		TableUtils,
-		AnalyticalColumnMenu
-	) {
+	"sap/base/Log"
+], function(
+	Column,
+	library,
+	Element,
+	BooleanType,
+	DateTime,
+	Float,
+	Integer,
+	Time,
+	TableUtils,
+	Log
+) {
 	"use strict";
 
 	var GroupEventType = library.GroupEventType;
@@ -80,7 +79,14 @@ sap.ui.define([
 			/**
 			 * If the column is grouped, this formatter is used to format the value in the group header
 			 */
-			groupHeaderFormatter: {type: "function", group: "Behavior", defaultValue: null}
+			groupHeaderFormatter: {type: "function", group: "Appearance", defaultValue: null},
+
+			/**
+			 * Indicates if the column is grouped.
+			 * @since 1.118
+			 */
+			grouped: {type: "boolean", group: "Appearance", defaultValue: false}
+
 		}
 	}});
 
@@ -94,15 +100,6 @@ sap.ui.define([
 		"Float": new Float(),
 		"Integer": new Integer(),
 		"Boolean": new BooleanType()
-	};
-
-	/*
-	 * Factory method. Creates the column menu.
-	 *
-	 * @returns {sap.ui.table.AnalyticalColumnMenu} The created column menu.
-	 */
-	AnalyticalColumn.prototype._createMenu = function() {
-		return new AnalyticalColumnMenu(this.getId() + "-menu");
 	};
 
 	AnalyticalColumn.prototype._setGrouped = function(bGrouped) {
@@ -125,6 +122,7 @@ sap.ui.define([
 		var oParent = this.getParent();
 
 		if (isInstanceOfAnalyticalTable(oParent)) {
+			oParent._bContextsAvailable = false;
 			if (bGrouped) {
 				oParent._addGroupedColumn(this.getId());
 			} else {
@@ -158,21 +156,25 @@ sap.ui.define([
 	 */
 	AnalyticalColumn.prototype.getLabel = function() {
 		var oLabel = this.getAggregation("label");
-		if (!oLabel) {
-			if (!this._oBindingLabel) {
-				var oParent = this.getParent();
-				if (isInstanceOfAnalyticalTable(oParent)) {
-					var oBinding = oParent.getBinding();
-					if (oBinding) {
-						this._oBindingLabel = library.TableHelper.createLabel();
-						this.addDependent(this._oBindingLabel);
-						TableUtils.Binding.metadataLoaded(oParent).then(function() {
-							this._oBindingLabel.setText(oBinding.getPropertyLabel(this.getLeadingProperty()));
-						}.bind(this));
+		try {
+			if (!oLabel) {
+				if (!this._oBindingLabel) {
+					var oParent = this.getParent();
+					if (isInstanceOfAnalyticalTable(oParent)) {
+						var oBinding = oParent.getBinding();
+						if (oBinding) {
+							this._oBindingLabel = TableUtils._getTableTemplateHelper().createLabel();
+							this.addDependent(this._oBindingLabel);
+							TableUtils.Binding.metadataLoaded(oParent).then(function() {
+								this._oBindingLabel.setText(oBinding.getPropertyLabel(this.getLeadingProperty()));
+							}.bind(this));
+						}
 					}
 				}
+				oLabel = this._oBindingLabel;
 			}
-			oLabel = this._oBindingLabel;
+		} catch (e) {
+			Log.warning(e);
 		}
 		return oLabel;
 	};
@@ -299,7 +301,7 @@ sap.ui.define([
 
 	AnalyticalColumn.prototype._getDefaultTooltip = function() {
 		var oParent = this.getParent();
-		if (isInstanceOfAnalyticalTable(oParent)) {
+		if (isInstanceOfAnalyticalTable(oParent) && !oParent._getHideStandardTooltips()) {
 			var oBinding = oParent.getBinding();
 			if (oBinding && this.getLeadingProperty()) {
 				return oBinding.getPropertyQuickInfo(this.getLeadingProperty());
@@ -309,8 +311,9 @@ sap.ui.define([
 	};
 
 	/**
-	 * Checks whether or not the menu has items
+	 * Checks whether the menu has items
 	 * @returns {boolean} True if the menu has or could have items.
+	 * @deprecated As of Version 1.117
 	 */
 	AnalyticalColumn.prototype._menuHasItems = function() {
 		var fnMenuHasItems = function() {
@@ -399,9 +402,20 @@ sap.ui.define([
 		return false;
 	};
 
+	AnalyticalColumn.prototype._isGroupableByMenu = function() {
+		return this.isGroupableByMenu();
+	};
+
 	// This column sets its own cell content visibility settings.
 	AnalyticalColumn.prototype._setCellContentVisibilitySettings = function() {};
 
-	return AnalyticalColumn;
+	AnalyticalColumn.prototype._applySorters = function() {
+		// The analytical info must be updated before sorting via the binding. The request will still be correct, but the binding
+		// will create its internal data structure based on the analytical info. We also do not need to get the contexts right
+		// now (therefore "true" is passed"), this will be done later in refreshRows.
+		this._updateTableAnalyticalInfo(true);
+		Column.prototype._applySorters.apply(this, arguments);
+	};
 
+	return AnalyticalColumn;
 });

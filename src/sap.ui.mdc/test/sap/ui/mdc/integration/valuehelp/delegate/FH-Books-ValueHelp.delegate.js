@@ -4,7 +4,6 @@
 
 sap.ui.define([
 	"./ValueHelp.delegate",
-	"sap/ui/mdc/library",
 	"sap/ui/mdc/valuehelp/content/MTable",
 	"sap/ui/mdc/valuehelp/content/MDCTable",
 	"sap/ui/mdc/valuehelp/content/Conditions",
@@ -17,10 +16,9 @@ sap.ui.define([
 	"sap/m/Column",
 	"sap/m/ColumnListItem",
 	"sap/m/Text",
-	"sap/base/util/UriParameters"
+	"sap/ui/mdc/enums/TableSelectionMode"
 ], function(
 	ODataV4ValueHelpDelegate,
-	library,
 	MTable,
 	MDCTable,
 	Conditions,
@@ -33,27 +31,27 @@ sap.ui.define([
 	Column,
 	ColumnListItem,
 	Text,
-	UriParameters
+	TableSelectionMode
 ) {
 	"use strict";
 
-	var SelectionMode = library.SelectionMode;
-	var ValueHelpDelegate = Object.assign({}, ODataV4ValueHelpDelegate);
+	const ValueHelpDelegate = Object.assign({}, ODataV4ValueHelpDelegate);
+	ValueHelpDelegate.apiVersion = 2;//CLEANUPD_DELEGATE
 
-	ValueHelpDelegate.retrieveContent = function (oPayload, oContainer) {
+	ValueHelpDelegate.retrieveContent = function (_oValueHelp, oContainer) {
+		const oPayload = _oValueHelp.getPayload();
+		const sFilterFields = oPayload.filter;
+		const oValueHelp = oContainer && oContainer.getParent();
+		const bMultiSelect = oValueHelp.getMaxConditions() === -1;
+		const sId = oValueHelp.getId();
 
-		var sFilterFields = oPayload.filter;
-		var oValueHelp = oContainer && oContainer.getParent();
-		var bMultiSelect = oValueHelp.getMaxConditions() === -1;
-		var sId = oValueHelp.getId();
+		const oParams = new URLSearchParams(window.location.search);
+		const oParamSuspended = oParams.get("suspended");
+		const bSuspended = oParamSuspended ? oParamSuspended === "true" : false;
 
-		var oParams = UriParameters.fromQuery(location.search);
-		var oParamSuspended = oParams.get("suspended");
-		var bSuspended = oParamSuspended ? oParamSuspended === "true" : false;
-
-		var aCurrentContent = oContainer && oContainer.getContent();
-		var oCurrentContent = aCurrentContent && aCurrentContent[0];
-		var oCurrentTable = oCurrentContent && oCurrentContent.getTable();
+		const aCurrentContent = oContainer && oContainer.getContent();
+		let oCurrentContent = aCurrentContent && aCurrentContent[0];
+		let oCurrentTable = oCurrentContent && oCurrentContent.getTable();
 
 		if (oContainer.isA("sap.ui.mdc.valuehelp.Popover")) {
 			if (!oCurrentTable) {
@@ -126,8 +124,7 @@ sap.ui.define([
 						autoBindOnInit: !bSuspended,
 						showRowCount: true,
 						width: "100%",
-						height: "100%",
-						selectionMode: bMultiSelect ? SelectionMode.Multi : SelectionMode.Single,
+						selectionMode: bMultiSelect ? TableSelectionMode.Multi : TableSelectionMode.Single,
 						delegate: {
 							name: "sap/ui/v4demo/delegate/GridTable.delegate",
 							payload: {
@@ -135,10 +132,10 @@ sap.ui.define([
 							}
 						},
 						columns: [
-								  new mdcColumn({importance: "High", header: "ID", dataProperty: "ID", template: new Text({text: "{ID}"}), width: "5rem"}),
-								  new mdcColumn({importance: "High", header: "Title", dataProperty: "title", template: new Text({text:  "{title}"})}),
-								  new mdcColumn({importance: "Low", header: "Description", dataProperty: "descr", template: new Text({text: "{descr}"})}),
-								  new mdcColumn({importance: "Low", header: "Published", dataProperty: "published", template: new Text({text: "{published}"})})
+								  new mdcColumn({header: "ID", propertyKey: "ID", template: new Text({text: "{ID}"}), width: "5rem"}),
+								  new mdcColumn({header: "Title", propertyKey: "title", template: new Text({text:  "{title}"})}),
+								  new mdcColumn({header: "Description", propertyKey: "descr", template: new Text({text: "{descr}"})}),
+								  new mdcColumn({header: "Published", propertyKey: "published", template: new Text({text: "{published}"})})
 								  ]
 					})
 				});

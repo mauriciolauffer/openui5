@@ -4,7 +4,7 @@
 
 // Provides control sap.ui.webc.main.Tree.
 sap.ui.define([
-	"sap/ui/webc/common/WebComponent",
+	"sap/ui/core/webc/WebComponent",
 	"./library",
 	"./thirdparty/Tree"
 ], function(WebComponent, library) {
@@ -18,7 +18,7 @@ sap.ui.define([
 	 * @param {string} [sId] ID for the new control, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new control
 	 *
-	 * @extends sap.ui.webc.common.WebComponent
+	 * @extends sap.ui.core.webc.WebComponent
 	 * @class
 	 *
 	 * <h3>Overview</h3> The <code>sap.ui.webc.main.Tree</code> component provides a tree structure for displaying data in a hierarchy.
@@ -68,6 +68,13 @@ sap.ui.define([
 			library: "sap.ui.webc.main",
 			tag: "ui5-tree-ui5",
 			properties: {
+
+				/**
+				 * Defines the accessible name of the component.
+				 */
+				accessibleName: {
+					type: "string"
+				},
 
 				/**
 				 * Defines the component footer text.
@@ -155,6 +162,21 @@ sap.ui.define([
 				items: {
 					type: "sap.ui.webc.main.ITreeItem",
 					multiple: true
+				}
+			},
+			associations: {
+
+				/**
+				 * Receives id(or many ids) of the controls that label this control.
+				 */
+				ariaLabelledBy: {
+					type: "sap.ui.core.Control",
+					multiple: true,
+					mapping: {
+						type: "property",
+						to: "accessibleNameRef",
+						formatter: "_getAriaLabelledByForRendering"
+					}
 				}
 			},
 			events: {
@@ -250,6 +272,13 @@ sap.ui.define([
 						 */
 						previouslySelectedItems: {
 							type: "Array"
+						},
+
+						/**
+						 * The item triggering the event.
+						 */
+						targetItem: {
+							type: "HTMLElement"
 						}
 					}
 				}
@@ -260,7 +289,7 @@ sap.ui.define([
 
 	/**
 	 * Perform Depth-First-Search walk on the tree and run a callback on each node
-	 * @param {function} callback function to execute on each node of the tree with 2 arguments: the node and the level
+	 * @param {function} callback function to execute on each node of the tree with 3 arguments: the node, the level and the index
 	 * @public
 	 * @name sap.ui.webc.main.Tree#walk
 	 * @function

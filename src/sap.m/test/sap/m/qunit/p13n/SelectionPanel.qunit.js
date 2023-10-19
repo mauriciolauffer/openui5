@@ -5,9 +5,17 @@ sap.ui.define([
 	"sap/ui/thirdparty/sinon",
 	"sap/ui/core/Core",
 	"sap/m/Input",
-	"sap/base/util/merge"
-], function(SelectionPanel, VBox, sinon, oCore, Input, merge) {
+	"sap/base/util/merge",
+	"sap/m/library",
+	"sap/ui/model/json/JSONModel"
+], function(SelectionPanel, VBox, sinon, oCore, Input, merge, mLibrary, JSONModel) {
 	"use strict";
+
+	// shortcut for sap.m.ListType
+	var ListType = mLibrary.ListType;
+
+	// shortcut for sap.m.MultiSelectMode
+	var MultiSelectMode = mLibrary.MultiSelectMode;
 
 	QUnit.module("API Tests", {
 		getTestData: function() {
@@ -477,4 +485,69 @@ sap.ui.define([
 			assert.equal(sLabelFor, "testAccInput" + sKey, "Label for assocation points to children element");
 		});
     });
+
+	QUnit.test("Check type of inner item depending if values are shown", function(assert){
+
+		this.oSelectionPanel.setP13nData(this.getTestData());
+		var oInnerTable = this.oSelectionPanel._oListControl;
+		var aItems = oInnerTable.getItems();
+
+		//In case the factory is not shown, the item should be clickable/active in case its selected
+		aItems.forEach(function(oItem){
+			if (oItem.getSelected()) {
+				assert.equal(oItem.getType(), ListType.Active, "The list item is set to active");
+			} else {
+				assert.equal(oItem.getType(), ListType.Inactive, "The list item is set to active");
+			}
+		});
+
+		this.oSelectionPanel.showFactory(true);
+
+		//Once the factory is shown, the item should be inactive since move buttons are disabled
+		aItems.forEach(function(oItem){
+			assert.equal(oItem.getType(), ListType.Inactive, "The list item is set to inactive");
+		});
+
+	});
+
+	QUnit.test("Check fieldColumn can by dynamically updated", function(assert){
+
+		const oSelectionPanel = new SelectionPanel();
+
+		assert.equal(oSelectionPanel.getFieldColumn(), "Field", "The default has been provided");
+
+		oSelectionPanel.setFieldColumn("Test");
+		assert.equal(oSelectionPanel.getFieldColumn(), "Test", "The updated text has been set");
+
+	});
+
+	QUnit.test("Check fieldColumn can be bound", function(assert){
+
+		const testText = "Test 2";
+
+		const oModel = new JSONModel({
+			panelText: testText
+		});
+
+		const oSelectionPanel = new SelectionPanel({
+			fieldColumn: "{testP13nModel>/panelText}"
+		});
+
+		oSelectionPanel.setModel(oModel, "testP13nModel");
+
+		assert.equal(oSelectionPanel.getFieldColumn(), testText, "The updated text has been set");
+
+	});
+
+	QUnit.test("Check 'multiSelectMode'", function(assert) {
+		var oPanel = this.oSelectionPanel;
+
+		assert.equal(oPanel._oListControl.getMultiSelectMode(), MultiSelectMode.ClearAll, "Correct default value for 'multiSelectMode' set in inner ListControl.");
+
+		oPanel.setMultiSelectMode(MultiSelectMode.Default);
+		assert.equal(oPanel._oListControl.getMultiSelectMode(), MultiSelectMode.Default, "Correct value forwarded to inner ListControl.");
+
+		oPanel.setMultiSelectMode(MultiSelectMode.SelectAll);
+		assert.equal(oPanel._oListControl.getMultiSelectMode(), MultiSelectMode.SelectAll, "Correct value forwarded to inner ListControl.");
+	});
 });

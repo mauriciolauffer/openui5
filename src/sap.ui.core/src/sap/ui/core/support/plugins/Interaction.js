@@ -4,7 +4,7 @@
 
 // Provides class sap.ui.core.support.plugins.Performance
 sap.ui.define([
-	'jquery.sap.global',
+	'sap/ui/core/Supportability',
 	'sap/ui/core/support/Plugin',
 	'sap/ui/core/support/controls/InteractionSlider',
 	'sap/ui/core/support/controls/InteractionTree',
@@ -13,10 +13,11 @@ sap.ui.define([
 	'sap/ui/thirdparty/jszip',
 	'sap/ui/core/util/File',
 	"sap/ui/performance/trace/Interaction",
-	"sap/ui/performance/Measurement"
+	"sap/ui/performance/Measurement",
+	"sap/ui/core/date/UI5Date"
 	],
 	function(
-		jQuery,
+		Supportability,
 		Plugin,
 		InteractionSlider,
 		InteractionTree,
@@ -25,7 +26,8 @@ sap.ui.define([
 		JSZip,
 		File,
 		TraceInteraction,
-		Measurement
+		Measurement,
+		UI5Date
 	) {
 		"use strict";
 
@@ -44,8 +46,6 @@ sap.ui.define([
 			constructor : function(oSupportStub) {
 				Plugin.apply(this, ["sapUiSupportInteraction", "Interaction", oSupportStub]);
 
-				this._oStub = oSupportStub;
-
 				if (this.runsAsToolPlugin()) {
 
 					this._aEventIds = [this.getId() + "SetMeasurements",
@@ -58,7 +58,7 @@ sap.ui.define([
 						return ("000" + String(i)).slice(-w);
 					};
 					this._fnFormatTime = function(fNow) {
-						var oNow = new Date(fNow),
+						var oNow =  UI5Date.getInstance(fNow),
 							iMicroSeconds = Math.floor((fNow - Math.floor(fNow)) * 1000);
 						return pad0(oNow.getHours(),2) + ":" + pad0(oNow.getMinutes(),2) + ":" + pad0(oNow.getSeconds(),2) + "." + pad0(oNow.getMilliseconds(),3) + pad0(iMicroSeconds,3);
 					};
@@ -158,8 +158,14 @@ sap.ui.define([
 			}.bind(this));
 			this.dom("odata").checked = this._bODATA_Stats_On;
 			this.dom("odata").addEventListener("click", function(oEvent) {
-				jQuery.sap.statistics(!jQuery.sap.statistics());
-			});
+				this._bODATA_Stats_On = !this._bODATA_Stats_On;
+				this.confirmReload(function () {
+					this._oStub.sendEvent(this._oStub.getMetadata().getClass().EventType.RELOAD_WITH_PARAMETER, {
+						parameterName: "sap-statistics",
+						parameterValue: this._bODATA_Stats_On
+					});
+				}.bind(this));
+			}.bind(this));
 
 
 			this.dom('record').dataset.state = (!this._bFesrActive) ? 'Start recording' : 'Stop recording';
@@ -182,8 +188,7 @@ sap.ui.define([
 
 		function initInApps(oSupportStub) {
 			var _bFesrActive = /sap-ui-xx-fesr=(true|x|X)/.test(window.location.search);
-			var _bODATA_Stats_On = jQuery.sap.statistics() ||
-				/sap-statistics=(true|x|X)/.test(window.location.search);
+			var _bODATA_Stats_On = Supportability.isStatisticsEnabled();
 
 			this._oStub.sendEvent(this.getId() + "SetQueryString", {"queryString": { bFesrActive: _bFesrActive,
 				bODATA_Stats_On: _bODATA_Stats_On}});
@@ -252,7 +257,6 @@ sap.ui.define([
 			this.dom('record').dataset.state = (!this._bFesrActive) ? 'Start recording' : 'Stop recording';
 		};
 
-
 		/**
 		 * Handler for sapUiSupportInteractionSetMeasurements event
 		 *
@@ -318,8 +322,6 @@ sap.ui.define([
 		 * @private
 		 */
 		Interaction.prototype.onsapUiSupportInteractionEnd = function(oEvent) {
-
-			//jQuery.sap.measure.end(this.getId() + "-perf");
 			Interaction.end(/* bForce= */true);
 		};
 
@@ -516,5 +518,4 @@ sap.ui.define([
 		};
 
 		return Interaction;
-
 	});

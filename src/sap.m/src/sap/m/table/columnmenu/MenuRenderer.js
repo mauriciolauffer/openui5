@@ -15,6 +15,7 @@ sap.ui.define([], function () {
 		this.renderHiddenTexts(oRm, oMenu);
 		this.renderQuickActions(oRm, oMenu);
 		this.renderItems(oRm, oMenu);
+
 		oRm.close("div");
 	};
 

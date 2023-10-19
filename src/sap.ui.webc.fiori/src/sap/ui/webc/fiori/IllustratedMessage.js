@@ -4,7 +4,7 @@
 
 // Provides control sap.ui.webc.fiori.IllustratedMessage.
 sap.ui.define([
-	"sap/ui/webc/common/WebComponent",
+	"sap/ui/core/webc/WebComponent",
 	"./library",
 	"./thirdparty/IllustratedMessage"
 ], function(WebComponent, library) {
@@ -19,7 +19,7 @@ sap.ui.define([
 	 * @param {string} [sId] ID for the new control, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new control
 	 *
-	 * @extends sap.ui.webc.common.WebComponent
+	 * @extends sap.ui.core.webc.WebComponent
 	 * @class
 	 *
 	 * <h3>Overview</h3> An IllustratedMessage is a recommended combination of a solution-oriented message, an engaging illustration, and conversational tone to better communicate an empty or a success state than just show a message alone.
@@ -122,6 +122,32 @@ sap.ui.define([
 					type: "sap.ui.core.Control",
 					multiple: false,
 					slot: "subtitle"
+				},
+
+				/**
+				 * Defines the title of the component. <br>
+				 * <br>
+				 * <b>Note:</b> Using this slot, the default title text of illustration and the value of <code>title</code> property will be overwritten.
+				 */
+				title: {
+					type: "sap.ui.core.Control",
+					multiple: false,
+					slot: "title"
+				}
+			},
+			associations: {
+
+				/**
+				 * Receives id(or many ids) of the controls that label this control.
+				 */
+				ariaLabelledBy: {
+					type: "sap.ui.core.Control",
+					multiple: true,
+					mapping: {
+						type: "property",
+						to: "accessibleNameRef",
+						formatter: "_getAriaLabelledByForRendering"
+					}
 				}
 			}
 		}

@@ -6,14 +6,13 @@
 // mock server for the back-end requests is set up.
 sap.ui.define([
 	"sap/base/util/merge",
-	"sap/base/util/UriParameters",
 	"sap/ui/model/json/JSONModel",
 	"sap/ui/model/odata/CountMode",
 	"sap/ui/model/odata/OperationMode",
 	"sap/ui/model/odata/v2/ODataModel",
 	"sap/ui/test/TestUtils",
 	"sap/ui/thirdparty/sinon"
-], function (merge, UriParameters, JSONModel, CountMode, OperationMode, ODataModel, TestUtils,
+], function (merge, JSONModel, CountMode, OperationMode, ODataModel, TestUtils,
 		sinon) {
 	"use strict";
 
@@ -815,6 +814,9 @@ sap.ui.define([
 				},
 
 				/* ODataListBinding#create: Test Case III */
+				"SalesOrderSet?$skip=4&$top=1&$orderby=SalesOrderID%20desc&$filter=LifecycleStatus%20eq%20%27N%27&$select=CurrencyCode%2cCustomerName%2cGrossAmount%2cLifecycleStatus%2cNote%2cSalesOrderID" : {
+					source : "ODLB.create/TC3/SalesOrderSet_desc_4-1.json"
+				},
 				"SalesOrderSet('205')" : {
 					source : "ODLB.create/TC3/SalesOrder('205').json"
 				},
@@ -851,17 +853,17 @@ sap.ui.define([
 
 						return true;
 					},
-					source : "metadata.xml"
+					source : "../../../../../../qunit/odata/v2/data/ZUI5_GWSAMPLE_BASIC.metadata.xml"
 				}
 			}, {
 				regExp : /GET .*\/SAP__Currencies\?/,
 				response : {
-					source : "../../data/SAP__Currencies.json"
+					source : "../../../../../../qunit/odata/v2/data/SAP__Currencies.json"
 				}
 			}, {
 				regExp : /GET .*\/SAP__UnitsOfMeasure\?/,
 				response : {
-					source : "../../data/SAP__UnitsOfMeasure.json"
+					source : "../../../../../../qunit/odata/v2/data/SAP__UnitsOfMeasure.json"
 				}
 			}, {
 				/* Messages: Test Case III */
@@ -1049,7 +1051,7 @@ sap.ui.define([
 					"/sap/opu/odata/sap/ZUI5_GWSAMPLE_BASIC/", oMockServerFixtures.aRegExpFixture);
 			} else {
 				mParameters = Object.assign({}, mParameters);
-				oUriParameters = UriParameters.fromQuery(window.location.search);
+				oUriParameters = new URLSearchParams(window.location.search);
 				sParameter = OperationMode[oUriParameters.get("operationMode")];
 				if (sParameter) {
 					mParameters.defaultOperationMode = sParameter;

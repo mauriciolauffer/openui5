@@ -71,6 +71,7 @@ sap.ui.define([
 			if (!bVariantIndependent && bVariantPresent) {
 				this.mCurrentExpectedSpecificData.variantManagementReference = "variantReference";
 				this.mCurrentExpectedSpecificData.variantReference = "variantReference";
+				this.mCurrentExpectedSpecificData.isChangeOnStandardVariant = true;
 			}
 
 			assert.deepEqual(this.oCreateStub.lastCall.args[0].changeSpecificData, this.mCurrentExpectedSpecificData, "the correct change specific data were passed");
@@ -90,9 +91,9 @@ sap.ui.define([
 	 * @param {object} mExpectedSpecificData - Command specific data that will be passed to the creation of the <code>sap.ui.fl.apply._internal.flexObjects.UIChange</code>
 	 */
 	function basicCommandTest(mInfo, mCommandProperties, mExpectedSpecificData) {
-		var sMsg = mInfo.moduleName || "Test for '" + mInfo.commandName + "' command";
+		var sMsg = mInfo.moduleName || `Test for '${mInfo.commandName}' command`;
 		QUnit.module(sMsg, {
-			beforeEach: function() {
+			beforeEach() {
 				this.mCurrentInfo = Object.assign({}, mInfo);
 				this.mCurrentCommandProperties = Object.assign({}, mCommandProperties);
 				this.mCurrentExpectedSpecificData = Object.assign({}, mExpectedSpecificData);
@@ -106,7 +107,7 @@ sap.ui.define([
 				this.oCreateStub = sandbox.stub(ChangesWriteAPI, "create").resolves();
 				this.oControl = new Control("myFancyControlId");
 			},
-			afterEach: function() {
+			afterEach() {
 				sandbox.restore();
 				this.oControl.destroy();
 				this.oMockedAppComponent.destroy();

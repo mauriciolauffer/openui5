@@ -3,21 +3,33 @@
 sap.ui.define([
 	"sap/ui/core/Control",
 	"sap/ui/core/LabelEnablement",
-	"sap/ui/core/Core",
 	"sap/m/Label",
 	"sap/m/Button",
 	"sap/m/Link",
 	"sap/m/Input",
-	"sap/ui/qunit/utils/createAndAppendDiv"
+	"sap/ui/layout/form/Form",
+	"sap/ui/layout/form/ColumnLayout",
+	"sap/ui/layout/form/FormContainer",
+	"sap/ui/layout/form/FormElement",
+	"sap/ui/mdc/Field",
+	"sap/ui/mdc/field/content/ContentFactory",
+	"sap/ui/qunit/utils/createAndAppendDiv",
+	"sap/ui/qunit/utils/nextUIUpdate"
 ], function(
 	Control,
 	LabelEnablement,
-	Core,
 	Label,
 	Button,
 	Link,
 	Input,
-	createAndAppendDiv
+	Form,
+	ColumnLayout,
+	FormContainer,
+	FormElement,
+	Field,
+	ContentFactory,
+	createAndAppendDiv,
+	nextUIUpdate
 ) {
 	"use strict";
 
@@ -105,7 +117,7 @@ sap.ui.define([
 			this.oLabel.placeAt("content");
 			this.oControl1.placeAt("content");
 			this.oControl2.placeAt("content");
-			Core.applyChanges();
+			return nextUIUpdate();
 		},
 		afterEach : function () {
 			this.oLabel.destroy();
@@ -137,9 +149,9 @@ sap.ui.define([
 		assert.strictEqual(this.oControl2.$().attr("aria-labelledby"), "testControl2-additionalLabel", "No aria-labelledby reference to label in control 1");
 	});
 
-	QUnit.test("Label assignment done with LabelFor association", function(assert) {
+	QUnit.test("Label assignment done with LabelFor association", async function(assert) {
 		this.oLabel.setLabelFor(this.oControl1);
-		Core.applyChanges();
+		await nextUIUpdate();
 
 		assert.strictEqual(LabelEnablement.getReferencingLabels(this.oControl1).length, 1, "Label assigned to control 1");
 		assert.strictEqual(LabelEnablement.getReferencingLabels(this.oControl1)[0], "testLabel", "Label assigned to control 1");
@@ -149,9 +161,9 @@ sap.ui.define([
 		assert.strictEqual(this.oControl2.$().attr("aria-labelledby"), "testControl2-additionalLabel", "No aria-labelledby reference to label in control 1");
 	});
 
-	QUnit.test("Label assignment done with setAlternativeLabelFor", function(assert) {
+	QUnit.test("Label assignment done with setAlternativeLabelFor", async function(assert) {
 		this.oLabel.setAlternativeLabelFor(this.oControl1);
-		Core.applyChanges();
+		await nextUIUpdate();
 
 		assert.strictEqual(LabelEnablement.getReferencingLabels(this.oControl1).length, 1, "Label assigned to control 1");
 		assert.strictEqual(LabelEnablement.getReferencingLabels(this.oControl1)[0], "testLabel", "Label assigned to control 1");
@@ -161,10 +173,10 @@ sap.ui.define([
 		assert.strictEqual(this.oControl2.$().attr("aria-labelledby"), "testControl2-additionalLabel", "No aria-labelledby reference to label in control 1");
 	});
 
-	QUnit.test("Label assignment done with LabelFor association and setAlternativeLabelFor - association wins", function(assert) {
+	QUnit.test("Label assignment done with LabelFor association and setAlternativeLabelFor - association wins", async function(assert) {
 		this.oLabel.setLabelFor(this.oControl1);
 		this.oLabel.setAlternativeLabelFor(this.oControl2);
-		Core.applyChanges();
+		await nextUIUpdate();
 
 		assert.strictEqual(LabelEnablement.getReferencingLabels(this.oControl1).length, 1, "Label assigned to control 1");
 		assert.strictEqual(LabelEnablement.getReferencingLabels(this.oControl1)[0], "testLabel", "Label assigned to control 1");
@@ -174,9 +186,9 @@ sap.ui.define([
 		assert.strictEqual(this.oControl2.$().attr("aria-labelledby"), "testControl2-additionalLabel", "No aria-labelledby reference to label in control 1");
 	});
 
-	QUnit.test("Label assignment change is reflected", function(assert) {
+	QUnit.test("Label assignment change is reflected", async function(assert) {
 		this.oLabel.setLabelFor(this.oControl1);
-		Core.applyChanges();
+		await nextUIUpdate();
 
 		assert.strictEqual(LabelEnablement.getReferencingLabels(this.oControl1).length, 1, "Label assigned to control 1");
 		assert.strictEqual(LabelEnablement.getReferencingLabels(this.oControl1)[0], "testLabel", "Label assigned to control 1");
@@ -186,7 +198,7 @@ sap.ui.define([
 		assert.strictEqual(this.oControl2.$().attr("aria-labelledby"), "testControl2-additionalLabel", "No aria-labelledby reference to label in control 1");
 
 		this.oLabel.setLabelFor(this.oControl2);
-		Core.applyChanges();
+		await nextUIUpdate();
 
 		assert.strictEqual(LabelEnablement.getReferencingLabels(this.oControl1).length, 0, "No label assigned to control 1");
 		assert.strictEqual(LabelEnablement.getReferencingLabels(this.oControl2).length, 1, "Label assigned to control 2");
@@ -196,7 +208,7 @@ sap.ui.define([
 		assert.strictEqual(this.oControl2.$().attr("aria-labelledby"), "testLabel testControl2-additionalLabel", "aria-labelledby reference to label in control 2 available");
 
 		this.oLabel.setLabelFor(null);
-		Core.applyChanges();
+		await nextUIUpdate();
 
 		assert.strictEqual(LabelEnablement.getReferencingLabels(this.oControl1).length, 0, "No label assigned to control 1");
 		assert.strictEqual(LabelEnablement.getReferencingLabels(this.oControl2).length, 0, "No label assigned to control 2");
@@ -212,7 +224,7 @@ sap.ui.define([
 			this.oLabel.placeAt("content");
 			this.oControl.placeAt("content");
 			this.oLabel.setLabelFor(this.oControl);
-			Core.applyChanges();
+			return nextUIUpdate();
 		},
 		afterEach : function () {
 			this.oLabel.destroy();
@@ -235,43 +247,43 @@ sap.ui.define([
 		assert.strictEqual(fnInvalidateSpy.callCount, 0);
 	});
 
-	QUnit.test("LabelEnablement.isRequired", function(assert) {
+	QUnit.test("LabelEnablement.isRequired", async function(assert) {
 		assert.ok(!LabelEnablement.isRequired(this.oControl), "Control not required (own property and label property not set)");
 
 		this.oControl.setRequired(true);
-		Core.applyChanges();
+		await nextUIUpdate();
 		assert.ok(LabelEnablement.isRequired(this.oControl), "Control required (explicitly via own property)");
 
 		this.oControl.setRequired(false);
-		Core.applyChanges();
+		await nextUIUpdate();
 		assert.ok(!LabelEnablement.isRequired(this.oControl), "Control not required (own property and label property not set)");
 
 		this.oLabel.setRequired(true);
-		Core.applyChanges();
+		await nextUIUpdate();
 		assert.ok(LabelEnablement.isRequired(this.oControl), "Control required (implicitly via label property)");
 
 		this.oLabel.setLabelFor(null);
-		Core.applyChanges();
+		await nextUIUpdate();
 		assert.ok(!LabelEnablement.isRequired(this.oControl), "Control not required (own property not set and no label assigned)");
 	});
 
-	QUnit.test("aria-required", function(assert) {
+	QUnit.test("aria-required", async function(assert) {
 		assert.ok(!this.oControl.$().attr("aria-required"), "Control not required (own property and label property not set)");
 
 		this.oControl.setRequired(true);
-		Core.applyChanges();
+		await nextUIUpdate();
 		assert.strictEqual(this.oControl.$().attr("aria-required"), "true", "Control required (explicitly via own property)");
 
 		this.oControl.setRequired(false);
-		Core.applyChanges();
+		await nextUIUpdate();
 		assert.ok(!this.oControl.$().attr("aria-required"), "Control not required (own property and label property not set)");
 
 		this.oLabel.setRequired(true);
-		Core.applyChanges();
+		await nextUIUpdate();
 		assert.strictEqual(this.oControl.$().attr("aria-required"), "true", "Control required (implicitly via label property)");
 
 		this.oLabel.setLabelFor(null);
-		Core.applyChanges();
+		await nextUIUpdate();
 		assert.ok(!this.oControl.$().attr("aria-required"), "Control not required (own property not set and no label assigned)");
 	});
 
@@ -298,7 +310,7 @@ sap.ui.define([
 			this.oLabel2.setLabelFor(this.oControl2);
 			this.oLabel3.setLabelFor(this.oControl3);
 
-			Core.applyChanges();
+			return nextUIUpdate();
 		},
 		afterEach : function () {
 			this.oLabel1.destroy();
@@ -324,4 +336,80 @@ sap.ui.define([
 		assert.strictEqual(this.oLabel3.$().attr("for"), undefined, "No for attribute for non-labelable elements");
 	});
 
+	QUnit.module("Label For", {
+		beforeEach : function () {
+			var oForm = new Form({
+				title: "Form",
+				editable: true,
+				width: "300px",
+				layout: new ColumnLayout(),
+				formContainers: [
+					new FormContainer({
+						formElements: [
+							new FormElement({
+								label: new Label("lbl1", {text: "Editable"}),
+								fields: [
+									new Field("fld1", {
+										editMode: "Editable",
+										value: "Text",
+										multipleLines: false
+									})
+								]
+							}),
+							new FormElement({
+								label: new Label("lbl2", {text: "Display"}),
+								fields: [
+									new Field("fld2", {
+										editMode: "Display",
+										value: "Text",
+										multipleLines: false
+									})
+								]
+							})
+						]
+					})
+				]
+			}).placeAt('content');
+
+			this.oForm = oForm;
+		},
+		afterEach : function () {
+			this.oForm.destroy();
+		}
+	});
+
+	QUnit.test("label is rendered correctly", function(assert) {
+		var done = assert.async(),
+			oForm = this.oForm,
+			fnOriginalCreateContent = ContentFactory.prototype.createContent;
+
+		ContentFactory.prototype.createContent = function () {
+			var pResult = fnOriginalCreateContent.apply(this, arguments);
+
+			pResult.then(function (aControls) {
+				var oControl = aControls[0];
+				if (oControl && oControl.isA("sap.ui.mdc.field.FieldInput")) {
+					oControl.addEventDelegate({
+						onAfterRendering: function () {
+							setTimeout(function () {
+								var oLabel1DomRef = oForm.getDomRef().querySelector("#lbl1");
+								var oLabel2DomRef = oForm.getDomRef().querySelector("#lbl2");
+
+								var oField1DomRef = oForm.getDomRef().querySelector("#fld1");
+
+								assert.strictEqual(oLabel1DomRef.tagName, "LABEL", "Label is rendered with 'label' tag.");
+								assert.strictEqual(oLabel2DomRef.tagName, "SPAN", "Label is rendered with 'span' tag.");
+
+								assert.strictEqual(oLabel1DomRef.getAttribute("for"), oField1DomRef.getAttribute("id") + "-inner-inner", "'for' attribute is correct");
+								assert.notOk(oLabel2DomRef.getAttribute("for"), "'for' attribute is not set");
+								done();
+							}, 300);
+						}
+					});
+				}
+			});
+
+			return pResult;
+		};
+	});
 });

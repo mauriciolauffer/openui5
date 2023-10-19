@@ -13,15 +13,12 @@
 	<div class="topic">
 		<div class="content">
 
-			<h1>
+			<h1 id="overview">
 				Pagination
 			</h1>
 			<div class="messageStripWarning">
 				Experimental feature since version 1.99. The API may change.
 			</div>
-			<h2 id="overview">
-				Overview
-			</h2>
 			<p>
 				Pagination is the process of dividing data so that
 				only a subset of the data is showed on one page at a time.
@@ -45,9 +42,58 @@
 			<br />
 				Pagination can be handled either client side or server side.
 			</p>
-			<h3 id="clientSide">
+
+			<h2 id="properties">Paginator Properties</h2>
+			<div class="tableWrapper">
+				<table>
+					<tr>
+						<th>Property</th>
+						<th>Type</th>
+						<th>Default Value</th>
+						<th>Required</th>
+						<th>Description</th>
+						<th>Schema Version</th>
+						<th>Since</th>
+					</tr>
+					<tr>
+						<td>pageSize</td>
+						<td>int</td>
+						<td></td>
+						<td>Yes</td>
+						<td>Number of the items in one page.</td>
+						<td>1.39.0</td>
+						<td>1.99</td>
+					</tr>
+					<tr>
+						<td>totalCount</td>
+						<td>int</td>
+						<td></td>
+						<td>No</td>
+						<td>
+							The total number of the items. Set this only for server-side pagination.
+						</td>
+						<td>1.39.0</td>
+						<td>1.99</td>
+					</tr>
+					<tr>
+						<td>visible</td>
+						<td>boolean</td>
+						<td>true</td>
+						<td>No</td>
+						<td>
+							Determines whether the paginator is visible.
+							<br>
+							<b>Note:</b> This property is experimental and may change!
+						</td>
+						<td>1.56.0</td>
+						<td>1.116</td>
+					</tr>
+				</table>
+			</div>
+
+			<h2 id="clientSide">
 				Client-Side Pagination
-			</h3>
+			</h2>
 			<p>
 				In client-side pagination for each query the server returns the data in one block.
 				As a result, it is faster to browse between the pages,
@@ -73,9 +119,9 @@
 				<a class="try-button" href="../../../index.html#/explore/pagination/client" target="_parent">Try it Out</a>
 			</p>
 
-			<h3 id="serverSide">
+			<h2 id="serverSide">
 				Server-Side Pagination
-			</h3>
+			</h2>
 			<p>
 				In server-side pagination for each query the server returns only one data subset.
 				Along with the data subset, the server also sends the
@@ -118,7 +164,7 @@
 			</p>
 
 			<h2 id="paginatorModel">Paginator Model</h2>
-			<p>The following values are available for the paginator model, when server-side mode is used:</p>
+			<p>The following values are available in the paginator model:</p>
 			<table>
 				<tr>
 					<th>Path</th>
@@ -140,13 +186,6 @@
 					<td>The currently selected page index</td>
 				</tr>
 			</table>
-		</div>
-		<div class="navigation">
-			<h4>Table of Contents</h4>
-			<div><a href="#overview">Overview</a></div>
-			<div><a href="#clientSide">Client-Side Pagination</a></div>
-			<div><a href="#serverSide">Server-Side Pagination</a></div>
-			<div><a href="#paginatorModel">Paginator Model</a></div>
 		</div>
 	</div>
 </body>

@@ -1,4 +1,4 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/ui/rta/plugin/LocalReset",
@@ -12,8 +12,8 @@ sap.ui.define([
 	"sap/m/MessageToast",
 	"sap/ui/thirdparty/sinon-4",
 	"test-resources/sap/ui/rta/qunit/RtaQunitUtils",
-	"sap/ui/core/Core"
-], function (
+	"sap/ui/qunit/utils/nextUIUpdate"
+], function(
 	LocalResetPlugin,
 	CommandFactory,
 	VBox,
@@ -25,17 +25,17 @@ sap.ui.define([
 	MessageToast,
 	sinon,
 	RtaQunitUtils,
-	oCore
+	nextUIUpdate
 ) {
 	"use strict";
 
 	var sandbox = sinon.createSandbox();
 
 	QUnit.module("Given a designTime and localReset plugin are instantiated", {
-		beforeEach: function(assert) {
+		async beforeEach(assert) {
 			var done = assert.async();
 			this.oVariantModel = {
-				getCurrentVariantReference: function() {
+				getCurrentVariantReference() {
 					return undefined;
 				}
 			};
@@ -51,7 +51,7 @@ sap.ui.define([
 				items: [this.oNestedForm]
 			});
 			this.oSimpleForm.placeAt("qunit-fixture");
-			oCore.applyChanges();
+			await nextUIUpdate();
 
 			this.oDesignTime = new DesignTime({
 				rootElements: [this.oSimpleForm],
@@ -64,13 +64,13 @@ sap.ui.define([
 				done();
 			}.bind(this));
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 			this.oMockedAppComponent.destroy();
 			this.oDesignTime.destroy();
 			this.oSimpleForm.destroy();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("when an overlay has no localReset action designTime metadata", function(assert) {
 			this.oSimpleFormOverlay.setDesignTimeMetadata({});
 
@@ -109,14 +109,14 @@ sap.ui.define([
 			assert.strictEqual(this.oLocalResetPlugin._isEditable(this.oSimpleFormOverlay), true, "... then _isEditable is called, then it returns true");
 		});
 
-		QUnit.test("when an overlay has localReset action designTime metadata, and isEnabled is function", function(assert) {
+		QUnit.test("when an overlay has localReset action designTime metadata, and isEnabled is a function", function(assert) {
 			sandbox.stub(LocalResetAPI, "isResetEnabled").returns(true);
 
 			this.oSimpleFormOverlay.setDesignTimeMetadata({
 				actions: {
 					localReset: {
 						changeType: "localReset",
-						isEnabled: function(oElementInstance) {
+						isEnabled(oElementInstance) {
 							return oElementInstance.getMetadata().getName() !== "sap.m.VBox";
 						}
 					}
@@ -127,6 +127,21 @@ sap.ui.define([
 			assert.strictEqual(this.oLocalResetPlugin._isEditable(this.oSimpleFormOverlay), true, "... then _isEditable is called, then it returns true");
 		});
 
+		QUnit.test("when an overlay has localReset action designTime metadata but no stable id", function(assert) {
+			sandbox.stub(LocalResetAPI, "isResetEnabled").returns(true);
+			this.oSimpleFormOverlay.data("hasStableId", false);
+
+			this.oSimpleFormOverlay.setDesignTimeMetadata({
+				actions: {
+					localReset: {
+						changeType: "localReset"
+					}
+				}
+			});
+
+			assert.strictEqual(this.oLocalResetPlugin._isEditable(this.oSimpleFormOverlay), false, "... then when _isEditable is called with an unstable Id it returns false");
+		});
+
 		QUnit.test("when an overlay has localReset action designTime metadata, and isEnabled is function set to true, but there are no changes for localReset", function(assert) {
 			sandbox.stub(LocalResetAPI, "isResetEnabled").returns(false);
 
@@ -134,7 +149,7 @@ sap.ui.define([
 				actions: {
 					localReset: {
 						changeType: "localReset",
-						isEnabled: function(oElementInstance) {
+						isEnabled(oElementInstance) {
 							return oElementInstance.getMetadata().getName() === "sap.ui.core.Control";
 						}
 					}
@@ -179,7 +194,7 @@ sap.ui.define([
 			assert.strictEqual(this.oLocalResetPlugin.getMenuItems([this.oSimpleFormOverlay]).length, 0, "and if the plugin is not enabled, no menu entries are returned");
 		});
 
-		QUnit.test("when the isEnabled check is called with an element where changeOnRelevantContainer is true", function (assert) {
+		QUnit.test("when the isEnabled check is called with an element where changeOnRelevantContainer is true", function(assert) {
 			this.oNestedFormOverlay.setDesignTimeMetadata({
 				actions: {
 					localReset: {
@@ -198,23 +213,23 @@ sap.ui.define([
 			);
 		});
 
-		QUnit.test("when the plugin handler is called for a local reset on a variant", function (assert) {
+		QUnit.test("when the plugin handler is called for a local reset on a variant", function(assert) {
 			var oCommandFactoryStub = sandbox.stub(this.oLocalResetPlugin.getCommandFactory(), "getCommandFor");
 			sandbox.stub(this.oLocalResetPlugin, "getVariantManagementReference").returns("variantManagement1");
 			sandbox.stub(this.oVariantModel, "getCurrentVariantReference").returns("variantManagement1");
 			sandbox.stub(JsControlTreeModifier, "bySelector");
 			var oMessageToastSpy = sandbox.stub(MessageToast, "show");
-			return this.oLocalResetPlugin.handler([this.oSimpleFormOverlay]).then(function () {
+			return this.oLocalResetPlugin.handler([this.oSimpleFormOverlay]).then(function() {
 				assert.strictEqual(oCommandFactoryStub.firstCall.args[1], "localReset", "then a local reset command is added to the composite command");
 				assert.strictEqual(oCommandFactoryStub.secondCall.args[1], "save", "then a save variant command is added to the composite command");
 				assert.ok(oMessageToastSpy.called, "then a message toast is shown");
 			});
 		});
 
-		QUnit.test("when the plugin handler is called for a local reset without a variant", function (assert) {
+		QUnit.test("when the plugin handler is called for a local reset without a variant", function(assert) {
 			var oCommandFactoryStub = sandbox.stub(this.oLocalResetPlugin.getCommandFactory(), "getCommandFor");
 			var oMessageToastSpy = sandbox.stub(MessageToast, "show");
-			return this.oLocalResetPlugin.handler([this.oSimpleFormOverlay]).then(function () {
+			return this.oLocalResetPlugin.handler([this.oSimpleFormOverlay]).then(function() {
 				assert.strictEqual(oCommandFactoryStub.firstCall.args[1], "localReset", "then a local reset command is added to the composite command");
 				assert.strictEqual(oCommandFactoryStub.callCount, 1, "then no save variant command is added to the composite command");
 				assert.ok(oMessageToastSpy.notCalled, "then no message toast is shown");
@@ -222,7 +237,7 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

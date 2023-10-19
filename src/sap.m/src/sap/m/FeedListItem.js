@@ -14,7 +14,9 @@ sap.ui.define([
 	"sap/m/Avatar",
 	"sap/m/AvatarShape",
 	"sap/m/AvatarSize",
-	"sap/ui/core/Configuration"
+	"sap/ui/util/openWindow",
+	"sap/ui/core/Configuration",
+	"sap/ui/core/Lib"
 ],
 function(
 	ListItemBase,
@@ -28,7 +30,9 @@ function(
 	Avatar,
 	AvatarShape,
 	AvatarSize,
-	Configuration
+	openWindow,
+	Configuration,
+	CoreLib
 	) {
 	"use strict";
 
@@ -144,8 +148,8 @@ function(
 				 *
 				 * If bandwidth is the key for the application, set this value to false.
 				 *
-				 * Deprecated as of version 1.88. Image is replaced by avatar.
-				 */
+				 * @deprecated as of version 1.88. Image is replaced by {@link sap.m.Avatar }
+				*/
 				iconDensityAware: {type: "boolean", defaultValue: true},
 
 				/**
@@ -250,7 +254,7 @@ function(
 		renderer: FeedListItemRenderer
 	});
 
-	FeedListItem._oRb = sap.ui.getCore().getLibraryResourceBundle("sap.m");
+	FeedListItem._oRb = CoreLib.getResourceBundleFor("sap.m");
 	FeedListItem._nMaxCharactersMobile = 300;
 	FeedListItem._nMaxCharactersDesktop = 500;
 
@@ -369,26 +373,22 @@ function(
 	};
 
 	FeedListItem.prototype.onAfterRendering = function() {
+		var oFormattedText = this.getAggregation("_text"),
+			oDomRef = this.getDomRef();
 		if (document.getElementById(this.getAggregation("_actionButton"))) {
 			document.getElementById(this.getAggregation("_actionButton").getId()).setAttribute("aria-haspopup", "menu");
 		}
 		if (this._checkTextIsExpandable() && !this._bTextExpanded) {
 			this._clearEmptyTagsInCollapsedText();
 		}
-		// Additional processing of the links takes place in the onAfterRendering function of sap.m.FormattedText, e.g. registration of the click event handlers.
-		// FeedListItem does not render sap.m.FormattedText control as part of its own DOM structure, therefore the onAfterRendering function of the FormattedText
-		// must be called manually with the correct context, providing access to the DOM elements that must be processed.
-		var $RealText = this.$("realtext");
-		FormattedText.prototype.onAfterRendering.apply({
-			$: function() {
-				return $RealText;
-			}
-		});
+		this.$("realtext").find('a[target="_blank"]').on("click", openLink);
+
+		oDomRef && oFormattedText && oFormattedText._sanitizeCSSPosition(oDomRef.querySelector(".sapMFeedListItemText")); // perform CSS position sanitize
 	};
 
 	FeedListItem.prototype.exit = function() {
 		// Should be done always, since the registration occurs independently of the properties that determine auto link recognition.
-		this.$("realtext").find('a[target="_blank"]').off("click");
+		this.$("realtext").find('a[target="_blank"]').off("click", openLink);
 
 		// destroy link control if initialized
 		if (this._oLinkControl) {
@@ -403,6 +403,15 @@ function(
 
 		ListItemBase.prototype.exit.apply(this);
 	};
+
+	// open links href using safe API
+	function openLink (oEvent) {
+		if (oEvent.originalEvent.defaultPrevented) {
+			return;
+		}
+		oEvent.preventDefault();
+		openWindow(oEvent.currentTarget.href, oEvent.currentTarget.target);
+	}
 
 	/**
 	 * Overwrite ListItemBase's ontap: Propagate tap event from FeedListItem to ListItemBase only when tap performed
@@ -505,11 +514,11 @@ function(
 		}
 
 		if (withColon) {
-			this._oLinkControl.setProperty("text", this.getSender() + FeedListItem._oRb.getText("COLON"), true);
+			this._oLinkControl.setText(this.getSender() + FeedListItem._oRb.getText("COLON"));
 		} else {
-			this._oLinkControl.setProperty("text", this.getSender(), true);
+			this._oLinkControl.setText(this.getSender());
 		}
-		this._oLinkControl.setProperty("enabled", this.getSenderActive(), true);
+		this._oLinkControl.setEnabled(this.getSenderActive());
 
 		return this._oLinkControl;
 	};
@@ -604,24 +613,35 @@ function(
 		var $threeDots = this.$("threeDots");
 		var sMoreLabel = FeedListItem._sTextShowMore;
 		var sLessLabel = FeedListItem._sTextShowLess;
+		var oFormattedText = this.getAggregation("_text");
+
 		if (this.getMoreLabel()) {
 			sMoreLabel = this.getMoreLabel();
 		}
 		if (this.getLessLabel()) {
 			sLessLabel = this.getLessLabel();
 		}
+
+		// detach click events
+		$text.find('a[target="_blank"]').off("click");
+
 		if (this._bTextExpanded) {
 			$text.html(this._sShortText.replace(/&#xa;/g, "<br>"));
+			oFormattedText._sanitizeCSSPosition($text[0]); // perform CSS position sanitize
 			$threeDots.text(" ... ");
 			this._oLinkExpandCollapse.setText(sMoreLabel);
 			this._bTextExpanded = false;
 			this._clearEmptyTagsInCollapsedText();
 		} else {
 			$text.html(this._sFullText.replace(/&#xa;/g, "<br>"));
+			oFormattedText._sanitizeCSSPosition($text[0]); // perform CSS position sanitize
 			$threeDots.text("  ");
 			this._oLinkExpandCollapse.setText(sLessLabel);
 			this._bTextExpanded = true;
 		}
+
+		// attach again click events since the text is changed without rerendering
+		$text.find('a[target="_blank"]').on("click", openLink);
 	};
 
 	/**

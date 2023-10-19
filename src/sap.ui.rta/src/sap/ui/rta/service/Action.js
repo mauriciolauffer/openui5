@@ -7,7 +7,7 @@ sap.ui.define([
 	"sap/ui/dt/Util",
 	"sap/base/util/restricted/_castArray",
 	"sap/base/util/restricted/_pick"
-], function (
+], function(
 	OverlayRegistry,
 	DtUtil,
 	_castArray,
@@ -21,7 +21,6 @@ sap.ui.define([
 	 * @namespace
 	 * @name sap.ui.rta.service.Action
 	 * @author SAP SE
-	 * @experimental Since 1.58
 	 * @since 1.58
 	 * @version ${version}
 	 * @private
@@ -56,80 +55,79 @@ sap.ui.define([
 	 * @property {string} text - Action name
 	*/
 
-
-	return function (oRta) {
+	return function(oRta) {
 		function invoke(vValue, oOverlay) {
-			return typeof vValue === 'function'
+			return typeof vValue === "function"
 				? vValue(oOverlay)
 				: vValue;
 		}
 
 		function getActions(aElementOverlays) {
 			var aMenuItemPromises = oRta._oDesignTime.getPlugins()
-				.map(function (oPlugin) {
-					return oPlugin.getMenuItems(aElementOverlays);
-				});
+			.map(function(oPlugin) {
+				return oPlugin.getMenuItems(aElementOverlays);
+			});
 			return Promise.all(aMenuItemPromises)
-				.then(function(aMenuItems) {
+			.then(function(aMenuItems) {
+				return aMenuItems
+				.reduce(function(aResult, aMenuItems) {
 					return aMenuItems
-						.reduce(function (aResult, aMenuItems) {
-							return aMenuItems
-								? aResult.concat(aMenuItems)
-								: aResult;
-						}, [])
-						.map(function (mMenuItem) {
-							return Object.assign({}, mMenuItem, {
-								enabled: invoke(mMenuItem.enabled, aElementOverlays),
-								text: invoke(mMenuItem.text, aElementOverlays[0])
-							});
-						});
+						? aResult.concat(aMenuItems)
+						: aResult;
+				}, [])
+				.map(function(mMenuItem) {
+					return Object.assign({}, mMenuItem, {
+						enabled: invoke(mMenuItem.enabled, aElementOverlays),
+						text: invoke(mMenuItem.text, aElementOverlays[0])
+					});
 				});
+			});
 		}
 
 		function get(vControlIds) {
 			var aControlIds = _castArray(vControlIds);
-			var aElementOverlays = aControlIds.map(function (sControlId) {
+			var aElementOverlays = aControlIds.map(function(sControlId) {
 				var oElementOverlay = OverlayRegistry.getOverlay(sControlId);
 
 				if (!oElementOverlay) {
-					throw new Error(DtUtil.printf('Control with id="{0}" is not under the one of root elements or ignored.', sControlId));
+					throw new Error(`Control with id="${sControlId}" is not under a root element or ignored.'`);
 				}
 
 				return oElementOverlay;
 			});
 
 			return getActions(aElementOverlays)
-				.then(function(aMenuItems) {
-					return aMenuItems.map(function (mMenuItem) {
-						return _pick(mMenuItem, ['id', 'icon', 'rank', 'group', 'enabled', 'text']);
-					});
+			.then(function(aMenuItems) {
+				return aMenuItems.map(function(mMenuItem) {
+					return _pick(mMenuItem, ["id", "icon", "rank", "group", "enabled", "text"]);
 				});
+			});
 		}
 
 		function execute(vControlIds, sActionId) {
 			var aControlIds = _castArray(vControlIds);
-			var aElementOverlays = aControlIds.map(function (sControlId) {
+			var aElementOverlays = aControlIds.map(function(sControlId) {
 				var oElementOverlay = OverlayRegistry.getOverlay(sControlId);
 
 				if (!oElementOverlay) {
-					throw new Error(DtUtil.printf('Control with id="{0}" is not under the one of root elements or ignored.', sControlId));
+					throw new Error(`Control with id="${sControlId}" is not under a root element or ignored.`);
 				}
 
 				return oElementOverlay;
 			});
 
 			return getActions(aElementOverlays)
-				.then(function(aActions) {
-					var mAction = aActions.filter(function (mAction) {
-						return mAction.id === sActionId;
-					}).pop();
+			.then(function(aActions) {
+				var mAction = aActions.filter(function(mAction) {
+					return mAction.id === sActionId;
+				}).pop();
 
-					if (!mAction) {
-						throw new Error('No action found by specified ID');
-					} else {
-						return mAction.handler(aElementOverlays, {});
-					}
-				});
+				if (!mAction) {
+					throw new Error("No action found by specified ID");
+				} else {
+					return mAction.handler(aElementOverlays, {});
+				}
+			});
 		}
 
 		return {
@@ -186,7 +184,7 @@ sap.ui.define([
 				 * @public
 				 * @function
 				 */
-				get: get,
+				get,
 
 				/**
 				 * Returns a list of available actions for the specified control(s).
@@ -198,7 +196,7 @@ sap.ui.define([
 				 * @public
 				 * @function
 				 */
-				execute: execute
+				execute
 			}
 		};
 	};

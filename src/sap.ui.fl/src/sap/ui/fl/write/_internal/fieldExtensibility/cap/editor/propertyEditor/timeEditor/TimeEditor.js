@@ -5,7 +5,7 @@ sap.ui.define([
 	"sap/ui/integration/designtime/baseEditor/propertyEditor/BasePropertyEditor",
 	"sap/ui/integration/designtime/baseEditor/propertyEditor/dateEditor/DateEditor",
 	"sap/ui/core/format/DateFormat"
-], function (
+], function(
 	BasePropertyEditor,
 	DateEditor,
 	DateFormat
@@ -23,7 +23,6 @@ sap.ui.define([
 	 * @version ${version}
 	 *
 	 * @private
-	 * @experimental 1.93
 	 * @ui5-restricted sap.ui.fl
 	 */
 	var TimeEditor = DateEditor.extend("sap.ui.fl.write._internal.fieldExtensibility.cap.editor.propertyEditor.timeEditor.TimeEditor", {
@@ -44,14 +43,14 @@ sap.ui.define([
 		}
 	});
 
-	TimeEditor.prototype.getDefaultValidators = function () {
+	TimeEditor.prototype.getDefaultValidators = function() {
 		return Object.assign(
 			{},
 			DateEditor.prototype.getDefaultValidators.call(this)
 		);
 	};
 
-	TimeEditor.prototype.getFormatterInstance = function (mOptions) {
+	TimeEditor.prototype.getFormatterInstance = function(mOptions) {
 		return DateFormat.getTimeInstance(mOptions || {
 			pattern: "HH:mm:ss.SSSS"
 		});

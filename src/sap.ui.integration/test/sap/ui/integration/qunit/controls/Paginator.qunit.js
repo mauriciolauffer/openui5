@@ -10,6 +10,7 @@ sap.ui.define([
 	"use strict";
 
 	var DOM_RENDER_LOCATION = "qunit-fixture";
+	var oResourceBundle = Core.getLibraryResourceBundle("sap.m");
 
 	QUnit.module("API and Rendering", {
 		beforeEach: function () {
@@ -27,12 +28,24 @@ sap.ui.define([
 
 	QUnit.test("rendered", function (assert) {
 		assert.strictEqual(this.oPaginator.$().length, 1, "rendered");
+
+		assert.strictEqual(this.oPaginator._getNavigationArrow("prev").getTooltip(), oResourceBundle.getText("PAGINGBUTTON_PREVIOUS"), "tooltip text is correct");
+		assert.strictEqual(this.oPaginator._getNavigationArrow("next").getTooltip(), oResourceBundle.getText("PAGINGBUTTON_NEXT"), "tooltip text is correct");
 	});
 
 	QUnit.test("pageCount <= 1", function (assert) {
 		this.oPaginator.setPageCount(1);
 		Core.applyChanges();
 		assert.notOk(this.oPaginator.$().length, "not rendered");
+	});
+
+	QUnit.test("pageCount = 0", function (assert) {
+		this.oPaginator
+			.setPageCount(0)
+			.setPageSize(3);
+
+		assert.notOk(this.oPaginator._getLastPageNumber() < 0, "Last page number should NOT be negative number");
+		assert.strictEqual(this.oPaginator._getLastPageNumber(), 0, "Last page number should be 0 when there are no pages");
 	});
 
 	QUnit.test("arrows and dots", function (assert) {

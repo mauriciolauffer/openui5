@@ -29,7 +29,7 @@ sap.ui.define([
 	oAnnotationMockServer.start();
 
 	TableQUnitUtils.setDefaultSettings({
-		plugins: [new MultiSelectionPlugin()],
+		dependents: [new MultiSelectionPlugin()],
 		rows: {
 			path: "/GLAccountHierarchyInChartOfAccountsSet(P_MANDT='902',P_VERSN='INT',P_KTOPL='INT')/Result",
 			parameters: {
@@ -38,13 +38,13 @@ sap.ui.define([
 			}
 		},
 		columns: TableQUnitUtils.createTextColumn({text: "HierarchyNode", bind: true}),
-		models: TableQUnitUtils.createODataModel("/metadata/")
+		models: TableQUnitUtils.createODataModel("/metadata")
 	});
 
 	QUnit.module("Load data", {
 		beforeEach: function() {
 			this.oTable = TableQUnitUtils.createTable(TreeTable);
-			this.oMultiSelectionPlugin = this.oTable.getPlugins()[0];
+			this.oMultiSelectionPlugin = this.oTable.getDependents()[0];
 
 			// The binding is expanding to level 4 in 4 steps. We need to wait for completion before test execution.
 			function waitForLevel4(oTable) {
@@ -70,7 +70,7 @@ sap.ui.define([
 		return this.oMultiSelectionPlugin.selectAll().then(function() {
 			var oBinding = this.oTable.getBinding();
 			var iBindingLength = oBinding.getLength();
-			var aContexts = oBinding.getContexts(0, iBindingLength, 0, true);
+			var aContexts = oBinding.getContexts(0, iBindingLength, 0);
 
 			assert.equal(aContexts.length, iBindingLength, "All binding contexts are available");
 			assert.ok(!aContexts.includes(undefined), "There are no undefined contexts");
@@ -79,7 +79,7 @@ sap.ui.define([
 
 	QUnit.test("Select range", function(assert) {
 		return this.oMultiSelectionPlugin.setSelectionInterval(0, 189).then(function() {
-			var aContexts = this.oTable.getBinding().getContexts(0, 190, 0, true);
+			var aContexts = this.oTable.getBinding().getContexts(0, 190, 0);
 
 			assert.equal(aContexts.length, 190, "Binding contexts in selected range are available");
 			assert.ok(!aContexts.includes(undefined), "There are no undefined contexts");

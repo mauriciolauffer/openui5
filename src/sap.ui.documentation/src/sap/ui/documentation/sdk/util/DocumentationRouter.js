@@ -45,6 +45,17 @@ sap.ui.define([
 			}, this);
 		},
 
+		/**
+		 * Helper function which removes non-standard characters from a URL (see BCP: 2380008679)
+		 *
+		 * @param {string} sURL string to be reworked
+		 * @returns {string} The reworked URL as string or the sURL itself if it's invalid
+		 * @private
+		 */
+		_removeNonStandardEncoding: function (sURL) {
+			return typeof sURL === 'string' ? sURL.replace(/[\[\]']+/g,'') : sURL;
+		},
+
 		_onOldEntityRouteMatched: function(oEvent) {
 			this.navTo("entity", {
 				id: oEvent.getParameter("arguments").id
@@ -249,6 +260,11 @@ sap.ui.define([
 
 		sTarget = getHref(oAnchorElement);
 
+		/*eslint-disable no-script-url */
+		if (sTarget === "javascript:void(0)") {
+			return;
+		}
+
 		bParsed = /^blob:/.test(sTarget)
 			|| /^https?:\/\//.test(sTarget)
 			|| /^test-resources\//.test(sTarget)
@@ -278,6 +294,8 @@ sap.ui.define([
 			sPath = sPath.replace("#", "%23");
 		}
 
+		sPath = this._removeNonStandardEncoding(sPath);
+
 		this.parse(sPath);
 
 		// Add new URL history and update URL
@@ -298,7 +316,7 @@ sap.ui.define([
 			oUri;
 
 		if (oAnchorElement) {
-			sTargetHref = getHref(oAnchorElement);
+			sTargetHref = this._removeNonStandardEncoding(getHref(oAnchorElement));
 			bNewWindow = bCtrlHold || !getSameWindow(oAnchorElement);
 		}
 

@@ -1,21 +1,21 @@
 /* global QUnit, sinon */
 
 sap.ui.define([
-	"../../services/SampleServices",
-	"sap/ui/integration/library",
-	"sap/ui/integration/widgets/Card",
-	"sap/ui/integration/cards/actions/CardActions",
-	"sap/ui/integration/cards/actions/NavigationAction",
-	"sap/ui/integration/cards/actions/SubmitAction",
-	"sap/ui/integration/util/RequestDataProvider",
-	"sap/ui/integration/Host",
-	"sap/ui/core/Core",
-	"sap/ui/core/Element",
-	"sap/base/Log",
-	"sap/ui/events/KeyCodes",
-	"sap/ui/qunit/QUnitUtils",
-	"sap/m/library"
-],
+		"../../services/SampleServices",
+		"sap/ui/integration/library",
+		"sap/ui/integration/widgets/Card",
+		"sap/ui/integration/cards/actions/CardActions",
+		"sap/ui/integration/cards/actions/NavigationAction",
+		"sap/ui/integration/cards/actions/SubmitAction",
+		"sap/ui/integration/util/RequestDataProvider",
+		"sap/ui/integration/Host",
+		"sap/ui/core/Core",
+		"sap/ui/core/Element",
+		"sap/base/Log",
+		"sap/ui/events/KeyCodes",
+		"sap/ui/qunit/QUnitUtils",
+		"sap/m/library"
+	],
 	function (
 		SampleServices,
 		library,
@@ -64,15 +64,13 @@ sap.ui.define([
 					"status": {
 						"text": "100 of 200"
 					},
-					"actions": [
-						{
-							"type": "Navigation",
-							"service": "Navigation2",
-							"parameters": {
-								"url": "https://www.sap.com"
-							}
+					"actions": [{
+						"type": "Navigation",
+						"service": "Navigation2",
+						"parameters": {
+							"url": "https://www.sap.com"
 						}
-					]
+					}]
 				}
 			}
 		};
@@ -92,14 +90,12 @@ sap.ui.define([
 						"src": "sap-icon://accept"
 					},
 					"status": "100 of 200",
-					"actions": [
-						{
-							"type": "Navigation",
-							"parameters": {
-								"url": "https://www.sap.com"
-							}
+					"actions": [{
+						"type": "Navigation",
+						"parameters": {
+							"url": "https://www.sap.com"
 						}
-					]
+					}]
 				}
 			}
 		};
@@ -153,13 +149,11 @@ sap.ui.define([
 				"header": {
 					"title": "Request list content Card",
 					"subTitle": "Card Subtitle",
-					"actions": [
-						{
-							"parameters": {
-								"url": "https://www.sap.com"
-							}
+					"actions": [{
+						"parameters": {
+							"url": "https://www.sap.com"
 						}
-					]
+					}]
 				},
 				"content": {
 					"data": {
@@ -175,16 +169,14 @@ sap.ui.define([
 						"description": {
 							"value": "{Description}"
 						},
-						"actions": [
-							{
-								"enabled": "{= ${url}}",
-								"parameters": {
-									"url": "{url}",
-									"target": "_blank",
-									"somekey": "{someparam}"
-								}
+						"actions": [{
+							"enabled": "{= ${url}}",
+							"parameters": {
+								"url": "{url}",
+								"target": "_blank",
+								"somekey": "{someparam}"
 							}
-						]
+						}]
 					}
 				}
 			}
@@ -229,17 +221,15 @@ sap.ui.define([
 						"description": {
 							"value": "{Description}"
 						},
-						"actions": [
-							{
-								"type": "Navigation",
-								"enabled": "{= ${url}}",
-								"parameters": {
-									"url": "{url}",
-									"target": "_blank",
-									"somekey": "{someparam}"
-								}
+						"actions": [{
+							"type": "Navigation",
+							"enabled": "{= ${url}}",
+							"parameters": {
+								"url": "{url}",
+								"target": "_blank",
+								"somekey": "{someparam}"
 							}
-						]
+						}]
 					}
 				}
 			}
@@ -274,16 +264,14 @@ sap.ui.define([
 						"description": {
 							"value": "{Description}"
 						},
-						"actions": [
-							{
-								"type": "Navigation",
-								"enabled": "{= ${enabled}}",
-								"parameters": {
-									"url": "{url}",
-									"target": "_blank"
-								}
+						"actions": [{
+							"type": "Navigation",
+							"enabled": "{= ${enabled}}",
+							"parameters": {
+								"url": "{url}",
+								"target": "_blank"
 							}
-						]
+						}]
 					}
 				}
 			}
@@ -310,8 +298,7 @@ sap.ui.define([
 				},
 				"content": {
 					"data": {
-						"json":
-							[{
+						"json": [{
 								"Name": "Comfort Easy",
 								"Category": "PDA & Organizers",
 								"url": "https://www.sap.com"
@@ -319,21 +306,20 @@ sap.ui.define([
 							{
 								"Name": "ITelO Vault",
 								"Category": "PDA & Organizers"
-							}]
+							}
+						]
 					},
 					"item": {
 						"title": {
 							"value": "{Name}"
 						},
-						"actions": [
-							{
-								"type": "Navigation",
-								"enabled": "{= ${url}}",
-								"parameters": {
-									"url": "{url}"
-								}
+						"actions": [{
+							"type": "Navigation",
+							"enabled": "{= ${url}}",
+							"parameters": {
+								"url": "{url}"
 							}
-						]
+						}]
 					}
 				}
 			}
@@ -374,16 +360,14 @@ sap.ui.define([
 						"title": {
 							"value": "{Name}"
 						},
-						"actions": [
-							{
-								"type": "Navigation",
-								"service": "IntentBasedNavigation",
-								"parameters": {
-									"intentSemanticObject": "SalesOrder",
-									"name": "{Name}"
-								}
+						"actions": [{
+							"type": "Navigation",
+							"service": "IntentBasedNavigation",
+							"parameters": {
+								"intentSemanticObject": "SalesOrder",
+								"name": "{Name}"
 							}
-						]
+						}]
 					}
 				}
 			}
@@ -424,17 +408,15 @@ sap.ui.define([
 						"title": {
 							"value": "{Name}"
 						},
-						"actions": [
-							{
-								"type": "Navigation",
-								"service": "IntentBasedNavigation",
-								"parameters": {
-									"intentSemanticObject": "SalesOrder",
-									"name": "{Name}",
-									"hidden": "{url}"
-								}
+						"actions": [{
+							"type": "Navigation",
+							"service": "IntentBasedNavigation",
+							"parameters": {
+								"intentSemanticObject": "SalesOrder",
+								"name": "{Name}",
+								"hidden": "{url}"
 							}
-						]
+						}]
 					}
 				}
 			}
@@ -475,17 +457,15 @@ sap.ui.define([
 						"title": {
 							"value": "{Name}"
 						},
-						"actions": [
-							{
-								"type": "Navigation",
-								"service": "IntentBasedNavigation",
-								"parameters": {
-									"intentSemanticObject": "SalesOrder",
-									"name": "{Name}",
-									"hidden": "{url}"
-								}
+						"actions": [{
+							"type": "Navigation",
+							"service": "IntentBasedNavigation",
+							"parameters": {
+								"intentSemanticObject": "SalesOrder",
+								"name": "{Name}",
+								"hidden": "{url}"
 							}
-						]
+						}]
 					}
 				}
 			}
@@ -518,11 +498,9 @@ sap.ui.define([
 					"subTitle": "{position}"
 				},
 				"content": {
-					"groups": [
-						{
+					"groups": [{
 							"title": "Contact Details",
-							"items": [
-								{
+							"items": [{
 									"label": "First Name",
 									"value": "{firstName}"
 								},
@@ -538,20 +516,17 @@ sap.ui.define([
 						},
 						{
 							"title": "Organization Details",
-							"items": [
-								{
-									"label": "Direct Manager",
-									"value": "{manager/firstName} {manager/lastName}",
-									"icon": {
-										"src": "{manager/photo}"
-									}
+							"items": [{
+								"label": "Direct Manager",
+								"value": "{manager/firstName} {manager/lastName}",
+								"icon": {
+									"src": "{manager/photo}"
 								}
-							]
+							}]
 						},
 						{
 							"title": "Company Details",
-							"items": [
-								{
+							"items": [{
 									"label": "Company Name",
 									"value": "{company/name}"
 								},
@@ -562,28 +537,24 @@ sap.ui.define([
 								{
 									"label": "Website",
 									"value": "{company/website}",
-									"actions": [
-										{
-											"type": "Navigation",
-											"parameters": {
-												"url": "{company/website}"
-											}
+									"actions": [{
+										"type": "Navigation",
+										"parameters": {
+											"url": "{company/website}"
 										}
-									]
+									}]
 								}
 							]
 						}
 					],
-					"actions": [
-						{
-							"type": "Navigation",
-							"enabled": "{= ${url}}",
-							"parameters": {
-								"url": "{url}",
-								"target": "_blank"
-							}
+					"actions": [{
+						"type": "Navigation",
+						"enabled": "{= ${url}}",
+						"parameters": {
+							"url": "{url}",
+							"target": "_blank"
 						}
-					]
+					}]
 				}
 			}
 		};
@@ -608,25 +579,19 @@ sap.ui.define([
 					}
 				},
 				"content": {
-					"groups": [
-						{
-							"items": [
-								{
-									"label": "Website",
-									"value": "{company/website}",
-									"actions": [
-										{
-											"type": "Navigation",
-											"service": "Navigation2",
-											"parameters": {
-												"url": "{company/website}"
-											}
-										}
-									]
+					"groups": [{
+						"items": [{
+							"label": "Website",
+							"value": "{company/website}",
+							"actions": [{
+								"type": "Navigation",
+								"service": "Navigation2",
+								"parameters": {
+									"url": "{company/website}"
 								}
-							]
-						}
-					]
+							}]
+						}]
+					}]
 				}
 			}
 		};
@@ -649,22 +614,18 @@ sap.ui.define([
 					},
 					"title": "{firstName} {lastName}",
 					"subTitle": "{position}",
-					"actions": [
-						{
-							"type": "Navigation",
-							"parameters": {
-								"url": "https://www.sap.com"
-							}
-
+					"actions": [{
+						"type": "Navigation",
+						"parameters": {
+							"url": "https://www.sap.com"
 						}
-					]
+
+					}]
 				},
 				"content": {
-					"groups": [
-						{
+					"groups": [{
 							"title": "Contact Details",
-							"items": [
-								{
+							"items": [{
 									"label": "Fist Name",
 									"value": "{firstName}"
 								},
@@ -680,34 +641,29 @@ sap.ui.define([
 									"label": "Agenda",
 									"value": "Book a meeting",
 									"type": "action",
-									"actions": [
-										{
-											"type": "Navigation",
-											"enabled": "{= ${agendaUrl}}",
-											"parameters": {
-												"url": "{agendaUrl}"
-											}
+									"actions": [{
+										"type": "Navigation",
+										"enabled": "{= ${agendaUrl}}",
+										"parameters": {
+											"url": "{agendaUrl}"
 										}
-									]
+									}]
 								}
 							]
 						},
 						{
 							"title": "Organization Details",
-							"items": [
-								{
-									"label": "Direct Manager",
-									"value": "{manager/firstName} {manager/lastName}",
-									"icon": {
-										"src": "{manager/photo}"
-									}
+							"items": [{
+								"label": "Direct Manager",
+								"value": "{manager/firstName} {manager/lastName}",
+								"icon": {
+									"src": "{manager/photo}"
 								}
-							]
+							}]
 						},
 						{
 							"title": "Company Details",
-							"items": [
-								{
+							"items": [{
 									"label": "Company Name",
 									"value": "{company/name}"
 								},
@@ -718,27 +674,23 @@ sap.ui.define([
 								{
 									"label": "Website",
 									"value": "{company/website}",
-									"actions": [
-										{
-											"type": "Navigation",
-											"enabled": false,
-											"parameters": {
-												"url": "{company/website}"
-											}
+									"actions": [{
+										"type": "Navigation",
+										"enabled": false,
+										"parameters": {
+											"url": "{company/website}"
 										}
-									]
+									}]
 								}
 							]
 						}
 					],
-					"actions": [
-						{
-							"type": "Navigation",
-							"parameters": {
-								"url": "https://www.sap.com"
-							}
+					"actions": [{
+						"type": "Navigation",
+						"parameters": {
+							"url": "https://www.sap.com"
 						}
-					]
+					}]
 				}
 			}
 		};
@@ -782,14 +734,12 @@ sap.ui.define([
 			"sap.card": {
 				"type": "List",
 				"header": {
-					"actions": [
-						{
-							"type": "Navigation",
-							"parameters": {
-								"url": "https://www.sap.com"
-							}
+					"actions": [{
+						"type": "Navigation",
+						"parameters": {
+							"url": "https://www.sap.com"
 						}
-					],
+					}],
 					"title": "Integration Card with action",
 					"subTitle": "Card subtitle",
 					"icon": {
@@ -801,8 +751,7 @@ sap.ui.define([
 				},
 				"content": {
 					"data": {
-						"json": [
-							{
+						"json": [{
 								"Name": "Notebook Basic 15",
 								"Description": "Notebook Basic 15 with 2,80 GHz quad core, 15\" LCD, 4 GB DDR3 RAM, 500 GB Hard Disc, Windows 8 Pro",
 								"Id": "HT-1000",
@@ -864,8 +813,7 @@ sap.ui.define([
 				},
 				"content": {
 					"data": {
-						"json": [
-							{
+						"json": [{
 								"Name": "Ergo Screen E-I",
 								"Number": "356865544"
 							},
@@ -877,23 +825,20 @@ sap.ui.define([
 						]
 					},
 					"row": {
-						"columns": [
-							{
+						"columns": [{
 								"title": "Name",
 								"value": "{Name}"
 							},
 							{
 								"title": "Number",
 								"value": "{Number}",
-								"actions": [
-									{
-										"type": "Navigation",
-										"enabled": "{= ${ActionUrl}}",
-										"parameters": {
-											"url": "{ActionUrl}"
-										}
+								"actions": [{
+									"type": "Navigation",
+									"enabled": "{= ${ActionUrl}}",
+									"parameters": {
+										"url": "{ActionUrl}"
 									}
-								]
+								}]
 							}
 						]
 					}
@@ -916,8 +861,7 @@ sap.ui.define([
 				"content": {
 					"maxItems": 3,
 					"data": {
-						"json": [
-							{
+						"json": [{
 								"Title": "Weekly sync: Marketplace / Design Stream",
 								"Description": "MRR WDF18 C3.2(GLASSBOX)",
 								"Icon": "sap-icon://appointment-2",
@@ -951,14 +895,12 @@ sap.ui.define([
 						"icon": {
 							"src": "{Icon}"
 						},
-						"actions": [
-							{
-								"type": "Navigation",
-								"parameters": {
-									"url": "{Url}"
-								}
+						"actions": [{
+							"type": "Navigation",
+							"parameters": {
+								"url": "{Url}"
 							}
-						]
+						}]
 					}
 				}
 			}
@@ -981,45 +923,36 @@ sap.ui.define([
 					}
 				},
 				"content": {
-					"groups": [
-						{
-							"title": "Contact Details",
-							"items": [
-								{
-									"label": "First Name",
-									"value": "{firstName}"
-								}
-							]
-						}
-					]
+					"groups": [{
+						"title": "Contact Details",
+						"items": [{
+							"label": "First Name",
+							"value": "{firstName}"
+						}]
+					}]
 				},
 				"footer": {
-					"actionsStrip": [
-						{
+					"actionsStrip": [{
 							"text": "Disabled",
 							"overflowPriority": "High",
-							"actions": [
-								{
-									"enabled": false,
-									"type": "Custom",
-									"parameters": {
-										"method": "approve"
-									}
+							"actions": [{
+								"enabled": false,
+								"type": "Custom",
+								"parameters": {
+									"method": "approve"
 								}
-							]
+							}]
 						},
 						{
 							"buttonType": "Transparent",
 							"text": "Enabled: {= !${company/email} }",
-							"actions": [
-								{
-									"type": "Navigation",
-									"enabled": "{= !${company/email} }",
-									"parameters": {
-										"url": "mailto:{company/email}?subject={company/emailSubject}"
-									}
+							"actions": [{
+								"type": "Navigation",
+								"enabled": "{= !${company/email} }",
+								"parameters": {
+									"url": "mailto:{company/email}?subject={company/emailSubject}"
 								}
-							]
+							}]
 						}
 					]
 				}
@@ -1064,7 +997,7 @@ sap.ui.define([
 			// Arrange
 			var done = assert.async(),
 				oActionSpy = sinon.spy(CardActions, "fireAction"),
-				oStubOpenUrl = sinon.stub(NavigationAction.prototype, "execute").callsFake(function () { });
+				oStubOpenUrl = sinon.stub(NavigationAction.prototype, "execute").callsFake(function () {});
 
 			this.oCard.attachEvent("_ready", function () {
 
@@ -1076,7 +1009,7 @@ sap.ui.define([
 					oEvent.preventDefault();
 
 					// Assert
-					assert.ok(oCardLContent.$().hasClass("sapFCardClickable"), "Card Content is clickable");
+					assert.ok(oCardLContent.$().hasClass("sapFCardSectionClickable"), "Card Content is clickable");
 					assert.ok(oActionSpy.callCount === 1, "Card Content is clicked and action event is fired");
 
 					// Cleanup
@@ -1099,7 +1032,7 @@ sap.ui.define([
 			// Arrange
 			var done = assert.async(),
 				oActionSpy = sinon.spy(CardActions, "fireAction"),
-				oStubOpenUrl = sinon.stub(NavigationAction.prototype, "execute").callsFake(function () { });
+				oStubOpenUrl = sinon.stub(NavigationAction.prototype, "execute").callsFake(function () {});
 
 			this.oCard.attachEvent("_ready", function () {
 				Core.applyChanges();
@@ -1107,8 +1040,8 @@ sap.ui.define([
 					oCardHeader = this.oCard.getCardHeader();
 
 				// Assert
-				assert.ok(oCardLContent.$().hasClass("sapFCardClickable"), "Card Content is clickable");
-				assert.ok(oCardHeader.$().hasClass("sapFCardClickable"), "Card Header is clickable");
+				assert.ok(oCardLContent.$().hasClass("sapFCardSectionClickable"), "Card Content is clickable");
+				assert.ok(oCardHeader.$().hasClass("sapFCardSectionClickable"), "Card Header is clickable");
 
 				//Act
 				oCardLContent.firePress();
@@ -1145,7 +1078,7 @@ sap.ui.define([
 			var oFakeEvent = {
 				getSource: function () {
 					return {
-						getBindingContext: function () { }
+						getBindingContext: function () {}
 					};
 				}
 			};
@@ -1203,7 +1136,7 @@ sap.ui.define([
 				Core.applyChanges();
 				var oCardHeader = this.oCard.getCardHeader();
 
-				assert.ok(oCardHeader.$().hasClass("sapFCardClickable"), "Card Header has a clickable style is added");
+				assert.ok(oCardHeader.$().hasClass("sapFCardSectionClickable"), "Card Header has a clickable style is added");
 
 				this.oCard.attachAction(function () {
 					// Assert
@@ -1236,7 +1169,7 @@ sap.ui.define([
 				Core.applyChanges();
 
 				var oCardHeader = this.oCard.getCardHeader();
-				assert.ok(oCardHeader.$().hasClass("sapFCardClickable"), "Card Header has a clickable style is added");
+				assert.ok(oCardHeader.$().hasClass("sapFCardSectionClickable"), "Card Header has a clickable style is added");
 				//Act
 				oCardHeader.firePress();
 				Core.applyChanges();
@@ -1291,7 +1224,7 @@ sap.ui.define([
 				Core.applyChanges();
 				var oCardHeader = this.oCard.getCardHeader();
 				// Assert
-				assert.notOk(oCardHeader.$().hasClass("sapFCardClickable"), "Card Header doesn't have a clickable style");
+				assert.notOk(oCardHeader.$().hasClass("sapFCardSectionClickable"), "Card Header doesn't have a clickable style");
 
 				//Act
 				qutils.triggerEvent("tap", oCardHeader);
@@ -1314,15 +1247,13 @@ sap.ui.define([
 					"type": "List",
 					"header": {
 						"title": "Card Title",
-						"actions": [
-							{
-								"enabled": false,
-								"type": "Navigation",
-								"parameters": {
-									"url": "https://www.sap.com"
-								}
+						"actions": [{
+							"enabled": false,
+							"type": "Navigation",
+							"parameters": {
+								"url": "https://www.sap.com"
 							}
-						]
+						}]
 					}
 				}
 			});
@@ -1337,7 +1268,7 @@ sap.ui.define([
 				var oCardHeader = this.oCard.getCardHeader();
 
 				// Assert
-				assert.notOk(oCardHeader.$().hasClass("sapFCardClickable"), "Card Header doesn't have a clickable style");
+				assert.notOk(oCardHeader.$().hasClass("sapFCardSectionClickable"), "Card Header doesn't have a clickable style");
 
 				// Act
 				qutils.triggerEvent("tap", oCardHeader);
@@ -1351,7 +1282,7 @@ sap.ui.define([
 			}.bind(this));
 
 			// Act
-			this.oCard.setManifest( {
+			this.oCard.setManifest({
 				"sap.app": {
 					"id": "test.card.actions.enabledPropertySetToFalseWithBinding",
 					"type": "card"
@@ -1365,15 +1296,13 @@ sap.ui.define([
 					},
 					"header": {
 						"title": "Card Title",
-						"actions": [
-							{
-								"enabled": "{/headerActionEnabled}",
-								"type": "Navigation",
-								"parameters": {
-									"url": "https://www.sap.com"
-								}
+						"actions": [{
+							"enabled": "{/headerActionEnabled}",
+							"type": "Navigation",
+							"parameters": {
+								"url": "https://www.sap.com"
 							}
-						]
+						}]
 					}
 				}
 			});
@@ -1388,7 +1317,7 @@ sap.ui.define([
 				var oCardHeader = this.oCard.getCardHeader();
 
 				// Assert
-				assert.notOk(oCardHeader.$().hasClass("sapFCardClickable"), "Card Header has not a clickable style is added");
+				assert.notOk(oCardHeader.$().hasClass("sapFCardSectionClickable"), "Card Header has not a clickable style is added");
 				assert.ok(oAttachNavigationSpy.callCount === 0, "_attachAction should not be called");
 
 				//Clean up
@@ -1445,7 +1374,7 @@ sap.ui.define([
 				Core.applyChanges();
 				var oCardHeader = this.oCard.getCardHeader();
 				// Assert
-				assert.notOk(oCardHeader.$().hasClass("sapFCardClickable"), "Card Header doesn't have a clickable style");
+				assert.notOk(oCardHeader.$().hasClass("sapFCardSectionClickable"), "Card Header doesn't have a clickable style");
 
 				//Act
 				qutils.triggerEvent("tap", oCardHeader);
@@ -1469,15 +1398,13 @@ sap.ui.define([
 					"header": {
 						"title": "Card Title",
 						"type": "Numeric",
-						"actions": [
-							{
-								"enabled": false,
-								"type": "Navigation",
-								"parameters": {
-									"url": "https://www.sap.com"
-								}
+						"actions": [{
+							"enabled": false,
+							"type": "Navigation",
+							"parameters": {
+								"url": "https://www.sap.com"
 							}
-						]
+						}]
 					}
 				}
 			});
@@ -1492,7 +1419,7 @@ sap.ui.define([
 				var oCardHeader = this.oCard.getCardHeader();
 
 				// Assert
-				assert.notOk(oCardHeader.$().hasClass("sapFCardClickable"), "Card Header doesn't have a clickable style");
+				assert.notOk(oCardHeader.$().hasClass("sapFCardSectionClickable"), "Card Header doesn't have a clickable style");
 
 				// Act
 				qutils.triggerEvent("tap", oCardHeader);
@@ -1506,7 +1433,7 @@ sap.ui.define([
 			}.bind(this));
 
 			// Act
-			this.oCard.setManifest( {
+			this.oCard.setManifest({
 				"sap.app": {
 					"id": "test.card.actions.numeric.enabledPropertySetToFalseWithBinding",
 					"type": "card"
@@ -1521,15 +1448,13 @@ sap.ui.define([
 					"header": {
 						"title": "Card Title",
 						"type": "Numeric",
-						"actions": [
-							{
-								"enabled": "{/headerActionEnabled}",
-								"type": "Navigation",
-								"parameters": {
-									"url": "https://www.sap.com"
-								}
+						"actions": [{
+							"enabled": "{/headerActionEnabled}",
+							"type": "Navigation",
+							"parameters": {
+								"url": "https://www.sap.com"
 							}
-						]
+						}]
 					}
 				}
 			});
@@ -1798,7 +1723,7 @@ sap.ui.define([
 		QUnit.test("On pressing link, action should be fired", function (assert) {
 			var done = assert.async(),
 				oActionSpy = sinon.spy(CardActions, "fireAction"),
-				oStubOpenUrl = sinon.stub(NavigationAction.prototype, "execute").callsFake(function () { });
+				oStubOpenUrl = sinon.stub(NavigationAction.prototype, "execute").callsFake(function () {});
 
 			this.oCard.attachEvent("_ready", function () {
 				Core.applyChanges();
@@ -1811,7 +1736,7 @@ sap.ui.define([
 				Core.applyChanges();
 
 				// Assert
-				assert.ok(oObjContent.$().hasClass("sapFCardClickable"), "Card Content is clickable");
+				assert.ok(oObjContent.$().hasClass("sapFCardSectionClickable"), "Card Content is clickable");
 				assert.ok(oActionSpy.callCount === 1, "Link is clicked and action event is not fired");
 
 				// Cleanup
@@ -1845,7 +1770,7 @@ sap.ui.define([
 		QUnit.test("Pressing a field with type 'action' should fire an action", function (assert) {
 			var done = assert.async(),
 				oActionSpy = sinon.spy(CardActions, "fireAction"),
-				oStubOpenUrl = sinon.stub(NavigationAction.prototype, "execute").callsFake(function () { });
+				oStubOpenUrl = sinon.stub(NavigationAction.prototype, "execute").callsFake(function () {});
 
 			this.oCard.attachEvent("_ready", function () {
 				Core.applyChanges();
@@ -1859,7 +1784,7 @@ sap.ui.define([
 				Core.applyChanges();
 
 				// Assert
-				assert.ok(oContent.$().hasClass("sapFCardClickable"), "Card Content is clickable");
+				assert.ok(oContent.$().hasClass("sapFCardSectionClickable"), "Card Content is clickable");
 				assert.ok(oActionSpy.callCount === 1, "Field with type='action' is clicked and action event is fired");
 
 				// Cleanup
@@ -1891,7 +1816,7 @@ sap.ui.define([
 		QUnit.test("Pressing a table row column with type 'action' should fire an action", function (assert) {
 			var done = assert.async(),
 				oActionSpy = sinon.spy(CardActions, "fireAction"),
-				oStubOpenUrl = sinon.stub(NavigationAction.prototype, "execute").callsFake(function () { });
+				oStubOpenUrl = sinon.stub(NavigationAction.prototype, "execute").callsFake(function () {});
 
 			this.oCard.attachEvent("_ready", function () {
 				Core.applyChanges();
@@ -1946,8 +1871,15 @@ sap.ui.define([
 				mEventArguments = {
 					card: this.oCard,
 					host: null,
-					action: { type: CardActionType.Submit },
-					parameters: { configuration: {}, data: { foo: "bar" } },
+					action: {
+						type: CardActionType.Submit
+					},
+					parameters: {
+						configuration: {},
+						data: {
+							foo: "bar"
+						}
+					},
 					source: this.oCard.getCardContent()
 				};
 				// Act
@@ -1990,8 +1922,15 @@ sap.ui.define([
 				mEventArguments = {
 					card: this.oCard,
 					host: oHost1,
-					action: { type: CardActionType.Submit },
-					parameters: { configuration: {}, data: { foo: "bar" } },
+					action: {
+						type: CardActionType.Submit
+					},
+					parameters: {
+						configuration: {},
+						data: {
+							foo: "bar"
+						}
+					},
 					source: this.oCard.getCardContent()
 				};
 				// Act
@@ -2032,7 +1971,7 @@ sap.ui.define([
 		QUnit.test("When preventing an action within action handler, no further processing of that action should be done", function (assert) {
 			var done = assert.async(2),
 				oCardFireActionSpy = sinon.spy(this.oCard, "fireAction"),
-				oFurtherProcessingSpy = sinon.stub(NavigationAction.prototype, "execute").callsFake(function () { });
+				oFurtherProcessingSpy = sinon.stub(NavigationAction.prototype, "execute").callsFake(function () {});
 
 			// Arrange
 			this.oCard.attachEvent("action", function (oEvent) {
@@ -2069,7 +2008,7 @@ sap.ui.define([
 			var done = assert.async(),
 				oCard = this.oCard,
 				oActionSpy = sinon.spy(CardActions, "fireAction"),
-				oStubOpenUrl = sinon.stub(NavigationAction.prototype, "_openUrl").callsFake(function () { });
+				oStubOpenUrl = sinon.stub(NavigationAction.prototype, "_openUrl").callsFake(function () {});
 
 			oCard.attachEvent("_ready", function () {
 				// Act
@@ -2117,7 +2056,7 @@ sap.ui.define([
 				oCard = this.oCard;
 
 			oCard.attachEvent("_ready", function () {
-				var oActionsStrip  = oCard.getAggregation("_footer").getActionsStrip(),
+				var oActionsStrip = oCard.getAggregation("_footer").getActionsStrip(),
 					aButtons = oActionsStrip._getToolbar().getContent();
 
 				// Assert
@@ -2132,7 +2071,9 @@ sap.ui.define([
 			Core.applyChanges();
 		});
 
-		return Core.loadLibrary("sap.suite.ui.commons", { async: true }).then(function () {
+		return Core.loadLibrary("sap.suite.ui.commons", {
+			async: true
+		}).then(function () {
 			QUnit.module("Navigation Action - Timeline Content", {
 				beforeEach: function () {
 					this.oCard = new Card({

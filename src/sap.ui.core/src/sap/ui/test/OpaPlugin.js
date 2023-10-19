@@ -22,12 +22,13 @@ sap.ui.define([
 	'sap/ui/Global',
 	'sap/ui/base/Object',
 	'sap/ui/core/Element',
+	'sap/ui/core/StaticArea',
 	'sap/ui/core/mvc/View',
 	'sap/ui/test/matchers/Ancestor',
 	'sap/ui/test/matchers/MatcherFactory',
 	'sap/ui/test/pipelines/MatcherPipeline',
 	'sap/ui/test/_OpaLogger'
-], function (extend, ObjectPath, $, Global, UI5Object, UI5Element, View, Ancestor, MatcherFactory,
+], function (extend, ObjectPath, $, Global, UI5Object, UI5Element, StaticArea, View, Ancestor, MatcherFactory,
 			MatcherPipeline, _OpaLogger) {
 
 		/**
@@ -41,6 +42,7 @@ sap.ui.define([
 		var OpaPlugin = UI5Object.extend("sap.ui.test.OpaPlugin", /** @lends sap.ui.test.OpaPlugin.prototype */ {
 
 			constructor : function() {
+				UI5Object.call(this);
 				this._oLogger = _OpaLogger.getLogger("sap.ui.test.Opa5");
 				this._oMatcherFactory = new MatcherFactory();
 			},
@@ -51,7 +53,7 @@ sap.ui.define([
 			 *
 			 * @param {Function} [fnConstructorType] the control type, e.g: sap.m.CheckBox
 			 * @param {string} [sControlType] optional control type name, e.g: "sap.m.CheckBox"
-			 * @returns {Array} an array of the found controls (can be empty)
+			 * @returns {Array<sap.ui.core.Element>} an array of the found controls (can be empty)
 			 * @public
 			 */
 			getAllControls : function (fnConstructorType, sControlType) {
@@ -105,7 +107,7 @@ sap.ui.define([
 				}
 
 				if (oOptions.viewId) {
-					var oCoreElement = UI5Element.registry.get(oOptions.viewId);
+					var oCoreElement = UI5Element.getElementById(oOptions.viewId);
 					if (oCoreElement instanceof View && (!sViewName || oCoreElement.getViewName() === sViewName)) {
 						oView = oCoreElement;
 					}
@@ -129,8 +131,13 @@ sap.ui.define([
 			 * eg : { viewName : "bar", viewNamespace : "baz." } will return all the Controls in the view with the name baz.bar<br/>
 			 * eg : { viewId : "viewBar" } will return all the controls inside the view with the ID viewBar<br/>
 			 *
-			 * @param {object} oOptions can contain a viewName, viewNamespace, viewId, fragmentId, id and controlType properties.
-			 * oOptions.id can be string, array or regular expression
+			 * @param {object} options can contain a viewName, viewNamespace, viewId, fragmentId, id and controlType properties.
+			 * @param {string} [options.viewName]
+			 * @param {string} [options.viewNamespace]
+			 * @param {string} [options.viewId]
+			 * @param {string} [options.fragmentId]
+			 * @param {string|RegExp|Array<string|RegExp>} [options.id]
+			 * @param {function} [options.controlType]
 			 * @returns {sap.ui.core.Element|sap.ui.core.Element[]|null}
 			 * If oOptions.id is a string, will return the control with such an ID or null.<br/>
 			 * If the view is not found or no control matches the given criteria, will return an empty array <br/>
@@ -138,8 +145,12 @@ sap.ui.define([
 			 * @public
 			 */
 			getControlInView : function (oOptions) {
-				var oView = this._getMatchingView(oOptions);
-				var bSearchForSingleControl = typeof oOptions.id === "string";
+				var bSearchForSingleControl = typeof oOptions.id === "string",
+					oView;
+
+				if (oOptions.viewName || oOptions.viewId) {
+					oView = this._getMatchingView(oOptions);
+				}
 
 				if (!oView) {
 					return bSearchForSingleControl ? null : [];
@@ -230,13 +241,17 @@ sap.ui.define([
 
 			// get control in static area that matches a control type, ID (string, array, regex), viewId, viewName, fragmentId
 			_getControlsInStaticArea: function (oOptions) {
-				var oStaticArea = $(sap.ui.getCore().getStaticAreaRef());
+				var oStaticArea = $(StaticArea.getDomRef());
 				var vControls = this._getControlsInContainer(oStaticArea) || [];
 
 				if (oOptions.id) {
 					vControls = this._filterUniqueControlsByCondition(vControls, function (oControl) {
-						var sUnprefixedControlId = oControl.getId();
-						var oView = this._getMatchingView(oOptions);
+						var sUnprefixedControlId = oControl.getId(),
+							oView;
+
+						if (oOptions.viewName || oOptions.viewId) {
+							oView = this._getMatchingView(oOptions);
+						}
 
 						if (oView) {
 							// the view could be set globally or from page object. in this case, search inside open dialogs should take priority:
@@ -502,7 +517,7 @@ sap.ui.define([
 				var hasExpectedType = makeTypeFilterFn(oOptions.controlType);
 
 				if (typeof oOptions.id === "string") {
-					var oControl = UI5Element.registry.get(oOptions.id) || null;
+					var oControl = UI5Element.getElementById(oOptions.id) || null;
 
 					if (oControl && !hasExpectedType(oControl)) {
 						this._oLogger.error("A control with global ID '" + oOptions.id + "' is found but does not have required controlType '" +
@@ -532,7 +547,7 @@ sap.ui.define([
 				var aUnmatchedIds = [];
 
 				aMatchIds.forEach(function (sId) {
-					var oControl = UI5Element.registry.get(sId);
+					var oControl = UI5Element.getElementById(sId);
 					// only return defined controls
 					if (oControl && hasExpectedType(oControl) && !oControl.bIsDestroyed) {
 						aMatchingControls.push(oControl);
@@ -553,16 +568,25 @@ sap.ui.define([
 			 * Gets the constructor function of a certain controlType
 			 *
 			 * @param {string} sControlType the name of the type eg: "sap.m.Button"
-			 * @returns {null|function} When the type is loaded, the contstructor is returned, if it is a lazy stub or not yet loaded, null will be returned and there will be a log entry.
+			 * @returns {null|function} When the type is loaded, the constructor is returned, if it is a lazy stub or not yet loaded, null will be returned and there will be a log entry.
 			 * @public
 			 */
 			getControlConstructor : function (sControlType) {
-				if (isLazyStub(sControlType)) {
-					this._oLogger.debug("The control type " + sControlType + " is currently a lazy stub.");
-					return null;
+				var sModuleName = sControlType.replace(/\./g, "/");
+				var fnControlType = sap.ui.require(sModuleName);
+				if ( fnControlType == null ) {
+					/**
+					 * @deprecated since 1.56 together with lazy loading as it implies sync loading
+					 */
+					if (Global.lazyRequire._isStub(sControlType)) {
+						this._oLogger.debug("The control type " + sControlType + " is currently a lazy stub.");
+						return null;
+					}
+					fnControlType = ObjectPath.get(sControlType);
+					if ( typeof fnControlType === "function" ) {
+						this._oLogger.debug("The control type " + sControlType + " could only be retrieved via global name.");
+					}
 				}
-
-				var fnControlType = ObjectPath.get(sControlType);
 
 				// no control type
 				if (!fnControlType) {
@@ -570,7 +594,7 @@ sap.ui.define([
 					return null;
 				}
 
-				// some control types only have static methods and cannot be instanciated (e.g.: sap.m.MessageToast)
+				// some control types only have static methods and cannot be instantiated (e.g.: sap.m.MessageToast)
 				if (typeof fnControlType !== "function") {
 					this._oLogger.debug("The control type " + sControlType + " must be a function.");
 					return null;
@@ -608,6 +632,9 @@ sap.ui.define([
 				var vControlType = oOptions.controlType;
 				//retrieve the constructor instance
 				if (typeof vControlType !== "string") {
+					/**
+					 * @deprecated since 1.56 together with lazy loading as it implies sync loading
+					 */
 					if (vControlType && vControlType._sapUiLazyLoader) {
 						// no way of getting the control type's name without actually calling it
 						this._oLogger.debug("The control type is currently a lazy stub");
@@ -643,24 +670,6 @@ sap.ui.define([
 				return sUnprefixedControlId;
 			}
 		});
-
-		/**
-		 * Checks whether the given class name is still a lazy stub.
-		 * In future, there won't be lazy stubs, that's the default implementation of this helper.
-		 * Only when sap.ui.lazyRequire._isStub still exists, this method will check something.
-		 * @param {string} sClassName
-		 * @private
-		 */
-		var isLazyStub = function isLazyStub(sClassName) {
-			return false;
-		};
-
-		/**
-		 * @deprecated since 1.56 as lazy loading implies sync loading
-		 */
-		if ( Global.lazyRequire && typeof Global.lazyRequire._isStub === "function" ) {
-			isLazyStub = Global.lazyRequire._isStub;
-		}
 
 		/**
 		 * Creates a filter function that returns true when a given element

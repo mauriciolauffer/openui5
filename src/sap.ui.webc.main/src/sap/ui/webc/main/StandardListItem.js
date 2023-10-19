@@ -4,7 +4,7 @@
 
 // Provides control sap.ui.webc.main.StandardListItem.
 sap.ui.define([
-	"sap/ui/webc/common/WebComponent",
+	"sap/ui/core/webc/WebComponent",
 	"./library",
 	"sap/ui/core/library",
 	"./thirdparty/StandardListItem"
@@ -20,7 +20,7 @@ sap.ui.define([
 	 * @param {string} [sId] ID for the new control, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new control
 	 *
-	 * @extends sap.ui.webc.common.WebComponent
+	 * @extends sap.ui.core.webc.WebComponent
 	 * @class
 	 *
 	 * The <code>sap.ui.webc.main.StandardListItem</code> represents the simplest type of item for a <code>sap.ui.webc.main.List</code>.
@@ -36,6 +36,12 @@ sap.ui.define([
 	 *     <li>description - Used to style the description of the list item</li>
 	 *     <li>additional-text - Used to style the additionalText of the list item</li>
 	 *     <li>icon - Used to style the icon of the list item</li>
+	 *     <li>native-li - Used to style the main li tag of the list item</li>
+	 *     <li>content - Used to style the content area of the list item</li>
+	 *     <li>detail-button - Used to style the button rendered when the list item is of type detail</li>
+	 *     <li>delete-button - Used to style the button rendered when the list item is in delete mode</li>
+	 *     <li>radio - Used to style the radio button rendered when the list item is in single selection mode</li>
+	 *     <li>checkbox - Used to style the checkbox rendered when the list item is in multiple selection mode</li>
 	 * </ul>
 	 *
 	 * @author SAP SE
@@ -58,6 +64,22 @@ sap.ui.define([
 			properties: {
 
 				/**
+				 * An object of strings that defines several additional accessibility attribute values for customization depending on the use case.
+				 *
+				 * It supports the following fields:
+				 *
+				 *
+				 * <ul>
+				 *     <li><code>ariaSetsize</code>: Defines the number of items in the current set of listitems or treeitems when not all items in the set are present in the DOM. The value of each <code>aria-setsize</code> is an integer reflecting number of items in the complete set. <b>Note: </b> If the size of the entire set is unknown, set <code>aria-setsize="-1"</code>. </li>
+				 *     <li><code>ariaPosinset</code>: Defines an element's number or position in the current set of listitems or treeitems when not all items are present in the DOM. The value of each <code>aria-posinset</code> is an integer greater than or equal to 1, and less than or equal to the size of the set when that size is known. </li>
+				 * </ul>
+				 */
+				accessibilityAttributes: {
+					type: "object",
+					defaultValue: {}
+				},
+
+				/**
 				 * Defines the text alternative of the component. Note: If not provided a default text alternative will be set, if present.
 				 */
 				accessibleName: {
@@ -74,7 +96,7 @@ sap.ui.define([
 
 				/**
 				 * Defines the state of the <code>additionalText</code>. <br>
-				 * Available options are: <code>"None"</code> (by default), <code>"Success"</code>, <code>"Warning"</code>, <code>"Information"</code> and <code>"Erorr"</code>.
+				 * Available options are: <code>"None"</code> (by default), <code>"Success"</code>, <code>"Warning"</code>, <code>"Information"</code> and <code>"Error"</code>.
 				 */
 				additionalTextState: {
 					type: "sap.ui.core.ValueState",
@@ -117,6 +139,13 @@ sap.ui.define([
 				},
 
 				/**
+				 * The navigated state of the list item. If set to <code>true</code>, a navigation indicator is displayed at the end of the list item.
+				 */
+				navigated: {
+					type: "boolean"
+				},
+
+				/**
 				 * Defines the selected state of the <code>ListItem</code>.
 				 */
 				selected: {
@@ -134,13 +163,33 @@ sap.ui.define([
 				},
 
 				/**
-				 * Defines the visual indication and behavior of the list items. Available options are <code>Active</code> (by default), <code>Inactive</code> and <code>Detail</code>. <br>
+				 * Defines the visual indication and behavior of the list items. Available options are <code>Active</code> (by default), <code>Inactive</code>, <code>Detail</code> and <code>Navigation</code>. <br>
 				 * <br>
-				 * <b>Note:</b> When set to <code>Active</code>, the item will provide visual response upon press and hover, while with type <code>Inactive</code> and <code>Detail</code> - will not.
+				 * <b>Note:</b> When set to <code>Active</code> or <code>Navigation</code>, the item will provide visual response upon press and hover, while with type <code>Inactive</code> and <code>Detail</code> - will not.
 				 */
 				type: {
 					type: "sap.ui.webc.main.ListItemType",
 					defaultValue: ListItemType.Active
+				}
+			},
+			aggregations: {
+
+				/**
+				 * Defines the delete button, displayed in "Delete" mode. <b>Note:</b> While the slot allows custom buttons, to match design guidelines, please use the <code>sap.ui.webc.main.Button</code> component. <b>Note:</b> When the slot is not present, a built-in delete button will be displayed.
+				 */
+				deleteButton: {
+					type: "sap.ui.webc.main.IButton",
+					multiple: false,
+					slot: "deleteButton"
+				},
+
+				/**
+				 * <b>Note:</b> While the slot allows option for setting custom avatar, to match the design guidelines, please use the <code>sap.ui.webc.main.Avatar</code> with it`s default size - S. <b>Note:</b> If bigger <code>sap.ui.webc.main.Avatar</code> needs to be used, then the size of the <code>sap.ui.webc.main.StandardListItem</code> should be customized in order to fit.
+				 */
+				imageContent: {
+					type: "sap.ui.core.Control",
+					multiple: true,
+					slot: "imageContent"
 				}
 			},
 			events: {

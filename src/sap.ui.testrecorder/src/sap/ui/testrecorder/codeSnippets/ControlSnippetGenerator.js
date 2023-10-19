@@ -3,9 +3,9 @@
  */
 
 sap.ui.define([
-	"sap/ui/thirdparty/jquery",
+	"sap/base/util/deepExtend",
 	"sap/ui/base/Object"
-], function ($, BaseObject) {
+], function (deepExtend, BaseObject) {
 	"use strict";
 
 	 /**
@@ -20,7 +20,7 @@ sap.ui.define([
 	 * @param {object} mData.controlSelector control selector in string format
 	 * @param {string} mData.action name of the action to record for the control
 	 * @param {object} mData.assertion assertion details - property name, type and expected value
-	 * @param {object} oOptions.settings preferences for the snippet e.g. formatting, method wrapping
+	 * @param {object} mData.settings preferences for the snippet e.g. formatting, method wrapping
 	 * @param {boolean} mData.settings.formatAsPOMethod true if selectors should be wrapped in a page object method. Default value is true.
 	 * @returns {Promise<string>} Promise for a code snippet or error
 	 */
@@ -29,7 +29,7 @@ sap.ui.define([
 			if (!mData || !mData.controlSelector) {
 				reject(new Error("Control selector is required!"));
 			}
-			var sSnippet = this._generate($.extend(true, {}, mData));
+			var sSnippet = this._generate(deepExtend({}, mData));
 			resolve(sSnippet);
 		}.bind(this));
 	};
@@ -40,7 +40,7 @@ sap.ui.define([
 	 * @param {object} mData data from which to generate a snippet
 	 * @param {object} mData.controlSelector control selector in string format
 	 * @param {string} mData.action name of the action to record for the control
-	 * @param {object} oOptions.settings preferences for the snippet e.g. formatting, method wrapping
+	 * @param {object} mData.settings preferences for the snippet e.g. formatting, method wrapping
 	 * @param {boolean} mData.settings.formatAsPOMethod true if selectors should be wrapped in a page object method. Default value is true.
 	 * Note that this setting makes no sense for the Raw snippet generator and therefore doesn't change its output.
 	 * @returns {string} a stringified code snippet

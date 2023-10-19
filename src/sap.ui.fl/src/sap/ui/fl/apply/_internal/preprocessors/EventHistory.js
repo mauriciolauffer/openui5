@@ -2,7 +2,7 @@
  * ${copyright}
  */
 
-sap.ui.define(["sap/ui/core/Core"], function(oCore) {
+sap.ui.define(["sap/ui/core/EventBus"], function(EventBus) {
 	"use strict";
 
 	/**
@@ -10,14 +10,14 @@ sap.ui.define(["sap/ui/core/Core"], function(oCore) {
 	 *
 	 * @namespace
 	 * @alias sap.ui.fl.apply._internal.preprocessors.EventHistory
-	 * @experimental Since 1.47.0
+	 * @since 1.47.0
 	 * @author SAP SE
 	 * @version ${version}
 	 *
 	 * @private
 	 * @ui5-restricted sap.ui.fl.apply._internal.preprocessors.RegistrationDelegator
 	 */
-	var EventHistory = function () {
+	var EventHistory = function() {
 	};
 
 	EventHistory._aEventIds = [
@@ -31,10 +31,10 @@ sap.ui.define(["sap/ui/core/Core"], function(oCore) {
 	/**
 	 * Starts listening to the events
 	 */
-	EventHistory.start = function () {
+	EventHistory.start = function() {
 		EventHistory._aEventIds.forEach(function(sEventId) {
 			if (EventHistory._aUnsubscribedEventIds.indexOf(sEventId) === -1) {
-				oCore.getEventBus().subscribe("sap.ui", sEventId, EventHistory.saveEvent);
+				EventBus.getInstance().subscribe("sap.ui", sEventId, EventHistory.saveEvent);
 				EventHistory._oHistory[sEventId] = [];
 			}
 		});
@@ -47,11 +47,11 @@ sap.ui.define(["sap/ui/core/Core"], function(oCore) {
 	 * @param {string} sEventId The identifier of the event
 	 * @param {map} mParameters The parameter map carried by the event
 	 */
-	EventHistory.saveEvent = function (sChannelId, sEventId, mParameters) {
+	EventHistory.saveEvent = function(sChannelId, sEventId, mParameters) {
 		var oEvent = {
 			channelId: sChannelId,
 			eventId: sEventId,
-			parameters: mParameters.getId() //we only need the id. In unified.shell sap.ui.getCore().byId(vControl); will be used.
+			parameters: mParameters.getId() // we only need the id. In unified.shell Element.getElementById(vControl); will be used.
 		};
 
 		if (EventHistory._oHistory[sEventId]) {
@@ -73,8 +73,8 @@ sap.ui.define(["sap/ui/core/Core"], function(oCore) {
 	 *
 	 * @return {array} List of events
 	 */
-	EventHistory.getHistoryAndStop = function (sEventId) {
-		oCore.getEventBus().unsubscribe("sap.ui", sEventId, EventHistory.saveEvent);
+	EventHistory.getHistoryAndStop = function(sEventId) {
+		EventBus.getInstance().unsubscribe("sap.ui", sEventId, EventHistory.saveEvent);
 		EventHistory._addUnsubscribedEvent(sEventId);
 		return EventHistory._oHistory[sEventId] || [];
 	};

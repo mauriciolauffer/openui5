@@ -3,22 +3,20 @@
  */
 sap.ui.define([
 	"sap/base/Log",
-	"sap/ui/model/Context",
-	"sap/ui/test/TestUtils"
-], function (Log, Context, TestUtils) {
+	"sap/ui/model/Context"
+], function (Log, Context) {
 	/*global QUnit,sinon*/
 	"use strict";
 
 	//*********************************************************************************************
 	QUnit.module("sap.ui.model.Context", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach : function () {
 			this.oLogMock = this.mock(Log);
 			this.oLogMock.expects("error").never();
 			this.oLogMock.expects("warning").never();
-		},
-
-		afterEach : function (assert) {
-			return TestUtils.awaitRendering();
 		}
 	});
 
@@ -38,30 +36,10 @@ sap.ui.define([
 	});
 
 	//*********************************************************************************************
-[
-	{isUpdated : true, result : true},
-	{isUpdated : "true", result : "true"},
-	{isUpdated : undefined, isRefreshForced : true, result : true},
-	{isUpdated : undefined, isRefreshForced : false, result : false},
-	{isUpdated : undefined, isRefreshForced : undefined, result : undefined},
-	{isUpdated : false, isRefreshForced : true, result : true},
-	{isUpdated : false, isRefreshForced : "true", result : "true"}
-].forEach(function (oFixture, i) {
-	QUnit.test("hasChanged #" + i, function (assert) {
-		var oContext = new Context("~oModel", "~sPath");
-
-		//TODO: standard implementation shall return false in all cases; but as long as deprecated
-		// functions are not removed keep the current behaviour.
-
-		this.mock(oContext).expects("isUpdated").withExactArgs().returns(oFixture.isUpdated);
-		this.mock(oContext).expects("isRefreshForced").withExactArgs()
-			.exactly("isRefreshForced" in oFixture ? 1 : 0)
-			.returns(oFixture.isRefreshForced);
-
+	QUnit.test("hasChanged", function (assert) {
 		// code under test
-		assert.strictEqual(oContext.hasChanged(), oFixture.result);
+		assert.strictEqual(new Context("~oModel", "~sPath").hasChanged(), false);
 	});
-});
 
 	//*********************************************************************************************
 [

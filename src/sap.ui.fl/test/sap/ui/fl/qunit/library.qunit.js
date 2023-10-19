@@ -1,4 +1,4 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/ui/thirdparty/sinon-4",
@@ -12,11 +12,11 @@ sap.ui.define([
 	var sandbox = sinon.createSandbox();
 
 	QUnit.module("sap.ui.fl.library", {
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
-		QUnit.test("triggers all its registrations", function (assert) {
+		QUnit.test("triggers all its registrations", function(assert) {
 			var oRegisterAllStub = sandbox.stub(RegistrationDelegator, "registerAll");
 
 			return new Promise(function(resolve) {
@@ -28,7 +28,7 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

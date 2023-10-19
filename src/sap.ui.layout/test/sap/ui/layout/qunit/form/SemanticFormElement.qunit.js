@@ -1,11 +1,16 @@
-/* global QUnit */
+/* global QUnit, sinon */
 
 sap.ui.define([
 	"sap/ui/layout/form/SemanticFormElement",
 	"sap/ui/layout/form/ColumnElementData",
+	"sap/ui/layout/form/FormContainer",
+	"sap/ui/layout/form/Form",
+	"sap/ui/layout/form/FormLayout",
 	"sap/m/Label",
 	"sap/m/Input",
 	"sap/m/Text",
+	"sap/m/Link",
+	"sap/m/Button", // to make FormHelper could load all modules
 	"sap/ui/core/Control",
 	"sap/ui/thirdparty/jquery",
 	"sap/ui/core/Core"
@@ -13,9 +18,14 @@ sap.ui.define([
 	function(
 			SemanticFormElement,
 			ColumnElementData,
+			FormContainer,
+			Form,
+			FormLayout,
 			Label,
 			Input,
 			Text,
+			Link,
+			Button,
 			Control,
 			jQuery,
 			oCore
@@ -31,6 +41,7 @@ sap.ui.define([
 		}
 	};
 	Input.prototype.isA = myTypeCheck;
+	Link.prototype.isA = myTypeCheck;
 
 	var oFormElement;
 
@@ -132,6 +143,36 @@ sap.ui.define([
 		assert.equal(aFields[1] && aFields[1].getText && aFields[1].getText(), "/", "Delimitter symbol rendered");
 		assert.equal(aFields[1] && aFields[1].getTextAlign && aFields[1].getTextAlign(), "Center", "Delimitter horizontal centered");
 		assert.ok(aFields[2] && aFields[2] === oField2, "Second field rendered");
+	});
+
+	QUnit.test("two fields - delimiter created async", function(assert) {
+		var fnResolve;
+		oFormElement._oInitPromise = new Promise(function(fResolve, fReject) { // fake async loading
+			fnResolve = fResolve;
+		});
+
+		var oLabel = new Label("L1", {text: "Test"});
+		oFormElement.setLabel(oLabel);
+		var oField1 = new Input("F1", {value: "Text 1"});
+		var oField2 = new Input("F2", {value: "Text 2"});
+		oFormElement.addField(oField1);
+		oFormElement.addField(oField2);
+		var aFields = oFormElement.getFieldsForRendering();
+		assert.equal(aFields.length, 2, "2 controls rendered");
+
+		var fnDone = assert.async();
+		fnResolve();
+
+		setTimeout(function() {
+			aFields = oFormElement.getFieldsForRendering();
+			assert.equal(aFields.length, 3, "3 controls rendered");
+			assert.equal(aFields[0], oField1, "First field rendered");
+			assert.ok(aFields[1] && aFields[1].isA("sap.m.Text"), "Delimiter rendered");
+			assert.equal(aFields[1] && aFields[1].getText && aFields[1].getText(), "/", "Delimitter symbol rendered");
+			assert.equal(aFields[1] && aFields[1].getTextAlign && aFields[1].getTextAlign(), "Center", "Delimitter horizontal centered");
+			assert.ok(aFields[2] && aFields[2] === oField2, "Second field rendered");
+			fnDone();
+		}, 0);
 	});
 
 	QUnit.test("two fields with fieldLabels", function(assert) {
@@ -458,6 +499,37 @@ sap.ui.define([
 		assert.equal(aFields[0].getText && aFields[0].getText(), "Text 1 / Text 2", "rendered text");
 	});
 
+	QUnit.test("two fields - Text created async", function(assert) {
+		var fnResolve;
+		oFormElement._oInitPromise = new Promise(function(fResolve, fReject) { // fake async loading
+			fnResolve = fResolve;
+		});
+
+		var oLabel = new Label("L1", {text: "Test"});
+		oFormElement.setLabel(oLabel);
+		var oField1 = new Input("F1", {value: "Text 1"});
+		var oField2 = new Input("F2", {value: "Text 2"});
+		oFormElement.addField(oField1);
+		oFormElement.addField(oField2);
+		var aFields = oFormElement.getFieldsForRendering();
+		oCore.applyChanges();
+
+		assert.equal(aFields.length, 0, "No control rendered");
+
+		var fnDone = assert.async();
+		fnResolve();
+
+		setTimeout(function() {
+			oRenderControl.invalidate(); // as there is no real control tree
+			oCore.applyChanges();
+			aFields = oFormElement.getFieldsForRendering();
+			assert.equal(aFields.length, 1, "1 control rendered");
+			assert.ok(aFields[0].isA("sap.m.Text"), "Text control rendered");
+			assert.equal(aFields[0].getText && aFields[0].getText(), "Text 1 / Text 2", "rendered text");
+			fnDone();
+		}, 0);
+	});
+
 	QUnit.test("three fields", function(assert) {
 		var oLabel = new Label("L1", {text: "Test"});
 		oFormElement.setLabel(oLabel);
@@ -649,6 +721,113 @@ sap.ui.define([
 		assert.ok(aFields[0].isA("sap.m.Text"), "Text control rendered");
 		assert.equal(aFields[0].getText && aFields[0].getText(), "Text 1 / Text 2 / Text 3", "rendered text");
 
+	});
+
+	QUnit.test("two fields supporting control-rendring, but layout don't support it", function(assert) {
+		Link.prototype.getFormRenderAsControl = function() {return true;};
+		sinon.stub(oFormElement, "getParent").returns({ //fake assigned to FormContainer
+			getParent: function() {
+				return {//fake assigned to Form
+					getLayout: function() {
+						return { // fake Layout
+							renderControlsForSemanticElement: function() {return false;}
+						};
+					}
+				};
+			}
+		});
+
+		var oLabel = new Label("L1", {text: "Test"});
+		oFormElement.setLabel(oLabel);
+		var oField1 = new Link("F1", {text: "Text 1"});
+		var oField2 = new Link("F2", {text: "Text 2"});
+		oFormElement.addField(oField1);
+		oFormElement.addField(oField2);
+		var aFields = oFormElement.getFieldsForRendering();
+		oCore.applyChanges();
+
+		assert.equal(aFields.length, 1, "1 control rendered");
+		assert.ok(aFields[0].isA("sap.m.Text"), "Text control rendered");
+		assert.equal(aFields[0].getText && aFields[0].getText(), "Text 1 / Text 2", "rendered text");
+	});
+
+	var oForm;
+	var oFormContainer;
+	var oFormLayout;
+	QUnit.module("display mode with control rendering", {
+		beforeEach: function() {
+			// sinon.stub(Link.prototype, "getFormRenderAsControl").returns(true);
+			Link.prototype.getFormRenderAsControl = function() {return true;}; // TODO: remove after Link supports this
+			Link.prototype.getFormObservingProperties = function() {return ["text"];};
+			oFormElement = new SemanticFormElement("FE1");
+			oFormContainer = new FormContainer("FC1", {
+				formElements: [oFormElement]
+			});
+			oFormLayout = new FormLayout("FL1");
+			sinon.stub(oFormLayout, "renderControlsForSemanticElement").returns(true);
+			oForm = new Form("Form1", {
+				editable: false
+			}).placeAt("qunit-fixture");
+			oForm.addFormContainer(oFormContainer); // add after Form creation to test observin parent change
+			oForm.setLayout(oFormLayout); // set layout after assigning FormElement to test layout observing
+		},
+		afterEach: function() {
+			// Link.prototype.getFormRenderAsControl.restore();
+			delete Link.prototype.getFormRenderAsControl;
+			delete Link.prototype.getFormObservingProperties;
+			oForm.destroy();
+			oForm = undefined;
+			oFormContainer = undefined;
+			oFormElement = undefined;
+			oFormLayout = undefined;
+		}
+	});
+
+	QUnit.test("one Field", function(assert) {
+		var oLabel = new Label("L1", {text: "Test"});
+		oFormElement.setLabel(oLabel);
+		var oField1 = new Link("F1", {text: "Text 1"});
+		oFormElement.addField(oField1);
+		var aFields = oFormElement.getFieldsForRendering();
+
+		assert.equal(aFields.length, 1, "1 control rendered");
+		assert.equal(aFields[0], oField1, "First field rendered");
+	});
+
+	QUnit.test("two fields", function(assert) {
+		var oLabel = new Label("L1", {text: "Test"});
+		oFormElement.setLabel(oLabel);
+		var oField1 = new Link("F1", {text: "Text 1"});
+		var oField2 = new Link("F2", {text: "Text 2"});
+		oFormElement.addField(oField1);
+		oFormElement.addField(oField2);
+		var aFields = oFormElement.getFieldsForRendering();
+
+		assert.equal(aFields.length, 3, "3 controls rendered");
+		assert.equal(aFields[0], oField1, "First field rendered");
+		assert.ok(aFields[1] && aFields[1].isA("sap.m.Text"), "Delimiter rendered");
+		assert.equal(aFields[1] && aFields[1].getText && aFields[1].getText(), " / ", "Delimitter symbol rendered");
+		assert.equal(aFields[1] && aFields[1].getTextAlign && aFields[1].getTextAlign(), "Center", "Delimitter horizontal centered");
+		assert.ok(aFields[2] && aFields[2] === oField2, "Second field rendered");
+	});
+
+	QUnit.test("two fields one control don't support control rendering", function(assert) {
+		var oLabel = new Label("L1", {text: "Test"});
+		oFormElement.setLabel(oLabel);
+		var oField1 = new Link("F1", {text: "Text 1"});
+		var oField2 = new Link("F2", {text: "Text 2"});
+		oField2.getFormRenderAsControl = function() {return false;};
+		oFormElement.addField(oField1);
+
+		oCore.applyChanges(); // to test change of renderinng mode
+
+		oFormElement.addField(oField2);
+		var aFields = oFormElement.getFieldsForRendering();
+		oCore.applyChanges();
+
+		assert.equal(aFields.length, 1, "1 control rendered");
+		assert.ok(aFields[0].isA("sap.m.Text"), "Text control rendered");
+		assert.equal(aFields[0].getText && aFields[0].getText(), "Text 1 / Text 2", "rendered text");
 	});
 
 });

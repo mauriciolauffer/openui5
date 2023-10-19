@@ -7,9 +7,9 @@ sap.ui.define([
 	'sap/ui/core/Element',
 	'sap/ui/core/Control',
 	'sap/ui/base/ManagedObjectObserver',
-	'sap/ui/layout/library',
-	"sap/base/Log"
-	], function(Element, Control, ManagedObjectObserver, library, Log) {
+	'./FormHelper',
+	'sap/base/Log'
+	], function(Element, Control, ManagedObjectObserver, FormHelper, Log) {
 	"use strict";
 
 	/**
@@ -83,6 +83,8 @@ sap.ui.define([
 
 	FormElement.prototype.init = function(){
 
+		this._oInitPromise = FormHelper.init();
+
 		this._oFieldDelegate = {oElement: this, onAfterRendering: _fieldOnAfterRendering};
 
 		this._oObserver = new ManagedObjectObserver(this._observeChanges.bind(this));
@@ -137,7 +139,18 @@ sap.ui.define([
 		this.setAggregation("label", vAny);
 		var oLabel = vAny;
 		if (typeof oLabel === "string") {
-			this._setInternalLabel(oLabel);
+			if (this._oInitPromise) {
+				// module needs to be loaded -> create Label async
+				this._oInitPromise.then(function () {
+					delete this._oInitPromise; // not longer needed as resolved
+					var oLabel = this.getLabel(); // Label might have changed
+					if (typeof oLabel === "string") {
+						this._setInternalLabel(oLabel);
+					}
+				}.bind(this));
+			} else {
+				this._setInternalLabel(oLabel);
+			}
 		} else {
 			if (this._oLabel) {
 				this._oLabel.destroy();
@@ -167,8 +180,8 @@ sap.ui.define([
 	FormElement.prototype._setInternalLabel = function(sText) {
 
 		if (!this._oLabel) {
-			this._oLabel = library.form.FormHelper.createLabel(sText, this.getId() + "-label");
-			this.setAggregation("_label", this._oLabel, true); // use Aggregation to allow model inheritance
+			this._oLabel = FormHelper.createLabel(sText, this.getId() + "-label"); // called only after Helper-Promise resolved
+			this.setAggregation("_label", this._oLabel); // use Aggregation to allow model inheritance
 			this._oLabel.disableRequiredChangeCheck(true);
 			if (this._oLabel.isRequired) {
 				this._oLabel.isRequired = _labelIsRequired;
@@ -212,7 +225,12 @@ sap.ui.define([
 		if (this._oLabel) {
 			return this._oLabel;
 		} else {
-			return this.getLabel();
+			var vLabel = this.getLabel();
+			if (typeof vLabel === "string") {
+				// happens if internal label needs to be created async (see this._oInitPromise)
+				vLabel = null;
+			}
+			return vLabel;
 		}
 
 	};
@@ -310,17 +328,33 @@ sap.ui.define([
 	 *
 	 * @param {boolean} bEditable Editable state of the <code>Form</code>
 	 * @protected
-	 * @restricted sap.ui.layout.form.FormContainer
+	 * @ui5-restricted sap.ui.layout.form.FormContainer
 	 * @since 1.74.0
 	 */
 	FormElement.prototype._setEditable = function(bEditable) {
 
-		var bOldEditable = this.getProperty("_editable");
+		var bOldEditable = this._getEditable();
 		this.setProperty("_editable", bEditable, true); // do not invalidate whole FormElement
 
 		if (bEditable !== bOldEditable) {
 			this.invalidateLabel();
 		}
+
+	};
+
+	/**
+	 * Gets the editable state of the <code>FormElement</code>.
+	 *
+	 * This must only be called from the <code>Form</code> and its <code>FormLayout</code>.
+	 *
+	 * @returns {boolean} Editable state of the <code>Form</code>
+	 * @protected
+	 * @ui5-restricted sap.ui.layout.form.FormLayout
+	 * @since 1.117.0
+	 */
+	FormElement.prototype._getEditable = function() {
+
+		return this.getProperty("_editable");
 
 	};
 
@@ -451,7 +485,7 @@ sap.ui.define([
 			}
 
 			var oFormElement = this.getParent();
-			return !oFormElement.getProperty("_editable");
+			return !oFormElement._getEditable();
 		}
 
 		return false;

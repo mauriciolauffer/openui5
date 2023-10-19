@@ -6,7 +6,7 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
   });
   _exports.pathData = _exports.ltr = _exports.default = _exports.accData = void 0;
   const name = "dishwasher";
-  const pathData = "M423-20q35 0 59 24t24 59v334q0 35-24 59t-59 24H89q-35 0-59-24T6 397V63Q6 28 30 4t59-24h334zm27 111H62v306q0 11 8 19t19 8h334q11 0 19-8t8-19V91zm-73 54q8-8 19.5-8t19.5 8 8 19.5-8 19.5l-19 20q-8 8-20 8t-20-8-8-19.5 8-19.5zm-117 59q-8-8-8-19.5t8-19.5l20-20q8-8 19.5-8t19.5 8 8 19.5-8 19.5l-20 20q-8 8-19.5 8t-19.5-8zM89 341q0-23 9-43t24-35 35-24 43-9 43.5 9 35.5 24 24 35 9 43q0 11-8.5 19.5T284 369q-12 0-20-8.5t-8-19.5q0-23-16.5-39T200 286t-39 16-16 39q0 11-8.5 19.5T117 369t-19.5-8.5T89 341zm254-106q35 11 57.5 40t22.5 66q0 11-8.5 19.5T395 369t-19.5-8.5T367 341q0-18-11-33t-29-20q-11-4-16.5-14t-1.5-21q3-11 13-16.5t21-1.5z";
+  const pathData = "M422 32q24 0 41 17t17 41v332q0 24-17 41t-41 17H90q-24 0-41-17t-17-41V90q0-24 17-41t41-17h332zm0 397q7 0 7-7V128H83v294q0 7 7 7h332zM243 224q-11 0-18-7.5t-7-18.5 7-18l13-13q7-7 18-7t18.5 7.5T282 186q0 10-8 18l-13 12q-8 8-18 8zm89 0q-11 0-18-7.5t-7-18.5 7-18l13-13q7-7 18-7t18.5 7.5T371 186q0 10-8 18l-13 12q-8 8-18 8zm-140 32q40 0 68 28t28 68q0 7-1 16t-4.5 16.5-9.5 13-16 5.5-17.5-7-7.5-18q0-3 .5-5.5t1.5-5.5q3-6 3-15 0-19-13-32t-32-13-32 13-13 32q0 9 3 15 1 3 1.5 5.5t.5 5.5q0 10-7 17.5t-18 7.5q-9 0-15-5.5t-9.5-13-5-16.5-1.5-16q0-40 28-68t68-28zm151 32q14 0 27 6.5t23.5 17 16.5 25 6 31.5q0 13-5.5 24T390 403q-14 0-20-9t-6-21q1-2 1-5 0-12-8.5-20.5T336 339q-11 0-18.5-7t-7.5-18 8.5-18.5T343 288z";
   _exports.pathData = pathData;
   const ltr = false;
   _exports.ltr = ltr;
@@ -20,6 +20,6 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
     collection,
     packageName
   });
-  var _default = "dishwasher";
+  var _default = "SAP-icons-v5/dishwasher";
   _exports.default = _default;
 });

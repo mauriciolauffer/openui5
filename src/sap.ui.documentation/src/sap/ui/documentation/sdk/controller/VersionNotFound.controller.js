@@ -5,11 +5,13 @@
 sap.ui.define([
 	"./BaseController",
 	"sap/ui/thirdparty/jquery",
+	"sap/ui/core/Core",
 	"sap/ui/documentation/sdk/controller/util/URLUtil",
 	"sap/m/library"
 ], function (
 	BaseController,
 	jQuery,
+	Core,
 	DemokitURLUtil,
 	mLib
 ) {
@@ -45,13 +47,13 @@ sap.ui.define([
 				sUrl = document.location.href,
 				sRedirectUrl,
 				sVersion = DemokitURLUtil.parseVersion(sUrl),
-				isRemoved = false;
+				oPatchInfo = this._getPatchInfo(oVersionInfo, sVersion),
+				isRemoved = oPatchInfo && oPatchInfo.removed,
+				isRuntimeOnly = oPatchInfo && oPatchInfo.runtimeOnly;
 
 			oMessagePage.setBusy(false);
 
-			isRemoved = this._isVersionRemoved(oVersionInfo, sVersion);
-
-			if (isRemoved && DemokitURLUtil.requestsDemokitView(sUrl)) {
+			if ((isRemoved || isRuntimeOnly) && DemokitURLUtil.requestsDemokitView(sUrl)) {
 				// redirect to the latest (version-less) URL
 				sRedirectUrl = DemokitURLUtil.removeVersion(sUrl);
 				mLib.URLHelper.redirect(sRedirectUrl);
@@ -70,6 +72,10 @@ sap.ui.define([
 				// show removed message
 				oMessagePage.setText(this._getLibraryResourceBundle().getText("NOT_FOUND_REMOVED_TEXT"));
 				oReadMoreBtn.setVisible(true);
+			} else if (isRuntimeOnly) {
+				// show removed message
+				oMessagePage.setText(this._getLibraryResourceBundle().getText("NOT_FOUND_DK_REMOVED_TEXT"));
+				oReadMoreBtn.setVisible(true);
 			} else {
 				// show unavailable message
 				oReadMoreBtn.setVisible(false);
@@ -77,21 +83,15 @@ sap.ui.define([
 			}
 		},
 
-		_isVersionRemoved: function (oVersionInfo, sVersion) {
-			var aPatches = oVersionInfo.patches,
-				iVersionIndex,
-				reVersion;
-
-			iVersionIndex = aPatches.findIndex(function (oData) {
-				reVersion = new RegExp(oData.version);
-				return oData.removed && reVersion.test(sVersion);
+		_getPatchInfo: function (oVersionInfo, sVersion) {
+			var aPatches = oVersionInfo.patches;
+			return aPatches.find(function (oData) {
+				return sVersion === oData.version;
 			});
-
-			return iVersionIndex > -1;
 		},
 
 		_getLibraryResourceBundle: function () {
-			return sap.ui.getCore().getLibraryResourceBundle("sap.ui.documentation");
+			return Core.getLibraryResourceBundle("sap.ui.documentation");
 		},
 
 		_loadVersionInfo: function () {

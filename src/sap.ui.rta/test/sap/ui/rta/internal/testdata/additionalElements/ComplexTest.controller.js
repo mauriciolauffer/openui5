@@ -18,7 +18,7 @@ sap.ui.define([
 	return Controller.extend("sap.ui.rta.test.additionalElements.ComplexTest", {
 		_data: [],
 
-		onInit: function () {
+		onInit() {
 			var sURL;
 			var oModel;
 			var oView;
@@ -30,8 +30,8 @@ sap.ui.define([
 			});
 			this._sResourcePath = sap.ui.require.toUrl("sap/ui/rta/test/additionalElements");
 
-			oMockServer.simulate(this._sResourcePath + "/mockserver/metadata.xml", {
-				sMockdataBaseUrl: this._sResourcePath + "/mockserver",
+			oMockServer.simulate(`${this._sResourcePath}/mockserver/metadata.xml`, {
+				sMockdataBaseUrl: `${this._sResourcePath}/mockserver`,
 				bGenerateMissingMockData: true
 			});
 
@@ -44,7 +44,6 @@ sap.ui.define([
 
 			oModel.setDefaultBindingMode(BindingMode.TwoWay);
 			this._oModel = oModel;
-
 
 			oView = this.getView();
 			oView.setModel(oModel);
@@ -85,7 +84,7 @@ sap.ui.define([
 			oTableSelect.setModel(oActivationModel);
 
 			this._data.push(
-				new Promise(function (resolve) {
+				new Promise(function(resolve) {
 					oView.bindElement({
 						path: "/EntityTypes(Property01='propValue01',Property02='propValue02',Property03='propValue03')",
 						events: {
@@ -93,7 +92,7 @@ sap.ui.define([
 						}
 					});
 				}),
-				new Promise(function (resolve) {
+				new Promise(function(resolve) {
 					oView.byId("GroupEntityType01").bindElement({
 						path: "/EntityTypes(Property01='propValue01',Property02='propValue02',Property03='propValue03')",
 						events: {
@@ -102,7 +101,7 @@ sap.ui.define([
 					});
 				}),
 
-				new Promise(function (resolve) {
+				new Promise(function(resolve) {
 					oView.byId("MainForm").bindElement({
 						path: "/EntityTypes2(EntityType02_Property01='EntityType02Property01Value')",
 						events: {
@@ -114,7 +113,7 @@ sap.ui.define([
 					});
 				}),
 
-				new Promise(function (resolve) {
+				new Promise(function(resolve) {
 					oView.byId("DelegateMainForm").bindElement({
 						path: "/EntityTypes2(EntityType02_Property01='EntityType02Property01Value')",
 						events: {
@@ -126,7 +125,7 @@ sap.ui.define([
 					});
 				}),
 
-				new Promise(function (resolve) {
+				new Promise(function(resolve) {
 					oView.byId("DelegateGroupEntityType01").bindElement({
 						path: "/EntityTypes(Property01='propValue01',Property02='propValue02',Property03='propValue03')",
 						events: {
@@ -137,20 +136,20 @@ sap.ui.define([
 			);
 		},
 
-		_getUrlParameter: function (sParam) {
+		_getUrlParameter(sParam) {
 			var sReturn = "";
 			var sPageURL = window.location.search.substring(1);
-			var sURLVariables = sPageURL.split('&');
+			var sURLVariables = sPageURL.split("&");
 			for (var i = 0; i < sURLVariables.length; i++) {
-				var sParameterName = sURLVariables[i].split('=');
+				var sParameterName = sURLVariables[i].split("=");
 				if (sParameterName[0] === sParam) {
-					sReturn = sParameterName[1];
+					[, sReturn] = sParameterName;
 				}
 			}
 			return sReturn;
 		},
 
-		switchToAdaptationMode: function () {
+		switchToAdaptationMode() {
 			sap.ui.require([
 				"sap/ui/rta/api/startKeyUserAdaptation"
 			], function(startKeyUserAdaptation) {
@@ -160,7 +159,7 @@ sap.ui.define([
 			}.bind(this));
 		},
 
-		isDataReady: function () {
+		isDataReady() {
 			return Promise.all(this._data);
 		}
 	});

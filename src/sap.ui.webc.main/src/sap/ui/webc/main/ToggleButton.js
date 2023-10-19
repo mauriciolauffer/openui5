@@ -4,7 +4,7 @@
 
 // Provides control sap.ui.webc.main.ToggleButton.
 sap.ui.define([
-	"sap/ui/webc/common/WebComponent",
+	"sap/ui/core/webc/WebComponent",
 	"./library",
 	"sap/ui/core/EnabledPropagator",
 	"./thirdparty/ToggleButton"
@@ -12,6 +12,7 @@ sap.ui.define([
 	"use strict";
 
 	var ButtonDesign = library.ButtonDesign;
+	var ButtonType = library.ButtonType;
 
 	/**
 	 * Constructor for a new <code>ToggleButton</code>.
@@ -19,7 +20,7 @@ sap.ui.define([
 	 * @param {string} [sId] ID for the new control, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new control
 	 *
-	 * @extends sap.ui.webc.common.WebComponent
+	 * @extends sap.ui.core.webc.WebComponent
 	 * @class
 	 *
 	 * <h3>Overview</h3>
@@ -74,28 +75,15 @@ sap.ui.define([
 				},
 
 				/**
-				 * Defines the accessible aria name of the component.
+				 * Defines the accessible ARIA name of the component.
 				 */
 				accessibleName: {
-					type: "string"
+					type: "string",
+					defaultValue: undefined
 				},
 
 				/**
 				 * Defines the component design.
-				 *
-				 * <br>
-				 * <br>
-				 * <b>The available values are:</b>
-				 *
-				 *
-				 * <ul>
-				 *     <li><code>Default</code></li>
-				 *     <li><code>Emphasized</code></li>
-				 *     <li><code>Positive</code></li>
-				 *     <li><code>Negative</code></li>
-				 *     <li><code>Transparent</code></li>
-				 *     <li><code>Attention</code></li>
-				 * </ul>
 				 */
 				design: {
 					type: "sap.ui.webc.main.ButtonDesign",
@@ -109,7 +97,7 @@ sap.ui.define([
 					type: "boolean",
 					defaultValue: true,
 					mapping: {
-						type: "attribute",
+						type: "property",
 						to: "disabled",
 						formatter: "_mapEnabled"
 					}
@@ -144,20 +132,20 @@ sap.ui.define([
 				},
 
 				/**
-				 *
-				 */
-				submits: {
-					type: "boolean",
-					defaultValue: false
-				},
-
-				/**
 				 * Defines the content of the control
 				 */
 				text: {
 					type: "string",
 					defaultValue: "",
 					mapping: "textContent"
+				},
+
+				/**
+				 * Defines whether the button has special form-related functionality.
+				 */
+				type: {
+					type: "sap.ui.webc.main.ButtonType",
+					defaultValue: ButtonType.Button
 				},
 
 				/**

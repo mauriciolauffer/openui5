@@ -13,6 +13,7 @@ sap.ui.define([
 	"sap/ui/core/Item",
 	"sap/m/MenuListItem",
 	"sap/ui/core/CustomData",
+	"sap/ui/core/Control",
 	"sap/ui/core/Core"
 ], function(
 	merge,
@@ -28,6 +29,7 @@ sap.ui.define([
 	Item,
 	MenuListItem,
 	CustomData,
+	Control,
 	oCore
 ) {
 	"use strict";
@@ -229,6 +231,20 @@ sap.ui.define([
 		assert.strictEqual(jQuery('#' + this.sut._getVisualParent().getId()).length, 1, 'The menu is rendered on "openBy"');
 	});
 
+	QUnit.test('isOpen()', function (assert) {
+		// Assert that menu is closed
+		assert.strictEqual(this.sut._getVisualParent(), null, 'The menu is not initially rendered');
+		assert.strictEqual(this.sut.isOpen(), false, 'Menu is closed');
+
+		// Act - Open menu
+		this.sut.openBy();
+		this.clock.tick(1000);
+
+		// Assert menu is open
+		assert.strictEqual(jQuery('#' + this.sut._getVisualParent().getId()).length, 1, 'The menu is rendered on "openBy"');
+		assert.strictEqual(this.sut.isOpen(), true, 'Menu is open');
+	});
+
 	QUnit.test("visible", function(assert) {
 		//Act
 		this.sut.getItems()[0].setVisible(false);
@@ -300,29 +316,6 @@ sap.ui.define([
 		assert.equal(oItemFridge.getEnabled(), false, "menu item is not enabled");
 	});
 
-	QUnit.test('Opening/closing/reopening', function (assert) {
-		//Assert
-		assert.strictEqual(this.sut._getVisualParent(), null, 'The menu is not initially rendered');
-
-		this.sut.openBy();
-		this.clock.tick(1000);
-
-		//Assert
-		assert.strictEqual(jQuery('#' + this.sut._getVisualParent().getId()).length, 1, 'The menu is rendered on "openBy"');
-
-		this.sut.close();
-		this.clock.tick(1000);
-
-		//Assert
-		assert.strictEqual(jQuery('#' + this.sut._getVisualParent().getId()).length, 0, 'The menu is not rendered after "focus" is changed');
-
-		this.sut.openBy();
-		this.clock.tick(1000);
-
-		//Assert
-		assert.strictEqual(jQuery('#' + this.sut._getVisualParent().getId()).length, 1, 'The menu is rendered on "openBy"');
-	});
-
 	QUnit.test("close without open", function(assert) {
 		// arrange
 		var oMenu = new Menu();
@@ -380,6 +373,102 @@ sap.ui.define([
 
 		//assert
 		assert.strictEqual(this.sut.getItems().length, 4, "MenuItem's press event is now handled");
+	});
+
+	QUnit.test("Event handlers", function(assert) {
+		// Prepare
+		var oMenu = this.sut;
+
+		// Assert
+		assert.ok(oMenu.hasListeners("propertyChanged"), "The 'propertyChanged' event listener is properly attached");
+		assert.ok(oMenu.hasListeners("aggregationChanged"), "The 'aggregationChanged' event listener is properly attached");
+	});
+
+	QUnit.test("sap.m.MenuItem change events do not bubble out of the root sap.m.Menu", function(assert) {
+		// Prepare
+		var Container = Control.extend("my.Container", {
+			metadata: {
+				aggregations: {
+					content: "sap.ui.core.Control"
+				},
+				events: {
+					"propertyChanged": {}
+				}
+			},
+			renderer: {
+				apiVersion: 2,
+				render: function(rm, container) {
+					rm.openStart("div", container).openEnd();
+					rm.openStart("div").openEnd().text("Container").close("div");
+					container.getContent().forEach(function(oChild) { rm.renderControl(oChild); });
+					rm.close("div");
+				}
+			}
+		});
+
+		var oContainer = new Container();
+		oContainer.fnPropertyChanged = function() {};
+		var oContainerPropertyChangedSpy = this.spy(oContainer, "fnPropertyChanged");
+		oContainer.addContent(this.sut);
+		oContainer.attachEvent("propertyChanged", oContainer.fnPropertyChanged);
+		oContainer.placeAt("qunit-fixture");
+
+		// Act
+		this.sut.getItems()[0].getItems()[0].setText("New text");
+
+		// Assert
+		assert.ok(oContainerPropertyChangedSpy.notCalled, "sap.m.MenuItem events do bubble properly");
+
+		// Clean
+		oContainer.destroy();
+	});
+
+	QUnit.test("Clone operation", function(assert) {
+		// Prepare
+		var oMenu = this.sut,
+			oClone;
+
+		// Act
+		oMenu.openBy();
+		oClone = oMenu.clone();
+		oClone.getItems()[0].getItems()[0].setText("New text");
+
+		// Assert
+		assert.ok(true, "Error isn't thrown.");
+	});
+
+	QUnit.test("Adding event delegates", function(assert) {
+		// Prepare
+		var oMenuItem = new MenuItem({text: "text"}),
+			oBeforeDelegate = {
+				onBeforeRendering: function() {}
+			},
+			oDelegateContext = {test: "test"};
+
+		oMenuItem.addEventDelegate(oBeforeDelegate, oDelegateContext);
+
+		// Act
+		var oUnifiedItem = this.sut._createVisualMenuItemFromItem(oMenuItem);
+
+		// Assert
+		assert.deepEqual(oMenuItem.aDelegates[0].vThis, oDelegateContext, "The delegate context is supplied");
+		assert.strictEqual(oMenuItem.aDelegates.length, oUnifiedItem.aDelegates.length, "Equal number of delegates with the unified item");
+		assert.deepEqual(oMenuItem.aDelegates[0], oUnifiedItem.aDelegates[0], "The delegate is added to the unified item");
+		assert.deepEqual(oUnifiedItem.aDelegates[0].vThis, oDelegateContext, "The delegate context is supplied to the unified menu item");
+
+		// Act
+		var oListItem = this.sut._createMenuListItemFromItem(oMenuItem);
+
+		// Assert
+		assert.strictEqual(oMenuItem.aDelegates.length, oListItem.aDelegates.length, "Equal number of delegates with the list item");
+		assert.deepEqual(oMenuItem.aDelegates[0], oListItem.aDelegates[0], "The delegate is added to the list item");
+		assert.deepEqual(oListItem.aDelegates[0].vThis, oDelegateContext, "The delegate context is supplied to the list item");
+
+		// Act
+		oMenuItem.removeEventDelegate(oBeforeDelegate);
+
+		// Assert
+		assert.notOk(oMenuItem.aDelegates.length, "There are no delegates left");
 	});
 
 	QUnit.module("[PHONE] Custom mutators", {

@@ -1849,6 +1849,7 @@ sap.ui.define([
 				editable: false,
 				enabled: false,
 				placeholder: 'useful placeholder',
+				tooltip: 'useful tooltip',
 				min: 0,
 				max: 10,
 				value: 15
@@ -1867,6 +1868,8 @@ sap.ui.define([
 		assert.ok($Input.is("[aria-valuemax]"), "Internal Input has 'aria-valuemax' attribute");
 		assert.strictEqual($Input.attr("aria-valuemax"), "10", "Internal input's 'aria-valuemax' attribute has correct value");
 		/* Inherited InputBase aria properties */
+		assert.ok(oInput.$().is("[title]"), "Internal Input wrapper has 'title' attribute");
+		assert.strictEqual(oInput.$().attr("title"), 'useful tooltip', "Internal input's wrapper 'title' attribute has correct value");
 		assert.ok($Input.is("[name]"), "Internal Input has 'name' attribute");
 		assert.strictEqual($Input.attr("name"), 'useful name', "Internal input's 'name' attribute has correct value");
 		assert.ok($Input.is("[placeholder]"), "Internal Input has 'placeholder' attribute");
@@ -2044,8 +2047,22 @@ sap.ui.define([
 	});
 
 	QUnit.test("Increment/Decrement button", function (assert) {
-		assert.strictEqual(this.stepInput._getDecrementButton().getDecorative(), false, "Decrement icon isn't decorative");
-		assert.strictEqual(this.stepInput._getIncrementButton().getDecorative(), false, "Increment icon isn't decorative");
+		// assert
+		assert.ok(this.stepInput._getDecrementButton().getDecorative(), "Decrement icon is decorative");
+		assert.ok(this.stepInput._getIncrementButton().getDecorative(), "Increment icon is decorative");
+
+		// arrange
+		var oTouchStub = this.stub(Device, "support").value({touch: true});
+		var oDeviceStub = this.stub(Device, "system").value({phone: true});
+		var oStepInput = new StepInput();
+
+		// assert
+		assert.notOk(oStepInput._getDecrementButton().getDecorative(), "Decrement icon isn't decorative");
+		assert.notOk(oStepInput._getIncrementButton().getDecorative(), "Increment icon isn't decorative");
+
+		// clean
+		oTouchStub.restore();
+		oDeviceStub.restore();
 	});
 
 	QUnit.module("binding", {
@@ -2730,7 +2747,7 @@ sap.ui.define([
 
 		// assert
 		assert.strictEqual(this.stepInput._getInput().getValueState(), ValueState.Error, "value state is correct");
-		assert.strictEqual(this.stepInput._getInput().getValueStateText(), sap.ui.getCore().getLibraryResourceBundle("sap.ui.core").getText("EnterNumberMax", iMax), "value state text is correct");
+		assert.strictEqual(this.stepInput._getInput().getValueStateText(), sap.ui.getCore().getLibraryResourceBundle("sap.ui.core").getText("EnterNumberMax", [iMax]), "value state text is correct");
 	});
 
 	QUnit.test("_verifyValue prefers binding max constraint over max property setting", function(assert) {
@@ -2750,7 +2767,7 @@ sap.ui.define([
 		this.stepInput._verifyValue();
 
 		// assert
-		assert.strictEqual(this.stepInput._getInput().getValueStateText(), sap.ui.getCore().getLibraryResourceBundle("sap.ui.core").getText("EnterNumberMax", iMax), "value state text is correct");
+		assert.strictEqual(this.stepInput._getInput().getValueStateText(), sap.ui.getCore().getLibraryResourceBundle("sap.ui.core").getText("EnterNumberMax", [iMax]), "value state text is correct");
 	});
 
 	QUnit.test("If maximum or minimum binding constraint is set to 0, _getMin and _getMax return 0 too", function(assert) {

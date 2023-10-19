@@ -1,12 +1,13 @@
 sap.ui.define([
+	"sap/base/config",
 	"sap/base/Log",
 	"sap/base/i18n/ResourceBundle",
 	"sap/base/util/deepExtend",
-	"sap/base/util/UriParameters",
+	"sap/ui/base/config/URLConfigurationProvider",
 	"sap/ui/core/Component",
 	"sap/ui/core/Configuration",
+	"sap/ui/core/Lib",
 	"sap/ui/core/Manifest",
-	"sap/ui/core/UIComponent",
 	"sap/ui/core/UIComponentMetadata",
 	"sap/ui/model/json/JSONModel",
 	"sap/ui/model/odata/ODataModel",
@@ -16,14 +17,15 @@ sap.ui.define([
 	"sap/ui/model/xml/XMLModel",
 	"sap/ui/test/v2models/parent/CustomModel"
 ], function(
+	BaseConfig,
 	Log,
 	ResourceBundle,
 	deepExtend,
-	UriParameters,
+	URLConfigurationProvider,
 	Component,
 	Configuration,
+	Library,
 	Manifest,
-	UIComponent,
 	UIComponentMetadata,
 	JSONModel,
 	ODataModelV1,
@@ -42,10 +44,15 @@ sap.ui.define([
 	// might wrongly optimize the access (e.g. within jQuery) to override the fake server which fails those tests.
 	window.XMLHttpRequest = window["XML" + "HttpRequest"];
 
+	var privateLoaderAPI = sap.ui.loader._;
 
 	var Helper = {
 		spyModels: function() {
+			BaseConfig._.invalidate();
 			this.modelSpy = {
+				/**
+				 * @deprecated As of version 1.48
+				 */
 				odata: sinon.spy(sap.ui.model.odata, "ODataModel"),
 				odataV2: sinon.spy(sap.ui.model.odata.v2, "ODataModel"),
 				odataV4: sinon.spy(sap.ui.model.odata.v4, "ODataModel"),
@@ -66,34 +73,15 @@ sap.ui.define([
 			}
 		},
 		stubGetUriParameters: function(mMockParams) {
-			var oGetParameterStub = sinon.stub();
-
-			oGetParameterStub.withArgs('sap-client').returns(mMockParams && mMockParams.sapClient || 'foo');
-			oGetParameterStub.withArgs('sap-server').returns(mMockParams && mMockParams.sapServer || 'bar');
-			oGetParameterStub.withArgs('sap-system').returns(mMockParams && mMockParams.sapSystem);
-
-			if (mMockParams && mMockParams["preload-component-models"]) {
-				oGetParameterStub.withArgs('sap-ui-xx-preload-component-models').returns('true');
-			}
-
-			this.oGetUriParametersStub = sinon.stub(UriParameters, 'fromQuery').returns({
-				get: oGetParameterStub
-			// We need a call through as UriParameters could be used by other modules and needs the full interface
-			}).callThrough();
-
 			var sSAPLanguage = Configuration.getSAPLogonLanguage();
-
-			this.oConfigurationStub = sinon.stub(Configuration, 'getSAPParam');
-			this.oConfigurationStub.withArgs('sap-language').returns(mMockParams && mMockParams.sapLanguage || sSAPLanguage);
-			this.oConfigurationStub.withArgs('sap-client').returns(mMockParams && mMockParams.sapClient || 'foo');
-			this.oConfigurationStub.withArgs('sap-server').returns(mMockParams && mMockParams.sapServer || 'bar');
-			this.oConfigurationStub.withArgs('sap-system').returns(mMockParams && mMockParams.sapSystem);
+			BaseConfig._.invalidate();
+			this.oConfigurationStub = sinon.stub(URLConfigurationProvider, 'get');
+			this.oConfigurationStub.withArgs('sapLanguage').returns(mMockParams && mMockParams.sapLanguage || sSAPLanguage);
+			this.oConfigurationStub.withArgs('sapClient').returns(mMockParams && mMockParams.sapClient || 'foo');
+			this.oConfigurationStub.withArgs('sapServer').returns(mMockParams && mMockParams.sapServer || 'bar');
+			this.oConfigurationStub.withArgs('sapSystem').returns(mMockParams && mMockParams.sapSystem);
 		},
 		restoreGetUriParameters: function() {
-			if (this.oGetUriParametersStub && this.oGetUriParametersStub.restore) {
-				this.oGetUriParametersStub.restore();
-				this.oGetUriParametersStub = null;
-			}
 			if (this.oConfigurationStub && this.oConfigurationStub.restore) {
 				this.oConfigurationStub.restore();
 				this.oConfigurationStub = null;
@@ -171,6 +159,9 @@ sap.ui.define([
 						"sap/ui/core/CustomData",
 						"sap/ui/core/mvc/XMLView",
 						"sap/ui/core/routing/Router",
+						/**
+						 * @deprecated As of version 1.66
+						 */
 						"sap/ui/model/odata/ODataAnnotations"
 					], function() {
 						resolve();
@@ -200,18 +191,22 @@ sap.ui.define([
 
 			this.oComponent = oComponent;
 
-			// sap.ui.model.odata.ODataModel
-			sinon.assert.callCount(this.modelSpy.odata, 1);
+			/**
+			 * @deprecated As of version 1.48
+			 */
+			if ( this.modelSpy.odata ) {
+				// sap.ui.model.odata.ODataModel
+				sinon.assert.callCount(this.modelSpy.odata, 1);
 
-			// model: "ODataModel"
-			sinon.assert.calledWithExactly(this.modelSpy.odata, {
-				serviceUrl: '/path/to/odata/service?sap-client=foo&sap-server=bar',
-				annotationURI: [ '/path/to/odata/annotations/1', 'test-resources/sap/ui/core/qunit/component/testdata/v2models/parent/path/to/local/odata/annotations/2' ],
-				useBatch: false,
-				refreshAfterChange: false,
-				json: true
-			});
-
+				// model: "ODataModel"
+				sinon.assert.calledWithExactly(this.modelSpy.odata, {
+					serviceUrl: '/path/to/odata/service?sap-client=foo&sap-server=bar',
+					annotationURI: [ '/path/to/odata/annotations/1', 'test-resources/sap/ui/core/qunit/component/testdata/v2models/parent/path/to/local/odata/annotations/2' ],
+					useBatch: false,
+					refreshAfterChange: false,
+					json: true
+				});
+			}
 
 			// sap.ui.model.odata.v2.ODataModel
 			sinon.assert.callCount(this.modelSpy.odataV2, 9);
@@ -377,6 +372,9 @@ sap.ui.define([
 				"": ODataModelV2,
 				"default-with-annotations": ODataModelV2,
 				"old-uri-syntax": ODataModelV2,
+				/**
+				 * @deprecated As of version 1.48
+				 */
 				"ODataModel": ODataModelV1,
 				"v2-ODataModel": ODataModelV2,
 				"invalid-annotations": ODataModelV2,
@@ -419,6 +417,9 @@ sap.ui.define([
 		}).then(function(oComponent) {
 			this.oComponent = oComponent;
 
+			/**
+			 * @deprecated As of version 1.48
+			 */
 			// model: "ODataModel"
 			sinon.assert.calledWithExactly(this.modelSpy.odata, {
 				serviceUrl: '/path/to/odata/service;o=BLA_123?sap-client=foo&sap-server=bar',
@@ -494,6 +495,9 @@ sap.ui.define([
 		}).then(function(oComponent) {
 			this.oComponent = oComponent;
 
+			/**
+			 * @deprecated As of version 1.48
+			 */
 			// model: "ODataModel"
 			sinon.assert.calledWithExactly(this.modelSpy.odata, {
 				serviceUrl: '/path/to/odata/service;o=STARTUP456?sap-client=foo&sap-server=bar',
@@ -574,6 +578,9 @@ sap.ui.define([
 		}).then(function(oComponent) {
 			this.oComponent = oComponent;
 
+			/**
+			 * @deprecated As of version 1.48
+			 */
 			// V1 ODataModel should not be affected by cache tokens
 			// model: "ODataModel"
 			sinon.assert.calledWithExactly(this.modelSpy.odata, {
@@ -654,6 +661,9 @@ sap.ui.define([
 		}).then(function(oComponent) {
 			this.oComponent = oComponent;
 
+			/**
+			 * @deprecated As of version 1.48
+			 */
 			// V1 ODataModel should not be affected by cache tokens
 			// model: "ODataModel"
 			sinon.assert.calledWithExactly(this.modelSpy.odata, {
@@ -769,18 +779,23 @@ sap.ui.define([
 		}).then(function(oComponent) {
 			this.oComponent = oComponent;
 
-			// sap.ui.model.odata.ODataModel
-			sinon.assert.callCount(this.modelSpy.odata, 1);
+			/**
+			 * @deprecated As of version 1.48
+			 */
+			if ( this.modelSpy.odata ) {
+				// sap.ui.model.odata.ODataModel
+				sinon.assert.callCount(this.modelSpy.odata, 1);
 
-			// model: "ODataModel"
-			sinon.assert.calledWithExactly(this.modelSpy.odata, {
-				serviceUrl: '/path/to/odata/service?sap-client=foo&sap-server=bar',
-				annotationURI: [ '/path/to/odata/annotations/1', 'test-resources/sap/ui/core/qunit/component/testdata/v2models/parent/path/to/local/odata/annotations/2' ],
-				useBatch: true,
-				skipMetadataAnnotationParsing: true,
-				refreshAfterChange: false,
-				json: true
-			});
+				// model: "ODataModel"
+				sinon.assert.calledWithExactly(this.modelSpy.odata, {
+					serviceUrl: '/path/to/odata/service?sap-client=foo&sap-server=bar',
+					annotationURI: [ '/path/to/odata/annotations/1', 'test-resources/sap/ui/core/qunit/component/testdata/v2models/parent/path/to/local/odata/annotations/2' ],
+					useBatch: true,
+					skipMetadataAnnotationParsing: true,
+					refreshAfterChange: false,
+					json: true
+				});
+			}
 
 
 			// sap.ui.model.odata.v2.ODataModel
@@ -931,6 +946,9 @@ sap.ui.define([
 				"": ODataModelV2,
 				"default-with-annotations": ODataModelV2,
 				"old-uri-syntax": ODataModelV2,
+				/**
+				 * @deprecated As of version 1.48
+				 */
 				"ODataModel": ODataModelV1,
 				"v2-ODataModel": ODataModelV2,
 				"invalid-annotations": ODataModelV2,
@@ -969,8 +987,12 @@ sap.ui.define([
 		}).then(function(oComponent) {
 			this.oComponent = oComponent;
 
+			/**
+			 * @deprecated As of version 1.48
+			 */
 			// sap.ui.model.odata.ODataModel
 			sinon.assert.callCount(this.modelSpy.odata, 0);
+
 			// sap.ui.model.odata.v2.ODataModel
 			sinon.assert.callCount(this.modelSpy.odataV2, 0);
 			// sap.ui.model.json.JSONModel
@@ -1001,14 +1023,19 @@ sap.ui.define([
 		}).then(function(oComponent) {
 			this.oComponent = oComponent;
 
-			// sap.ui.model.odata.ODataModel
-			sinon.assert.callCount(this.modelSpy.odata, 1);
+			/**
+			 * @deprecated As of version 1.48
+			 */
+			if ( this.modelSpy.odata ) {
+				// sap.ui.model.odata.ODataModel
+				sinon.assert.callCount(this.modelSpy.odata, 1);
 
-			// model: "sfapi"
-			sinon.assert.calledWithExactly(this.modelSpy.odata, {
-				serviceUrl: 'test-resources/sap/ui/core/qunit/component/testdata/v1/some/odata/service',
-				json: true
-			});
+				// model: "sfapi"
+				sinon.assert.calledWithExactly(this.modelSpy.odata, {
+					serviceUrl: 'test-resources/sap/ui/core/qunit/component/testdata/v1/some/odata/service',
+					json: true
+				});
+			}
 
 
 			// sap.ui.model.resource.ResourceModel
@@ -1022,6 +1049,9 @@ sap.ui.define([
 			// check if models are set on component (and save them internally)
 			this.assertModelInstances({
 				"i18n": ResourceModel,
+				/**
+				 * @deprecated As of version 1.48
+				 */
 				"sfapi": ODataModelV1
 			});
 
@@ -1045,8 +1075,12 @@ sap.ui.define([
 		}).then(function(oComponent) {
 			this.oComponent = oComponent;
 
+			/**
+			 * @deprecated As of version 1.48
+			 */
 			// sap.ui.model.odata.ODataModel
 			sinon.assert.callCount(this.modelSpy.odata, 0);
+
 			// sap.ui.model.odata.v2.ODataModel
 			sinon.assert.callCount(this.modelSpy.odataV2, 0);
 			// sap.ui.model.json.JSONModel
@@ -1265,18 +1299,22 @@ sap.ui.define([
 			this.oLogSpy.restore();
 		},
 		assertAll: function(assert) {
-			// sap.ui.model.odata.ODataModel
-			sinon.assert.callCount(this.modelSpy.odata, 1);
+			/**
+			 * @deprecated As of version 1.48
+			 */
+			if ( this.modelSpy.odata ) {
+				// sap.ui.model.odata.ODataModel
+				sinon.assert.callCount(this.modelSpy.odata, 1);
 
-			// model: "ODataModel"
-			sinon.assert.calledWithExactly(this.modelSpy.odata, {
-				serviceUrl: '/path/to/odata/service?sap-client=foo&sap-server=bar',
-				annotationURI: [ '/path/to/odata/annotations/1', 'test-resources/sap/ui/core/qunit/component/testdata/v2models/parent/path/to/local/odata/annotations/2' ],
-				useBatch: false,
-				refreshAfterChange: false,
-				json: true
-			});
-
+				// model: "ODataModel"
+				sinon.assert.calledWithExactly(this.modelSpy.odata, {
+					serviceUrl: '/path/to/odata/service?sap-client=foo&sap-server=bar',
+					annotationURI: [ '/path/to/odata/annotations/1', 'test-resources/sap/ui/core/qunit/component/testdata/v2models/parent/path/to/local/odata/annotations/2' ],
+					useBatch: false,
+					refreshAfterChange: false,
+					json: true
+				});
+			}
 
 			// sap.ui.model.odata.v2.ODataModel
 			sinon.assert.callCount(this.modelSpy.odataV2, 9);
@@ -1423,6 +1461,9 @@ sap.ui.define([
 				"": ODataModelV2,
 				"default-with-annotations": ODataModelV2,
 				"old-uri-syntax": ODataModelV2,
+				/**
+				 * @deprecated As of version 1.48
+				 */
 				"ODataModel": ODataModelV1,
 				"v2-ODataModel": ODataModelV2,
 				"invalid-annotations": ODataModelV2,
@@ -1487,12 +1528,12 @@ sap.ui.define([
 			this.oLogErrorSpy = sinon.spy(Log, "error");
 			this.oLogWarningSpy = sinon.spy(Log, "warning");
 			// enable async preloading
-			this.oConfigurationGetPreloadStub = sinon.stub(Configuration, "getPreload").returns("");
+			this.oConfigurationGetPreloadStub = sinon.stub(Library, "getPreloadMode").returns("");
 
 			// unload not existing module to prevent different logs
 			// depending on cached 404 response or not
 			// (see "class-not-loaded" model in manifest below)
-			sap.ui.loader._.unloadResources("sap/ui/sample/model/MyModel.js", false, true);
+			privateLoaderAPI.unloadResources("sap/ui/sample/model/MyModel.js", false, true);
 
 			//setup fake server
 			var oManifest = this.oManifest = {
@@ -1680,7 +1721,7 @@ sap.ui.define([
 				"[\"sap.ui5\"][\"models\"][\"class-not-loaded\"]",
 				this.oComponent.getMetadata().getComponentName());
 
-			assert.ok(this.oComponent.getMetadata() instanceof sap.ui.core.UIComponentMetadata, "The metadata is instance of UIComponentMetadata");
+			assert.ok(this.oComponent.getMetadata() instanceof UIComponentMetadata, "The metadata is instance of UIComponentMetadata");
 			assert.ok(this.oComponent.getManifest(), "Manifest is available");
 			assert.deepEqual(this.oComponent.getManifest(), this.oManifest, "Manifest matches the manifest behind manifestUrl");
 
@@ -1800,7 +1841,7 @@ sap.ui.define([
 				"[\"sap.ui5\"][\"models\"][\"class-not-loaded\"]",
 				this.oComponent.getMetadata().getComponentName());
 
-			assert.ok(this.oComponent.getMetadata() instanceof sap.ui.core.UIComponentMetadata, "The metadata is instance of UIComponentMetadata");
+			assert.ok(this.oComponent.getMetadata() instanceof UIComponentMetadata, "The metadata is instance of UIComponentMetadata");
 			assert.ok(this.oComponent.getManifest(), "Manifest is available");
 			assert.deepEqual(this.oComponent.getManifest(), this.oManifest, "Manifest matches the manifest behind manifestUrl");
 
@@ -2607,7 +2648,7 @@ sap.ui.define([
 	QUnit.module("sap.ui.model.v2.ODataModel (with cacheTokens)", {
 		beforeEach: function() {
 			bindHelper.apply(this);
-
+			BaseConfig._.invalidate();
 			this.oLogErrorSpy = sinon.spy(Log, "error");
 			this.oLogWarningSpy = sinon.spy(Log, "warning");
 		},
@@ -3761,6 +3802,9 @@ sap.ui.define([
 						"sap/ui/core/CustomData",
 						"sap/ui/core/mvc/XMLView",
 						"sap/ui/core/routing/Router",
+						/**
+						 * @deprecated As of version 1.66
+						 */
 						"sap/ui/model/odata/ODataAnnotations"
 					], function() {
 						resolve();
@@ -3798,7 +3842,7 @@ sap.ui.define([
 			if ( TestComponent ) {
 				delete TestComponent.getMetadata()._oManifest;
 			}
-			sap.ui.loader._.unloadResources('sap/ui/test/v2models/ui5urls/Component.js', true, true, true);
+			privateLoaderAPI.unloadResources('sap/ui/test/v2models/ui5urls/Component.js', true, true, true);
 
 			// remove the previous path-configs/resource-roots
 			sap.ui.loader.config({
@@ -3827,12 +3871,12 @@ sap.ui.define([
 			metadataUrlParams: {"sap-language": "EN"},
 			annotationURI: [
 				'/path/to/odata/annotations/1?sap-language=EN&sap-client=foo',
-				sap.ui.loader._.resolveURL('test-resources/sap/ui/core/qunit/component/testdata/v2models/ui5Urls/annotations/2?sap-language=EN&sap-client=foo'),
-				sap.ui.loader._.resolveURL('test-resources/sap/ui/core/qunit/component/testdata/v2models/ui5Urls/another/name/space/annotations/3?sap-language=EN&sap-client=foo'),
-				sap.ui.loader._.resolveURL('test-resources/sap/ui/core/qunit/component/testdata/v2models/ui5Urls/cool/name/space/annotations/4.xml?sap-language=EN&sap-client=foo'),
-				sap.ui.loader._.resolveURL('resources/unkown.name.space/annotations/5.xml?sap-language=EN&sap-client=foo'),
-				sap.ui.loader._.resolveURL('resources/another/unkown/name/space/annotations/6.xml?sap-language=EN&sap-client=foo'),
-				sap.ui.loader._.resolveURL('test-resources/sap/ui/core/qunit/component/testdata/v2models/ui5Urls/resourceRoots/subfolder/annotations/file7.xml?sap-language=EN&sap-client=foo')
+				privateLoaderAPI.resolveURL('test-resources/sap/ui/core/qunit/component/testdata/v2models/ui5Urls/annotations/2?sap-language=EN&sap-client=foo'),
+				privateLoaderAPI.resolveURL('test-resources/sap/ui/core/qunit/component/testdata/v2models/ui5Urls/another/name/space/annotations/3?sap-language=EN&sap-client=foo'),
+				privateLoaderAPI.resolveURL('test-resources/sap/ui/core/qunit/component/testdata/v2models/ui5Urls/cool/name/space/annotations/4.xml?sap-language=EN&sap-client=foo'),
+				privateLoaderAPI.resolveURL('resources/unkown.name.space/annotations/5.xml?sap-language=EN&sap-client=foo'),
+				privateLoaderAPI.resolveURL('resources/another/unkown/name/space/annotations/6.xml?sap-language=EN&sap-client=foo'),
+				privateLoaderAPI.resolveURL('test-resources/sap/ui/core/qunit/component/testdata/v2models/ui5Urls/resourceRoots/subfolder/annotations/file7.xml?sap-language=EN&sap-client=foo')
 			],
 			useBatch: false,
 			refreshAfterChange: false

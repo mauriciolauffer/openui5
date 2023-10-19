@@ -4,11 +4,12 @@ sap.ui.define([
 	"sap/ui/model/FilterOperator",
 	"sap/ui/model/json/JSONModel",
 	"sap/ui/mdc/condition/Condition",
-	"sap/ui/mdc/enum/EditMode",
+	"sap/ui/mdc/enums/FieldEditMode",
+	"sap/ui/mdc/enums/OperatorName",
 	"sap/m/library",
 	"sap/m/MessageToast",
 	"sap/ui/core/Core"
-], function(Controller, Filter, FilterOperator, JSONModel, Condition, EditMode, mobileLibrary, MessageToast, oCore) {
+], function(Controller, Filter, FilterOperator, JSONModel, Condition, FieldEditMode, OperatorName, mobileLibrary, MessageToast, oCore) {
 	"use strict";
 
 	var ButtonType = mobileLibrary.ButtonType;
@@ -44,7 +45,8 @@ sap.ui.define([
 				},
 				field: {
 					value: "22134T",
-					additionalValue: null
+					additionalValue: null,
+					additionalDateValue: null
 				},
 				collectiveSearch: [
 								   {key: "1", description: "Search 1"},
@@ -186,15 +188,16 @@ sap.ui.define([
 			var oField = this.byId(sId);
 			var bPressed = oEvent.getParameter("pressed");
 			if (bPressed) {
-				oField.setEditMode(EditMode.Display);
+				oField.setEditMode(FieldEditMode.Display);
 			} else {
-				oField.setEditMode(EditMode.Editable);
+				oField.setEditMode(FieldEditMode.Editable);
 			}
 		},
 
 		handleButton: function(oEvent) {
 			var oApp = this.byId("MyApp");
-			var sKey = oEvent.getParameter("key");
+			var oItem = oEvent.getParameter("item");
+			var sKey = oItem.getKey();
 			var oCurrentPage = oApp.getCurrentPage();
 			var oNewPage = this.byId(sKey);
 			var sPageId = oNewPage.getId();
@@ -204,15 +207,15 @@ sap.ui.define([
 
 		handleIconPress: function(oEvent) {
 			var oButton = oEvent.oSource;
-			var oFieldHelp = oButton.getParent().getParent();
+			var oValueHelp = oButton.getParent().getParent();
 			var vKey = oButton.getIcon().substr(11);
-			oFieldHelp.fireSelectEvent([Condition.createCondition("EQ", [vKey])]);
+			oValueHelp.fireSelectEvent([Condition.createCondition(OperatorName.EQ, [vKey])]);
 		},
 
 		handleBeforeOpen: function(oEvent) {
-			var oFieldHelp = oEvent.oSource;
-			var aConditions = oFieldHelp.getConditions();
-			var aButtons = oFieldHelp.getContent().getItems();
+			var oValueHelp = oEvent.oSource;
+			var aConditions = oValueHelp.getConditions();
+			var aButtons = oValueHelp.getContent().getItems();
 			var vKey;
 
 			if (aConditions.length === 1) {

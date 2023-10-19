@@ -20,14 +20,13 @@ sap.ui.define([
 	 * @extends sap.ui.core.Control
 	 * @version ${version}
 	 * @constructor
-	 * @abstract
 	 * @private
 	 * @ui5-restricted sap.ui.mdc
 	 * @since 1.95.0
 	 * @experimental As of version 1.95
 	 * @alias sap.ui.mdc.valuehelp.base.DialogTab
 	 */
-	var DialogTab = Control.extend("sap.ui.mdc.valuehelp.base.DialogTab", /** @lends sap.ui.mdc.valuehelp.base.DialogTab.prototype */
+	const DialogTab = Control.extend("sap.ui.mdc.valuehelp.base.DialogTab", /** @lends sap.ui.mdc.valuehelp.base.DialogTab.prototype */
 	{
 		metadata: {
 			library: "sap.ui.mdc",
@@ -50,7 +49,7 @@ sap.ui.define([
 						/**
 						 * Type of the selection change (add, remove)
 						 */
-						type: { type: "sap.ui.mdc.enum.SelectType" },
+						type: { type: "sap.ui.mdc.enums.ValueHelpSelectionType" },
 						/**
 						 * Changed conditions
 						 *
@@ -82,7 +81,7 @@ sap.ui.define([
 				oRm.openStart("div", oControl);
 				oRm.class("sapUiMdcDialogTab");
 				oRm.openEnd();
-				var oContent = oControl.getContent();
+				const oContent = oControl.getContent();
 				if (oContent) {
 					oRm.renderControl(oContent);
 				}

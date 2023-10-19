@@ -80,6 +80,9 @@ sap.ui.define([
 
 	//*****************************************************************************************************************
 	QUnit.module("sap.ui.model.type.Date", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach : function() {
 			Configuration.setLanguage("en-US");
 		},
@@ -206,9 +209,10 @@ sap.ui.define([
 	QUnit.test("getModelFormat() with timestamp", function (assert) {
 		var oDateType = new DateType({source: {pattern: "timestamp"}}),
 			oDateValue = UI5Date.getInstance(2000, 1, 1),
-			oFormat = oDateType.getModelFormat();
+			oParsedTimestamp = oDateType.getModelFormat().parse(oDateValue.getTime());
 
-		assert.ok(oFormat.parse(oDateValue.getTime()) instanceof Date);
+		assert.ok(oParsedTimestamp instanceof Date);
+		assert.strictEqual(oParsedTimestamp.getDate(), 1);
 	});
 
 	//*****************************************************************************************************************
@@ -222,5 +226,15 @@ sap.ui.define([
 		assert.strictEqual(oDateValue.getFullYear(), 2002);
 		assert.strictEqual(oDateValue.getMonth(), 0);
 		assert.strictEqual(oDateValue.getDate(), 2);
+	});
+
+	//*****************************************************************************************************************
+	QUnit.test("getPlaceholderText", function (assert) {
+		var oType = new DateType();
+
+		this.mock(oType.oOutputFormat).expects("getPlaceholderText").withExactArgs().returns("~placeholder");
+
+		// code under test
+		assert.strictEqual(oType.getPlaceholderText(), "~placeholder");
 	});
 });

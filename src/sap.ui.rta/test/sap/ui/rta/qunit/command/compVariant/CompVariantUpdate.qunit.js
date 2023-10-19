@@ -17,10 +17,10 @@ sap.ui.define([
 	var sandbox = sinon.createSandbox();
 
 	QUnit.module("Given a control", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oControl = new Control();
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oControl.destroy();
 			sandbox.restore();
 		}
@@ -34,7 +34,7 @@ sap.ui.define([
 			this.oControl.updateVariant = oUpdateControlStub;
 			var oSetModifiedStub = sandbox.stub();
 			this.oControl.setModified = oSetModifiedStub;
-			this.oControl.getModified = function () {
+			this.oControl.getModified = function() {
 				return true;
 			};
 			var oUpdateFlAPIStub = sandbox.stub(SmartVariantManagementWriteAPI, "saveVariantContent");

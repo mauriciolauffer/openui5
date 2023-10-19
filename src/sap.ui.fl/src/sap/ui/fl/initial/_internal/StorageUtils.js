@@ -3,19 +3,17 @@
  */
 
 sap.ui.define([
-	"sap/base/security/encodeURLParameters",
 	"sap/base/Log",
+	"sap/ui/fl/initial/_internal/FlexConfiguration",
 	"sap/ui/fl/Layer",
 	"sap/ui/fl/LayerUtils",
-	"sap/base/util/isEmptyObject",
-	"sap/ui/core/Configuration"
-], function (
-	encodeURLParameters,
+	"sap/base/util/isEmptyObject"
+], function(
 	Log,
+	FlexConfiguration,
 	Layer,
 	LayerUtils,
-	isEmptyObject,
-	Configuration
+	isEmptyObject
 ) {
 	"use strict";
 
@@ -71,7 +69,7 @@ sap.ui.define([
 		if (!aLayers) {
 			aValidLayers = aConnectorLayers;
 		} else {
-			aValidLayers = aLayers.filter(function (sLayer) {
+			aValidLayers = aLayers.filter(function(sLayer) {
 				return aConnectorLayers.indexOf(sLayer) !== -1 || aConnectorLayers[0] === "ALL";
 			});
 		}
@@ -79,12 +77,16 @@ sap.ui.define([
 	}
 
 	function _getConnectorConfigurations(sNameSpace, bLoadConnectors, mConnectors) {
-		return mConnectors.map(function (mConnectorConfiguration) {
+		return mConnectors.map(function(mConnectorConfiguration) {
 			var sConnector = mConnectorConfiguration.connector;
 			var sConnectorModuleName;
 
 			// the applyConnector / loadConnector is used for a custom connector
-			if (!mConnectorConfiguration.loadConnector && !mConnectorConfiguration.applyConnector && !mConnectorConfiguration.loadConnector) {
+			if (
+				!mConnectorConfiguration.loadConnector
+				&& !mConnectorConfiguration.applyConnector
+				&& !mConnectorConfiguration.loadConnector
+			) {
 				sConnectorModuleName = bLoadConnectors ? mConnectorNamespaces.load[sConnector] : mConnectorNamespaces.write[sConnector];
 			} else if (bLoadConnectors) {
 				// fallback for configured custom connectors which specify a apply connector
@@ -101,9 +103,9 @@ sap.ui.define([
 	function _requireConnectorsByConfiguration(sNameSpace, bLoadConnectors, mConnectors) {
 		var aConnectors = _getConnectorConfigurations(sNameSpace, bLoadConnectors, mConnectors);
 
-		return new Promise(function (resolve) {
-			sap.ui.require(aConnectors, function () {
-				Array.from(arguments).forEach(function (oConnector, iIndex) {
+		return new Promise(function(resolve) {
+			sap.ui.require(aConnectors, function(...aArgs) {
+				aArgs.forEach(function(oConnector, iIndex) {
 					if (!mConnectors[iIndex].layers) {
 						mConnectors[iIndex].layers = oConnector.layers;
 					} else {
@@ -129,8 +131,8 @@ sap.ui.define([
 		 * @param {boolean} bLoadConnectors Flag to determine if the loading scenario is used and the StaticFileConnector should be included
 		 * @returns {Promise<map[]>} Resolving with a list of maps for all configured connectors and their requested modules
 		 */
-		getConnectors: function (sNameSpace, bLoadConnectors) {
-			var aConfiguredConnectors = Configuration.getFlexibilityServices();
+		getConnectors(sNameSpace, bLoadConnectors) {
+			var aConfiguredConnectors = FlexConfiguration.getFlexibilityServices();
 			var mConnectors = [];
 			if (bLoadConnectors) {
 				mConnectors = [STATIC_FILE_CONNECTOR_CONFIGURATION];
@@ -142,22 +144,21 @@ sap.ui.define([
 		},
 
 		/**
-		 * Provides all mandatory connectors required to read data for the initial case; these are the static file connector as well as all connectors
-		 * mentioned in the core-Configuration.
+		 * Provides all mandatory connectors required to read data for the initial case; these are the static
+		 * file connector as well as all connectors mentioned in the core-Configuration.
 		 *
 		 * @returns {Promise<map[]>} Resolving with a list of maps for all configured initial connectors and their requested modules
 		 */
-		getLoadConnectors: function () {
+		getLoadConnectors() {
 			return this.getConnectors(INITIAL_CONNECTOR_NAME_SPACE, true);
 		},
-
 
 		/**
 		 * Provides only the static file connector.
 		 *
 		 * @returns {Promise<map[]>} Resolving with a list of maps static file connector and its requested modules
 		 */
-		getStaticFileConnector: function () {
+		getStaticFileConnector() {
 			return _requireConnectorsByConfiguration(INITIAL_CONNECTOR_NAME_SPACE, true, [STATIC_FILE_CONNECTOR_CONFIGURATION]);
 		},
 
@@ -170,9 +171,11 @@ sap.ui.define([
 		 * @param {string} sErrorMessage Error messages retrieved from the endpoint
 		 * @returns {object} oResponse Response from the endpoint
 		 */
-		logAndResolveDefault: function (oResponse, oConnectorConfig, sFunctionName, sErrorMessage) {
-			Log.error("Connector (" + oConnectorConfig.connector + ") failed call '" + sFunctionName + "': "
-				+ sErrorMessage + "\nApplication startup continues without data from this storage.");
+		logAndResolveDefault(oResponse, oConnectorConfig, sFunctionName, sErrorMessage) {
+			Log.error(
+				`Connector (${oConnectorConfig.connector}) failed call '${sFunctionName}': ${sErrorMessage}
+				Application startup continues without data from this storage.`
+			);
 			return oResponse;
 		},
 
@@ -182,14 +185,15 @@ sap.ui.define([
 		 * @param {object} mGroupedFlexObjects Grouped flexibility objects
 		 * @returns {array} Array of non-empty responses sorted by layer
 		 */
-		filterAndSortResponses: function (mGroupedFlexObjects) {
+		filterAndSortResponses(mGroupedFlexObjects) {
 			var aResponses = [];
-			Object.keys(mGroupedFlexObjects).forEach(function (sLayer) {
+			Object.keys(mGroupedFlexObjects).forEach(function(sLayer) {
 				aResponses.push(mGroupedFlexObjects[sLayer]);
 			});
 
-			aResponses = aResponses.filter(function (oResponse) {
+			aResponses = aResponses.filter(function(oResponse) {
 				return oResponse.changes.length > 0
+					|| oResponse.appDescriptorChanges.length > 0
 					|| oResponse.variants.length > 0
 					|| oResponse.variantChanges.length > 0
 					|| oResponse.variantManagementChanges.length > 0
@@ -200,14 +204,14 @@ sap.ui.define([
 					|| oResponse.comp.standardVariants.length > 0;
 			});
 
-			aResponses.sort(function (a, b) {
+			aResponses.sort(function(a, b) {
 				return a.index - b.index;
 			});
 
 			return aResponses;
 		},
 
-		sortFlexObjects: function(aFlexObjects) {
+		sortFlexObjects(aFlexObjects) {
 			aFlexObjects.sort(function(oChangeA, oChangeB) {
 				return new Date(oChangeA.creation) - new Date(oChangeB.creation);
 			});
@@ -219,18 +223,18 @@ sap.ui.define([
 		 * @param {array} aFlexObjects Flexibility objects
 		 * @returns {object} Map of grouped flexibility objects per layer
 		 */
-		getGroupedFlexObjects: function (aFlexObjects) {
+		getGroupedFlexObjects(aFlexObjects) {
 			this.sortFlexObjects(aFlexObjects);
 			var mGroupedFlexObjects = {};
 
 			// build empty groups
-			Object.keys(Layer).forEach(function (sLayer) {
+			Object.keys(Layer).forEach(function(sLayer) {
 				mGroupedFlexObjects[sLayer] = this.getEmptyFlexDataResponse();
 				mGroupedFlexObjects[sLayer].index = LayerUtils.getLayerIndex(sLayer);
 			}.bind(this));
 
 			// fill groups
-			aFlexObjects.forEach(function (oFlexObject) {
+			aFlexObjects.forEach(function(oFlexObject) {
 				var sLayer = oFlexObject.layer;
 
 				if (oFlexObject.fileType === "ctrl_variant" && oFlexObject.variantManagementReference) {
@@ -277,7 +281,7 @@ sap.ui.define([
 		 * @ui5-restricted sap.ui.fl.apply_internal.flexState.FlexState, sap.ui.fl.initial._internal.connectors.ObjectPathConnector,
 		 * 	sap.ui.fl.apply_internal
 		 */
-		getEmptyFlexDataResponse: function () {
+		getEmptyFlexDataResponse() {
 			return Object.assign({}, {
 				appDescriptorChanges: [],
 				changes: [],
@@ -302,7 +306,7 @@ sap.ui.define([
 		 * @returns {boolean} Indicated if storage response contains flex objects
 		 * @ui5-restricted sap.ui.fl
 		 */
-		isStorageResponseFilled: function (oResponse) {
+		isStorageResponseFilled(oResponse) {
 			return Object.keys(oResponse || {}).some(function(sKey) {
 				if (Array.isArray(oResponse[sKey])) {
 					return oResponse[sKey].length !== 0;

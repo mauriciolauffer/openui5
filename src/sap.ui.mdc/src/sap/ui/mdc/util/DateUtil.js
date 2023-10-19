@@ -3,19 +3,19 @@
  */
 sap.ui.define([
 		'sap/ui/core/library',
-		'sap/ui/core/date/UniversalDate',
-		'sap/ui/mdc/enum/BaseType',
+		'sap/ui/core/date/UI5Date',
+		'sap/ui/mdc/enums/BaseType',
 		'sap/base/util/merge'
 	],
 	function(
 			coreLibrary,
-			UniversalDate,
+			UI5Date,
 			BaseType,
 			merge
 	) {
 		"use strict";
 
-		var CalendarType = coreLibrary.CalendarType;
+		const CalendarType = coreLibrary.CalendarType;
 
 		/**
 		 * Utility class with functions for Date conversion
@@ -27,75 +27,7 @@ sap.ui.define([
 		 * @since 1.74.0
 		 * @alias sap.ui.mdc.util.DateUtil
 		 */
-		var DateUtil = {
-
-				/**
-				 * Converts a data type specific date to a UniversalDate.
-				 *
-				 * @param {any} vDate Date
-				 * @param {sap.ui.model.SimpleType} oType Data type
-				 * @param {sap.ui.mdc.enum.BaseType} [sBaseType] Basic type
-				 * @return {sap.ui.core.date.UniversalDate} UniversalDate
-				 * @private
-				 * @ui5-restricted sap.ui.mdc
-				 * @since 1.74.0
-				 */
-				typeToUniversalDate: function(vDate, oType, sBaseType) {
-
-					var sPattern;
-					if (sBaseType && sBaseType === BaseType.DateTime) {
-						sPattern = "yyyyMMdd-HHmmssSSS";
-					} else {
-						sPattern = "yyyyMMdd";
-					}
-					var sDate = this.typeToString(vDate, oType, sPattern);
-					var iYear = parseInt(sDate.slice(0,4));
-					var iMonth = parseInt(sDate.slice(4,6)) - 1;
-					var iDate = parseInt(sDate.slice(6,8));
-					var iHour = sBaseType === BaseType.DateTime ? parseInt(sDate.slice(9,11)) : 0;
-					var iMinute = sBaseType === BaseType.DateTime ? parseInt(sDate.slice(11,13)) : 0;
-					var iSecond = sBaseType === BaseType.DateTime ? parseInt(sDate.slice(13,15)) : 0;
-					var iMillisecond = sBaseType === BaseType.DateTime ? parseInt(sDate.slice(15,18)) : 0;
-					var oUniversalDate = new UniversalDate(UniversalDate.UTC(iYear, iMonth, iDate, iHour, iMinute, iSecond, iMillisecond));
-
-					return oUniversalDate;
-
-				},
-
-				/**
-				 * Converts a UniversalDate to data type specific date.
-				 *
-				 * @param {sap.ui.core.date.UniversalDate} oDate UniversalDate
-				 * @param {sap.ui.model.SimpleType} oType Data type
-				 * @param {sap.ui.mdc.enum.BaseType} [sBaseType] Basic type
-				 * @return {any} type specific date
-				 * @private
-				 * @ui5-restricted sap.ui.mdc
-				 * @since 1.74.0
-				 */
-				universalDateToType: function(oDate, oType, sBaseType) {
-
-					var iYear = oDate.getUTCFullYear();
-					var iMonth = oDate.getUTCMonth() + 1;
-					var iDate = oDate.getUTCDate();
-					var sYear = (iYear < 10 ? "0" : "") + (iYear < 100 ? "0" : "") + (iYear < 1000 ? "0" : "") + iYear.toString();
-					var sDate = sYear + ((iMonth < 10) ? "0" : "") + iMonth.toString() + ((iDate < 10) ? "0" : "") + iDate.toString();
-					var sPattern;
-					if (sBaseType && sBaseType === BaseType.DateTime) {
-						sPattern = "yyyyMMdd-HHmmssSSS";
-						var iHour = oDate.getUTCHours();
-						var iMinute = oDate.getUTCMinutes();
-						var iSecond = oDate.getUTCSeconds();
-						var iMillisecond = oDate.getUTCMilliseconds();
-						sDate = sDate + "-" + ((iHour < 10) ? "0" : "") + iHour.toString() + ((iMinute < 10) ? "0" : "") + iMinute.toString() + ((iSecond < 10) ? "0" : "") + iSecond.toString() + ((iMillisecond < 100) ? "0" : "") + ((iMillisecond < 10) ? "0" : "") + iMillisecond.toString();
-					} else {
-						sPattern = "yyyyMMdd";
-					}
-					var vDate = this.stringToType(sDate, oType, sPattern);
-
-					return vDate;
-
-				},
+		const DateUtil = {
 
 				/**
 				 * "Clones" a given data type to use a given pattern.
@@ -109,9 +41,9 @@ sap.ui.define([
 				 */
 				createInternalType: function(oType, sPattern) {
 
-					var Type = sap.ui.require(oType.getMetadata().getName().replace(/\./g, "/")); // type is already loaded because instance is provided
-					var oConstraints = merge({}, oType.getConstraints());
-					var oFormatOptions = merge({}, oType.getFormatOptions());
+					const Type = sap.ui.require(oType.getMetadata().getName().replace(/\./g, "/")); // type is already loaded because instance is provided
+					const oConstraints = merge({}, oType.getConstraints());
+					const oFormatOptions = merge({}, oType.getFormatOptions());
 
 					if (oFormatOptions.style) {
 						delete oFormatOptions.style;
@@ -139,8 +71,8 @@ sap.ui.define([
 				 */
 				showTimezone: function(oType) {
 
-					var oFormatOptions = oType.getFormatOptions();
-					var fnCheckProperty = function(oFormatOptions, sProperty) {
+					const oFormatOptions = oType.getFormatOptions();
+					const fnCheckProperty = function(oFormatOptions, sProperty) {
 						return !oFormatOptions.hasOwnProperty(sProperty) || oFormatOptions[sProperty]; // if not set, showTimezone=true, showDate=true or showTime=true is default
 					};
 
@@ -161,8 +93,8 @@ sap.ui.define([
 				 */
 				typeToString: function(vDate, oType, sPattern) {
 
-					var oInternalType = this.createInternalType(oType, sPattern);
-					var sDate = oInternalType.formatValue(vDate, "string");
+					const oInternalType = this.createInternalType(oType, sPattern);
+					const sDate = oInternalType.formatValue(vDate, "string");
 					return sDate;
 
 				},
@@ -180,51 +112,120 @@ sap.ui.define([
 				 */
 				stringToType: function(sDate, oType, sPattern) {
 
-					var oInternalType = this.createInternalType(oType, sPattern);
-					var vDate = oInternalType.parseValue(sDate, "string");
+					const oInternalType = this.createInternalType(oType, sPattern);
+					const vDate = oInternalType.parseValue(sDate, "string");
 					return vDate;
 
 				},
 
 				/**
-				 * Convert time part of a JS Date object from local time to UTC
+				 * Converts a data type representation of a dateTime to a ISO-string.
 				 *
-				 * Returns a new date object, where the UTC time is set to the same value as
-				 * the local time on the original date object.
-				 *
-				 * If a date has a local time of to 14:00 GMT+0200, the resulting date will have
-				 * 14:00 UTC on the same day.
-				 *
-				 * @param {Date} oDate the date to convert
-				 * @returns {Date} a new date object with converted time
+				 * @param {any} vDate Date
+				 * @param {sap.ui.model.SimpleType} oType Data type
+				 * @param {sap.ui.mdc.enums.BaseType} [sBaseType] Basic type
+				 * @return {string} Date as ISOString
 				 * @private
+				 * @ui5-restricted sap.ui.mdc
+				 * @since 1.112.0
 				 */
-				localToUtc: function(oDate) {
-					return new Date( Date.UTC(oDate.getFullYear(), oDate.getMonth(), oDate.getDate(),
-							oDate.getHours(), oDate.getMinutes(), oDate.getSeconds(), oDate.getMilliseconds())
-					);
+				typeToISO: function(vDate, oType, sBaseType) {
+
+					if (oType.getISOStringFromModelValue) {
+						return oType.getISOStringFromModelValue(vDate);
+					} else { // old types cannot convert to ISO by itself
+						let oDate = this.typeToDate(vDate, oType, sBaseType);
+
+						if (oType.getFormatOptions().UTC) { // in UTC date we need to bring the local date to UTC
+							oDate = UI5Date.getInstance(Date.UTC(oDate.getFullYear(), oDate.getMonth(), oDate.getDate(), oDate.getHours(), oDate.getMinutes(), oDate.getSeconds(), oDate.getMilliseconds()));
+						}
+
+						return oDate.toISOString();
+					}
+
 				},
 
 				/**
-				 * Convert time part of a JS Date object from UTC to local time
+				 * Converts a ISO representation of a DateTime into the data-type representation.
 				 *
-				 * Returns a new date object, where the local time is set to the same value as
-				 * the UTC time on the original date object.
+				 * @param {string} sISODate Date
+				 * @param {sap.ui.model.SimpleType} oType Data type
+				 * @param {sap.ui.mdc.enums.BaseType} [sBaseType] Basic type
+				 * @return {any} Date for type
+				 * @private
+				 * @ui5-restricted sap.ui.mdc
+				 * @since 1.112.0
+				 */
+				ISOToType: function(sISODate, oType, sBaseType) {
+
+					if (oType.getModelValueFromISOString) {
+						return oType.getModelValueFromISOString(sISODate);
+					} else { // old types cannot convert to ISO by itself
+						let oDate = UI5Date.getInstance(sISODate); // can also interpret string with pattern "yyyy-MM-ddTHH:mm:ssZ"
+
+						if (oType.getFormatOptions().UTC) { // in UTC date we need to bring the UTC to local date
+							oDate = UI5Date.getInstance(oDate.getUTCFullYear(), oDate.getUTCMonth(), oDate.getUTCDate(), oDate.getUTCHours(), oDate.getUTCMinutes(), oDate.getUTCSeconds(), oDate.getUTCMilliseconds());
+						}
+
+						return this.dateToType(oDate, oType, sBaseType);
+					}
+
+				},
+
+				/**
+				 * Convert time part of a JS Date ino the type representation
 				 *
-				 * If a date has a time of to 14:00 UTC, the resulting date will have
-				 * 14:00 GMT+0200 on the same day.
-				 *
-				 * Please be aware that due to summer/winter time and changes in timezones,
-				 * not all times can be converted to local time.
+				 * The incomming date is a local date, so for Date and Time the local value needs to be used, for DateTime it depends on the UTC configuration.
 				 *
 				 * @param {Date} oDate the date to convert
-				 * @returns {Date} a new date object with converted time
+				 * @param {sap.ui.model.SimpleType} oType Data type
+				 * @param {sap.ui.mdc.enums.BaseType} [sBaseType] Basic type
+				 * @returns {any} date in type representation
 				 * @private
 				 */
-				utcToLocal: function(oDate) {
-					return new Date( oDate.getUTCFullYear(), oDate.getUTCMonth(), oDate.getUTCDate(),
-							oDate.getUTCHours(), oDate.getUTCMinutes(), oDate.getUTCSeconds(), oDate.getUTCMilliseconds()
-					);
+				dateToType: function(oDate, oType, sBaseType) {
+					let vDate;
+
+					if (oType.getModelValue) {
+						vDate = oType.getModelValue(oDate);
+					} else if (oType.isA("sap.ui.model.type.DateTime") && oType.getFormatOptions().UTC) { // old DateTime don't support UTC on ModelFormat
+						vDate = UI5Date.getInstance(Date.UTC(oDate.getFullYear(), oDate.getMonth(), oDate.getDate(), oDate.getHours(), oDate.getMinutes(), oDate.getSeconds(), oDate.getMilliseconds()));
+					} else { // older types don't support the new getModelValue
+						const oModelFormat = oType.getModelFormat();
+						const oFormatOptions = oType.getFormatOptions();
+						const bUTC = sBaseType === BaseType.DateTime ? !!oFormatOptions.UTC : false;
+						vDate = oModelFormat.format(oDate, bUTC);
+					}
+
+					return vDate;
+				},
+
+				/**
+				 * Convert time part of a JS Date ino the type representation
+				 *
+				 * The needed date is a local date, so for Date and Time the local value needs to be used, for DateTime it depends on the UTC configuration.
+				 *
+				 * @param {any} vDate date in type representation
+				 * @param {sap.ui.model.SimpleType} oType Data type
+				 * @param {sap.ui.mdc.enums.BaseType} [sBaseType] Basic type
+				 * @returns {Date} JSDate (local)
+				 * @private
+				 */
+				typeToDate: function(vDate, oType, sBaseType) {
+					let oDate;
+
+					if (oType.getDateValue) {
+						oDate = oType.getDateValue(vDate);
+					} else if (oType.isA("sap.ui.model.type.DateTime") && oType.getFormatOptions().UTC) { // old DateTime don't support UTC on ModelFormat
+						oDate = UI5Date.getInstance(vDate.getUTCFullYear(), vDate.getUTCMonth(), vDate.getUTCDate(), vDate.getUTCHours(), vDate.getUTCMinutes(), vDate.getUTCSeconds(), vDate.getUTCMilliseconds());
+					} else { // older types don't support the new getDateValue
+						const oModelFormat = oType.getModelFormat();
+						const oFormatOptions = oType.getFormatOptions();
+						const bUTC = sBaseType === BaseType.DateTime ? !!oFormatOptions.UTC : false;
+						oDate = oModelFormat.parse(vDate, bUTC);
+					}
+
+					return oDate;
 				}
 		};
 

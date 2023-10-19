@@ -14,9 +14,6 @@
 			body {
 				margin: 0;
 			}
-			.sapMPageScroll {
-				padding: 1rem;
-			}
 			.sapMILI-CTX .sapMInputValHelp {
 				margin-right: 0rem;
 			}
@@ -43,12 +40,11 @@
 					"sap/m/Table",
 					"sap/m/Text",
 					"sap/m/Token",
-					"sap/ui/core/TextDirection"
-				], function (JSONModel, App, Button, Column, ColumnListItem, Label, List, MessageBox, MessageToast, MultiInput, Page, StandardListItem, Table, Text, Token, TextDirection){
-
-					jQuery.sap.require("sap.ui.table.Table");
-					jQuery.sap.require("sap.ui.table.Row");
-					jQuery.sap.require("sap.ui.table.Column");
+					"sap/ui/core/library",
+					"sap/ui/table/Table",
+					"sap/ui/table/Column",
+				], function (JSONModel, App, Button, Column, ColumnListItem, Label, List, MessageBox, MessageToast, MultiInput, Page, StandardListItem, Table, Text, Token, coreLibrary, GridTable, GridTableColumn){
+					var TextDirection = coreLibrary.TextDirection;
 
  					//*******************************
 					var oEventList = new List();
@@ -102,7 +98,7 @@
 							},
 							title: "add Token"
 						});
-						return MultiInput.WaitForAsyncValidation;
+						return oMultiInputCustomValidator.getWaitForAsyncValidation();
 					});
 
 					// MultiInput - tokens get validated asynchronously after 500ms + 500ms
@@ -117,7 +113,7 @@
 						window.setTimeout(function(){
 							args.asyncCallback(new Token({text: args.text}));
 						},500);
-						return MultiInput.WaitForAsyncValidation;
+						return oMultiInputCustomAsyncValidator.WaitForAsyncValidation;
 					};
 					oMultiInputCustomAsyncValidator.addValidator(fValidator);
 					oMultiInputCustomAsyncValidator.addValidator(fValidator);
@@ -383,45 +379,6 @@
 					oModel.setData(oSuggestionData);
 					oTabularSuggestMultiInput.setModel(oModel);
 					oTabularSuggestMultiInput.bindAggregation("suggestionRows", "/tabularSuggestionItems", oTableItemTemplate);
-
-					// MultiInput - MultiLine mode
-					var oMultiLineMultiInput = new MultiInput("multiLineMI", {
-						enableMultiLineMode: true,
-						width: "500px"
-					});
-
-					oMultiLineMultiInput.setTokens([
-						new Token({text: "Token 1", key: "0001"}),
-						new Token({text: "Token 2", key: "0002"}),
-						new Token({text: "Token 3", key: "0003"}),
-						new Token({text: "Token 4", key: "0004"}),
-						new Token({text: "longTokenlongToken 5", key: "0005"}),
-						new Token({text: "Token 6", key: "0006"}),
-						new Token({text: "Token 7", key: "0007"}),
-						new Token({text: "longToken 8", key: "0008"}),
-						new Token({text: "Token 9", key: "0009"}),
-						new Token({text: "Token 10", key: "0010"})
-					]);
-					oMultiLineMultiInput.addValidator(function(args){
-						if (oCheckBoxAcceptValidation.getSelected()){
-							var text = args.text;
-							return new Token({key: text, text: "\""+text+"\""});
-						}
-					});
-					oMultiLineMultiInput.addValidator(function(args){
-						MessageBox.confirm("Do you really want to add this token?", {
-							onClose: function(oAction) {
-								if (oAction === MessageBox.Action.OK){
-									args.asyncCallback(args.suggestedToken);
-								}
-								else{
-									args.asyncCallback(null);
-								}
-							},
-							title: "add Token"
-						});
-						return sap.m.MultiInput.WaitForAsyncValidation;
-					});
 
 					// MultiInput in a SimpleForm
 					var oSimpleFormMultiInput = new MultiInput("simpleFormMultiInput", {
@@ -830,13 +787,13 @@
 						new Token({text: "Token 3", key: "0003"}),
 					]);
 
-					var oCondensedTable = new sap.ui.table.Table("condensed-table", {
+					var oCondensedTable = new GridTable("condensed-table", {
 						visibleRowCount: 2,
 						visibleRowCountMode: "Fixed",
 						rows: "{/modelData}"
 					}).addStyleClass("sapUiMediumMarginBottom");
 
-					oCondensedTable.addColumn(new sap.ui.table.Column({
+					oCondensedTable.addColumn(new GridTableColumn({
 						label: "Table with MultiInput (Condensed Mode)",
 						template: [
 							oCondensedMultiInput
@@ -974,7 +931,7 @@
 					// MultiInput with long suggestions
 					oMultiInputWrapping = new MultiInput("mi-wrapping", {
 						placeholder: "MultiInput with wrapping",
-						width: "50%",
+						width: "30rem",
 						suggestionItems: [
 							new sap.ui.core.Item({key: "1", text: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum."}),
 							new sap.ui.core.Item({key: "2", text: "Item with very long text, wrapping enabled and wrapCharLimit set to а very large number in order to make the whole text always visible, taking as much space as needed."}),
@@ -1023,8 +980,6 @@
 							oChangeTextValidatorMultiInput,
 							new Label({labelFor: oTabularSuggestMultiInput.getId(), text: "Tabular Suggest MultiInput: ", width: "100%"}),
 							oTabularSuggestMultiInput,
-							new Label({labelFor: oMultiLineMultiInput.getId(), text : "EnableMultiLineMode: true + synchronously validation", width:"100%"}),
-							oMultiLineMultiInput,
 							new Label({labelFor: oSimpleForm.getId(), text : "MultiInput in simple form", width:"100%"}),
 							oSimpleForm,
 							oWarningMultiInput,

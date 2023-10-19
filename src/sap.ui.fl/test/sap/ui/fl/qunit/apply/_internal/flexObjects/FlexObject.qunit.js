@@ -1,4 +1,4 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/base/util/LoaderExtensions",
@@ -23,7 +23,7 @@ sap.ui.define([
 	var oFileContent = {
 		fileName: "foo",
 		fileType: "change",
-		reference: "sap.ui.demoapps.rta.fiorielements.Component",
+		reference: "sap.ui.demoapps.rta.fiorielements",
 		packageName: "$TMP",
 		content: {
 			originalControlType: "sap.m.Label"
@@ -54,10 +54,10 @@ sap.ui.define([
 	};
 
 	QUnit.module("Basic tests", {
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("constructor - when originalLanguage is missing", function(assert) {
 			sandbox.stub(Utils, "getCurrentLanguage").returns("EN");
 			var oFlexObject = FlexObjectFactory.createFromFileContent({
@@ -70,7 +70,7 @@ sap.ui.define([
 			);
 		});
 
-		QUnit.test("constructor - when reference is set and namespace is missing", function(assert) {
+		QUnit.test("constructor - when reference is set and namespace is missing and the reference has the legacy .Component", function(assert) {
 			var oFlexObject = FlexObjectFactory.createFromFileContent({
 				fileType: "change",
 				reference: "sap.ui.demoapps.rta.fiorielements.Component"
@@ -80,9 +80,14 @@ sap.ui.define([
 				"apps/sap.ui.demoapps.rta.fiorielements/changes/",
 				"then the namespace is filled"
 			);
+			assert.strictEqual(
+				oFlexObject.getFlexObjectMetadata().reference,
+				"sap.ui.demoapps.rta.fiorielements",
+				"then the .Component is removed"
+			);
 		});
 
-		QUnit.test("constructor - when both reference and namespace are set", function(assert) {
+		QUnit.test("constructor - when both reference and namespace are set and the reference has the legacy .Component", function(assert) {
 			var oFlexObject = FlexObjectFactory.createFromFileContent({
 				fileType: "change",
 				reference: "sap.ui.demoapps.rta.fiorielements.Component",
@@ -92,6 +97,11 @@ sap.ui.define([
 				oFlexObject.getFlexObjectMetadata().namespace,
 				"apps/sap.ui.demoapps.rta.fiorielements/changes/",
 				"then the namespace is not overridden"
+			);
+			assert.strictEqual(
+				oFlexObject.getFlexObjectMetadata().reference,
+				"sap.ui.demoapps.rta.fiorielements",
+				"then the .Component is removed"
 			);
 		});
 
@@ -110,7 +120,7 @@ sap.ui.define([
 		QUnit.test("constructor - when both reference and projectId are set", function(assert) {
 			var oFlexObject = FlexObjectFactory.createFromFileContent({
 				fileType: "change",
-				reference: "sap.ui.demoapps.rta.fiorielements.Component",
+				reference: "sap.ui.demoapps.rta.fiorielements",
 				projectId: "sap.ui.demoapps.rta.fiorielements"
 			});
 			assert.strictEqual(
@@ -122,13 +132,13 @@ sap.ui.define([
 	});
 
 	QUnit.module("Custom getters/setters", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oFlexObject = FlexObjectFactory.createFromFileContent(oFileContent);
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("when setting the content", function(assert) {
 			this.oFlexObject.setState(States.LifecycleState.PERSISTED);
 			this.oFlexObject.setContent({
@@ -252,13 +262,13 @@ sap.ui.define([
 	});
 
 	QUnit.module("State handling", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oFlexObject = FlexObjectFactory.createFromFileContent(oFileContent);
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("FlexObject.getState", function(assert) {
 			assert.strictEqual(
 				this.oFlexObject.getState(),
@@ -269,6 +279,10 @@ sap.ui.define([
 			assert.strictEqual(
 				this.oFlexObject.getState(),
 				States.LifecycleState.PERSISTED,
+				"then the state can be changed to PERSISTED"
+			);
+			assert.ok(
+				this.oFlexObject.isPersisted(),
 				"then the state can be changed to PERSISTED"
 			);
 			this.oFlexObject.setContent({});
@@ -357,14 +371,14 @@ sap.ui.define([
 	});
 
 	QUnit.module("Updates and export", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oFlexObject = FlexObjectFactory.createFromFileContent(oFileContent);
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
-	}, function () {
-		QUnit.test("when a FlexObject is updated", function (assert) {
+	}, function() {
+		QUnit.test("when a FlexObject is updated", function(assert) {
 			var oInitialSupportInfo = this.oFlexObject.getSupportInformation();
 			var oUpdate = {
 				layer: Layer.VENDOR,
@@ -393,7 +407,7 @@ sap.ui.define([
 			);
 		});
 
-		QUnit.test("when a very deep FlexObject is updated", function (assert) {
+		QUnit.test("when a very deep FlexObject is updated", function(assert) {
 			return LoaderExtensions.loadResource({
 				dataType: "json",
 				url: sap.ui.require.toUrl("test-resources/sap/ui/fl/qunit/testResources/DeepFlexObject.json"),
@@ -421,7 +435,7 @@ sap.ui.define([
 			);
 		});
 
-		QUnit.test("when exporting file content of a FlexObject", function (assert) {
+		QUnit.test("when exporting file content of a FlexObject", function(assert) {
 			// fileName is assigned to the id upon creation
 			var oExpectedFileContent = Object.assign({}, oFileContent);
 			oExpectedFileContent.selector = {};
@@ -432,9 +446,22 @@ sap.ui.define([
 				"then the output should have the same information as the original file content"
 			);
 		});
+
+		QUnit.test("when cloning file content", function(assert) {
+			var oExpectedFileContent = Object.assign({}, oFileContent);
+			oExpectedFileContent.selector = {};
+			oExpectedFileContent.dependentSelector = {};
+			var oCopiedFlexObject = this.oFlexObject.cloneFileContentWithNewId();
+			assert.notStrictEqual(
+				oCopiedFlexObject,
+				oExpectedFileContent,
+				"then the two flex objects are not equal"
+			);
+			assert.notStrictEqual(oCopiedFlexObject.fileName, oFileContent.fileName, "then the cloned flex object has another id as the original flex object");
+		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

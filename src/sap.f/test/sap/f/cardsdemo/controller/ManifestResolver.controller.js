@@ -9,6 +9,14 @@ sap.ui.define([
 			path: "sap/f/cardsdemo/bundles/objectbundle/manifest.json",
 			baseUrl: "sap/f/cardsdemo/bundles/objectbundle/"
 		},
+		"objectCardFormInputs": {
+			path: "sap/f/cardsdemo/cardcontent/objectContent/formWithValidations.json",
+			baseUrl: "sap/f/cardsdemo/cardcontent/objectContent/"
+		},
+		"calendarCard": {
+			path: "sap/f/cardsdemo/bundles/calendarbundle/manifest.json",
+			baseUrl: "sap/f/cardsdemo/bundles/calendarbundle/"
+		},
 		"listCard": {
 			path: "sap/f/cardsdemo/bundles/listbundle/manifest.json",
 			baseUrl: "sap/f/cardsdemo/bundles/listbundle/"
@@ -59,6 +67,10 @@ sap.ui.define([
 		},
 		"cardWithSevereError": {
 			path: "sap/f/cardsdemo/cardcontent/withSevereError.json",
+			baseUrl: "sap/f/cardsdemo/cardcontent/"
+		},
+		"cardWithExtension": {
+			path: "sap/f/cardsdemo/cardcontent/withExtension.json",
 			baseUrl: "sap/f/cardsdemo/cardcontent/"
 		}
 	};

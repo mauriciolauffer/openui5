@@ -11,7 +11,10 @@ sap.ui.define([
 	"sap/ui/core/Core",
 	"sap/ui/qunit/QUnitUtils",
 	"sap/ui/events/KeyCodes",
-	"sap/base/i18n/ResourceBundle"
+	"sap/base/i18n/ResourceBundle",
+	"qunit/designtime/EditorQunitUtils",
+	"sap/ui/core/date/UI5Date",
+	"sap/ui/integration/formatters/IconFormatter"
 ], function (
 	merge,
 	x,
@@ -24,7 +27,10 @@ sap.ui.define([
 	Core,
 	QUnitUtils,
 	KeyCodes,
-	ResourceBundle
+	ResourceBundle,
+	EditorQunitUtils,
+	UI5Date,
+	IconFormatter
 ) {
 	"use strict";
 
@@ -35,6 +41,14 @@ sap.ui.define([
 
 	Core.getConfiguration().setLanguage("en");
 	document.body.className = document.body.className + " sapUiSizeCompact ";
+
+	function wait(ms) {
+		return new Promise(function (resolve) {
+			setTimeout(function () {
+				resolve();
+			}, ms || 1000);
+		});
+	}
 
 	function getDefaultContextModel(oResourceBundle) {
 		return {
@@ -171,7 +185,6 @@ sap.ui.define([
 			}
 		}
 	}, function () {
-
 		QUnit.test("No configuration section (as json)", function (assert) {
 			this.oEditor.setJson({ baseUrl: sBaseUrl, manifest: { "sap.app": { "id": "test.sample", "i18n": "../i18n/i18n.properties" }, "sap.card": { "designtime": "designtime/noconfig", "type": "List", "header": {} } } });
 			return new Promise(function (resolve, reject) {
@@ -423,7 +436,7 @@ sap.ui.define([
 					assert.ok(this.oEditor.isReady(), "Editor is ready");
 					var oLabel = this.oEditor.getAggregation("_formContent")[1];
 					var oField = this.oEditor.getAggregation("_formContent")[2];
-					setTimeout(function () {
+					wait(500).then(function () {
 						assert.ok(oLabel.isA("sap.m.Label"), "Label: Form content contains a Label");
 						assert.equal(oLabel.getText(), "stringParameterWithValues", "Label: Has static label text");
 						assert.ok(oField.isA("sap.ui.integration.editor.fields.StringField"), "Field: String Field");
@@ -437,7 +450,7 @@ sap.ui.define([
 						assert.equal(aItems[2].getKey(), "key3", "Field: Select item 1 Key is OK");
 						assert.equal(aItems[2].getText(), "text3", "Field: Select item 1 Text is OK");
 						resolve();
-					}, 500);
+					});
 				}.bind(this));
 			}.bind(this));
 		});
@@ -468,7 +481,7 @@ sap.ui.define([
 					assert.ok(this.oEditor.isReady(), "Editor is ready");
 					var oLabel = this.oEditor.getAggregation("_formContent")[1];
 					var oField = this.oEditor.getAggregation("_formContent")[2];
-					setTimeout(function () {
+					wait().then(function () {
 						assert.ok(oLabel.isA("sap.m.Label"), "Label: Form content contains a Label");
 						assert.equal(oLabel.getText(), "stringParameterWithValues", "Label: Has static label text");
 						assert.ok(oField.isA("sap.ui.integration.editor.fields.StringField"), "Field: String Field");
@@ -484,7 +497,7 @@ sap.ui.define([
 						assert.equal(aItems[3].getKey(), "key4", "Field: Select item 3 Key is OK");
 						assert.equal(aItems[3].getText(), "text4req", "Field: Select item 3 Text is OK");
 						resolve();
-					}, 500);
+					});
 				}.bind(this));
 			}.bind(this));
 		});
@@ -515,14 +528,14 @@ sap.ui.define([
 					assert.ok(this.oEditor.isReady(), "Editor is ready");
 					var oLabel = this.oEditor.getAggregation("_formContent")[1];
 					var oField = this.oEditor.getAggregation("_formContent")[2];
-					setTimeout(function () {
+					wait(500).then(function () {
 						assert.ok(oLabel.isA("sap.m.Label"), "Label: Form content contains a Label");
 						assert.equal(oLabel.getText(), "stringArrayParameter", "Label: Has static label text");
 						assert.ok(oField.isA("sap.ui.integration.editor.fields.StringListField"), "Field: List Field");
 						assert.ok(oField.getAggregation("_field").isA("sap.m.MultiComboBox"), "Field: Editor is MultiComboBox");
 						assert.equal(oField.getAggregation("_field").getItems().length, 5, "Field: MultiComboBox items lenght is OK");
 						resolve();
-					}, 500);
+					});
 				}.bind(this));
 			}.bind(this));
 		});
@@ -553,7 +566,7 @@ sap.ui.define([
 					assert.ok(this.oEditor.isReady(), "Editor is ready");
 					var oLabel = this.oEditor.getAggregation("_formContent")[1];
 					var oField = this.oEditor.getAggregation("_formContent")[2];
-					setTimeout(function () {
+					wait().then(function () {
 						assert.ok(oLabel.isA("sap.m.Label"), "Label: Form content contains a Label");
 						assert.equal(oLabel.getText(), "stringArrayParameter", "Label: Has static label text");
 						assert.ok(oField.isA("sap.ui.integration.editor.fields.StringListField"), "Field: List Field");
@@ -566,7 +579,7 @@ sap.ui.define([
 						assert.equal(aValue.length, 1, "Field: value length correct");
 						assert.equal(aValue[0], "key1", "Field: value correct");
 						resolve();
-					}.bind(this), 500);
+					}.bind(this));
 				}.bind(this));
 			}.bind(this));
 		});
@@ -640,14 +653,14 @@ sap.ui.define([
 					assert.ok(this.oEditor.isReady(), "Editor is ready");
 					var oLabel = this.oEditor.getAggregation("_formContent")[1];
 					var oField = this.oEditor.getAggregation("_formContent")[2];
-					setTimeout(function () {
+					wait().then(function () {
 						assert.ok(oLabel.isA("sap.m.Label"), "Label: Form content contains a Label");
 						assert.equal(oLabel.getText(), "stringArrayParameter", "Label: Has static label text");
 						assert.ok(oField.isA("sap.ui.integration.editor.fields.StringListField"), "Field: List Field");
 						assert.ok(oField.getAggregation("_field").isA("sap.m.MultiComboBox"), "Field: Editor is MultiComboBox");
 						assert.equal(oField.getAggregation("_field").getItems().length, 6, "Field: MultiComboBox items lenght is OK");
 						resolve();
-					}, 500);
+					});
 				}.bind(this));
 			}.bind(this));
 		});
@@ -729,11 +742,11 @@ sap.ui.define([
 					assert.ok(oLabel.isA("sap.m.Label"), "Label: Form content contains a Label");
 					assert.ok(oField.getAggregation("_field").isA("sap.ui.integration.editor.fields.viz.IconSelect"), "Field: Icon Select Field");
 					var oSelect = oField.getAggregation("_field").getAggregation("_control");
-					setTimeout(function () {
+					wait(500).then(function () {
 						oSelect.setSelectedIndex(10);
 						oSelect.open();
 						resolve();
-					}, 500);
+					});
 				}.bind(this));
 			}.bind(this));
 		});
@@ -748,12 +761,12 @@ sap.ui.define([
 					assert.ok(oLabel.isA("sap.m.Label"), "Label: Form content contains a Label");
 					assert.ok(oField.getAggregation("_field").isA("sap.ui.integration.editor.fields.viz.IconSelect"), "Field: Icon Select Field");
 					var oSelect = oField.getAggregation("_field").getAggregation("_control");
-					setTimeout(function () {
-						assert.ok(oSelect.getItemByKey("").getEnabled(), "Icon: item none is enabled");
+					wait(500).then(function () {
+						assert.ok(oSelect.getItemByKey(IconFormatter.SRC_FOR_HIDDEN_ICON).getEnabled(), "Icon: item none is enabled");
 						assert.ok(!oSelect.getItemByKey("file").getEnabled(), "Icon: item file is disabled");
 						assert.ok(!oSelect.getItemByKey("selected").getEnabled(), "Icon: item selected is disabled");
 						resolve();
-					}, 500);
+					});
 				}.bind(this));
 			}.bind(this));
 		});
@@ -768,12 +781,12 @@ sap.ui.define([
 					assert.ok(oLabel.isA("sap.m.Label"), "Label: Form content contains a Label");
 					assert.ok(oField.getAggregation("_field").isA("sap.ui.integration.editor.fields.viz.IconSelect"), "Field: Icon Select Field");
 					var oSelect = oField.getAggregation("_field").getAggregation("_control");
-					setTimeout(function () {
-						assert.ok(!oSelect.getItemByKey("").getEnabled(), "Icon: item none is disabled");
+					wait(500).then(function () {
+						assert.ok(!oSelect.getItemByKey(IconFormatter.SRC_FOR_HIDDEN_ICON).getEnabled(), "Icon: item none is disabled");
 						assert.ok(oSelect.getItemByKey("file").getEnabled(), "Icon: item file is enabled");
 						assert.ok(!oSelect.getItemByKey("selected").getEnabled(), "Icon: item selected is disabled");
 						resolve();
-					}, 500);
+					});
 				}.bind(this));
 			}.bind(this));
 		});
@@ -788,12 +801,12 @@ sap.ui.define([
 					assert.ok(oLabel.isA("sap.m.Label"), "Label: Form content contains a Label");
 					assert.ok(oField.getAggregation("_field").isA("sap.ui.integration.editor.fields.viz.IconSelect"), "Field: Icon Select Field");
 					var oSelect = oField.getAggregation("_field").getAggregation("_control");
-					setTimeout(function () {
-						assert.ok(!oSelect.getItemByKey("").getEnabled(), "Icon: item none is disabled");
+					wait(500).then(function () {
+						assert.ok(!oSelect.getItemByKey(IconFormatter.SRC_FOR_HIDDEN_ICON).getEnabled(), "Icon: item none is disabled");
 						assert.ok(!oSelect.getItemByKey("file").getEnabled(), "Icon: item file is disabled");
 						assert.ok(!oSelect.getItemByKey("selected").getEnabled(), "Icon: item selected git sis disabled");
 						resolve();
-					}, 500);
+					});
 				}.bind(this));
 			}.bind(this));
 		});
@@ -807,12 +820,12 @@ sap.ui.define([
 					var oField = this.oEditor.getAggregation("_formContent")[2];
 					assert.ok(oLabel.isA("sap.m.Label"), "Label: Form content contains a Label");
 					assert.ok(oField.getAggregation("_field").isA("sap.ui.integration.editor.fields.viz.IconSelect"), "Field: Icon Select Field");
-					setTimeout(function () {
+					wait(500).then(function () {
 						var oSelect = oField.getAggregation("_field").getAggregation("_control");
 						oSelect.setSelectedIndex(10);
 						oSelect.open();
 						resolve();
-					}, 500);
+					});
 				}.bind(this));
 			}.bind(this));
 		});
@@ -826,13 +839,13 @@ sap.ui.define([
 					var oField = this.oEditor.getAggregation("_formContent")[2];
 					assert.ok(oLabel.isA("sap.m.Label"), "Label: Form content contains a Label");
 					assert.ok(oField.getAggregation("_field").isA("sap.ui.integration.editor.fields.viz.IconSelect"), "Field: Icon Select Field");
-					setTimeout(function () {
+					wait(500).then(function () {
 						var oSelect = oField.getAggregation("_field").getAggregation("_control");
 						oSelect.open();
 						oSelect.setSelectedIndex(10);
 						oSelect.fireChange({ selectedItem: oSelect.getItems()[10] });
 						resolve();
-					}, 500);
+					});
 				}.bind(this));
 			}.bind(this));
 		});
@@ -846,13 +859,13 @@ sap.ui.define([
 					var oField = this.oEditor.getAggregation("_formContent")[2];
 					assert.ok(oLabel.isA("sap.m.Label"), "Label: Form content contains a Label");
 					assert.ok(oField.getAggregation("_field").isA("sap.ui.integration.editor.fields.viz.IconSelect"), "Field: Icon Select Field");
-					setTimeout(function () {
+					wait(500).then(function () {
 						var oSelect = oField.getAggregation("_field").getAggregation("_control");
 						oSelect.open();
 						oSelect.setSelectedItem(oSelect.getItems()[2]);
 						oSelect.fireChange({ selectedItem: oSelect.getItems()[2] });
 						resolve();
-					}, 500);
+					});
 				}.bind(this));
 			}.bind(this));
 		});
@@ -866,13 +879,13 @@ sap.ui.define([
 					var oField = this.oEditor.getAggregation("_formContent")[2];
 					assert.ok(oLabel.isA("sap.m.Label"), "Label: Form content contains a Label");
 					assert.ok(oField.getAggregation("_field").isA("sap.ui.integration.editor.fields.viz.IconSelect"), "Field: Icon Select Field");
-					setTimeout(function () {
+					wait(500).then(function () {
 						var oSelect = oField.getAggregation("_field").getAggregation("_control");
 						oSelect.setSelectedIndex(10);
 						oSelect.fireChange({ selectedItem: oSelect.getItems()[10] });
 						oSelect.focus();
 						oSelect.open();
-						setTimeout(function () {
+						wait().then(function () {
 							QUnitUtils.triggerKeydown(oSelect.getDomRef(), KeyCodes.ARROW_UP);
 							assert.equal(oSelect.getSelectedIndex(), 1, "Field: Arrow Up navigation correct for 3 < index < 14");
 							QUnitUtils.triggerKeydown(oSelect.getDomRef(), KeyCodes.ARROW_UP);
@@ -922,8 +935,8 @@ sap.ui.define([
 							QUnitUtils.triggerKeydown(oSelect.getDomRef(), KeyCodes.ARROW_UP);
 							assert.equal(oSelect.getSelectedIndex(), 1, "Field: Arrow Up navigation correct for index = 7");
 							resolve();
-						}, 1000);
-					}, 500);
+						});
+					});
 				}.bind(this));
 			}.bind(this));
 		});
@@ -937,13 +950,13 @@ sap.ui.define([
 					var oField = this.oEditor.getAggregation("_formContent")[2];
 					assert.ok(oLabel.isA("sap.m.Label"), "Label: Form content contains a Label");
 					assert.ok(oField.getAggregation("_field").isA("sap.ui.integration.editor.fields.viz.IconSelect"), "Field: Icon Select Field");
-					setTimeout(function () {
+					wait(500).then(function () {
 						var oSelect = oField.getAggregation("_field").getAggregation("_control");
 						oSelect.setSelectedIndex(10);
 						oSelect.fireChange({ selectedItem: oSelect.getItems()[10] });
 						oSelect.focus();
 						oSelect.open();
-						setTimeout(function () {
+						wait().then(function () {
 							QUnitUtils.triggerKeydown(oSelect.getDomRef(), KeyCodes.ARROW_UP);
 							assert.equal(oSelect.getSelectedIndex(), 1, "Field: Arrow Up navigation correct for 3 < index < 14");
 							QUnitUtils.triggerKeydown(oSelect.getDomRef(), KeyCodes.ARROW_UP);
@@ -985,8 +998,8 @@ sap.ui.define([
 							QUnitUtils.triggerKeydown(oSelect.getDomRef(), KeyCodes.ARROW_UP);
 							assert.equal(oSelect.getSelectedIndex(), 1, "Field: Arrow Up navigation correct for index = 4");
 							resolve();
-						}, 1000);
-					}, 500);
+						});
+					});
 				}.bind(this));
 			}.bind(this));
 		});
@@ -1000,13 +1013,13 @@ sap.ui.define([
 					var oField = this.oEditor.getAggregation("_formContent")[2];
 					assert.ok(oLabel.isA("sap.m.Label"), "Label: Form content contains a Label");
 					assert.ok(oField.getAggregation("_field").isA("sap.ui.integration.editor.fields.viz.IconSelect"), "Field: Icon Select Field");
-					setTimeout(function () {
+					wait(500).then(function () {
 						var oSelect = oField.getAggregation("_field").getAggregation("_control");
 						oSelect.setSelectedIndex(10);
 						oSelect.fireChange({ selectedItem: oSelect.getItems()[10] });
 						oSelect.focus();
 						oSelect.open();
-						setTimeout(function () {
+						wait().then(function () {
 							QUnitUtils.triggerKeydown(oSelect.getDomRef(), KeyCodes.ARROW_UP);
 							assert.equal(oSelect.getSelectedIndex(), 0, "Field: Arrow Up navigation correct for 3 < index < 14");
 							QUnitUtils.triggerKeydown(oSelect.getDomRef(), KeyCodes.ARROW_UP);
@@ -1044,8 +1057,8 @@ sap.ui.define([
 							QUnitUtils.triggerKeydown(oSelect.getDomRef(), KeyCodes.ARROW_UP);
 							assert.equal(oSelect.getSelectedIndex(), 0, "Field: Arrow Up navigation correct for index = 5");
 							resolve();
-						}, 1000);
-					}, 500);
+						});
+					});
 				}.bind(this));
 			}.bind(this));
 		});
@@ -1059,13 +1072,13 @@ sap.ui.define([
 					var oField = this.oEditor.getAggregation("_formContent")[2];
 					assert.ok(oLabel.isA("sap.m.Label"), "Label: Form content contains a Label");
 					assert.ok(oField.getAggregation("_field").isA("sap.ui.integration.editor.fields.viz.IconSelect"), "Field: Icon Select Field");
-					setTimeout(function () {
+					wait(500).then(function () {
 						var oSelect = oField.getAggregation("_field").getAggregation("_control");
 						oSelect.setSelectedIndex(10);
 						oSelect.fireChange({ selectedItem: oSelect.getItems()[10] });
 						oSelect.focus();
 						oSelect.open();
-						setTimeout(function () {
+						wait().then(function () {
 							QUnitUtils.triggerKeydown(oSelect.getDomRef(), KeyCodes.ARROW_UP);
 							assert.equal(oSelect.getSelectedIndex(), 3, "Field: Arrow Up navigation correct for 3 < index < 14");
 							QUnitUtils.triggerKeydown(oSelect.getDomRef(), KeyCodes.ARROW_UP);
@@ -1105,8 +1118,8 @@ sap.ui.define([
 							QUnitUtils.triggerKeydown(oSelect.getDomRef(), KeyCodes.ARROW_UP);
 							assert.equal(oSelect.getSelectedIndex(), 3, "Field: Arrow Up navigation correct for index = 5");
 							resolve();
-						}, 1000);
-					}, 500);
+						});
+					});
 				}.bind(this));
 			}.bind(this));
 		});
@@ -1120,12 +1133,12 @@ sap.ui.define([
 					var oField = this.oEditor.getAggregation("_formContent")[2];
 					assert.ok(oLabel.isA("sap.m.Label"), "Label: Form content contains a Label");
 					assert.ok(oField.getAggregation("_field").isA("sap.ui.integration.editor.fields.viz.IconSelect"), "Field: Icon Select Field");
-					setTimeout(function () {
+					wait(500).then(function () {
 						var oSelect = oField.getAggregation("_field").getAggregation("_control");
 						assert.equal(oSelect.getSelectedIndex(), 2, "Field: selected index is 2");
 						oSelect.focus();
 						oSelect.open();
-						setTimeout(function () {
+						wait().then(function () {
 							QUnitUtils.triggerKeydown(oSelect.getDomRef(), KeyCodes.ARROW_UP);
 							assert.equal(oSelect.getSelectedIndex(), 1, "Field: Arrow Up navigation correct for index = 2");
 							QUnitUtils.triggerKeydown(oSelect.getDomRef(), KeyCodes.ARROW_UP);
@@ -1181,8 +1194,8 @@ sap.ui.define([
 							QUnitUtils.triggerKeydown(oSelect.getDomRef(), KeyCodes.ARROW_UP);
 							assert.equal(oSelect.getSelectedIndex(), 1, "Field: Arrow Up navigation correct for index = 7");
 							resolve();
-						}, 1000);
-					}, 500);
+						});
+					});
 				}.bind(this));
 			}.bind(this));
 		});
@@ -1196,12 +1209,12 @@ sap.ui.define([
 					var oField = this.oEditor.getAggregation("_formContent")[2];
 					assert.ok(oLabel.isA("sap.m.Label"), "Label: Form content contains a Label");
 					assert.ok(oField.getAggregation("_field").isA("sap.ui.integration.editor.fields.viz.IconSelect"), "Field: Icon Select Field");
-					setTimeout(function () {
+					wait(500).then(function () {
 						var oSelect = oField.getAggregation("_field").getAggregation("_control");
 						assert.equal(oSelect.getSelectedIndex(), 2, "Field: selected index is 2");
 						oSelect.focus();
 						oSelect.open();
-						setTimeout(function () {
+						wait().then(function () {
 							QUnitUtils.triggerKeydown(oSelect.getDomRef(), KeyCodes.ARROW_UP);
 							assert.equal(oSelect.getSelectedIndex(), 1, "Field: Arrow Up navigation correct for index = 2");
 							QUnitUtils.triggerKeydown(oSelect.getDomRef(), KeyCodes.ARROW_UP);
@@ -1253,8 +1266,34 @@ sap.ui.define([
 							QUnitUtils.triggerKeydown(oSelect.getDomRef(), KeyCodes.ARROW_UP);
 							assert.equal(oSelect.getSelectedIndex(), 1, "Field: Arrow Up navigation correct for index = 7");
 							resolve();
-						}, 1000);
-					}, 500);
+						});
+					});
+				}.bind(this));
+			}.bind(this));
+		});
+
+		QUnit.test("1 image parameter", function (assert) {
+			this.oEditor.setJson({ baseUrl: sBaseUrl, manifest: { "sap.app": { "id": "test.sample", "i18n": "../i18n/i18n.properties" }, "sap.card": { "designtime": "designtime/image", "type": "List", "configuration": { "parameters": { "imageParameter": { "value": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAgCKr4qjAAD//gAQTGF2YzU4LjM1LjEwMAD/2wBDAAgQEBMQExYWFhYWFhoYGhsbGxoaGhobGxsdHR0iIiIdHR0bGx0dICAiIiUmJSMjIiMmJigoKDAwLi44ODpFRVP/xACFAAACAgMBAAAAAAAAAAAAAAAAAwIBBQQGBwEBAQEBAQEAAAAAAAAAAAAAAAEDAgQFEAACAQICBgUHCwUBAQAAAAAAAQIDERIEcTFBIVEFgaFhkbFSQnLRIjIT4dKCwfAVBkNTIzNj4pKToxSiEQEBAQEBAQAAAAAAAAAAAAAAEQESMVH/wAARCAB4AJUDASIAAhEAAxEA/9oADAMBAAIRAxEAPwDWGERh9SslkgJCgJgSFFEiyQoiWTAUQAmAoWUNKJQoiOsRsKFANsUShYEwFGmhhSGIyrVZIsmKKJlkxURLJ2JWFEAsMsXYULsFhtgFCbANCwoTYLDQJQmxVhpEUJsFiZQGmMQtDUZtUxhFDAJEgJhIomWSBFWLsW2krt20nD57ndOg8FG1WW1+aulaxR2VScKUXOclGK1t6kYWfMcvGpSpxl8WVVxSULOyltbv1azxzM5yvm3+7NtbI6oroN7lMqcM7Sc9yu0vSasjjpHuZQwo7WFlEyDYIiLJtiHK2zp2AWAjHfZ3hj7OtAIQ1CENRw0PQqpXpUI4qk4wXa/Ba2YrOZ2GThd75P3Y8fkR49WrVMxNzqSxN9y7F2Erndepz55lY6lUnojbxaNCX4gh5tCT0yS8EzzICVzXdT5/mH7lOnHTeXqMRPm2dn+bh9FJHOARGQq5vMV/5Ks5Lhfd3LcY8AIgC9nda1vQ6nTnVmoQWKUnZI9GX4ejgV6zU7b/AGU437NTC+u3yeap5ulGcHfclJbYy2p/beZI43l/KnkqjqOs5O1sMVhi/S37+w7A0aIsQ3wJvea7iKqDm72w2enXo2PxNf4jT1Jdl9z0cHpJSW7zl/8AS+3cYipOaXlLirYlpVxRvOdnulhvsav3cO0Piv8AUj/iYVVVLz8D7MGF8GrpksX9Z/8AP5oRmEybkoRcnqSv3Gumc1zTNKFF04tYp7nZ70tpw18cFmK88zVlUlte5cFsSNMCg8qwKO2yPKP/AE0lUqSlC79lJa48eki5lcUB6kuRUNs6j7vUcfzLKQydWEYYrSjffxuHW5uOdN3L5epmaip01dvW9iXFmtCDqTjBa5NRWls92ymUp5SGCC3+dLbJhMytbIcvp5KPlVHrn9S4I6EiRuV6JE7kSFyiEDFk2zUlIC39uJpTUGt9n2rdLqEVK8Ye9KMdMkvFHM1ea0Yt2bm+yPs+KvpCa2KtGli9521r2b+r5TW+DR8p/wCv+4xEuaKbu6fRua6xf3jD9PqidM7jEVc9mK2ubS4R9ldRiywIyUWAEAZrL8wzOWWGE7x8mXtJaOBhQCu9p8+ml+5SUnxi8PU7mG5jn4Z34eGDjgvraevQc2QsFutuhV+DVhUtiwSUrXte3aegR/EEfOoNejK/ikea2KsUzdx6n9/0LfxVL/R9Zrvn8NlGXTNeo80sFiL1r0J8/lsoLpm/mmjPnmZl7sacOhvxZxpYOt+ugnzXOT/MtojFfUYueazE/eq1H9JmmAc1Hey7FgEUWAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFXC4sCIZcLiwAZcLiwAZcLiwAZcLiwAZcLiwAZcLiwAZcLiwAZcLiwAZcLiwA//Z" } } } } } });
+			return new Promise(function (resolve, reject) {
+				this.oEditor.attachReady(function () {
+					assert.ok(this.oEditor.isReady(), "Editor is ready");
+					var oLabel = this.oEditor.getAggregation("_formContent")[1];
+					var oField = this.oEditor.getAggregation("_formContent")[2];
+					assert.ok(oLabel.isA("sap.m.Label"), "Label: Form content contains a Label");
+					assert.ok(oField.getAggregation("_field").isA("sap.ui.integration.editor.fields.viz.ImageSelect"), "Field: Image Select Field");
+					wait(500).then(function () {
+						var oSelect = oField.getAggregation("_field").getAggregation("_control");
+						assert.equal(oSelect.getSelectedIndex(), 2, "Field: selected index is 2");
+						assert.equal(oSelect.getItems().length, 3, "Field: select item number is 3");
+						oSelect.focus();
+						var oIconDomRef = oSelect.getDomRef("labelIcon");
+						var oIcon = Core.byId(oIconDomRef.id);
+						QUnitUtils.triggerMouseEvent(oIconDomRef, "click");
+						wait().then(function () {
+							assert.ok(oIcon._oImagePopover.isOpen(), "Field: popover is open");
+							resolve();
+						});
+					});
 				}.bind(this));
 			}.bind(this));
 		});
@@ -1443,7 +1482,7 @@ sap.ui.define([
 					//force rendering
 					Core.applyChanges();
 					//check the change event handling of the field
-					oField.getAggregation("_field").setValue(new Date());
+					oField.getAggregation("_field").setValue(UI5Date.getInstance());
 					// oField.getAggregation("_field").fireChange({ valid: true });
 					// assert.equal(oField.getAggregation("_field").getBinding("value").getValue(), oField.getAggregation("_field").getValue(), "Field: Date Field binding raw value '" + oField.getAggregation("_field").getValue() + "' ");
 					oField.getAggregation("_field").fireChange({ valid: false });
@@ -1467,7 +1506,7 @@ sap.ui.define([
 					//force rendering
 					Core.applyChanges();
 					//check the change event handling of the field
-					oField.getAggregation("_field").setValue(new Date());
+					oField.getAggregation("_field").setValue(UI5Date.getInstance());
 					// oField.getAggregation("_field").fireChange({ valid: true });
 					// assert.equal(oField.getAggregation("_field").getBinding("value").getValue(), oField.getAggregation("_field").getValue().toISOString(), "Field: DateTime Field binding raw value '" + oField.getAggregation("_field").getDateValue().toISOString() + "' ");
 					oField.getAggregation("_field").fireChange({ valid: false });
@@ -1504,6 +1543,23 @@ sap.ui.define([
 					assert.ok(oPanel.isA("sap.m.Panel"), "Panel: Form content contains a Panel");
 					assert.ok(oLabel.isA("sap.m.Label"), "Label: Form content contains a Label");
 					assert.equal(oLabel.getText(), "dest1", "Label: Has dest1 label from destination settings name");
+					assert.ok(oField.isA("sap.ui.integration.editor.fields.DestinationField"), "Field: Destination Field");
+					resolve();
+				}.bind(this));
+			}.bind(this));
+		});
+
+		QUnit.test("1 destination with label (as json)", function (assert) {
+			this.oEditor.setJson({ host: "host", manifest: { "sap.app": { "id": "test.sample", "i18n": "../i18n/i18n.properties" }, "sap.card": { "type": "List", "configuration": { "destinations": { "dest1": { "name": "Sample", "label": "dest1 label" } } } } } });
+			return new Promise(function (resolve, reject) {
+				this.oEditor.attachReady(function () {
+					assert.ok(this.oEditor.isReady(), "Editor is ready");
+					var oPanel = this.oEditor.getAggregation("_formContent")[0].getAggregation("_field");
+					var oLabel = this.oEditor.getAggregation("_formContent")[1];
+					var oField = this.oEditor.getAggregation("_formContent")[2];
+					assert.ok(oPanel.isA("sap.m.Panel"), "Panel: Form content contains a Panel");
+					assert.ok(oLabel.isA("sap.m.Label"), "Label: Form content contains a Label");
+					assert.equal(oLabel.getText(), "dest1 label", "Label: Has dest1 label from destination label property");
 					assert.ok(oField.isA("sap.ui.integration.editor.fields.DestinationField"), "Field: Destination Field");
 					resolve();
 				}.bind(this));
@@ -3623,6 +3679,99 @@ sap.ui.define([
 			}.bind(this));
 		});
 
+		QUnit.test("Select is created from dt class inline", function (assert) {
+			var dt = function () {
+				return new Designtime(
+					{
+						"form": {
+							"items": {
+								"string1": {
+									"manifestpath": "/sap.card/configuration/parameters/string1/value",
+									"type": "string",
+									"values": {
+										"data": {
+											"json": [
+												{ "text": 0.3, "key": "key1", "additionalText": 1293883200000, "icon": "sap-icon://accept" },
+												{ "text": 0.6, "key": "key2", "additionalText": 1293883200000, "icon": "sap-icon://cart" },
+												{ "text": 0.8, "key": "key3", "additionalText": 1293883200000, "icon": "sap-icon://zoom-in" }
+											],
+											"path": "/"
+										},
+										"item": {
+											"text": "Percent: {= format.percent(${text}) }",
+											"key": "{key}",
+											"additionalText": "datetime: {= format.dateTime(${additionalText}, {style: 'long'}) }",
+											"icon": "{icon}"
+										}
+									},
+									"visualization": {
+										"type": "Select"
+									}
+								},
+								"string2": {
+									"manifestpath": "/sap.card/configuration/parameters/string2/value",
+									"type": "string",
+									"values": {
+										"data": {
+											"json": [
+												{ "text": 0.3, "key": "key1", "additionalText": 1293883200000, "icon": "sap-icon://accept" },
+												{ "text": 0.6, "key": "key2", "additionalText": 1293883200000, "icon": "sap-icon://cart" },
+												{ "text": 0.8, "key": "key3", "additionalText": 1293883200000, "icon": "sap-icon://zoom-in" }
+											],
+											"path": "/"
+										},
+										"item": {
+											"text": "Percent: {= format.percent(${text}) }",
+											"key": "{key}",
+											"additionalText": "datetime: {= format.dateTime(${additionalText}, {style: 'long'}) }",
+											"icon": "{icon}"
+										}
+									},
+									"visualization": {
+										"type": "Select",
+										"settings": {
+											"forceSelection": true,
+											"editable": false
+										}
+									}
+								}
+							}
+						}
+					});
+			};
+
+			this.oEditor.setDesigntime(dt);
+			this.oEditor.setJson({ baseUrl: sBaseUrl, manifest: { "sap.app": { "id": "test.sample", "i18n": "../i18n/i18n.properties" }, "sap.card": { "designtime": "designtime/noconfig", "type": "List", "header": {} } } });
+			return new Promise(function (resolve, reject) {
+				this.oEditor.attachReady(function () {
+					assert.ok(this.oEditor.isReady(), "Editor is ready");
+					var oField1 = this.oEditor.getAggregation("_formContent")[2];
+					var oControl1 = oField1.getAggregation("_field");
+					assert.ok(oControl1.isA("sap.m.Select"), "Field 1: Control is Select");
+					assert.ok(oControl1.getEditable(), "Field 1: Control is editable");
+					assert.equal(oControl1.getItems().length, 3, "Field 1: Select lenght is OK");
+					var oField2 = this.oEditor.getAggregation("_formContent")[4];
+					var oControl2 = oField2.getAggregation("_field");
+					assert.ok(oControl2.isA("sap.m.Select"), "Field 2: Control is Select");
+					assert.ok(!oControl2.getEditable(), "Field 2: Control is NOT editable since 'editable' is false");
+					assert.equal(oControl2.getItems().length, 3, "Field 2: Select lenght is OK");
+					wait(1500).then(function () {
+						assert.equal(oField1._getCurrentProperty("value"), "", "Field 1: String1 Value '' correct");
+						assert.equal(oField2._getCurrentProperty("value"), "key1", "Field 2: String2 Value 'key1' correct since forceSelection is true");
+						oControl1.setSelectedKey("key2");
+						oControl1.fireChange({ selectedItem: oControl1.getItems()[1] });
+						oControl2.setSelectedKey("key3");
+						oControl2.fireChange({ selectedItem: oControl2.getItems()[2] });
+						wait(1500).then(function () {
+							assert.equal(oField1._getCurrentProperty("value"), "key2", "Field 1: String1 Value updated correct");
+							assert.equal(oField2._getCurrentProperty("value"), "key3", "Field 2: String2 Value updated correct");
+							resolve();
+						});
+					});
+				}.bind(this));
+			}.bind(this));
+		});
+
 		QUnit.test("IconSelect is created from dt class inline", function (assert) {
 			var dt = function () {
 				return new Designtime(
@@ -3672,7 +3821,7 @@ sap.ui.define([
 			this.oHost = new Host("host");
 			this.oHost.getDestinations = function () {
 				return new Promise(function (resolve) {
-					setTimeout(function () {
+					wait().then(function () {
 						resolve([
 							{
 								"name": "Products"
@@ -3687,7 +3836,7 @@ sap.ui.define([
 								"name": "Northwind"
 							}
 						]);
-					}, 1000);
+					});
 				});
 			};
 			this.oContextHost = new ContextHost("contexthost");
@@ -3714,7 +3863,6 @@ sap.ui.define([
 			}
 		}
 	}, function () {
-
 		QUnit.test("Check Loading animation on destination", function (assert) {
 			this.oEditor.setJson({ baseUrl: sBaseUrl, host: "host", manifest: { "sap.app": { "id": "test.sample", "i18n": "../i18n/i18n.properties" }, "sap.card": { "configuration": { "destinations": { "dest1": { "name": "MyDestination" } } }, "type": "List", "header": {} } } });
 			return new Promise(function (resolve, reject) {
@@ -3723,11 +3871,11 @@ sap.ui.define([
 					var oField = this.oEditor.getAggregation("_formContent")[2];
 					assert.ok(oField.isA("sap.ui.integration.editor.fields.DestinationField"), "Content of Form contains: Destination Field");
 					assert.ok(oField.getAggregation("_field").getBusy() === true, "Content of Form contains: Destination Field that is busy");
-					setTimeout(function () {
+					wait(1500).then(function () {
 						//should resolve the destination within 1000ms
 						assert.ok(oField.getAggregation("_field").getBusy() === false, "Content of Form contains: Destination Field that is not busy anymore");
 						resolve();
-					}, 1500);
+					});
 				}.bind(this));
 			}.bind(this));
 		});
@@ -3737,18 +3885,204 @@ sap.ui.define([
 			return new Promise(function (resolve, reject) {
 				this.oEditor.attachReady(function () {
 					assert.ok(this.oEditor.isReady(), "Editor is ready");
-					var DestinationSelect = this.oEditor.getAggregation("_formContent")[2].getAggregation("_field");
+					var DestinationComboBox = this.oEditor.getAggregation("_formContent")[2].getAggregation("_field");
 					assert.ok(this.oEditor.getAggregation("_formContent")[2].isA("sap.ui.integration.editor.fields.DestinationField"), "Content of Form contains: Destination Field");
-					assert.ok(DestinationSelect.getBusy() === true, "Content of Form contains: Destination Field that is busy");
-					setTimeout(function () {
+					assert.ok(DestinationComboBox.getBusy() === true, "Content of Form contains: Destination Field that is busy");
+					wait(1500).then(function () {
 						//should resolve the destination within 1000ms
-						assert.ok(DestinationSelect.getBusy() === false, "Content of Form contains: Destination Field that is not busy anymore");
-						assert.equal(DestinationSelect.getItems().length, 4, "Content of Form contains: Destination Field items lengh OK");
-						assert.equal(DestinationSelect.getSelectedIndex(), 3, "Content of Form contains: Destination Field selectedItem: Index OK");
-						assert.equal(DestinationSelect.getSelectedItem().getKey(), "Northwind", "Content of Form contains: Destination Field selectedItem: Key OK");
-						assert.equal(DestinationSelect.getSelectedItem().getText(), "Northwind", "Content of Form contains: Destination Field selectedItem: Text OK");
+						assert.ok(DestinationComboBox.isA("sap.m.ComboBox"), "Content of Form contains: Destination Field that is ComboBox");
+						assert.ok(DestinationComboBox.getBusy() === false, "Content of Form contains: Destination Field that is not busy anymore");
+						assert.equal(DestinationComboBox.getSelectedKey(), "Northwind", "Content of Form contains: Destination Field selectedItem: Key OK");
+						assert.equal(DestinationComboBox.getSelectedItem().getText(), "Northwind", "Content of Form contains: Destination Field selectedItem: Text OK");
+						var oItems = DestinationComboBox.getItems();
+						assert.equal(oItems.length, 4, "Content of Form contains: Destination Field items lengh OK");
+						assert.equal(oItems[0].getKey(), "Northwind", "Content of Form contains: Destination Field item 0 Key OK");
+						assert.equal(oItems[1].getKey(), "Orders", "Content of Form contains: Destination Field item 1 Key OK");
+						assert.equal(oItems[2].getKey(), "Portal", "Content of Form contains: Destination Field item 2 Key OK");
+						assert.equal(oItems[3].getKey(), "Products", "Content of Form contains: Destination Field item 3 Key OK");
 						resolve();
-					}, 1500);
+					});
+				}.bind(this));
+			}.bind(this));
+		});
+	});
+
+	QUnit.module("Large number of destinations", {
+		beforeEach: function () {
+			this.oHost = new Host("host");
+			this.oHost.getDestinations = function () {
+				return new Promise(function (resolve) {
+					wait().then(function () {
+						var items = [
+							{
+								"name": "Products"
+							},
+							{
+								"name": "Orders"
+							},
+							{
+								"name": "Portal"
+							},
+							{
+								"name": "Northwind"
+							}
+						];
+						for (var i = 1000; i > 0; i--) {
+							items.push({name: i});
+						}
+						resolve(items);
+					});
+				});
+			};
+			this.oContextHost = new ContextHost("contexthost");
+
+			this.oEditor = new Editor();
+			var oContent = document.getElementById("content");
+			if (!oContent) {
+				oContent = document.createElement("div");
+				oContent.setAttribute("id", "content");
+				document.body.appendChild(oContent);
+				document.body.style.zIndex = 1000;
+			}
+			this.oEditor.placeAt(oContent);
+		},
+		afterEach: function () {
+			this.oEditor.destroy();
+			this.oHost.destroy();
+			this.oContextHost.destroy();
+			sandbox.restore();
+			var oContent = document.getElementById("content");
+			if (oContent) {
+				oContent.innerHTML = "";
+				document.body.style.zIndex = "unset";
+			}
+		}
+	}, function () {
+		QUnit.test("Check number of destinations", function (assert) {
+			this.oEditor.setJson({ baseUrl: sBaseUrl, host: "host", manifest: { "sap.app": { "id": "test.sample", "i18n": "../i18n/i18n.properties" }, "sap.card": { "configuration": { "destinations": { "dest1": { "name": "Northwind" } } }, "type": "List", "header": {} } } });
+			return new Promise(function (resolve, reject) {
+				this.oEditor.attachReady(function () {
+					assert.ok(this.oEditor.isReady(), "Editor is ready");
+					var DestinationComboBox = this.oEditor.getAggregation("_formContent")[2].getAggregation("_field");
+					assert.ok(this.oEditor.getAggregation("_formContent")[2].isA("sap.ui.integration.editor.fields.DestinationField"), "Content of Form contains: Destination Field");
+					assert.ok(DestinationComboBox.getBusy() === true, "Content of Form contains: Destination Field that is busy");
+					wait(1500).then(function () {
+						//should resolve the destination within 1000ms
+						assert.ok(DestinationComboBox.isA("sap.m.ComboBox"), "Content of Form contains: Destination Field that is ComboBox");
+						assert.ok(DestinationComboBox.getBusy() === false, "Content of Form contains: Destination Field that is not busy anymore");
+						assert.equal(DestinationComboBox.getSelectedKey(), "Northwind", "Content of Form contains: Destination Field selectedItem: Key OK");
+						assert.equal(DestinationComboBox.getSelectedItem().getText(), "Northwind", "Content of Form contains: Destination Field selectedItem: Text OK");
+						var oItems = DestinationComboBox.getItems();
+						assert.equal(oItems.length, 1004, "Content of Form contains: Destination Field items lengh OK");
+						assert.equal(oItems[0].getKey(), "Northwind", "Content of Form contains: Destination Field item 0 Key OK");
+						assert.equal(oItems[1].getKey(), "Orders", "Content of Form contains: Destination Field item 1 Key OK");
+						assert.equal(oItems[2].getKey(), "Portal", "Content of Form contains: Destination Field item 2 Key OK");
+						assert.equal(oItems[3].getKey(), "Products", "Content of Form contains: Destination Field item 3 Key OK");
+						for (var i = 1; i < 1001; i++) {
+							assert.equal(oItems[(i + 3)].getKey(), i, "Content of Form contains: Destination Field item " + (i + 3) + " Key OK");
+						}
+						resolve();
+					});
+				}.bind(this));
+			}.bind(this));
+		});
+
+		QUnit.test("Filter destinations 1", function (assert) {
+			this.oEditor.setJson({ baseUrl: sBaseUrl, host: "host", manifest: { "sap.app": { "id": "test.sample", "i18n": "../i18n/i18n.properties" }, "sap.card": { "configuration": { "destinations": { "dest1": { "name": "Northwind" } } }, "type": "List", "header": {} } } });
+			return new Promise(function (resolve, reject) {
+				this.oEditor.attachReady(function () {
+					assert.ok(this.oEditor.isReady(), "Editor is ready");
+					var DestinationComboBox = this.oEditor.getAggregation("_formContent")[2].getAggregation("_field");
+					assert.ok(this.oEditor.getAggregation("_formContent")[2].isA("sap.ui.integration.editor.fields.DestinationField"), "Content of Form contains: Destination Field");
+					assert.ok(DestinationComboBox.getBusy() === true, "Content of Form contains: Destination Field that is busy");
+					wait(1500).then(function () {
+						//should resolve the destination within 1000ms
+						assert.ok(DestinationComboBox.isA("sap.m.ComboBox"), "Content of Form contains: Destination Field that is ComboBox");
+						assert.ok(DestinationComboBox.getBusy() === false, "Content of Form contains: Destination Field that is not busy anymore");
+						assert.equal(DestinationComboBox.getSelectedKey(), "Northwind", "Content of Form contains: Destination Field selectedItem: Key OK");
+						assert.equal(DestinationComboBox.getSelectedItem().getText(), "Northwind", "Content of Form contains: Destination Field selectedItem: Text OK");
+						assert.equal(DestinationComboBox.getVisibleItems().length, 0, "Content of Form contains: Destination Field visible items lengh OK");
+						DestinationComboBox.focus();
+						EditorQunitUtils.setInputValue(DestinationComboBox, "o");
+						wait(2000).then(function () {
+							assert.ok(DestinationComboBox._getSuggestionsPopover().isOpen(), "Content of Form contains: suggestion popover is open");
+							assert.equal(DestinationComboBox.getVisibleItems().length, 1, "Field: Destination Field visible items lengh OK");
+							assert.equal(DestinationComboBox.getVisibleItems()[0].getKey(), "Orders", "Field: Destination Field visible item 0 Key OK");
+							resolve();
+						});
+					});
+				}.bind(this));
+			}.bind(this));
+		});
+
+		QUnit.test("Filter destinations 2", function (assert) {
+			this.oEditor.setJson({ baseUrl: sBaseUrl, host: "host", manifest: { "sap.app": { "id": "test.sample", "i18n": "../i18n/i18n.properties" }, "sap.card": { "configuration": { "destinations": { "dest1": { "name": "Northwind" } } }, "type": "List", "header": {} } } });
+			return new Promise(function (resolve, reject) {
+				this.oEditor.attachReady(function () {
+					assert.ok(this.oEditor.isReady(), "Editor is ready");
+					var DestinationComboBox = this.oEditor.getAggregation("_formContent")[2].getAggregation("_field");
+					assert.ok(this.oEditor.getAggregation("_formContent")[2].isA("sap.ui.integration.editor.fields.DestinationField"), "Content of Form contains: Destination Field");
+					assert.ok(DestinationComboBox.getBusy() === true, "Content of Form contains: Destination Field that is busy");
+					wait(1500).then(function () {
+						//should resolve the destination within 1000ms
+						assert.ok(DestinationComboBox.isA("sap.m.ComboBox"), "Content of Form contains: Destination Field that is ComboBox");
+						assert.ok(DestinationComboBox.getBusy() === false, "Content of Form contains: Destination Field that is not busy anymore");
+						assert.equal(DestinationComboBox.getSelectedKey(), "Northwind", "Content of Form contains: Destination Field selectedItem: Key OK");
+						assert.equal(DestinationComboBox.getSelectedItem().getText(), "Northwind", "Content of Form contains: Destination Field selectedItem: Text OK");
+						assert.equal(DestinationComboBox.getVisibleItems().length, 0, "Content of Form contains: Destination Field visible items lengh OK");
+						DestinationComboBox.focus();
+						EditorQunitUtils.setInputValue(DestinationComboBox, "p");
+						wait(2000).then(function () {
+							assert.ok(DestinationComboBox._getSuggestionsPopover().isOpen(), "Content of Form contains: suggestion popover is open");
+							assert.equal(DestinationComboBox.getVisibleItems().length, 2, "Field: Destination Field visible items lengh OK");
+							assert.equal(DestinationComboBox.getVisibleItems()[0].getKey(), "Portal", "Field: Destination Field visible item 0 Key OK");
+							assert.equal(DestinationComboBox.getVisibleItems()[1].getKey(), "Products", "Field: Destination Field visible item 1 Key OK");
+							resolve();
+						});
+					});
+				}.bind(this));
+			}.bind(this));
+		});
+
+		QUnit.test("Filter destinations 3", function (assert) {
+			this.oEditor.setJson({ baseUrl: sBaseUrl, host: "host", manifest: { "sap.app": { "id": "test.sample", "i18n": "../i18n/i18n.properties" }, "sap.card": { "configuration": { "destinations": { "dest1": { "name": "Northwind" } } }, "type": "List", "header": {} } } });
+			return new Promise(function (resolve, reject) {
+				this.oEditor.attachReady(function () {
+					assert.ok(this.oEditor.isReady(), "Editor is ready");
+					var DestinationComboBox = this.oEditor.getAggregation("_formContent")[2].getAggregation("_field");
+					assert.ok(this.oEditor.getAggregation("_formContent")[2].isA("sap.ui.integration.editor.fields.DestinationField"), "Content of Form contains: Destination Field");
+					assert.ok(DestinationComboBox.getBusy() === true, "Content of Form contains: Destination Field that is busy");
+					wait(1500).then(function () {
+						//should resolve the destination within 1000ms
+						assert.ok(DestinationComboBox.isA("sap.m.ComboBox"), "Content of Form contains: Destination Field that is ComboBox");
+						assert.ok(DestinationComboBox.getBusy() === false, "Content of Form contains: Destination Field that is not busy anymore");
+						assert.equal(DestinationComboBox.getSelectedKey(), "Northwind", "Content of Form contains: Destination Field selectedItem: Key OK");
+						assert.equal(DestinationComboBox.getSelectedItem().getText(), "Northwind", "Content of Form contains: Destination Field selectedItem: Text OK");
+						assert.equal(DestinationComboBox.getVisibleItems().length, 0, "Content of Form contains: Destination Field visible items lengh OK");
+						DestinationComboBox.focus();
+						EditorQunitUtils.setInputValue(DestinationComboBox, "1");
+						wait(2000).then(function () {
+							assert.ok(DestinationComboBox._getSuggestionsPopover().isOpen(), "Content of Form contains: suggestion popover is open");
+							var aVisibleItems = DestinationComboBox.getVisibleItems();
+							assert.equal(aVisibleItems.length, 112, "Content of Form contains: Destination Field visible items lengh OK");
+							assert.equal(aVisibleItems[0].getKey(), "1", "Content of Form contains: Destination Field visible item 0 Key OK");
+							assert.equal(aVisibleItems[1].getKey(), "10", "Content of Form contains: Destination Field visible item 1 Key OK");
+							assert.equal(aVisibleItems[2].getKey(), "11", "Content of Form contains: Destination Field visible item 2 Key OK");
+							assert.equal(aVisibleItems[3].getKey(), "12", "Content of Form contains: Destination Field visible item 3 Key OK");
+							assert.equal(aVisibleItems[4].getKey(), "13", "Content of Form contains: Destination Field visible item 4 Key OK");
+							assert.equal(aVisibleItems[5].getKey(), "14", "Content of Form contains: Destination Field visible item 5 Key OK");
+							assert.equal(aVisibleItems[6].getKey(), "15", "Content of Form contains: Destination Field visible item 6 Key OK");
+							assert.equal(aVisibleItems[7].getKey(), "16", "Content of Form contains: Destination Field visible item 7 Key OK");
+							assert.equal(aVisibleItems[8].getKey(), "17", "Content of Form contains: Destination Field visible item 8 Key OK");
+							assert.equal(aVisibleItems[9].getKey(), "18", "Content of Form contains: Destination Field visible item 9 Key OK");
+							assert.equal(aVisibleItems[10].getKey(), "19", "Content of Form contains: Destination Field visible item 10 Key OK");
+							for (var i = 0; i < 100; i++) {
+								assert.equal(aVisibleItems[(i + 11)].getKey(), i + 100, "Content of Form contains: Destination Field item " + (i + 11) + " Key OK");
+							}
+							assert.equal(aVisibleItems[111].getKey(), "1000", "Content of Form contains: Destination Field visible item 111 Key OK");
+							resolve();
+						});
+					});
 				}.bind(this));
 			}.bind(this));
 		});
@@ -3759,9 +4093,9 @@ sap.ui.define([
 			this.oHost = new Host("host");
 			this.oHost.getDestinations = function() {
 				return new Promise(function(resove, reject) {
-					setTimeout(function() {
+					wait(3000).then(function () {
 						reject("Get destinations list timeout.");
-					}, 3000);
+					});
 				});
 			};
 			this.oContextHost = new ContextHost("contexthost");
@@ -3796,12 +4130,1135 @@ sap.ui.define([
 					var oField = this.oEditor.getAggregation("_formContent")[2];
 					assert.ok(oField.isA("sap.ui.integration.editor.fields.DestinationField"), "Content of Form contains: Destination Field");
 					assert.ok(oField.getAggregation("_field").getBusy() === true, "Content of Form contains: Destination Field that is busy");
-					setTimeout(function () {
+					wait(8000).then(function () {
 						//should resolve the destination within 6000ms
 						assert.ok(oField.getAggregation("_field").getBusy() === false, "Content of Form contains: Destination Field that is not busy anymore");
 						assert.equal(oField.getAggregation("_field").getItems().length, 0, "Content of Form contains: Destination Field items lengh OK");
 						resolve();
-					}, 8000);
+					});
+				}.bind(this));
+			}.bind(this));
+		});
+	});
+
+	QUnit.module("Destinations defined in DT", {
+		beforeEach: function () {
+			Core.getConfiguration().setLanguage("en");
+			this.oHost = new Host("host");
+			this.oHost.getDestinations = function () {
+				return new Promise(function (resolve) {
+					wait().then(function () {
+						var items = [
+							{
+								"name": "Products"
+							},
+							{
+								"name": "Orders"
+							},
+							{
+								"name": "Portal"
+							},
+							{
+								"name": "Northwind"
+							}
+						];
+						resolve(items);
+					});
+				});
+			};
+			this.oContextHost = new ContextHost("contexthost");
+
+			this.oEditor = new Editor();
+			var oContent = document.getElementById("content");
+			if (!oContent) {
+				oContent = document.createElement("div");
+				oContent.setAttribute("id", "content");
+				document.body.appendChild(oContent);
+				document.body.style.zIndex = 1000;
+			}
+			this.oEditor.placeAt(oContent);
+		},
+		afterEach: function () {
+			this.oEditor.destroy();
+			this.oHost.destroy();
+			this.oContextHost.destroy();
+			sandbox.restore();
+			var oContent = document.getElementById("content");
+			if (oContent) {
+				oContent.innerHTML = "";
+				document.body.style.zIndex = "unset";
+			}
+		}
+	}, function () {
+		QUnit.test("Define destination in DT", function (assert) {
+			this.oEditor.setJson({
+				baseUrl: sBaseUrl,
+				host: "host",
+				manifest: {
+					"sap.app": {
+						"id": "test.sample",
+						"i18n": "../i18n/i18n.properties"
+					},
+					"sap.card": {
+						"configuration": {
+							"editor": "designtime/destinationInDT",
+							"destinations": {
+								"dest1": {
+									"label": "dest1 label defined in manifest",
+									"name": "Northwind"
+								},
+								"dest2": {
+									"label": "dest2 label defined in manifest",
+									"name": "Northwind"
+								},
+								"dest3": {
+									"name": "Northwind"
+								}
+							}
+						},
+						"type": "List",
+						"header": {}
+					}
+				}
+			});
+			return new Promise(function (resolve, reject) {
+				this.oEditor.attachReady(function () {
+					assert.ok(this.oEditor.isReady(), "Editor is ready");
+					var aFormContent = this.oEditor.getAggregation("_formContent");
+					assert.equal(aFormContent.length, 5, "Editor: has 2 destinations");
+					var oPanel = aFormContent[0].getAggregation("_field");
+					assert.ok(oPanel.isA("sap.m.Panel"), "Panel: Form content contains a Panel");
+					assert.equal(oPanel.getHeaderText(), "Destinations", "Panel: Header Text");
+					var DestinationLabel1 = aFormContent[1];
+					var DestinationComboBox1 = aFormContent[2].getAggregation("_field");
+					var DestinationLabel2 = aFormContent[3];
+					var DestinationComboBox2 = aFormContent[4].getAggregation("_field");
+					assert.ok(DestinationLabel1.isA("sap.m.Label"), "Label1: Form content contains a Label");
+					assert.equal(DestinationLabel1.getText(), "dest1 label defined in DT", "Label1: Has dest1 label from destination label property defined in DT");
+					assert.ok(this.oEditor.getAggregation("_formContent")[2].isA("sap.ui.integration.editor.fields.DestinationField"), "Content of Form contains: Destination Field");
+					assert.ok(DestinationComboBox1.getBusy() === true, "Content of Form contains: Destination Field that is busy");
+					assert.ok(DestinationLabel2.isA("sap.m.Label"), "Label2: Form content contains a Label");
+					assert.equal(DestinationLabel2.getText(), "dest2 label defined in manifest", "Label2: Has dest2 label from destination label property defined in manifest");
+					assert.ok(!DestinationComboBox2.getEditable(), "Content of Form contains: Destination Field 2 is NOT editable");
+					wait(1500).then(function () {
+						//should resolve the destination within 1000ms
+						assert.ok(DestinationComboBox1.isA("sap.m.ComboBox"), "Content of Form contains: Destination Field 1 that is ComboBox");
+						assert.ok(DestinationComboBox1.getBusy() === false, "Content of Form contains: Destination Field 1 that is not busy anymore");
+						assert.equal(DestinationComboBox1.getSelectedKey(), "Northwind", "Content of Form contains: Destination Field 1 selectedItem: Key OK");
+						assert.equal(DestinationComboBox1.getSelectedItem().getText(), "Northwind", "Content of Form contains: Destination Field 1 selectedItem: Text OK");
+						var oItems = DestinationComboBox1.getItems();
+						assert.equal(oItems.length, 4, "Content of Form contains: Destination Field items lengh OK");
+						assert.equal(oItems[0].getKey(), "Northwind", "Content of Form contains: Destination Field item 0 Key OK");
+						assert.equal(oItems[1].getKey(), "Orders", "Content of Form contains: Destination Field item 1 Key OK");
+						assert.equal(oItems[2].getKey(), "Portal", "Content of Form contains: Destination Field item 2 Key OK");
+						assert.equal(oItems[3].getKey(), "Products", "Content of Form contains: Destination Field item 3 Key OK");
+						resolve();
+					});
+				}.bind(this));
+			}.bind(this));
+		});
+
+		QUnit.test("In content mode", function (assert) {
+			this.oEditor.setMode("content");
+			this.oEditor.setJson({
+				baseUrl: sBaseUrl,
+				host: "host",
+				manifest: {
+					"sap.app": {
+						"id": "test.sample",
+						"i18n": "../i18n/i18n.properties"
+					},
+					"sap.card": {
+						"configuration": {
+							"editor": "designtime/destinationInDT",
+							"destinations": {
+								"dest1": {
+									"label": "dest1 label defined in manifest",
+									"name": "Northwind"
+								},
+								"dest2": {
+									"label": "dest2 label defined in manifest",
+									"name": "Northwind"
+								},
+								"dest3": {
+									"name": "Northwind"
+								}
+							}
+						},
+						"type": "List",
+						"header": {}
+					}
+				}
+			});
+			return new Promise(function (resolve, reject) {
+				this.oEditor.attachReady(function () {
+					assert.ok(this.oEditor.isReady(), "Editor is ready");
+					var aFormContent = this.oEditor.getAggregation("_formContent");
+					assert.ok(!aFormContent, "Editor: has no destinations");
+					wait(1500).then(function () {
+						resolve();
+					});
+				}.bind(this));
+			}.bind(this));
+		});
+
+		QUnit.test("In translation mode", function (assert) {
+			this.oEditor.setMode("translation");
+			this.oEditor.setJson({
+				baseUrl: sBaseUrl,
+				host: "host",
+				manifest: {
+					"sap.app": {
+						"id": "test.sample",
+						"i18n": "../i18n/i18n.properties"
+					},
+					"sap.card": {
+						"configuration": {
+							"editor": "designtime/destinationInDT",
+							"destinations": {
+								"dest1": {
+									"label": "dest1 label defined in manifest",
+									"name": "Northwind"
+								},
+								"dest2": {
+									"label": "dest2 label defined in manifest",
+									"name": "Northwind"
+								},
+								"dest3": {
+									"name": "Northwind"
+								}
+							}
+						},
+						"type": "List",
+						"header": {}
+					}
+				}
+			});
+			return new Promise(function (resolve, reject) {
+				this.oEditor.attachReady(function () {
+					assert.ok(this.oEditor.isReady(), "Editor is ready");
+					var aFormContent = this.oEditor.getAggregation("_formContent");
+					assert.equal(aFormContent.length, 1, "Editor: has 1 item");
+					var oPanel = aFormContent[0].getAggregation("_field");
+					assert.ok(oPanel.isA("sap.m.Panel"), "Panel: Form content contains a Panel");
+					wait(1500).then(function () {
+						resolve();
+					});
+				}.bind(this));
+			}.bind(this));
+		});
+
+		QUnit.test("Define Destination Group in DT", function (assert) {
+			this.oEditor.setJson({
+				baseUrl: sBaseUrl,
+				host: "host",
+				manifest: {
+					"sap.app": {
+						"id": "test.sample",
+						"i18n": "../i18n/i18n.properties"
+					},
+					"sap.card": {
+						"configuration": {
+							"editor": "designtime/customDestinationGroup",
+							"parameters": {
+								"stringParameter": {
+									"value": "stringParameter Value"
+								}
+							},
+							"destinations": {
+								"dest1": {
+									"label": "dest1 label defined in manifest",
+									"name": "Northwind"
+								}
+							}
+						},
+						"type": "List",
+						"header": {}
+					}
+				}
+			});
+			return new Promise(function (resolve, reject) {
+				this.oEditor.attachReady(function () {
+					assert.ok(this.oEditor.isReady(), "Editor is ready");
+					var aFormContent = this.oEditor.getAggregation("_formContent");
+					var oGeneralPanel = aFormContent[0].getAggregation("_field");
+					assert.ok(oGeneralPanel.isA("sap.m.Panel"), "Panel: Form content contains a General Panel");
+					assert.equal(oGeneralPanel.getHeaderText(), "General Settings", "General Panel: Header Text");
+					var oLabel = aFormContent[1];
+					var oField = aFormContent[2];
+					assert.ok(oLabel.isA("sap.m.Label"), "Label: Form content contains a Label");
+					assert.equal(oLabel.getText(), "string Parameter", "Label: Has label text");
+					assert.ok(oField.isA("sap.ui.integration.editor.fields.StringField"), "Field: String Field");
+					assert.ok(oField.getAggregation("_field").isA("sap.m.Input"), "Field: Editable changed from admin change");
+					assert.ok(oField.getAggregation("_field").getEditable(), "Field: Editable changed from admin change");
+
+					var oDestinationPanel = aFormContent[3].getAggregation("_field");
+					assert.ok(oDestinationPanel.isA("sap.m.Panel"), "Destinations Panel: Form content contains a Panel");
+					assert.equal(oDestinationPanel.getHeaderText(), "Destinations group label defined in DT", "Destinations Panel: Header Text");
+					assert.ok(!oDestinationPanel.getExpanded(), "Destinations Panel: not expanded");
+					var DestinationLabel1 = aFormContent[4];
+					var DestinationField1 = aFormContent[5];
+					var DestinationComboBox1 = DestinationField1.getAggregation("_field");
+					assert.ok(DestinationLabel1.isA("sap.m.Label"), "Label1: Form content contains a Label");
+					assert.equal(DestinationLabel1.getText(), "dest1 label defined in DT", "Label1: Has dest1 label from destination label property defined in DT");
+					assert.ok(DestinationField1.isA("sap.ui.integration.editor.fields.DestinationField"), "Content of Form contains: Destination Field");
+					assert.ok(DestinationComboBox1.getBusy() === true, "Content of Form contains: Destination Field that is busy");
+					wait(1500).then(function () {
+						//should resolve the destination within 1000ms
+						assert.ok(DestinationComboBox1.isA("sap.m.ComboBox"), "Content of Form contains: Destination Field 1 that is ComboBox");
+						assert.ok(DestinationComboBox1.getBusy() === false, "Content of Form contains: Destination Field 1 that is not busy anymore");
+						assert.equal(DestinationComboBox1.getSelectedKey(), "Northwind", "Content of Form contains: Destination Field 1 selectedItem: Key OK");
+						assert.equal(DestinationComboBox1.getSelectedItem().getText(), "Northwind", "Content of Form contains: Destination Field 1 selectedItem: Text OK");
+						var oItems = DestinationComboBox1.getItems();
+						assert.equal(oItems.length, 4, "Content of Form contains: Destination Field items lengh OK");
+						assert.equal(oItems[0].getKey(), "Northwind", "Content of Form contains: Destination Field item 0 Key OK");
+						assert.equal(oItems[1].getKey(), "Orders", "Content of Form contains: Destination Field item 1 Key OK");
+						assert.equal(oItems[2].getKey(), "Portal", "Content of Form contains: Destination Field item 2 Key OK");
+						assert.equal(oItems[3].getKey(), "Products", "Content of Form contains: Destination Field item 3 Key OK");
+						resolve();
+					});
+				}.bind(this));
+			}.bind(this));
+		});
+	});
+
+	QUnit.module("Destination Group position start", {
+		beforeEach: function () {
+			Core.getConfiguration().setLanguage("en");
+			this.oHost = new Host("host");
+			this.oHost.getDestinations = function () {
+				return new Promise(function (resolve) {
+					wait().then(function () {
+						var items = [
+							{
+								"name": "Products"
+							},
+							{
+								"name": "Orders"
+							},
+							{
+								"name": "Portal"
+							},
+							{
+								"name": "Northwind"
+							}
+						];
+						resolve(items);
+					});
+				});
+			};
+			this.oContextHost = new ContextHost("contexthost");
+
+			this.oEditor = new Editor();
+			var oContent = document.getElementById("content");
+			if (!oContent) {
+				oContent = document.createElement("div");
+				oContent.setAttribute("id", "content");
+				document.body.appendChild(oContent);
+				document.body.style.zIndex = 1000;
+			}
+			this.oEditor.placeAt(oContent);
+		},
+		afterEach: function () {
+			this.oEditor.destroy();
+			this.oHost.destroy();
+			this.oContextHost.destroy();
+			sandbox.restore();
+			var oContent = document.getElementById("content");
+			if (oContent) {
+				oContent.innerHTML = "";
+				document.body.style.zIndex = "unset";
+			}
+		}
+	}, function () {
+		QUnit.test("In admin mode, no general group defined for parameters", function (assert) {
+			this.oEditor.setMode("admin");
+			this.oEditor.setJson({
+				baseUrl: sBaseUrl,
+				host: "host",
+				manifest: {
+					"sap.app": {
+						"id": "test.sample",
+						"i18n": "../i18n/i18n.properties"
+					},
+					"sap.card": {
+						"configuration": {
+							"editor": "designtime/DestinationGroupPositionStartWithNoGeneralGroup",
+							"parameters": {
+								"stringParameter": {
+									"value": "stringParameter Value"
+								},
+								"booleanParameter": {
+									"value": false
+								}
+							},
+							"destinations": {
+								"dest1": {
+									"label": "dest1 label defined in manifest",
+									"name": "Northwind"
+								}
+							}
+						},
+						"type": "List",
+						"header": {}
+					}
+				}
+			});
+			return new Promise(function (resolve, reject) {
+				this.oEditor.attachReady(function () {
+					assert.ok(this.oEditor.isReady(), "Editor is ready");
+					var aFormContent = this.oEditor.getAggregation("_formContent");
+					var oDestinationPanel = aFormContent[0].getAggregation("_field");
+					assert.ok(oDestinationPanel.isA("sap.m.Panel"), "Panel: Form content contains Destination Panel");
+					assert.equal(oDestinationPanel.getHeaderText(), "Destinations group label defined in DT", "Destination Panel: Header Text");
+					assert.ok(!oDestinationPanel.getExpanded(), "Panel: not expanded");
+					var DestinationLabel1 = aFormContent[1];
+					var DestinationComboBox1 = aFormContent[2].getAggregation("_field");
+					assert.ok(DestinationLabel1.isA("sap.m.Label"), "Label1: Form content contains a Label");
+					assert.equal(DestinationLabel1.getText(), "dest1 label defined in DT", "Label1: Has dest1 label from destination label property defined in DT");
+					assert.ok(this.oEditor.getAggregation("_formContent")[2].isA("sap.ui.integration.editor.fields.DestinationField"), "Content of Form contains: Destination Field");
+					assert.ok(DestinationComboBox1.getBusy() === true, "Content of Form contains: Destination Field that is busy");
+
+					var oGeneralPanel = aFormContent[3].getAggregation("_field");
+					assert.ok(oGeneralPanel.isA("sap.m.Panel"), "Panel: Form content contains General Panel");
+					assert.equal(oGeneralPanel.getHeaderText(), "General Settings", "General Panel: Header Text");
+					var oLabel1 = this.oEditor.getAggregation("_formContent")[4];
+					var oField1 = this.oEditor.getAggregation("_formContent")[5];
+					assert.ok(oLabel1.isA("sap.m.Label"), "stringParameter Label: Form content 1 contains a Label");
+					assert.equal(oLabel1.getText(), "string Parameter", "stringParameter Label: Has label text");
+					assert.ok(oField1.isA("sap.ui.integration.editor.fields.StringField"), "stringParameter Field: String Field");
+					assert.equal(oField1.getAggregation("_field").getValue(), "stringParameter Value", "stringParameter Field: String Value");
+					var oCurrentSettings = this.oEditor.getCurrentSettings();
+					assert.equal(oCurrentSettings["/sap.card/configuration/parameters/stringParameter/value"], "stringParameter Value", "stringParameter Field: manifestpath Value");
+					var oLabel2 = this.oEditor.getAggregation("_formContent")[6];
+					var oField2 = this.oEditor.getAggregation("_formContent")[7];
+					assert.ok(oLabel2.isA("sap.m.Label"), "booleanParameter Label: Form content 2 contains a Label");
+					assert.equal(oLabel2.getText(), "booleanParameter", "booleanParameter Label: Has label text");
+					assert.ok(oField2.isA("sap.ui.integration.editor.fields.BooleanField"), "booleanParameter Field: Boolean Field");
+					assert.equal(oField2.getAggregation("_field").getSelected(), false, "booleanParameter Field: Value");
+					assert.equal(oCurrentSettings["/sap.card/configuration/parameters/booleanParameter/value"], false, "booleanParameter Field: manifestpath Value");
+
+					wait(1500).then(function () {
+						//should resolve the destination within 1000ms
+						assert.ok(DestinationComboBox1.isA("sap.m.ComboBox"), "Content of Form contains: Destination Field 1 that is ComboBox");
+						assert.ok(DestinationComboBox1.getBusy() === false, "Content of Form contains: Destination Field 1 that is not busy anymore");
+						assert.equal(DestinationComboBox1.getSelectedKey(), "Northwind", "Content of Form contains: Destination Field 1 selectedItem: Key OK");
+						assert.equal(DestinationComboBox1.getSelectedItem().getText(), "Northwind", "Content of Form contains: Destination Field 1 selectedItem: Text OK");
+						var oItems = DestinationComboBox1.getItems();
+						assert.equal(oItems.length, 4, "Content of Form contains: Destination Field items lengh OK");
+						assert.equal(oItems[0].getKey(), "Northwind", "Content of Form contains: Destination Field item 0 Key OK");
+						assert.equal(oItems[1].getKey(), "Orders", "Content of Form contains: Destination Field item 1 Key OK");
+						assert.equal(oItems[2].getKey(), "Portal", "Content of Form contains: Destination Field item 2 Key OK");
+						assert.equal(oItems[3].getKey(), "Products", "Content of Form contains: Destination Field item 3 Key OK");
+						resolve();
+					});
+				}.bind(this));
+			}.bind(this));
+		});
+
+		QUnit.test("In admin mode, no general group defined for parameters 2", function (assert) {
+			this.oEditor.setMode("admin");
+			this.oEditor.setJson({
+				baseUrl: sBaseUrl,
+				host: "host",
+				manifest: {
+					"sap.app": {
+						"id": "test.sample",
+						"i18n": "../i18n/i18n.properties"
+					},
+					"sap.card": {
+						"configuration": {
+							"editor": "designtime/DestinationGroupPositionStartWithNoGeneralGroup2",
+							"parameters": {
+								"stringParameter": {
+									"value": "stringParameter Value"
+								},
+								"booleanParameter": {
+									"value": false
+								}
+							},
+							"destinations": {
+								"dest1": {
+									"label": "dest1 label defined in manifest",
+									"name": "Northwind"
+								}
+							}
+						},
+						"type": "List",
+						"header": {}
+					}
+				}
+			});
+			return new Promise(function (resolve, reject) {
+				this.oEditor.attachReady(function () {
+					assert.ok(this.oEditor.isReady(), "Editor is ready");
+					var aFormContent = this.oEditor.getAggregation("_formContent");
+					var oDestinationPanel = aFormContent[0].getAggregation("_field");
+					assert.ok(oDestinationPanel.isA("sap.m.Panel"), "Panel: Form content contains Destination Panel");
+					assert.equal(oDestinationPanel.getHeaderText(), "Destinations group label defined in DT", "Destination Panel: Header Text");
+					assert.ok(!oDestinationPanel.getExpanded(), "Panel: not expanded");
+					var DestinationLabel1 = aFormContent[1];
+					var DestinationComboBox1 = aFormContent[2].getAggregation("_field");
+					assert.ok(DestinationLabel1.isA("sap.m.Label"), "Label1: Form content contains a Label");
+					assert.equal(DestinationLabel1.getText(), "dest1 label defined in DT", "Label1: Has dest1 label from destination label property defined in DT");
+					assert.ok(this.oEditor.getAggregation("_formContent")[2].isA("sap.ui.integration.editor.fields.DestinationField"), "Content of Form contains: Destination Field");
+					assert.ok(DestinationComboBox1.getBusy() === true, "Content of Form contains: Destination Field that is busy");
+
+					var oGeneralPanel = aFormContent[3].getAggregation("_field");
+					assert.ok(oGeneralPanel.isA("sap.m.Panel"), "Panel: Form content contains General Panel");
+					assert.equal(oGeneralPanel.getHeaderText(), "General Settings", "General Panel: Header Text");
+					var oLabel1 = this.oEditor.getAggregation("_formContent")[4];
+					var oField1 = this.oEditor.getAggregation("_formContent")[5];
+					assert.ok(oLabel1.isA("sap.m.Label"), "stringParameter Label: Form content 1 contains a Label");
+					assert.equal(oLabel1.getText(), "string Parameter", "stringParameter Label: Has label text");
+					assert.ok(oField1.isA("sap.ui.integration.editor.fields.StringField"), "stringParameter Field: String Field");
+					assert.equal(oField1.getAggregation("_field").getValue(), "stringParameter Value", "stringParameter Field: String Value");
+					var oCurrentSettings = this.oEditor.getCurrentSettings();
+					assert.equal(oCurrentSettings["/sap.card/configuration/parameters/stringParameter/value"], "stringParameter Value", "stringParameter Field: manifestpath Value");
+					var oGroupPanel = aFormContent[6].getAggregation("_field");
+					assert.ok(oGroupPanel.isA("sap.m.Panel"), "Panel: Form content contains Group Panel");
+					assert.equal(oGroupPanel.getHeaderText(), "Group", "Group Panel: Header Text");
+					var oLabel2 = this.oEditor.getAggregation("_formContent")[7];
+					var oField2 = this.oEditor.getAggregation("_formContent")[8];
+					assert.ok(oLabel2.isA("sap.m.Label"), "booleanParameter Label: Form content 2 contains a Label");
+					assert.equal(oLabel2.getText(), "booleanParameter", "booleanParameter Label: Has label text");
+					assert.ok(oField2.isA("sap.ui.integration.editor.fields.BooleanField"), "booleanParameter Field: Boolean Field");
+					assert.equal(oField2.getAggregation("_field").getSelected(), false, "booleanParameter Field: Value");
+					assert.equal(oCurrentSettings["/sap.card/configuration/parameters/booleanParameter/value"], false, "booleanParameter Field: manifestpath Value");
+
+					wait(1500).then(function () {
+						//should resolve the destination within 1000ms
+						assert.ok(DestinationComboBox1.isA("sap.m.ComboBox"), "Content of Form contains: Destination Field 1 that is ComboBox");
+						assert.ok(DestinationComboBox1.getBusy() === false, "Content of Form contains: Destination Field 1 that is not busy anymore");
+						assert.equal(DestinationComboBox1.getSelectedKey(), "Northwind", "Content of Form contains: Destination Field 1 selectedItem: Key OK");
+						assert.equal(DestinationComboBox1.getSelectedItem().getText(), "Northwind", "Content of Form contains: Destination Field 1 selectedItem: Text OK");
+						var oItems = DestinationComboBox1.getItems();
+						assert.equal(oItems.length, 4, "Content of Form contains: Destination Field items lengh OK");
+						assert.equal(oItems[0].getKey(), "Northwind", "Content of Form contains: Destination Field item 0 Key OK");
+						assert.equal(oItems[1].getKey(), "Orders", "Content of Form contains: Destination Field item 1 Key OK");
+						assert.equal(oItems[2].getKey(), "Portal", "Content of Form contains: Destination Field item 2 Key OK");
+						assert.equal(oItems[3].getKey(), "Products", "Content of Form contains: Destination Field item 3 Key OK");
+						resolve();
+					});
+				}.bind(this));
+			}.bind(this));
+		});
+
+		QUnit.test("In admin mode, general group defined for parameters", function (assert) {
+			this.oEditor.setMode("admin");
+			this.oEditor.setJson({
+				baseUrl: sBaseUrl,
+				host: "host",
+				manifest: {
+					"sap.app": {
+						"id": "test.sample",
+						"i18n": "../i18n/i18n.properties"
+					},
+					"sap.card": {
+						"configuration": {
+							"editor": "designtime/DestinationGroupPositionStartWithGeneralGroup",
+							"parameters": {
+								"stringParameter": {
+									"value": "stringParameter Value"
+								},
+								"booleanParameter": {
+									"value": false
+								}
+							},
+							"destinations": {
+								"dest1": {
+									"label": "dest1 label defined in manifest",
+									"name": "Northwind"
+								}
+							}
+						},
+						"type": "List",
+						"header": {}
+					}
+				}
+			});
+			return new Promise(function (resolve, reject) {
+				this.oEditor.attachReady(function () {
+					assert.ok(this.oEditor.isReady(), "Editor is ready");
+					var aFormContent = this.oEditor.getAggregation("_formContent");
+					var oDestinationPanel = aFormContent[0].getAggregation("_field");
+					assert.ok(oDestinationPanel.isA("sap.m.Panel"), "Panel: Form content contains Destination Panel");
+					assert.equal(oDestinationPanel.getHeaderText(), "Destinations group label defined in DT", "Destination Panel: Header Text");
+					assert.ok(!oDestinationPanel.getExpanded(), "Panel: not expanded");
+					var DestinationLabel1 = aFormContent[1];
+					var DestinationComboBox1 = aFormContent[2].getAggregation("_field");
+					assert.ok(DestinationLabel1.isA("sap.m.Label"), "Label1: Form content contains a Label");
+					assert.equal(DestinationLabel1.getText(), "dest1 label defined in DT", "Label1: Has dest1 label from destination label property defined in DT");
+					assert.ok(this.oEditor.getAggregation("_formContent")[2].isA("sap.ui.integration.editor.fields.DestinationField"), "Content of Form contains: Destination Field");
+					assert.ok(DestinationComboBox1.getBusy() === true, "Content of Form contains: Destination Field that is busy");
+
+					var oGroupPanel = aFormContent[3].getAggregation("_field");
+					assert.ok(oGroupPanel.isA("sap.m.Panel"), "Panel: Form content contains Group Panel");
+					assert.equal(oGroupPanel.getHeaderText(), "Group", "Group Panel: Header Text");
+					var oLabel1 = this.oEditor.getAggregation("_formContent")[4];
+					var oField1 = this.oEditor.getAggregation("_formContent")[5];
+					assert.ok(oLabel1.isA("sap.m.Label"), "stringParameter Label: Form content 1 contains a Label");
+					assert.equal(oLabel1.getText(), "string Parameter", "stringParameter Label: Has label text");
+					assert.ok(oField1.isA("sap.ui.integration.editor.fields.StringField"), "stringParameter Field: String Field");
+					assert.equal(oField1.getAggregation("_field").getValue(), "stringParameter Value", "stringParameter Field: String Value");
+					var oCurrentSettings = this.oEditor.getCurrentSettings();
+					assert.equal(oCurrentSettings["/sap.card/configuration/parameters/stringParameter/value"], "stringParameter Value", "stringParameter Field: manifestpath Value");
+					var oLabel2 = this.oEditor.getAggregation("_formContent")[6];
+					var oField2 = this.oEditor.getAggregation("_formContent")[7];
+					assert.ok(oLabel2.isA("sap.m.Label"), "booleanParameter Label: Form content 2 contains a Label");
+					assert.equal(oLabel2.getText(), "booleanParameter", "booleanParameter Label: Has label text");
+					assert.ok(oField2.isA("sap.ui.integration.editor.fields.BooleanField"), "booleanParameter Field: Boolean Field");
+					assert.equal(oField2.getAggregation("_field").getSelected(), false, "booleanParameter Field: Value");
+					assert.equal(oCurrentSettings["/sap.card/configuration/parameters/booleanParameter/value"], false, "booleanParameter Field: manifestpath Value");
+
+					wait(1500).then(function () {
+						//should resolve the destination within 1000ms
+						assert.ok(DestinationComboBox1.isA("sap.m.ComboBox"), "Content of Form contains: Destination Field 1 that is ComboBox");
+						assert.ok(DestinationComboBox1.getBusy() === false, "Content of Form contains: Destination Field 1 that is not busy anymore");
+						assert.equal(DestinationComboBox1.getSelectedKey(), "Northwind", "Content of Form contains: Destination Field 1 selectedItem: Key OK");
+						assert.equal(DestinationComboBox1.getSelectedItem().getText(), "Northwind", "Content of Form contains: Destination Field 1 selectedItem: Text OK");
+						var oItems = DestinationComboBox1.getItems();
+						assert.equal(oItems.length, 4, "Content of Form contains: Destination Field items lengh OK");
+						assert.equal(oItems[0].getKey(), "Northwind", "Content of Form contains: Destination Field item 0 Key OK");
+						assert.equal(oItems[1].getKey(), "Orders", "Content of Form contains: Destination Field item 1 Key OK");
+						assert.equal(oItems[2].getKey(), "Portal", "Content of Form contains: Destination Field item 2 Key OK");
+						assert.equal(oItems[3].getKey(), "Products", "Content of Form contains: Destination Field item 3 Key OK");
+						resolve();
+					});
+				}.bind(this));
+			}.bind(this));
+		});
+
+		QUnit.test("In admin mode, general group defined for parameters 2", function (assert) {
+			this.oEditor.setMode("admin");
+			this.oEditor.setJson({
+				baseUrl: sBaseUrl,
+				host: "host",
+				manifest: {
+					"sap.app": {
+						"id": "test.sample",
+						"i18n": "../i18n/i18n.properties"
+					},
+					"sap.card": {
+						"configuration": {
+							"editor": "designtime/DestinationGroupPositionStartWithGeneralGroup2",
+							"parameters": {
+								"stringParameter": {
+									"value": "stringParameter Value"
+								},
+								"booleanParameter": {
+									"value": false
+								}
+							},
+							"destinations": {
+								"dest1": {
+									"label": "dest1 label defined in manifest",
+									"name": "Northwind"
+								}
+							}
+						},
+						"type": "List",
+						"header": {}
+					}
+				}
+			});
+			return new Promise(function (resolve, reject) {
+				this.oEditor.attachReady(function () {
+					assert.ok(this.oEditor.isReady(), "Editor is ready");
+					var aFormContent = this.oEditor.getAggregation("_formContent");
+					var oDestinationPanel = aFormContent[0].getAggregation("_field");
+					assert.ok(oDestinationPanel.isA("sap.m.Panel"), "Panel: Form content contains Destination Panel");
+					assert.equal(oDestinationPanel.getHeaderText(), "Destinations group label defined in DT", "Destination Panel: Header Text");
+					assert.ok(!oDestinationPanel.getExpanded(), "Panel: not expanded");
+					var DestinationLabel1 = aFormContent[1];
+					var DestinationComboBox1 = aFormContent[2].getAggregation("_field");
+					assert.ok(DestinationLabel1.isA("sap.m.Label"), "Label1: Form content contains a Label");
+					assert.equal(DestinationLabel1.getText(), "dest1 label defined in DT", "Label1: Has dest1 label from destination label property defined in DT");
+					assert.ok(this.oEditor.getAggregation("_formContent")[2].isA("sap.ui.integration.editor.fields.DestinationField"), "Content of Form contains: Destination Field");
+					assert.ok(DestinationComboBox1.getBusy() === true, "Content of Form contains: Destination Field that is busy");
+
+					var oGroupPanel = aFormContent[3].getAggregation("_field");
+					assert.ok(oGroupPanel.isA("sap.m.Panel"), "Panel: Form content contains Group Panel");
+					assert.equal(oGroupPanel.getHeaderText(), "Group", "Group Panel: Header Text");
+					var oLabel1 = this.oEditor.getAggregation("_formContent")[4];
+					var oField1 = this.oEditor.getAggregation("_formContent")[5];
+					assert.ok(oLabel1.isA("sap.m.Label"), "stringParameter Label: Form content 1 contains a Label");
+					assert.equal(oLabel1.getText(), "string Parameter", "stringParameter Label: Has label text");
+					assert.ok(oField1.isA("sap.ui.integration.editor.fields.StringField"), "stringParameter Field: String Field");
+					assert.equal(oField1.getAggregation("_field").getValue(), "stringParameter Value", "stringParameter Field: String Value");
+					var oCurrentSettings = this.oEditor.getCurrentSettings();
+					assert.equal(oCurrentSettings["/sap.card/configuration/parameters/stringParameter/value"], "stringParameter Value", "stringParameter Field: manifestpath Value");
+					var oGroupPanel2 = aFormContent[6].getAggregation("_field");
+					assert.ok(oGroupPanel2.isA("sap.m.Panel"), "Panel: Form content contains Group Panel");
+					assert.equal(oGroupPanel2.getHeaderText(), "Group 2", "Group Panel: Header Text");
+					var oLabel2 = this.oEditor.getAggregation("_formContent")[7];
+					var oField2 = this.oEditor.getAggregation("_formContent")[8];
+					assert.ok(oLabel2.isA("sap.m.Label"), "booleanParameter Label: Form content 2 contains a Label");
+					assert.equal(oLabel2.getText(), "booleanParameter", "booleanParameter Label: Has label text");
+					assert.ok(oField2.isA("sap.ui.integration.editor.fields.BooleanField"), "booleanParameter Field: Boolean Field");
+					assert.equal(oField2.getAggregation("_field").getSelected(), false, "booleanParameter Field: Value");
+					assert.equal(oCurrentSettings["/sap.card/configuration/parameters/booleanParameter/value"], false, "booleanParameter Field: manifestpath Value");
+
+					wait(1500).then(function () {
+						//should resolve the destination within 1000ms
+						assert.ok(DestinationComboBox1.isA("sap.m.ComboBox"), "Content of Form contains: Destination Field 1 that is ComboBox");
+						assert.ok(DestinationComboBox1.getBusy() === false, "Content of Form contains: Destination Field 1 that is not busy anymore");
+						assert.equal(DestinationComboBox1.getSelectedKey(), "Northwind", "Content of Form contains: Destination Field 1 selectedItem: Key OK");
+						assert.equal(DestinationComboBox1.getSelectedItem().getText(), "Northwind", "Content of Form contains: Destination Field 1 selectedItem: Text OK");
+						var oItems = DestinationComboBox1.getItems();
+						assert.equal(oItems.length, 4, "Content of Form contains: Destination Field items lengh OK");
+						assert.equal(oItems[0].getKey(), "Northwind", "Content of Form contains: Destination Field item 0 Key OK");
+						assert.equal(oItems[1].getKey(), "Orders", "Content of Form contains: Destination Field item 1 Key OK");
+						assert.equal(oItems[2].getKey(), "Portal", "Content of Form contains: Destination Field item 2 Key OK");
+						assert.equal(oItems[3].getKey(), "Products", "Content of Form contains: Destination Field item 3 Key OK");
+						resolve();
+					});
+				}.bind(this));
+			}.bind(this));
+		});
+
+		QUnit.test("In content mode, no general group defined for parameters", function (assert) {
+			this.oEditor.setMode("content");
+			this.oEditor.setJson({
+				baseUrl: sBaseUrl,
+				host: "host",
+				manifest: {
+					"sap.app": {
+						"id": "test.sample",
+						"i18n": "../i18n/i18n.properties"
+					},
+					"sap.card": {
+						"configuration": {
+							"editor": "designtime/DestinationGroupPositionStartWithNoGeneralGroup",
+							"parameters": {
+								"stringParameter": {
+									"value": "stringParameter Value"
+								},
+								"booleanParameter": {
+									"value": false
+								}
+							},
+							"destinations": {
+								"dest1": {
+									"label": "dest1 label defined in manifest",
+									"name": "Northwind"
+								}
+							}
+						},
+						"type": "List",
+						"header": {}
+					}
+				}
+			});
+			return new Promise(function (resolve, reject) {
+				this.oEditor.attachReady(function () {
+					assert.ok(this.oEditor.isReady(), "Editor is ready");
+					var aFormContent = this.oEditor.getAggregation("_formContent");
+					var oGeneralPanel = aFormContent[0].getAggregation("_field");
+					assert.ok(oGeneralPanel.isA("sap.m.Panel"), "Panel: Form content contains General Panel");
+					assert.equal(oGeneralPanel.getHeaderText(), "General Settings", "General Panel: Header Text");
+					var oLabel1 = this.oEditor.getAggregation("_formContent")[1];
+					var oField1 = this.oEditor.getAggregation("_formContent")[2];
+					assert.ok(oLabel1.isA("sap.m.Label"), "stringParameter Label: Form content 1 contains a Label");
+					assert.equal(oLabel1.getText(), "string Parameter", "stringParameter Label: Has label text");
+					assert.ok(oField1.isA("sap.ui.integration.editor.fields.StringField"), "stringParameter Field: String Field");
+					assert.equal(oField1.getAggregation("_field").getValue(), "stringParameter Value", "stringParameter Field: String Value");
+					var oCurrentSettings = this.oEditor.getCurrentSettings();
+					assert.equal(oCurrentSettings["/sap.card/configuration/parameters/stringParameter/value"], "stringParameter Value", "stringParameter Field: manifestpath Value");
+					var oLabel2 = this.oEditor.getAggregation("_formContent")[3];
+					var oField2 = this.oEditor.getAggregation("_formContent")[4];
+					assert.ok(oLabel2.isA("sap.m.Label"), "booleanParameter Label: Form content 2 contains a Label");
+					assert.equal(oLabel2.getText(), "booleanParameter", "booleanParameter Label: Has label text");
+					assert.ok(oField2.isA("sap.ui.integration.editor.fields.BooleanField"), "booleanParameter Field: Boolean Field");
+					assert.equal(oField2.getAggregation("_field").getSelected(), false, "booleanParameter Field: Value");
+					assert.equal(oCurrentSettings["/sap.card/configuration/parameters/booleanParameter/value"], false, "booleanParameter Field: manifestpath Value");
+					resolve();
+				}.bind(this));
+			}.bind(this));
+		});
+
+		QUnit.test("In content mode, no general group defined for parameters 2", function (assert) {
+			this.oEditor.setMode("content");
+			this.oEditor.setJson({
+				baseUrl: sBaseUrl,
+				host: "host",
+				manifest: {
+					"sap.app": {
+						"id": "test.sample",
+						"i18n": "../i18n/i18n.properties"
+					},
+					"sap.card": {
+						"configuration": {
+							"editor": "designtime/DestinationGroupPositionStartWithNoGeneralGroup2",
+							"parameters": {
+								"stringParameter": {
+									"value": "stringParameter Value"
+								},
+								"booleanParameter": {
+									"value": false
+								}
+							},
+							"destinations": {
+								"dest1": {
+									"label": "dest1 label defined in manifest",
+									"name": "Northwind"
+								}
+							}
+						},
+						"type": "List",
+						"header": {}
+					}
+				}
+			});
+			return new Promise(function (resolve, reject) {
+				this.oEditor.attachReady(function () {
+					assert.ok(this.oEditor.isReady(), "Editor is ready");
+					var aFormContent = this.oEditor.getAggregation("_formContent");
+					var oGeneralPanel = aFormContent[0].getAggregation("_field");
+					assert.ok(oGeneralPanel.isA("sap.m.Panel"), "Panel: Form content contains General Panel");
+					assert.equal(oGeneralPanel.getHeaderText(), "General Settings", "General Panel: Header Text");
+					var oLabel1 = this.oEditor.getAggregation("_formContent")[1];
+					var oField1 = this.oEditor.getAggregation("_formContent")[2];
+					assert.ok(oLabel1.isA("sap.m.Label"), "stringParameter Label: Form content 1 contains a Label");
+					assert.equal(oLabel1.getText(), "string Parameter", "stringParameter Label: Has label text");
+					assert.ok(oField1.isA("sap.ui.integration.editor.fields.StringField"), "stringParameter Field: String Field");
+					assert.equal(oField1.getAggregation("_field").getValue(), "stringParameter Value", "stringParameter Field: String Value");
+					var oCurrentSettings = this.oEditor.getCurrentSettings();
+					assert.equal(oCurrentSettings["/sap.card/configuration/parameters/stringParameter/value"], "stringParameter Value", "stringParameter Field: manifestpath Value");
+					var oGroupPanel = aFormContent[3].getAggregation("_field");
+					assert.ok(oGroupPanel.isA("sap.m.Panel"), "Panel: Form content contains Group Panel");
+					assert.equal(oGroupPanel.getHeaderText(), "Group", "Group Panel: Header Text");
+					var oLabel2 = this.oEditor.getAggregation("_formContent")[4];
+					var oField2 = this.oEditor.getAggregation("_formContent")[5];
+					assert.ok(oLabel2.isA("sap.m.Label"), "booleanParameter Label: Form content 2 contains a Label");
+					assert.equal(oLabel2.getText(), "booleanParameter", "booleanParameter Label: Has label text");
+					assert.ok(oField2.isA("sap.ui.integration.editor.fields.BooleanField"), "booleanParameter Field: Boolean Field");
+					assert.equal(oField2.getAggregation("_field").getSelected(), false, "booleanParameter Field: Value");
+					assert.equal(oCurrentSettings["/sap.card/configuration/parameters/booleanParameter/value"], false, "booleanParameter Field: manifestpath Value");
+					resolve();
+				}.bind(this));
+			}.bind(this));
+		});
+
+		QUnit.test("In content mode, general group defined for parameters", function (assert) {
+			this.oEditor.setMode("content");
+			this.oEditor.setJson({
+				baseUrl: sBaseUrl,
+				host: "host",
+				manifest: {
+					"sap.app": {
+						"id": "test.sample",
+						"i18n": "../i18n/i18n.properties"
+					},
+					"sap.card": {
+						"configuration": {
+							"editor": "designtime/DestinationGroupPositionStartWithGeneralGroup",
+							"parameters": {
+								"stringParameter": {
+									"value": "stringParameter Value"
+								},
+								"booleanParameter": {
+									"value": false
+								}
+							},
+							"destinations": {
+								"dest1": {
+									"label": "dest1 label defined in manifest",
+									"name": "Northwind"
+								}
+							}
+						},
+						"type": "List",
+						"header": {}
+					}
+				}
+			});
+			return new Promise(function (resolve, reject) {
+				this.oEditor.attachReady(function () {
+					assert.ok(this.oEditor.isReady(), "Editor is ready");
+					var aFormContent = this.oEditor.getAggregation("_formContent");
+					var oGroupPanel = aFormContent[0].getAggregation("_field");
+					assert.ok(oGroupPanel.isA("sap.m.Panel"), "Panel: Form content contains Group Panel");
+					assert.equal(oGroupPanel.getHeaderText(), "Group", "Group Panel: Header Text");
+					var oLabel1 = this.oEditor.getAggregation("_formContent")[1];
+					var oField1 = this.oEditor.getAggregation("_formContent")[2];
+					assert.ok(oLabel1.isA("sap.m.Label"), "stringParameter Label: Form content 1 contains a Label");
+					assert.equal(oLabel1.getText(), "string Parameter", "stringParameter Label: Has label text");
+					assert.ok(oField1.isA("sap.ui.integration.editor.fields.StringField"), "stringParameter Field: String Field");
+					assert.equal(oField1.getAggregation("_field").getValue(), "stringParameter Value", "stringParameter Field: String Value");
+					var oCurrentSettings = this.oEditor.getCurrentSettings();
+					assert.equal(oCurrentSettings["/sap.card/configuration/parameters/stringParameter/value"], "stringParameter Value", "stringParameter Field: manifestpath Value");
+					var oLabel2 = this.oEditor.getAggregation("_formContent")[3];
+					var oField2 = this.oEditor.getAggregation("_formContent")[4];
+					assert.ok(oLabel2.isA("sap.m.Label"), "booleanParameter Label: Form content 2 contains a Label");
+					assert.equal(oLabel2.getText(), "booleanParameter", "booleanParameter Label: Has label text");
+					assert.ok(oField2.isA("sap.ui.integration.editor.fields.BooleanField"), "booleanParameter Field: Boolean Field");
+					assert.equal(oField2.getAggregation("_field").getSelected(), false, "booleanParameter Field: Value");
+					assert.equal(oCurrentSettings["/sap.card/configuration/parameters/booleanParameter/value"], false, "booleanParameter Field: manifestpath Value");
+					resolve();
+				}.bind(this));
+			}.bind(this));
+		});
+
+		QUnit.test("In content mode, general group defined for parameters 2", function (assert) {
+			this.oEditor.setMode("content");
+			this.oEditor.setJson({
+				baseUrl: sBaseUrl,
+				host: "host",
+				manifest: {
+					"sap.app": {
+						"id": "test.sample",
+						"i18n": "../i18n/i18n.properties"
+					},
+					"sap.card": {
+						"configuration": {
+							"editor": "designtime/DestinationGroupPositionStartWithGeneralGroup2",
+							"parameters": {
+								"stringParameter": {
+									"value": "stringParameter Value"
+								},
+								"booleanParameter": {
+									"value": false
+								}
+							},
+							"destinations": {
+								"dest1": {
+									"label": "dest1 label defined in manifest",
+									"name": "Northwind"
+								}
+							}
+						},
+						"type": "List",
+						"header": {}
+					}
+				}
+			});
+			return new Promise(function (resolve, reject) {
+				this.oEditor.attachReady(function () {
+					assert.ok(this.oEditor.isReady(), "Editor is ready");
+					var aFormContent = this.oEditor.getAggregation("_formContent");
+					var oGroupPanel = aFormContent[0].getAggregation("_field");
+					assert.ok(oGroupPanel.isA("sap.m.Panel"), "Panel: Form content contains Group Panel");
+					assert.equal(oGroupPanel.getHeaderText(), "Group", "Group Panel: Header Text");
+					var oLabel1 = this.oEditor.getAggregation("_formContent")[1];
+					var oField1 = this.oEditor.getAggregation("_formContent")[2];
+					assert.ok(oLabel1.isA("sap.m.Label"), "stringParameter Label: Form content 1 contains a Label");
+					assert.equal(oLabel1.getText(), "string Parameter", "stringParameter Label: Has label text");
+					assert.ok(oField1.isA("sap.ui.integration.editor.fields.StringField"), "stringParameter Field: String Field");
+					assert.equal(oField1.getAggregation("_field").getValue(), "stringParameter Value", "stringParameter Field: String Value");
+					var oCurrentSettings = this.oEditor.getCurrentSettings();
+					assert.equal(oCurrentSettings["/sap.card/configuration/parameters/stringParameter/value"], "stringParameter Value", "stringParameter Field: manifestpath Value");
+					var oGroupPanel2 = aFormContent[3].getAggregation("_field");
+					assert.ok(oGroupPanel2.isA("sap.m.Panel"), "Panel: Form content contains Group Panel");
+					assert.equal(oGroupPanel2.getHeaderText(), "Group 2", "Group Panel: Header Text");
+					var oLabel2 = this.oEditor.getAggregation("_formContent")[4];
+					var oField2 = this.oEditor.getAggregation("_formContent")[5];
+					assert.ok(oLabel2.isA("sap.m.Label"), "booleanParameter Label: Form content 2 contains a Label");
+					assert.equal(oLabel2.getText(), "booleanParameter", "booleanParameter Label: Has label text");
+					assert.ok(oField2.isA("sap.ui.integration.editor.fields.BooleanField"), "booleanParameter Field: Boolean Field");
+					assert.equal(oField2.getAggregation("_field").getSelected(), false, "booleanParameter Field: Value");
+					assert.equal(oCurrentSettings["/sap.card/configuration/parameters/booleanParameter/value"], false, "booleanParameter Field: manifestpath Value");
+					resolve();
+				}.bind(this));
+			}.bind(this));
+		});
+
+		QUnit.test("In translation mode, no general group defined for parameters", function (assert) {
+			this.oEditor.setMode("translation");
+			this.oEditor.setJson({
+				baseUrl: sBaseUrl,
+				host: "host",
+				manifest: {
+					"sap.app": {
+						"id": "test.sample",
+						"i18n": "../i18n/i18n.properties"
+					},
+					"sap.card": {
+						"configuration": {
+							"editor": "designtime/DestinationGroupPositionStartWithNoGeneralGroup",
+							"parameters": {
+								"stringParameter": {
+									"value": "stringParameter Value"
+								},
+								"booleanParameter": {
+									"value": false
+								}
+							},
+							"destinations": {
+								"dest1": {
+									"label": "dest1 label defined in manifest",
+									"name": "Northwind"
+								}
+							}
+						},
+						"type": "List",
+						"header": {}
+					}
+				}
+			});
+			return new Promise(function (resolve, reject) {
+				this.oEditor.attachReady(function () {
+					assert.ok(this.oEditor.isReady(), "Editor is ready");
+					var aFormContent = this.oEditor.getAggregation("_formContent");
+					assert.equal(aFormContent.length, 2, "Editor: has 2 item");
+					var oPanel1 = aFormContent[0].getAggregation("_field");
+					assert.ok(oPanel1.isA("sap.m.Panel"), "Panel: Form content contains 1 Panel");
+					var oPanel2 = aFormContent[1].getAggregation("_field");
+					assert.ok(oPanel2.isA("sap.m.Panel"), "Panel: Form content contains 2 Panel");
+					wait(1500).then(function () {
+						resolve();
+					});
+				}.bind(this));
+			}.bind(this));
+		});
+
+		QUnit.test("In translation mode, no general group defined for parameters 2", function (assert) {
+			this.oEditor.setMode("translation");
+			this.oEditor.setJson({
+				baseUrl: sBaseUrl,
+				host: "host",
+				manifest: {
+					"sap.app": {
+						"id": "test.sample",
+						"i18n": "../i18n/i18n.properties"
+					},
+					"sap.card": {
+						"configuration": {
+							"editor": "designtime/DestinationGroupPositionStartWithNoGeneralGroup2",
+							"parameters": {
+								"stringParameter": {
+									"value": "stringParameter Value"
+								},
+								"booleanParameter": {
+									"value": false
+								}
+							},
+							"destinations": {
+								"dest1": {
+									"label": "dest1 label defined in manifest",
+									"name": "Northwind"
+								}
+							}
+						},
+						"type": "List",
+						"header": {}
+					}
+				}
+			});
+			return new Promise(function (resolve, reject) {
+				this.oEditor.attachReady(function () {
+					assert.ok(this.oEditor.isReady(), "Editor is ready");
+					var aFormContent = this.oEditor.getAggregation("_formContent");
+					assert.equal(aFormContent.length, 3, "Editor: has 3 item");
+					var oPanel1 = aFormContent[0].getAggregation("_field");
+					assert.ok(oPanel1.isA("sap.m.Panel"), "Panel: Form content contains 1 Panel");
+					var oPanel2 = aFormContent[1].getAggregation("_field");
+					assert.ok(oPanel2.isA("sap.m.Panel"), "Panel: Form content contains 2 Panel");
+					var oPanel3 = aFormContent[2].getAggregation("_field");
+					assert.ok(oPanel3.isA("sap.m.Panel"), "Panel: Form content contains 3 Panel");
+					wait(1500).then(function () {
+						resolve();
+					});
+				}.bind(this));
+			}.bind(this));
+		});
+
+		QUnit.test("In translation mode, general group defined for parameters", function (assert) {
+			this.oEditor.setMode("translation");
+			this.oEditor.setJson({
+				baseUrl: sBaseUrl,
+				host: "host",
+				manifest: {
+					"sap.app": {
+						"id": "test.sample",
+						"i18n": "../i18n/i18n.properties"
+					},
+					"sap.card": {
+						"configuration": {
+							"editor": "designtime/DestinationGroupPositionStartWithGeneralGroup",
+							"parameters": {
+								"stringParameter": {
+									"value": "stringParameter Value"
+								},
+								"booleanParameter": {
+									"value": false
+								}
+							},
+							"destinations": {
+								"dest1": {
+									"label": "dest1 label defined in manifest",
+									"name": "Northwind"
+								}
+							}
+						},
+						"type": "List",
+						"header": {}
+					}
+				}
+			});
+			return new Promise(function (resolve, reject) {
+				this.oEditor.attachReady(function () {
+					assert.ok(this.oEditor.isReady(), "Editor is ready");
+					var aFormContent = this.oEditor.getAggregation("_formContent");
+					assert.equal(aFormContent.length, 2, "Editor: has 2 item");
+					var oPanel1 = aFormContent[0].getAggregation("_field");
+					assert.ok(oPanel1.isA("sap.m.Panel"), "Panel: Form content contains 1 Panel");
+					var oPanel2 = aFormContent[1].getAggregation("_field");
+					assert.ok(oPanel2.isA("sap.m.Panel"), "Panel: Form content contains 2 Panel");
+					wait(1500).then(function () {
+						resolve();
+					});
+				}.bind(this));
+			}.bind(this));
+		});
+
+		QUnit.test("In translation mode, general group defined for parameters 2", function (assert) {
+			this.oEditor.setMode("translation");
+			this.oEditor.setJson({
+				baseUrl: sBaseUrl,
+				host: "host",
+				manifest: {
+					"sap.app": {
+						"id": "test.sample",
+						"i18n": "../i18n/i18n.properties"
+					},
+					"sap.card": {
+						"configuration": {
+							"editor": "designtime/DestinationGroupPositionStartWithGeneralGroup2",
+							"parameters": {
+								"stringParameter": {
+									"value": "stringParameter Value"
+								},
+								"booleanParameter": {
+									"value": false
+								}
+							},
+							"destinations": {
+								"dest1": {
+									"label": "dest1 label defined in manifest",
+									"name": "Northwind"
+								}
+							}
+						},
+						"type": "List",
+						"header": {}
+					}
+				}
+			});
+			return new Promise(function (resolve, reject) {
+				this.oEditor.attachReady(function () {
+					assert.ok(this.oEditor.isReady(), "Editor is ready");
+					var aFormContent = this.oEditor.getAggregation("_formContent");
+					assert.equal(aFormContent.length, 3, "Editor: has 3 item");
+					var oPanel1 = aFormContent[0].getAggregation("_field");
+					assert.ok(oPanel1.isA("sap.m.Panel"), "Panel: Form content contains 1 Panel");
+					var oPanel2 = aFormContent[1].getAggregation("_field");
+					assert.ok(oPanel2.isA("sap.m.Panel"), "Panel: Form content contains 2 Panel");
+					var oPanel3 = aFormContent[2].getAggregation("_field");
+					assert.ok(oPanel3.isA("sap.m.Panel"), "Panel: Form content contains 3 Panel");
+					wait(1500).then(function () {
+						resolve();
+					});
 				}.bind(this));
 			}.bind(this));
 		});

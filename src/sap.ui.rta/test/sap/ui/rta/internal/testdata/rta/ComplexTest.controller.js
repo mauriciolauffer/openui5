@@ -1,5 +1,4 @@
 sap.ui.define([
-	"sap/base/util/UriParameters",
 	"sap/base/Log",
 	"sap/m/MessageToast",
 	"sap/ui/core/mvc/Controller",
@@ -7,12 +6,11 @@ sap.ui.define([
 	"sap/ui/core/Fragment",
 	"sap/ui/model/BindingMode",
 	"sap/ui/model/json/JSONModel",
-	"sap/ui/model/odata/ODataModel",
+	"sap/ui/model/odata/v2/ODataModel",
 	"sap/ui/model/odata/CountMode",
 	"sap/ui/fl/Utils",
-	"sap/ui/core/Core"
+	"sap/ui/core/Element"
 ], function(
-	UriParameters,
 	Log,
 	MessageToast,
 	Controller,
@@ -23,13 +21,13 @@ sap.ui.define([
 	ODataModel,
 	CountMode,
 	FlUtils,
-	oCore
+	Element
 ) {
 	"use strict";
-	function setTableModelData (oModel, sResourcePath) {
+	function setTableModelData(oModel, sResourcePath) {
 		var xhr = new XMLHttpRequest();
-		xhr.open("GET", sResourcePath + "/TableData.json", true);
-		xhr.onload = function () {
+		xhr.open("GET", `${sResourcePath}/TableData.json`, true);
+		xhr.onload = function() {
 			if (xhr.readyState === 4) {
 				if (xhr.status >= 200 && xhr.status < 400) {
 					var oTableData = JSON.parse(xhr.responseText);
@@ -42,10 +40,10 @@ sap.ui.define([
 
 	return Controller.extend("sap.ui.rta.test.ComplexTest", {
 
-		onInit: function () {
+		onInit() {
 			this._sResourcePath = sap.ui.require.toUrl("sap/ui/rta/test");
 			var oManifest = FlUtils.getAppComponentForControl(this.getView()).getManifest();
-			var iServerDelay = UriParameters.fromQuery(window.location.search).get("serverDelay");
+			var iServerDelay = new URLSearchParams(window.location.search).get("serverDelay");
 
 			var iAutoRespond = iServerDelay || 1000;
 			var oMockServer;
@@ -53,7 +51,7 @@ sap.ui.define([
 			var sMockServerPath;
 			var sMetadataUrl;
 			var aEntities = [];
-			var oDataSources = oManifest["sap.app"]["dataSources"];
+			var oDataSources = oManifest["sap.app"].dataSources;
 
 			MockServer.config({
 				autoRespond: true,
@@ -64,7 +62,7 @@ sap.ui.define([
 				if (oDataSources.hasOwnProperty(property)) {
 					dataSource = oDataSources[property];
 
-					//do we have a mock url in the app descriptor
+					// do we have a mock url in the app descriptor
 					if (dataSource.settings && dataSource.settings.localUri) {
 						if (typeof dataSource.type === "undefined" || dataSource.type === "OData") {
 							oMockServer = new MockServer({
@@ -79,9 +77,9 @@ sap.ui.define([
 								aEntitySetsNames: aEntities
 							});
 						}
-						//else if *Other types can be inserted here, like Annotations*
+						// else if *Other types can be inserted here, like Annotations*
 						oMockServer.start();
-						Log.info("Running the app with mock data for " + property);
+						Log.info(`Running the app with mock data for ${property}`);
 
 						if (property === "mainService") {
 							var oModel;
@@ -113,16 +111,16 @@ sap.ui.define([
 							this.oView.setModel(oStateModel, "state");
 							this.oView.bindElement("/Headers(AccountingDocument='100015012',CompanyCode='0001',FiscalYear='2015')");
 
-							return fetch(this._sResourcePath + "/countriesExtendedCollection.json")
-								.then(function(oResponse) {
-									return oResponse.json();
-								}).then(function(oJson) {
-									var oComboBox = this.byId("ComboBox0");
-									var oCountriesModel = new JSONModel(oJson);
-									oComboBox.setModel(oCountriesModel);
-								}.bind(this));
+							return fetch(`${this._sResourcePath}/countriesExtendedCollection.json`)
+							.then(function(oResponse) {
+								return oResponse.json();
+							}).then(function(oJson) {
+								var oComboBox = this.byId("ComboBox0");
+								var oCountriesModel = new JSONModel(oJson);
+								oComboBox.setModel(oCountriesModel);
+							}.bind(this));
 						} else if (property === "smartFilterService") {
-							//smartfilterbar bind
+							// smartfilterbar bind
 							var oSmartFilterModel = new ODataModel("/foo", true);
 							oSmartFilterModel.setDefaultCountMode(CountMode.None);
 							var oSmartFilterLayout = this.byId("smartFilterLayout");
@@ -132,13 +130,13 @@ sap.ui.define([
 							}
 						}
 					} else {
-						Log.error("Running the app with mock data for " + property);
+						Log.error(`Running the app with mock data for ${property}`);
 					}
 				}
 			}
 		},
 
-		toggleUpdateMode: function() {
+		toggleUpdateMode() {
 			var oSmartFilterbar = this.byId("smartFilterBar");
 			var oButton = this.byId("toggleUpdateMode");
 
@@ -156,7 +154,7 @@ sap.ui.define([
 			oSmartFilterbar.setLiveMode(!bLiveMode);
 		},
 
-		_setButtonText: function() {
+		_setButtonText() {
 			var oSmartFilterbar = this.byId("smartFilterBar");
 			var oButton = this.byId("toggleUpdateMode");
 
@@ -172,7 +170,7 @@ sap.ui.define([
 			}
 		},
 
-		_undoRedoStack: function(oStack) {
+		_undoRedoStack(oStack) {
 			function undo(oStack) {
 				if (oStack.canUndo()) {
 					return oStack.undo().then(function() {
@@ -191,17 +189,17 @@ sap.ui.define([
 			}
 
 			undo(oStack)
-				.then(function() {
-					MessageToast.show("All changes undone", {duration: 1000});
+			.then(function() {
+				MessageToast.show("All changes undone", {duration: 1000});
 
-					return redo(oStack);
-				})
-				.then(function() {
-					MessageToast.show("All changes redone", {duration: 1000});
-				});
+				return redo(oStack);
+			})
+			.then(function() {
+				MessageToast.show("All changes redone", {duration: 1000});
+			});
 		},
 
-		switchToAdaptionMode: function() {
+		switchToAdaptionMode() {
 			sap.ui.require([
 				"sap/ui/rta/api/startAdaptation",
 				"sap/ui/rta/command/Stack"
@@ -222,14 +220,14 @@ sap.ui.define([
 					}
 				});
 
-				Stack.initializeWithChanges(oCore.byId("Comp1---idMain1"), aFileNames).then(function(oStack) {
-					//expose undo/redo test function to console
+				Stack.initializeWithChanges(Element.getElementById("Comp1---idMain1"), aFileNames).then(function(oStack) {
+					// expose undo/redo test function to console
 					window.undoRedoStack = this._undoRedoStack.bind(this, oStack);
 
 					startAdaptation({
 						rootControl: this.getOwnerComponent(),
 						commandStack: oStack,
-						stop: function() {
+						stop() {
 							this.destroy();
 						}
 					}).then(function() {
@@ -239,7 +237,7 @@ sap.ui.define([
 			}.bind(this));
 		},
 
-		openSmartFormDialog: function() {
+		openSmartFormDialog() {
 			sap.ui.require([
 				"sap/m/Dialog"
 			], function(
@@ -247,7 +245,7 @@ sap.ui.define([
 			) {
 				var oComponent = this.getOwnerComponent();
 				oComponent.runAsOwner(function() {
-					if (!this._oDialog || !oCore.byId(this._oDialog.getId())) {
+					if (!this._oDialog || !Element.getElementById(this._oDialog.getId())) {
 						Fragment.load({
 							id: this.getView().createId("SmartFormDialog"),
 							name: "sap.ui.rta.test.fragment.Popup"
@@ -273,46 +271,19 @@ sap.ui.define([
 			}.bind(this));
 		},
 
-		createOrDeleteContent: function(oEvent) {
+		createOrDeleteContent(oEvent) {
 			var oTargetControl = oEvent.getSource();
 			sap.ui.require([
-				"sap/ui/core/mvc/XMLView",
-				"sap/m/Dialog",
 				"sap/ui/comp/smartform/SmartForm",
 				"sap/ui/comp/smartform/Group",
 				"sap/ui/comp/smartform/GroupElement",
 				"sap/ui/comp/smartfield/SmartField"
 			], function(
-				XMLView,
-				Dialog,
 				SmartForm,
 				Group,
 				GroupElement,
 				SmartField
 			) {
-				var oComponent = this.getOwnerComponent();
-				oComponent.runAsOwner(function() {
-					if (!this._oDialog || !oCore.byId(this._oDialog.getId())) {
-						this._oDialogForm = new XMLView(
-							this.getView().createId("SmartFormDialog"),
-							{
-								viewName: "sap.ui.rta.test.Popup"
-							}
-						);
-
-						this._oDialog = new Dialog({
-							id: oComponent.createId("SmartFormDialog"),
-							showHeader: false,
-							content: this._oDialogForm
-						});
-						this.getView().addDependent(this._oDialog);
-
-						this._oDialog.addStyleClass("sapUiNoContentPadding");
-						this._oDialog.addStyleClass("sapUiSizeCompact");
-					}
-					this._oDialog.open();
-				}.bind(this));
-
 				if (this.byId("newForm")) {
 					this.byId("newForm").destroy();
 				} else {
@@ -361,14 +332,14 @@ sap.ui.define([
 			}.bind(this));
 		},
 
-		openSmartFormPopover: function(oEvent) {
+		openSmartFormPopover(oEvent) {
 			var oTargetButton = oEvent.getSource();
 			return sap.ui.require([
 				"sap/m/Popover"
 			], function(Popover) {
 				var oComponent = this.getOwnerComponent();
 				oComponent.runAsOwner(function() {
-					if (!this._oPopover || !oCore.byId(this._oPopover.getId())) {
+					if (!this._oPopover || !Element.getElementById(this._oPopover.getId())) {
 						Fragment.load({
 							id: this.getView().createId("FormPopover"),
 							name: "sap.ui.rta.test.fragment.Popup"
@@ -392,8 +363,8 @@ sap.ui.define([
 			}.bind(this));
 		},
 
-		sampleFormatter: function(sValue) {
-			return "This text was changed by a formatter: " + (sValue && sValue.toUpperCase());
+		sampleFormatter(sValue) {
+			return `This text was changed by a formatter: ${sValue && sValue.toUpperCase()}`;
 		}
 	});
 });

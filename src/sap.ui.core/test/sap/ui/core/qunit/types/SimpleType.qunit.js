@@ -11,6 +11,9 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.module("sap.ui.model.SimpleType", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach : function () {
 			this.oLogMock = this.mock(Log);
 			this.oLogMock.expects("warning").never();
@@ -20,13 +23,21 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.test("basics", function (assert) {
+		var oSetFormatOptionsCall = this.mock(SimpleType.prototype).expects("setFormatOptions").withExactArgs({})
+				.callsFake(function () {
+					assert.ok(this.hasOwnProperty("oInputFormat"), "oInputFormat set before setFormatOptions call");
+					assert.strictEqual(this.oInputFormat, undefined);
+				});
+		var oSetConstraintsCall = this.mock(SimpleType.prototype).expects("setConstraints").withExactArgs({});
+
+		// code under test
 		var oType = new SimpleType();
 
 		assert.ok(oType instanceof Type, "is a Type");
 		assert.ok(oType instanceof SimpleType, "is a SimpleType");
 		assert.strictEqual(oType.getName(), "SimpleType", "type name");
-		assert.deepEqual(oType.oFormatOptions, {}, "default format options");
-		assert.deepEqual(oType.oConstraints, {}, "default constraints");
+		assert.ok(oSetFormatOptionsCall.calledOn(oType));
+		assert.ok(oSetConstraintsCall.calledOn(oType));
 	});
 
 	//*********************************************************************************************
@@ -40,6 +51,12 @@ sap.ui.define([
 
 		assert.strictEqual(oType.oConstraints, oConstraints);
 		assert.strictEqual(oType.oFormatOptions, oFormatOptions);
+
+		// code under test
+		oType = new SimpleType();
+
+		assert.deepEqual(oType.oConstraints, {});
+		assert.deepEqual(oType.oFormatOptions, {});
 
 		// code under test
 		oType = new SimpleType(null, null);
@@ -80,5 +97,19 @@ sap.ui.define([
 
 		// code under test
 		assert.deepEqual(new SimpleType().getFormatOptions(), {});
+	});
+
+	//*********************************************************************************************
+	QUnit.test("combineMessages", function (assert) {
+		// code under test
+		assert.strictEqual(SimpleType.prototype.combineMessages([]), "");
+		assert.strictEqual(SimpleType.prototype.combineMessages(["M0"]), "M0", "single message is unchanged");
+		assert.strictEqual(SimpleType.prototype.combineMessages(["M0."]), "M0.");
+
+		assert.strictEqual(SimpleType.prototype.combineMessages(["M0", "M1"]), "M0. M1.");
+		// BCP 2380043909: messages may end with a dot
+		assert.strictEqual(SimpleType.prototype.combineMessages(["M0.", "M1"]), "M0. M1.");
+		assert.strictEqual(SimpleType.prototype.combineMessages(["M0", "M1."]), "M0. M1.");
+		assert.strictEqual(SimpleType.prototype.combineMessages(["M0.", "M1."]), "M0. M1.");
 	});
 });

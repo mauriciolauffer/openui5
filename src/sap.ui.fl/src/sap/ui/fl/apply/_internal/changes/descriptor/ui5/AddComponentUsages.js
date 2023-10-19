@@ -8,7 +8,6 @@ sap.ui.define([
 ) {
 	"use strict";
 
-
 	/**
 	 * Descriptor change merger for change type <code>appdescr_ui5_addComponentUsages</code>.
 	 * Adds component usages under <code>sap.ui5/componentUsages</code> node and creates parent node if not yet existing.
@@ -17,7 +16,6 @@ sap.ui.define([
 	 * Only available during build time {@link sap.ui.fl.apply._internal.changes.descriptor.RegistrationBuild}.
 	 *
 	 * @namespace sap.ui.fl.apply._internal.changes.descriptor.ui5.AddComponentUsages
-	 * @experimental
 	 * @since 1.86
 	 * @version ${version}
 	 * @private
@@ -27,32 +25,29 @@ sap.ui.define([
 
 		/**
 		 * Method to apply the <code>appdescr_ui5_addComponentUsages</code> change to the manifest.
-		 * @param {object} oManifest Original manifest
-		 * @param {object} oChange Change with type <code>appdescr_ui5_addComponentUsages</code>
+		 * @param {object} oManifest - Original manifest
+		 * @param {sap.ui.fl.apply._internal.flexObjects.AppDescriptorChange} oChange - Change with type <code>appdescr_ui5_addComponentUsages</code>
 		 * @returns {object} Updated manifest with <code>sap.ui5/componentUsages</code> entity
 		 *
 		 * @private
 		 * @ui5-restricted sap.ui.fl.apply._internal
 		 */
-		applyChange: function(oManifest, oChange) {
+		applyChange(oManifest, oChange) {
 			var oChangeComponentUsages = oChange.getContent().componentUsages;
 
 			// sap.ui5 node is mandatory in UI5 manifest
-			if (!oManifest["sap.ui5"]["componentUsages"]) {
-				oManifest["sap.ui5"]["componentUsages"] = {};
-			}
+			oManifest["sap.ui5"].componentUsages ||= {};
 			var oManifestComponentUsages = oManifest["sap.ui5"].componentUsages;
 
 			Object.keys(oChangeComponentUsages).forEach(function(sComponentUsageName) {
 				if (oManifestComponentUsages[sComponentUsageName]) {
-					throw new Error("Component usage '" + sComponentUsageName + "' already exists");
+					throw new Error(`Component usage '${sComponentUsageName}' already exists`);
 				} else {
 					oManifestComponentUsages[sComponentUsageName] = oChangeComponentUsages[sComponentUsageName];
 				}
 			});
 			return oManifest;
 		}
-
 
 	};
 

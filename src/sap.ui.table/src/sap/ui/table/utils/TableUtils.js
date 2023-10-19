@@ -14,9 +14,12 @@ sap.ui.define([
 	"sap/ui/core/ResizeHandler",
 	"sap/ui/core/library",
 	"sap/ui/core/theming/Parameters",
+	"sap/ui/core/Icon",
+	"sap/ui/core/Lib",
 	"sap/ui/model/ChangeReason",
 	"sap/ui/thirdparty/jquery",
-	"sap/base/util/restricted/_throttle"
+	"sap/base/util/restricted/_throttle",
+	"sap/base/Log"
 ], function(
 	GroupingUtils,
 	ColumnUtils,
@@ -28,9 +31,12 @@ sap.ui.define([
 	ResizeHandler,
 	coreLibrary,
 	ThemeParameters,
+	Icon,
+	Lib,
 	ChangeReason,
 	jQuery,
-	throttle
+	throttle,
+	Log
 ) {
 	"use strict";
 
@@ -326,24 +332,6 @@ sap.ui.define([
 			return oTable.getSelectionMode() !== SelectionMode.None && TableUtils.hasRowHeader(oTable);
 		},
 
-		/**
-		 * Finds out if all rows are selected in a table.
-		 *
-		 * @param {sap.ui.table.Table} oTable Instance of the table.
-		 * @returns {boolean} Returns <code>true</code> if all rows in the table are selected.
-		 */
-		areAllRowsSelected: function(oTable) {
-			if (!oTable) {
-				return false;
-			}
-
-			var oSelectionPlugin = oTable._getSelectionPlugin();
-			var iSelectableRowCount = oSelectionPlugin.getSelectableCount();
-			var iSelectedRowCount = oSelectionPlugin.getSelectedCount();
-
-			return iSelectableRowCount > 0 && iSelectableRowCount === iSelectedRowCount;
-		},
-
         /**
 		 * Checks whether the "no data text" is shown. Pure API check, the actual DOM is not considered.
 		 * The "no data text" is shown if the table has no visible columns, or if the <code>showNoData</code> property is <code>true</code> and the
@@ -353,8 +341,7 @@ sap.ui.define([
 		 * @returns {boolean} Whether the no data text is shown.
 		 */
 		isNoDataVisible: function(oTable) {
-			return oTable.getShowNoData() && !oTable._getRowMode().isNoDataDisabled() && !TableUtils.hasData(oTable)
-				   || TableUtils.getVisibleColumnCount(oTable) === 0;
+			return !oTable._isNoDataDisabled() && !TableUtils.hasData(oTable) || TableUtils.getVisibleColumnCount(oTable) === 0;
 		},
 
 		/**
@@ -392,64 +379,26 @@ sap.ui.define([
 		 * @returns {boolean} Whether this object is an instance of the given type or of any of the given types.
 		 */
 		isA: function(oObject, vTypeName) {
-			return BaseObject.isA(oObject, vTypeName);
+			return BaseObject.isObjectA(oObject, vTypeName);
 		},
 
 		/**
 		 * Toggles the selection state of the row which contains the given cell DOM element.
 		 *
 		 * @param {sap.ui.table.Table} oTable Instance of the table.
-		 * @param {jQuery | HTMLElement | int} vRowIndicator The data cell in the row, or the data row index of the row,
-		 *                                                   where the selection state should be toggled.
+		 * @param {jQuery | HTMLElement | int | sap.ui.table.Row} vRowIndicator
+		 *     The data cell in the row, the index of the row in the aggregation, or the row instance on which to toggle the selection state.
 		 * @param {boolean} [bSelect] If defined, then instead of toggling the desired state is set.
-		 * @param {Function} [fnDoSelect] If defined, then instead of the default selection code, this custom callback is used.
-		 * @returns {boolean} Returns <code>true</code> if the selection state of the row has been changed.
+		 * @param {function(sap.ui.table.Row)} [fnDoSelect] If defined, then instead of the default selection code, this custom callback is used.
 		 */
 		toggleRowSelection: function(oTable, vRowIndicator, bSelect, fnDoSelect) {
-			if (!oTable ||
-				!oTable.getBinding() ||
-				oTable.getSelectionMode() === SelectionMode.None ||
-				vRowIndicator == null) {
+			var oRow;
 
-				return false;
-			}
-
-			var oSelectionPlugin = oTable._getSelectionPlugin();
-
-			function setSelectionState(iAbsoluteRowIndex) {
-				if (!oSelectionPlugin.isIndexSelectable(iAbsoluteRowIndex)) {
-					return false;
-				}
-
-				oTable._iSourceRowIndex = iAbsoluteRowIndex; // To indicate that the selection was changed by user interaction.
-
-				var bSelectionChanged = false;
-
-				if (fnDoSelect) {
-					bSelectionChanged = fnDoSelect(iAbsoluteRowIndex, bSelect);
-				} else if (oSelectionPlugin.isIndexSelected(iAbsoluteRowIndex)) {
-					if (bSelect !== true) {
-						bSelectionChanged = true;
-						oSelectionPlugin.removeSelectionInterval(iAbsoluteRowIndex, iAbsoluteRowIndex);
-					}
-				} else if (bSelect !== false) {
-					bSelectionChanged = true;
-					oSelectionPlugin.addSelectionInterval(iAbsoluteRowIndex, iAbsoluteRowIndex);
-				}
-
-				delete oTable._iSourceRowIndex;
-				return bSelectionChanged;
-			}
-
-			// Variable vRowIndicator is a row index value.
-			if (typeof vRowIndicator === "number") {
-				if (vRowIndicator < 0 || vRowIndicator >= oTable._getTotalRowCount()) {
-					return false;
-				}
-				return setSelectionState(vRowIndicator);
-
-				// Variable vRowIndicator is a jQuery object or DOM element.
-			} else {
+			if (TableUtils.isA(vRowIndicator, "sap.ui.table.Row")) {
+				oRow = vRowIndicator;
+			} else if (typeof vRowIndicator === "number") {
+				oRow = oTable.getRows()[vRowIndicator];
+			} else { // vRowIndicator is a jQuery object or a DOM element.
 				var $Cell = jQuery(vRowIndicator);
 				var oCellInfo = TableUtils.getCellInfo($Cell[0]);
 				var bIsRowSelectionAllowed = TableUtils.isRowSelectionAllowed(oTable);
@@ -458,13 +407,24 @@ sap.ui.define([
 					&& ((oCellInfo.isOfType(TableUtils.CELLTYPE.DATACELL | TableUtils.CELLTYPE.ROWACTION) && bIsRowSelectionAllowed)
 						|| (oCellInfo.isOfType(TableUtils.CELLTYPE.ROWHEADER) && TableUtils.isRowSelectorSelectionAllowed(oTable)))) {
 
-					var iAbsoluteRowIndex = oTable.getRows()[oCellInfo.rowIndex].getIndex();
-
-					return setSelectionState(iAbsoluteRowIndex);
+					oRow = oTable.getRows()[oCellInfo.rowIndex];
 				}
-
-				return false;
 			}
+
+			if (!oRow || oRow.isEmpty()) {
+				return;
+			}
+
+			oTable._iSourceRowIndex = oRow.getIndex(); // To indicate that the selection was changed by user interaction. TODO: Move to plugin and legacy multi selection
+
+			if (fnDoSelect) {
+				fnDoSelect(oRow);
+			} else {
+				var oSelectionPlugin = oTable._getSelectionPlugin();
+				oSelectionPlugin.setSelected(oRow, typeof bSelect === "boolean" ? bSelect : !oSelectionPlugin.isSelected(oRow));
+			}
+
+			delete oTable._iSourceRowIndex;
 		},
 
 		/**
@@ -548,8 +508,8 @@ sap.ui.define([
 		 * Returns a combined info about the currently focused item (based on the item navigation).
 		 *
 		 * @param {sap.ui.table.Table} oTable Instance of the table.
-		 * @returns {sap.ui.table.utils.TableUtils.FocusedItemInfo | null} Returns the information about the focused item, or <code>null</code>, if the
-		 *                                                           item navigation is not yet initialized.
+		 * @returns {sap.ui.table.utils.TableUtils.FocusedItemInfo | null} Returns the information about the focused item, or <code>null</code>, if
+		 *     the item navigation is not yet initialized.
 		 * @typedef {object} sap.ui.table.utils.TableUtils.FocusedItemInfo
 		 * @property {int} cell Index of focused cell in the ItemNavigation.
 		 * @property {int} columnCount Number of columns in the ItemNavigation.
@@ -619,6 +579,138 @@ sap.ui.define([
 			if (oIN) {
 				oIN.focusItem(iIndex, oEvent);
 			}
+		},
+
+		/**
+		 * Scrolls the table to the <code>iIndex</code>.
+		 * If <code>bReverse</code> is true the <code>firstVisibleRow</code> property of the Table is set to <code>iIndex</code> - 1,
+		 * otherwise to <code>iIndex</code> - row count + 2.
+		 *
+		 * @param {sap.ui.table.Table} oTable Instance of the table.
+		 * @param {int} iIndex The index of the row to which to scroll to.
+		 * @param {boolean} bReverse Whether the row should be displayed at the bottom of the table.
+		 * @returns {Promise} A promise that resolves when the table is scrolled.
+		 */
+		scrollTableToIndex: function(oTable, iIndex, bReverse) {
+			if (!oTable) {
+				return Promise.resolve();
+			}
+
+			var iFirstVisibleRow = oTable.getFirstVisibleRow();
+			var mRowCounts = oTable._getRowCounts();
+			var iLastVisibleRow = iFirstVisibleRow + mRowCounts.scrollable - 1;
+			var bExpectRowsUpdatedEvent = false;
+
+			if (iIndex < iFirstVisibleRow || iIndex > iLastVisibleRow) {
+				var iNewIndex = bReverse ? iIndex - mRowCounts.fixedTop - 1 : iIndex - mRowCounts.scrollable - mRowCounts.fixedTop + 2;
+
+				bExpectRowsUpdatedEvent = oTable._setFirstVisibleRowIndex(Math.max(0, iNewIndex));
+			}
+
+			return new Promise(function(resolve) {
+				if (bExpectRowsUpdatedEvent) {
+					oTable.attachEventOnce("rowsUpdated", resolve);
+				} else {
+					resolve();
+				}
+			});
+		},
+
+		/**
+		 * Displays a notification Popover beside the row selector that indicates a limited selection. The given index
+		 * references the index of the data context in the binding.
+		 *
+		 * @param {sap.ui.table.Table} oTable Instance of the table.
+		 * @param {number} iIndex Index of the data context
+		 * @param {number} iLimit Maximum number of rows that can be selected at once
+		 * @returns {Promise} A Promise that resolves after the notification popover has been opened
+		 */
+		showNotificationPopoverAtIndex: function(oTable, iIndex, iLimit) {
+			var oPopover = oTable._oNotificationPopover;
+			var oRow = oTable.getRows()[iIndex - oTable._getFirstRenderedRowIndex()];
+			var sTitle = TableUtils.getResourceText("TBL_SELECT_LIMIT_TITLE");
+			var sMessage = TableUtils.getResourceText("TBL_SELECT_LIMIT", [iLimit]);
+
+			return new Promise(function(resolve) {
+				sap.ui.require([
+					"sap/m/Popover", "sap/m/Bar", "sap/m/Title", "sap/m/Text", "sap/m/HBox", "sap/ui/core/library", "sap/m/library"
+				], function(Popover, Bar, Title, Text, HBox, coreLib, mLib) {
+					if (!oPopover) {
+						oPopover = new Popover(oTable.getId() + "-notificationPopover", {
+							customHeader: [
+								new Bar({
+									contentMiddle: [
+										new HBox({
+											items: [
+												new Icon({src: "sap-icon://message-warning", color: coreLib.IconColor.Critical})
+													.addStyleClass("sapUiTinyMarginEnd"),
+												new Title({text: sTitle, level: coreLib.TitleLevel.H2})
+											],
+											renderType: mLib.FlexRendertype.Bare,
+											justifyContent: mLib.FlexJustifyContent.Center,
+											alignItems: mLib.FlexAlignItems.Center
+										})
+									]
+								})
+							],
+							content: new Text({text: sMessage})
+						});
+
+						oPopover.addStyleClass("sapUiContentPadding");
+						oTable._oNotificationPopover = oPopover;
+						oTable.addAggregation("_hiddenDependents", oTable._oNotificationPopover);
+					} else {
+						oPopover.getContent()[0].setText(sMessage);
+					}
+
+					oTable.detachFirstVisibleRowChanged(this.onFirstVisibleRowChange, this);
+					oTable.attachFirstVisibleRowChanged(this.onFirstVisibleRowChange, this);
+
+					var oRowSelector = oRow.getDomRefs().rowSelector;
+
+					if (oRowSelector) {
+						oPopover.attachEventOnce("afterOpen", resolve);
+						oPopover.openBy(oRowSelector);
+					} else {
+						resolve();
+					}
+				}.bind(this));
+			}.bind(this));
+		},
+
+		onFirstVisibleRowChange: function(oEvent) {
+			var oTable = oEvent.getSource();
+			if (!oTable._oNotificationPopover) {
+				return;
+			}
+
+			if (oTable) {
+				oTable.detachFirstVisibleRowChanged(this.onFirstVisibleRowChange, this);
+			}
+			oTable._oNotificationPopover.close();
+		},
+
+		/**
+		 * Loads <code>iLength</code> binding contexts starting from index <code>iStartIndex</code>.
+		 *
+		 * @param {object} oBinding The binding
+		 * @param {int} iStartIndex The starting index
+		 * @param {int} iLength The length
+		 * @returns {Promise<sap.ui.model.Context[]>} Promise that resolves with the row contexts once they are loaded.
+		 */
+		loadContexts: function(oBinding, iStartIndex, iLength) {
+			var aContexts = oBinding.getContexts(iStartIndex, iLength, 0, true);
+			var bContextsAvailable = aContexts.length === Math.min(iLength, oBinding.getLength()) && !aContexts.includes(undefined);
+
+			if (bContextsAvailable) {
+				return Promise.resolve(aContexts);
+			}
+
+			return new Promise(function(resolve) {
+				oBinding.attachEventOnce("dataReceived", function() {
+					resolve(this.loadContexts(oBinding, iStartIndex, iLength));
+				}.bind(this));
+			}.bind(this));
 		},
 
 		/**
@@ -1089,15 +1181,12 @@ sap.ui.define([
 				}
 			}
 
-			var vResult = sap.ui.getCore().getLibraryResourceBundle("sap.ui.table", mOptions.async === true);
+			var vResult = Lib.getResourceBundleFor("sap.ui.table");
 
-			if (vResult instanceof Promise) {
-				vResult = vResult.then(function(oBundle) {
-					oResourceBundle = oBundle;
-					return oResourceBundle;
-				});
-			} else {
-				oResourceBundle = vResult;
+			oResourceBundle = vResult;
+
+			if (mOptions.async === true) {
+				vResult = Promise.resolve(oResourceBundle);
 			}
 
 			return vResult;
@@ -1464,6 +1553,31 @@ sap.ui.define([
 
 				return oWeakMap.get(oKey);
 			};
+		},
+
+		/**
+		 * Returns the active Table helper.
+		 *
+		 * @param {boolean} bCallByAPI Whether the call is initiated by an API setting
+		 * @throws Error when no Table helper can be found.
+		 * @returns {object} Table helper
+		 */
+		_getTableTemplateHelper: function(bCallByAPI) {
+			var sMessage = "An automatic control and template generation for the sap.ui.table.Table is not supported " +
+							"anymore for the aggragations footer and title and the aggregations label and template of " +
+							"the sap.ui.table.Columns. Use concrete controls for those aggregations instead of altType string.";
+
+			/**
+			 * @deprecated As of version 1.118
+			 */
+			if (library.TableHelper) {
+				if (!bCallByAPI) {
+					Log.warning(sMessage);
+				}
+				return library.TableHelper;
+			}
+
+			throw new Error(sMessage);
 		}
 	};
 

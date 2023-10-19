@@ -10,10 +10,9 @@ sap.ui.define([
 	"sap/ui/model/PropertyBinding",
 	"sap/ui/model/odata/ODataMetaModel",
 	"sap/ui/model/odata/ODataPropertyBinding",
-	"sap/ui/model/odata/v2/ODataModel",
-	"sap/ui/test/TestUtils"
+	"sap/ui/model/odata/v2/ODataModel"
 ], function (Log, SyncPromise, Binding, ChangeReason, Context, PropertyBinding, ODataMetaModel,
-		ODataPropertyBinding, ODataModel, TestUtils) {
+		ODataPropertyBinding, ODataModel) {
 	/*global QUnit,sinon*/
 	/*eslint no-warning-comments: 0*/
 	"use strict";
@@ -24,10 +23,6 @@ sap.ui.define([
 			this.oLogMock = this.mock(Log);
 			this.oLogMock.expects("error").never();
 			this.oLogMock.expects("warning").never();
-		},
-
-		afterEach : function (assert) {
-			return TestUtils.awaitRendering();
 		}
 	});
 
@@ -133,13 +128,13 @@ sap.ui.define([
 
 	//*********************************************************************************************
 [
-	{aControlMessages : [], bForceUpdate : false, bSameContext : true},
-	{aControlMessages : [], bForceUpdate : false, bSameContext : false},
-	{aControlMessages : [{}], bForceUpdate : true, bSameContext : false}
+	{aMessages : [], bForceUpdate : false, bSameContext : true},
+	{aMessages : [], bForceUpdate : false, bSameContext : false},
+	{aMessages : [{}], bForceUpdate : true, bSameContext : false}
 ].forEach(function (oFixture) {
 	var sTitle = "setContext: changed context (relative binding)"
 			+ "; same context = " + oFixture.bSameContext
-			+ "; number of control messages = " + oFixture.aControlMessages.length;
+			+ "; number of messages = " + oFixture.aMessages.length;
 
 	QUnit.test(sTitle, function (assert) {
 		var oContext = {
@@ -152,7 +147,7 @@ sap.ui.define([
 				isRelative : function () {}
 			},
 			oDataState = {
-				getControlMessages : function () {}
+				getMessages : function () {}
 			};
 
 		this.mock(oContext).expects("isPreliminary").withExactArgs().returns(false);
@@ -162,8 +157,7 @@ sap.ui.define([
 		this.mock(oBinding).expects("isRelative").withExactArgs().returns(true);
 		if (!oFixture.bSameContext) {
 			this.mock(oBinding).expects("getDataState").withExactArgs().returns(oDataState);
-			this.mock(oDataState).expects("getControlMessages").withExactArgs()
-				.returns(oFixture.aControlMessages);
+			this.mock(oDataState).expects("getMessages").withExactArgs().returns(oFixture.aMessages);
 		}
 
 		this.mock(oBinding).expects("checkUpdate").withExactArgs(oFixture.bForceUpdate);

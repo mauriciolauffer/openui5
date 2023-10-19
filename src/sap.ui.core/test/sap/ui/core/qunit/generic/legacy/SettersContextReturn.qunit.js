@@ -31,10 +31,25 @@ sap.ui.define([
 		 */
 		"sap.ui.core": {
 			elements: {
+				/**
+				 * @deprecated since 1.56
+				 */
 				"sap.ui.core.XMLComposite" : NO_CREATE, // needs constructor arguments
+				/**
+				 * @deprecated since 1.108
+				 */
 				"sap.ui.core.mvc.HTMLView" : NO_CREATE, // needs constructor arguments
+				/**
+				 * @deprecated since 1.120
+				 */
 				"sap.ui.core.mvc.JSONView" : NO_CREATE, // needs constructor arguments
+				/**
+				 * @deprecated since 1.90
+				 */
 				"sap.ui.core.mvc.JSView" : NO_CREATE, // needs constructor arguments
+				/**
+				 * @deprecated since 1.56
+				 */
 				"sap.ui.core.mvc.TemplateView" : NO_CREATE, // needs constructor arguments
 				"sap.ui.core.mvc.View": NO_CREATE, // needs constructor arguments
 				"sap.ui.core.mvc.XMLView": NO_CREATE, // needs constructor arguments
@@ -46,6 +61,8 @@ sap.ui.define([
 			elements: {
 				"sap.m._overflowToolbarHelpers.OverflowToolbarAssociativePopover": NOT_A_MODULE, // not a module of its own
 				"sap.m.internal.NumericInput": NOT_A_MODULE, // not a module of its own
+				"sap.m.internal.ObjectMarkerCustomLink": NOT_A_MODULE, // not a module of its own
+				"sap.m.internal.ObjectMarkerCustomText": NOT_A_MODULE, // not a module of its own
 				"sap.m.TablePopin": NOT_A_MODULE,  // not a module of its own,
 				"sap.m.PlanningCalendarHeader": {exclude:["actions"]}, // implementation of 'actions' is broken
 				"sap.m.SinglePlanningCalendar": NO_DESTROY
@@ -259,8 +276,8 @@ sap.ui.define([
 		var iOwnSettings = 0;
 
 		function hasOwnMethod(obj, name) {
-			return Object.prototype.hasOwnProperty.call(obj, name)
-				|| Object.prototype.hasOwnProperty.call(oClass.prototype, name)
+			return Object.hasOwn(obj, name)
+				|| Object.hasOwn(oClass.prototype, name)
 				|| bForceTest4AllMethods;
 		}
 

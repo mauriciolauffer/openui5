@@ -33,6 +33,9 @@ sap.ui.define([
 					useFakeTimers: true
 				}
 			},
+			/**
+			 * @deprecated since 1.111
+			 */
 			ActionSelect: {
 				title: "Test Page for sap.m.ActionSelect",
 				sinon: {
@@ -196,6 +199,13 @@ sap.ui.define([
 			},
 			"opa/combobox/LoadItemsOPA": {
 				title: "OPA Test Page for sap.m.ComboBox",
+				ui5: {
+					libs: "sap.m",
+					language: "en"
+				}
+			},
+			"opa/input/SuggestionRowsPopoverOPA": {
+				title: "OPA Test Page for sap.m.Input with tabular suggestions",
 				ui5: {
 					libs: "sap.m",
 					language: "en"
@@ -521,6 +531,15 @@ sap.ui.define([
 					language: "en"
 				}
 			},
+			LinkTileContent: {
+				title: "QUnit Test Page for sap.m.LinkTileContent",
+				coverage: {
+					only: "//sap\/m\/LinkTileContent.*/"
+				},
+				ui5: {
+					language: "en"
+				}
+			},
 			"Generic Testsuite": {
 				page: "test-resources/sap/m/qunit/testsuite.generic.qunit.html"
 			},
@@ -615,6 +634,13 @@ sap.ui.define([
 				title: "QUnit tests: sap.m.InputBase",
 				sinon: {
 					useFakeTimers: true
+				}
+			},
+			"opa/input/InputTypeAheadOPA": {
+				title: "OPA Test Page for sap.m.Input",
+				ui5: {
+					libs: "sap.m",
+					language: "en"
 				}
 			},
 			InstanceManager: {
@@ -719,6 +745,16 @@ sap.ui.define([
 					libs: ["sap.m", "sap.ui.unified"] // to compensate sync loadLibrary
 				}
 			},
+			MenuItem: {
+				title: "QUnit Page for sap.m.MenuItem",
+				coverage: {
+					only: ["sap/m/MenuItem"]
+				},
+				ui5: {
+					language: "en-US",
+					libs: ["sap.m", "sap.ui.unified"] // to compensate sync loadLibrary
+				}
+			},
 			MenuButton: {
 				title: "QUnit tests: sap.m.MenuButton",
 				sinon: {
@@ -740,6 +776,9 @@ sap.ui.define([
 			MessageItem: {
 				title: "QUnit Page for sap.m.MessageItem"
 			},
+			/**
+			 * @deprecated since 1.112
+			 */
 			MessagePage: {
 				title: "QUnit Page for sap.m.MessagePage in Responsive mode",
 				sinon: {
@@ -900,6 +939,15 @@ sap.ui.define([
 					}
 				}
 			},
+			"p13n.UIManager": {
+				title: "Test Page for sap.m.p13n.UIManager",
+				module: "test-resources/sap/m/qunit/p13n/UIManager.qunit",
+				loader: {
+					paths: {
+						resourceroot: "test-resources/sap/m/qunit/p13n"
+					}
+				}
+			},
 			"p13n.modules.StateHandlerRegistry": {
 				title: "Test Page for sap.m.p13n.modules.StateHandlerRegistry",
 				module: "test-resources/sap/m/qunit/p13n/StateHandlerRegistry.qunit",
@@ -930,15 +978,6 @@ sap.ui.define([
 			"p13n.modification.LocalStorageModificationHandler": {
 				title: "Test Page for sap.m.p13n.modification.LocalStorageModificationHandler",
 				module: "test-resources/sap/m/qunit/p13n/LocalStorageModificationHandler.qunit",
-				loader: {
-					paths: {
-						resourceroot: "test-resources/sap/m/qunit/p13n"
-					}
-				}
-			},
-			"p13n.FlexUtil": {
-				title: "Test Page for sap.m.p13n.FlexUtil",
-				module: "test-resources/sap/m/qunit/p13n/FlexUtil.qunit",
 				loader: {
 					paths: {
 						resourceroot: "test-resources/sap/m/qunit/p13n"
@@ -1059,6 +1098,9 @@ sap.ui.define([
 					libs: ["sap.m", "sap.ui.layout", "sap.ui.unified"] // to compensate 2 sync loadLibrary
 				}
 			},
+            /**
+             * @deprecated as of version 1.120
+             */
 			P13nDimMeasurePanel: {
 				title: "Test Page for sap.m.P13nDimMeasurePanel",
 				sinon: {
@@ -1257,14 +1299,6 @@ sap.ui.define([
 			},
 			Rule: {
 				title: "QUnit Page for Support Assistant Rules",
-				loader: {
-					map: {
-						"*": {
-							"sap/ui/thirdparty/sinon": "sap/ui/thirdparty/sinon-4",
-							"sap/ui/thirdparty/sinon-qunit": "sap/ui/qunit/sinon-qunit-bridge"
-						}
-					}
-				},
 				ui5: {
 					libs: ["sap.m", "sap.ui.support", "sap.ui.unified"],  // to compensate sync loadLibrary
 					support: "silent",
@@ -1527,12 +1561,21 @@ sap.ui.define([
 					language: "en"
 				}
 			},
+			/**
+			 * @deprecated since 1.115
+			 */
 			TablePersoController: {
 				title: "QUnit Page for sap.m.TablePersoController"
 			},
+				/**
+			 * @deprecated since 1.115
+			 */
 			TablePersoControllerMigrationInComponent: {
 				title: "QUnit Page for sap.m.TablePersoDialog - Migration in Component"
 			},
+			/**
+			 * @deprecated since 1.115
+			 */
 			TablePersoDialog: {
 				title: "QUnit Page for sap.m.TablePersoController",
 				ui5: {
@@ -1544,6 +1587,13 @@ sap.ui.define([
 				sinon: {
 					version: 1, // custom handling of fakeTimer fails with sinon-4
 					useFakeTimers: false // some tests activate it
+				}
+			},
+			"table.ColumnWidthController": {
+				title: "Test Page for sap.m.table.ColumnWidthController",
+				module: "test-resources/sap/m/qunit/table/ColumnWidthController.qunit",
+				paths: {
+					resourceroot: "test-resources/sap/m/qunit/table/"
 				}
 			},
 			"table.columnmenu.Menu": {
@@ -1782,6 +1832,21 @@ sap.ui.define([
 					"./upload/UploadSetRestrictions.qunit",
 					"./upload/UploadSetToolbar.qunit",
 					"./upload/UploadSetOpenFileDialog.qunit"
+				]
+			},
+			UploadSetwithTable: {
+				title: "Test Page for sap.m.upload.UploadSetwithTable",
+				coverage: {
+					only: "[sap/m/upload/UploadSetwithTable.js,sap/m/upload/UploadSetwithTableItem.js,sap/m/upload/FilePreviewDialog.js,sap/m/upload/UploadSetwithTableRenderer.js,sap/m/upload/UploadSetwithTableItemRenderer.js]"
+				},
+				ui5: {
+					language: "en",
+					libs: ["sap.m", "sap.ui.unified"] // to compensate sync loadLibrary
+				},
+				module: [
+					"./upload/UploadSetwithTable.qunit",
+					"./upload/UploadSetwithTableItem.qunit",
+					"./upload/FilePreviewDialog.qunit"
 				]
 			},
 			VBox: {
@@ -2274,6 +2339,14 @@ sap.ui.define([
 				title: "Test Page for sap.m.plugins.CellSelector",
 				module: "test-resources/sap/m/qunit/plugins/CellSelector.qunit"
 			},
+			"plugins/opa/CellSelector": {
+				title: "Opa tests for CellSelector",
+				module: "test-resources/sap/m/qunit/plugins/opa/CellSelector/test/CellSelectorOPA.qunit",
+				ui5: {
+					libs: ["sap.m", "sap.ui.table"],
+					language: "en"
+				}
+			},
 			"plugins/PluginBase": {
 				title: "Test Page for sap.m.plugins.PluginBase"
 			},
@@ -2305,44 +2378,47 @@ sap.ui.define([
 			 * @deprecated Since 1.28
 			 */
 			"routing/async/RouteMatchedHandler": {
-				title: "QUnit Page for RouteMatchedHandler"
+				title: "QUnit Page for RouteMatchedHandler",
+				ui5: {
+					resourceroots: {
+						"sap.ui.test": "test-resources/sap/m/qunit/"
+					}
+				}
 			},
 			"routing/async/Router": {
-				title: "QUnit Page for sap.m.routing.Router"
+				title: "QUnit Page for sap.m.routing.Router",
+				ui5: {
+					resourceroots: {
+						"sap.ui.test": "test-resources/sap/m/qunit/"
+					}
+				}
 			},
 			"routing/async/Targets": {
-				title: "QUnit Page for sap.m.routing.Targets"
+				title: "QUnit Page for sap.m.routing.Targets",
+				ui5: {
+					resourceroots: {
+						"sap.ui.test": "test-resources/sap/m/qunit/"
+					}
+				}
 			},
 			/**
 			 * @deprecated Since 1.28
 			 */
 			"routing/common/RouteMatchedHandler": {
-				title: "QUnit Page for RouteMatchedHandler"
-			},
-			"routing/common/TargetHandler": {
-				title: "QUnit Page for sap.m.routing.TargetHandler"
-			},
-			/**
-			 * @deprecated Since 1.28
-			 */
-			"routing/sync/RouteMatchedHandler": {
 				title: "QUnit Page for RouteMatchedHandler",
-				sinon: {
-					version: 4,
-					useFakeTimers: true
+				ui5: {
+					resourceroots: {
+						"sap.ui.test": "test-resources/sap/m/qunit/"
+					}
 				}
 			},
-			/**
-			 * @deprecated Since 1.90 together with sync routing
-			 */
-			"routing/sync/Router": {
-				title: "QUnit Page for sap.m.routing.Router"
-			},
-			/**
-			 * @deprecated Since 1.90 together with sync routing
-			 */
-			"routing/sync/Targets": {
-				title: "QUnit Page for sap.m.routing.Targets"
+			"routing/common/TargetHandler": {
+				title: "QUnit Page for sap.m.routing.TargetHandler",
+				ui5: {
+					resourceroots: {
+						"sap.ui.test": "test-resources/sap/m/qunit/"
+					}
+				}
 			},
 			"semantic/Segment": {
 				title: "Test Page for sap.m.semantic.Segment"

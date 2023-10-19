@@ -7,6 +7,12 @@ describe("sap.m.Panel", function() {
 		expect(takeScreenshot()).toLookAs("initial");
 	});
 
+	it('should show Panel sticky header properly', function () {
+		browser.executeScript('document.getElementById("page-cont").scrollTop=35').then(function() {
+			expect(takeScreenshot(element(by.id("panelSticky")))).toLookAs('panel-sticky-header');
+		});
+	});
+
 	it("should show Panel with Input and Text controls inside", function() {
 		element(by.id("panel1")).click();
 		expect(takeScreenshot(element(by.id("panel1")))).toLookAs("panel-with-text-and-input");

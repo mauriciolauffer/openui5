@@ -22,13 +22,14 @@
 					<m:Label text="single value field (ProductId)"/>
 					<mdc:FilterField id="FF1"
 						conditions="{cm>/conditions/ProductId}"
+						propertyKey="ProductId"
 						display="Description"
 						maxConditions="1"
 						placeholder="{/#Product/ProductId/@sap:label}"
 						label="{/#Product/ProductId/@sap:label}"
 						change="handleChange"
 						liveChange="handleLiveChange"
-						fieldHelp="VH1">
+						valueHelp="VH1">
 						<mdc:dependents>
 							<mdc:ValueHelp id="VH1" delegate='\{"name": "sap/ui/mdc/sample/field/ValueHelpODataV2.delegate"\}'>
 								<mdc:typeahead>
@@ -97,9 +98,10 @@
 						</mdc:dependents>
 					</mdc:FilterField>
 
-					<m:Label text="single value field in display mode  (ProductId)"/>
+					<m:Label text="single value field in display mode (ProductId)"/>
 					<mdc:FilterField id="FF2"
 						conditions="{cm>/conditions/ProductId}"
+						propertyKey="ProductId"
 						display="Description"
 						maxConditions="1"
 						editMode="Display"
@@ -107,24 +109,26 @@
 						label="{/#Product/ProductId/@sap:label}"
 						change="handleChange"
 						liveChange="handleLiveChange"
-						fieldHelp="VH1">
+						valueHelp="VH1">
 					</mdc:FilterField>
 
 					<m:Label text="multi value field (Name)"/>
 					<mdc:FilterField
 						id="FF3"
 						conditions="{cm>/conditions/Name}"
+						propertyKey="Name"
 						maxConditions="10"
 						placeholder="{/#Product/Name/@sap:label}"
 						label="{/#Product/Name/@sap:label}"
 						change="handleChange"
 						liveChange="handleLiveChange"
-						fieldHelp="VH1">
+						valueHelp="VH1">
 					</mdc:FilterField>
 
 					<m:Label text="multi value field in display mode (Name)"/>
 					<mdc:FilterField id="FF4"
 						conditions="{cm>/conditions/Name}"
+						propertyKey="Name"
 						maxConditions="10"
 						editMode="Display"
 						placeholder="{/#Product/Name/@sap:label}"
@@ -136,6 +140,7 @@
 					<m:Label text="multi value field (Description)"/>
 					<mdc:FilterField id="FF5"
 						conditions="{cm>/conditions/Description}"
+						propertyKey="Description"
 						dataType="sap.ui.model.odata.type.String"
 						dataTypeConstraints='\{"nullable": false\}'
 						delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate"\}'
@@ -149,6 +154,7 @@
 					<m:Label text="multi value field in display mode (Description)"/>
 					<mdc:FilterField id="FF6"
 						conditions="{cm>/conditions/Description}"
+						propertyKey="Description"
 						maxConditions="3"
 						editMode="Display"
 						placeholder="{/#Product/Description/@sap:label}"
@@ -160,8 +166,10 @@
 					<m:Label text="single value field (DateTime) only equals"/>
 					<mdc:FilterField id="FF7"
 						conditions="{cm>/conditions/DateTime}"
+						propertyKey="DateTime"
 						dataType="sap.ui.model.odata.type.DateTime"
 						dataTypeFormatOptions='\{"style": "long"\}'
+						delegate='\{"name": "sap/ui/mdc/sample/field/FieldBaseODataV2.delegate"\}'
 						display="Value"
 						maxConditions="1"
 						operators="EQ"
@@ -174,8 +182,10 @@
 					<m:Label text="single value field (DateTime) with DynamicDateRange"/>
 					<mdc:FilterField id="FF7d"
 						conditions="{cm>/conditions/DateTime}"
+						propertyKey="DateTime"
 						dataType="sap.ui.model.odata.type.DateTime"
 						dataTypeFormatOptions='\{"style": "short"\}'
+						delegate='\{"name": "sap/ui/mdc/sample/field/FieldBaseODataV2.delegate"\}'
 						display="Value"
 						maxConditions="1"
 						placeholder="{/#Product/DateTime/@sap:label}"
@@ -187,8 +197,10 @@
 					<m:Label text="single value field in display mode (DateTime)"/>
 					<mdc:FilterField id="FF8"
 						conditions="{cm>/conditions/DateTime}"
+						propertyKey="DateTime"
 						dataType="sap.ui.model.odata.type.DateTime"
 						dataTypeFormatOptions='\{"style": "medium"\}'
+						delegate='\{"name": "sap/ui/mdc/sample/field/FieldBaseODataV2.delegate"\}'
 						maxConditions="1"
 						editMode="Display"
 						placeholder="{/#Product/DateTime/@sap:label}"
@@ -200,24 +212,28 @@
 					<m:Label text="single value field (Date) all operators"/>
 					<mdc:FilterField id="FF7a"
 						conditions="{cm>/conditions/Date}"
+						propertyKey="Date"
 						dataType="sap.ui.model.odata.type.DateTime"
 						dataTypeFormatOptions='\{"style": "long"\}'
 						dataTypeConstraints='\{"displayFormat": "Date"\}'
+						delegate='\{"name": "sap/ui/mdc/sample/field/FieldBaseODataV2.delegate"\}'
 						display="Value"
 						maxConditions="1"
 						placeholder="{/#Product/Date/@sap:label}"
 						label="{/#Product/Date/@sap:label}"
 						change="handleChange"
 						liveChange="handleLiveChange"
-						fieldHelp="VH-Conditions">
+						valueHelp="VH-Conditions">
 					</mdc:FilterField>
 
 					<m:Label text="single value field (Date) using DynamicDateRange"/>
 					<mdc:FilterField id="FF7a-DDR"
 						conditions="{cm>/conditions/Date}"
+						propertyKey="Date"
 						dataType="sap.ui.model.odata.type.DateTime"
 						dataTypeFormatOptions='\{"style": "long"\}'
 						dataTypeConstraints='\{"displayFormat": "Date"\}'
+						delegate='\{"name": "sap/ui/mdc/sample/field/FieldBaseODataV2.delegate"\}'
 						display="Value"
 						maxConditions="1"
 						placeholder="{/#Product/Date/@sap:label}"
@@ -229,9 +245,11 @@
 					<m:Label text="single value field (Date) only between"/>
 					<mdc:FilterField id="FF7b"
 						conditions="{cm>/conditions/Date}"
+						propertyKey="Date"
 						dataType="sap.ui.model.odata.type.DateTime"
 						dataTypeFormatOptions='\{"style": "short"\}'
 						dataTypeConstraints='\{"displayFormat": "Date"\}'
+						delegate='\{"name": "sap/ui/mdc/sample/field/FieldBaseODataV2.delegate"\}'
 						display="Value"
 						maxConditions="1"
 						operators="BT"
@@ -244,9 +262,11 @@
 					<m:Label text="multi value field (Date) only equal"/>
 					<mdc:FilterField id="FF7c"
 						conditions="{cm>/conditions/Date}"
+						propertyKey="Date"
 						dataType="sap.ui.model.odata.type.DateTime"
 						dataTypeFormatOptions='\{"style": "short"\}'
 						dataTypeConstraints='\{"displayFormat": "Date"\}'
+						delegate='\{"name": "sap/ui/mdc/sample/field/FieldBaseODataV2.delegate"\}'
 						display="Value"
 						maxConditions="-1"
 						operators="EQ"
@@ -254,25 +274,26 @@
 						label="{/#Product/Date/@sap:label}"
 						change="handleChange"
 						liveChange="handleLiveChange"
-						fieldHelp="VH-Conditions">
+						valueHelp="VH-Conditions">
 					</mdc:FilterField>
 
 					<m:Label text="single value field (Status)"/>
 					<mdc:FilterField id="FF9"
 						conditions="{cm>/conditions/Status}"
+						propertyKey="Status"
 						display="Description"
 						maxConditions="1"
 						placeholder="{/#Product/Status/@sap:label}"
 						label="{/#Product/Status/@sap:label}"
 						change="handleChange"
 						liveChange="handleLiveChange"
-						fieldHelp="VH-Status">
+						valueHelp="VH-Status">
 						<mdc:dependents>
 							<mdc:ValueHelp id="VH-Status" delegate='\{"name": "sap/ui/mdc/sample/field/ValueHelpODataV2.delegate"\}'>
 								<mdc:typeahead>
 									<mdcValueHelp:Popover id="VH-Status-Pop">
 										<mdcValueHelpContent:FixedList id="VH-Status-FL" useFirstMatch="false" items="{path: '/StatusCollection'}">
-											<mdcField:ListFieldHelpItem key="{StatusId}" text="{Name}"/>
+											<mdcValueHelpContent:FixedListItem key="{StatusId}" text="{Name}"/>
 										</mdcValueHelpContent:FixedList>
 									</mdcValueHelp:Popover>
 								</mdc:typeahead>
@@ -283,19 +304,20 @@
 					<m:Label text="Select-like single value field (Status)"/>
 					<mdc:FilterField id="FF17"
 						conditions="{cm>/conditions/Status}"
+						propertyKey="Status"
 						display="Description"
 						maxConditions="1"
 						placeholder="{/#Product/Status/@sap:label}"
 						label="{/#Product/Status/@sap:label}"
 						change="handleChange"
 						liveChange="handleLiveChange"
-						fieldHelp="VH-Status2">
+						valueHelp="VH-Status2">
 						<mdc:dependents>
 							<mdc:ValueHelp id="VH-Status2" delegate='\{"name": "sap/ui/mdc/sample/field/ValueHelpODataV2.delegate"\}'>
 								<mdc:typeahead>
 									<mdcValueHelp:Popover id="VH-Status2-Pop">
 										<mdcValueHelpContent:FixedList id="VH-Status2-FL" useFirstMatch="true" filterList="false" items="{path: '/StatusCollection'}">
-											<mdcField:ListFieldHelpItem key="{StatusId}" text="{Name}"/>
+											<mdcValueHelpContent:FixedListItem key="{StatusId}" text="{Name}"/>
 										</mdcValueHelpContent:FixedList>
 									</mdcValueHelp:Popover>
 								</mdc:typeahead>
@@ -306,6 +328,7 @@
 					<m:Label text="single value field in display mode  (Status)"/>
 					<mdc:FilterField id="FF10"
 						conditions="{cm>/conditions/Status}"
+						propertyKey="Status"
 						maxConditions="1"
 						editMode="Display"
 						placeholder="{/#Product/Status/@sap:label}"
@@ -317,21 +340,25 @@
 					<m:Label text="multi (2) value field (Quantity)"/>
 					<mdc:FilterField id="FF11"
 						conditions="{cm>/conditions/Quantity}"
+						propertyKey="Quantity"
 						dataType="Edm.Int32"
 						dataTypeConstraints='\{"nullable": false\}'
+						delegate='\{"name": "sap/ui/mdc/sample/field/FieldBaseODataV2.delegate"\}'
 						display="Value"
 						maxConditions="2"
 						placeholder="{/#Product/Quantity/@sap:label}"
 						label="{/#Product/Quantity/@sap:label}"
 						change="handleChange"
 						liveChange="handleLiveChange"
-						fieldHelp="VH-Conditions">
+						valueHelp="VH-Conditions">
 					</mdc:FilterField>
 
 					<m:Label text="multi value field in display mode (Quantity)"/>
 					<mdc:FilterField id="FF12"
 						conditions="{cm>/conditions/Quantity}"
+						propertyKey="Quantity"
 						dataType="Edm.Int32"
+						delegate='\{"name": "sap/ui/mdc/sample/field/FieldBaseODataV2.delegate"\}'
 						maxConditions="2"
 						editMode="Display"
 						placeholder="{/#Product/Quantity/@sap:label}"
@@ -343,6 +370,7 @@
 					<m:Label text="Custom field"/>
 					<mdc:FilterField id="FF13"
 						conditions="{cm>/conditions/Status}"
+						propertyKey="Status"
 						display="Description"
 						maxConditions="1"
 						placeholder="{/#Product/Status/@sap:label}"
@@ -358,6 +386,7 @@
 					<m:Label text="A UoM field"/>
 					<mdc:FilterField id="FF15"
 						conditions="{cm>/conditions/WeightMeasure,WeightUnit}"
+						propertyKey="WeightMeasure,WeightUnit"
 						dataType="sap.ui.model.type.Unit"
 						dataTypeConstraints='\{"minimum": 0\}'
 						display="Description"
@@ -366,13 +395,13 @@
 						label="{/#Product/WeightMeasure/@sap:label}"
 						change="handleChange"
 						liveChange="handleLiveChange"
-						fieldHelp="VH-WeightUnit">
+						valueHelp="VH-WeightUnit">
 						<mdc:dependents>
 							<mdc:ValueHelp id="VH-WeightUnit" delegate='\{"name": "sap/ui/mdc/sample/field/ValueHelpODataV2.delegate"\}'>
 								<mdc:typeahead>
 									<mdcValueHelp:Popover id="VH-WeightUnit-Pop">
 										<mdcValueHelpContent:FixedList id="VH-WeightUnit-FL" useFirstMatch="false" items="{/weightUnits}">
-											<mdcField:ListFieldHelpItem key="{id}" text="{unit}" additionalText="{text}"/>
+											<mdcValueHelpContent:FixedListItem key="{id}" text="{unit}" additionalText="{text}"/>
 										</mdcValueHelpContent:FixedList>
 									</mdcValueHelp:Popover>
 								</mdc:typeahead>
@@ -383,6 +412,7 @@
 					<m:Label text="A UoM field in display mode"/>
 					<mdc:FilterField id="FF16"
 						conditions="{cm>/conditions/WeightMeasure,WeightUnit}"
+						propertyKey="WeightMeasure,WeightUnit"
 						dataType="sap.ui.model.type.Unit"
 						display="Value"
 						editMode="Display"
@@ -395,6 +425,7 @@
 					<m:Label text="Material (empty key)"/>
 					<mdc:FilterField id="FF_Material"
 						conditions="{cm>/conditions/MatrId}"
+						propertyKey="MatrId"
 						dataType="sap.ui.model.type.String"
 						dataTypeConstraints='\{"maxLength": 10, "search": "^(|[0-9])+$", "nullable": false\}'
 						dataTypeFormatOptions='\{"parseKeepsEmptyString": true\}'
@@ -403,7 +434,7 @@
 						label="{/#Product/MatrId/@sap:label}"
 						change="handleChange"
 						liveChange="handleLiveChange"
-						fieldHelp="VH-Material">
+						valueHelp="VH-Material">
 						<mdc:dependents>
 							<mdc:ValueHelp id="VH-Material" delegate='\{"name": "sap/ui/mdc/sample/field/ValueHelpODataV2.delegate"\}'>
 								<mdc:typeahead>
@@ -464,11 +495,57 @@
 						</mdc:dependents>
 					</mdc:FilterField>
 
+					<m:Label text="Search"/>
+					<mdc:FilterField id="FF-Search"
+						conditions="{cm>/conditions/$search}"
+						propertyKey="$search"
+						maxConditions="1"
+						dataType="sap.ui.model.type.String"
+						display="Value"
+						editMode="Editable"
+						placeholder="My Search"
+						label="My Search"
+						change="handleChange"
+						liveChange="handleLiveChange">
+					</mdc:FilterField>
+
+					<m:Label text="type date as additionalValue"/>
+					<mdc:FilterField id="FF-DateDescription"
+						conditions="{cm>/conditions/Name}"
+						delegate='\{"name": "sap/ui/mdc/sample/field/FieldBaseODataV2.delegate"\}'
+						dataType="sap.ui.model.type.String"
+						dataTypeConstraints='\{"maxLength": 30\}'
+						additionalDataType='\{"name": "sap.ui.model.odata.type.DateTime", "formatOptions": \{"style": "long"\}, "constraints": \{"displayFormat": "Date"\}\}'
+						propertyKey="Name"
+						display="ValueDescription"
+						maxConditions="-1"
+						placeholder="{/#Product/Name/@sap:label}"
+						label="{/#Product/Name/@sap:label}"
+						change="handleChange"
+						liveChange="handleLiveChange"
+						valueHelp="VH-DateDescription">
+						<mdc:dependents>
+							<mdc:ValueHelp id="VH-DateDescription" delegate='\{"name": "sap/ui/mdc/sample/field/ValueHelpODataV2.delegate"\}'>
+								<mdc:typeahead>
+									<mdcValueHelp:Popover id="VH-DateDescription-Pop">
+										<mdcValueHelpContent:FixedList id="VH-DateDescription-FL" useFirstMatch="true" items="{path: '/ProductCollection'}" >
+											<mdcValueHelpContent:FixedListItem 
+												text="{path: 'Date', type:'sap.ui.model.odata.type.DateTime', formatOptions: {style: 'long'}, constraints: {displayFormat: 'Date'}}" 
+												additionalText="{path: 'Name', type: 'sap.ui.model.type.String', constraints: {maxLength: 30}}" 
+												key="{path: 'Name', type: 'sap.ui.model.type.String', constraints: {maxLength: 30}}"/>
+										</mdcValueHelpContent:FixedList>
+									</mdcValueHelp:Popover>
+								</mdc:typeahead>
+							</mdc:ValueHelp>
+						</mdc:dependents>
+					</mdc:FilterField>
+
 					<c:Title text="In/Out Example"/>
 					<m:Label text="{/#Product/CountryId/@sap:label}"/>
 					<mdc:FilterField
 						id="IOFFCountry"
 						conditions="{cm>/conditions/CountryId}"
+						propertyKey="CountryId"
 						operators="EQ,NE,EUROPE"
 						dataType="sap.ui.model.type.String"
 						dataTypeConstraints='\{"maxLength": 3\}'
@@ -476,7 +553,7 @@
 						label="{/#Product/CountryId/@sap:label}"
 						change="handleChange"
 						liveChange="handleLiveChange"
-						fieldHelp="VH-Country">
+						valueHelp="VH-Country">
 						<mdc:dependents>
 							<mdc:ValueHelp id="VH-Country" delegate='\{"name": "sap/ui/mdc/sample/field/ValueHelpODataV2.delegate"\}'>
 								<mdc:typeahead>
@@ -542,13 +619,14 @@
 					<mdc:FilterField
 						id="IOFFRegion"
 						conditions="{cm>/conditions/RegionId}"
+						propertyKey="RegionId"
 						dataType="sap.ui.model.type.String"
 						dataTypeConstraints='\{"maxLength": 2, "search": "^[0-9]+$"\}'
 						display="ValueDescription"
 						label="{/#Product/RegionId/@sap:label}"
 						change="handleChange"
 						liveChange="handleLiveChange"
-						fieldHelp="VH-Region">
+						valueHelp="VH-Region">
 						<mdc:dependents>
 							<mdc:ValueHelp id="VH-Region"
 								delegate='\{"name": "sap/ui/mdc/sample/field/ValueHelp.delegate", "payload": \{"in": [\{"path": "countryId", "source": "conditions/CountryId"\}], "out": [\{"path": "countryId", "target": "conditions/CountryId"\}]\}\}'>
@@ -602,8 +680,9 @@
 														dataTypeConstraints='\{"maxLength": 3\}'
 														width="100%"
 														conditions="{$filters>/conditions/countryId}"
+														propertyKey="countryId"
 														operators="EQ,NE,EUROPE"
-														fieldHelp="VH-Country"/>
+														valueHelp="VH-Country"/>
 												</vhfb:FilterBar>
 											</mdcValueHelpContent:filterBar>
 											<m:Table id="VH-Region-Dialog-Table" items="{path: '/RegionCollection', suspended: true}">
@@ -638,13 +717,15 @@
 					<mdc:FilterField
 						id="IOFFCity"
 						conditions="{cm>/conditions/CityId}"
+						propertyKey="CityId"
 						dataType="sap.ui.model.odata.type.String"
 						dataTypeConstraints='\{"maxLength": 2, "isDigitSequence": true, "nullable": false\}'
+						delegate='\{"name": "sap/ui/mdc/sample/field/FieldBaseODataV2.delegate"\}'
 						display="ValueDescription"
 						label="{/#Product/CityId/@sap:label}"
 						change="handleChange"
 						liveChange="handleLiveChange"
-						fieldHelp="VH-City">
+						valueHelp="VH-City">
 					</mdc:FilterField>
 
 					<m:Label text="Info (not bound to ConditionModel)"/>
@@ -727,10 +808,12 @@
 												display= "ValueDescription"
 												dataType="sap.ui.model.type.String"
 												dataTypeConstraints='\{"maxLength": 3\}'
+												delegate='\{"name": "sap/ui/mdc/sample/field/FieldBaseODataV2.delegate"\}'
 												width="100%"
 												conditions="{$filters>/conditions/countryId}"
+												propertyKey="countryId"
 												operators="EQ,NE,EUROPE"
-												fieldHelp="VH-Country"/>
+												valueHelp="VH-Country"/>
 											<mdc:FilterField
 												id="VH-City-FF-regionId"
 												label= "{/#City/regionId/@sap:label}"
@@ -738,9 +821,11 @@
 												display= "ValueDescription"
 												dataType="sap.ui.model.type.String"
 												dataTypeConstraints='\{"maxLength": 2, "search": "^[0-9]+$"\}'
+												delegate='\{"name": "sap/ui/mdc/sample/field/FieldBaseODataV2.delegate"\}'
 												width="100%"
 												conditions="{$filters>/conditions/regionId}"
-												fieldHelp="VH-Region2">
+												propertyKey="regionId"
+												valueHelp="VH-Region2">
 											</mdc:FilterField>
 											<mdc:FilterField
 												id="VH-City-FF-info"
@@ -750,8 +835,10 @@
 												dataType="sap.ui.model.odata.type.String"
 												dataTypeFormatOptions='\{"parseKeepsEmptyString": true\}'
 												dataTypeConstraints='\{"maxLength": 100, "nullable": false\}'
+												delegate='\{"name": "sap/ui/mdc/sample/field/FieldBaseODataV2.delegate"\}'
 												width="100%"
-												conditions="{$filters>/conditions/info}"/>
+												conditions="{$filters>/conditions/info}"
+												propertyKey="info"/>
 											<vhfb:dependents>
 												<mdc:ValueHelp id="VH-Region2"
 													delegate='\{"name": "sap/ui/mdc/sample/field/ValueHelp.delegate", "payload": \{"in": [\{"path": "countryId", "source": "conditions/countryId"\}], "out": [\{"path": "countryId", "target": "conditions/countryId"\}]\}\}'>

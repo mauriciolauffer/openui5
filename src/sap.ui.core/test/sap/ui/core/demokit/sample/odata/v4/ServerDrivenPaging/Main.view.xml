@@ -3,14 +3,16 @@
 	controllerName="sap.ui.core.sample.odata.v4.ServerDrivenPaging.Main"
 	xmlns="sap.m"
 	xmlns:t="sap.ui.table"
+	xmlns:trm="sap.ui.table.rowmodes"
 	xmlns:mvc="sap.ui.core.mvc">
 	<IconTabBar select=".onTabSelect">
 		<items>
-			<IconTabFilter id="list" text="m.Table">
+			<IconTabFilter id="list" key="m" text="m.Table">
 				<Table id="businessPartnerList" growing="true" growingThreshold="21">
 					<headerToolbar>
 						<Toolbar>
-							<Title id="businessPartnerListTitle" text="{$count} Business Partners"/>
+							<Title id="businessPartnerListTitle" level="H1"
+								text="{$count} Business Partners"/>
 						</Toolbar>
 					</headerToolbar>
 					<columns>
@@ -26,9 +28,14 @@
 					</columns>
 				</Table>
 			</IconTabFilter>
-			<IconTabFilter id="table" text="table.Table">
-				<t:Table id="businessPartnerTable" selectionMode="None"
-						title="{$count} Business Partners" visibleRowCount="21">
+			<IconTabFilter id="table" key="table" text="table.Table">
+				<t:Table ariaLabelledBy="title" id="businessPartnerTable" selectionMode="None">
+					<t:extension>
+						<Title id="title" text="{$count} Business Partners" level="H1"/>
+					</t:extension>
+					<t:rowMode>
+						<trm:Fixed rowCount="21"/>
+					</t:rowMode>
 					<t:Column>
 						<Label text="Index"/>
 						<t:template>

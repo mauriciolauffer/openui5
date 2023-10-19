@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-	<title>Integration Cards</title>
+	<title>Preview</title>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<script src="../../../scripts/boot.js"></script>
@@ -38,7 +38,7 @@
 		<div class="content">
 
 			<h1 id="overview">Preview</h1>
-			<h3 id="configure">Configure the Editor's Preview</h3>
+			<h2 id="configure">Configure the Editor's Preview</h2>
 			<p>An additional section in the configuration allows to influence the preview shown in the Configuration Editor
 			</p>
 			<div class="tableWrapper">
@@ -94,11 +94,11 @@ sap.ui.define(["sap/ui/integration/Designtime"], function (
 							preview.<br>
 							<code>"LiveAbstract"</code> : The user will be able to toggle between live and abstract
 							preview, starting with the live preview.<br>
-							<code>"Mock"</code> <span>(Component Card)</span>: A small scaled preview of the real Card with mock data is shown.<br>
-							<code>"AbstractMock"</code> <span>(Component Card)</span>: The user will be able to toggle between abstract and mock preview, starting with the abstract
+							<code>"MockData"</code> <span>(Component Card)</span>: A small scaled preview of the real Card with mock data is shown.<br>
+							<code>"AbstractMockData"</code> <span>(Component Card)</span>: The user will be able to toggle between abstract and mockdata preview, starting with the abstract
 							preview.<br>
-							<code>"MockAbstract"</code> <span>(Component Card)</span>: The user will be able to toggle between mock and abstract
-							preview, starting with the mock preview.<br>
+							<code>"MockDataAbstract"</code> <span>(Component Card)</span>: The user will be able to toggle between mockdata and abstract
+							preview, starting with the mockdata preview.<br>
 							<pre class="lang-js">modes : "AbstractLive"</pre>
 						</td>
 						<td>1.83</td>
@@ -135,7 +135,7 @@ sap.ui.define(["sap/ui/integration/Designtime"], function (
 			</div>
 
 			<h2 id="preview">Preview of the Card in Configuration Editor</h2>
-			<h3>Preview Modes</h3>
+			<h3 id="previewModes">Preview Modes</h3>
 			<ul>
 				<li>
 					None: No preview<br><br>
@@ -161,7 +161,7 @@ sap.ui.define(["sap/ui/integration/Designtime"], function (
 				</li>
 			</ul>
 
-			<h3>Create a Themeable Preview for a Card</h3>
+			<h3 id="createThemablePreview">Create a Themeable Preview for a Card</h3>
 			<p>
 				Preview images for card should present an abstract preview to give the user an impression of look of the final
 				card. As a card developer, you should create the picture for such abstract in case you want to override
@@ -203,7 +203,7 @@ sap.ui.define(["sap/ui/integration/Designtime"], function (
 	};
 });</pre>
 
-			<h3>Preview Position</h3>
+			<h3 id="previewPosition">Preview Position</h3>
 			<p>
 				When creating the Card Editor, we can set the preview position via parameter "previewPosition".
 			</p>
@@ -231,11 +231,6 @@ var oEditor = new CardEditor({<mark>
 			<br><br>
 			<a class="try-button" href="../../../index.html#/explore/designtimePreview" target="_parent">Try it Out</a>
 			<br>
-		</div>
-		<div class="navigation">
-			<h4>Table of Contents</h4>
-			<div><a href="#configure">Configure the editor's preview</a></div>
-			<div><a href="#preview">Preview of the Card in Configuration Editor</a></div>
 		</div>
 	</div>
 

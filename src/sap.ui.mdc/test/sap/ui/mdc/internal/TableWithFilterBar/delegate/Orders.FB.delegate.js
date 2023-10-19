@@ -7,13 +7,14 @@
 // ---------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------
 sap.ui.define([
-	"delegates/odata/v4/FilterBarDelegate", 'sap/ui/fl/Utils', 'sap/ui/core/util/reflection/JsControlTreeModifier', 'sap/ui/mdc/enum/FieldDisplay', 'sap/ui/model/odata/type/Int32'
-], function (FilterBarDelegate, FlUtils, JsControlTreeModifier, FieldDisplay, TypeInt32) {
+	"delegates/odata/v4/FilterBarDelegate", 'sap/ui/fl/Utils', 'sap/ui/core/util/reflection/JsControlTreeModifier', 'sap/ui/mdc/enums/FieldDisplay', 'sap/ui/mdc/enums/OperatorName', 'sap/ui/model/odata/type/Int32', 'delegates/util/DelegateCache'
+
+], function (FilterBarDelegate, FlUtils, JsControlTreeModifier, FieldDisplay, OperatorName, TypeInt32, DelegateCache) {
 	"use strict";
 
 	var FilterBarOrdersSampleDelegate = Object.assign({}, FilterBarDelegate);
 
-	FilterBarOrdersSampleDelegate.fetchProperties = function () {
+	FilterBarOrdersSampleDelegate.fetchProperties = function (oFilterBar) {
 		var oFetchPropertiesPromise = FilterBarDelegate.fetchProperties.apply(this, arguments);
 
 		var bSearchExists = false;
@@ -28,17 +29,12 @@ sap.ui.define([
 				if (oPropertyInfo.name === "$search") {
 					bSearchExists = true;
 				} else if (oPropertyInfo.name === "OrderNo") {
-					oPropertyInfo.fieldHelp = "FH1";
 					oPropertyInfo.label = "Order Number";
 				} else if (oPropertyInfo.name === "orderTime") {
 					oPropertyInfo.label = "Order Time";
 				} else if (oPropertyInfo.name === "currency_code") {
-					oPropertyInfo.fieldHelp = "FH-Currency";
-					oPropertyInfo.display = FieldDisplay.Value; // for currencies description key is the name
 					oPropertyInfo.maxConditions = 1; // normally only one currency should be used, otherwise it makes no sense related to price
-					oPropertyInfo.filterOperators = ["EQ"]; // for currency only fixed values make sense
 				}
-
 			});
 
 			if (!aProperties.find(function(aItem) { return aItem.name === "Items*/book_ID"; } ) ) {
@@ -46,11 +42,7 @@ sap.ui.define([
 					name: "Items*/book_ID",
 					label: "Order w. one Item for Book (Any)",
 					groupLabel: "none",
-					typeConfig: {
-						baseType: "Numeric",
-						className: "Edm.In32",
-						typeInstance: new TypeInt32()
-					}
+					dataType: "Edm.Int32"
 				});
 			}
 
@@ -59,54 +51,35 @@ sap.ui.define([
 					name: "Items+/book_ID",
 					label: "Order w. all Items for Book (All)",
 					groupLabel: "none",
-					typeConfig: {
-						baseType: "Numeric",
-						className: "Edm.Int32",
-						typeInstance: new TypeInt32()
-					}
+					dataType: "Edm.Int32"
 				});
 			}
 
 			if (!bSearchExists) {
 				aProperties.push({
 					  name: "$search",
-					  typeConfig: FilterBarDelegate.getTypeUtil().getTypeConfig("Edm.String", null, null)
+					  label: "",
+					  dataType: "Edm.String"
 				});
 			}
 
+			DelegateCache.add(oFilterBar, {
+				"OrderNo": {valueHelp: "FH1"},
+				"currency_code": {valueHelp: "FH-Currency", display: FieldDisplay.Value, operators: [OperatorName.EQ]},
+				"ID": {valueHelp: "VH-ID", display: FieldDisplay.ValueDescription, operators: [OperatorName.EQ], additionalDataType: {name: "sap.ui.model.odata.type.String", constraints: {maxLength: 10, isDigitSequence: true}}}
+			}, "$Filters");
+
 			return aProperties;
 		});
-
-		// { name: "author_ID",
-		// groupLabel: "none",
-		// label: "Author ID",
-		// type: "Edm.Int32",
-		// baseType:new TypeInt32(),
-		// required: false,
-		// hiddenFilter: false,
-		// visible: true,
-		// maxConditions : -1,
-		// fieldHelp: "FHAuthor"}
 	};
 
 	FilterBarOrdersSampleDelegate._createFilterField = function (oProperty, oFilterBar, mPropertyBag) {
-
-		mPropertyBag = 	{
+		mPropertyBag = mPropertyBag || {
 			modifier: JsControlTreeModifier,
 			view: FlUtils.getViewForControl(oFilterBar),
 			appComponent: FlUtils.getAppComponentForControl(oFilterBar)
 		};
-
-		// var oModifier = mPropertyBag.modifier;
-		// var sName = oProperty.path || oProperty.name;
-		var oFilterFieldPromise = FilterBarDelegate._createFilterField.apply(this, arguments);
-
-		oFilterFieldPromise.then(function (oFilterField) {
-
-		});
-
-		return oFilterFieldPromise;
-
+		return FilterBarDelegate._createFilterField.apply(this, arguments);
 	};
 
 

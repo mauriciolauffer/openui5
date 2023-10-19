@@ -314,6 +314,7 @@ sap.ui.define([
 			statusText : "Internal Server Error"
 		}
 	}, {
+		// no need to use UI5Date.getInstance as only the timestamp is relevant
 		retryAfter : new Date(1234567890),
 		message : "message: 503 Service Unavailable",
 		response : {
@@ -324,6 +325,7 @@ sap.ui.define([
 			statusText : "Service Unavailable"
 		}
 	}, {
+		// no need to use UI5Date.getInstance as only the timestamp is relevant
 		retryAfter : new Date(1234567890 + 42 * 1000),
 		message : "message: 503 Service Unavailable",
 		response : {
@@ -334,6 +336,7 @@ sap.ui.define([
 			statusText : "Service Unavailable"
 		}
 	}, {
+		// no need to use UI5Date.getInstance as only the timestamp is relevant
 		retryAfter : new Date("Fri, 16 Jul 2021 14:04:39 GMT"),
 		message : "message: 503 Service Unavailable",
 		response : {
@@ -1518,6 +1521,29 @@ sap.ui.define([
 	});
 
 	//*********************************************************************************************
+	QUnit.test("updateSelected: $postBodyCollection", function (assert) {
+		var oNewValue = {
+				transient : [{foo : "new"}],
+				upcoming : []
+			},
+			oOldValue = {
+				transient : [{foo : "old"}],
+				upcoming : null
+			};
+
+		oOldValue.transient.$postBodyCollection = true;
+		this.mock(_Helper).expects("fireChange").never();
+
+		// code under test
+		_Helper.updateSelected("~mChangeListener~", "", oOldValue, oNewValue);
+
+		assert.deepEqual(oOldValue, {
+			transient : [{foo : "old"}],
+			upcoming : []
+		});
+	});
+
+	//*********************************************************************************************
 [false, true].forEach(function (bNull) {
 	var sTitle = "updateSelected: complex type was " + (bNull ? "null" : "missing") + " in cache";
 
@@ -1831,8 +1857,13 @@ sap.ui.define([
 	});
 
 	//*********************************************************************************************
-	QUnit.test("informAll: comparison of old and new value fires all events", function (assert) {
+[true, undefined].forEach(function (bAllowUndefined) {
+	var sTitle = "informAll: comparison of old and new value fires all events, "
+		+ "bAllowUndefined=" + bAllowUndefined;
+
+	QUnit.test(sTitle, function (assert) {
 		var mChangeListeners = {},
+			vUndefinedValue = bAllowUndefined ? undefined : null,
 			oHelperMock = this.mock(_Helper),
 			oNew = {
 				add : "new",
@@ -1882,9 +1913,10 @@ sap.ui.define([
 		oHelperMock.expects("fireChange")
 			.withExactArgs(sinon.match.same(mChangeListeners), "path/deep/changed", "changed");
 		oHelperMock.expects("fireChange")
-			.withExactArgs(sinon.match.same(mChangeListeners), "path/deep/deepOld", null);
+			.withExactArgs(sinon.match.same(mChangeListeners), "path/deep/deepOld",
+				vUndefinedValue);
 		oHelperMock.expects("fireChange")
-			.withExactArgs(sinon.match.same(mChangeListeners), "path/deep/old", null);
+			.withExactArgs(sinon.match.same(mChangeListeners), "path/deep/old", vUndefinedValue);
 		oHelperMock.expects("fireChange")
 			.withExactArgs(sinon.match.same(mChangeListeners), "path/getDeep/inside", "value");
 		oHelperMock.expects("fireChange")
@@ -1892,17 +1924,19 @@ sap.ui.define([
 		oHelperMock.expects("fireChange")
 			.withExactArgs(sinon.match.same(mChangeListeners), "path/getFlat", "now");
 		oHelperMock.expects("fireChange")
-			.withExactArgs(sinon.match.same(mChangeListeners), "path/getFlat/inside", null);
+			.withExactArgs(sinon.match.same(mChangeListeners), "path/getFlat/inside",
+				vUndefinedValue);
 		oHelperMock.expects("fireChange")
-			.withExactArgs(sinon.match.same(mChangeListeners), "path/old", null);
+			.withExactArgs(sinon.match.same(mChangeListeners), "path/old", vUndefinedValue);
 
 		// code under test
-		_Helper.informAll(mChangeListeners, "path", oOld, oNew);
+		_Helper.informAll(mChangeListeners, "path", oOld, oNew, bAllowUndefined);
 
 		// assertion - no change on the old and the new value
 		assert.strictEqual(JSON.stringify(oOld), sUnchangedOld);
 		assert.strictEqual(JSON.stringify(oNew), sUnchangedNew);
 	});
+});
 
 	//*********************************************************************************************
 [{
@@ -1976,6 +2010,16 @@ sap.ui.define([
 	});
 
 	//*********************************************************************************************
+	QUnit.test("makeRelativeUrl", function (assert) {
+		assert.strictEqual(_Helper.makeRelativeUrl("/foo/baz", "/foo/bar"), "baz");
+		assert.strictEqual(_Helper.makeRelativeUrl("/foo/bar/qux", "/foo/baz"), "bar/qux");
+		assert.strictEqual(_Helper.makeRelativeUrl("/foo/baz", "/foo/bar/qux"), "../baz");
+		assert.strictEqual(
+			_Helper.makeRelativeUrl("/Bar(baz='2',qux=3)", "/Foo"),
+			"Bar(baz='2',qux=3)");
+	});
+
+	//*********************************************************************************************
 	QUnit.test("drillDown", function (assert) {
 		var oObject = {
 				foo : "bar",
@@ -1988,10 +2032,51 @@ sap.ui.define([
 		assert.strictEqual(_Helper.drillDown(oObject, []), oObject);
 		assert.strictEqual(_Helper.drillDown(oObject, ["foo"]), "bar");
 		assert.strictEqual(_Helper.drillDown(oObject, ["bar", "baz"]), "qux");
+		assert.strictEqual(_Helper.drillDown(oObject, "bar/baz"), "qux");
 		assert.strictEqual(_Helper.drillDown(oObject, ["unknown"]), undefined);
 		assert.strictEqual(_Helper.drillDown(oObject, ["unknown", "value"]), undefined);
 		assert.strictEqual(_Helper.drillDown(oObject, ["null"]), null);
 		assert.strictEqual(_Helper.drillDown(oObject, ["null", "value"]), undefined);
+	});
+
+	//*********************************************************************************************
+	QUnit.test("deleteProperty", function (assert) {
+		var oObject = {
+				foo : "foo",
+				bar : "bar",
+				baz : "baz"
+			},
+			oDrilledDown = {
+				a : "abc",
+				qux : "qux",
+				x : "xyz"
+			},
+			oHelperMock = this.mock(_Helper);
+
+		// code under test
+		_Helper.deleteProperty(oObject, "bar");
+
+		assert.deepEqual(oObject, {foo : "foo", baz : "baz"});
+
+		oHelperMock.expects("drillDown")
+			.withExactArgs(sinon.match.same(oObject), ["foo", "bar", "baz"])
+			.returns(oDrilledDown);
+
+		// code under test
+		_Helper.deleteProperty(oObject, "foo/bar/baz/qux");
+
+		assert.deepEqual(oDrilledDown, {a : "abc", x : "xyz"});
+
+		[undefined, null].forEach(function (vValue) {
+			oHelperMock.expects("drillDown")
+				.withExactArgs(sinon.match.same(oObject), ["qux"])
+				.returns(vValue);
+
+			// code under test
+			_Helper.deleteProperty(oObject, "qux/foo");
+
+			assert.deepEqual(oObject, {foo : "foo", baz : "baz"}, "unchanged");
+		});
 	});
 
 	//*********************************************************************************************
@@ -2181,13 +2266,21 @@ sap.ui.define([
 	QUnit.test("getPrivateAnnotation", function (assert) {
 		var oObject = {
 				"@$ui5._" : {
+					null : null,
 					transient : "foo"
 				}
 			};
 
 		assert.strictEqual(_Helper.getPrivateAnnotation({}, "foo"), undefined);
+		assert.strictEqual(_Helper.getPrivateAnnotation({}, "foo", "~default~"), "~default~");
 		assert.strictEqual(_Helper.getPrivateAnnotation(oObject, "foo"), undefined);
+		assert.strictEqual(_Helper.getPrivateAnnotation(oObject, "foo", "~default~"), "~default~");
+		assert.strictEqual(_Helper.getPrivateAnnotation(oObject, "null", "~default~"), null);
 		assert.strictEqual(_Helper.getPrivateAnnotation(oObject, "transient"), "foo");
+
+		assert.throws(function () {
+			_Helper.getPrivateAnnotation(null, "foo", "~default~");
+		}, TypeError);
 	});
 
 	//*********************************************************************************************
@@ -2319,6 +2412,23 @@ sap.ui.define([
 });
 
 	//*********************************************************************************************
+	QUnit.test("cloneNo$", function (assert) {
+		var oCloneExpectation = this.mock(_Helper).expects("clone")
+				.withExactArgs("~value~", sinon.match.func)
+				.returns("~clone~"),
+			fnReplacer;
+
+		// code under test
+		assert.strictEqual(_Helper.cloneNo$("~value~"), "~clone~");
+
+		fnReplacer = oCloneExpectation.getCall(0).args[1];
+
+		// code under test
+		assert.strictEqual(fnReplacer("$foo", 42), undefined);
+		assert.strictEqual(fnReplacer("f$oo", 42), 42);
+	});
+
+	//*********************************************************************************************
 	[{
 		mHeaders : {},
 		mResolvedHeader : {}
@@ -2346,10 +2456,34 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("resetInactiveEntity", function (assert) {
 		var oContext = {setInactive : function () {}},
-			oEntity = {foo : "n/a", bar : "n/a", baz : "n/a", notIn : "postBody"},
 			oHelperMock = this.mock(_Helper),
-			oInitialData = {foo : "foo"},
-			oPostBody = {foo : "n/a", bar : "n/a", baz : "n/a"};
+			oInitialData = {
+				foo : "foo",
+				complex1 : {CITY : {ZIP : "ZIP"}},
+				complex3 : {REGION : "REGION"}
+			},
+			oPostBody = {
+				foo : "n/a", bar : "n/a", baz : "n/a",
+				complex1 : {CITY : {NAME : {PARTS : {PART : "n/a"}}, ZIP : "n/a"}, COUNTRY : "n/a"},
+				complex2 : {ID : "n/a"},
+				complex3 : null
+			},
+			oExpectedPostBody = {
+				foo : "foo",
+				complex1 : {CITY : {ZIP : "ZIP"}},
+				complex3 : {REGION : "REGION"}
+			},
+			oEntity = {
+				"@$ui5._" : {
+					context : oContext,
+					initialData : oInitialData,
+					postBody : oPostBody
+				},
+				foo : "n/a", bar : "n/a", baz : "n/a",
+				complex1 : {CITY : {NAME : {PARTS : {PART : "n/a"}}, ZIP : "n/a"}, COUNTRY : "n/a"},
+				complex2 : {ID : "n/a"},
+				complex3 : null
+			};
 
 		oHelperMock.expects("getPrivateAnnotation")
 			.withExactArgs(sinon.match.same(oEntity), "initialData").returns(oInitialData);
@@ -2357,14 +2491,32 @@ sap.ui.define([
 			.withExactArgs(sinon.match.same(oEntity), "postBody").returns(oPostBody);
 
 		oHelperMock.expects("fireChange").withExactArgs("~mChangeListeners~", "path/foo", "foo");
-		oHelperMock.expects("fireChange")
-			.withExactArgs("~mChangeListeners~", "path/bar", undefined);
-		oHelperMock.expects("fireChange")
-			.withExactArgs("~mChangeListeners~", "path/baz", undefined);
+		oHelperMock.expects("fireChange").withExactArgs("~mChangeListeners~",
+			"path/bar", undefined);
+		oHelperMock.expects("fireChange").withExactArgs("~mChangeListeners~",
+			"path/baz", undefined);
+		oHelperMock.expects("fireChange").withExactArgs("~mChangeListeners~",
+			"path/complex1/CITY/NAME/PARTS/PART", undefined);
+		oHelperMock.expects("fireChange").withExactArgs("~mChangeListeners~",
+			"path/complex1/CITY/ZIP", "ZIP");
+		oHelperMock.expects("fireChange").withExactArgs("~mChangeListeners~",
+			"path/complex1/COUNTRY", undefined);
+		oHelperMock.expects("fireChange").withExactArgs("~mChangeListeners~",
+			"path/complex2/ID", undefined);
+		oHelperMock.expects("fireChange").withExactArgs("~mChangeListeners~",
+			"path/complex3/REGION", "REGION");
+
+		// fireChange will be called for the following paths, but realistically there will be no
+		// change listeners for objects
+		oHelperMock.expects("fireChange").withExactArgs("~mChangeListeners~",
+			"path/complex1/CITY/NAME", undefined);
+		oHelperMock.expects("fireChange").withExactArgs("~mChangeListeners~",
+			"path/complex1/CITY/NAME/PARTS", undefined);
+		oHelperMock.expects("fireChange").withExactArgs("~mChangeListeners~",
+			"path/complex2", undefined);
 
 		oHelperMock.expects("updateAll").withExactArgs("~mChangeListeners~", "path",
 			sinon.match.same(oEntity), {"@$ui5.context.isInactive" : true});
-
 		oHelperMock.expects("getPrivateAnnotation")
 			.withExactArgs(sinon.match.same(oEntity), "context")
 			.returns(oContext);
@@ -2373,8 +2525,30 @@ sap.ui.define([
 		// code under test
 		_Helper.resetInactiveEntity("~mChangeListeners~", "path", oEntity);
 
-		assert.deepEqual(oEntity, {foo : "foo", notIn : "postBody"});
-		assert.deepEqual(oPostBody, {foo : "foo"});
+		assert.deepEqual(oEntity, {
+			"@$ui5._" : {
+				context : oContext,
+				initialData : oInitialData,
+				postBody : oExpectedPostBody
+			},
+			foo : "foo",
+			complex1 : {CITY : {ZIP : "ZIP"}},
+			complex3 : {REGION : "REGION"}
+		});
+
+		// to enforce object clone
+		oEntity.complex3.REGION = "IGB";
+		assert.deepEqual(oInitialData, {
+			foo : "foo",
+			complex1 : {CITY : {ZIP : "ZIP"}},
+			complex3 : {REGION : "REGION"}
+		});
+		oEntity["@$ui5._"].postBody.complex3.REGION = "IGB";
+		assert.deepEqual(oInitialData, {
+			foo : "foo",
+			complex1 : {CITY : {ZIP : "ZIP"}},
+			complex3 : {REGION : "REGION"}
+		});
 	});
 
 	//*********************************************************************************************
@@ -3234,7 +3408,8 @@ sap.ui.define([
 		}
 	}].forEach(function (oFixture) {
 		QUnit.test("wrapChildQueryOptions, " + oFixture.childPath, function (assert) {
-			var oMetaModel = {
+			var sChildQueryOptions = JSON.stringify(oFixture.childQueryOptions),
+				oMetaModel = {
 					// Note: "this" not needed, save Function#bind below
 					fetchObject : function () {}
 				},
@@ -3267,6 +3442,7 @@ sap.ui.define([
 				oFixture.childQueryOptions, oMetaModel.fetchObject);
 
 			assert.deepEqual(mWrappedQueryOptions, oFixture.expected);
+			assert.strictEqual(JSON.stringify(oFixture.childQueryOptions), sChildQueryOptions);
 		});
 	});
 
@@ -4894,5 +5070,337 @@ sap.ui.define([
 			// code under test
 			_Helper.setLanguage("/some/path?mysap-language=bar", "XY"),
 			"/some/path?mysap-language=bar&sap-language=%58Y");
+	});
+
+	//*********************************************************************************************
+	QUnit.test("addPromise", function (assert) {
+		var oElement = {},
+			oPromise;
+
+		// code under test
+		oPromise = _Helper.addPromise(oElement);
+
+		assert.strictEqual(oPromise.isPending(), true);
+		_Helper.getPrivateAnnotation(oElement, "reject")("~oError~");
+		assert.strictEqual(oPromise.isRejected(), true);
+		oPromise.catch(function (oError) {
+			assert.strictEqual(oError, "~oError~");
+		});
+	});
+
+	//*********************************************************************************************
+	QUnit.test("isMissingProperty", function (assert) {
+		var oEntity = {
+				collection : [{
+					simple : true,
+					nested1 : {
+						simple : true,
+						nested3 : null
+					},
+					nested2 : null
+				}, {
+					simple : true,
+					nested1 : null,
+					nested2 : {
+						simple : true
+					}
+				}, {
+					simple : true,
+					nested1 : {
+						simple : true,
+						nested3 : {
+							simple : true
+						}
+					},
+					nested2 : null
+				}],
+				nested : {
+					simple : true
+				},
+				empty : [],
+				nulled : null,
+				simple : true
+			};
+
+		function test(vValue, sPath, bExpected) {
+			assert.strictEqual(_Helper.isMissingProperty(vValue, sPath), bExpected, sPath);
+		}
+
+		test(oEntity, "missing", true);
+		test(oEntity, "simple", false);
+		test(oEntity, "nested", false);
+		test(oEntity, "nested/missing", true);
+		test(oEntity, "nested/simple", false);
+		test(oEntity, "nulled", false);
+		test(oEntity, "missing/missing/missing", true);
+		test(oEntity, "collection", false);
+		test(oEntity, "collection/missing", true);
+		test(oEntity, "collection/simple", false);
+		test(oEntity, "collection/nested1/missing", true);
+		test(oEntity, "collection/nested1/simple", false);
+		test(oEntity, "collection/nested2/missing", true);
+		test(oEntity, "collection/nested2/simple", false);
+		test(oEntity, "collection/nested1/nested3/missing", true);
+		test(oEntity, "collection/nested1/nested3/simple", false);
+		test(oEntity, "empty", false);
+		test(oEntity, "empty/simple", false);
+		test(oEntity.collection, "missing", true);
+		test(oEntity.collection, "simple", false);
+		test(oEntity.collection, "nested1/missing", true);
+		test(oEntity.collection, "nested1/simple", false);
+		test(oEntity.collection, "nested2/missing", true);
+		test(oEntity.collection, "nested2/simple", false);
+		test(oEntity.collection, "nested1/nested3/missing", true);
+		test(oEntity.collection, "nested1/nested3/simple", false);
+
+		assert.throws(function () {
+			_Helper.isMissingProperty(oEntity, "nested/*");
+		}, new Error("Unsupported property path nested/*"));
+	});
+
+	//*********************************************************************************************
+	QUnit.test("getMissingPropertyPaths", function (assert) {
+		var oHelperMock = this.mock(_Helper),
+			mQueryOptions = {
+				$select : ["p1", "p2", "p3"],
+				$expand : {np1 : true, np2 : true, np3 : true}
+			};
+
+		oHelperMock.expects("isMissingProperty").withExactArgs("~value~", "p1").returns(false);
+		oHelperMock.expects("isMissingProperty").withExactArgs("~value~", "p2").returns(true);
+		oHelperMock.expects("isMissingProperty").withExactArgs("~value~", "p3").returns(false);
+		oHelperMock.expects("isMissingProperty").withExactArgs("~value~", "np1").returns(false);
+		oHelperMock.expects("isMissingProperty").withExactArgs("~value~", "np2").returns(true);
+		oHelperMock.expects("isMissingProperty").withExactArgs("~value~", "np3").returns(false);
+
+		// code under test
+		assert.deepEqual(_Helper.getMissingPropertyPaths("~value~", mQueryOptions), ["p2", "np2"]);
+
+		// code under test
+		assert.deepEqual(_Helper.getMissingPropertyPaths("~value~", {}), []);
+	});
+
+	//*********************************************************************************************
+	QUnit.test("cancelNestedCreates", function () {
+		var oCreatedElement0 = {},
+			oCreatedElement1 = {},
+			oElement = {
+				SO_2_SOITEM : [oCreatedElement0, oCreatedElement1],
+				nulled : null,
+				otherCollection : [{}]
+			},
+			oHelperMock = this.mock(_Helper),
+			fnReject0 = sinon.spy(),
+			fnReject1 = sinon.spy();
+
+		_Helper.setPrivateAnnotation(oCreatedElement0, "reject", fnReject0);
+		_Helper.setPrivateAnnotation(oCreatedElement1, "reject", fnReject1);
+		oElement.SO_2_SOITEM.$postBodyCollection = "~postBodyCollection~";
+		oHelperMock.expects("cancelNestedCreates")
+			.withExactArgs(sinon.match.same(oElement), "Error message")
+			.callThrough(); // initial call
+		oHelperMock.expects("cancelNestedCreates")
+			.withExactArgs(sinon.match.same(oCreatedElement0), "Error message");
+		oHelperMock.expects("cancelNestedCreates")
+			.withExactArgs(sinon.match.same(oCreatedElement1), "Error message");
+
+		// code under test
+		_Helper.cancelNestedCreates(oElement, "Error message");
+
+		[fnReject0, fnReject1].forEach(function (fnReject) {
+			sinon.assert.calledOnceWithExactly(fnReject, sinon.match(function (oParameter) {
+				return oParameter instanceof Error && oParameter.canceled
+					&& oParameter.message === "Error message";
+			}));
+		});
+	});
+
+	//*********************************************************************************************
+	QUnit.test("setCount", function () {
+		var oHelperMock = this.mock(_Helper);
+
+		oHelperMock.expects("updateExisting")
+			.withExactArgs("~mChangeListeners~", "~sPath~", "~aCollection~", {$count : 42});
+
+		// code under test
+		_Helper.setCount("~mChangeListeners~", "~sPath~", "~aCollection~", 42);
+
+		oHelperMock.expects("updateExisting")
+			.withExactArgs("~mChangeListeners~", "~sPath~", "~aCollection~", {$count : 23});
+
+		// code under test
+		_Helper.setCount("~mChangeListeners~", "~sPath~", "~aCollection~", "23");
+	});
+
+	//*********************************************************************************************
+	QUnit.test("addToCount", function () {
+		var aCollection = [];
+
+		aCollection.$count = 42;
+
+		this.mock(_Helper).expects("setCount")
+			.withExactArgs("~mChangeListeners~", "~sPath~", aCollection, 41);
+
+		// code under test
+		_Helper.addToCount("~mChangeListeners~", "~sPath~", aCollection, -1);
+
+		delete aCollection.$count;
+
+		// code under test
+		_Helper.addToCount("~mChangeListeners~", "~sPath~", aCollection, 1);
+	});
+
+	//*********************************************************************************************
+	QUnit.test("updateNestedCreates: no deep create", function (assert) {
+		this.mock(_Helper).expects("getQueryOptionsForPath").twice()
+			.withExactArgs("~mQueryOptions~", "path/to/entity")
+			.returns({}); // no $expand
+
+		assert.strictEqual(
+			// code under test - not even a nested ODLB
+			_Helper.updateNestedCreates("~mChangeListeners~", "~mQueryOptions~", "path/to/entity"),
+			false);
+
+		assert.strictEqual(
+			// code under test - no nested create in foo
+			_Helper.updateNestedCreates("~mChangeListeners~", "~mQueryOptions~", "path/to/entity",
+				{/*oCacheEntity*/}, {/*oCreatedEntity*/}, {foo : "~$select~"}),
+			false);
+	});
+
+	//*********************************************************************************************
+	QUnit.test("updateNestedCreates: single", function (assert) {
+		const oHelperMock = this.mock(_Helper);
+		oHelperMock.expects("getQueryOptionsForPath").exactly(3)
+			.withExactArgs("~mQueryOptions~", "path/to/entity")
+			.returns({$expand : {foo : "~", nested : "~"}});
+		oHelperMock.expects("drillDown").exactly(3)
+			.withExactArgs("~target~", "foo").returns(undefined);
+
+		oHelperMock.expects("drillDown").withExactArgs("~target~", "nested").returns({});
+
+		assert.deepEqual(
+			_Helper.updateNestedCreates("~mChangeListeners~", "~mQueryOptions~", "path/to/entity",
+				"~target~", "~created~"),
+			true);
+
+		oHelperMock.expects("drillDown").withExactArgs("~target~", "nested").returns([]);
+
+		assert.deepEqual(
+			_Helper.updateNestedCreates("~mChangeListeners~", "~mQueryOptions~", "path/to/entity",
+				"~target~", "~created~"),
+			false);
+
+		oHelperMock.expects("drillDown").withExactArgs("~target~", "nested").returns(undefined);
+
+		assert.deepEqual(
+			_Helper.updateNestedCreates("~mChangeListeners~", "~mQueryOptions~", "path/to/entity",
+				"~target~", "~created~"),
+			false);
+	});
+
+	//*********************************************************************************************
+	QUnit.test("updateNestedCreates: collections", function (assert) {
+		var oCacheEntity = {
+				nested1 : ["n/a"],
+				nested2 : ["n/a"],
+				nested3 : ["n/a"]
+			},
+			oCreatedEntity = {
+				nested1 : ["~created11~", "~created12~"],
+				nested2 : ["~created21~"]
+			},
+			oHelperMock = this.mock(_Helper),
+			mSelectForMetaPath = {
+				nested1 : "~$select1~",
+				"nested1/foo" : "~$select1foo~",
+				"nested1/bar" : "~$select1bar~",
+				nested2 : undefined,
+				"nested2/foo" : "~$select2foo~",
+				nested3 : "~$select3~"
+			};
+
+		oHelperMock.expects("updateNestedCreates")
+			.withExactArgs("~mChangeListeners~", "~mQueryOptions~", "path/to/entity",
+				sinon.match.same(oCacheEntity), sinon.match.same(oCreatedEntity),
+				sinon.match.same(mSelectForMetaPath))
+			.callThrough(); // initial call
+		oCacheEntity.nested1.$postBodyCollection = "~postBodyCollection1~";
+		// nested1
+		oHelperMock.expects("setCount")
+			.withExactArgs("~mChangeListeners~", "path/to/entity/nested1",
+				sinon.match(function (aEntities) { return aEntities === oCacheEntity.nested1; }),
+				2)
+			.callsFake(function () {
+				assert.strictEqual(oCacheEntity.nested1.$count, undefined);
+				assert.ok("$count" in oCacheEntity.nested1);
+			});
+		// created11
+		oHelperMock.expects("getPrivateAnnotation")
+			.withExactArgs("~created11~", "predicate").returns("~predicate11~");
+		oHelperMock.expects("updateNestedCreates")
+			.withExactArgs("~mChangeListeners~", "~mQueryOptions~",
+				"path/to/entity/nested1~predicate11~", "~created11~", "~created11~",
+				{foo : "~$select1foo~", bar : "~$select1bar~"});
+		// created12
+		oHelperMock.expects("getPrivateAnnotation")
+			.withExactArgs("~created12~", "predicate").returns("~predicate12~");
+		oHelperMock.expects("updateNestedCreates")
+			.withExactArgs("~mChangeListeners~", "~mQueryOptions~",
+				"path/to/entity/nested1~predicate12~", "~created12~", "~created12~",
+				{foo : "~$select1foo~", bar : "~$select1bar~"});
+		// nested2
+		oHelperMock.expects("setCount")
+			.withExactArgs("~mChangeListeners~", "path/to/entity/nested2",
+				sinon.match(function (aEntities) { return aEntities === oCacheEntity.nested2; }),
+				1);
+		// created21
+		oHelperMock.expects("getPrivateAnnotation")
+			.withExactArgs("~created21~", "predicate").returns("~predicate21~");
+		oHelperMock.expects("updateNestedCreates")
+			.withExactArgs("~mChangeListeners~", "~mQueryOptions~",
+				"path/to/entity/nested2~predicate21~", "~created21~", "~created21~",
+				{foo : "~$select2foo~"});
+
+		assert.strictEqual(
+			// code under test
+			_Helper.updateNestedCreates("~mChangeListeners~", "~mQueryOptions~", "path/to/entity",
+				oCacheEntity, oCreatedEntity, mSelectForMetaPath),
+			true);
+
+		assert.deepEqual(oCacheEntity, {
+			nested1 : ["~created11~", "~created12~"],
+			nested2 : ["~created21~"]
+		});
+		assert.strictEqual(oCacheEntity.nested1.$created, 0);
+		assert.ok(oCacheEntity.nested1.$transfer, true);
+		assert.deepEqual(oCacheEntity.nested1.$byPredicate, {
+			"~predicate11~" : "~created11~",
+			"~predicate12~" : "~created12~"
+		});
+		assert.strictEqual(oCacheEntity.nested2.$created, 0);
+		assert.deepEqual(oCacheEntity.nested2.$byPredicate, {
+			"~predicate21~" : "~created21~"
+		});
+		assert.notOk("$transfer" in oCacheEntity.nested2);
+		assert.notOk("$postBodyCollection" in oCacheEntity.nested1);
+	});
+
+	//*********************************************************************************************
+	QUnit.test("makeUpdateData", function (assert) {
+		assert.deepEqual(_Helper.makeUpdateData(["Age"], 42), {Age : 42});
+		assert.deepEqual(_Helper.makeUpdateData(["Address", "City"], "Walldorf"),
+			{Address : {City : "Walldorf"}});
+		assert.deepEqual(_Helper.makeUpdateData(["Age"], 42, /*bUpdating*/true), {
+			Age : 42,
+			"Age@$ui5.updating" : true
+		});
+		assert.deepEqual(_Helper.makeUpdateData(["Address", "City"], "Walldorf", /*bUpdating*/true),
+			{
+				Address : {
+					City : "Walldorf",
+					"City@$ui5.updating" : true
+				}
+			});
 	});
 });

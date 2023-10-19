@@ -50,6 +50,9 @@ sap.ui.define([
 
 		constructor : function (oFormatOptions, oConstraints) {
 			Type.apply(this, arguments);
+			// The formatter to convert between the value in internal and model representation, cf. #getModelFormat
+			//   setFormatOptions may be overwritten by subclasses and set an own oInputFormat => must be set before
+			this.oInputFormat = undefined;
 			this.setFormatOptions(oFormatOptions || {});
 			this.setConstraints(oConstraints || {});
 			this.sName = "SimpleType";
@@ -239,13 +242,17 @@ sap.ui.define([
 	 *   An array of message strings
 	 * @return {string}
 	 *   The combined message text
+	 *
+	 * @private
 	 */
 	SimpleType.prototype.combineMessages = function (aMessages) {
 		if (aMessages.length === 1) {
 			return aMessages[0];
-		} else {
-			return aMessages.join(". ") + ".";
 		}
+
+		return aMessages.map(function (sMessage) {
+			return sMessage.endsWith(".") ? sMessage : sMessage + ".";
+		}).join(" ");
 	};
 
 	return SimpleType;

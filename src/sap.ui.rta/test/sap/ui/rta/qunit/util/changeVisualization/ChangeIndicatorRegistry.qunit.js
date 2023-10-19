@@ -1,4 +1,4 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/base/Log",
@@ -39,7 +39,7 @@ sap.ui.define([
 
 	function createMockVersioning(aDraftChangeFileNames) {
 		return {
-			getData: function() {
+			getData() {
 				return {
 					draftFilenames: aDraftChangeFileNames
 				};
@@ -48,7 +48,7 @@ sap.ui.define([
 	}
 
 	QUnit.module("Basic tests", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oRegistry = new ChangeIndicatorRegistry({
 				changeCategories: {
 					fooCategory: [
@@ -63,7 +63,7 @@ sap.ui.define([
 			sandbox.stub(JsControlTreeModifier, "bySelector").returns(this.oControl);
 			sandbox.stub(ChangesWriteAPI, "getChangeHandler").resolves();
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oRegistry.destroy();
 			this.oControl.destroy();
 			sandbox.restore();
@@ -81,7 +81,7 @@ sap.ui.define([
 				assert.strictEqual(this.oRegistry.getAllRegisteredChanges().length, 3, "then the changes are added to the registry");
 				assert.strictEqual(this.oRegistry.getRegisteredChange("fooChange").changeCategory, "fooCategory", "then the command categories are properly classified");
 				assert.deepEqual(this.oRegistry.getRegisteredChange("fooChange").changeStates, ChangeStates.getDraftAndDirtyStates(), "then the change state is properly classified (Dirty & Draft)");
-				assert.deepEqual(this.oRegistry.getRegisteredChange("barChange").changeStates, [ChangeStates.ACTIVATED], "then the change state is properly classified (Activated)");
+				assert.deepEqual(this.oRegistry.getRegisteredChange("barChange").changeStates, [ChangeStates.ALL], "then the change state is properly classified (All)");
 				assert.deepEqual(this.oRegistry.getRegisteredChange("draftChange").changeStates, [ChangeStates.DRAFT], "then the change state is properly classified (Draft)");
 			}.bind(this));
 		});
@@ -95,7 +95,7 @@ sap.ui.define([
 		QUnit.test("when a settings command change is registered with a valid category", function(assert) {
 			ChangesWriteAPI.getChangeHandler.reset();
 			ChangesWriteAPI.getChangeHandler.resolves({
-				getChangeVisualizationInfo: function() {
+				getChangeVisualizationInfo() {
 					return {
 						descriptionPayload: {
 							category: "fooCategory"
@@ -111,7 +111,7 @@ sap.ui.define([
 		QUnit.test("when a settings command change is registered with an invalid category", function(assert) {
 			ChangesWriteAPI.getChangeHandler.reset();
 			ChangesWriteAPI.getChangeHandler.resolves({
-				getChangeVisualizationInfo: function() {
+				getChangeVisualizationInfo() {
 					return {
 						descriptionPayload: {
 							category: "move123"
@@ -137,7 +137,7 @@ sap.ui.define([
 		QUnit.test("when a not settings command change is registered with a category", function(assert) {
 			ChangesWriteAPI.getChangeHandler.reset();
 			ChangesWriteAPI.getChangeHandler.resolves({
-				getChangeVisualizationInfo: function() {
+				getChangeVisualizationInfo() {
 					return {
 						descriptionPayload: {
 							category: "fooCategory"
@@ -152,26 +152,26 @@ sap.ui.define([
 
 		QUnit.test("when a change indicator is registered", function(assert) {
 			var oIndicator = {
-				destroy: function() {}
+				destroy() {}
 			};
 			this.oRegistry.registerChangeIndicator("someChangeIndicator", oIndicator);
 			assert.strictEqual(this.oRegistry.getChangeIndicator("someChangeIndicator"), oIndicator, "then the saved reference is returned");
 			assert.deepEqual(this.oRegistry.getChangeIndicators()[0], oIndicator, "then it is included in the list of change indicator references");
 		});
 
-		QUnit.test("when a registered change has the updateRequired flag and should be removed from the registry", function (assert) {
+		QUnit.test("when a registered change has the updateRequired flag and should be removed from the registry", function(assert) {
 			ChangesWriteAPI.getChangeHandler.reset();
 			ChangesWriteAPI.getChangeHandler
-				.onFirstCall()
-				.resolves({
-					getChangeVisualizationInfo: function() {
-						return {
-							updateRequired: true
-						};
-					}
-				})
-				.onSecondCall()
-				.resolves();
+			.onFirstCall()
+			.resolves({
+				getChangeVisualizationInfo() {
+					return {
+						updateRequired: true
+					};
+				}
+			})
+			.onSecondCall()
+			.resolves();
 			var oRemoveOutdatedRegisteredChangesSpy = sandbox.spy(this.oRegistry, "removeOutdatedRegisteredChanges");
 			return Promise.all([
 				this.oRegistry.registerChange(createMockChange("fooChange"), "foo"),
@@ -179,14 +179,14 @@ sap.ui.define([
 			]).then(function() {
 				assert.strictEqual(this.oRegistry.getAllRegisteredChanges().length, 2, "then the two changes are registered correctly");
 				this.oRegistry.removeOutdatedRegisteredChanges();
-			}.bind(this)).then(function () {
+			}.bind(this)).then(function() {
 				assert.ok(oRemoveOutdatedRegisteredChangesSpy.calledOnce, "then the function was called only once");
 				assert.strictEqual(this.oRegistry.getAllRegisteredChanges().length, 1, "then only one change is registered");
 				assert.notOk(this.oRegistry.getAllRegisteredChanges()[0].visualizationInfo.updateRequired, "then the remaining change has no updateRequired flag");
 			}.bind(this));
 		});
 
-		QUnit.test("when a registered change has no displayElementId and should be removed from the registry", function (assert) {
+		QUnit.test("when a registered change has no displayElementId and should be removed from the registry", function(assert) {
 			ChangesWriteAPI.getChangeHandler.reset();
 			ChangesWriteAPI.getChangeHandler.resolves();
 			var oRemoveRegisteredChangesWithoutVizInfoSpy = sandbox.spy(this.oRegistry, "removeRegisteredChangesWithoutVizInfo");
@@ -197,7 +197,7 @@ sap.ui.define([
 				assert.strictEqual(this.oRegistry.getAllRegisteredChanges().length, 2, "then the two changes are registered correctly");
 				this.oRegistry.getAllRegisteredChanges()[0].visualizationInfo.displayElementIds = [];
 				this.oRegistry.removeRegisteredChangesWithoutVizInfo();
-			}.bind(this)).then(function () {
+			}.bind(this)).then(function() {
 				assert.ok(oRemoveRegisteredChangesWithoutVizInfoSpy.calledOnce, "then the function was called only once");
 				assert.strictEqual(this.oRegistry.getAllRegisteredChanges().length, 1, "then only one change is registered");
 				assert.strictEqual(this.oRegistry.getAllRegisteredChanges()[0].visualizationInfo.displayElementIds.length, 1, "then the remaining change has a display element id");
@@ -206,7 +206,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("Cleanup", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oRegistry = new ChangeIndicatorRegistry({
 				changeCategories: {
 					fooCategory: [
@@ -215,7 +215,7 @@ sap.ui.define([
 				}
 			});
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
@@ -225,7 +225,7 @@ sap.ui.define([
 				this.oRegistry.registerChange(createMockChange("barChange"), "bar")
 			]).then(function() {
 				var oIndicator = {
-					destroy: function() {}
+					destroy() {}
 				};
 				var oDestructionSpy = sandbox.spy(oIndicator, "destroy");
 				this.oRegistry.registerChangeIndicator("someChangeIndicator", oIndicator);

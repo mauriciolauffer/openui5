@@ -6,6 +6,8 @@
 	<App>
 	<Page floatingFooter="true" id="page" showHeader="false">
 	<Toolbar>
+		<Button icon="sap-icon://add" id="create" press="onCreateSalesOrder" text="Create"
+				tooltip="Create Sales Order"/>
 		<Button icon="sap-icon://save" id="save" press="onSave" text="Save" tooltip="Save changes"/>
 		<Button id="cancel" icon="sap-icon://sys-cancel-2" press="onCancel" text="Cancel"
 				tooltip="Cancel changes"/>
@@ -82,6 +84,9 @@
 							<Title id="objectPageTitle" level="H2" text="Sales Order Details"/>
 							<Button enabled="true" icon="sap-icon://delete" id="deleteSalesOrder"
 								press="onDeleteSalesOrder" tooltip="Delete sales order"/>
+							<Button enabled="true" icon="sap-icon://sys-cancel-2"
+								id="resetSalesOrder" press="onResetContext"
+								tooltip="Reset Sales Order"/>
 							<Button enabled="true" icon="sap-icon://refresh" id="refreshSalesOrder"
 								press="onRefreshSalesOrder" tooltip="Refresh Sales Order"/>
 							<Button enabled="true" icon="sap-icon://trend-up"
@@ -112,8 +117,7 @@
 							$orderby : 'ItemPosition',
 							$$ownRequest : true
 						},
-						path : 'SO_2_SOITEM',
-						templateShareable : false
+						path : 'SO_2_SOITEM'
 					}" mode="SingleSelectMaster" selectionChange="onSalesOrderLineItemSelect">
 					<dependents>
 						<plugins:DataStateIndicator/>
@@ -140,7 +144,8 @@
 							<Text text="Quantity Unit"/>
 						</Column>
 						<Column hAlign="Right" width="8em">
-							<Button id="sortByGrossAmount" icon="{ui>/sSortGrossAmountIcon}"
+							<Button enabled="{= !%{@$ui5.context.isTransient} }"
+									id="sortByGrossAmount" icon="{ui>/sSortGrossAmountIcon}"
 									iconFirst="false" press="onSortByGrossAmount"
 									text="Gross Amount" tooltip="Sort by Gross Amount"/>
 						</Column>
@@ -175,6 +180,9 @@
 							<Button enabled="true" icon="sap-icon://delete"
 								id="deleteSalesOrderItem" press="onDeleteSalesOrderItem"
 								tooltip="Delete sales order item"/>
+							<Button enabled="true" icon="sap-icon://sys-cancel-2"
+								id="resetLineItem" press="onResetContext"
+								tooltip="Reset Sales Order Line Item"/>
 						</Toolbar>
 					</form:toolbar>
 					<Label labelFor="SO_2_ITEM::productId" text="ProductId"/>

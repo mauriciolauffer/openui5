@@ -6,7 +6,7 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
   });
   _exports.pathData = _exports.ltr = _exports.default = _exports.accData = void 0;
   const name = "media-rewind";
-  const pathData = "M224.5 108q15 10 15 27v242q0 17-15 27-7 5-15 4.5t-15-7.5l-182-121q-12-8-12-24 0-7 3.5-14.5t8.5-9.5l182-121q7-5 15-6.5t15 3.5zm-45 81l-97 67 97 63V189zm317-81q15 10 15 27v242q0 17-15 27-7 5-15 4.5t-15-7.5l-182-121q-12-8-12-24 0-7 3.5-14.5t8.5-9.5l182-121q7-5 15-6.5t15 3.5zm-45 81l-97 67 97 63V189z";
+  const pathData = "M10 276q-10-8-10-20t10-20L214 70q8-6 16-6 11 0 18.5 7.5T256 90v332q0 11-7.5 18.5T230 448q-8 0-16-6zm256 0q-10-8-10-20t10-20L470 70q8-6 16-6 11 0 18.5 7.5T512 90v332q0 11-7.5 18.5T486 448q-8 0-16-6zM66 256l139 113V143zm256 0l139 113V143z";
   _exports.pathData = pathData;
   const ltr = true;
   _exports.ltr = ltr;
@@ -20,6 +20,6 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
     collection,
     packageName
   });
-  var _default = "media-rewind";
+  var _default = "SAP-icons-v5/media-rewind";
   _exports.default = _default;
 });

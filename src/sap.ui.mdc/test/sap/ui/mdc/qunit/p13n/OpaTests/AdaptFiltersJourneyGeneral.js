@@ -22,7 +22,7 @@ sap.ui.define([
 		autoWait: true
 	});
 
-	var oFilterItems = {
+	const oFilterItems = {
 		"Artists": [
 			{p13nItem: "artistUUID", selected: true},
 			{p13nItem: "Breakout Year", selected: true},
@@ -155,7 +155,7 @@ sap.ui.define([
 		When.iChangeAdaptFiltersView("sap-icon://list");
 		When.iClickOnTableItem("Country").and.iPressOnButtonWithIcon(Arrangement.P13nDialog.Settings.MoveToTop);
 
-		var aCurrentFilterItems = [
+		const aCurrentFilterItems = [
 			{p13nItem: "Country", selected: true},
 			{p13nItem: "Name", selected: true},
 			{p13nItem: "Founding Year", selected: true},
@@ -344,7 +344,8 @@ sap.ui.define([
 		When.iPressDialogOk();
 
 		//check dirty flag
-		Then.theVariantManagementIsDirty(false);
+		//since 1.115 Value is always implicitly set.
+		Then.theVariantManagementIsDirty(true);
 
 		Then.iTeardownMyAppFrame();
 	});
@@ -426,8 +427,11 @@ sap.ui.define([
 		When.iPressResetInDialog();
 		When.iConfirmResetWarning();
 
-		oFilterItems["Artists"][4].value = undefined;
+		//Only array will trigger a check --> reset should also clear filter values not just the selection
+		//[undefined] = no value in field
+		oFilterItems["Artists"][4].value = [undefined];
 		oFilterItems["Artists"][3].selected = false;
+
 		Then.iShouldSeeP13nFilterItemsInPanel(oFilterItems["Artists"], "Artists");
 
 		When.iPressDialogOk();

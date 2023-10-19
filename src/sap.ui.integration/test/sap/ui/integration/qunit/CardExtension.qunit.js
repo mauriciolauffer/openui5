@@ -1,17 +1,15 @@
-/* global QUnit */
+/* global QUnit, sinon */
 
 sap.ui.define([
 	"sap/base/Log",
 	"sap/ui/core/Core",
 	"sap/ui/integration/widgets/Card",
-	"sap/ui/integration/Extension",
-	"sap/ui/thirdparty/jquery"
+	"sap/ui/integration/Extension"
 ], function (
 	Log,
 	Core,
 	Card,
-	Extension,
-	jQuery
+	Extension
 ) {
 	"use strict";
 
@@ -277,10 +275,20 @@ sap.ui.define([
 	QUnit.test("Extension making request with custom dataType", function (assert) {
 		// arrange
 		var done = assert.async(),
-			deferred = new jQuery.Deferred();
+			oServer = sinon.createFakeServer({
+				autoRespond: true
+			});
 
-		this.stub(jQuery, "ajax").callsFake(function () {
-			return deferred.promise();
+		oServer.respondImmediately = true;
+
+		oServer.respondWith(/.*\/some\/url/, function (oXhr) {
+			oXhr.respond(
+				200,
+				{
+					"Content-Type": "application/xml"
+				},
+				'<CitySet> <City Name="Paris"/> <City Name="Berlin" /> </CitySet>'
+			);
 		});
 
 		this.oCard.setManifest({
@@ -308,18 +316,18 @@ sap.ui.define([
 
 			// assert
 			assert.ok(aItems.length, "The data request is successful.");
-			assert.ok(jQuery.ajax.calledWithMatch({ dataType: "xml" }), "request was made with the expected dataType");
 
+			oServer.restore();
 			done();
-			jQuery.ajax.restore();
 		}.bind(this));
 
 		// act
 		this.oCard.placeAt(DOM_RENDER_LOCATION);
-
-		deferred.resolve(new DOMParser().parseFromString('<CitySet> <City Name="Paris"/> <City Name="Berlin" /> </CitySet>', "application/xml"));
 	});
 
+	/**
+	 * @deprecated Since version 1.85
+	 */
 	QUnit.module("Actions - Legacy", {
 		beforeEach: function () {
 			this.oCard = new Card({
@@ -690,6 +698,125 @@ sap.ui.define([
 		}.bind(this));
 
 		// act
+		this.oCard.placeAt(DOM_RENDER_LOCATION);
+	});
+
+	QUnit.test("No data IllustratedMessage set by extension binding", function (assert) {
+		// Arrange
+		var done = assert.async();
+
+		this.oCard.attachEventOnce("_ready", function () {
+			Core.applyChanges();
+			var oMessage = this.oCard.getCardContent().getAggregation("_blockingMessage");
+
+			// Assert
+			assert.strictEqual(oMessage.getIllustrationType(), sap.m.IllustratedMessageType.SimpleError, "The no data message type set by expression binding is correct");
+			assert.strictEqual(oMessage.getDescription(), "Test", "The no data message description set by expression binding is correct");
+			assert.strictEqual(oMessage.getTitle(), "No Data", "The no data message title set by expression binding is correct");
+			assert.strictEqual(oMessage.getIllustrationSize(), "Auto", "The no data message size set by expression binding is correct");
+
+			// Clean up
+			done();
+		}.bind(this));
+
+		this.oCard.setManifest({
+			"sap.app": {
+				"id": "test.card.NoData"
+			},
+			"sap.card": {
+				"type": "List",
+				"extension": "./extensions/Extension1",
+				"data": {
+					"extension": {
+						"method": "loadData"
+					}
+				},
+				"configuration": {
+					"messages": {
+						"noData": {
+							"type": "{/IMType}",
+							"title": "{/IMTitle}",
+							"description": "{/IMDescription}",
+							"size": "{/IMSize}"
+						}
+					}
+				},
+				"header": {},
+				"content": {
+					"data": {
+						"path": "/items"
+					},
+					"item": {
+						"title": "{title}"
+					},
+					"maxItems": "{maxItems}"
+				}
+			}
+		});
+		this.oCard.placeAt(DOM_RENDER_LOCATION);
+	});
+
+	QUnit.test("No data IllustratedMessage set by extension binding with 'tnt' set", function (assert) {
+		// Arrange
+		var done = assert.async();
+
+
+		var oTntSet = {
+			setFamily: "tnt",
+			setURI: sap.ui.require.toUrl("sap/tnt/themes/base/illustrations")
+		};
+
+		// register tnt illustration set
+		sap.m.IllustrationPool.registerIllustrationSet(oTntSet, false);
+
+		this.oCard.attachEventOnce("_ready", function () {
+			Core.applyChanges();
+			var oMessage = this.oCard.getCardContent().getAggregation("_blockingMessage");
+
+			// Assert
+			assert.strictEqual(oMessage.getIllustrationType(), "tnt-Tools", "The no data message type set by expression binding is correct");
+			assert.strictEqual(oMessage.getDescription(), "Test", "The no data message description set by expression binding is correct");
+			assert.strictEqual(oMessage.getTitle(), "No Data", "The no data message title set by expression binding is correct");
+			assert.strictEqual(oMessage.getIllustrationSize(), "Auto", "The no data message size set by expression binding is correct");
+
+			// Clean up
+			done();
+		}.bind(this));
+
+		this.oCard.setManifest({
+			"sap.app": {
+				"id": "test.card.NoData"
+			},
+			"sap.card": {
+				"type": "List",
+				"extension": "./extensions/Extension1",
+				"data": {
+					"extension": {
+						"method": "loadData"
+					}
+				},
+				"configuration": {
+					"messages": {
+						"noData": {
+							"type": "{/IMTntType}",
+							"title": "{/IMTitle}",
+							"description": "{/IMDescription}",
+							"size": "{/IMSize}"
+						}
+					}
+				},
+				"header": {},
+				"content": {
+					"data": {
+						"path": "/items"
+					},
+					"item": {
+						"title": "{title}"
+					},
+					"maxItems": "{maxItems}"
+				}
+			}
+		});
 		this.oCard.placeAt(DOM_RENDER_LOCATION);
 	});
 });

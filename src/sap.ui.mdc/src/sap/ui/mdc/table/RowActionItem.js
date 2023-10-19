@@ -4,13 +4,11 @@
 
 sap.ui.define([
 	'sap/ui/core/Element',
-	'../library',
 	'sap/ui/core/IconPool',
-	'sap/ui/core/Core'
-], function(Element, library, IconPool, Core) {
+	'sap/ui/core/Core',
+	'sap/ui/mdc/enums/TableRowAction'
+], function(Element, IconPool, Core, TableRowAction) {
 	"use strict";
-
-	var RowAction = library.RowAction;
 
 	/**
 	 * Constructor for new RowActionItem.
@@ -25,25 +23,22 @@ sap.ui.define([
 	 * @version ${version}
 	 *
 	 * @constructor
-	 * @experimental
-	 * @private
-	 * @ui5-restricted sap.fe
-	 * @MDC_PUBLIC_CANDIDATE
+	 * @public
 	 * @alias sap.ui.mdc.table.RowActionItem
 	 */
 
-	var RowActionItem = Element.extend("sap.ui.mdc.table.RowActionItem", {
+	const RowActionItem = Element.extend("sap.ui.mdc.table.RowActionItem", {
 		metadata: {
 			library: "sap.ui.mdc",
 			properties: {
 				/**
 				 * Type of the row action item.
 				 *
-				 * As of version 1.98, only sap.ui.mdc.RowAction.Navigation is available.
+				 * As of version 1.98, only sap.ui.mdc.enums.TableRowAction.Navigation is available.
 				 * Setting the type ensures default values for the properties <code>icon</code> and <code>text</code>.
 				 * If an icon or text is set explicitly this setting is used.
 				 */
-				type: {type: "sap.ui.mdc.RowAction"},
+				type: {type: "sap.ui.mdc.enums.TableRowAction"},
 				/**
 				 * Text for the row action item.
 				 *
@@ -86,17 +81,17 @@ sap.ui.define([
 		}
 	});
 
-	var mThemeParameters = {
+	const mThemeParameters = {
 		navigationIcon: "navigation-right-arrow"
 	};
 
 	RowActionItem.prototype._getText = function () {
-		var sText;
+		let sText;
 		if (this.getText()) {
 			sText = this.getText();
 		} else {
-			var oResourceBundle = Core.getLibraryResourceBundle("sap.ui.mdc");
-			if (this.getType() === RowAction.Navigation) {
+			const oResourceBundle = Core.getLibraryResourceBundle("sap.ui.mdc");
+			if (this.getType() === TableRowAction.Navigation) {
 				sText = oResourceBundle.getText("table.ROW_ACTION_ITEM_NAVIGATE");
 			}
 		}
@@ -104,10 +99,10 @@ sap.ui.define([
 	};
 
 	RowActionItem.prototype._getIcon = function () {
-		var oIcon;
+		let oIcon;
 		if (this.getIcon()) {
 			oIcon = this.getIcon();
-		} else if (this.getType() === RowAction.Navigation) {
+		} else if (this.getType() === TableRowAction.Navigation) {
 			oIcon = IconPool.getIconURI(mThemeParameters["navigationIcon"]);
 		}
 		return oIcon;

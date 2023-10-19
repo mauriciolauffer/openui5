@@ -2,8 +2,8 @@
  * ${copyright}
  */
 
-sap.ui.define(['./library', 'sap/ui/core/library', 'sap/ui/core/Control', './TileContentRenderer', 'sap/ui/core/Configuration'],
-	function(library, Core, Control, TileContentRenderer, Configuration) {
+sap.ui.define(['./library', 'sap/ui/core/library', 'sap/ui/core/Control', './TileContentRenderer', 'sap/ui/core/Configuration', 'sap/ui/core/Lib'],
+	function(library, Core, Control, TileContentRenderer, Configuration, CoreLib) {
 	"use strict";
 
 	var Priority = library.Priority;
@@ -99,21 +99,21 @@ sap.ui.define(['./library', 'sap/ui/core/library', 'sap/ui/core/Control', './Til
 		if (sState && !this._bStateSetManually) {
 			if (this.getParent() && this.getParent().isA("sap.m.GenericTile")) {
 				if (this.getParent().getState() === LoadState.Failed) {
-					this.setProperty("state", LoadState.Loaded, true);
+					this.setState(LoadState.Loaded);
 				} else if (this.getParent().getState() === LoadState.Disabled) {
-					this.setProperty("state", LoadState.Loaded, true);
-					this.setProperty("disabled", this.getState() === LoadState.Disabled, true);
+					this.setState(LoadState.Loaded);
+					this.setDisabled(this.getState() === LoadState.Disabled);
 				}
 			}
 		} else {
 			if (this.getParent() && this.getParent().isA("sap.m.GenericTile")) {
 				if (this.getParent().getState() === LoadState.Failed) {
-					this.setProperty("state", LoadState.Loaded, true);
+					this.setState(LoadState.Loaded);
 				} else if (this.getParent().getState() === LoadState.Disabled) {
-					this.setProperty("state", LoadState.Loaded, true);
-					this.setProperty("disabled", this.getState() === LoadState.Disabled, true);
+					this.setState(LoadState.Loaded);
+					this.setDisabled(this.getState() === LoadState.Disabled);
 				} else {
-					this.setProperty("state", this.getParent().getState(), true);
+					this.setState(this.getParent().getState());
 				}
 			}
 			this._bStateSetManually = true;
@@ -199,7 +199,7 @@ sap.ui.define(['./library', 'sap/ui/core/library', 'sap/ui/core/Control', './Til
 	 * @returns {string} The Footer text
 	 */
 	TileContent.prototype._getFooterText = function() {
-		var resourceBundle = sap.ui.getCore().getLibraryResourceBundle('sap.m');
+		var resourceBundle = CoreLib.getResourceBundleFor('sap.m');
 		var sFooter = this.getFooter();
 		var sUnit = this.getUnit();
 		if (sUnit) {

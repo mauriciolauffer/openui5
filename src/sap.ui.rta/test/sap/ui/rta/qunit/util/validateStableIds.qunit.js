@@ -1,4 +1,4 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/ui/rta/util/validateStableIds",
@@ -8,12 +8,10 @@ sap.ui.define([
 	"sap/ui/layout/VerticalLayout",
 	"sap/m/Button",
 	"sap/ui/core/mvc/XMLView",
-	"sap/base/util/includes",
 	"sap/base/util/LoaderExtensions",
 	"sap/ui/thirdparty/sinon-4",
-	"sap/ui/core/Core"
-],
-function (
+	"sap/ui/qunit/utils/nextUIUpdate"
+], function(
 	validateStableIds,
 	UIComponent,
 	ComponentContainer,
@@ -21,20 +19,19 @@ function (
 	VerticalLayout,
 	Button,
 	XMLView,
-	includes,
 	LoaderExtensions,
 	sinon,
-	oCore
+	nextUIUpdate
 ) {
 	"use strict";
 
 	var sandbox = sinon.createSandbox();
 
 	QUnit.module("Freestyle application", {
-		beforeEach: function (assert) {
+		async beforeEach(assert) {
 			var fnDone = assert.async();
 			var CustomComponent = UIComponent.extend("sap.ui.rta.test.Component", {
-				createContent: function() {
+				createContent() {
 					return new VerticalLayout({
 						id: this.createId("layoutId"),
 						content: [
@@ -47,8 +44,8 @@ function (
 									'<mvc:View xmlns:mvc="sap.ui.core.mvc" xmlns:m="sap.m" xmlns:l="sap.ui.layout">' +
 										'<l:VerticalLayout id="layout">' +
 											'<m:Button text="Button 1" id="button1" />' +
-										'</l:VerticalLayout>' +
-									'</mvc:View>'
+										"</l:VerticalLayout>" +
+									"</mvc:View>"
 							})
 						]
 					});
@@ -62,7 +59,7 @@ function (
 			});
 
 			this.oComponentContainer.placeAt("qunit-fixture");
-			oCore.applyChanges();
+			await nextUIUpdate();
 
 			this.oDesignTime = new DesignTime({
 				rootElements: [
@@ -72,11 +69,11 @@ function (
 
 			this.oDesignTime.attachEventOnce("synced", fnDone);
 		},
-		afterEach: function () {
+		afterEach() {
 			this.oComponentContainer.destroy();
 		}
-	}, function () {
-		QUnit.test("base functionality", function (assert) {
+	}, function() {
+		QUnit.test("base functionality", function(assert) {
 			assert.strictEqual(
 				validateStableIds(this.oDesignTime.getElementOverlays(), this.oComponent).length,
 				5
@@ -84,11 +81,11 @@ function (
 		});
 	});
 
-	QUnit.module("Fiori Elements Application", {
-		beforeEach: function (assert) {
+	QUnit.module("Fiori Elements Application with extension", {
+		async beforeEach(assert) {
 			var fnDone = assert.async();
 			var CustomComponent = UIComponent.extend("sap.ui.dt.test.Component", {
-				createContent: function() {
+				createContent() {
 					return new VerticalLayout({
 						id: this.createId("layoutId"),
 						content: [
@@ -102,8 +99,8 @@ function (
 									'<mvc:View xmlns:mvc="sap.ui.core.mvc" xmlns:m="sap.m" xmlns:l="sap.ui.layout">' +
 										'<l:VerticalLayout id="layout">' +
 											'<m:Button text="Button 1" id="button1" />' +
-										'</l:VerticalLayout>' +
-									'</mvc:View>'
+										"</l:VerticalLayout>" +
+									"</mvc:View>"
 							}),
 
 							// This view considered as a custom extension:
@@ -118,23 +115,22 @@ function (
 			var oParser = new DOMParser();
 
 			sandbox.stub(LoaderExtensions, "loadResource")
-				.callThrough()
-				.withArgs(
-					sinon.match(function (sResourceName) {
-						return typeof sResourceName === "string" && sResourceName.endsWith("fixture/application/ext/view/ProductDetailReview.view.xml");
-					})
-				)
-				.returns(
-					oParser.parseFromString(
-						'<mvc:View xmlns:mvc="sap.ui.core.mvc" xmlns:m="sap.m" xmlns:l="sap.ui.layout">' +
+			.callThrough()
+			.withArgs(
+				sinon.match(function(sResourceName) {
+					return typeof sResourceName === "string" && sResourceName.endsWith("fixture/application/ext/view/ProductDetailReview.view.xml");
+				})
+			)
+			.returns(
+				oParser.parseFromString(
+					'<mvc:View xmlns:mvc="sap.ui.core.mvc" xmlns:m="sap.m" xmlns:l="sap.ui.layout">' +
 							'<l:VerticalLayout id="layout">' +
 								'<m:Button text="Button 1"/>' +
-							'</l:VerticalLayout>' +
-						'</mvc:View>',
-						"text/xml"
-					)
-				);
-
+							"</l:VerticalLayout>" +
+						"</mvc:View>",
+					"text/xml"
+				)
+			);
 
 			this.oComponent = new CustomComponent(); // Missing ID
 
@@ -171,7 +167,7 @@ function (
 			});
 
 			this.oComponentContainer.placeAt("qunit-fixture");
-			oCore.applyChanges();
+			await nextUIUpdate();
 
 			this.oDesignTime = new DesignTime({
 				rootElements: [
@@ -181,12 +177,11 @@ function (
 
 			this.oDesignTime.attachEventOnce("synced", fnDone);
 		},
-		afterEach: function () {
-			// this.oComponentContainer.destroy();
+		afterEach() {
 			sandbox.restore();
 		}
-	}, function () {
-		QUnit.test("base functionality", function (assert) {
+	}, function() {
+		QUnit.test("base functionality", function(assert) {
 			assert.strictEqual(
 				validateStableIds(this.oDesignTime.getElementOverlays(), this.oComponent).length,
 				1
@@ -194,7 +189,67 @@ function (
 		});
 	});
 
-	QUnit.done(function () {
+	var mManifest = {};
+
+	QUnit.module("Fiori Elements Applications without extensions", {
+		beforeEach() {
+			this.aDummyOverlays = ["overlay1", "overlay2"];
+			this.oComponent = {
+				getManifest() {
+					return mManifest;
+				}
+			};
+		},
+		afterEach() {
+			sandbox.restore();
+		}
+	}, function() {
+		QUnit.test("V2", function(assert) {
+			mManifest = {
+				"sap.ui.generic.app": {}
+			};
+
+			assert.strictEqual(
+				validateStableIds(this.aDummyOverlays, this.oComponent).length,
+				0,
+				"no unstable overlays returned"
+			);
+		});
+
+		QUnit.test("V4", function(assert) {
+			mManifest = {
+				"sap.ui5": {
+					dependencies: {
+						libs: {
+							dummyLibrary: {},
+							"sap.fe.templates": {},
+							anotherDummyLibrary: {}
+						}
+					}
+				}
+			};
+
+			assert.strictEqual(
+				validateStableIds(this.aDummyOverlays, this.oComponent).length,
+				0,
+				"no unstable overlays returned"
+			);
+		});
+
+		QUnit.test("OVP", function(assert) {
+			mManifest = {
+				"sap.ovp": {}
+			};
+
+			assert.strictEqual(
+				validateStableIds(this.aDummyOverlays, this.oComponent).length,
+				0,
+				"no unstable overlays returned"
+			);
+		});
+	});
+
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

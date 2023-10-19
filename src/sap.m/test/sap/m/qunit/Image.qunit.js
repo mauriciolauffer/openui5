@@ -47,6 +47,16 @@ sap.ui.define([
 		return new Image(sControlId, oImageProps);
 	}
 
+	function createSVGImage(oProps) {
+		var oImageProps = {
+			src: "https://openui5.org/7726d076e89ac67994e0a4d96106d534/B_OpenUI5_H.svg",
+			width: "150px",
+			height: "74px"
+		};
+		oProps && jQuery.extend(oImageProps, oProps);
+
+		return new Image(sControlId, oImageProps);
+	}
 	/* tests */
 	QUnit.module("Basic rendering");
 
@@ -100,7 +110,8 @@ sap.ui.define([
 
 		aTestInputValues.forEach(function(sTestValue, iIndex) {
 			oImage.setBackgroundPosition(sTestValue);
-			oImage.rerender();
+			oImage.invalidate();
+			Core.applyChanges();
 
 			// Assert
 			var oImageDom = oImage.getDomRef();
@@ -127,7 +138,8 @@ sap.ui.define([
 
 		aTestInputValues.forEach(function(sTestValue, iIndex) {
 			oImage.setBackgroundSize(sTestValue);
-			oImage.rerender();
+			oImage.invalidate();
+			Core.applyChanges();
 
 			// Assert
 			var oImageDom = oImage.getDomRef();
@@ -152,7 +164,8 @@ sap.ui.define([
 
 		aTestInputValues.forEach(function(sTestValue, iIndex) {
 			oImage.setBackgroundRepeat(sTestValue);
-			oImage.rerender();
+			oImage.invalidate();
+			Core.applyChanges();
 
 			// Assert
 			var oImageDom = oImage.getDomRef();
@@ -1119,7 +1132,8 @@ sap.ui.define([
 		oImage.$().on("load", function() {
 			assert.ok(oImage.$().attr("src").indexOf("@2") !== -1, "@2 version of image is taken");
 			assert.equal(oLoadSpy.callCount, 1, "load event handler is called");
-			oImage.rerender();
+			oImage.invalidate();
+			Core.applyChanges();
 			oImage.$().on("load", function() {
 				assert.ok(oImage.$().attr("src").indexOf("@2") !== -1, "@2 version of image is still taken");
 				assert.equal(oLoadSpy.callCount, 2, "load event handler is called again");
@@ -1184,6 +1198,34 @@ sap.ui.define([
 
 		//setup
 		var oImage = createImage({
+				src: sSrc,
+				load: function () {
+					if (callCount < callLimit) {
+						callCount++;
+						oImage.invalidate();
+					} else {
+						assert.ok(true, 'Load after rerendering called ' + callCount + ' times');
+						done();
+						oImage.destroy();
+					}
+				}
+			});
+
+		oImage.placeAt("qunit-fixture");
+		Core.applyChanges();
+	});
+
+	// This test is especially created to cover FF problem loading huge size SVG images,
+	// caused by wrongly reading naturalWidth property as '0'
+	QUnit.test("SVG Load is called on rerender", function (assert) {
+		var done = assert.async();
+		var callCount = 0;
+		var callLimit = 10;
+
+		assert.expect(1);
+
+		//setup
+		var oImage = createSVGImage({
 				src: sSrc,
 				load: function () {
 					if (callCount < callLimit) {

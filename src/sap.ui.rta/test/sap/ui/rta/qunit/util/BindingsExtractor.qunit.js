@@ -1,17 +1,17 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/ui/core/mvc/XMLView",
 	"sap/ui/rta/util/BindingsExtractor",
 	"sap/m/Button",
 	"sap/ui/thirdparty/sinon-4",
-	"sap/ui/core/Core"
+	"sap/ui/qunit/utils/nextUIUpdate"
 ], function(
 	XMLView,
 	BindingsExtractor,
 	Button,
 	sinon,
-	oCore
+	nextUIUpdate
 ) {
 	"use strict";
 
@@ -25,26 +25,26 @@ sap.ui.define([
 
 	// One model with EntityType01 and EntityType02 (default) + one i18n model ("i18n")
 	QUnit.module("Given a complex test view with oData Model...", {
-		before: function () {
+		before() {
 			return XMLView.create({
 				id: "idMain1",
 				viewName: "sap.ui.rta.test.additionalElements.ComplexTest"
 			}).then(function(oView) {
 				this.oView = oView;
 				return oView.loaded();
-			}.bind(this)).then(function() {
+			}.bind(this)).then(async function() {
 				this.oView.placeAt("qunit-fixture");
-				oCore.applyChanges();
+				await nextUIUpdate();
 				return this.oView.getController().isDataReady();
 			}.bind(this));
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		},
-		after: function () {
+		after() {
 			this.oView.destroy();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("when getting the Bindings for the Smart Form Group bound to EntityType01 and main data model", function(assert) {
 			var oMainModel = this.oView.getModel();
 			var oGroup = this.oView.byId("GroupEntityType01");
@@ -171,41 +171,41 @@ sap.ui.define([
 		QUnit.test("when getBindingContextPath is called for element with bindingContext", function(assert) {
 			var oElementWithContext = this.oView.byId("EntityType02.CompProp1");
 			var sBindingContextPath = BindingsExtractor.getBindingContextPath(oElementWithContext);
-			assert.strictEqual(typeof sBindingContextPath, 'string',
+			assert.strictEqual(typeof sBindingContextPath, "string",
 				"then the return value is a string");
 		});
 
 		QUnit.test("when collectBindingPaths is called for element with bindings not containing a path property", function(assert) {
 			var oElement = {
-				getParent: function() {
+				getParent() {
 					return undefined;
 				}
 			};
 
 			sandbox.stub(BindingsExtractor, "getBindings")
-				.returns(
-					[
-						{
-							parts: [{
-								value: true,
-								mode: "OneWay"
-							}]
-						},
-						{
-							parts: [{
-								value: "",
-								mode: "OneWay"
-							}]
-						},
-						{
-							parts: [{
-								path: "realPath",
-								mode: "OneWay",
-								value: "doesntMatter"
-							}]
-						}
-					]
-				);
+			.returns(
+				[
+					{
+						parts: [{
+							value: true,
+							mode: "OneWay"
+						}]
+					},
+					{
+						parts: [{
+							value: "",
+							mode: "OneWay"
+						}]
+					},
+					{
+						parts: [{
+							path: "realPath",
+							mode: "OneWay",
+							value: "doesntMatter"
+						}]
+					}
+				]
+			);
 
 			var aBindingPaths = BindingsExtractor.collectBindingPaths(oElement);
 
@@ -214,7 +214,7 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

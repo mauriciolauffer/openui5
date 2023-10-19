@@ -213,6 +213,31 @@ sap.ui.define([
 		oTB.destroy();
 	});
 
+	QUnit.test("test sapMBarChildFirstChild class", function(assert) {
+		var oFirstControl = new Button({ text: "Button1" }),
+			oSecondControl = new Button({ text: "Button2" }),
+			oTB = createToolbar({
+			Toolbar : {
+				content : [oFirstControl, oSecondControl]
+			}
+		});
+
+		//Assert
+		assert.ok(oFirstControl.hasStyleClass("sapMBarChildFirstChild"), "First child has 'sapMBarChildFirstChild' class");
+		assert.notOk(oSecondControl.hasStyleClass("sapMBarChildFirstChild"), "Second child does not have 'sapMBarChildFirstChild' class");
+
+		//Act
+		oFirstControl.setVisible(false);
+		Core.applyChanges();
+
+		//Assert
+		assert.notOk(oFirstControl.hasStyleClass("sapMBarChildFirstChild"), "First child does not have 'sapMBarChildFirstChild' class");
+		assert.ok(oSecondControl.hasStyleClass("sapMBarChildFirstChild"), "Second child now has 'sapMBarChildFirstChild' class, as the first one is not visible");
+
+		//Cleanup
+		oTB.destroy();
+	});
+
 	QUnit.module("Accessiblity");
 
 	QUnit.test("getAccessibilityInfo method", function(assert) {
@@ -373,7 +398,7 @@ sap.ui.define([
 		oTB.destroy();
 	});
 
-	QUnit.test("ariaLabelledBy external label", function(assert) {
+	QUnit.test("If Toolbar's content is made of only a label aria-labelledby should not be present - internal labels", function(assert) {
 		// Arrange + System under Test
 		var oLabel = new Label({
 			text : "Toolbar Label"
@@ -386,7 +411,9 @@ sap.ui.define([
 		Core.applyChanges();
 
 		//Assert
-		assert.equal(oTB.$().attr("aria-labelledby"), oLabel.getId(), "Toolbar has attribute aria-labelledby external label");
+		var oInvisibleText = document.getElementById(oTB.getId() + "-InvisibleText");
+		assert.notOk(oInvisibleText, "Invisible text is not rendered in the static area");
+		assert.strictEqual(oTB.$().attr("aria-labelledby"), undefined, "Toolbar does not have attribute aria-labelledby - external label");
 
 		oTB.applyTagAndContextClassFor("header");
 		Core.applyChanges();
@@ -396,7 +423,7 @@ sap.ui.define([
 		oTB.destroy();
 	});
 
-	QUnit.test("ariaLabelledBy internal and external labels", function(assert) {
+	QUnit.test("If Toolbar's content is made of only a label aria-labelledby should not be present - internal and external labels", function(assert) {
 		// Arrange + System under Test
 		var oLabel = new Label({
 			text : "Toolbar Label"
@@ -409,7 +436,9 @@ sap.ui.define([
 		Core.applyChanges();
 
 		//Assert
-		assert.equal(oTB.$().attr("aria-labelledby"), oLabel.getId(), "Toolbar has attribute aria-labelledby for internal and external labels");
+		var oInvisibleText = document.getElementById(oTB.getId() + "-InvisibleText");
+		assert.notOk(oInvisibleText, "Invisible text is not rendered in the static area");
+		assert.strictEqual(oTB.$().attr("aria-labelledby"), undefined, "Toolbar does not have attribute aria-labelledby - external label");
 
 		//Cleanup
 		oLabel.destroy();
@@ -869,6 +898,8 @@ sap.ui.define([
 		// act
 		oBtn.getLayoutData().setMinWidth(sLastMinWidth);
 
+		Core.applyChanges();
+
 		// assert
 		assert.strictEqual(oBtn.getDomRef().style.minWidth, sLastMinWidth, "After layout data changes min width is set on the DOM.");
 		assert.strictEqual(fnRerenderSpy.callCount, 1, "Toolbar is rerendered because of the layoutData changes.");
@@ -897,6 +928,8 @@ sap.ui.define([
 			minWidth : sMinWidth,
 			shrinkable : true
 		}));
+
+		Core.applyChanges();
 
 		// assert
 		assert.strictEqual(oBtn.getDomRef().style.minWidth, sMinWidth, "After layout data is set minWidth applied to the DOM.");
@@ -937,7 +970,7 @@ sap.ui.define([
 		}
 
 		assertButton(oFirstButton, {
-			left: 4,
+			left: 0,
 			right : 0
 		});
 

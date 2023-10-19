@@ -27,13 +27,6 @@
 			"icon": "sap-icon://accept"
 		}
 	},
-	"sap.ui5": {
-		"dependencies": {
-		  "libs": {
-			"sap/ui/integration/cardEditor/test/testLib": {}
-		  }
-		}
-	},
 	"sap.card": {
 		"extension1": "DataExtensionImpl",
 		"extension": "module:sap/ui/integration/cardEditor/test/testLib/SharedExtension",
@@ -87,6 +80,9 @@
 				},
 				"stringInCols2": {
 					"value": ""
+				},
+				"maxItems": {
+					"value": 5
 				},
 				"integer": {
 					"value": 1
@@ -406,7 +402,7 @@
 					"value": "Location: {location}"
 				}
 			},
-			"maxItems": 4
+			"maxItems": "{parameters>/maxItems/value}"
 		}
 	}
 }

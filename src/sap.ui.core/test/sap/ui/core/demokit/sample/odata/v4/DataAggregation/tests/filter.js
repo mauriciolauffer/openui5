@@ -67,14 +67,15 @@ sap.ui.define([
 				name : "sap.ui.core.sample.odata.v4.DataAggregation"
 			}
 		});
+		Then.onAnyPage.iTeardownMyUIComponentInTheEnd();
 
 		Then.onTheMainPage.checkTable(aInitialTableData);
 
 		When.onTheMainPage.toggleExpandInRow(3, "Expand Germany.");
 		When.onTheMainPage.toggleExpandInRow(4, "Expand Saxony");
-		When.onTheMainPage.scrollToRow(Infinity, "Scroll to Saxony/Small.");
+		When.onTheMainPage.scrollToRow(3, "Scroll to Saxony/Small.");
 		When.onTheMainPage.toggleExpandInRow(7, "Expand Saxony/Small.");
-		When.onTheMainPage.scrollToRow(Infinity, "Scroll to Saxony/Small/Michael Meier.");
+		When.onTheMainPage.scrollToRow(4, "Scroll to Saxony/Small/Michael Meier.");
 		Then.onTheMainPage.checkTable([{
 			level : 0,
 			groupLevelCount : "",
@@ -208,6 +209,5 @@ sap.ui.define([
 
 		Then.onAnyPage.checkLog();
 		Then.onAnyPage.analyzeSupportAssistant();
-		Then.iTeardownMyUIComponent();
 	};
 });

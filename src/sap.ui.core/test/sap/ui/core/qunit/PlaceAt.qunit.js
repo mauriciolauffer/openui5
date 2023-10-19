@@ -4,9 +4,10 @@ sap.ui.define([
 	"sap/m/Button",
 	"sap/ui/core/Core",
 	"sap/ui/core/Element",
+	"sap/ui/core/StaticArea",
 	"sap/ui/core/UIArea",
 	"sap/ui/qunit/utils/createAndAppendDiv"
-], function(Panel, Button, oCore, Element, UIArea, createAndAppendDiv) {
+], function(Panel, Button, oCore, Element, StaticArea, UIArea, createAndAppendDiv) {
 	"use strict";
 
 	createAndAppendDiv(["uiArea1", "uiArea2", "uiArea3", "uiArea4"]);
@@ -33,7 +34,7 @@ sap.ui.define([
 				oControl.placeAt(oContainerRef);
 			}
 
-			var oCont = bIsUiArea ? UIArea.registry.get(sContainerId) : Element.registry.get(sContainerId);
+			var oCont = bIsUiArea ? UIArea.registry.get(sContainerId) : Element.getElementById(sContainerId);
 			return [oControl.getId(), oCont];
 		}
 
@@ -67,6 +68,14 @@ sap.ui.define([
 		doTestPlaceAt(assert, document.getElementById("uiArea2"), "uiArea2", true);
 	});
 
+	QUnit.test("Static UIArea via ID", function(assert) {
+		doTestPlaceAt(assert, StaticArea.STATIC_UIAREA_ID, StaticArea.STATIC_UIAREA_ID, true);
+	});
+
+	QUnit.test("Static UIArea via DomRef", function(assert) {
+		doTestPlaceAt(assert, StaticArea.getDomRef(), StaticArea.STATIC_UIAREA_ID, true);
+	});
+
 	QUnit.test("Container Control via Control reference", function(assert) {
 		doTestPlaceAt(assert, oPanel, "myPanel", false);
 	});
@@ -96,7 +105,7 @@ sap.ui.define([
 			function setRoot() {
 				var oControl = new Button();
 				oCore.setRoot(oContainerRef, oControl);
-				var oCont = bIsUiArea ? UIArea.registry.get(sContainerId) : Element.registry.get(sContainerId);
+				var oCont = bIsUiArea ? UIArea.registry.get(sContainerId) : Element.getElementById(sContainerId);
 				return [oControl.getId(), oCont];
 			}
 

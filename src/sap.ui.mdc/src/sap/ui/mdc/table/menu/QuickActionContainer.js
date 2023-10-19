@@ -2,8 +2,8 @@
  * ${copyright}
  */
 sap.ui.define([
-	"../TableSettings",
 	"../ResponsiveTableType",
+	"../utils/Personalization",
 	"sap/m/table/columnmenu/QuickActionContainer",
 	"sap/m/table/columnmenu/QuickAction",
 	"sap/m/table/columnmenu/QuickSort",
@@ -16,8 +16,8 @@ sap.ui.define([
 	"sap/ui/core/Core",
 	"sap/ui/core/library"
 ], function(
-	TableSettings,
 	ResponsiveTableType,
+	PersonalizationUtils,
 	QuickActionContainerBase,
 	QuickAction,
 	QuickSort,
@@ -32,7 +32,7 @@ sap.ui.define([
 ) {
 	"use strict";
 
-	var QuickActionContainer = QuickActionContainerBase.extend("sap.ui.mdc.table.menu.QuickActionContainer", {
+	const QuickActionContainer = QuickActionContainerBase.extend("sap.ui.mdc.table.menu.QuickActionContainer", {
 		metadata: {
 			library: "sap.ui.mdc",
 			associations: {
@@ -43,22 +43,22 @@ sap.ui.define([
 	});
 
 	QuickActionContainer.prototype.initializeQuickActions = function() {
-		var oTable = this.getTable();
-		var oColumn = this.getColumn();
-		var oPropertyHelper = oTable.getPropertyHelper();
-		var pCreateContent = Promise.resolve();
+		const oTable = this.getTable();
+		const oColumn = this.getColumn();
+		const oPropertyHelper = oTable.getPropertyHelper();
+		const pCreateContent = Promise.resolve();
 
 		this.destroyQuickActions(); // TODO: More efficient update would be good
 
 		if (oTable.isSortingEnabled()) {
-			var aSortableProperties = oPropertyHelper.getProperty(oColumn.getDataProperty()).getSortableProperties();
-			var aSortedProperties = oTable._getSortedProperties();
+			const aSortableProperties = oPropertyHelper.getProperty(oColumn.getPropertyKey()).getSortableProperties();
+			const aSortedProperties = oTable._getSortedProperties();
 
 			if (aSortableProperties.length > 0) {
 				this.addQuickAction(new QuickSort({
 					items: aSortableProperties.map(function(oProperty) {
-						var sSortOrder = CoreLibrary.SortOrder.None;
-						var mSortCondition = aSortedProperties.find(function(oSortedProperty) {
+						let sSortOrder = CoreLibrary.SortOrder.None;
+						const mSortCondition = aSortedProperties.find(function(oSortedProperty) {
 							return oSortedProperty.name === oProperty.name;
 						});
 
@@ -72,21 +72,24 @@ sap.ui.define([
 						});
 					}),
 					change: function(oEvent) {
-						var oItem = oEvent.getParameter("item");
-						TableSettings.createSort(oTable, oItem.getKey(), oItem.getSortOrder(), true);
+						const oItem = oEvent.getParameter("item");
+						PersonalizationUtils.createSortChange(oTable, {
+							property: oItem.getKey(),
+							sortOrder: oItem.getSortOrder()
+						});
 					}
 				}));
 			}
 		}
 
 		if (oTable.isGroupingEnabled()) {
-			var aGroupableProperties = oPropertyHelper.getProperty(oColumn.getDataProperty()).getGroupableProperties();
-			var aGroupedProperties = oTable._getGroupedProperties();
+			const aGroupableProperties = oPropertyHelper.getProperty(oColumn.getPropertyKey()).getGroupableProperties();
+			const aGroupedProperties = oTable._getGroupedProperties();
 
 			if (aGroupableProperties.length > 0) {
 				this.addQuickAction(new QuickGroup({
 					items: aGroupableProperties.map(function(oProperty) {
-						var bGrouped = aGroupedProperties.some(function(oGroupedProperty) {
+						const bGrouped = aGroupedProperties.some(function(oGroupedProperty) {
 							return oGroupedProperty.name === oProperty.name;
 						});
 
@@ -97,18 +100,19 @@ sap.ui.define([
 						});
 					}),
 					change: function(oEvent) {
-						var oItem = oEvent.getParameter("item");
-						TableSettings.createGroup(oTable, oItem.getKey());
+						PersonalizationUtils.createGroupChange(oTable, {
+							property: oEvent.getParameter("item").getKey()
+						});
 					}
 				}));
 			}
 		}
 
 		if (oTable.isAggregationEnabled()) {
-			var aPropertiesThatCanBeTotaled = oPropertyHelper.getProperty(oColumn.getDataProperty()).getAggregatableProperties().filter(function(oProperty) {
+			const aPropertiesThatCanBeTotaled = oPropertyHelper.getProperty(oColumn.getPropertyKey()).getAggregatableProperties().filter(function(oProperty) {
 				return oProperty.extension && oProperty.extension.customAggregate;
 			});
-			var mAggregatedProperties = oTable._getAggregatedProperties();
+			const mAggregatedProperties = oTable._getAggregatedProperties();
 
 			if (aPropertiesThatCanBeTotaled.length > 0) {
 				this.addQuickAction(new QuickTotal({
@@ -120,8 +124,9 @@ sap.ui.define([
 						});
 					}),
 					change: function(oEvent) {
-						var oItem = oEvent.getParameter("item");
-						TableSettings.createAggregation(oTable, oItem.getKey());
+						PersonalizationUtils.createAggregateChange(oTable, {
+							property: oEvent.getParameter("item").getKey()
+						});
 					}
 				}));
 			}
@@ -135,15 +140,15 @@ sap.ui.define([
 	};
 
 	QuickActionContainer.prototype.updateQuickActions = function(aKeys) {
-		var oTable = this.getTable();
-		var aSortedProperties = oTable._getSortedProperties();
-		var aGroupedProperties = oTable._getGroupedProperties();
-		var oAggregatedProperty = oTable._getAggregatedProperties();
+		const oTable = this.getTable();
+		const aSortedProperties = oTable._getSortedProperties();
+		const aGroupedProperties = oTable._getGroupedProperties();
+		const oAggregatedProperty = oTable._getAggregatedProperties();
 
 		this.getQuickActions().forEach(function(oQuickAction) {
 			if ((!aKeys || aKeys.includes("Sort")) && oQuickAction.isA("sap.m.table.columnmenu.QuickSort")) {
 				oQuickAction.getItems().forEach(function(oItem) {
-					var mSortCondition = aSortedProperties.find(function(oSortedProperty) {
+					const mSortCondition = aSortedProperties.find(function(oSortedProperty) {
 						return oSortedProperty.name === oItem.getProperty("key");
 					});
 					if (mSortCondition) {
@@ -154,14 +159,14 @@ sap.ui.define([
 				});
 			} else if ((!aKeys || aKeys.includes("Group")) && oQuickAction.isA("sap.m.table.columnmenu.QuickGroup")) {
 				oQuickAction.getItems().forEach(function(oItem) {
-					var bGrouped = aGroupedProperties.some(function (oGroupedProperty) {
+					const bGrouped = aGroupedProperties.some(function (oGroupedProperty) {
 						return oGroupedProperty.name === oItem.getProperty("key");
 					});
 					oItem.setGrouped(bGrouped);
 				});
 			} else if ((!aKeys || aKeys.includes("Aggregate")) && oQuickAction.isA("sap.m.table.columnmenu.QuickTotal")) {
 				oQuickAction.getItems().forEach(function(oItem) {
-					var bTotaled = oAggregatedProperty.hasOwnProperty(oItem.getProperty("key"));
+					const bTotaled = oAggregatedProperty.hasOwnProperty(oItem.getProperty("key"));
 					oItem.setTotaled(bTotaled);
 				});
 			}

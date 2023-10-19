@@ -4,9 +4,8 @@
 
 sap.ui.define([
 	'sap/ui/mdc/util/TypeUtil',
-	'sap/ui/mdc/enum/BaseType',
-	'sap/base/util/ObjectPath'
-], function(BaseTypeUtil, BaseType, ObjectPath) {
+	'sap/ui/mdc/enums/BaseType'
+], function(BaseTypeUtil, BaseType) {
 	"use strict";
 
 	/**
@@ -18,6 +17,7 @@ sap.ui.define([
 	 * @private
 	 * @experimental As of version 1.79
 	 * @since 1.79.0
+	 * @deprecated since 1.115.0 - please see {@link module:sap/ui/mdc/BaseDelegate.getTypeMap}
 	 * @alias sap.ui.mdc.odata.TypeUtil
 	 */
 	var TypeUtil = Object.assign({}, BaseTypeUtil, {
@@ -140,6 +140,46 @@ sap.ui.define([
 				}
 			}
 			return BaseTypeUtil.externalizeValue.call(this, vValue, vType, oFormatOptions, oConstraints);
+		},
+
+		/*
+		* For sap.ui.model.odata.type.Currency and sap.ui.model.odata.type.Unit the
+		* CompositeBinding has 3 parts, Number, Currency/Unit and unit map.
+		* On the first call of formatValue the unit map is analyzed and stored inside the
+		* Type. Later, on parsing it is used. Without initializing the unit map parsing is
+		* not working.
+		*
+		* In the sap.ui.mdc.Field the Type is created via Binding. So when the value of the Field
+		* gets the unit map for the first time we need to initialize the type via formatValue.
+		* (As no condition is created if there is no number or unit formatValue might not be called before
+		* first user input.)
+		*
+		* We return the given unit map in the TypeInitialization object to allow to initialize the "cloned"
+		* Unit/Currency-Type (internally used by the two Input controls for number and unit) with the unit map.
+		*/
+		initializeTypeFromValue: function(oType, vValue) {
+
+			if (oType && this.getBaseType(oType.getMetadata().getName()) === BaseType.Unit && Array.isArray(vValue) && vValue.length > 2) {
+				if (vValue[2] !== undefined) {
+					var oTypeInitialization = {mCustomUnits: vValue[2]};
+					this.initializeInternalType(oType, oTypeInitialization);
+					return oTypeInitialization;
+				}
+			} else {
+				return {}; // to mark initialization as finished as not needed for normal types
+			}
+
+			return null; // not all needed information are given right now.
+
+		},
+
+		initializeInternalType: function(oType, oTypeInitialization) {
+
+			if (oTypeInitialization && oTypeInitialization.mCustomUnits !== undefined) {
+				// if already initialized initialize new type too.
+				oType.formatValue([null, null, oTypeInitialization.mCustomUnits], "string");
+			}
+
 		}
 	});
 

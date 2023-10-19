@@ -47,6 +47,26 @@ sap.ui.define([
 		assert.strictEqual(oType.oFormat, null, "no formatter preload");
 	});
 
+	//*****************************************************************************************
+	QUnit.test("constructor calls checkParseEmptyValueToZero", function (assert) {
+		var oConstraints = {nullable : false}; // otherwise there are no constraints set to the type
+		var oFormatOptions = {"~formatOption" : "foo"};
+
+		var oExpectation = this.mock(ODataType.prototype).expects("checkParseEmptyValueToZero")
+				.withExactArgs()
+				.callsFake(function () {
+					assert.deepEqual(this.oConstraints, oConstraints);
+					assert.strictEqual(this.oFormatOptions, oFormatOptions);
+				});
+
+		// code under test
+		var oType = new Int64(oFormatOptions, oConstraints);
+
+		assert.ok(oExpectation.calledOn(oType));
+		assert.deepEqual(oType.oConstraints, oConstraints);
+		assert.strictEqual(oType.oFormatOptions, oFormatOptions);
+	});
+
 	//*********************************************************************************************
 	QUnit.test("construct with null values for 'oFormatOptions' and 'oConstraints",
 		function (assert) {
@@ -333,5 +353,29 @@ sap.ui.define([
 			oType.formatValue(42, "string");
 			sinon.assert.calledWithExactly(oSpy, oFixture.expect);
 		});
+	});
+
+	//*********************************************************************************************
+	QUnit.test("getFormat", function (assert) {
+		var oType = new Int64({parseEmptyValueToZero : true}, {nullable : false});
+
+		assert.strictEqual(oType.oFormat, null);
+
+		this.mock(NumberFormat).expects("getIntegerInstance")
+			.withExactArgs({groupingEnabled : true, parseAsString: true})
+			.returns("~integerInstance");
+
+		// code under test
+		assert.strictEqual(oType.getFormat(), "~integerInstance");
+	});
+
+	//*****************************************************************************************
+	QUnit.test("parseValue calls getEmptyValue", function (assert) {
+		var oType = new Int64();
+
+		this.mock(oType).expects("getEmptyValue").withExactArgs("~emptyString").returns("~emptyValue");
+
+		// code under test
+		assert.strictEqual(oType.parseValue("~emptyString", "foo"), "~emptyValue");
 	});
 });

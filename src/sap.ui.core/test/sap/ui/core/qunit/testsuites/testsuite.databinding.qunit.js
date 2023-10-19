@@ -51,6 +51,12 @@ sap.ui.define(function() {
 					language: "en-US"
 				}
 			},
+			ClientPropertyBinding : {
+				title: "sap.ui.model.ClientPropertyBinding - QUnit Tests",
+				module: [
+					"test-resources/sap/ui/core/qunit/model/ClientPropertyBinding.qunit"
+				]
+			},
 			ClientTreeBinding: {
 				title: "sap.ui.model.ClientTreeBinding - QUnit Tests",
 				module: ["test-resources/sap/ui/core/qunit/model/ClientTreeBinding.qunit"]
@@ -88,8 +94,12 @@ sap.ui.define(function() {
 			ListBinding: {
 				title: "sap.ui.model.ListBinding - QUnit Tests"
 			},
+			/** @deprecated As of version 1.11.1 reason bindContext*/
 			MasterDetail: {
-				title: "QUnit tests: databinding MasterDetail"
+				title: "QUnit tests: databinding MasterDetail",
+				module: [
+					"test-resources/sap/ui/core/qunit/MasterDetail_legacyAPIs.qunit"
+				]
 			},
 			ODataAnnotations: {
 				title: "sap.ui.model.odata.ODataAnnotations - QUnit Tests",
@@ -100,10 +110,11 @@ sap.ui.define(function() {
 					language: "en-US"
 				}
 			},
+			/** @deprecated As of version 1.66.0 */
 			ODataListBinding: {
 				title: "sap.ui.model.odata.ODataListBinding - QUnit Tests",
 				module: [
-					"test-resources/sap/ui/core/qunit/odata/ODataListBinding.qunit"
+					"test-resources/sap/ui/core/qunit/odata/ODataListBinding_legacyAPIs.qunit"
 				]
 			},
 			ODataMessageParser: {
@@ -134,25 +145,28 @@ sap.ui.define(function() {
 					"test-resources/sap/ui/core/qunit/odata/ODataMetadataNoFakeService.qunit"
 				]
 			},
+			/** @deprecated As of version 1.48.0 */
 			ODataModel: {
 				title: "sap.ui.model.odata.ODataModel - QUnit Tests",
 				module: [
-					"test-resources/sap/ui/core/qunit/odata/ODataModel.qunit"
+					"test-resources/sap/ui/core/qunit/odata/ODataModel_legacyAPIs.qunit"
 				]
 			},
+			/** @deprecated As of version 1.48.0 reason sap.ui.model.odata.ODataModel */
 			ODataSharedMetadata: {
 				title: "sap.ui.model.odata.ODataModel - Shared Metadata QUnit Tests",
 				module: [
-					"test-resources/sap/ui/core/qunit/odata/ODataSharedMetadata.qunit"
+					"test-resources/sap/ui/core/qunit/odata/ODataSharedMetadata_legacyAPIs.qunit"
 				],
 				sinon: {
 					useFakeTimers: true
 				}
 			},
+			/** @deprecated As of version 1.28.0 */
 			ODataTreeBinding: {
 				title: "sap.ui.model.odata.ODataTreeBinding - QUnit Tests",
 				module: [
-					"test-resources/sap/ui/core/qunit/odata/ODataTreeBinding.qunit"
+					"test-resources/sap/ui/core/qunit/odata/ODataTreeBinding_legacyAPIs.qunit"
 				],
 				sinon: 1 // because MockServer is used which has a hard dependency to sinon V1
 			},
@@ -190,10 +204,6 @@ sap.ui.define(function() {
 						testdata: 'test-resources/sap/ui/core/qunit/testdata',
 						'sap/ui/testlib': 'test-resources/sap/ui/core/qunit/testdata/uilib'
 					}
-				},
-				ui5: {
-					language: "en",
-					originInfo: true
 				}
 			},
 			StaticBinding: {
@@ -292,6 +302,9 @@ sap.ui.define(function() {
 			},
 			"model/Model": {
 				title: "sap.ui.model.Model"
+			},
+			"model/PropertyBinding": {
+				title: "sap.ui.model.PropertyBinding"
 			},
 			"model/Sorter": {
 				title: "sap.ui.model.Sorter"

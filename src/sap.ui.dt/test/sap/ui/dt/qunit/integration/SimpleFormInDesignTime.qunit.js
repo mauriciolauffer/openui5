@@ -1,9 +1,8 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/ui/dt/DesignTime",
 	"sap/ui/dt/OverlayRegistry",
-	"sap/ui/dt/ElementUtil",
 	"sap/m/Label",
 	"sap/ui/layout/form/SimpleForm",
 	"sap/ui/core/Title",
@@ -11,12 +10,10 @@ sap.ui.define([
 	"sap/m/DatePicker",
 	"sap/ui/layout/VerticalLayout",
 	"sap/m/Button",
-	"sap/ui/core/Core"
-],
-function(
+	"sap/ui/qunit/utils/nextUIUpdate"
+], function(
 	DesignTime,
 	OverlayRegistry,
-	ElementUtil,
 	Label,
 	SimpleForm,
 	Title,
@@ -24,17 +21,18 @@ function(
 	DatePicker,
 	VerticalLayout,
 	Button,
-	oCore
+	nextUIUpdate
 ) {
 	"use strict";
 
 	QUnit.module("Given that a DesignTime is created for a SimpleForm and designTimeMetadata for SimpleForm hidden form is provided", {
-		beforeEach: function(assert) {
+		async beforeEach(assert) {
 			this.oLabel = new Label({text: "Name"});
 
 			this.oSimpleForm = new SimpleForm("Form1", {
 				maxContainerCols: 2,
 				editable: true,
+				layout: "ColumnLayout",
 				content: [
 					new Title({text: "Person"}),
 					this.oLabel,
@@ -49,7 +47,7 @@ function(
 			this.oVerticalLayout = new VerticalLayout({content: [this.oSimpleForm, this.oLabel]});
 
 			this.oVerticalLayout.placeAt("qunit-fixture");
-			oCore.applyChanges();
+			await nextUIUpdate();
 
 			var done = assert.async();
 
@@ -69,27 +67,27 @@ function(
 				rootElements: [this.oVerticalLayout]
 			});
 
-			this.oDesignTime.attachEventOnce("synced", function() {
-				oCore.applyChanges();
+			this.oDesignTime.attachEventOnce("synced", async function() {
+				await nextUIUpdate();
 				done();
 			});
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oDesignTime.destroy();
 			this.oSimpleForm.destroy();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("when the content is added to a SimpleForm ...", function(assert) {
 			var oSimpleFormOverlay = OverlayRegistry.getOverlay(this.oSimpleForm);
 			var oFormAggregationOverlay = oSimpleFormOverlay.getAggregationOverlay("form");
 			assert.ok(oFormAggregationOverlay, "aggregation overlay for not ignored aggregation is created");
 		});
 
-		QUnit.test("when the content is added to a SimpleForm ...", function(assert) {
+		QUnit.test("when the content is added to a SimpleForm ...", async function(assert) {
 			var fnDone = assert.async();
 			this.oButton = new Button("button1", {text: "Button"});
 			this.oSimpleForm.addContent(this.oButton);
-			oCore.applyChanges();
+			await nextUIUpdate();
 
 			this.oDesignTime.attachEventOnce("synced", function() {
 				var oButtonOverlay = OverlayRegistry.getOverlay(this.oButton);
@@ -107,30 +105,30 @@ function(
 		});
 
 		QUnit.test("when getIndex is called in a simpleForm", function(assert) {
-			var oForm = this.oSimpleForm.getAggregation('form');
+			var oForm = this.oSimpleForm.getAggregation("form");
 			var oFormOverlay = OverlayRegistry.getOverlay(oForm);
-			var fnGetIndex = oFormOverlay.getDesignTimeMetadata().getAggregation('formContainers').getIndex;
+			var fnGetIndex = oFormOverlay.getDesignTimeMetadata().getAggregation("formContainers").getIndex;
 			assert.equal(fnGetIndex(oForm), 1, "then the new index should be 1");
 		});
 
 		QUnit.test("when getIndex is called in a simpleForm with a sibling", function(assert) {
-			var oForm = this.oSimpleForm.getAggregation('form');
+			var oForm = this.oSimpleForm.getAggregation("form");
 			var oFormOverlay = OverlayRegistry.getOverlay(oForm);
-			var fnGetIndex = oFormOverlay.getDesignTimeMetadata().getAggregation('formContainers').getIndex;
+			var fnGetIndex = oFormOverlay.getDesignTimeMetadata().getAggregation("formContainers").getIndex;
 			assert.equal(fnGetIndex(oForm, oForm.getFormContainers()[0]), 1, "then the new index should be 1");
 		});
 
 		QUnit.test("when getIndex is called in a simpleForm without Title", function(assert) {
-			var oForm = this.oSimpleForm.getAggregation('form');
+			var oForm = this.oSimpleForm.getAggregation("form");
 			var oFormOverlay = OverlayRegistry.getOverlay(oForm);
-			var fnGetIndex = oFormOverlay.getDesignTimeMetadata().getAggregation('formContainers').getIndex;
+			var fnGetIndex = oFormOverlay.getDesignTimeMetadata().getAggregation("formContainers").getIndex;
 			oForm.getFormContainers()[0].removeAllFormElements();
 			this.oSimpleForm.removeContent(oForm.getAggregation("formContainers")[0].getTitle());
 			assert.equal(fnGetIndex(oForm), 0, "then the new index should be 0");
 		});
 
 		QUnit.test("when rename is called in a simpleForm without Title", function(assert) {
-			var oFirstFormContainer = this.oSimpleForm.getAggregation('form').getAggregation('formContainers')[0];
+			var oFirstFormContainer = this.oSimpleForm.getAggregation("form").getAggregation("formContainers")[0];
 			var oFormContainerOverlay = OverlayRegistry.getOverlay(oFirstFormContainer);
 			var fnRename = oFormContainerOverlay.getDesignTimeMetadata().getData().actions.rename;
 			this.oSimpleForm.removeContent(oFirstFormContainer.getTitle());
@@ -138,7 +136,7 @@ function(
 		});
 
 		QUnit.test("when remove is called in a simpleForm without Title", function(assert) {
-			var oFirstFormContainer = this.oSimpleForm.getAggregation('form').getAggregation('formContainers')[0];
+			var oFirstFormContainer = this.oSimpleForm.getAggregation("form").getAggregation("formContainers")[0];
 			var oFormContainerOverlay = OverlayRegistry.getOverlay(oFirstFormContainer);
 			var fnRemove = oFormContainerOverlay.getDesignTimeMetadata().getData().actions.remove;
 			this.oSimpleForm.removeContent(oFirstFormContainer.getTitle());

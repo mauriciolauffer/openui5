@@ -4,6 +4,8 @@
 sap.ui.define([
 	"./AnalyticalContentRenderer",
 	"./BaseContent",
+	"sap/f/cards/loading/AnalyticalPlaceholder",
+	"sap/m/IllustratedMessageType",
 	"sap/ui/integration/library",
 	"sap/ui/integration/util/BindingResolver",
 	"sap/base/Log",
@@ -12,6 +14,8 @@ sap.ui.define([
 ], function (
 	AnalyticalContentRenderer,
 	BaseContent,
+	AnalyticalPlaceholder,
+	IllustratedMessageType,
 	library,
 	BindingResolver,
 	Log,
@@ -23,7 +27,7 @@ sap.ui.define([
 	var ActionArea = library.CardActionArea;
 
 	// lazy dependencies, loaded on the first attempt to create AnalyticalContent
-	var VizFrame, FeedItem, FlattenedDataset, Popover;
+	var VizFrame, FeedItem, FlattenedDataset, Popover, MeasureDefinition, DimensionDefinition;
 
 	/**
 	 * Enumeration with supported legend positions.
@@ -111,6 +115,16 @@ sap.ui.define([
 	/**
 	 * @override
 	 */
+	AnalyticalContent.prototype.createLoadingPlaceholder = function (oConfiguration) {
+		return new AnalyticalPlaceholder({
+			chartType: oConfiguration.chartType,
+			minHeight: AnalyticalContentRenderer.getMinHeight(oConfiguration)
+		});
+	};
+
+	/**
+	 * @override
+	 */
 	AnalyticalContent.prototype.loadDependencies = function (oCardManifest) {
 		return new Promise(function (resolve, reject) {
 			Core.loadLibrary("sap.viz", { async: true })
@@ -119,12 +133,16 @@ sap.ui.define([
 						"sap/viz/ui5/controls/VizFrame",
 						"sap/viz/ui5/controls/common/feeds/FeedItem",
 						"sap/viz/ui5/controls/Popover",
-						"sap/viz/ui5/data/FlattenedDataset"
-					], function (_VizFrame, _FeedItem, _Popover, _FlattenedDataset) {
+						"sap/viz/ui5/data/FlattenedDataset",
+						"sap/viz/ui5/data/MeasureDefinition",
+						"sap/viz/ui5/data/DimensionDefinition"
+					], function (_VizFrame, _FeedItem, _Popover, _FlattenedDataset, _MeasureDefinition, _DimensionDefinition) {
 						VizFrame = _VizFrame;
 						FeedItem = _FeedItem;
 						Popover = _Popover;
 						FlattenedDataset = _FlattenedDataset;
+						MeasureDefinition = _MeasureDefinition;
+						DimensionDefinition = _DimensionDefinition;
 						resolve();
 					}, function (sErr) {
 						reject(sErr);
@@ -144,15 +162,22 @@ sap.ui.define([
 	AnalyticalContent.prototype.onDataChanged = function () {
 		this._createChart();
 		var oChart = this.getAggregation("_content");
+
 		if (oChart) {
 			var vizDS = oChart._getVizDataset(),
-				noData = vizDS
+				bHasData = vizDS
 					&& vizDS._FlatTableD
 					&& vizDS._FlatTableD._data
 					&& Array.isArray(vizDS._FlatTableD._data)
-					&& (!vizDS._FlatTableD._data.length);
-			if (noData) {
-				this.getParent()._handleError("No data available", true);
+					&& vizDS._FlatTableD._data.length;
+
+			if (bHasData) {
+				this.hideNoDataMessage();
+			} else {
+				this.showNoDataMessage({
+					illustrationType: IllustratedMessageType.NoEntries,
+					title: this.getCardInstance().getTranslatedText("CARD_NO_ITEMS_ERROR_LISTS")
+				});
 			}
 		}
 	};
@@ -316,21 +341,21 @@ sap.ui.define([
 
 		if (oConfiguration.dimensions) {
 			aDimensions = oConfiguration.dimensions.map(function (oDimension, i) {
-				return {
+				return new DimensionDefinition({
 					name: oResolvedConfiguration.dimensions[i].name || oResolvedConfiguration.dimensions[i].label, // .label for backwards compatibility
 					value: oDimension.value,
 					displayValue: oDimension.displayValue,
 					dataType: oDimension.dataType
-				};
+				});
 			});
 		}
 
 		if (oConfiguration.measures) {
 			aMeasures = oConfiguration.measures.map(function (oMeasure, i) {
-				return {
-					name: oResolvedConfiguration.measures[i].name || oResolvedConfiguration.measures[i].label, // .label for backwards compatibility
+				return new MeasureDefinition({
+					name: oResolvedConfiguration.measures[i].name || oResolvedConfiguration.measures[i].label, // .label for backwards compatibility,
 					value: oMeasure.value
-				};
+				});
 			});
 		}
 

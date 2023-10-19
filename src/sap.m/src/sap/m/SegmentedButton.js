@@ -4,6 +4,7 @@
 
 // Provides control sap.m.SegmentedButton.
 sap.ui.define([
+	'sap/ui/core/Lib',
 	'./library',
 	'./Button',
 	'./SegmentedButtonItem',
@@ -17,6 +18,7 @@ sap.ui.define([
 	'./SegmentedButtonRenderer'
 ],
 function(
+	Library,
 	library,
 	Button,
 	SegmentedButtonItem,
@@ -463,8 +465,8 @@ function(
 	SegmentedButton.prototype.getOverflowToolbarConfig = function() {
 		return {
 			canOverflow: true,
-			listenForEvents: ["select"],
-			autoCloseEvents: ["select"],
+			listenForEvents: ["selectionChange"],
+			autoCloseEvents: ["selectionChange"],
 			propsUnrelatedToSize: ["enabled", "selectedKey"],
 			invalidationEvents: ["_containerWidthChanged"],
 			onBeforeEnterOverflow: this._onBeforeEnterOverflow,
@@ -636,6 +638,10 @@ function(
 		return this;
 	};
 
+	SegmentedButton.prototype.getButtons = function () {
+		return this.getAggregation("buttons") || [];
+	};
+
 	SegmentedButton.prototype.removeButton = function (oButton) {
 		var oRemovedButton = this.removeAggregation("buttons", oButton);
 		if (oRemovedButton) {
@@ -767,7 +773,9 @@ function(
 				item: oItemPressed
 			});
 
-			// support old API
+			/**
+			 * @deprecated as of version 1.52, replaced by <code>selectionChange</code> event
+			 */
 			this.fireSelect({
 				button: oButtonPressed,
 				id: oButtonPressed.getId(),
@@ -791,6 +799,10 @@ function(
 				this.setAssociation('selectedItem', this.getItems()[0], true);
 			}
 		}
+	};
+
+	SegmentedButton.prototype.getSelectedButton = function () {
+		return this.getAssociation("selectedButton");
 	};
 
 	/**
@@ -938,7 +950,7 @@ function(
 	 * @protected
 	 */
 	 SegmentedButton.prototype.getAccessibilityInfo = function() {
-		var oResourceBundle = sap.ui.getCore().getLibraryResourceBundle("sap.m"),
+		var oResourceBundle = Library.getResourceBundleFor("sap.m"),
 			oSelectedItem = this.getItems().find(function(oItem) {
 				return oItem.getId() === this.getSelectedItem();
 			}.bind(this));

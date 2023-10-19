@@ -1,4 +1,4 @@
-/* global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/base/Log",
@@ -10,10 +10,10 @@ sap.ui.define([
 	"sap/ui/fl/apply/_internal/flexState/controlVariants/VariantManagementState",
 	"sap/ui/fl/apply/_internal/flexState/ManifestUtils",
 	"sap/ui/fl/apply/_internal/preprocessors/ControllerExtension",
-	"sap/ui/fl/Cache",
 	"sap/ui/fl/Layer",
 	"sap/ui/fl/Utils",
-	"sap/ui/thirdparty/sinon-4"
+	"sap/ui/thirdparty/sinon-4",
+	"test-resources/sap/ui/fl/qunit/FlQUnitUtils"
 ], function(
 	Log,
 	ManagedObject,
@@ -24,10 +24,10 @@ sap.ui.define([
 	VariantManagementState,
 	ManifestUtils,
 	ControllerExtension,
-	Cache,
 	Layer,
 	Utils,
-	sinon
+	sinon,
+	FlQUnitUtils
 ) {
 	"use strict";
 
@@ -38,7 +38,7 @@ sap.ui.define([
 	function createCodeExtChangeContent(oInput) {
 		return Object.assign({
 			fileName: "id_1436877480596_108",
-			namespace: "ui.s2p.mm.purchorder.approve.Component",
+			namespace: "ui.s2p.mm.purchorder.approve",
 			fileType: "change",
 			layer: Layer.CUSTOMER,
 			creation: "20150720131919",
@@ -56,21 +56,21 @@ sap.ui.define([
 	}
 
 	QUnit.module("sap.ui.fl.ControllerExtension", {
-		beforeEach: function() {
+		beforeEach() {
 			sandbox.stub(VariantManagementState, "getInitialChanges").returns([]);
 			this.oExtensionProvider = new ControllerExtension();
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
 		QUnit.test("When an sync view is processed", function(assert) {
 			sandbox.stub(ManifestUtils, "getFlexReferenceForControl").returns("<sap-app-id> or <component name>");
 
-			//check sync case
+			// check sync case
 			var spy = sandbox.spy(Log, "warning");
 			var aEmptyCodeExtensionSync = this.oExtensionProvider.getControllerExtensions(sControllerName, "<component ID>", false);
-			//should return empty array and log warning
+			// should return empty array and log warning
 			assert.ok(Array.isArray(aEmptyCodeExtensionSync), "Then an array is returned");
 			assert.equal(aEmptyCodeExtensionSync.length, 0, "which is empty");
 			assert.equal(spy.callCount, 1, "and a warning log is written");
@@ -95,12 +95,12 @@ sap.ui.define([
 		/**
 		 * @deprecated Since version 1.58 due to <code>sap.ui.base.Metadata.getPublicMethods</code> deprecation
 		 */
-		QUnit.test("When a component id is provided and one code extension with two methods is present", function(assert) {
+		QUnit.test("When a component id is provided and one code extension with two methods is present", async function(assert) {
 			var sModuleName = "sap/ui/fl/qunit/ControllerExtension/1.0.0/codeExtensions/firstCodeExt";
 			sap.ui.define(sModuleName, ["sap/ui/core/mvc/ControllerExtension"], function(ControllerExtension) { // legacy-relevant: simulates a loaded code extension. no option to replace this regarding legacy free coding
 				return ControllerExtension.extend("ui.s2p.mm.purchorder.approve.Extension1", {
-					extHookOnInit: function() {},
-					onInit: function() {}
+					extHookOnInit() {},
+					onInit() {}
 				});
 			});
 			var oChange = createCodeExtChangeContent({
@@ -110,56 +110,44 @@ sap.ui.define([
 				}
 			});
 
-			var oFileContent = {
-				changes: {
-					changes: [oChange]
-				}
-			};
-
-			var oChangesFillingCachePromise = new Promise(
-				function (resolve) {
-					resolve(oFileContent);
-				}
-			);
-
 			var oAppComponent = {
-				getManifest: function () {
+				getManifest() {
 					return {
 						"sap.app": {
 							applicationVersion: {
 								version: "1.2.3"
 							}
 						},
-						getEntry: function () {
+						getEntry() {
 							return {
 								type: "application"
 							};
 						}
 					};
 				},
-				getManifestObject: function () {
+				getManifestObject() {
 					return {
 						"sap.app": {
 							applicationVersion: {
 								version: "1.2.3"
 							}
 						},
-						getEntry: function () {
+						getEntry() {
 							return {
 								type: "application"
 							};
 						}
 					};
 				},
-				getManifestEntry: function () {}
+				getManifestEntry() {}
 			};
-			sandbox.stub(Cache, "getChangesFillingCache").returns(oChangesFillingCachePromise);
+			await FlQUnitUtils.initializeFlexStateWithData(sandbox, "ui.s2p.mm.purchorder.approve.view.S2", {changes: [oChange]});
 			sandbox.stub(Utils, "getAppComponentForControl").returns(oAppComponent);
 			sandbox.stub(ManifestUtils, "getFlexReferenceForControl").returns(sControllerName);
 
 			var oCodeExtensionsPromise = this.oExtensionProvider.getControllerExtensions(sControllerName, "<component ID>", true);
 
-			return oCodeExtensionsPromise.then(function (aCodeExtensions) {
+			return oCodeExtensionsPromise.then(function(aCodeExtensions) {
 				assert.equal(aCodeExtensions.length, 1, "one code extension should be returned");
 				assert.equal(aCodeExtensions[0].getMetadata().getPublicMethods().length, 2, "then two methods were extended");
 				assert.equal(aCodeExtensions[0].getMetadata().getPublicMethods()[0], "extHookOnInit", "of which one is extHookOnInit");
@@ -170,7 +158,7 @@ sap.ui.define([
 		/**
 		 * @deprecated Since version 1.58 due to <code>sap.ui.base.Metadata.getAllPublicMethods</code> deprecation
 		 */
-		QUnit.test("apply multiple changes on different controllers", function (assert) {
+		QUnit.test("apply multiple changes on different controllers", async function(assert) {
 			// expect both extensions to be called
 			var done1 = assert.async();
 			var done2 = assert.async();
@@ -193,8 +181,8 @@ sap.ui.define([
 			});
 			sap.ui.define(sModuleName1, ["sap/ui/core/mvc/ControllerExtension"], function(ControllerExtension) { // legacy-relevant: simulates a loaded code extension. no option to replace this regarding legacy free coding
 				return ControllerExtension.extend("ui.s2p.mm.purchorder.approve.Extension2", {
-					override: {
-						onInit: function () {
+					overrides: {
+						onInit() {
 							assert.strictEqual(this.base.getView().getId(), "testView1", "View1 is available and ID of View1 is correct");
 							done1();
 						}
@@ -215,8 +203,8 @@ sap.ui.define([
 			});
 			sap.ui.define(sModuleName2, ["sap/ui/core/mvc/ControllerExtension"], function(ControllerExtension) { // legacy-relevant: simulates a loaded code extension. no option to replace this regarding legacy free coding
 				return ControllerExtension.extend("ui.s2p.mm.purchorder.approve.Extension3", {
-					override: {
-						onInit: function () {
+					overrides: {
+						onInit() {
 							assert.strictEqual(this.base.getView().getId(), "testView2", "View2 is available and ID of View2 is correct");
 							done2();
 						}
@@ -235,17 +223,9 @@ sap.ui.define([
 				changeType: "notCodeExt"
 			};
 			var oFileContent = {
-				changes: {
-					changes: [oOtherChange1, oCodingChange1, oOtherChange2, oCodingChange2]
-				}
+				changes: [oOtherChange1, oCodingChange1, oOtherChange2, oCodingChange2]
 			};
-
-			var oChangesFillingCachePromise = new Promise(
-				function (resolve) {
-					resolve(oFileContent);
-				}
-			);
-			sandbox.stub(Cache, "getChangesFillingCache").returns(oChangesFillingCachePromise);
+			await FlQUnitUtils.initializeFlexStateWithData(sandbox, "<sap-app-id> or <component name>", oFileContent);
 
 			// view, controller and component definition
 
@@ -258,7 +238,7 @@ sap.ui.define([
 						component: oComponent
 					}
 				}).then(function() {
-					assert.ok(true, "the extension of the " + sText + " controller was applied and executed");
+					assert.ok(true, `the extension of the ${sText} controller was applied and executed`);
 				});
 			}
 
@@ -278,7 +258,7 @@ sap.ui.define([
 			});
 		});
 
-		QUnit.test("make sure requests are only sent if app component is defined", function (assert) {
+		QUnit.test("make sure requests are only sent if app component is defined", function(assert) {
 			var done = assert.async();
 			var sControllerName = "ui.s2p.mm.purchorder.approve.view.S2";
 			var oExtensionProvider = new ControllerExtension();
@@ -287,7 +267,7 @@ sap.ui.define([
 			var spy = sandbox.spy(Log, "warning");
 
 			oExtensionProvider.getControllerExtensions(sControllerName, "<component ID>", true).then(
-				function (aCodeExtensions) {
+				function(aCodeExtensions) {
 					assert.ok(Array.isArray(aCodeExtensions), "Then an array is returned");
 					assert.equal(aCodeExtensions.length, 0, "which is empty");
 					assert.equal(spy.callCount, 1, "and a warning log is written");
@@ -298,13 +278,13 @@ sap.ui.define([
 			);
 		});
 
-		QUnit.test("make sure requests are only sent for app components", function (assert) {
+		QUnit.test("make sure requests are only sent for app components", function(assert) {
 			var done = assert.async();
 			var sControllerName = "ui.s2p.mm.purchorder.approve.view.S2";
 			var oExtensionProvider = new ControllerExtension();
 
 			var oComponent = {
-				getManifestObject: function () {
+				getManifestObject() {
 					return {
 						"sap.app": {
 							applicationVersion: {
@@ -314,7 +294,7 @@ sap.ui.define([
 						}
 					};
 				},
-				getManifest: function () {
+				getManifest() {
 					return {
 						"sap.app": {
 							applicationVersion: {
@@ -324,37 +304,37 @@ sap.ui.define([
 						}
 					};
 				},
-				getManifestEntry: function () {}
+				getManifestEntry() {}
 			};
 
 			sandbox.stub(Utils, "getAppComponentForControl").returns(oComponent);
 
 			oExtensionProvider.getControllerExtensions(sControllerName, "<component ID>", true).then(
-				function (aCodeExtensions) {
+				function(aCodeExtensions) {
 					assert.equal(aCodeExtensions.length, 0, "No extensions were returned.");
 					done();
 				}
 			);
 		});
 
-		QUnit.test("make sure requests are only sent for app components (even without manifest)", function (assert) {
+		QUnit.test("make sure requests are only sent for app components (even without manifest)", function(assert) {
 			var done = assert.async();
 			var oExtensionProvider = new ControllerExtension();
 
 			var oComponent = {
-				getManifest: function () {
+				getManifest() {
 					return undefined;
 				},
-				getManifestObject: function () {
+				getManifestObject() {
 					return undefined;
 				},
-				getManifestEntry: function () {}
+				getManifestEntry() {}
 			};
 
 			sandbox.stub(Utils, "getAppComponentForControl").returns(oComponent);
 
 			oExtensionProvider.getControllerExtensions(sControllerName, "<component ID>", true).then(
-				function (aCodeExtensions) {
+				function(aCodeExtensions) {
 					assert.equal(aCodeExtensions.length, 0, "No extensions were returned.");
 					done();
 				}
@@ -362,7 +342,7 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

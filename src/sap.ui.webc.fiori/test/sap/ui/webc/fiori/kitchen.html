@@ -32,8 +32,6 @@
                 "sap/ui/webc/fiori/ShellBar",
                 "sap/ui/webc/fiori/ShellBarItem",
                 "sap/ui/webc/main/CustomListItem",
-                "sap/ui/webc/main/GroupHeaderListItem",
-                "sap/ui/webc/main/StandardListItem",
                 "sap/ui/webc/main/Input",
                 "sap/ui/webc/main/Icon",
                 "sap/ui/webc/main/SuggestionGroupItem",
@@ -50,7 +48,7 @@
                 "sap/ui/webc/fiori/Wizard",
                 "sap/ui/webc/fiori/WizardStep"
             ], function(
-                Bar, Button, BarcodeScannerDialog, DynamicSideContent, FilterItem, FilterItemOption, FlexibleColumnLayout, IllustratedMessage, MediaGallery, MediaGalleryItem, NotificationAction, NotificationListGroupItem, NotificationListItem, Avatar, Page, ProductSwitch, ProductSwitchItem, ShellBar, ShellBarItem, CustomListItem, GroupHeaderListItem, StandardListItem, Input, Icon, SuggestionGroupItem, SuggestionItem, SideNavigation, SideNavigationItem, SideNavigationSubItem, SortItem, Timeline, TimelineItem, UploadCollection, UploadCollectionItem, ViewSettingsDialog, Wizard, WizardStep
+                Bar, Button, BarcodeScannerDialog, DynamicSideContent, FilterItem, FilterItemOption, FlexibleColumnLayout, IllustratedMessage, MediaGallery, MediaGalleryItem, NotificationAction, NotificationListGroupItem, NotificationListItem, Avatar, Page, ProductSwitch, ProductSwitchItem, ShellBar, ShellBarItem, CustomListItem, Input, Icon, SuggestionGroupItem, SuggestionItem, SideNavigation, SideNavigationItem, SideNavigationSubItem, SortItem, Timeline, TimelineItem, UploadCollection, UploadCollectionItem, ViewSettingsDialog, Wizard, WizardStep
             ) {
 
                 var oBar = new Bar({
@@ -225,6 +223,7 @@
 
 
                 var oFilterItem = new FilterItem({
+                    additionalText: "Some text...",
                     text: "Some text...",
                     values: [
                         new FilterItemOption({
@@ -366,6 +365,13 @@
                         click: function(oEvent) {
                             console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
                         }
+                    }),
+                    title: new Button({
+                        icon: "employee",
+                        text: "Some text...",
+                        click: function(oEvent) {
+                            console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
+                        }
                     })
                 });
                 oIllustratedMessage.placeAt("testIllustratedMessage");
@@ -456,7 +462,10 @@
 
                 var oNotificationAction = new NotificationAction({
                     icon: "employee",
-                    text: "Some text..."
+                    text: "Some text...",
+                    click: function(oEvent) {
+                        console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                    }
                 });
                 oNotificationAction.placeAt("testNotificationAction");
 
@@ -466,15 +475,24 @@
                     actions: [
                         new NotificationAction({
                             icon: "employee",
-                            text: "Some text..."
+                            text: "Some text...",
+                            click: function(oEvent) {
+                                console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                            }
                         }),
                         new NotificationAction({
                             icon: "employee",
-                            text: "Some text..."
+                            text: "Some text...",
+                            click: function(oEvent) {
+                                console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                            }
                         }),
                         new NotificationAction({
                             icon: "employee",
-                            text: "Some text..."
+                            text: "Some text...",
+                            click: function(oEvent) {
+                                console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                            }
                         })
                     ],
                     items: [
@@ -483,19 +501,35 @@
                             actions: [
                                 new NotificationAction({
                                     icon: "employee",
-                                    text: "Some text..."
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                                    }
                                 }),
                                 new NotificationAction({
                                     icon: "employee",
-                                    text: "Some text..."
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                                    }
                                 }),
                                 new NotificationAction({
                                     icon: "employee",
-                                    text: "Some text..."
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                                    }
                                 })
                             ],
                             avatar: new Avatar({
                                 icon: "employee",
+                                badge: new Button({
+                                    icon: "employee",
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
+                                    }
+                                }),
                                 image: new Button({
                                     icon: "employee",
                                     text: "Some text...",
@@ -539,19 +573,35 @@
                             actions: [
                                 new NotificationAction({
                                     icon: "employee",
-                                    text: "Some text..."
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                                    }
                                 }),
                                 new NotificationAction({
                                     icon: "employee",
-                                    text: "Some text..."
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                                    }
                                 }),
                                 new NotificationAction({
                                     icon: "employee",
-                                    text: "Some text..."
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                                    }
                                 })
                             ],
                             avatar: new Avatar({
                                 icon: "employee",
+                                badge: new Button({
+                                    icon: "employee",
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
+                                    }
+                                }),
                                 image: new Button({
                                     icon: "employee",
                                     text: "Some text...",
@@ -595,19 +645,35 @@
                             actions: [
                                 new NotificationAction({
                                     icon: "employee",
-                                    text: "Some text..."
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                                    }
                                 }),
                                 new NotificationAction({
                                     icon: "employee",
-                                    text: "Some text..."
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                                    }
                                 }),
                                 new NotificationAction({
                                     icon: "employee",
-                                    text: "Some text..."
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                                    }
                                 })
                             ],
                             avatar: new Avatar({
                                 icon: "employee",
+                                badge: new Button({
+                                    icon: "employee",
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
+                                    }
+                                }),
                                 image: new Button({
                                     icon: "employee",
                                     text: "Some text...",
@@ -662,19 +728,35 @@
                     actions: [
                         new NotificationAction({
                             icon: "employee",
-                            text: "Some text..."
+                            text: "Some text...",
+                            click: function(oEvent) {
+                                console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                            }
                         }),
                         new NotificationAction({
                             icon: "employee",
-                            text: "Some text..."
+                            text: "Some text...",
+                            click: function(oEvent) {
+                                console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                            }
                         }),
                         new NotificationAction({
                             icon: "employee",
-                            text: "Some text..."
+                            text: "Some text...",
+                            click: function(oEvent) {
+                                console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                            }
                         })
                     ],
                     avatar: new Avatar({
                         icon: "employee",
+                        badge: new Button({
+                            icon: "employee",
+                            text: "Some text...",
+                            click: function(oEvent) {
+                                console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
+                            }
+                        }),
                         image: new Button({
                             icon: "employee",
                             text: "Some text...",
@@ -1036,6 +1118,13 @@
                     ],
                     logo: new Avatar({
                         icon: "employee",
+                        badge: new Button({
+                            icon: "employee",
+                            text: "Some text...",
+                            click: function(oEvent) {
+                                console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
+                            }
+                        }),
                         image: new Button({
                             icon: "employee",
                             text: "Some text...",
@@ -1048,6 +1137,286 @@
                         }
                     }),
                     menuItems: [
+                        new NotificationListGroupItem({
+                            titleText: "Some text...",
+                            actions: [
+                                new NotificationAction({
+                                    icon: "employee",
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                                    }
+                                }),
+                                new NotificationAction({
+                                    icon: "employee",
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                                    }
+                                }),
+                                new NotificationAction({
+                                    icon: "employee",
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                                    }
+                                })
+                            ],
+                            items: [
+                                new NotificationListItem({
+                                    titleText: "Some text...",
+                                    actions: [
+                                        new NotificationAction({
+                                            icon: "employee",
+                                            text: "Some text...",
+                                            click: function(oEvent) {
+                                                console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                                            }
+                                        }),
+                                        new NotificationAction({
+                                            icon: "employee",
+                                            text: "Some text...",
+                                            click: function(oEvent) {
+                                                console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                                            }
+                                        }),
+                                        new NotificationAction({
+                                            icon: "employee",
+                                            text: "Some text...",
+                                            click: function(oEvent) {
+                                                console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                                            }
+                                        })
+                                    ],
+                                    avatar: new Avatar({
+                                        icon: "employee",
+                                        click: function(oEvent) {
+                                            console.log("Event click fired for Avatar with parameters: ", oEvent.getParameters());
+                                        }
+                                    }),
+                                    footnotes: [
+                                        new Button({
+                                            icon: "employee",
+                                            text: "Some text...",
+                                            click: function(oEvent) {
+                                                console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
+                                            }
+                                        }),
+                                        new Button({
+                                            icon: "employee",
+                                            text: "Some text...",
+                                            click: function(oEvent) {
+                                                console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
+                                            }
+                                        }),
+                                        new Button({
+                                            icon: "employee",
+                                            text: "Some text...",
+                                            click: function(oEvent) {
+                                                console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
+                                            }
+                                        })
+                                    ],
+                                    close: function(oEvent) {
+                                        console.log("Event close fired for NotificationListItem with parameters: ", oEvent.getParameters());
+                                    }
+                                }),
+                                new NotificationListItem({
+                                    titleText: "Some text...",
+                                    actions: [
+                                        new NotificationAction({
+                                            icon: "employee",
+                                            text: "Some text...",
+                                            click: function(oEvent) {
+                                                console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                                            }
+                                        }),
+                                        new NotificationAction({
+                                            icon: "employee",
+                                            text: "Some text...",
+                                            click: function(oEvent) {
+                                                console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                                            }
+                                        }),
+                                        new NotificationAction({
+                                            icon: "employee",
+                                            text: "Some text...",
+                                            click: function(oEvent) {
+                                                console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                                            }
+                                        })
+                                    ],
+                                    avatar: new Avatar({
+                                        icon: "employee",
+                                        click: function(oEvent) {
+                                            console.log("Event click fired for Avatar with parameters: ", oEvent.getParameters());
+                                        }
+                                    }),
+                                    footnotes: [
+                                        new Button({
+                                            icon: "employee",
+                                            text: "Some text...",
+                                            click: function(oEvent) {
+                                                console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
+                                            }
+                                        }),
+                                        new Button({
+                                            icon: "employee",
+                                            text: "Some text...",
+                                            click: function(oEvent) {
+                                                console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
+                                            }
+                                        }),
+                                        new Button({
+                                            icon: "employee",
+                                            text: "Some text...",
+                                            click: function(oEvent) {
+                                                console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
+                                            }
+                                        })
+                                    ],
+                                    close: function(oEvent) {
+                                        console.log("Event close fired for NotificationListItem with parameters: ", oEvent.getParameters());
+                                    }
+                                }),
+                                new NotificationListItem({
+                                    titleText: "Some text...",
+                                    actions: [
+                                        new NotificationAction({
+                                            icon: "employee",
+                                            text: "Some text...",
+                                            click: function(oEvent) {
+                                                console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                                            }
+                                        }),
+                                        new NotificationAction({
+                                            icon: "employee",
+                                            text: "Some text...",
+                                            click: function(oEvent) {
+                                                console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                                            }
+                                        }),
+                                        new NotificationAction({
+                                            icon: "employee",
+                                            text: "Some text...",
+                                            click: function(oEvent) {
+                                                console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                                            }
+                                        })
+                                    ],
+                                    avatar: new Avatar({
+                                        icon: "employee",
+                                        click: function(oEvent) {
+                                            console.log("Event click fired for Avatar with parameters: ", oEvent.getParameters());
+                                        }
+                                    }),
+                                    footnotes: [
+                                        new Button({
+                                            icon: "employee",
+                                            text: "Some text...",
+                                            click: function(oEvent) {
+                                                console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
+                                            }
+                                        }),
+                                        new Button({
+                                            icon: "employee",
+                                            text: "Some text...",
+                                            click: function(oEvent) {
+                                                console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
+                                            }
+                                        }),
+                                        new Button({
+                                            icon: "employee",
+                                            text: "Some text...",
+                                            click: function(oEvent) {
+                                                console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
+                                            }
+                                        })
+                                    ],
+                                    close: function(oEvent) {
+                                        console.log("Event close fired for NotificationListItem with parameters: ", oEvent.getParameters());
+                                    }
+                                })
+                            ],
+                            close: function(oEvent) {
+                                console.log("Event close fired for NotificationListGroupItem with parameters: ", oEvent.getParameters());
+                            },
+                            toggle: function(oEvent) {
+                                console.log("Event toggle fired for NotificationListGroupItem with parameters: ", oEvent.getParameters());
+                            }
+                        }),
+                        new NotificationListItem({
+                            titleText: "Some text...",
+                            actions: [
+                                new NotificationAction({
+                                    icon: "employee",
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                                    }
+                                }),
+                                new NotificationAction({
+                                    icon: "employee",
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                                    }
+                                }),
+                                new NotificationAction({
+                                    icon: "employee",
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for NotificationAction with parameters: ", oEvent.getParameters());
+                                    }
+                                })
+                            ],
+                            avatar: new Avatar({
+                                icon: "employee",
+                                badge: new Button({
+                                    icon: "employee",
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
+                                    }
+                                }),
+                                image: new Button({
+                                    icon: "employee",
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
+                                    }
+                                }),
+                                click: function(oEvent) {
+                                    console.log("Event click fired for Avatar with parameters: ", oEvent.getParameters());
+                                }
+                            }),
+                            footnotes: [
+                                new Button({
+                                    icon: "employee",
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
+                                    }
+                                }),
+                                new Button({
+                                    icon: "employee",
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
+                                    }
+                                }),
+                                new Button({
+                                    icon: "employee",
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
+                                    }
+                                })
+                            ],
+                            close: function(oEvent) {
+                                console.log("Event close fired for NotificationListItem with parameters: ", oEvent.getParameters());
+                            }
+                        }),
                         new CustomListItem({
                             content: [
                                 new Button({
@@ -1072,24 +1441,27 @@
                                     }
                                 })
                             ],
+                            deleteButton: new Button({
+                                icon: "employee",
+                                text: "Some text...",
+                                click: function(oEvent) {
+                                    console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
+                                }
+                            }),
                             detailClick: function(oEvent) {
                                 console.log("Event detailClick fired for CustomListItem with parameters: ", oEvent.getParameters());
-                            }
-                        }),
-                        new GroupHeaderListItem({
-                            text: "Some text..."
-                        }),
-                        new StandardListItem({
-                            additionalText: "Some text...",
-                            icon: "employee",
-                            text: "Some text...",
-                            detailClick: function(oEvent) {
-                                console.log("Event detailClick fired for StandardListItem with parameters: ", oEvent.getParameters());
                             }
                         })
                     ],
                     profile: new Avatar({
                         icon: "employee",
+                        badge: new Button({
+                            icon: "employee",
+                            text: "Some text...",
+                            click: function(oEvent) {
+                                console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
+                            }
+                        }),
                         image: new Button({
                             icon: "employee",
                             text: "Some text...",
@@ -1202,17 +1574,29 @@
                             items: [
                                 new SideNavigationSubItem({
                                     icon: "employee",
-                                    text: "Some text..."
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for SideNavigationSubItem with parameters: ", oEvent.getParameters());
+                                    }
                                 }),
                                 new SideNavigationSubItem({
                                     icon: "employee",
-                                    text: "Some text..."
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for SideNavigationSubItem with parameters: ", oEvent.getParameters());
+                                    }
                                 }),
                                 new SideNavigationSubItem({
                                     icon: "employee",
-                                    text: "Some text..."
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for SideNavigationSubItem with parameters: ", oEvent.getParameters());
+                                    }
                                 })
-                            ]
+                            ],
+                            click: function(oEvent) {
+                                console.log("Event click fired for SideNavigationItem with parameters: ", oEvent.getParameters());
+                            }
                         }),
                         new SideNavigationItem({
                             icon: "employee",
@@ -1220,17 +1604,29 @@
                             items: [
                                 new SideNavigationSubItem({
                                     icon: "employee",
-                                    text: "Some text..."
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for SideNavigationSubItem with parameters: ", oEvent.getParameters());
+                                    }
                                 }),
                                 new SideNavigationSubItem({
                                     icon: "employee",
-                                    text: "Some text..."
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for SideNavigationSubItem with parameters: ", oEvent.getParameters());
+                                    }
                                 }),
                                 new SideNavigationSubItem({
                                     icon: "employee",
-                                    text: "Some text..."
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for SideNavigationSubItem with parameters: ", oEvent.getParameters());
+                                    }
                                 })
-                            ]
+                            ],
+                            click: function(oEvent) {
+                                console.log("Event click fired for SideNavigationItem with parameters: ", oEvent.getParameters());
+                            }
                         }),
                         new SideNavigationItem({
                             icon: "employee",
@@ -1238,17 +1634,29 @@
                             items: [
                                 new SideNavigationSubItem({
                                     icon: "employee",
-                                    text: "Some text..."
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for SideNavigationSubItem with parameters: ", oEvent.getParameters());
+                                    }
                                 }),
                                 new SideNavigationSubItem({
                                     icon: "employee",
-                                    text: "Some text..."
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for SideNavigationSubItem with parameters: ", oEvent.getParameters());
+                                    }
                                 }),
                                 new SideNavigationSubItem({
                                     icon: "employee",
-                                    text: "Some text..."
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for SideNavigationSubItem with parameters: ", oEvent.getParameters());
+                                    }
                                 })
-                            ]
+                            ],
+                            click: function(oEvent) {
+                                console.log("Event click fired for SideNavigationItem with parameters: ", oEvent.getParameters());
+                            }
                         })
                     ],
                     header: [
@@ -1281,17 +1689,29 @@
                             items: [
                                 new SideNavigationSubItem({
                                     icon: "employee",
-                                    text: "Some text..."
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for SideNavigationSubItem with parameters: ", oEvent.getParameters());
+                                    }
                                 }),
                                 new SideNavigationSubItem({
                                     icon: "employee",
-                                    text: "Some text..."
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for SideNavigationSubItem with parameters: ", oEvent.getParameters());
+                                    }
                                 }),
                                 new SideNavigationSubItem({
                                     icon: "employee",
-                                    text: "Some text..."
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for SideNavigationSubItem with parameters: ", oEvent.getParameters());
+                                    }
                                 })
-                            ]
+                            ],
+                            click: function(oEvent) {
+                                console.log("Event click fired for SideNavigationItem with parameters: ", oEvent.getParameters());
+                            }
                         }),
                         new SideNavigationItem({
                             icon: "employee",
@@ -1299,17 +1719,29 @@
                             items: [
                                 new SideNavigationSubItem({
                                     icon: "employee",
-                                    text: "Some text..."
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for SideNavigationSubItem with parameters: ", oEvent.getParameters());
+                                    }
                                 }),
                                 new SideNavigationSubItem({
                                     icon: "employee",
-                                    text: "Some text..."
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for SideNavigationSubItem with parameters: ", oEvent.getParameters());
+                                    }
                                 }),
                                 new SideNavigationSubItem({
                                     icon: "employee",
-                                    text: "Some text..."
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for SideNavigationSubItem with parameters: ", oEvent.getParameters());
+                                    }
                                 })
-                            ]
+                            ],
+                            click: function(oEvent) {
+                                console.log("Event click fired for SideNavigationItem with parameters: ", oEvent.getParameters());
+                            }
                         }),
                         new SideNavigationItem({
                             icon: "employee",
@@ -1317,17 +1749,29 @@
                             items: [
                                 new SideNavigationSubItem({
                                     icon: "employee",
-                                    text: "Some text..."
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for SideNavigationSubItem with parameters: ", oEvent.getParameters());
+                                    }
                                 }),
                                 new SideNavigationSubItem({
                                     icon: "employee",
-                                    text: "Some text..."
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for SideNavigationSubItem with parameters: ", oEvent.getParameters());
+                                    }
                                 }),
                                 new SideNavigationSubItem({
                                     icon: "employee",
-                                    text: "Some text..."
+                                    text: "Some text...",
+                                    click: function(oEvent) {
+                                        console.log("Event click fired for SideNavigationSubItem with parameters: ", oEvent.getParameters());
+                                    }
                                 })
-                            ]
+                            ],
+                            click: function(oEvent) {
+                                console.log("Event click fired for SideNavigationItem with parameters: ", oEvent.getParameters());
+                            }
                         })
                     ],
                     selectionChange: function(oEvent) {
@@ -1343,24 +1787,39 @@
                     items: [
                         new SideNavigationSubItem({
                             icon: "employee",
-                            text: "Some text..."
+                            text: "Some text...",
+                            click: function(oEvent) {
+                                console.log("Event click fired for SideNavigationSubItem with parameters: ", oEvent.getParameters());
+                            }
                         }),
                         new SideNavigationSubItem({
                             icon: "employee",
-                            text: "Some text..."
+                            text: "Some text...",
+                            click: function(oEvent) {
+                                console.log("Event click fired for SideNavigationSubItem with parameters: ", oEvent.getParameters());
+                            }
                         }),
                         new SideNavigationSubItem({
                             icon: "employee",
-                            text: "Some text..."
+                            text: "Some text...",
+                            click: function(oEvent) {
+                                console.log("Event click fired for SideNavigationSubItem with parameters: ", oEvent.getParameters());
+                            }
                         })
-                    ]
+                    ],
+                    click: function(oEvent) {
+                        console.log("Event click fired for SideNavigationItem with parameters: ", oEvent.getParameters());
+                    }
                 });
                 oSideNavigationItem.placeAt("testSideNavigationItem");
 
 
                 var oSideNavigationSubItem = new SideNavigationSubItem({
                     icon: "employee",
-                    text: "Some text..."
+                    text: "Some text...",
+                    click: function(oEvent) {
+                        console.log("Event click fired for SideNavigationSubItem with parameters: ", oEvent.getParameters());
+                    }
                 });
                 oSideNavigationSubItem.placeAt("testSideNavigationSubItem");
 
@@ -1555,6 +2014,13 @@
                                     }
                                 })
                             ],
+                            deleteButton: new Button({
+                                icon: "employee",
+                                text: "Some text...",
+                                click: function(oEvent) {
+                                    console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
+                                }
+                            }),
                             thumbnail: new Button({
                                 icon: "employee",
                                 text: "Some text...",
@@ -1562,6 +2028,9 @@
                                     console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
                                 }
                             }),
+                            detailClick: function(oEvent) {
+                                console.log("Event detailClick fired for UploadCollectionItem with parameters: ", oEvent.getParameters());
+                            },
                             fileNameClick: function(oEvent) {
                                 console.log("Event fileNameClick fired for UploadCollectionItem with parameters: ", oEvent.getParameters());
                             },
@@ -1599,6 +2068,13 @@
                                     }
                                 })
                             ],
+                            deleteButton: new Button({
+                                icon: "employee",
+                                text: "Some text...",
+                                click: function(oEvent) {
+                                    console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
+                                }
+                            }),
                             thumbnail: new Button({
                                 icon: "employee",
                                 text: "Some text...",
@@ -1606,6 +2082,9 @@
                                     console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
                                 }
                             }),
+                            detailClick: function(oEvent) {
+                                console.log("Event detailClick fired for UploadCollectionItem with parameters: ", oEvent.getParameters());
+                            },
                             fileNameClick: function(oEvent) {
                                 console.log("Event fileNameClick fired for UploadCollectionItem with parameters: ", oEvent.getParameters());
                             },
@@ -1643,6 +2122,13 @@
                                     }
                                 })
                             ],
+                            deleteButton: new Button({
+                                icon: "employee",
+                                text: "Some text...",
+                                click: function(oEvent) {
+                                    console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
+                                }
+                            }),
                             thumbnail: new Button({
                                 icon: "employee",
                                 text: "Some text...",
@@ -1650,6 +2136,9 @@
                                     console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
                                 }
                             }),
+                            detailClick: function(oEvent) {
+                                console.log("Event detailClick fired for UploadCollectionItem with parameters: ", oEvent.getParameters());
+                            },
                             fileNameClick: function(oEvent) {
                                 console.log("Event fileNameClick fired for UploadCollectionItem with parameters: ", oEvent.getParameters());
                             },
@@ -1701,6 +2190,13 @@
                             }
                         })
                     ],
+                    deleteButton: new Button({
+                        icon: "employee",
+                        text: "Some text...",
+                        click: function(oEvent) {
+                            console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
+                        }
+                    }),
                     thumbnail: new Button({
                         icon: "employee",
                         text: "Some text...",
@@ -1708,6 +2204,9 @@
                             console.log("Event click fired for Button with parameters: ", oEvent.getParameters());
                         }
                     }),
+                    detailClick: function(oEvent) {
+                        console.log("Event detailClick fired for UploadCollectionItem with parameters: ", oEvent.getParameters());
+                    },
                     fileNameClick: function(oEvent) {
                         console.log("Event fileNameClick fired for UploadCollectionItem with parameters: ", oEvent.getParameters());
                     },
@@ -1749,6 +2248,7 @@
                 var oViewSettingsDialog = new ViewSettingsDialog({
                     filterItems: [
                         new FilterItem({
+                            additionalText: "Some text...",
                             text: "Some text...",
                             values: [
                                 new FilterItemOption({
@@ -1763,6 +2263,7 @@
                             ]
                         }),
                         new FilterItem({
+                            additionalText: "Some text...",
                             text: "Some text...",
                             values: [
                                 new FilterItemOption({
@@ -1777,6 +2278,7 @@
                             ]
                         }),
                         new FilterItem({
+                            additionalText: "Some text...",
                             text: "Some text...",
                             values: [
                                 new FilterItemOption({

@@ -15,9 +15,20 @@ sap.ui.define(function() {
 			}
 		},
 		tests: {
+			"_Calendars": {
+				module: "./../date/_Calendars.qunit",
+				coverage : {
+					only : "sap/ui/core/date/_Calendars"
+				}
+			},
 			"CalendarUtils": {
 				coverage : {
 					only : "sap/ui/core/date/CalendarUtils"
+				}
+			},
+			"CalendarWeekNumbering": {
+				coverage : {
+					only : "sap/ui/core/date/CalendarWeekNumbering"
 				}
 			},
 			"Buddhist": {
@@ -55,6 +66,24 @@ sap.ui.define(function() {
 				module: "./../base/i18n/ResourceBundle.qunit",
 				coverage : {
 					only : "sap/base/i18n/ResourceBundle"
+				}
+			},
+			"Formatting": {
+				page: "test-resources/sap/ui/core/qunit/base/i18n/Formatting.qunit.html?sap-ui-ABAP-date-format=2&sap-ui-ABAP-number-format=X&sap-ui-ABAP-time-format=3",
+				ui5: {
+					language: undefined
+				},
+				coverage : {
+					only : "sap/base/i18n/Formatting"
+				}
+			},
+			"Localization": {
+				module: "./../base/i18n/Localization.qunit",
+				ui5: {
+					language: undefined
+				},
+				coverage : {
+					only : "sap/base/i18n/Localization"
 				}
 			},
 			"UI5Date": {

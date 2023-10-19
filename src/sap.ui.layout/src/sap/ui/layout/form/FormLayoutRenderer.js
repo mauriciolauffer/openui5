@@ -6,8 +6,9 @@ sap.ui.define([
 	'sap/ui/core/library',
 	'sap/ui/layout/library',
 	'sap/ui/layout/form/Form',
+	'./FormHelper',
 	'sap/ui/core/IconPool' // as RenderManager.icon needs it
-	], function(coreLibrary, library, Form) {
+	], function(coreLibrary, library, Form, FormHelper, IconPool) {
 	"use strict";
 
 	// shortcut for sap.ui.core.TitleLevel
@@ -124,7 +125,11 @@ sap.ui.define([
 		var aElements = oContainer.getVisibleFormElements();
 		for (var j = 0, jl = aElements.length; j < jl; j++) {
 			var oElement = aElements[j];
-			this.renderElement(rm, oLayout, oElement);
+			if (oElement.isA("sap.ui.layout.form.SemanticFormElement") && !oElement._getEditable()) {
+				this.renderSemanticElement(rm, oLayout, oElement);
+			} else {
+				this.renderElement(rm, oLayout, oElement);
+			}
 		}
 
 		if (bExpandable) {
@@ -157,6 +162,13 @@ sap.ui.define([
 			}
 		}
 		rm.close("div");
+
+	};
+
+	FormLayoutRenderer.renderSemanticElement = function(rm, oLayout, oElement){
+
+		// just render like standard Element as default
+		this.renderElement(rm, oLayout, oElement);
 
 	};
 
@@ -275,7 +287,7 @@ sap.ui.define([
 		if (oToolbar) {
 			if (!oContainer.getAriaLabelledBy() || oContainer.getAriaLabelledBy().length == 0) {
 				// no aria-label -> use Title of Toolbar
-				var sToolbarTitleID = library.form.FormHelper.getToolbarTitle(oToolbar);
+				var sToolbarTitleID = FormHelper.getToolbarTitle(oToolbar); // FormHelper must already be initialized by FormLayout
 				mAriaProps["labelledby"] = {value: sToolbarTitleID, append: true};
 			}
 		} else if (oTitle) {

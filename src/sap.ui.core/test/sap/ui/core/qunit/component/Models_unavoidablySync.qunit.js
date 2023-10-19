@@ -1,6 +1,6 @@
 sap.ui.define([
 	"jquery.sap.global",
-	"sap/base/util/UriParameters",
+	"sap/ui/base/config/URLConfigurationProvider",
 	"sap/base/Log",
 	"sap/ui/core/Component",
 	"sap/ui/core/Configuration",
@@ -12,7 +12,8 @@ sap.ui.define([
 	"sap/ui/model/xml/XMLModel",
 	"sap/ui/model/resource/ResourceModel",
 	"sap/ui/test/v2models/parent/CustomModel"
-], function(jQuery, UriParameters, Log, Component, Configuration) {
+], function(jQuery, URLConfigurationProvider, Log, Component, Configuration) {
+
 
 	"use strict";
 	/*global sinon, QUnit*/
@@ -46,33 +47,15 @@ sap.ui.define([
 			}
 		},
 		stubGetUriParameters: function(mMockParams) {
-			var oGetParameterStub = sinon.stub();
-
-			oGetParameterStub.withArgs('sap-client').returns(mMockParams && mMockParams.sapClient || 'foo');
-			oGetParameterStub.withArgs('sap-server').returns(mMockParams && mMockParams.sapServer || 'bar');
-			oGetParameterStub.withArgs('sap-system').returns(mMockParams && mMockParams.sapSystem);
-
-			if (mMockParams && mMockParams["preload-component-models"]) {
-				oGetParameterStub.withArgs('sap-ui-xx-preload-component-models').returns('true');
-			}
-
-			this.oGetUriParametersStub = sinon.stub(UriParameters, 'fromQuery').returns({
-				get: oGetParameterStub
-			});
-
 			var sSAPLanguage = Configuration.getSAPLogonLanguage();
 
-			this.oConfigurationStub = sinon.stub(Configuration, 'getSAPParam');
-			this.oConfigurationStub.withArgs('sap-language').returns(mMockParams && mMockParams.sapLanguage || sSAPLanguage);
-			this.oConfigurationStub.withArgs('sap-client').returns(mMockParams && mMockParams.sapClient || 'foo');
-			this.oConfigurationStub.withArgs('sap-server').returns(mMockParams && mMockParams.sapServer || 'bar');
-			this.oConfigurationStub.withArgs('sap-system').returns(mMockParams && mMockParams.sapSystem);
+			this.oConfigurationStub = sinon.stub(URLConfigurationProvider, 'get');
+			this.oConfigurationStub.withArgs('sapLanguage').returns(mMockParams && mMockParams.sapLanguage || sSAPLanguage);
+			this.oConfigurationStub.withArgs('sapClient').returns(mMockParams && mMockParams.sapClient || 'foo');
+			this.oConfigurationStub.withArgs('sapServer').returns(mMockParams && mMockParams.sapServer || 'bar');
+			this.oConfigurationStub.withArgs('sapSystem').returns(mMockParams && mMockParams.sapSystem);
 		},
 		restoreGetUriParameters: function() {
-			if (this.oGetUriParametersStub && this.oGetUriParametersStub.restore) {
-				this.oGetUriParametersStub.restore();
-				this.oGetUriParametersStub = null;
-			}
 			if (this.oConfigurationStub && this.oConfigurationStub.restore) {
 				this.oConfigurationStub.restore();
 				this.oConfigurationStub = null;

@@ -27,11 +27,14 @@ sap.ui.define([
 	"sap/ui/qunit/QUnitUtils",
 	"sap/ui/core/dnd/DragInfo",
 	"sap/f/dnd/GridDropInfo",
+	"sap/ui/core/Core",
+	"sap/ui/core/Theming",
+	"sap/m/LinkTileContent",
 	// used only indirectly
 	"sap/ui/events/jquery/EventExtension"
 ], function(jQuery, GenericTile, TileContent, NumericContent, ImageContent, Device, IntervalTrigger, ResizeHandler, GenericTileLineModeRenderer,
 			Button, Text, ScrollContainer, FlexBox, GenericTileRenderer, library, isEmptyObject, KeyCodes, oCore, GridContainerItemLayoutData,
-			GridContainerSettings, GridContainer, FormattedText, NewsContent, Parameters,qutils,DragInfo,GridDropInfo) {
+			GridContainerSettings, GridContainer, FormattedText, NewsContent, Parameters,qutils,DragInfo,GridDropInfo, Core, Theming,LinkTileContent) {
 	"use strict";
 
 	// shortcut for sap.m.Size
@@ -62,11 +65,9 @@ sap.ui.define([
 
 	QUnit.module("Control initialization core and theme checks", {
 		beforeEach: function() {
-			this.fnStubIsInitialized = this.stub(sap.ui.getCore(), "isInitialized");
-			this.fnSpyAttachInit = this.spy(sap.ui.getCore(), "attachInit");
+			this.fnSpyReady = this.spy(Core, "ready");
 			this.fnSpyHandleCoreInitialized = this.spy(GenericTile.prototype, "_handleCoreInitialized");
-			this.fnStubThemeApplied = this.stub(sap.ui.getCore(), "isThemeApplied");
-			this.fnStubAttachThemeApplied = this.stub(sap.ui.getCore(), "attachThemeChanged").callsFake(function(fn, context) {
+			this.fnStubAttachThemeApplied = this.stub(Theming, "attachApplied").callsFake(function(fn, context) {
 				fn.call(context); //simulate immediate theme change
 			});
 			this.fnSpyHandleThemeApplied = this.spy(GenericTile.prototype, "_handleThemeApplied");
@@ -75,74 +76,65 @@ sap.ui.define([
 		}
 	});
 
+	/**
+		* @deprecated Since version 1.119
+	*/
 	QUnit.test("Core initialization check - no core, no theme", function(assert) {
-		//Arrange
-		this.fnStubIsInitialized.returns(false);
-		this.fnStubThemeApplied.returns(false);
-
 		//Act
 		var oTile = new GenericTile();
 
 		//Assert
 		assert.ok(oTile._bThemeApplied, "Rendering variable has been correctly set.");
-		assert.ok(this.fnSpyAttachInit.calledOnce, "Method Core.attachInit has been called once.");
+		assert.ok(this.fnSpyReady.calledOnce, "Method Core.ready has been called once.");
 		assert.ok(this.fnSpyHandleCoreInitialized.calledOnce, "Method _handleCoreInitialized has been called once.");
 		assert.ok(this.fnStubAttachThemeApplied.calledOnce, "Method Core.attachThemeChanged has been called once.");
 		assert.ok(this.fnSpyHandleThemeApplied.calledOnce, "Method _handleThemeApplied has been called once.");
 	});
 
+	/**
+		* @deprecated Since version 1.119
+	*/
 	QUnit.test("Core initialization check - no core, but theme", function(assert) {
-		//Arrange
-		this.fnStubIsInitialized.returns(false);
-		this.fnStubThemeApplied.returns(true);
-
 		//Act
 		var oTile = new GenericTile();
 
 		//Assert
 		assert.ok(oTile._bThemeApplied, "Rendering variable has been correctly set.");
-		assert.ok(this.fnSpyAttachInit.calledOnce, "Method Core.attachInit has been called once.");
+		assert.ok(this.fnSpyReady.calledOnce, "Method Core.ready has been called once.");
 		assert.ok(this.fnSpyHandleCoreInitialized.calledOnce, "Method _handleCoreInitialized has been called once.");
-		assert.ok(this.fnStubAttachThemeApplied.notCalled, "Method Core.attachThemeChanged has not been called.");
-		assert.ok(this.fnSpyHandleThemeApplied.notCalled, "Method _handleThemeApplied has not been called.");
+		assert.ok(this.fnStubAttachThemeApplied.calledOnce, "Method Core.attachThemeChanged has been called once.");
+		assert.ok(this.fnSpyHandleThemeApplied.calledOnce, "Method _handleThemeApplied has been called once.");
 	});
 
+	/**
+		* @deprecated Since version 1.119
+	*/
 	QUnit.test("Core initialization check - core, but no theme", function(assert) {
-		//Arrange
-		this.fnStubIsInitialized.returns(true);
-		this.fnStubThemeApplied.returns(false);
-
 		//Act
 		var oTile = new GenericTile();
 
 		//Assert
 		assert.ok(oTile._bThemeApplied, "Rendering variable has been correctly set.");
-		assert.ok(this.fnSpyAttachInit.notCalled, "Method Core.attachInit has not been called.");
+		assert.ok(this.fnSpyReady.calledOnce, "Method Core.ready has been called once.");
 		assert.ok(this.fnSpyHandleCoreInitialized.calledOnce, "Method _handleCoreInitialized has been called once.");
 		assert.ok(this.fnStubAttachThemeApplied.calledOnce, "Method Core.attachThemeChanged has been called once.");
 		assert.ok(this.fnSpyHandleThemeApplied.calledOnce, "Method _handleThemeApplied has been called once.");
 	});
 
 	QUnit.test("Core initialization check - core and theme", function(assert) {
-		//Arrange
-		this.fnStubIsInitialized.returns(true);
-		this.fnStubThemeApplied.returns(true);
-
 		//Act
 		var oTile = new GenericTile();
 
 		//Assert
 		assert.ok(oTile._bThemeApplied, "Rendering variable has been correctly set.");
-		assert.ok(this.fnSpyAttachInit.notCalled, "Method Core.attachInit has not been called.");
+		assert.ok(this.fnSpyReady.calledOnce, "Method Core.ready has been called once.");
 		assert.ok(this.fnSpyHandleCoreInitialized.calledOnce, "Method _handleCoreInitialized has been called once.");
-		assert.ok(this.fnStubAttachThemeApplied.notCalled, "Method Core.attachThemeChanged has not been called.");
-		assert.ok(this.fnSpyHandleThemeApplied.notCalled, "Method _handleThemeApplied has not been called.");
+		assert.ok(this.fnStubAttachThemeApplied.calledOnce, "Method Core.attachThemeChanged has been called once.");
+		assert.ok(this.fnSpyHandleThemeApplied.calledOnce, "Method _handleThemeApplied has been called once.");
 	});
 
 	QUnit.test("Clamp title height when theme is ready", function(assert) {
 		//Arrange
-		this.fnStubIsInitialized.returns(true);
-		this.fnStubThemeApplied.returns(false);
 		this.spy(Text.prototype, "clampHeight");
 
 		//Act
@@ -355,6 +347,9 @@ sap.ui.define([
 		assert.strictEqual(document.getElementById("generic-tile-focus").parentNode, oTileElement, "The tile content is a child of the link.");
 	});
 
+	/**
+		* @deprecated Since version 1.40
+	*/
 	QUnit.test("GenericTile border rendered - blue crystal", function(assert) {
 		var $tile = this.oGenericTile.$();
 
@@ -373,6 +368,9 @@ sap.ui.define([
 		});
 	});
 
+	/**
+		* @deprecated Since version 1.40
+	*/
 	QUnit.test("GenericTile focus rendered - blue crystal", function(assert) {
 		var done = assert.async();
 		this.applyTheme("sap_bluecrystal", function() {
@@ -483,6 +481,9 @@ sap.ui.define([
 		});
 	});
 
+	/**
+		* @deprecated Since version 1.40
+	*/
 	QUnit.test("GenericTile does not expand on focus - theme bluecrystal", function(assert) {
 		var $tile = this.oGenericTile.$();
 
@@ -1093,6 +1094,8 @@ sap.ui.define([
 		//Arrange
 		oCore.getConfiguration().setRTL(true);
 
+		this.oGenericTile.invalidate();
+
 		//Act
 		oCore.applyChanges();
 
@@ -1570,7 +1573,7 @@ sap.ui.define([
 		assert.ok(document.getElementById("generic-tile-failed-overlay"), "Generic tile icon was rendered successfully");
 		assert.ok(document.getElementById("tile-cont-failed"), "TileContent was rendered successfully");
 		assert.ok(!document.getElementById("tile-cont-failed-footer-text"), "TileContent footer text was not rendered");
-		assert.equal(getComputedStyle(document.getElementById("generic-tile-failed-overlay")).opacity, "0.8","Overlay has been added successfully");
+		assert.ok(document.querySelector(".sapMGTOverlay"),"Overlay has been added successfully");
 
 		this.oGenericTile.setState("Loaded");
 		oCore.applyChanges();
@@ -1630,7 +1633,7 @@ sap.ui.define([
 	});
 
 	QUnit.test("GenericTile in Disabled state rendered", function(assert) {
-		assert.equal(getComputedStyle(document.getElementById("generic-tile-failed-overlay")).opacity, "0.8","Overlay has been added successfully");
+		assert.ok(document.querySelector(".sapMGTOverlay"),"Overlay has been added successfully");
 	});
 
 	QUnit.module("GenericTileMode tests", {
@@ -2671,6 +2674,30 @@ sap.ui.define([
 		beforeEach: function() {
 			this.ftnPressHandler = function() {
 			};
+			this.applyTheme = function(sTheme, fnCallback) {
+				this.sRequiredTheme = sTheme;
+				if (oCore.getConfiguration().getTheme() === this.sRequiredTheme && oCore.isThemeApplied()) {
+					if (typeof fnCallback === "function") {
+						fnCallback.bind(this)();
+						fnCallback = undefined;
+					}
+				} else {
+					oCore.attachThemeChanged(fnThemeApplied.bind(this));
+					oCore.applyTheme(sTheme);
+				}
+
+				function fnThemeApplied(oEvent) {
+					oCore.detachThemeChanged(fnThemeApplied);
+					if (oCore.getConfiguration().getTheme() === this.sRequiredTheme && oCore.isThemeApplied()) {
+						if (typeof fnCallback === "function") {
+							fnCallback.bind(this)();
+							fnCallback = undefined;
+						}
+					} else {
+						setTimeout(fnThemeApplied.bind(this, oEvent), 1500);
+					}
+				}
+			};
 			this.hasAttribute = function(sAttribute, oCurrentObject) {
 				var sAttributeValue = oCurrentObject.$().attr(sAttribute);
 				if (typeof sAttributeValue !== typeof undefined && sAttributeValue !== false) {
@@ -3244,6 +3271,22 @@ QUnit.test("Content Proritisation -  Footer rendered in OneByHalf", function(ass
 	assert.equal(this.oGenericTile.getTileContent()[0]._bRenderFooter, true);
 });
 
+QUnit.test("Height of the system Info Container for OneByOne tile", function(assert){
+		this.oGenericTile.setFrameType("OneByOne");
+		this.oGenericTile.setAppShortcut("app shortcut");
+		this.oGenericTile.setSystemInfo("system info");
+		oCore.applyChanges();
+		assert.equal(this.oGenericTile.$().find(".sapMGTTInfoContainer").css("height"),"44px","Sufficient Height applied");
+});
+
+QUnit.test("Height of the system Info Container for TwoByOne tile", function(assert){
+		this.oGenericTile.setFrameType("TwoByOne");
+		this.oGenericTile.setAppShortcut("app shortcut");
+		this.oGenericTile.setSystemInfo("system info");
+		oCore.applyChanges();
+		assert.equal(this.oGenericTile.$().find(".sapMGTTInfo").css("margin-bottom"),"8px","Sufficient Height applied");
+});
+
 QUnit.test("App shortcut and System info only rendered in OneByOne", function(assert) {
 	this.oGenericTile.setFrameType("OneByOne");
 	this.oGenericTile.setAppShortcut("app shortcut");
@@ -3511,7 +3554,6 @@ QUnit.test("Check for visibilty of content in header mode in 2*1 tile ", functio
 			assert.ok(document.getElementById("tile-cont"), "TileContent was rendered successfully");
 			assert.ok(document.getElementById("tile-cont-priority"), "Priority container was rendered successfully");
 			assert.ok(document.getElementById("tile-cont-priority-content"), "Priority content was rendered successfully");
-			assert.ok(document.getElementById("tile-cont-priority-border"), "Priority border was rendered successfully");
 			assert.ok(document.getElementById("tile-cont-priority-value"), "Priority value was rendered successfully");
 			assert.ok(document.getElementById("numeric-cnt"), "NumericContent was rendered successfully");
 			assert.ok(document.getElementById("numeric-cnt-indicator"), "Indicator was rendered successfully");
@@ -3617,7 +3659,7 @@ QUnit.test("Check for visibilty of content in header mode in 2*1 tile ", functio
 
 	QUnit.test("Priority Changes for TileContent", function(assert) {
 		var oTileContent = this.oGenericTile.getTileContent()[0];
-		var sPriority = sap.ui.getCore().getLibraryResourceBundle("sap.m").getText("TEXT_CONTENT_PRIORITY");
+		var sPriority = Core.getLibraryResourceBundle("sap.m").getText("TEXT_CONTENT_PRIORITY");
 
 		//Switch to None Priority
 		oTileContent.setPriority(Priority.None);
@@ -3636,18 +3678,15 @@ QUnit.test("Check for visibilty of content in header mode in 2*1 tile ", functio
 		assert.ok(document.getElementById("tile-cont-priority").classList.contains(Priority.VeryHigh), Priority.VeryHigh + ": VeryHigh StyleClass is applied");
 		assert.ok(document.getElementById("tile-cont-priority-content"), Priority.VeryHigh + ":Priority content is rendered");
 		assert.equal(document.getElementById("tile-cont-priority-value").innerText, this.oGenericTile.getTileContent()[0].getPriorityText(),Priority.VeryHigh + ":Priority value is rendered");
-		assert.ok(document.getElementById("tile-cont-priority-border"), Priority.VeryHigh + ":Priority border is rendered");
 
 		//Switch to High Priority
 		oTileContent.setPriority(Priority.High);
 		oTileContent.setPriorityText("High");
-
 		oCore.applyChanges();
 		assert.ok(document.getElementById("tile-cont-priority"), Priority.High + ": Priority container is rendered");
 		assert.ok(document.getElementById("tile-cont-priority").classList.contains(Priority.High), Priority.High + ": High StyleClass is applied");
 		assert.ok(document.getElementById("tile-cont-priority-content"), Priority.High + ":Priority content is rendered");
 		assert.equal(document.getElementById("tile-cont-priority-value").innerText, this.oGenericTile.getTileContent()[0].getPriorityText(), Priority.High + ":Priority value is rendered");
-		assert.ok(document.getElementById("tile-cont-priority-border"), Priority.High + ":Priority border is rendered");
 
 		//Switch to Medium Priority
 		oTileContent.setPriority(Priority.Medium);
@@ -3658,7 +3697,6 @@ QUnit.test("Check for visibilty of content in header mode in 2*1 tile ", functio
 		assert.ok(document.getElementById("tile-cont-priority").classList.contains(Priority.Medium), Priority.Medium + ": Medium StyleClass is applied");
 		assert.ok(document.getElementById("tile-cont-priority-content"), Priority.Medium + ":Priority content is rendered");
 		assert.equal(document.getElementById("tile-cont-priority-value").innerText, this.oGenericTile.getTileContent()[0].getPriorityText(), Priority.Medium + ":Priority value is rendered");
-		assert.ok(document.getElementById("tile-cont-priority-border"), Priority.Medium + ":Priority border is rendered");
 
 		//Switch to Low Priority
 		oTileContent.setPriority(Priority.Low);
@@ -3669,7 +3707,6 @@ QUnit.test("Check for visibilty of content in header mode in 2*1 tile ", functio
 		assert.ok(document.getElementById("tile-cont-priority").classList.contains(Priority.Low), Priority.Low + ": Low StyleClass is applied");
 		assert.ok(document.getElementById("tile-cont-priority-content"), Priority.Low + ":Priority content is rendered");
 		assert.equal(document.getElementById("tile-cont-priority-value").innerText, this.oGenericTile.getTileContent()[0].getPriorityText(), Priority.Low + ":Priority value is rendered");
-		assert.ok(document.getElementById("tile-cont-priority-border"), Priority.Low + ":Priority border is rendered");
 		assert.notOk(this.oGenericTile.getTileContent()[0].getAltText().includes(sPriority),"Priority text is not rendered inside the tooltip");
 	});
 
@@ -4311,36 +4348,57 @@ QUnit.test("Check for visibilty of content in header mode in 2*1 tile ", functio
 		this.fnWithRenderAsserts(assert,this.oGenericTile.getState(), this.oGenericTile.getTileContent()[0].getState(), this.oGenericTile.getFrameType());
 	});
 
+	/**
+	 * @deprecated since 1.48.0, FrameType.TwoThird is deprecated
+	 */
 	QUnit.test("GenericTile - Loaded/TwoThirds , TileContent - Loaded", function(assert) {
 		this.fnCreateGenericTile(LoadState.Loaded, LoadState.Loaded, FrameType.TwoThirds);
 		this.fnWithRenderAsserts(assert,this.oGenericTile.getState(), this.oGenericTile.getTileContent()[0].getState(), this.oGenericTile.getFrameType());
 	});
 
+	/**
+	 * @deprecated since 1.48.0, FrameType.TwoThird is deprecated
+	 */
 	QUnit.test("GenericTile - Loaded/TwoThirds , TileContent - Loading", function(assert) {
 		this.fnCreateGenericTile(LoadState.Loaded, LoadState.Loading, FrameType.TwoThirds);
 		this.fnWithRenderAsserts(assert,this.oGenericTile.getState(), this.oGenericTile.getTileContent()[0].getState(), this.oGenericTile.getFrameType());
 	});
 
+	/**
+	 * @deprecated since 1.48.0, FrameType.TwoThird is deprecated
+	 */
 	QUnit.test("GenericTile - Loaded/TwoThirds , TileContent - Failed", function(assert) {
 		this.fnCreateGenericTile(LoadState.Loaded, LoadState.Failed, FrameType.TwoThirds);
 		this.fnWithRenderAsserts(assert,this.oGenericTile.getState(), this.oGenericTile.getTileContent()[0].getState(), this.oGenericTile.getFrameType());
 	});
 
+	/**
+	 * @deprecated since 1.48.0, FrameType.TwoThird is deprecated
+	 */
 	QUnit.test("GenericTile - Loaded/TwoThirds , TileContent - Disabled", function(assert) {
 		this.fnCreateGenericTile(LoadState.Loaded, LoadState.Disabled, FrameType.TwoThirds);
 		this.fnWithRenderAsserts(assert,this.oGenericTile.getState(), this.oGenericTile.getTileContent()[0].getState(), this.oGenericTile.getFrameType());
 	});
 
+	/**
+	 * @deprecated since 1.48.0, FrameType.TwoThird is deprecated
+	 */
 	QUnit.test("GenericTile - Loading/TwoThirds", function(assert) {
 		this.fnCreateGenericTile(LoadState.Loading, LoadState.Loaded, FrameType.TwoThirds);
 		this.fnWithRenderAsserts(assert,this.oGenericTile.getState(), this.oGenericTile.getTileContent()[0].getState(), this.oGenericTile.getFrameType());
 	});
 
+	/**
+	 * @deprecated since 1.48.0, FrameType.TwoThird is deprecated
+	 */
 	QUnit.test("GenericTile - Disabled/TwoThirds", function(assert) {
 		this.fnCreateGenericTile(LoadState.Disabled, LoadState.Loaded, FrameType.TwoThirds);
 		this.fnWithRenderAsserts(assert,this.oGenericTile.getState(), this.oGenericTile.getTileContent()[0].getState(), this.oGenericTile.getFrameType());
 	});
 
+	/**
+	 * @deprecated since 1.48.0, FrameType.TwoThird is deprecated
+	 */
 	QUnit.test("GenericTile - Failed/TwoThirds", function(assert) {
 		this.fnCreateGenericTile(LoadState.Failed, LoadState.Loaded, FrameType.TwoThirds);
 		this.fnWithRenderAsserts(assert,this.oGenericTile.getState(), this.oGenericTile.getTileContent()[0].getState(), this.oGenericTile.getFrameType());
@@ -5322,6 +5380,32 @@ QUnit.test("Check for visibilty of content in header mode in 2*1 tile ", functio
 		//Removing the focus on the tile
 		simulateCssEvent("stop");
 	});
+
+	QUnit.module("Testing the ondragend event on the iconMode tiles", {
+		beforeEach: function() {
+			this.oGenericTile = new GenericTile("tile",{
+				header: "GenericTile",
+				subheader: "GenericTile subHeader",
+				mode: "IconMode",
+				tileIcon: "sap-icon://table-view",
+				backgroundColor: "sapLegendColor1",
+				frameType: FrameType.TwoByHalf
+			}).placeAt("qunit-fixture");
+			oCore.applyChanges();
+		},
+		afterEach: function() {
+			this.oGenericTile.destroy();
+		}
+	});
+
+	QUnit.test("Simulating a drag and drop scenario", function (assert) {
+		this.oGenericTile.addStyleClass("sapMGTPressActive");
+		//Style class for Generic Tile when it is dragged.
+		assert.ok(this.oGenericTile.hasStyleClass("sapMGTPressActive"), "Generic tile contains Press Active Style Class");
+		this.oGenericTile.ondragend();
+		//Style Classes for Generic Tile should be removed once Drag is completed.
+		assert.notOk(this.oGenericTile.hasStyleClass("sapMGTPressActive"), "Press state from Generic Tile is removed.");
+	});
 	// Checks whether the given DomRef is contained or equals (in) one of the given container
 	function isContained(aContainers, oRef) {
 		for (var i = 0; i < aContainers.length; i++) {
@@ -5391,4 +5475,137 @@ QUnit.test("Check for visibilty of content in header mode in 2*1 tile ", functio
 			return generateEvent(type);
 		}
 	}
+
+	QUnit.module("Generic Tile: 'tileBadge' property tests", {
+		beforeEach: function () {
+			this.oGenericTile = new GenericTile({
+				id: "badge-tile",
+				header: "Test Header",
+				subheader: "Test Subheader",
+				mode: "IconMode",
+				frameType: "TwoByHalf",
+				backgroundColor: "black",
+				tileIcon: "sap-icon://folder-full",
+				tileBadge: "99"
+			}).placeAt("qunit-fixture");
+			oCore.applyChanges();
+		},
+		afterEach: function () {
+			this.oGenericTile.destroy();
+			this.oGenericTile = null;
+		}
+	});
+
+	QUnit.test("Should Only be visible in IconMode and for TwoByHalf frameType", function (assert) {
+		assert.ok(document.getElementById("badge-tile-tileBadge"), "tile badge rendered initially");
+
+		//Switch Mode
+		this.oGenericTile.setMode("ContentMode");
+		oCore.applyChanges();
+		assert.notOk(document.getElementById("badge-tile-tileBadge"), "tile badge not rendered for other mode");
+
+		//Switch Frame Type
+		this.oGenericTile.setFrameType(FrameType.OneByOne);
+		oCore.applyChanges();
+		assert.notOk(document.getElementById("badge-tile-tileBadge"), "tile badge not rendered for other frame type");
+
+		//Switch back to original state
+		this.oGenericTile.setMode("IconMode");
+		this.oGenericTile.setFrameType(FrameType.TwoByHalf);
+		this.oGenericTile.setTileIcon("sap-icon://folder-full");
+		oCore.applyChanges();
+		assert.ok(document.getElementById("badge-tile-tileBadge"), "tile badge rendered again");
+
+		//Switch to invalid icon
+		this.oGenericTile.setTileIcon();
+		oCore.applyChanges();
+		assert.ok(document.getElementById("badge-tile-tileBadge"), "tile badge rendered even if invalid icon");
+	});
+
+	QUnit.test("Should only display 2 characters", function (assert) {
+		var sTestBadge = "1135";
+		assert.ok(document.getElementById("badge-tile-tileBadge"), "tile badge rendered initially");
+
+		//Change tile badge
+		this.oGenericTile.setTileBadge(sTestBadge);
+		oCore.applyChanges();
+		assert.equal(document.getElementById("badge-tile-tileBadge").innerText, sTestBadge.substring(0, 3), "only first 2 characters of the badge value are displayed");
+	});
+
+	QUnit.module("Generic Tile: 'dropAreaOffset' property tests", {
+		beforeEach: function () {
+			this.oGenericTile = new GenericTile({
+				id: "drop-tile",
+				header: "Test Header",
+				subheader: "Test Subheader",
+				mode: "IconMode",
+				frameType: "OneByOne",
+				backgroundColor: "black",
+				tileIcon: "sap-icon://folder-full",
+				dropAreaOffset: 0
+			}).placeAt("qunit-fixture");
+			oCore.applyChanges();
+		},
+		afterEach: function () {
+			this.oGenericTile.destroy();
+			this.oGenericTile = null;
+		}
+	});
+
+	QUnit.test("should verify that drop area bounding rectangle is influenced on change of dropAreaOffset", function (assert) {
+		assert.ok(document.getElementById("drop-tile"), "tile rendered initially");
+
+		var OFFSET = 100,
+			oBoundingRect = this.oGenericTile.getDropAreaRect();
+
+		//Update dropAreaOffset
+		this.oGenericTile.setDropAreaOffset(OFFSET);
+		oCore.applyChanges();
+
+		//Horizontal Layout
+		var oBoundingRectHorizontal = this.oGenericTile.getDropAreaRect("Horizontal");
+		assert.equal(Math.abs(oBoundingRect.left - oBoundingRectHorizontal.left), OFFSET, "left updated");
+		assert.equal(Math.abs(oBoundingRectHorizontal.right - oBoundingRect.right), OFFSET, "right updated");
+
+		//Vertical Layout
+		var oBoundingRectVertical = this.oGenericTile.getDropAreaRect("Vertical");
+		assert.equal(Math.abs(oBoundingRect.top - oBoundingRectVertical.top), OFFSET, "top updated");
+		assert.equal(Math.abs(oBoundingRectVertical.bottom - oBoundingRect.bottom), OFFSET, "bottom updated");
+	});
+	QUnit.module("GenericTile when linkTileContent is used", {
+		beforeEach: function () {
+			this.oGenericTile = new GenericTile({
+				id: "linkTile",
+				header: "Test Header",
+				subheader: "Test Subheader",
+				frameType: FrameType.TwoByOne,
+				linkTileContents:[
+					new LinkTileContent({iconSrc:"sap-icon://action-settings",linkText:"SAP"})
+				]
+			}).placeAt("qunit-fixture");
+			oCore.applyChanges();
+			this.isRepeatedTwice = function(sInputString, sWord) {
+				var sLowerInputString = sInputString.toLowerCase();
+				var sLowerWord = sWord.toLowerCase();
+
+				// Create a regular expression to match the word surrounded by word boundaries (\b)
+				var rRegularExprForWord = new RegExp(`\\b${sLowerWord}\\b`, 'g');
+
+				// Use the match method to find all occurrences of the word in the lowercased string
+				var aMatches = sLowerInputString.match(rRegularExprForWord);
+
+				// Check if the word is repeated twice by comparing the number of matches to 2
+				return aMatches.length === 1;
+			};
+		},
+		afterEach: function () {
+			this.oGenericTile.destroy();
+			this.oGenericTile = null;
+		}
+	});
+
+	QUnit.test("Announcement of text tile should only be done once", function (assert) {
+		assert.ok(this.isRepeatedTwice(this.oGenericTile.getDomRef().getAttribute("aria-label"),"tile"),"The word tile has been announced only once");
+	});
+
 });

@@ -1,26 +1,36 @@
 /* global QUnit, sinon */
 
 sap.ui.define([
+		"sap/base/Log",
 		"sap/ui/integration/widgets/Card",
 		"sap/ui/integration/util/RequestDataProvider",
 		"sap/ui/core/Core",
-		"sap/ui/integration/util/LoadingProvider",
 		"sap/ui/integration/cards/BaseContent",
+		"sap/ui/integration/cards/AnalyticalContent",
 		"sap/ui/integration/cards/Header",
 		"sap/ui/integration/cards/filters/SelectFilter",
+		"sap/ui/core/ComponentContainer",
+		"sap/ui/base/Event",
+		"sap/ui/core/UIComponent",
 		"sap/ui/integration/library",
-		"sap/ui/thirdparty/jquery"
+		"sap/ui/thirdparty/jquery",
+		"sap/ui/integration/library"
 	],
 	function (
+		Log,
 		Card,
 		RequestDataProvider,
 		Core,
-		LoadingProvider,
 		BaseContent,
+		AnalyticalContent,
 		Header,
 		Filter,
+		ComponentContainer,
+		Event,
+		UIComponent,
 		integrationLibrary,
-		jQuery
+		jQuery,
+		library
 	) {
 		"use strict";
 
@@ -580,6 +590,71 @@ sap.ui.define([
 				}
 			}
 		};
+		var oManifest_AnalyticalCard_JSONData = {
+			"sap.app": {
+				"id": "test.card.loading.analytical.card2"
+			},
+			"sap.card": {
+				"type": "Analytical",
+				"header": {
+					"type": "Numeric",
+					"title": "Project Cloud Transformation"
+				},
+				"content": {
+					"chartType": "Line",
+					"data": {
+						"json": {
+							"list": [
+								{
+									"Week": "CW14",
+									"Revenue": 431000.22,
+									"Cost": 230000.00,
+									"Cost1": 24800.63,
+									"Cost2": 205199.37,
+									"Cost3": 199999.37,
+									"Target": 500000.00,
+									"Budget": 210000.00
+								}
+							]
+						},
+						"path": "/list"
+					},
+					"dimensions": [
+						{
+							"name": "Weeks",
+							"value": "{Week}"
+						}
+					],
+					"measures": [
+						{
+							"name": "Revenue",
+							"value": "{Revenue}"
+						},
+						{
+							"name": "Costs",
+							"value": "{Cost}"
+						}
+					],
+					"feeds": [
+						{
+							"uid": "valueAxis",
+							"type": "Measure",
+							"values": [
+								"Revenue",
+								"Costs"
+							]
+						},
+						{
+							"uid": "categoryAxis",
+							"type": "Dimension",
+							"values": [
+								"Weeks"
+							]
+						}
+					]
+				}
+			}
+		};
 
 		var oManifest_ObjectCard = {
 			"sap.app": {
@@ -687,7 +762,7 @@ sap.ui.define([
 			}
 		};
 
-		var Manifest_TableCard_WithCardLevelData = {
+		var oManifest_TableCard_WithCardLevelData = {
 			"sap.app": {
 				"id": "test.card.loading.card13"
 			},
@@ -742,7 +817,30 @@ sap.ui.define([
 			}
 		};
 
-		var Manifest_TimelineCard = {
+		var oManifest_TimelineCard_Empty = {
+			"sap.app": {
+				"id": "test.card.loading.cardTimeline"
+			},
+			"sap.card": {
+				"type": "Timeline",
+				"header": {
+					"title": "Upcoming Activities"
+				},
+				"data": {
+					"json": []
+				},
+				"content": {
+					"item": {
+						"title": {
+							"value": "{Title}"
+						}
+					}
+				}
+			}
+		};
+
+
+		var oManifest_TimelineCard = {
 			"sap.app": {
 				"id": "test.card.loading.cardTimeline"
 			},
@@ -1367,6 +1465,128 @@ sap.ui.define([
 			}
 		};
 
+		var oManifest_List_MinItems_Grouping = {
+			"sap.app": {
+				"id":  "test.card.loading.cardMinItemsGrouping"
+			},
+			"sap.card": {
+				"type": "List",
+				"header": {
+					"title": "List Card"
+				},
+				"content": {
+					"data": {
+						"json": [{
+								"Name": "Product 1",
+								"Price": "100"
+							},
+							{
+								"Name": "Product 2",
+								"Price": "200"
+							},
+							{
+								"Name": "Product 3",
+								"Price": "200"
+							}
+						]
+					},
+					"item": {
+						"title": "{Name}"
+					},
+					"group": {
+						"title": "{= ${Price} > 150 ? 'Expensive' : 'Cheap'}",
+						"order": {
+							"path": "Price"
+						}
+					}
+				}
+			}
+		};
+
+		var oManifest_List_manifestChanges = {
+			"sap.app": {
+				"id": "test.card.loading.cardManifestChanges"
+			},
+			"sap.card": {
+				"type": "List",
+				"header": {
+					"title": "List Card"
+				},
+				"content": {
+					"data": {
+						"json": [{
+								"Name": "Comfort Easy",
+								"Description": "32 GB Digital Assistant with high-resolution color screen",
+								"Icon": "sap-icon://iphone"
+							},
+							{
+								"Name": "ITelO Vault",
+								"Description": "Digital Organizer with State-of-the-Art Storage Encryption",
+								"Icon": "sap-icon://iphone"
+							}
+						]
+					},
+					"maxItems": 2,
+					"item": {
+						"title": "{Name}",
+						"description": "{Description}",
+						"icon": {
+							"src": "{Icon}"
+						}
+					}
+				}
+			}
+		};
+
+		var oManifest_AdaptiveCard = {
+			"sap.app": {
+				"id": "test.card.loading.AdaptiveCard"
+			},
+			"sap.card": {
+				"type": "AdaptiveCard",
+				"content": {
+					"$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+					"type": "AdaptiveCard",
+					"version": "1.0",
+					"body": [
+						{
+							"type": "TextBlock",
+							"text": "style: compact, isMultiSelect: false"
+						}
+					]
+				}
+			}
+		};
+
+		var oManifest_ComponentCard = {
+			"_version": "1.12.0",
+			"sap.app": {
+				"id": "test.card.loading.componentContent",
+				"type": "card",
+				"applicationVersion": {
+					"version": "1.0.0"
+				}
+			},
+			"sap.card": {
+				"type": "Component"
+			}
+		};
+
+		var oManifest_WebPageCard = {
+			"sap.app": {
+				"id": "test.card.loading.WebPage"
+			},
+			"sap.card": {
+				"type": "WebPage",
+				"header": {
+					"title": "WebPage Card"
+				},
+				"content": {
+					"src": "/page.html"
+				}
+			}
+		};
+
 		function isLoadingIndicatorShowingHeader(oManifest, oCard, bLoading, bExpectedTitle, bExpectedSubtitle, bExpectedAvatar, assert) {
 
 			// Arrange
@@ -1462,18 +1682,6 @@ sap.ui.define([
 			oCard.placeAt(DOM_RENDER_LOCATION);
 		}
 
-		function isLoadingPlaceholderCorrectType(oLoadingProvider, oConfiguration, sType, oCard, sPlaceholderType, sMessage, assert) {
-
-			// Arrange
-			var oPlaceholder = oLoadingProvider.createContentPlaceholder(oConfiguration, sType, oCard);
-
-			//Act
-			assert.ok(oPlaceholder.getMetadata().getName().indexOf(sPlaceholderType) > -1, sMessage);
-
-			// Clean up
-			oPlaceholder.destroy();
-		}
-
 		function isLoadingIndicatorShowingFilter(oManifest, oCard, sMassage, bExpected, sCSSClass, assert) {
 
 			// Arrange
@@ -1498,6 +1706,57 @@ sap.ui.define([
 			oCard.placeAt(DOM_RENDER_LOCATION);
 		}
 
+		function assertContentHasCorrectPlaceholder(assert, sPlaceholderType, oManifest) {
+			var done = assert.async(),
+				oCard = new Card({
+					baseUrl: "test-resources/sap/ui/integration/qunit/testResources/"
+				});
+
+			oCard.attachEvent("_ready", function () {
+				Core.applyChanges();
+
+				var oContent = oCard.getCardContent(),
+					oPlaceholder = oContent.getAggregation("_loadingPlaceholder");
+
+				assert.strictEqual(oPlaceholder.isA("sap.f.cards.loading." + sPlaceholderType + "Placeholder"), true, "Placeholder has correct type");
+
+				oCard.destroy();
+				done();
+			});
+
+			oCard.setManifest(oManifest);
+			oCard.placeAt(DOM_RENDER_LOCATION);
+		}
+
+		QUnit.module("Card contents have various placeholders");
+
+		[
+			{ type: "AdaptiveCard", placeholder: "Generic", manifest: oManifest_AdaptiveCard },
+			{ type: "Calendar", placeholder: "Calendar", manifest: oManifest_Calendar_CardLevel },
+			{ type: "List", placeholder: "List", manifest: oManifest_List_CardLevel },
+			{ type: "Object", placeholder: "Object", manifest: oManifest_ObjectCard },
+			{ type: "Table", placeholder: "Table", manifest: oManifest_TableCard_WithCardLevelData },
+			{ type: "WebPage", placeholder: "Generic", manifest: oManifest_WebPageCard }
+		].forEach(function (oCase) {
+
+			QUnit.test("Card type: '" + oCase.type + "' has '" + oCase.placeholder + "' placeholder", function (assert) {
+				assertContentHasCorrectPlaceholder(assert, oCase.placeholder, oCase.manifest);
+			});
+		});
+
+		QUnit.test("Card type: 'Component' has 'Generic' placeholder", function (assert) {
+			var oStub = this.stub(ComponentContainer.prototype, "applySettings"),
+				oStubEvent = new Event("componentCreated", this, {
+					component: new UIComponent()
+				});
+
+			oStub.callsFake(function (mSettings) {
+				mSettings.componentCreated(oStubEvent);
+			});
+
+			assertContentHasCorrectPlaceholder(assert, "Generic", oManifest_ComponentCard);
+		});
+
 		QUnit.module("Loading", {
 			beforeEach: function () {
 				this.oCard = new Card({
@@ -1511,7 +1770,6 @@ sap.ui.define([
 				this._fnRequestStub.restore();
 			}
 		});
-
 
 		QUnit.test("Default Header - Title should not have a loading indicator and all other controls should", function (assert) {
 			isLoadingIndicatorShowingHeader(oManifest_CardCase1, this.oCard, true, false, true, true, assert);
@@ -1542,19 +1800,19 @@ sap.ui.define([
 		});
 
 		QUnit.test("List - Loading indicator should be present - card level request", function (assert) {
-			isLoadingIndicatorShowingContent(oManifest_List_CardLevel, this.oCard, "List content has a loading placeholder", true, ".sapFCardContentPlaceholder", assert);
+			isLoadingIndicatorShowingContent(oManifest_List_CardLevel, this.oCard, "List content has a loading placeholder", true, ".sapFCardContentListPlaceholder", assert);
 		});
 
 		QUnit.test("List - Loading indicator should be present - content level request", function (assert) {
-			isLoadingIndicatorShowingContent(oManifest_List_ContentLevel, this.oCard, "List content has a loading placeholder", true, ".sapFCardContentPlaceholder", assert);
+			isLoadingIndicatorShowingContent(oManifest_List_ContentLevel, this.oCard, "List content has a loading placeholder", true, ".sapFCardContentListPlaceholder", assert);
 		});
 
 		QUnit.test("Calendar - Loading indicator should be present - card level request", function (assert) {
-			isLoadingIndicatorShowingContent(oManifest_Calendar_CardLevel, this.oCard, "Calendar content has a loading placeholder", true, ".sapFCardContentPlaceholder", assert);
+			isLoadingIndicatorShowingContent(oManifest_Calendar_CardLevel, this.oCard, "Calendar content has a loading placeholder", true, ".sapFCardContentCalendarPlaceholder", assert);
 		});
 
 		QUnit.test("Calendar - Loading indicator should be present - content level request", function (assert) {
-			isLoadingIndicatorShowingContent(oManifest_Calendar_ContentLevel, this.oCard, "Calendar content has a loading placeholder", true, ".sapFCardContentPlaceholder", assert);
+			isLoadingIndicatorShowingContent(oManifest_Calendar_ContentLevel, this.oCard, "Calendar content has a loading placeholder", true, ".sapFCardContentCalendarPlaceholder", assert);
 		});
 
 		QUnit.test("Object - Loading indicator should be present - content level request", function (assert) {
@@ -1562,7 +1820,7 @@ sap.ui.define([
 		});
 
 		QUnit.test("Table - Loading indicator should be present - card level request", function (assert) {
-			isLoadingIndicatorShowingContent(Manifest_TableCard_WithCardLevelData, this.oCard, "Table content has a loading placeholder", true, ".sapFCardContentTablePlaceholder", assert);
+			isLoadingIndicatorShowingContent(oManifest_TableCard_WithCardLevelData, this.oCard, "Table content has a loading placeholder", true, ".sapFCardContentTablePlaceholder", assert);
 		});
 
 		QUnit.test("Filter - Loading indicator should be present", function (assert) {
@@ -1619,15 +1877,15 @@ sap.ui.define([
 		});
 
 		QUnit.test("Table - Loading indicator should be present - card level request", function (assert) {
-			isLoadingIndicatorShowingContentDataReady(Manifest_TableCard_WithCardLevelData, this.oCard, "Table content has a loading placeholder", false, ".sapFCardContentGenericPlaceholder", assert);
+			isLoadingIndicatorShowingContentDataReady(oManifest_TableCard_WithCardLevelData, this.oCard, "Table content has a loading placeholder", false, ".sapFCardContentGenericPlaceholder", assert);
 		});
 
 		QUnit.test("List - error should be visible when request can not be resolved", function (assert) {
-			isLoadingIndicatorShowingContentDataReady(oManifest_List_CardLevel_Error, this.oCard, "Error content is visible", true, ".sapFCardErrorContent", assert);
+			isLoadingIndicatorShowingContentDataReady(oManifest_List_CardLevel_Error, this.oCard, "Error content is visible", true, ".sapUiIntBlockingMsg", assert);
 		});
 
 		QUnit.test("Calendar - error should be visible when request can not be resolved", function (assert) {
-			isLoadingIndicatorShowingContentDataReady(oManifest_Calendar_CardLevel_Error, this.oCard, "Error content is visible", true, ".sapFCardErrorContent", assert);
+			isLoadingIndicatorShowingContentDataReady(oManifest_Calendar_CardLevel_Error, this.oCard, "Error content is visible", true, ".sapUiIntBlockingMsg", assert);
 		});
 
 		QUnit.module("Placeholders lifecycle", {
@@ -1745,59 +2003,17 @@ sap.ui.define([
 
 		});
 
-		QUnit.module("Loading Provider", {
+		QUnit.module("List Placeholder", {
 			beforeEach: function () {
-				this.oLoadingProvider = new LoadingProvider();
 				this.oCard = new Card({
 					baseUrl: "test-resources/sap/ui/integration/qunit/testResources/"
 				});
-
+				this.oCard.placeAt(DOM_RENDER_LOCATION);
 			},
 			afterEach: function () {
-				this.oLoadingProvider.destroy();
-				this.oLoadingProvider = null;
 				this.oCard.destroy();
 				this.oCard = null;
 			}
-		});
-
-		QUnit.test("Loading provider should provide correct loading placeholder", function (assert) {
-			var oConfiguration = {
-					"minItems": 2
-				},
-				sType = "List";
-
-			isLoadingPlaceholderCorrectType(this.oLoadingProvider, oConfiguration, sType, this.oCard, "List", "Loading placeholder is of type ListPlaceholder", assert);
-		});
-
-		QUnit.test("Loading provider should provide correct loading placeholder", function (assert) {
-			var oConfiguration = {
-					"minItems": 2
-				},
-				sType = "Calendar";
-
-			isLoadingPlaceholderCorrectType(this.oLoadingProvider, oConfiguration, sType, this.oCard, "Calendar", "Loading placeholder is of type CalendarPlaceholder", assert);
-		});
-
-		QUnit.test("Loading provider should provide correct loading placeholder", function (assert) {
-			var oConfiguration = {
-					"minItems": 2
-				},
-				sType = "Table";
-
-			isLoadingPlaceholderCorrectType(this.oLoadingProvider, oConfiguration, sType, this.oCard, "Table", "Loading placeholder is of type TablePlaceholder", assert);
-		});
-
-		QUnit.test("Loading provider should provide correct loading placeholder", function (assert) {
-			var sType = "Object";
-
-			isLoadingPlaceholderCorrectType(this.oLoadingProvider, {}, sType, this.oCard, "Object", "Loading placeholder is of type ObjectPlaceholder", assert);
-		});
-
-		QUnit.test("Loading provider should provide correct loading placeholder", function (assert) {
-			var sType = "Analytical";
-
-			isLoadingPlaceholderCorrectType(this.oLoadingProvider, {}, sType, this.oCard, "Analytical", "Loading placeholder is of type GenericPlaceholder", assert);
 		});
 
 		QUnit.test("Card loading placeholder has correct number of items when minItems is used", function (assert) {
@@ -1819,8 +2035,149 @@ sap.ui.define([
 			});
 
 			oCard.setManifest(oManifest_List_MinItems);
-			oCard.placeAt(DOM_RENDER_LOCATION);
 			oCard.showLoadingPlaceholders();
+		});
+
+		QUnit.test("Card loading placeholder has correct number of items when showLoadingPlaceholder() is called for grouped list", function (assert) {
+			var done = assert.async(),
+				oCard = this.oCard;
+
+			oCard.attachEventOnce("_ready", function () {
+				var oLoadingPlaceholder = oCard.getCardContent().getAggregation("_loadingPlaceholder");
+				oCard.getCardContent().showLoadingPlaceholders(true);
+				Core.applyChanges();
+
+				assert.strictEqual(oLoadingPlaceholder.getMinItems(), 3, "Placeholder shouldn't include the group headers");
+				done();
+			});
+
+			oCard.setManifest(oManifest_List_MinItems_Grouping);
+		});
+
+		QUnit.test("List Card in 'Abstract' preview mode - icon and title", function (assert) {
+			// Arrange
+			var done = assert.async();
+
+			this.oCard.attachEventOnce("_ready", function () {
+				Core.applyChanges();
+
+				// Assert
+				assert.strictEqual(this.oCard.getDomRef().getElementsByClassName("sapFCardListPlaceholderImg").length, 5, "there are 5 image placeholders rendered");
+				assert.strictEqual(this.oCard.getDomRef().getElementsByClassName("sapFCardListPlaceholderRow").length, 5, "there are 5 row placeholders rendered");
+				assert.strictEqual(this.oCard.getDomRef().getElementsByClassName("sapFCardListPlaceholderItem").length, 5, "there are 3 lines rendered");
+
+				done();
+			}.bind(this));
+
+			// Act
+			this.oCard.setPreviewMode(library.CardPreviewMode.Abstract);
+			this.oCard.setManifest({
+				"sap.app": {
+					"id": "test.card.previewModeList",
+					"type": "card"
+				},
+				"sap.card": {
+					"type": "List",
+					"data": {
+						"json": {
+							"title": "List Card",
+							"items": []
+						},
+						"mockData": {
+							"json": {
+								"title": "List Card with Mocked Data",
+								"items": [
+									{
+										"title": "item1"
+									},
+									{
+										"title": "item2"
+									}
+								]
+							}
+						}
+					},
+					"header": {
+						"title": "{title}"
+					},
+					"content": {
+						"maxItems": 5,
+						"data": {
+							"path": "/items"
+						},
+						"item": {
+							"title": "{title}",
+							"icon": {
+								"src": "{icon}"
+							},
+							"highlight": "{state}",
+							"description": "{state}",
+							"info": {
+								"value": "{info}",
+								"state": "{infoState}"
+							}
+						}
+					}
+				}
+			});
+		});
+
+		QUnit.test("List Card in 'Abstract' preview mode - icon, title and actionsStrip", function (assert) {
+			// Arrange
+			var done = assert.async();
+
+			this.oCard.attachEventOnce("_ready", function () {
+				Core.applyChanges();
+
+				// Assert
+				assert.strictEqual(this.oCard.getDomRef().getElementsByClassName("sapFCardListPlaceholderImg").length, 3, "there are 3 image placeholders rendered");
+				assert.strictEqual(this.oCard.getDomRef().getElementsByClassName("sapFCardListPlaceholderRow").length, 6, "there are 6 row placeholders rendered");
+				assert.strictEqual(this.oCard.getDomRef().getElementsByClassName("sapFCardListPlaceholderItem").length, 3, "there are 3 lines rendered");
+
+				done();
+			}.bind(this));
+
+			// Act
+			this.oCard.setPreviewMode(library.CardPreviewMode.Abstract);
+			this.oCard.setManifest({
+				"sap.app": {
+					"id": "test.card.previewModeList2",
+					"type": "card"
+				},
+				"sap.card": {
+					"type": "List",
+					"data": {
+						"request": {
+							"url": "./cardcontent/cost.json"
+						}
+					},
+					"header": {
+						"title": "{title}"
+					},
+					"content": {
+						"maxItems": 3,
+						"data": {
+							"path": "/milk"
+						},
+						"item": {
+							"title": "{Store Name}",
+							"icon": {
+								"src": "{icon}"
+							},
+							"highlight": "{state}",
+							"description": "{state}",
+							"actionsStrip": [{
+								"text": "{Revenue}"
+							}]
+						}
+					},
+					"footer": {
+						"actionsStrip": [{
+							"text": "{milk/0/Revenue}"
+						}]
+					}
+				}
+			});
 		});
 
 		QUnit.module("Card Loading Placeholder API", {
@@ -1995,6 +2352,38 @@ sap.ui.define([
 			});
 		});
 
+		QUnit.module("Loading when adding manifestChanges", {
+			beforeEach: function () {
+				this.oCard = new Card({
+					baseUrl: "test-resources/sap/ui/integration/qunit/"
+				});
+			},
+			afterEach: function () {
+				this.oCard.destroy();
+				this.oCard = null;
+			}
+		});
+
+		QUnit.test("Applying manifestChanges does not produce an error", function (assert) {
+			var done = assert.async(),
+				oLogSpy = this.spy(Log, "error");
+
+			// Act
+			this.oCard.attachEventOnce("manifestReady", function () {
+				this.oCard.setManifestChanges([{
+					"/sap.card/content/maxItems": 1
+				}]);
+			}.bind(this));
+
+			this.oCard.attachEventOnce("_ready", function () {
+				assert.strictEqual(oLogSpy.calledWithExactly(sinon.match("The manifest is not ready"), "sap.ui.integration.widgets.Card"), false, "Error for early usage of manifest was not reported");
+				done();
+			});
+
+			this.oCard.setManifest(oManifest_List_manifestChanges);
+			this.oCard.placeAt(DOM_RENDER_LOCATION);
+		});
+
 		var oPromiseVizModule =  Core.loadLibrary("sap.viz", { async: true }).then(function () {
 			QUnit.module("Analytical Loading", {
 				beforeEach: function () {
@@ -2012,6 +2401,27 @@ sap.ui.define([
 
 			QUnit.test("Analytical - Loading indicator should be present - content level request", function (assert) {
 				isLoadingIndicatorShowingContent(oManifest_AnalyticalCard, this.oCard, "Analytical content has a loading placeholder", true, ".sapFCardContentAnalyticalPlaceholder", assert);
+			});
+
+			QUnit.test("Analytical - Loading indicator should be present when the dependencies are loaded slowly", function (assert) {
+				this.stub(AnalyticalContent.prototype, "loadDependencies").returns(new Promise(function () { })); // never resolve the dependencies
+
+				isLoadingIndicatorShowingContent(oManifest_AnalyticalCard, this.oCard, "Analytical content has a loading placeholder", true, ".sapFCardContentAnalyticalPlaceholder", assert);
+			});
+
+			QUnit.test("Analytical - Loading indicator should be present when the dependencies are loaded slowly and data provider is JSON", function (assert) {
+				this.stub(AnalyticalContent.prototype, "loadDependencies").returns(new Promise(function () { })); // never resolve the dependencies
+
+				isLoadingIndicatorShowingContent(oManifest_AnalyticalCard_JSONData, this.oCard, "Analytical content has a loading placeholder", true, ".sapFCardContentAnalyticalPlaceholder", assert);
+			});
+
+			QUnit.test("Analytical - Loading indicator should not be present after the dependencies are loaded", function (assert) {
+				isLoadingIndicatorShowingContentDataReady(oManifest_AnalyticalCard_JSONData, this.oCard, "Analytical content does not have a loading placeholder", false, ".sapFCardContentAnalyticalPlaceholder", assert);
+			});
+
+
+			QUnit.test("Card type: 'Analytical' has 'Analytical' placeholder", function (assert) {
+				assertContentHasCorrectPlaceholder(assert, "Analytical", oManifest_AnalyticalCard_JSONData);
 			});
 
 		}).catch(function () {
@@ -2037,7 +2447,11 @@ sap.ui.define([
 			});
 
 			QUnit.test("Timeline - Loading indicator should be present - card level request", function (assert) {
-				isLoadingIndicatorShowingContent(Manifest_TimelineCard, this.oCard, "Timeline content has a loading placeholder", true, ".sapFCardContentTimelinePlaceholder", assert);
+				isLoadingIndicatorShowingContent(oManifest_TimelineCard, this.oCard, "Timeline content has a loading placeholder", true, ".sapFCardContentTimelinePlaceholder", assert);
+			});
+
+			QUnit.test("Card type: 'Timeline' has 'Timeline' placeholder", function (assert) {
+				assertContentHasCorrectPlaceholder(assert, "Timeline", oManifest_TimelineCard_Empty);
 			});
 		}).catch(function () {
 			QUnit.module("Timeline Loading");

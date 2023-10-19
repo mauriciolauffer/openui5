@@ -30,25 +30,6 @@ sap.ui.define([
 	}
 
 	/*
-	 * Returns the DateFormat instance for values displayed on the UI. Creates it lazily.
-	 *
-	 * @param {sap.ui.model.odata.type.TimeOfDay} oType
-	 *   The type
-	 * @returns {sap.ui.core.format.DateFormat}
-	 *   The DateFormat
-	 */
-	function getUiFormat(oType) {
-		var oFormatOptions;
-
-		if (!oType.oUiFormat) {
-			oFormatOptions = extend({strictParsing : true}, oType.oFormatOptions);
-			oFormatOptions.UTC = true; // value is always UTC; no overwrite via format options
-			oType.oUiFormat = DateFormat.getTimeInstance(oFormatOptions);
-		}
-		return oType.oUiFormat;
-	}
-
-	/*
 	 * Sets the constraints. Logs a warning and uses the constraint's default value, if an invalid
 	 * value is given.
 	 *
@@ -116,7 +97,7 @@ sap.ui.define([
 				ODataType.apply(this, arguments);
 				this.oModelFormat = undefined;
 				this.rTimeOfDay = undefined;
-				this.oUiFormat = undefined;
+				this.oFormat = undefined;
 				setConstraints(this, oConstraints);
 				this.oFormatOptions = oFormatOptions;
 			}
@@ -129,7 +110,7 @@ sap.ui.define([
 	 * @since 1.37.0
 	 */
 	TimeOfDay.prototype._handleLocalizationChange = function () {
-		this.oUiFormat = null;
+		this.oFormat = null;
 	};
 
 	/**
@@ -186,13 +167,61 @@ sap.ui.define([
 						return UI5Date.getInstance(1970, 0, 1, oDate.getUTCHours(), oDate.getUTCMinutes(),
 							oDate.getUTCSeconds());
 					}
-					return getUiFormat(this).format(oDate);
+					return this.getFormat().format(oDate);
 				}
 				throw new FormatException("Illegal " + this.getName() + " value: " + sValue);
 			default:
 				throw new FormatException("Don't know how to format " + this.getName() + " to "
 					+ sTargetType);
 		}
+	};
+
+	/**
+	 * Returns a date object for a given model value.
+	 *
+	 * @param {string|null} sModelValue
+	 *   The model value of this type. Can be retrieved via {@link sap.ui.model.odata.type.TimeOfDay#getModelValue}.
+	 * @returns {Date|module:sap/ui/core/date/UI5Date|null}
+	 *   An instance of <code>Date</code> for which the local getters <code>getHours()</code>,
+	 *   <code>getMinutes()</code>, <code>getSeconds()</code>, and <code>getMilliseconds()</code> can be used to get the
+	 *   corresponding hours, minutes, seconds, and milliseconds of the given model value
+	 *
+	 * @since 1.113.0
+	 * @private
+	 * @ui5-restricted sap.fe, sap.suite.ui.generic.template, sap.ui.comp, sap.ui.generic
+	 */
+	TimeOfDay.prototype.getDateValue = function (sModelValue) {
+		return sModelValue ? UI5Date.getInstance("1970-01-01T" + sModelValue) : null;
+	};
+
+	/**
+	 * @override
+	 */
+	TimeOfDay.prototype.getFormat = function () {
+		if (!this.oFormat) {
+			var oFormatOptions = extend({strictParsing : true}, this.oFormatOptions);
+			oFormatOptions.UTC = true; // value is always UTC; no overwrite via format options
+			this.oFormat = DateFormat.getTimeInstance(oFormatOptions);
+		}
+
+		return this.oFormat;
+	};
+
+	/**
+	 * Returns the ISO string for the given model value.
+	 *
+	 * @param {string|null} sModelValue
+	 *   The model value, as returned by {@link #getModelValue}
+	 * @returns {string|null}
+	 *   The time as string in the extended format without the 'T' according to ISO 8601,
+	 *   or <code>null</code> if the given model value is falsy
+	 *
+	 * @since 1.114.0
+	 * @private
+	 * @ui5-restricted sap.fe, sap.suite.ui.generic.template, sap.ui.comp, sap.ui.generic
+	 */
+	TimeOfDay.prototype.getISOStringFromModelValue = function (sModelValue) {
+		return sModelValue ? sModelValue : null;
 	};
 
 	/**
@@ -260,6 +289,27 @@ sap.ui.define([
 	};
 
 	/**
+	 * Returns the model value for the given ISO string.
+	 * The milliseconds part of the string is either truncated or padded with <code>0</code>, so that its length
+	 * fits the types precision constraint.
+	 *
+	 * @param {string|null} sISOString
+	 *   A string according to ISO 8601, as returned by {@link #getISOStringFromModelValue}
+	 * @returns {string|null}
+	 *   The model representation for the given ISO string for this type,
+	 *   or <code>null</code> if the given ISO string is falsy
+	 *
+	 * @since 1.114.0
+	 * @private
+	 * @ui5-restricted sap.fe, sap.suite.ui.generic.template, sap.ui.comp, sap.ui.generic
+	 */
+	TimeOfDay.prototype.getModelValueFromISOString = function (sISOString) {
+		return sISOString
+			? this.getModelFormat().format(UI5Date.getInstance("1970-01-01T" + sISOString + "Z"))
+			: null;
+	};
+
+	/**
 	 * Returns the type's name.
 	 *
 	 * @returns {string}
@@ -305,7 +355,7 @@ sap.ui.define([
 			case "object":
 				return this.getModelFormat().format(vValue, false);
 			case "string":
-				oDate = getUiFormat(this).parse(vValue);
+				oDate = this.getFormat().parse(vValue);
 				if (!oDate) {
 					throw new ParseException(getErrorMessage(this));
 				}

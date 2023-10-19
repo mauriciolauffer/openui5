@@ -12,7 +12,7 @@
                 data-sap-ui-language="en_US"
 				data-sap-ui-trace="false"
 				data-sap-ui-async="true"
-				data-sap-ui-theme="sap_fiori_3"
+				data-sap-ui-theme="sap_horizon"
 				src="../../../resources/sap-ui-core.js">
 		</script>
 
@@ -41,7 +41,8 @@
 				"sap/m/Label",
 				"sap/m/DynamicDateRange",
 				"sap/m/DynamicDateUtil",
-				"sap/m/Button"
+				"sap/m/Button",
+				"sap/ui/core/date/UI5Date"
 			], function(
 				App,
 				Page,
@@ -49,7 +50,8 @@
 				Label,
 				DynamicDateRange,
 				DynamicDateUtil,
-				Button
+				Button,
+				UI5Date
 			) {
 				"use strict";
 
@@ -69,7 +71,7 @@
 						new Page("Page1", {
 							title: "DynamicDateRange",
 							content: [
-								new Label("DDR1-label", {text: "Group headers disabled when there are more then ten options available", labelFor: "DDR1"}),
+								new Label("DDR1-label", {text: "Group headers disabled when there are more than ten options available", labelFor: "DDR1"}),
 								new DynamicDateRange("DDR1", {
 									change: handleChange,
 									width: '300px',
@@ -107,7 +109,7 @@
 									width: '300px',
 									value: {
 										operator: 'DATETIME',
-										values: [new Date(2000, 11, 20, 17, 0, 0)]
+										values: [UI5Date.getInstance(2000, 11, 20, 17, 0, 0)]
 									},
 									change: handleChange,
 									options: [

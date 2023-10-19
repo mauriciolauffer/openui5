@@ -11,7 +11,8 @@ sap.ui.define([
 
 	/**
 	 * Object-based definition of the search content type that is used in the {@link sap.ui.mdc.field.content.ContentFactory}.
-	 * This defines which controls to load and create for a given {@link sap.ui.mdc.enum.ContentMode}.
+	 * This defines which controls to load and create for a given {@link sap.ui.mdc.enums.ContentMode}.
+	 * @namespace
 	 * @author SAP SE
 	 * @private
 	 * @ui5-restricted sap.ui.mdc
@@ -19,9 +20,8 @@ sap.ui.define([
 	 * @since 1.87
 	 * @alias sap.ui.mdc.field.content.SearchContent
 	 * @extends sap.ui.mdc.field.content.DefaultContent
-	 * @MDC_PUBLIC_CANDIDATE
 	 */
-	var SearchContent = Object.assign({}, DefaultContent, {
+	const SearchContent = Object.assign({}, DefaultContent, {
 		getDisplayMultiValue: function() {
 			return [null];
 		},
@@ -43,12 +43,12 @@ sap.ui.define([
 		getUseDefaultEnterHandler: function() {
 			return false;
 		},
-		getUseDefaultFieldHelp: function() {
+		getUseDefaultValueHelp: function() {
 			return false;
 		},
 		createEdit: function(oContentFactory, aControlClasses, sId) {
-			var SearchField = aControlClasses[0];
-			var oConditionsType = oContentFactory.getConditionsType();
+			const SearchField = aControlClasses[0];
+			const oConditionsType = oContentFactory.getConditionsType();
 			oContentFactory.setHideOperator(true);
 			oContentFactory.updateConditionType(); // to update HideOperator
 
@@ -59,24 +59,24 @@ sap.ui.define([
 			 * the conditions. (Like it would happen in TwoWay-Binding.) To inform the Binding about the success or failure of the update the ValidationSuccess, ValidationError
 			 * and ParseError events are used. (Like it would happen on TwoWay-Binding.)
 			 */
-			var oControl = new SearchField(sId, {
+			const oControl = new SearchField(sId, {
 				value: { path: "$field>/conditions", type: oConditionsType, mode: BindingMode.OneWay }, // oneWay as SearchField updates "value" while typing
 				placeholder: "{$field>/placeholder}",
 				width: "100%",
 				tooltip: "{$field>/tooltip}",
-				search: function(oEvent) { // submit event should be fired on Enter and not via the clear-icon
-					if (oEvent.getParameters().clearButtonPressed) {
+				search: function(oEvent) { // submit event should be fired on Enter and not via the clear-icon or esc-key
+					if (oEvent.getParameters().clearButtonPressed || oEvent.getParameters().escPressed) {
 						return;
 					}
 					oContentFactory.getHandleEnter().call(this, oEvent);
 				},
 				change: function(oEvent) {
-					var oSource = oEvent.getSource();
-					var sValue = oEvent.getParameter("value");
-					var oBinding = oSource.getBinding("value");
+					const oSource = oEvent.getSource();
+					const sValue = oEvent.getParameter("value");
+					const oBinding = oSource.getBinding("value");
 					try {
 						oBinding.setExternalValue(sValue); // as not automatically triggered for OneWay binding
-						var mSuccessParameters = {
+						const mSuccessParameters = {
 							element: oSource,
 							property: "value",
 							type: oBinding.getType(),
@@ -85,7 +85,7 @@ sap.ui.define([
 						};
 						oSource.fireValidationSuccess(mSuccessParameters, false, true); // bAllowPreventDefault, bEnableEventBubbling
 					} catch (oException) {
-						var mErrorParameters = {
+						const mErrorParameters = {
 							element: oSource,
 							property: "value",
 							type: oBinding.getType(),

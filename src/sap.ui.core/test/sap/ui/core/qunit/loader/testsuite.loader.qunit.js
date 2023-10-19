@@ -102,6 +102,10 @@ sap.ui.define(function() {
 				bootCore: false,
 				autostart: false
 			},
+
+			/**
+			 * @deprecated As of version 1.111
+			 */
 			asyncModeUsingCoreFeatures: {
 				title: "Test Page for Module Loading (ui5loader), using Core features",
 				loader: {
@@ -139,9 +143,6 @@ sap.ui.define(function() {
 				title: "Test Page for ui5loader config option 'amd' with activated debug mode"
 			},
 			privateAPIs: {
-				qunit: {
-					seed: Math.random()
-				},
 				bootCore: false
 			},
 			/*

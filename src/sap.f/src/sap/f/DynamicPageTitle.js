@@ -42,10 +42,14 @@ sap.ui.define([
 ) {
 	"use strict";
 
-	// shortcut for sap.f.DynamicPageTitleArea
-	var DynamicPageTitleArea = library.DynamicPageTitleArea,
-		ToolbarStyle = mobileLibrary.ToolbarStyle,
-		InvisibleMessageMode = CoreLibrary.InvisibleMessageMode;
+	/**
+	 * @deprecated As of version 1.54
+	 */
+	var DynamicPageTitleArea = library.DynamicPageTitleArea;
+
+	var	ToolbarStyle = mobileLibrary.ToolbarStyle;
+
+	var	InvisibleMessageMode = CoreLibrary.InvisibleMessageMode;
 
 	/**
 	 * Constructor for a new <code>DynamicPageTitle</code>.
@@ -506,6 +510,9 @@ sap.ui.define([
 
 		var oShrinkFactorsInfo = this._getShrinkFactorsObject();
 
+		/**
+		 * @deprecated As of version 1.54
+		 */
 		if (this.getPrimaryArea() === DynamicPageTitleArea.Middle) {
 			Log.warning("DynamicPageTitle :: Property primaryArea is disregarded when areaShrinkRatio is set.", this);
 		}
@@ -948,9 +955,13 @@ sap.ui.define([
 			bHasVisibleBreadcrumbs = this.getBreadcrumbs() && this.getBreadcrumbs().getVisible(),
 			bHasVisibleSnappedTitleOnMobile = Device.system.phone && this.getSnappedTitleOnMobile() && !this._bExpandedState,
 			bShouldShowTopArea = (bHasVisibleBreadcrumbs || bNavigationActionsShouldBeInTopArea) && !bHasVisibleSnappedTitleOnMobile,
-			bShouldChangeNavigationActionsPlacement = this.getNavigationActions().length > 0 && (bNavigationActionsShouldBeInTopArea ^ bNavigationActionsAreInTopArea);
+			bShouldChangeNavigationActionsPlacement = this.getNavigationActions().length > 0 && (bNavigationActionsShouldBeInTopArea ^ bNavigationActionsAreInTopArea),
+			$topArea = this.$topArea;
 
 		this._toggleTopAreaVisibility(bShouldShowTopArea);
+
+		$topArea && $topArea.toggleClass("sapFDynamicPageTitleTopBreadCrumbsOnly",
+			bHasVisibleBreadcrumbs && !bNavigationActionsShouldBeInTopArea);
 
 		if (bShouldChangeNavigationActionsPlacement) {
 			this._toggleNavigationActionsPlacement(bNavigationActionsShouldBeInTopArea);
@@ -1290,11 +1301,17 @@ sap.ui.define([
 			bHasTopContent = oBreadcrumbs || bHasNavigationActions,
 			bHasOnlyBreadcrumbs = !!(oBreadcrumbs && !bHasNavigationActions),
 			bHasOnlyNavigationActions = bHasNavigationActions && !oBreadcrumbs,
-			sAreaShrinkRatioDefaultValue = this.getMetadata().getProperty("areaShrinkRatio").getDefaultValue();
+			sAreaShrinkRatioDefaultValue = this.getMetadata().getProperty("areaShrinkRatio").getDefaultValue(),
+			bAriaShrinkRatioDefault = this.getAreaShrinkRatio() === sAreaShrinkRatioDefaultValue;
 
-		// if areaShrinkRatio is set to default value (or not set at all) and primaryArea is set,
+		/**
+		 * @deprecated As of version 1.54
+		 */
+		bAriaShrinkRatioDefault = bAriaShrinkRatioDefault && this.getPrimaryArea() === DynamicPageTitleArea.Middle;
+
+		// if areaShrinkRatio is set to default value (or not set at all)
 		// use shrink factors defined for primaryArea
-		if (this.getAreaShrinkRatio() === sAreaShrinkRatioDefaultValue && this.getPrimaryArea() === DynamicPageTitleArea.Middle) {
+		if (bAriaShrinkRatioDefault) {
 			oShrinkFactorsInfo.headingAreaShrinkFactor = DynamicPageTitle.PRIMARY_AREA_MIDDLE_SHRINK_FACTORS.headingAreaShrinkFactor;
 			oShrinkFactorsInfo.contentAreaShrinkFactor = DynamicPageTitle.PRIMARY_AREA_MIDDLE_SHRINK_FACTORS.contentAreaShrinkFactor;
 			oShrinkFactorsInfo.actionsAreaShrinkFactor = DynamicPageTitle.PRIMARY_AREA_MIDDLE_SHRINK_FACTORS.actionsAreaShrinkFactor;
@@ -1457,7 +1474,7 @@ sap.ui.define([
 	};
 
 	DynamicPageTitle.prototype._updateARIAState = function (bExpanded) {
-		var sARIAText = this._getARIALabelReferences(bExpanded) || DynamicPageTitle.DEFAULT_HEADER_TEXT_ID,
+		var sARIAText = this._getARIALabelReferences(bExpanded),
 			$oFocusSpan = this._getFocusSpan();
 
 		if ($oFocusSpan) {
@@ -1483,7 +1500,7 @@ sap.ui.define([
 			sReferences += sTitleId || oHeading.getId();
 		}
 
-		return sReferences;
+		return sReferences || DynamicPageTitle.DEFAULT_HEADER_TEXT_ID;
 	};
 
 	DynamicPageTitle.prototype._focus = function () {

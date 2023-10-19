@@ -2,13 +2,13 @@ sap.ui.define([
 	"sap/ui/core/mvc/Controller",
 	"sap/ui/core/Core",
 	"sap/ui/model/json/JSONModel",
-	"sap/ui/mdc/enum/EditMode",
+	"sap/ui/mdc/enums/FieldEditMode",
 	"sap/m/MessageToast"
 ], function(
 	Controller,
 	oCore,
 	JSONModel,
-	EditMode,
+	FieldEditMode,
 	MessageToast
 	) {
 	"use strict";
@@ -16,19 +16,19 @@ sap.ui.define([
 	return Controller.extend("sap.ui.mdc.sample.FieldCustomContent.Controller", {
 
 		onInit: function() {
-			var oView = this.getView();
+			const oView = this.getView();
 			oView.bindElement("/Books(1)");
 			oCore.getMessageManager().registerObject(oView, true);
 
-			var oViewModel = new JSONModel({
-				editMode: EditMode.Editable
+			const oViewModel = new JSONModel({
+				editMode: FieldEditMode.Editable
 			});
 			oView.setModel(oViewModel, "view");
 
 		},
 
 		formatEditMode: function(sEditMode) {
-			if (sEditMode === EditMode.Editable) {
+			if (sEditMode === FieldEditMode.Editable) {
 				return true;
 			} else {
 				return false;
@@ -36,7 +36,7 @@ sap.ui.define([
 		},
 
 		formatDisplayOnly: function(sEditMode) {
-			if (sEditMode === EditMode.Display) {
+			if (sEditMode === FieldEditMode.Display) {
 				return true;
 			} else {
 				return false;
@@ -44,8 +44,8 @@ sap.ui.define([
 		},
 
 		handleChange: function(oEvent) {
-			var oField = oEvent.getSource();
-			var oPromise = oEvent.getParameter("promise");
+			const oField = oEvent.getSource();
+			const oPromise = oEvent.getParameter("promise");
 
 			if (oPromise) {
 				oPromise.then(function(vValue) {

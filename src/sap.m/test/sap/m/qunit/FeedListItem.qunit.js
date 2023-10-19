@@ -517,7 +517,6 @@ sap.ui.define([
 		assert.equal(this.oFeedListItem.getAggregation("_text").getConvertLinksToAnchorTags(), LinkConversion.All, "The convertLinksToAnchorTags property has been forwarded to sap.m.FormattedText");
 		assert.equal(this.oFeedListItem.getAggregation("_text").getConvertedLinksDefaultTarget(), sLinkTarget, "The ConvertedLinksDefaultTarget property has been forwarded to sap.m.FormattedText");
 		assert.equal(this.oFeedListItem._sFullText, sTransformed, "The anchor text has been added correctly");
-		assert.ok(oSpy.calledOnce, "The function onAfterRendering of sap.m.FormattedText has been called as part of the rendering cycle of FeedListItem");
 		//Restore
 		oSpy.restore();
 	});
@@ -600,6 +599,40 @@ sap.ui.define([
 	QUnit.test("Press X Key on MORE", function (assert) {
 		qutils.triggerKeydown(oFeedList.getItems()[9]._oLinkExpandCollapse.getId(), KeyCodes.X, false, false, false);
 		assert.notEqual(oFeedList.getItems()[9].getSender(), "Hello", "Sender Press event was not fired");
+	});
+
+	QUnit.test("URL navigation can be cancelled", function (assert) {
+		// Arrange
+		var oFLI = new FeedListItem({
+				sender: "Alexandrina Victoria",
+				info: "Request",
+				timestamp: "March 03 2013",
+				convertLinksToAnchorTags: "All",
+				text: "Lorem <strong>ipsum dolor sit amet</strong>, <em>consetetur sadipscing elitr</em>, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, <a href='http://www.sap.com'>sed diam voluptua</a>. At vero eos et accusam et justo duo dolores et ea rebum.Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod <strong>tempor invidunt ut labore et dolore magna</strong> aliquyam erat, sed diam voluptua. <em>At vero eos et accusam et justo</em> duo dolores et ea rebum. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, seddiamnonumyeirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, <u>sed diam nonumy eirmod tempor invidunt ut labore</u> et dolore magna aliquyam erat, sed diam voluptua. <strong>At vero eos et accusam</strong> et justo duo dolores et ea rebum. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod <a href='//www.sap.com'>tempor invidunt</a> ut labore et dolore magna aliquyam erat, sed diam voluptua. <em>At vero eos et accusam</em> et justo duo dolores et ea rebum. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum."
+			}),
+			rootElement = document.getElementById("qunit-fixture"),
+			fnPreventNavigation = function(oEvent) {
+				oEvent.preventDefault();
+			},
+			oSpy = this.spy(window, "open");
+
+		rootElement.addEventListener("click", fnPreventNavigation, true);
+		oFLI.placeAt("qunit-fixture");
+		oCore.applyChanges();
+
+		// Act
+		oFLI.getDomRef().querySelectorAll(".sapMFeedListItemTextString a")[0].dispatchEvent(new MouseEvent("click", {
+			view: window,
+			bubbles: true,
+			cancelable: true
+		}));
+
+		// Assert
+		assert.ok(!oSpy.called, "No navigation");
+
+		// Cleanup
+		oFLI.destroy();
+		rootElement.removeEventListener("click", fnPreventNavigation, true);
 	});
 
 	QUnit.module("Rendering behavior");
@@ -1200,6 +1233,76 @@ sap.ui.define([
 
 		// Cleanup
 		Device.system.phone = bOriginSystemPhone;
+	});
+
+	QUnit.module("Security");
+
+	QUnit.test("Sanitize CSS position", function (assert) {
+		var oList = new List(),
+			oFeedListItem = new FeedListItem({
+				sender: "George Washington",
+				info: "Reply",
+				icon: "sap-icon://edit",
+				timestamp: "March 04 2013",
+				text: "Lorem ipsum dolor sit amet, <strong class=\"malicious\" style=\"position: absolute !important\">consetetur</strong> sadipscing elitr, <a class=\"malicious\" href=\"https://sap.com\" style=\"position: fixed !important\">sed diam nonumy</a> eirmod tempor invidunt ut labore." +
+						"Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore." +
+						"Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore." +
+						"Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore." +
+						"Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore." +
+						"Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore." +
+						"Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore." +
+						"Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore." +
+						"Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore." +
+						"Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore." +
+						"Lorem ipsum dolor sit amet, <strong class=\"malicious\" style=\"position: absolute !important\">consetetur</strong> sadipscing elitr, <a class=\"malicious\" href=\"https://sap.com\" style=\"position: fixed !important\">sed diam nonumy</a> eirmod tempor invidunt ut labore."
+			}),
+			aMaliciousNodes;
+
+		// Arrange
+		oList.addItem(oFeedListItem);
+
+		oList.placeAt("qunit-fixture");
+		oCore.applyChanges();
+
+		// Assert
+		aMaliciousNodes = oFeedListItem.getDomRef().querySelectorAll(".malicious"); // find all "malicious" links
+
+		assert.strictEqual(aMaliciousNodes.length, 2, "there are 2 'malicious' nodes");
+		assert.strictEqual(aMaliciousNodes[0].getAttribute("style"), "position: static !important;", "There is 'position: static !important' added as style attribute to the first 'malicious' node");
+		assert.strictEqual(aMaliciousNodes[1].getAttribute("style"), "position: static !important;", "There is 'position: static !important' added as style attribute to the second 'malicious' node");
+		assert.strictEqual(oFeedListItem.getDomRef("figure").getAttribute("style"), null, "There is no stile added to the item icon");
+
+		// Act - toggle to full text
+		oFeedListItem._toggleTextExpanded();
+		oCore.applyChanges();
+
+		// Assert
+		aMaliciousNodes = oFeedListItem.getDomRef().querySelectorAll(".malicious"); // find all "malicious" links
+
+		assert.strictEqual(aMaliciousNodes.length, 4, "there are 4 'malicious' nodes");
+		assert.strictEqual(aMaliciousNodes[0].getAttribute("style"), "position: static !important;", "There is 'position: static !important' added as style attribute to the first 'malicious' node");
+		assert.strictEqual(aMaliciousNodes[1].getAttribute("style"), "position: static !important;", "There is 'position: static !important' added as style attribute to the second 'malicious' node");
+		assert.strictEqual(aMaliciousNodes[2].getAttribute("style"), "position: static !important;", "There is 'position: static !important' added as style attribute to the third 'malicious' node");
+		assert.strictEqual(aMaliciousNodes[3].getAttribute("style"), "position: static !important;", "There is 'position: static !important' added as style attribute to the fourth 'malicious' node");
+		assert.strictEqual(oFeedListItem.getDomRef("figure").getAttribute("style"), null, "There is no stile added to the item icon");
+
+		// Act - toggle back to short text
+		oFeedListItem._toggleTextExpanded();
+		oCore.applyChanges();
+
+		// Assert
+		aMaliciousNodes = oFeedListItem.getDomRef().querySelectorAll(".malicious"); // find all "malicious" links
+
+		assert.strictEqual(aMaliciousNodes.length, 2, "there are 2 'malicious' nodes");
+		assert.strictEqual(aMaliciousNodes[0].getAttribute("style"), "position: static !important;", "There is 'position: static !important' added as style attribute to the first 'malicious' node");
+		assert.strictEqual(aMaliciousNodes[1].getAttribute("style"), "position: static !important;", "There is 'position: static !important' added as style attribute to the second 'malicious' node");
+		assert.strictEqual(oFeedListItem.getDomRef("figure").getAttribute("style"), null, "There is no stile added to the item icon");
+
+		// Cleanup
+		oFeedListItem.destroy();
+		oList.destroy();
+		oFeedListItem = null;
+		oList = null;
 	});
 
 });

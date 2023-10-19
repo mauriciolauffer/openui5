@@ -25,15 +25,15 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
   _tntDialogCodePlaceholder = _interopRequireDefault(_tntDialogCodePlaceholder);
   _tntSceneCodePlaceholder = _interopRequireDefault(_tntSceneCodePlaceholder);
   _tntSpotCodePlaceholder = _interopRequireDefault(_tntSpotCodePlaceholder);
-
   function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
   const name = "CodePlaceholder";
   const set = "tnt";
+  const collection = "V4";
   (0, _Illustrations.registerIllustration)(name, {
     dialogSvg: _tntDialogCodePlaceholder.default,
     sceneSvg: _tntSceneCodePlaceholder.default,
     spotSvg: _tntSpotCodePlaceholder.default,
-    set
+    set,
+    collection
   });
 });

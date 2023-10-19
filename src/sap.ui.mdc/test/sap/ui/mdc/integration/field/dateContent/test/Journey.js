@@ -12,7 +12,8 @@ sap.ui.define([
 	"sap/ui/model/type/Date",
 	"sap/ui/model/type/DateTime",
 	"sap/ui/model/type/Time",
-	"sap/ui/core/format/DateFormat"
+	"sap/ui/core/format/DateFormat",
+	"sap/ui/core/Core"
 ], function(
 	Opa5,
 	opaTest,
@@ -21,9 +22,13 @@ sap.ui.define([
 	DateType,
 	DateTimeType,
 	TimeType,
-	DateFormat
+	DateFormat,
+	Core
 ) {
 	"use strict";
+
+	// shortcut for sap.m resource bundle
+	const oRb = Core.getLibraryResourceBundle("sap.ui.core");
 
 	Opa5.extendConfig({
 
@@ -67,17 +72,17 @@ sap.ui.define([
 		}
 	});
 
-	var oDateType = new DateType();
-	var oDateTimeType = new DateTimeType();
-	var oTimeType = new TimeType();
+	const oDateType = new DateType();
+	const oDateTimeType = new DateTimeType();
+	const oTimeType = new TimeType();
 
-	var oFieldDate = new Date(2022, 10, 28, 12, 45, 52);
-	var oToday = new Date();
-	var oTomorrow = new Date(new Date().setDate(oToday.getDate() + 1));
-	var oYesterday = new Date(new Date().setDate(oToday.getDate() - 1));
-	var oInFiveDays = new Date(new Date().setDate(oToday.getDate() + 5));
+	const oFieldDate = new Date(2022, 10, 28, 12, 45, 52);
+	const oToday = new Date();
+	const oTomorrow = new Date(new Date().setDate(oToday.getDate() + 1));
+	const oYesterday = new Date(new Date().setDate(oToday.getDate() - 1));
+	const oInFiveDays = new Date(new Date().setDate(oToday.getDate() + 5));
 
-	var aDynamicDates = [
+	const aDynamicDates = [
 		{
 			dynamicDate: "Today",
 			expectedDynamicDateRangeValue: {
@@ -104,54 +109,54 @@ sap.ui.define([
 		}
 	];
 
-	var fnGetId = function(sId) {
+	const fnGetId = function(sId) {
 		return "testingComponent---app--" + sId;
 	};
 
-	var getDateAsYYYYMMDD = function(oDate) {
-		var sYear = oDate.getFullYear().toString();
-		var iMonth = oDate.getMonth() + 1;
-		var sMonth = iMonth < 10 ? "0" + iMonth : iMonth;
-		var sDay = oDate.getDate() < 10 ? "0" + oDate.getDate().toString() : oDate.getDate().toString();
+	const getDateAsYYYYMMDD = function(oDate) {
+		const sYear = oDate.getFullYear().toString();
+		const iMonth = oDate.getMonth() + 1;
+		const sMonth = iMonth < 10 ? "0" + iMonth : iMonth;
+		const sDay = oDate.getDate() < 10 ? "0" + oDate.getDate().toString() : oDate.getDate().toString();
 
 		return sYear + "-" + sMonth + "-" + sDay;
 	};
 
-	var getDateAsYYYYMMDDWithTime = function(oDate) {
+	const getDateAsYYYYMMDDWithTime = function(oDate) {
 		return getDateAsYYYYMMDD(oDate) + "T" + oDate.toTimeString().split(" ")[0];
 	};
 
-	var getRangeForDates = function(oStartDate, oEndDate, sConnection) {
+	const getRangeForDates = function(oStartDate, oEndDate, sConnection) {
 		return oDateType.formatValue(oStartDate, "string") + sConnection + oDateType.formatValue(oEndDate, "string");
 	};
 
-	var getRangeForDateTimes = function(oStartDate, oEndDate, sConnection) {
+	const getRangeForDateTimes = function(oStartDate, oEndDate, sConnection) {
 		return oDateTimeType.formatValue(oStartDate, "string") + sConnection + oDateTimeType.formatValue(oEndDate, "string");
 	};
 
-	var aFields = [
-		{ id: "F-Date", initialValue: oDateType.formatValue(oFieldDate, "string"), innerControl: "sap.m.DatePicker", valueStateText: "Enter a date." },
-		{ id: "F-DateTime", initialValue: oDateTimeType.formatValue(oFieldDate, "string"), innerControl: "sap.m.DateTimePicker", valueStateText: "Enter a valid date and time." },
-		{ id: "F-Time", initialValue: oTimeType.formatValue(oFieldDate, "string"), innerControl: "sap.m.TimePicker", valueStateText: "Enter a date." }
+	const aFields = [
+		{ id: "F-Date", initialValue: oDateType.formatValue(oFieldDate, "string"), innerControl: "sap.m.DatePicker", valueStateText: oRb.getText("Date.Invalid") },
+		{ id: "F-DateTime", initialValue: oDateTimeType.formatValue(oFieldDate, "string"), innerControl: "sap.m.DateTimePicker", valueStateText: oRb.getText("DateTime.Invalid") },
+		{ id: "F-Time", initialValue: oTimeType.formatValue(oFieldDate, "string"), innerControl: "sap.m.TimePicker", valueStateText: oRb.getText("Date.Invalid") }
 	];
 
-	var aFilterFields = [
+	const aFilterFields = [
 		// FilterFields with maxConditions="1"
-		{ id: "FF-Date", innerControl: "sap.m.DatePicker", valueStateText: "Enter a date." },
-		{ id: "FF-DateTime", innerControl: "sap.m.DateTimePicker", valueStateText: "Enter a valid date and time." },
-		{ id: "FF-Time", innerControl: "sap.m.TimePicker", valueStateText: "Enter a date." },
-		{ id: "FF-DateRange", innerControl: "sap.m.DateRangeSelection", valueStateText: "Enter a date." },
+		{ id: "FF-Date", innerControl: "sap.m.DatePicker", valueStateText: oRb.getText("Date.Invalid") },
+		{ id: "FF-DateTime", innerControl: "sap.m.DateTimePicker", valueStateText: oRb.getText("DateTime.Invalid") },
+		{ id: "FF-Time", innerControl: "sap.m.TimePicker", valueStateText: oRb.getText("Date.Invalid") },
+		{ id: "FF-DateRange", innerControl: "sap.m.DateRangeSelection", valueStateText: oRb.getText("Date.Invalid") },
 		{ id: "FF-DateTimeRange", innerControl: "sap.m.DynamicDateRange", valueStateText: "Incorrect value" },
 		{ id: "FF-DDR-Date", innerControl: "sap.m.DynamicDateRange", valueStateText: "Incorrect value" },
 		{ id: "FF-DDR-DateTime", innerControl: "sap.m.DynamicDateRange", valueStateText: "Incorrect value" },
 		// FilterFields with maxConditions="-1"
-		{ id: "FF-Date-2", innerControl: "sap.ui.mdc.field.FieldMultiInput", valueStateText: "Enter a date." },
-		{ id: "FF-DateTime-2", innerControl: "sap.ui.mdc.field.FieldMultiInput", valueStateText: "Enter a valid date and time." },
-		{ id: "FF-Time-2", innerControl: "sap.ui.mdc.field.FieldMultiInput", valueStateText: "Enter a valid time." },
-		{ id: "FF-DateRange-2", innerControl: "sap.ui.mdc.field.FieldMultiInput", valueStateText: "Enter a date." },
-		{ id: "FF-DateTimeRange-2", innerControl: "sap.ui.mdc.field.FieldMultiInput", valueStateText: "Enter a valid date and time." },
-		{ id: "FF-DDR-Date-2", innerControl: "sap.ui.mdc.field.FieldMultiInput", valueStateText: "Enter a date." },
-		{ id: "FF-DDR-DateTime-2", innerControl: "sap.ui.mdc.field.FieldMultiInput", valueStateText: "Enter a valid date and time." }
+		{ id: "FF-Date-2", innerControl: "sap.ui.mdc.field.FieldMultiInput", valueStateText: oRb.getText("Date.Invalid") },
+		{ id: "FF-DateTime-2", innerControl: "sap.ui.mdc.field.FieldMultiInput", valueStateText: oRb.getText("DateTime.Invalid") },
+		{ id: "FF-Time-2", innerControl: "sap.ui.mdc.field.FieldMultiInput", valueStateText: oRb.getText("Time.Invalid") },
+		{ id: "FF-DateRange-2", innerControl: "sap.ui.mdc.field.FieldMultiInput", valueStateText: oRb.getText("Date.Invalid") },
+		{ id: "FF-DateTimeRange-2", innerControl: "sap.ui.mdc.field.FieldMultiInput", valueStateText: oRb.getText("DateTime.Invalid") },
+		{ id: "FF-DDR-Date-2", innerControl: "sap.ui.mdc.field.FieldMultiInput", valueStateText: oRb.getText("Date.Invalid") },
+		{ id: "FF-DDR-DateTime-2", innerControl: "sap.ui.mdc.field.FieldMultiInput", valueStateText: oRb.getText("DateTime.Invalid") }
 	];
 
 	QUnit.module("Sanity");
@@ -435,7 +440,7 @@ sap.ui.define([
 	});
 
 	opaTest("DynamicDateRange - Enter DynamicDates", function(Given, When, Then) {
-		var aTokenTexts = aDynamicDates.map(function(oDynamicDate) {
+		const aTokenTexts = aDynamicDates.map(function(oDynamicDate) {
 			return oDynamicDate.dynamicDate;
 		});
 

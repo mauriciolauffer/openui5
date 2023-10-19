@@ -1,15 +1,15 @@
 /*global QUnit, sinon, oTable, oTreeTable*/
 
 sap.ui.define([
+	"sap/ui/table/qunit/TableQUnitUtils",
 	"sap/ui/table/utils/TableUtils",
 	"sap/ui/core/dnd/DragDropInfo",
 	"sap/ui/core/library",
 	"sap/ui/core/Control",
 	"sap/ui/Device",
 	"sap/ui/thirdparty/jquery",
-	"sap/ui/core/Core",
-	"sap/ui/table/qunit/TableQUnitUtils" // implicitly used via globals (e.g. createTables)
-], function(TableUtils, DragDropInfo, CoreLibrary, Control, Device, jQuery, oCore) {
+	"sap/ui/core/Core"
+], function(TableQUnitUtils, TableUtils, DragDropInfo, CoreLibrary, Control, Device, jQuery, oCore) {
 	"use strict";
 
 	// mapping of globals
@@ -65,13 +65,19 @@ sap.ui.define([
 
 	QUnit.module("Common", {
 		beforeEach: function() {
-			createTables();
+			this.oTable = TableQUnitUtils.createTable({
+				columns: TableQUnitUtils.createTextColumn().setWidth("2000px"),
+				rows: {path: "/"},
+				models: TableQUnitUtils.createJSONModelWithEmptyRows(100)
+			});
 
-			this.oDragAndDropExtension = oTable._getDragAndDropExtension();
+			this.oDragAndDropExtension = this.oTable._getDragAndDropExtension();
 			this.oDragAndDropExtension._debug();
+
+			return this.oTable.qunit.whenRenderingFinished();
 		},
 		afterEach: function() {
-			destroyTables();
+			this.oTable.destroy();
 		}
 	});
 
@@ -98,7 +104,7 @@ sap.ui.define([
 		var iOriginalPageYOffset = window.pageYOffset;
 
 		// Prepare for all tests.
-		oFakeEvent.dragSession.setComplexData("sap.ui.table-" + oTable.getId(), {
+		oFakeEvent.dragSession.setComplexData("sap.ui.table-" + this.oTable.getId(), {
 			persistent: "i should still exist after dragenter"
 		});
 
@@ -106,9 +112,9 @@ sap.ui.define([
 		window.pageXOffset = 321;
 
 		// Test without a drop control in the drag session.
-		this.oDragAndDropExtension._ExtensionDelegate.ondragenter.call(oTable, oFakeEvent);
+		this.oDragAndDropExtension._ExtensionDelegate.ondragenter.call(this.oTable, oFakeEvent);
 
-		mSessionData = oFakeEvent.dragSession.getComplexData("sap.ui.table-" + oTable.getId());
+		mSessionData = oFakeEvent.dragSession.getComplexData("sap.ui.table-" + this.oTable.getId());
 		assert.equal(mSessionData.verticalScrollEdge, null, "No drop control: No vertical scroll edge stored");
 		assert.equal(mSessionData.horizontalScrollEdge, null, "No drop control: No horizontal scroll edge stored");
 		assert.strictEqual(mSessionData.persistent, "i should still exist after dragenter",
@@ -116,13 +122,13 @@ sap.ui.define([
 
 		// Test the session data added by the table in dragenter.
 		oFakeEvent.dragSession.dropControl = new Control();
-		this.oDragAndDropExtension._ExtensionDelegate.ondragenter.call(oTable, oFakeEvent);
+		this.oDragAndDropExtension._ExtensionDelegate.ondragenter.call(this.oTable, oFakeEvent);
 
-		mSessionData = oFakeEvent.dragSession.getComplexData("sap.ui.table-" + oTable.getId());
+		mSessionData = oFakeEvent.dragSession.getComplexData("sap.ui.table-" + this.oTable.getId());
 		var iPageYOffset = window.pageYOffset;
 		var iPageXOffset = window.pageXOffset;
-		var mVerticalScrollRect = oTable.getDomRef("table").getBoundingClientRect();
-		var mHorizontalScrollRect = oTable.getDomRef("sapUiTableCtrlScr").getBoundingClientRect();
+		var mVerticalScrollRect = this.oTable.getDomRef("table").getBoundingClientRect();
+		var mHorizontalScrollRect = this.oTable.getDomRef("sapUiTableCtrlScr").getBoundingClientRect();
 
 		assert.deepEqual(mSessionData.verticalScrollEdge, {
 			bottom: mVerticalScrollRect.bottom + iPageYOffset,
@@ -143,10 +149,6 @@ sap.ui.define([
 	});
 
 	QUnit.test("Scrolling & Indicator size - dragover", function(assert) {
-		// Increase a column width to be able to test horizontal scrolling.
-		oTable.getColumns()[1].setWidth("3000px");
-		oCore.applyChanges();
-
 		var oFakeIndicator = jQuery("<div></div>").attr("style", "width: 0; height: 0; left: 0; right: 0");
 		var oFakeEvent = {
 			dragSession: {
@@ -175,9 +177,6 @@ sap.ui.define([
 				}
 			}
 		};
-		var oVSb = oTable._getScrollExtension().getVerticalScrollbar();
-		var oHSb = oTable._getScrollExtension().getHorizontalScrollbar();
-		var iScrollDistance = 32;
 		var iThreshold = 50;
 		var that = this;
 
@@ -185,14 +184,28 @@ sap.ui.define([
 			oEvent.pageY = iPageY;
 			oEvent.pageX = iPageX;
 
-			that.oDragAndDropExtension._ExtensionDelegate.ondragover.call(oTable, oFakeEvent);
+			// Multiple dragover events must not increase the scroll speed.
+			that.oDragAndDropExtension._ExtensionDelegate.ondragover.call(that.oTable, oFakeEvent);
+			that.oDragAndDropExtension._ExtensionDelegate.ondragover.call(that.oTable, oFakeEvent);
+			that.oDragAndDropExtension._ExtensionDelegate.ondragover.call(that.oTable, oFakeEvent);
+			that.oDragAndDropExtension._ExtensionDelegate.ondragover.call(that.oTable, oFakeEvent);
 
-			assert.strictEqual(oVSb.scrollTop, iExpectedScrollPosition, "The vertical scroll position is correct");
-			assert.strictEqual(oHSb.scrollLeft, iExpectedScrollPosition, "The horizontal scroll position is correct");
+			return Promise.race([
+				that.oTable.qunit.whenVSbScrolled(),
+				new Promise(function(resolve) {
+					setTimeout(resolve, 500);
+				})
+			]).then(that.oTable.qunit.whenRenderingFinished).then(function() {
+				var oScrollExtension = that.oTable._getScrollExtension();
+				var oVSb = oScrollExtension.getVerticalScrollbar();
+				var oHSb = oScrollExtension.getHorizontalScrollbar();
+				assert.strictEqual(oVSb.scrollTop, iExpectedScrollPosition, "The vertical scroll position is correct: " + iExpectedScrollPosition);
+				assert.strictEqual(oHSb.scrollLeft, iExpectedScrollPosition, "The horizontal scroll position is correct: " + iExpectedScrollPosition);
+			});
 		}
 
 		function testIndicatorSize(oEvent, iExpectedWidth, iExpectedHeight, iExpectedLeft, iExpectedRight) {
-			that.oDragAndDropExtension._ExtensionDelegate.ondragover.call(oTable, oEvent);
+			that.oDragAndDropExtension._ExtensionDelegate.ondragover.call(that.oTable, oEvent);
 
 			var oIndicator = oEvent.dragSession.getIndicator();
 
@@ -206,7 +219,7 @@ sap.ui.define([
 				"The style \"right\" of the indicator has the expected value");
 		}
 
-		oFakeEvent.dragSession.setComplexData("sap.ui.table-" + oTable.getId(), {
+		oFakeEvent.dragSession.setComplexData("sap.ui.table-" + this.oTable.getId(), {
 			verticalScrollEdge: {
 				top: 600,
 				bottom: 300
@@ -218,45 +231,52 @@ sap.ui.define([
 		});
 
 		// Scroll down and to the right simultaneously.
-		testScrolling(oFakeEvent, 300 - iThreshold, 600 - iThreshold, iScrollDistance);
-		testScrolling(oFakeEvent, 300 - iThreshold - 1, 600 - iThreshold - 1, iScrollDistance);
-		testScrolling(oFakeEvent, 300, 600, iScrollDistance * 2);
-		testScrolling(oFakeEvent, 300 + iThreshold, 600 + iThreshold, iScrollDistance * 3);
-		testScrolling(oFakeEvent, 300 + iThreshold + 1, 600 + iThreshold + 1, iScrollDistance * 3);
+		return testScrolling(oFakeEvent, 300 - iThreshold - 1, 600 - iThreshold - 1, 0).then(function() {
+			return testScrolling(oFakeEvent, 300, 600, 25);
+		}).then(function() {
+			return testScrolling(oFakeEvent, 300 + iThreshold, 600 + iThreshold, 75);
+		}).then(function() {
+			return testScrolling(oFakeEvent, 300 + iThreshold + 1, 600 + iThreshold + 1, 75);
 
-		// Scroll up and to the left simultaneously.
-		testScrolling(oFakeEvent, 600 + iThreshold + 1, 300 + iThreshold + 1, iScrollDistance * 3);
-		testScrolling(oFakeEvent, 600 + iThreshold, 300 + iThreshold, iScrollDistance * 2);
-		testScrolling(oFakeEvent, 600, 300, iScrollDistance);
-		testScrolling(oFakeEvent, 600 - iThreshold - 1, 300 - iThreshold - 1, iScrollDistance);
-		testScrolling(oFakeEvent, 600 - iThreshold, 300 - iThreshold, 0);
+			// Scroll up and to the left simultaneously.
+		}).then(function() {
+			return testScrolling(oFakeEvent, 600 + iThreshold + 1, 300 + iThreshold + 1, 75);
+		}).then(function() {
+			return testScrolling(oFakeEvent, 600 + iThreshold, 300 + iThreshold, 73);
+		}).then(function() {
+			return testScrolling(oFakeEvent, 600, 300, 48);
+		}).then(function() {
+			return testScrolling(oFakeEvent, 600 - iThreshold - 1, 300 - iThreshold - 1, 48);
+		}).then(function() {
+			return testScrolling(oFakeEvent, 600 - iThreshold, 300 - iThreshold, 0);
+		}).then(function() {
+			// If the drop target is the table, no scrolling should be performed.
+			oFakeEvent.dragSession.dropControl = that.oTable;
+			return testScrolling(oFakeEvent, 300 - iThreshold, 600 - iThreshold, 0);
+		}).then(function() {
+			/* Resize and reposition the indicator */
 
-		// If the drop target is the table, no scrolling should be performed.
-		oFakeEvent.dragSession.dropControl = oTable;
-		testScrolling(oFakeEvent, 300 - iThreshold, 600 - iThreshold, 0);
+			// If there is no drop target, there is no need to modify the indicator.
+			oFakeEvent.dragSession.dropControl = null;
+			oFakeEvent.dragSession.setIndicatorConfig({
+				width: 500
+			});
+			testIndicatorSize(oFakeEvent, 0, 0, 0, 0);
 
-		/* Resize and reposition the indicator */
+			// If there is an indicator size in the drag session, the indicator should be modified accordingly.
+			oFakeEvent.dragSession.dropControl = "a control which needs indicator modification";
+			oFakeEvent.dragSession.setIndicatorConfig({
+				width: 500,
+				height: 50,
+				left: 33,
+				right: 222
+			});
+			testIndicatorSize(oFakeEvent, 500, 50, 33, 222);
 
-		// If there is no drop target, there is no need to modify the indicator.
-		oFakeEvent.dragSession.dropControl = null;
-		oFakeEvent.dragSession.setIndicatorConfig({
-			width: 500
+			// Not all controls need indicator modifications, so there might be no indicator size. In this case the indicator should not be modified.
+			oFakeEvent.dragSession.setIndicatorConfig();
+			testIndicatorSize(oFakeEvent, 500, 50, 33, 222);
 		});
-		testIndicatorSize(oFakeEvent, 0, 0, 0, 0);
-
-		// If there is an indicator size in the drag session, the indicator should be modified accordingly.
-		oFakeEvent.dragSession.dropControl = "a control which needs indicator modification";
-		oFakeEvent.dragSession.setIndicatorConfig({
-			width: 500,
-			height: 50,
-			left: 33,
-			right: 222
-		});
-		testIndicatorSize(oFakeEvent, 500, 50, 33, 222);
-
-		// Not all controls need indicator modifications, so there might be no indicator size. In this case the indicator should not be modified.
-		oFakeEvent.dragSession.setIndicatorConfig();
-		testIndicatorSize(oFakeEvent, 500, 50, 33, 222);
 	});
 
 	QUnit.module("Rows", {
@@ -284,13 +304,36 @@ sap.ui.define([
 		}
 	});
 
-	QUnit.test("draggable attribute", function(assert) {
+	QUnit.test("draggable attribute of row with data", function(assert) {
 		assert.strictEqual(getRowHeader(0)[0].getAttribute("draggable"), null,
 			"Row header does not have a draggable attribute");
 		assert.strictEqual(getCell(0, 0).parent()[0].getAttribute("draggable"), "true",
 			"Row in the fixed column area does have a draggable attribute with value \"true\"");
+		assert.strictEqual(getCell(0, 0).parent()[0].getAttribute("data-sap-ui-draggable"), "true",
+			"Row in the fixed column area does have a data-sap-ui-draggable attribute with value \"true\"");
 		assert.strictEqual(getCell(0, 1).parent()[0].getAttribute("draggable"), "true",
 			"Row in the scrollable column area does have a draggable attribute with value \"true\"");
+		assert.strictEqual(getCell(0, 1).parent()[0].getAttribute("data-sap-ui-draggable"), "true",
+			"Row in the scrollable column area does have a data-sap-ui-draggable attribute with value \"true\"");
+		assert.strictEqual(getRowAction(0)[0].getAttribute("draggable"), null,
+			"Row action does not have a draggable attribute");
+	});
+
+	QUnit.test("draggable attribute of empty row", function(assert) {
+		oTable.setShowNoData(false);
+		oTable.unbindRows();
+		oCore.applyChanges();
+
+		assert.strictEqual(getRowHeader(0)[0].getAttribute("draggable"), null,
+			"Row header does not have a draggable attribute");
+		assert.strictEqual(getCell(0, 0).parent()[0].getAttribute("draggable"), "true",
+			"Row in the fixed column area does have a draggable attribute with value \"true\"");
+		assert.strictEqual(getCell(0, 0).parent()[0].getAttribute("data-sap-ui-draggable"), "true",
+			"Row in the fixed column area does have a data-sap-ui-draggable attribute with value \"true\"");
+		assert.strictEqual(getCell(0, 1).parent()[0].getAttribute("draggable"), "true",
+			"Row in the scrollable column area does have a draggable attribute with value \"true\"");
+		assert.strictEqual(getCell(0, 1).parent()[0].getAttribute("data-sap-ui-draggable"), "true",
+			"Row in the scrollable column area does have a data-sap-ui-draggable attribute with value \"true\"");
 		assert.strictEqual(getRowAction(0)[0].getAttribute("draggable"), null,
 			"Row action does not have a draggable attribute");
 	});
@@ -442,9 +485,9 @@ sap.ui.define([
 
 		function testEmptyRow() {
 			var sOriginalDropPosition = oTable.getDragDropConfig()[0].getDropPosition();
-			var iVisibleRowCount = oTable.getVisibleRowCount();
+			var iOriginalRowCount = oTable.getRowMode().getRowCount();
 
-			oTable.setVisibleRowCount(10);
+			oTable.getRowMode().setRowCount(10);
 			oCore.applyChanges();
 
 			Object.getOwnPropertyNames(DropPosition).forEach(function(sPropertyName) {
@@ -457,7 +500,7 @@ sap.ui.define([
 
 			// Restore
 			oTable.getDragDropConfig()[0].setDropPosition(sOriginalDropPosition);
-			oTable.setVisibleRowCount(iVisibleRowCount);
+			oTable.getRowMode().setRowCount(iOriginalRowCount);
 			oCore.applyChanges();
 		}
 
@@ -513,7 +556,7 @@ sap.ui.define([
 		}
 
 		oTable.unbindRows();
-		oTable.setVisibleRowCount(2);
+		oTable.getRowMode().setRowCount(2);
 		oTable.setShowNoData(false);
 		oCore.applyChanges();
 		oClock.tick(50);
@@ -614,7 +657,8 @@ sap.ui.define([
 		var aColumns = oTable.getColumns();
 
 		this.oDDI.bIgnoreMetadataCheck = true;
-		oTable.rerender();
+		oTable.invalidate();
+		oCore.applyChanges();
 
 		// move non-fixed columns
 		triggerDragEvent("dragstart", aColumns[1]);
@@ -646,8 +690,8 @@ sap.ui.define([
 		oTreeTable.addDragDropConfig(this.oDDI);
 		this.oDDI.bIgnoreMetadataCheck = true;
 
+		oTreeTable.invalidate();
 		oCore.applyChanges();
-		oTreeTable.rerender();
 
 		for (var i = 0; i < aColumns.length; i++) {
 			var oColumnRef = aColumns[i].getDomRef();
@@ -684,8 +728,8 @@ sap.ui.define([
 
 		this.oDDI.bIgnoreMetadataCheck = true;
 
+		oTable.invalidate();
 		oCore.applyChanges();
-		oTable.rerender();
 
 		for (var i = 0; i < aColumns.length; i++) {
 			var oColumnRef = aColumns[i].getDomRef();

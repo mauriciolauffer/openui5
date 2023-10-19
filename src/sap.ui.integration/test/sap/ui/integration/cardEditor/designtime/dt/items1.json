@@ -1,4 +1,9 @@
 {
+	"destination.group":{
+		"type": "group",
+		"label": "My Destinations",
+		"expanded": false
+	},
 	"generalGroup": {
 		"type": "group",
 		"label": "All Data Type",
@@ -20,6 +25,24 @@
 		"hint": "Please refer to the <a href='https://www.sap.com'>documentation</a> lets see how this will behave if the text is wrapping to the next line and has <a href='https://www.sap.com'>two links</a>. good?",
 		"visualization": {
 			"fragment": "sap/ui5/test/cardeditor/listcard/viz/Input"
+		}
+	},
+	"maxItems": {
+		"manifestpath": "/sap.card/configuration/parameters/maxItems/value",
+		"type": "integer",
+		"label": "Max Items",
+		"visualization": {
+			"type": "Slider",
+			"settings": {
+				"value": "{currentSettings>value}",
+				"min": 0,
+				"max": 20,
+				"width": "100%",
+				"showAdvancedTooltip": true,
+				"showHandleTooltip": false,
+				"inputsAsTooltips": true,
+				"enabled": "{currentSettings>editable}"
+			}
 		}
 	},
 	"stringWithTextArea": {

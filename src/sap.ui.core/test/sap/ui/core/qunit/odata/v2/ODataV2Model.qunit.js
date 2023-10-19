@@ -14,6 +14,7 @@ sap.ui.define([
 	"sap/m/List",
 	"sap/m/Panel",
 	"sap/m/Text",
+	"sap/ui/core/Messaging",
 	"sap/ui/core/message/Message",
 	"sap/ui/core/mvc/XMLView",
 	"sap/ui/model/ChangeReason",
@@ -31,7 +32,7 @@ sap.ui.define([
 	"sap/ui/thirdparty/jquery",
 	"test-resources/sap/ui/core/qunit/odata/data/ODataModelFakeService"
 ], function(Log, encodeURL, each, isEmptyObject, isPlainObject, Button, ListItem, HBox, Input,
-		Label, List, Panel, Text, Message, XMLView, ChangeReason, ClientModel, Context, Filter,
+		Label, List, Panel, Text, Messaging, Message, XMLView, ChangeReason, ClientModel, Context, Filter,
 		FilterOperator, Sorter, JSONModel, MessageScope, ODataUtils, ODataModel, Column, Table,
 		jQuery, fakeService) {
 	"use strict";
@@ -290,15 +291,15 @@ sap.ui.define([
 		assert.strictEqual(oModel.getMessageScope(), MessageScope.RequestedObjects,
 			"Initial message scope is: RequestedObjects");
 
-		sap.ui.getCore().getMessageManager().registerMessageProcessor(oModel);
+		Messaging.registerMessageProcessor(oModel);
 		oModel.metadataLoaded().then(function() {
 			var oContext = oModel.createEntry("/Products");
-			oMessage.setTarget(oContext.getPath());
-			oMessage2.setTarget(oContext.getPath());
-			sap.ui.getCore().getMessageManager().addMessages([oMessage, oMessage2]);
+			oMessage.setTargets([oContext.getPath()]);
+			oMessage2.setTargets([oContext.getPath()]);
+			Messaging.addMessages([oMessage, oMessage2]);
 			assert.equal(oModel.getMessagesByEntity(oContext.getPath()).length, 2, "all messages returned");
 			assert.equal(oModel.getMessagesByEntity(oContext.getPath(), true).length, 1, "messages that are not persitent returned");
-			sap.ui.getCore().getMessageManager().unregisterMessageProcessor(oModel);
+			Messaging.unregisterMessageProcessor(oModel);
 			done();
 		});
 	});
@@ -2160,15 +2161,15 @@ sap.ui.define([
 		oTable.getBinding("rows").attachDataReceived(oHandler);
 	});
 
-	QUnit.test("test bindElement with batchGroupId", function(assert) {
+	QUnit.test("test bindElement with groupId", function(assert) {
 		assert.expect(2);
 		var done = assert.async();
 		cleanSharedData();
 		var oModel = initModel(sURI, {json:false});
 		oModel.setUseBatch(true);
-		oModel.setDeferredBatchGroups(["test"]);
+		oModel.setDeferredGroups(["test"]);
 		sap.ui.getCore().setModel(oModel);
-		oLabel.bindElement("/Categories(2)", {batchGroupId:"test"});
+		oLabel.bindElement("/Categories(2)", {groupId:"test"});
 		var fnHandler = function() {
 			assert.equal(oLabel.getBindingContext().getPath(), "/Categories(2)", "context must be set in change handler");
 			oLabel.setBindingContext();
@@ -3445,8 +3446,11 @@ sap.ui.define([
 		}, true);
 
 		var oBinding = oModel.bindList("/Categories");
-		oModel.setDeferredBatchGroups(["myId"]);
+		oModel.setDeferredGroups(["myId"]);
 		var handler = function() { // delay the following test
+			// detach so that checkUpdate called from v2.Context#delete does not again call this handler
+			oBinding.detachChange(handler);
+			oBinding.detachRefresh(handler);
 			var oProperties = {CategoryID:99,CategoryName:"Food",Description:"Food Desc", undefProp:undefined};
 			var oContext = oModel.createEntry("Categories",{properties: oProperties, batchGroupId : "myId"});
 			assert.ok(oContext, "context check");
@@ -3459,15 +3463,10 @@ sap.ui.define([
 			assert.equal(oEntry.CategoryName, "Food", "category name check");
 			assert.equal(oEntry.CategoryID, 99, "category ID check");
 			assert.equal(oEntry.Description, "Food Desc", "category ID check");
-
-			//oModel.setProperty("CategoryName", "test",oContext);
-
-			//assert.ok(oModel.mDeferredRequests['myId'].changes['undefined'].length == 1, "queue check");
 			assert.ok(oModel.mContexts[oContext.getPath()], "context check");
 			assert.equal(oModel.oData[oContext.getPath().substr(1)].CategoryName, "Food", "data check");
 
-			oModel.deleteCreatedEntry(oContext);
-			//assert.equal(oModel.mDeferredRequests['myId'].changes['undefined'][0].request._aborted, true, "queue check");
+			oContext.delete();
 			assert.equal(oModel.oData[oContext.getPath().substr(1)], undefined, "data check");
 			assert.equal(oModel.mContexts[oContext.getPath()], undefined, "context check");
 
@@ -3623,7 +3622,7 @@ sap.ui.define([
 		window.fakeResponded = function() {
 			iParallelCount--;
 		};
-		oModel.setDeferredBatchGroups(["1", "2"]);
+		oModel.setDeferredGroups(["1", "2"]);
 		oModel.read("/Categories(1)", {groupId: "1"});
 		oModel.read("/Categories(9999)", {groupId: "1"});
 		oModel.read("/Categories(3)", {groupId: "2"});
@@ -4207,7 +4206,7 @@ sap.ui.define([
 		function fnSuccess() { oInfo.success++; }
 		function fnError() { oInfo.error++; }
 		oModel.attachMetadataLoaded(function() {
-			oModel.setDeferredBatchGroups(["myId"]);
+			oModel.setDeferredGroups(["myId"]);
 			oRequest1 = oModel.read("/Categories(1)", {success: fnSuccess, error: fnError, batchGroupId : "myId"});
 			oRequest2 = oModel.read("/Categories(3)", {success: fnSuccess, error: fnError, batchGroupId : "myId"});
 						oModel.read("/Categories(4)", {success: fnSuccess, error: fnError, batchGroupId : "myId"});
@@ -4254,7 +4253,7 @@ sap.ui.define([
 		function fnSuccess() { oInfo.success++; }
 		function fnError() { oInfo.error++; }
 		oModel.attachMetadataLoaded(function() {
-			oModel.setDeferredBatchGroups(["myId"]);
+			oModel.setDeferredGroups(["myId"]);
 			oRequest1 = oModel.read("/Categories(1)", {success: fnSuccess, error: fnError, batchGroupId : "myId"});
 			oRequest2 = oModel.read("/Categories(3)", {success: fnSuccess, error: fnError, batchGroupId : "myId"});
 			oModel.read("/Categories(4)", {success: fnSuccess, error: fnError, batchGroupId : "myId"});

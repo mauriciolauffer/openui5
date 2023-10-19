@@ -33,6 +33,7 @@ sap.ui.define([
 
 	var sPlaceholder = "search for..",
 		sValue = "value",
+		sTooltip = "Search city",
 		sQuery = "",
 		sLive  = "",
 		aEvents = [];
@@ -74,6 +75,7 @@ sap.ui.define([
 		placeholder: sPlaceholder,
 		value: sValue,
 		enabled: true,
+		tooltip: sTooltip,
 		search:onSearch,
 		liveChange: onLiveChange
 	}).placeAt(DOM_RENDER_LOCATION);
@@ -132,6 +134,7 @@ sap.ui.define([
 	QUnit.test("Properties", function(assert) {
 		assert.equal(this.sf1.getValue(), sValue, "Value property, UI5");
 		assert.equal(this.sf1Dom.value, sValue, "Value property, DOM");
+		assert.equal(this.sf1.getInputElement().getAttribute("title"), sTooltip, "Tooltip correctly set");
 		assert.equal(this.sf2.getEnabled(), false, "Enabled property, UI5");
 		assert.equal(this.sf2Dom.disabled, true, "Disabled property, DOM");
 		assert.ok(this.sf2.$().hasClass("sapMSFDisabled"),"CSS class name for \"disabled\" is set");
@@ -269,6 +272,28 @@ sap.ui.define([
 			this.oSearchField.destroy();
 			Core.applyChanges();
 		}
+	});
+
+	QUnit.test("input's maxlength attribute remains rendered after every invalidation", function(assert) {
+		// arrange
+		this.oSearchField.setMaxLength(20);
+		Core.applyChanges();
+
+		// assert
+		assert.strictEqual(this.oSearchField.getDomRef("I").getAttribute("maxlength"), "20", "attribute is present");
+
+		// act
+		this.oSearchField.invalidate();
+		Core.applyChanges();
+
+		// assert
+		assert.strictEqual(this.oSearchField.getDomRef("I").getAttribute("maxlength"), "20", "attribute is present");
+
+		// act
+		this.oSearchField.invalidate();
+		Core.applyChanges();
+		// assert
+		assert.strictEqual(this.oSearchField.getDomRef("I").getAttribute("maxlength"), "20", "attribute is present");
 	});
 
 	QUnit.test("ARIA attributes for Chrome specific", function(assert) {
@@ -459,6 +484,42 @@ sap.ui.define([
 		this.oSearchField.onsapfocusleave();
 
 		assert.strictEqual(fnFireChangeSpy.callCount, 3, "The change event is fired");
+
+		this.oSearchField.setValue("new");
+		QunitUtils.triggerKeydown(this.oSearchField.getDomRef("I"), KeyCodes.ESCAPE);
+
+		assert.strictEqual(fnFireSearchSpy.callCount, 2, "The search event is fired");
+		assert.ok(fnFireSearchSpy.args[1][0].escPressed, "'escPressed' parameter is set");
+
+		fnFireChangeSpy.restore();
+		fnFireSearchSpy.restore();
+	});
+
+	QUnit.test("'searchButtonPressed' event parameter", function(assert) {
+
+		var fnFireSearchSpy = this.spy(this.oSearchField, "fireSearch");
+
+		// act
+		QunitUtils.triggerCharacterInput(this.oSearchField.getFocusDomRef(), "a");
+
+		var oTouchStartMockEvent = {
+			target: this.oSearchField.getDomRef("search")
+		};
+		var oTouchEndMockEvent = {
+			target: this.oSearchField.getDomRef("search"),
+			originalEvent: {},
+			id: this.oSearchField.getId() + "-search"
+		};
+
+		// Act
+		// Simulate touch start on the SearchField's search button.
+		this.oSearchField.ontouchstart(oTouchStartMockEvent);
+		// Simulate touch end on the SearchField's search button.
+		this.oSearchField.ontouchend(oTouchEndMockEvent);
+
+		// assertions
+		assert.strictEqual(fnFireSearchSpy.callCount, 1, "The search event is fired");
+		assert.strictEqual(fnFireSearchSpy.args[0][0].searchButtonPressed, true, "searchButtonPressed parameter is set for search event");
 	});
 
 	QUnit.test("'submit' form event", function(assert) {

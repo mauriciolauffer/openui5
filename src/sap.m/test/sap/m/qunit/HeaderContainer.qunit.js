@@ -514,6 +514,19 @@ sap.ui.define([
 			assert.equal(this.oHeaderContainer._oArrowNext.getType(), "Transparent", "Next button is transparent");
 		});
 
+		QUnit.test("Internal ItemNavigation alt/meta key + right/left or cmd + right/left arrow or cmd + [] is not handled",function (assert){
+			// Prepare
+            var oModifiers;
+            // Assert
+            var oModifiers = this.oHeaderContainer._oItemNavigation.getDisabledModifiers();
+            assert.ok(oModifiers["sapnext"], "sapnext has disabled modifiers");
+            assert.ok(oModifiers["sapprevious"], "sapprevious has disabled modifiers");
+            assert.ok(oModifiers["sapnext"].indexOf("alt") !== -1, "right is not handled when alt is pressed");
+            assert.ok(oModifiers["sapnext"].indexOf("meta") !== -1, "right is not handled when meta key is pressed");
+            assert.ok(oModifiers["sapprevious"].indexOf("alt") !== -1, "left is not handled when alt is pressed");
+            assert.ok(oModifiers["sapprevious"].indexOf("meta") !== -1, "left is not handled when meta key is pressed");
+        });
+
 		QUnit.module("Special focus issues", {
 			afterEach: function () {
 				this.oHeaderContainer.destroy();
@@ -1447,7 +1460,7 @@ sap.ui.define([
 	QUnit.module("HeaderContainer with RTL", {
 		beforeEach: function () {
 		Configuration.setRTL(true);
-		sap.ui.getCore().applyChanges();
+		oCore.applyChanges();
 		this.initializeMobileView(320);
 		this.oHeaderContainer = new HeaderContainer({
 			gridLayout: true,
@@ -1465,7 +1478,7 @@ sap.ui.define([
 				this.resetMobileView();
 			}
 			Configuration.setRTL(false);
-			sap.ui.getCore().applyChanges();
+			oCore.applyChanges();
 		},
 		initializeMobileView: function(iScreenWidth) {
 			this.initialScreenWidth = Device.resize.width;

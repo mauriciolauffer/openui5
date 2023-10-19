@@ -742,6 +742,12 @@ sap.ui.define([
 					only: ["sap/ui/rta/util/validateStableIds"]
 				}
 			},
+			"util/validateText": {
+				group: "util",
+				coverage: {
+					only: ["sap/ui/rta/util/validateText"]
+				}
+			},
 			"util/showMessageBox": {
 				group: "util",
 				coverage: {
@@ -820,12 +826,12 @@ sap.ui.define([
 
 	var bCompAvailable = false;
 	var oXhr = new XMLHttpRequest();
-	oXhr.onreadystatechange = function () {
+	oXhr.onreadystatechange = function() {
 		if (this.readyState === 4) {
 			switch (this.status) {
 				case 200:
 				case 304:
-					bCompAvailable = JSON.parse(this.responseText).libraries.some(function (mLibrary) {
+					bCompAvailable = JSON.parse(this.responseText).libraries.some(function(mLibrary) {
 						return mLibrary.name === "sap.ui.comp";
 					});
 					break;
@@ -864,7 +870,8 @@ sap.ui.define([
 							qunit: "test-resources/sap/ui/rta/qunit/",
 							"sap.ui.rta.qunitrta": "test-resources/sap/ui/rta/internal/testdata/qunit_rta/",
 							"sap.ui.rta.test": "test-resources/sap/ui/rta/internal/testdata/rta/"
-						}
+						},
+						flexibilityServices: '[{"connector": "SessionStorageConnector"}]'
 					}
 				},
 				"RuntimeAuthoring-2": {
@@ -894,6 +901,19 @@ sap.ui.define([
 					}
 				},
 				"RuntimeAuthoring-versioning": {
+					coverage: {
+						only: ["sap/ui/rta/RuntimeAuthoring"]
+					},
+					ui5: {
+						flexibilityServices: '[{"connector": "SessionStorageConnector"}]',
+						resourceroots: {
+							qunit: "test-resources/sap/ui/rta/qunit/",
+							"sap.ui.rta.qunitrta": "test-resources/sap/ui/rta/internal/testdata/qunit_rta/",
+							"sap.ui.rta.test": "test-resources/sap/ui/rta/internal/testdata/rta/"
+						}
+					}
+				},
+				"RuntimeAuthoring-contextBasedAdaptation": {
 					coverage: {
 						only: ["sap/ui/rta/RuntimeAuthoring"]
 					},
@@ -997,7 +1017,8 @@ sap.ui.define([
 							qunit: "test-resources/sap/ui/rta/qunit/",
 							"sap.ui.rta.qunitrta": "test-resources/sap/ui/rta/internal/testdata/qunit_rta/",
 							"sap.ui.rta.test": "test-resources/sap/ui/rta/internal/testdata/rta/"
-						}
+						},
+						flexibilityServices: '[{"connector": "SessionStorageConnector"}]'
 					}
 				},
 				"util/BindingsExtractor": {

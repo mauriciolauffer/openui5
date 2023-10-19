@@ -14,7 +14,8 @@ sap.ui.define([
 	"sap/ui/core/InvisibleText",
 	"sap/ui/events/KeyCodes",
 	"./TimePickerInputsRenderer",
-	"sap/ui/thirdparty/jquery"
+	"sap/ui/thirdparty/jquery",
+	'sap/ui/core/date/UI5Date'
 ],
 	function(
 		library,
@@ -28,7 +29,8 @@ sap.ui.define([
 		InvisibleText,
 		KeyCodes,
 		TimePickerInputsRenderer,
-		jQuery
+		jQuery,
+        UI5Date
 	) {
 		"use strict";
 
@@ -330,7 +332,7 @@ sap.ui.define([
 		/**
 		 * Gets the time values from the clocks, as a date object.
 		 *
-		 * @returns {Date} A JavaScript date object
+		 * @returns {Date|module:sap/ui/core/date/UI5Date} A date instance
 		 * @public
 		 */
 		TimePickerInputs.prototype.getTimeValues = function() {
@@ -340,7 +342,7 @@ sap.ui.define([
 				oFormatButton = this._getFormatButton(),
 				iHours = null,
 				sAmpm = null,
-				oDateValue = new Date();
+				oDateValue = UI5Date.getInstance();
 
 			if (oHoursInput) {
 				iHours = parseInt(oHoursInput.getValue());
@@ -402,7 +404,7 @@ sap.ui.define([
 		/**
 		 * Set what inputs show.
 		 *
-		 * @param {object} oDate JavaScript date object
+		 * @param {object} oDate date instance
 		 * @param {boolean} bHoursValueIs24 whether the hours value is 24 or not
 		 * @private
 		 */
@@ -415,12 +417,12 @@ sap.ui.define([
 				iHours,
 				sAmPm = null;
 
-			oDate = oDate || new Date();
+			oDate = oDate || UI5Date.getInstance();
 
 			// Cross frame check for a date should be performed here otherwise setDateValue would fail in OPA tests
 			// because Date object in the test is different than the Date object in the application (due to the iframe).
 			if (Object.prototype.toString.call(oDate) !== "[object Date]" || isNaN(oDate)) {
-				throw new Error("Date must be a JavaScript date object; " + this);
+				throw new Error("Date must be a JavaScript or UI5Date date object; " + this);
 			}
 
 			if (!bHoursValueIs24) {

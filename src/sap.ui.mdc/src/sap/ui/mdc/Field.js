@@ -4,25 +4,25 @@
 sap.ui.define([
 	'sap/ui/mdc/field/FieldBase',
 	'sap/ui/mdc/field/FieldBaseRenderer',
-	'sap/ui/mdc/enum/FieldDisplay',
-	'sap/ui/mdc/condition/FilterOperatorUtil',
-	'sap/ui/mdc/enum/BaseType',
+	'sap/ui/mdc/enums/FieldDisplay',
+	'sap/ui/mdc/enums/BaseType',
+	'sap/ui/mdc/enums/OperatorName',
+	'sap/ui/mdc/condition/Condition',
 	'sap/base/util/deepEqual',
 	'sap/base/util/merge',
 	'sap/ui/model/BindingMode',
-	'sap/ui/model/Context',
-	'sap/ui/mdc/condition/Condition'
+	'sap/ui/model/Context'
 ], function(
 	FieldBase,
 	FieldBaseRenderer,
 	FieldDisplay,
-	FilterOperatorUtil,
 	BaseType,
+	OperatorName,
+	Condition,
 	deepEqual,
 	merge,
 	BindingMode,
-	Context,
-	Condition
+	Context
 ) {
 	"use strict";
 
@@ -34,26 +34,35 @@ sap.ui.define([
 	 *
 	 * @class
 	 * The <code>Field</code> control is used to bind its value to data of a certain data type. Based on the data type settings, a default
-	 * control is rendered by the <code>Field</code>. For example, if a date type is used, a {@link sap.m.DatePicker DatePicker} is rendered.
+	 * control is rendered by the <code>Field</code> as follows:
+	 *
+	 * <ul>
+	 * <li>In display mode, usually a {@link sap.m.Text Text} control is rendered.</li>
+	 * <li>If <code>multipleLines</code> is set, an {@link sap.m.ExpandableText ExpandableText} control is rendered.</li>
+	 * <li>If <code>fieldInfo</code> is set and it is configured to be triggerable, a {@link sap.m.Link Link} control is rendered.</li>
+	 * <li>In edit mode, usually an {@link sap.m.Input Input} control is rendered.</li>
+	 * <li>If <code>multipleLines</code> is set, a {@link sap.m.TextArea TextArea} control is rendered.</li>
+	 * <li>If a date type is used, a {@link sap.m.DatePicker DatePicker} control is rendered.</li>
+	 * <li>If a date/time type is used, a {@link sap.m.DateTimePicker DateTimePicker} control is rendered.</li>
+	 * <li>If a time type is used, a {@link sap.m.TimePicker TimePicker} control is rendered.</li>
+	 * <li>If a currency or unit type is used, two {@link sap.m.Input Input} controls are rendered, one for number and one for unit.</li>
+	 * </ul>
 	 *
 	 * @extends sap.ui.mdc.field.FieldBase
-	 * @implements sap.ui.core.IFormContent
+	 * @implements sap.ui.core.IFormContent, sap.ui.core.ISemanticFormContent, sap.m.IOverflowToolbarContent
 	 *
 	 * @author SAP SE
 	 * @version ${version}
 	 *
 	 * @constructor
 	 * @alias sap.ui.mdc.Field
-	 * @author SAP SE
 	 * @version ${version}
 	 * @since 1.54.0
-	 * @experimental As of version 1.54
 	 *
-	 * @private
-	 * @ui5-restricted sap.fe
-	 * @MDC_PUBLIC_CANDIDATE
+	 * @public
+  	 * @experimental As of version 1.54.0
 	 */
-	var Field = FieldBase.extend("sap.ui.mdc.Field", /* @lends sap.ui.mdc.Field.prototype */ {
+	const Field = FieldBase.extend("sap.ui.mdc.Field", /* @lends sap.ui.mdc.Field.prototype */ {
 		metadata: {
 			library: "sap.ui.mdc",
 			designtime: "sap/ui/mdc/designtime/field/Field.designtime",
@@ -66,7 +75,8 @@ sap.ui.define([
 				 */
 				value: {
 					type: "any",
-					defaultValue: null
+					defaultValue: null,
+					bindable: "bindable"
 				},
 
 				/**
@@ -77,7 +87,8 @@ sap.ui.define([
 				 */
 				additionalValue: {
 					type: "any",
-					defaultValue: null
+					defaultValue: null,
+					bindable: "bindable"
 				}
 			},
 			events: {
@@ -92,7 +103,7 @@ sap.ui.define([
 						/**
 						 * The new value of the <code>Field</code>.
 						 *
-						 * If a <code>FieldHelp</code> is assigned to the <code>Field</code>, the <code>value</code> is used as key for the <code>FieldHelp</code> items.
+						 * If a <code>ValueHelp</code> is assigned to the <code>Field</code>, the <code>value</code> is used as key for the <code>ValueHelp</code> items.
 						 */
 						value: { type: "string" },
 
@@ -103,7 +114,7 @@ sap.ui.define([
 
 						/**
 						 * Returns a <code>Promise</code> for the change. The <code>Promise</code> returns the value if it is resolved.
-						 * If the <code>change</code> event is synchronous, the promise has already been already resolved. If it is asynchronous,
+						 * If the <code>change</code> event is synchronous, the <code>Promise</code> has already been already resolved. If it is asynchronous,
 						 * it will be resolved after the value has been updated.
 						 *
 						 * The <code>Field</code> should be set to busy during the parsing to prevent user input.
@@ -128,9 +139,10 @@ sap.ui.define([
 		FieldBase.prototype.init.apply(this, arguments);
 
 		this.setMaxConditions(1);
+		this.setProperty("_operators", [OperatorName.EQ], true);
 
 		this._oObserver.observe(this, {
-			properties: ["value", "additionalValue"]
+			properties: ["value", "additionalValue", "valueState"]
 		});
 
 	};
@@ -151,26 +163,49 @@ sap.ui.define([
 
 	Field.prototype.bindProperty = function(sName, oBindingInfo) {
 
+		let oDataType;
+		let aTypes;
+		let i = 0;
+
 		if (sName === "value" && !oBindingInfo.formatter) { // not if a formatter is used, as this needs to be executed
 			oBindingInfo.targetType = "raw"; // provide internal value to inner control
-			var oDataType = this._getContentFactory().getDataType();
+			oDataType = this.getContentFactory().getDataType();
 			if (oBindingInfo.type && (!oDataType ||
 				oDataType.getMetadata().getName() !== oBindingInfo.type.getMetadata().getName() ||
 				!deepEqual(oDataType.getFormatOptions(), oBindingInfo.type.getFormatOptions()) ||
 				!deepEqual(oDataType.getConstraints(), oBindingInfo.type.getConstraints()) ||
 				oDataType._bCreatedByOperator !== oBindingInfo.type._bCreatedByOperator)) {
-				this._getContentFactory().setDataType(oBindingInfo.type);
-				this._getContentFactory().setDateOriginalType(undefined);
-				this._getContentFactory().setUnitOriginalType(undefined);
-				this._getContentFactory().setIsMeasure(false);
+				this.getContentFactory().setDataType(oBindingInfo.type);
+				this.getContentFactory().setDateOriginalType(undefined);
+				this.getContentFactory().setUnitOriginalType(undefined);
+				this.getContentFactory().setIsMeasure(false);
 				if (oBindingInfo.type.isA("sap.ui.model.CompositeType") && oBindingInfo.parts) {
-					var aTypes = [];
-					for (var i = 0; i < oBindingInfo.parts.length; i++) {
+					aTypes = [];
+					for (i = 0; i < oBindingInfo.parts.length; i++) {
 						aTypes.push(oBindingInfo.parts[i].type);
 					}
-					this._getContentFactory().setCompositeTypes(aTypes);
+					this.getContentFactory().setCompositeTypes(aTypes);
 				}
-				this._getContentFactory().updateConditionType();
+				this.getContentFactory().updateConditionType();
+				this.invalidate(); // as new inner control might be needed
+			}
+		} else if (sName === "additionalValue" && !oBindingInfo.formatter) { // not if a formatter is used, as this needs to be executed
+			oBindingInfo.targetType = "raw"; // provide internal value to inner control
+			oDataType = this.getContentFactory().getAdditionalDataType();
+			if (oBindingInfo.type && (!oDataType ||
+				oDataType.getMetadata().getName() !== oBindingInfo.type.getMetadata().getName() ||
+				!deepEqual(oDataType.getFormatOptions(), oBindingInfo.type.getFormatOptions()) ||
+				!deepEqual(oDataType.getConstraints(), oBindingInfo.type.getConstraints()) ||
+				oDataType._bCreatedByOperator !== oBindingInfo.type._bCreatedByOperator)) {
+				this.getContentFactory().setAdditionalDataType(oBindingInfo.type);
+				if (oBindingInfo.type.isA("sap.ui.model.CompositeType") && oBindingInfo.parts) {
+					aTypes = [];
+					for (i = 0; i < oBindingInfo.parts.length; i++) {
+						aTypes.push(oBindingInfo.parts[i].type);
+					}
+					this.getContentFactory().setAdditionalCompositeTypes(aTypes);
+				}
+				this.getContentFactory().updateConditionType();
 				this.invalidate(); // as new inner control might be needed
 			}
 		}
@@ -179,53 +214,53 @@ sap.ui.define([
 
 	};
 
-	Field.prototype._handleModelContextChange = function(oEvent) {
+	Field.prototype.handleModelContextChange = function(oEvent) {
 
-		FieldBase.prototype._handleModelContextChange.apply(this, arguments);
+		FieldBase.prototype.handleModelContextChange.apply(this, arguments);
 
-		var oBinding = this.getBinding("value");
+		const oBinding = this.getBinding("value");
 		if (oBinding) {
-			var oBindingContext = oBinding.isA("sap.ui.model.CompositeBinding") ? oBinding.getBindings()[0].getContext() : oBinding.getContext();
+			const oBindingContext = oBinding.isA("sap.ui.model.CompositeBinding") ? oBinding.getBindings()[0].getContext() : oBinding.getContext();
 
 			if (Context.hasChanged(this._oBindingContext, oBindingContext)) {
 				// BindingContextChanged -> if parsing error trigger update to remove valueState and wrong input
 				this._oBindingContext = oBindingContext;
-				this._getContentFactory().updateConditionType();
-				if (this._bParseError || this.getFieldHelp()) { // In FieldHelp case InParameters might need an update
+				this.getContentFactory().updateConditionType();
+				if (this.isInvalidInput() || this._getValueHelp()) { // In ValueHelp case InParameters might need an update
 					if (this._oManagedObjectModel) {
 						this._oManagedObjectModel.checkUpdate(true, true); // async. to reduce updates
 					}
-					this._bParseError = false;
+					this.resetInvalidInput();
 				}
 			}
 
-			if (!this._getContentFactory().getDataType()) {
-				this._getContentFactory().setDataType(oBinding.getType());
+			if (!this.getContentFactory().getDataType()) {
+				this.getContentFactory().setDataType(oBinding.getType());
 				this.invalidate(); // as new inner control might be needed
 			}
 		}
 
 	};
 
-	Field.prototype._initDataType = function() {
+	Field.prototype.initDataType = function() {
 
-		FieldBase.prototype._initDataType.apply(this, arguments);
+		FieldBase.prototype.initDataType.apply(this, arguments);
 
-		var oBinding = this.getBinding("value");
+		const oBinding = this.getBinding("value");
 		if (oBinding) {
-			this._getContentFactory().setDataType(oBinding.getType());
+			this.getContentFactory().setDataType(oBinding.getType());
 		}
 
 	};
 
 	Field.prototype.setProperty = function(sPropertyName, oValue, bSuppressInvalidate) {
 
-		if (sPropertyName === "value" && this._bParseError && deepEqual(this.getValue(), this.validateProperty(sPropertyName, oValue))) {
+		if (sPropertyName === "value" && this.isInvalidInput() && deepEqual(this.getValue(), this.validateProperty(sPropertyName, oValue))) {
 			// in parse error and same value - no update on property - so remove error here
 			if (this._oManagedObjectModel) {
 				this._oManagedObjectModel.checkUpdate(true, true); // async. to reduce updates (additionalValue will follow)
 			}
-			this._bParseError = false;
+			this.resetInvalidInput();
 		}
 
 		return FieldBase.prototype.setProperty.apply(this, arguments);
@@ -237,9 +272,7 @@ sap.ui.define([
 	 *
 	 * @param {int} iMaxConditions Only 1 condition allowed in <code>Field</code>
 	 * @returns {this} <code>this</code> to allow method chaining.
-	 * @private
-	 * @ui5-restricted sap.fe
-	 * @MDC_PUBLIC_CANDIDATE
+	 * @public
 	 * @deprecated Not supported, this property is not supported for the <code>Field</code>.
 	 * @ui5-not-supported
 	 */
@@ -253,12 +286,12 @@ sap.ui.define([
 
 	};
 
-	Field.prototype._observeChanges = function(oChanges) {
+	Field.prototype.observeChanges = function(oChanges) {
 
-		FieldBase.prototype._observeChanges.apply(this, arguments);
+		FieldBase.prototype.observeChanges.apply(this, arguments);
 
 		if (oChanges.name === "value") {
-			var vValue = _adjustValue.call(this, oChanges.current, oChanges.old);
+			const vValue = _adjustValue.call(this, oChanges.current, oChanges.old);
 			if (this._vAdditionalValue !== null && _checkAdditionalValueOneWay.call(this) && !_compareValues.call(this, vValue, this._vValue, true)) {
 				// additionalValue is bound OneWay. Value is changed from outside, not from Field user input.
 				// -> use model value for additionalValue. (Only use internal additionalValue if set by user input.)
@@ -274,10 +307,17 @@ sap.ui.define([
 			_triggerConditionUpdate.call(this);
 		}
 
+		if (oChanges.name === "valueState") {
+			// if condition update is pending do not remove the value state later if set before from outside
+			if (this._bPendingConditionUpdate) {
+				this._bKeepValueState = true;
+			}
+		}
+
 		if (oChanges.name === "conditions") {
 			// keep value/additionalValue and conditions in sync
 			// (value must be updated if conditions are changed in async parsing too, so not in change event)
-			if (this._getContent().length <= 1) {
+			if (this.getCurrentContent().length <= 1) {
 				// in unit/currency field update value with change event to prevent update by navigating from number to unit
 				_updateValue.call(this, oChanges.current);
 			}
@@ -306,10 +346,11 @@ sap.ui.define([
 		if (!this.bDelegateInitialized) {
 			// wait until delegate is loaded
 			this.awaitControlDelegate().then(function() {
-				if (!this.bIsDestroyed) {
+				if (!this.isFieldDestroyed()) {
 					_triggerConditionUpdate.call(this);
 				}
 			}.bind(this));
+			this._bPendingConditionUpdate = true;
 			return;
 		}
 
@@ -321,7 +362,6 @@ sap.ui.define([
 			this._iConditionUpdateTimer = setTimeout(function() {
 				_updateCondition.call(this, _getValue.call(this), _getAdditionalValue.call(this));
 				this._iConditionUpdateTimer = undefined;
-				this._bPendingConditionUpdate = false;
 			}.bind(this), 0);
 			this._bPendingConditionUpdate = true;
 		}
@@ -330,31 +370,33 @@ sap.ui.define([
 
 	function _updateCondition(vValue, vAdditionalValue) {
 
-		var aConditions = this.getConditions();
-		if (this._checkValueInitial(vValue) && !vAdditionalValue) {
+		const aConditions = this.getConditions();
+		if (this.checkValueInitial(vValue) && !vAdditionalValue) {
 			// if empty -> no condition
 			if (aConditions.length > 0) {
 				this.setConditions([]);
 			}
 		} else {
-			var oCurrentCondition = aConditions[0];
-			var vOldValue = oCurrentCondition && oCurrentCondition.values[0];
-			var sOldAdditionalValue = oCurrentCondition && oCurrentCondition.values[1] ? oCurrentCondition.values[1] : null; // to compare with default value
-			if (!oCurrentCondition || oCurrentCondition.operator !== "EQ" || !_compareValues.call(this, vOldValue, vValue) || sOldAdditionalValue !== vAdditionalValue) {
-				var oDelegate = this.getControlDelegate();
-				var oDelegatePayload = this.getPayload();
-				var oNextCondition = oDelegate.createCondition(oDelegatePayload, this, [vValue, vAdditionalValue], oCurrentCondition);
+			const oCurrentCondition = aConditions[0];
+			const vOldValue = oCurrentCondition && oCurrentCondition.values[0];
+			const vOldAdditionalValue = oCurrentCondition && oCurrentCondition.values[1] ? oCurrentCondition.values[1] : null; // to compare with default value
+			if (!oCurrentCondition || oCurrentCondition.operator !== OperatorName.EQ || !_compareValues.call(this, vOldValue, vValue) || !_compareAdditionalValues.call(this, vAdditionalValue, vOldAdditionalValue)) {
+				const oDelegate = this.getControlDelegate();
+				const oNextCondition = oDelegate.createCondition(this, this, [vValue, vAdditionalValue], oCurrentCondition);
 				if (!Condition.compareConditions(oCurrentCondition, oNextCondition)) { // We do a full comparison here as FilterOperatorUtils.compareConditions may ignore text changes
 					this.setConditions(oNextCondition ? [oNextCondition] : []);
 				}
 			}
 		}
 
+		this._bPendingConditionUpdate = false;
+		this._bKeepValueState = false;
+
 	}
 
 	function _adjustValue(vValue, vOldValue) {
 
-		var sDataType = this._getContentFactory().getDataType() ? this._getContentFactory().getDataType().getMetadata().getName() : this.getDataType(); // as type must not exist now
+		const sDataType = this.getContentFactory().getDataType() ? this.getContentFactory().getDataType().getMetadata().getName() : this.getDataType(); // as type must not exist now
 
 		if (vValue && vOldValue && (sDataType === "sap.ui.model.odata.type.Unit" || sDataType === "sap.ui.model.odata.type.Currency")
 			&& !vValue[2] && vOldValue[2] !== undefined) {
@@ -364,7 +406,7 @@ sap.ui.define([
 			vValue[2] = vOldValue[2];
 
 			if (this._bPendingChange) { //change is pending because navigated between number and unit
-				var oCondition = this.getConditions()[0];
+				const oCondition = this.getConditions()[0];
 				if (oCondition) {
 					// check what was updated
 					if (vValue[0] === vOldValue[0] && vValue[0] !== oCondition.values[0][0]) {
@@ -385,18 +427,18 @@ sap.ui.define([
 
 	function _compareValues(vValue1, vValue2, bUpdateCheck) {
 
-		var bEqual = vValue1 === vValue2;
-		var sDataType = this._getContentFactory().getDataType() ? this._getContentFactory().getDataType().getMetadata().getName() : this.getDataType(); // as type must not exist now
+		let bEqual = vValue1 === vValue2;
+		const sDataType = this.getContentFactory().getDataType() ? this.getContentFactory().getDataType().getMetadata().getName() : this.getDataType(); // as type must not exist now
 
-		if (!bEqual && this.getTypeUtil().getBaseType(sDataType) === BaseType.Unit && Array.isArray(vValue1) && Array.isArray(vValue2)) {
+		if (!bEqual && this.getTypeMap().getBaseType(sDataType) === BaseType.Unit && Array.isArray(vValue1) && Array.isArray(vValue2)) {
 			// in unit type the unit table is in there setting the value but not after parsing
 			// units must be set at least once. so if not set compare too
-			var vNumber1 = vValue1[0];
-			var vUnit1 = vValue1[1];
-			var vCustomUnit1 = vValue1.length >= 3 ? vValue1[2] : null; // if no custom units are given handle it like null
-			var vNumber2 = vValue2[0];
-			var vUnit2 = vValue2[1];
-			var vCustomUnit2 = vValue2.length >= 3 ? vValue2[2] : null; // if no custom units are given handle it like null
+			const vNumber1 = vValue1[0];
+			const vUnit1 = vValue1[1];
+			const vCustomUnit1 = vValue1.length >= 3 ? vValue1[2] : null; // if no custom units are given handle it like null
+			const vNumber2 = vValue2[0];
+			const vUnit2 = vValue2[1];
+			const vCustomUnit2 = vValue2.length >= 3 ? vValue2[2] : null; // if no custom units are given handle it like null
 			// null and undefined are handled different in Unit type, so don't handle it as equal
 			if (vNumber1 === vNumber2 && vUnit1 === vUnit2
 				&& (((this._bUnitSet || bUpdateCheck) && (!vCustomUnit1 || !vCustomUnit2)) || deepEqual(vCustomUnit1, vCustomUnit2))) {
@@ -411,45 +453,62 @@ sap.ui.define([
 
 	}
 
+	function _compareAdditionalValues(vValue1, vValue2, bUpdateCheck) {
+
+		let bEqual = vValue1 === vValue2;
+
+		if (!bEqual && (vValue1 === null || vValue1 === undefined || vValue1 === "") && (vValue2 === null || vValue2 === undefined || vValue2 === "")) {
+			// in the moment there is no real data type support for additionalValue, normally only String types are used.
+			// As, depending on the data type configuration a "" can be converted into null or vice versa it needs to be handed both as initial.
+			// In case of wrong user input with disabled ValueHelp input validation no addtitionalValue is added at all, so if set to "" by model it is no change.
+			// TODO: This logic needs to be adopted if there is a real data type support like for value.
+			bEqual = true;
+		}
+
+		return bEqual;
+
+	}
+
 	function _initializeType(vValue) {
 
-		if (!this._bTypeInitialized) {
+		if (!this._oTypeInitialization) {
 			if (!this.bDelegateInitialized) {
 				// wait until delegate is loaded
 				this.awaitControlDelegate().then(function() {
-					if (!this.bIsDestroyed) {
+					if (!this.isFieldDestroyed()) {
 						_initializeType.call(this, vValue);
 					}
 				}.bind(this));
 				return;
 			}
 
-			var oBinding = this.getBinding("value");
-			var oDataType = oBinding ? oBinding.getType() : this._getContentFactory().getDataType(); // use type from binding, not internal (might be a different one)
-			this._oTypeInitialization = this.getControlDelegate().initializeTypeFromBinding(this.getPayload(), oDataType, vValue);
-			this._bTypeInitialized = this._oTypeInitialization.bTypeInitialized;
-			if (this._bTypeInitialized && this._getContentFactory().getUnitOriginalType()) {
-				// internal type already created, initialize it too
-				this.getControlDelegate().initializeInternalUnitType(this.getPayload(), this._getContentFactory().getDataType(), this._oTypeInitialization);
-				this.getControlDelegate().initializeInternalUnitType(this.getPayload(), this._getContentFactory().getUnitType(), this._oTypeInitialization);
+			const oBinding = this.getBinding("value");
+			const oDataType = oBinding ? oBinding.getType() : this.getContentFactory().getDataType(); // use type from binding, not internal (might be a different one)
+
+			if (oDataType) {
+				this._oTypeInitialization = this.getTypeMap().initializeTypeFromValue(oDataType, vValue);
+				if (this._oTypeInitialization && this.getContentFactory().getUnitOriginalType()) {
+					this.getTypeMap().initializeInternalType(this.getContentFactory().getDataType(), this._oTypeInitialization);
+					this.getTypeMap().initializeInternalType(this.getContentFactory().getUnitType(), this._oTypeInitialization);
+				}
 			}
 		}
 
 	}
 
-	Field.prototype._fireChange = function(aConditions, bValid, vWrongValue, oPromise) {
+	Field.prototype.fireChangeEvent = function(aConditions, bValid, vWrongValue, oPromise) {
 
-		var vValue;
+		let vValue;
 
 		if (aConditions) { // even if empty and error is returned, only in async case it is really empty
 			if (bValid) {
-				vValue = this._getResultForPromise(aConditions);
+				vValue = this.getResultForChangePromise(aConditions);
 			} else {
 				vValue = vWrongValue;
 			}
 		}
 
-		if (this._getContent().length > 1) {
+		if (this.getCurrentContent().length > 1) {
 			// in unit/currency field update value with change event to prevent update by navigating from number to unit
 			if (aConditions) {
 				_updateValue.call(this, this.getConditions());
@@ -466,12 +525,12 @@ sap.ui.define([
 
 	};
 
-	Field.prototype._getResultForPromise = function(aConditions) {
+	Field.prototype.getResultForChangePromise = function(aConditions) {
 
-		var vValue;
-		if (aConditions.length === 0 && this._getContentFactory().getDataType()) {
+		let vValue;
+		if (aConditions.length === 0 && this.getContentFactory().getDataType()) {
 			// parse "" to get type specific initial value
-			vValue = this._getContentFactory().getDataType().parseValue("", "string", []); // we need the empty array when the type is Unit
+			vValue = this.getContentFactory().getDataType().parseValue("", "string", []); // we need the empty array when the type is Unit
 		} else if (aConditions.length === 1) {
 			vValue = aConditions[0].values[0];
 		}
@@ -485,26 +544,33 @@ sap.ui.define([
 		if (!this.bDelegateInitialized) {
 			// wait until delegate is loaded
 			this.awaitControlDelegate().then(function() {
-				if (!this.bIsDestroyed) {
+				if (!this.isFieldDestroyed()) {
 					_updateValue.call(this, aConditions);
 				}
 			}.bind(this));
 			return;
 		}
 
-		var vValue = null; // use default of property for empty to avoid updates from null to undefined
-		var vAdditionalValue = null; // use default of property for empty to avoid updates from null to undefined
-		var vOldValue = this.getValue();
-		var vOldAdditionalValue = this.getAdditionalValue();
+		let vValue = null; // use default of property for empty to avoid updates from null to undefined
+		let vAdditionalValue = null; // use default of property for empty to avoid updates from null to undefined
+		const vOldValue = this.getValue();
+		const vOldAdditionalValue = this.getAdditionalValue();
 
-		if (aConditions.length === 0 && vOldValue === null && vOldAdditionalValue === null) {
+		if (aConditions.length === 0 && _isValueNull(vOldValue) && _isValueNull(vOldAdditionalValue)) {
 			// Field initialized from setter -> cannot have a condition -> no update needed
 			return;
 		}
 
-		vValue = this._getResultForPromise(aConditions);
-		if (aConditions.length === 0 && !vOldAdditionalValue) {
-			vAdditionalValue = vOldAdditionalValue; // to not update old initial value
+		vValue = this.getResultForChangePromise(aConditions);
+		if (aConditions.length === 0 || aConditions[0].values.length === 1) {
+			if (vOldAdditionalValue) {
+				const oDataType = this.getContentFactory().getAdditionalDataType();
+				if (oDataType) {
+					vAdditionalValue = oDataType.parseValue("", "string"); // we need the empty representation of the data type
+				}
+			} else {
+				vAdditionalValue = vOldAdditionalValue; // to not update old initial value
+			}
 		} else if (aConditions.length === 1 && aConditions[0].values.length > 1) {
 			vAdditionalValue = aConditions[0].values[1];
 		}
@@ -517,7 +583,7 @@ sap.ui.define([
 			// to run not in V4 update issues if data not already loaded
 			this.setProperty("value", vValue, true);
 		}
-		if (vAdditionalValue !== vOldAdditionalValue && !_checkAdditionalValueOneWay.call(this)) {
+		if (!_compareAdditionalValues.call(this, vAdditionalValue, vOldAdditionalValue, true) && !_checkAdditionalValueOneWay.call(this)) {
 			// to run not in V4 update issues if data not already loaded
 			// do not update property in OneWay mode to keep in sync with model
 			this.setProperty("additionalValue", vAdditionalValue, true);
@@ -525,15 +591,15 @@ sap.ui.define([
 
 	}
 
-	Field.prototype._getOperators = function() {
+	Field.prototype.getSupportedOperators = function() {
 
-		return ["EQ"];
+		return this.getProperty("_operators", []);
 
 	};
 
 	function _checkAdditionalValueOneWay() {
 
-		var oBinding = this.getBinding("additionalValue");
+		const oBinding = this.getBinding("additionalValue");
 
 		if (oBinding && oBinding.getBindingMode() === BindingMode.OneWay) {
 			return true;
@@ -543,34 +609,65 @@ sap.ui.define([
 
 	}
 
-	Field.prototype._checkCreateInternalContent = function() {
+	Field.prototype.checkCreateInternalContent = function() {
 
-		if (!this.bIsDestroyed && this._getContentFactory().getDataType() && !this._isPropertyInitial("editMode") && !this._isPropertyInitial("multipleLines")) {
+		if (!this.isFieldDestroyed() && this.getContentFactory().getDataType() && !this.isFieldPropertyInitial("editMode") && !this.isFieldPropertyInitial("multipleLines")) {
 			// If DataType is provided via Binding and EditMode is set the internal control can be created
 			// TODO: no control needed if just template for cloning
-			FieldBase.prototype._checkCreateInternalContent.apply(this, arguments);
+			FieldBase.prototype.checkCreateInternalContent.apply(this, arguments);
 		}
 
 	};
 
 	Field.prototype.getOverflowToolbarConfig = function() {
-		var oConfig = FieldBase.prototype.getOverflowToolbarConfig.apply(this, arguments);
+		const oConfig = FieldBase.prototype.getOverflowToolbarConfig.apply(this, arguments);
 		oConfig.propsUnrelatedToSize.push("value");
 		oConfig.propsUnrelatedToSize.push("additionalValue");
 		return oConfig;
 	};
 
+	Field.prototype.isSearchField = function() {
+
+		return false; // Field cannot be a searchField (not supported for the moment)
+
+	};
+
+	function _isValueNull(vValue) {
+
+		let bNull = false;
+
+		if (vValue === null) {
+			bNull = true;
+		} else if (Array.isArray(vValue)) {
+			bNull = true;
+			for (let i = 0; i < vValue.length; i++) {
+				if (vValue[i] !== null) {
+					bNull = false;
+					break;
+				}
+			}
+		}
+
+		return bNull;
+
+	}
+
+	Field.prototype.getAdditionalDataTypeConfiguration = function() {
+
+		const oBinding = this.getBinding("additionalValue");
+		return oBinding && oBinding.getType();
+
+	};
+
 	/**
-	 * Sets conditions to the property <code>conditions</code>.
+	 * Sets a new value for property {@link #getConditions conditions}.
 	 *
 	 * Do not use the <code>conditions</code> property,
 	 * use the <code>value</code> and <code>additionalValue</code> properties instead.
 	 *
-	 * @param {object[]} aConditions Conditions to be set
+	 * @param {object[]} aConditions Conditions that are set
 	 * @returns {this} Reference to <code>this</code> to allow method chaining
-	 * @private
-	 * @ui5-restricted sap.fe
-	 * @MDC_PUBLIC_CANDIDATE
+	 * @public
 	 * @deprecated Not supported, use the <code>value</code> property and <code>additionalValue</code> property to bind the control.
 	 * @ui5-not-supported
 	 * @name sap.ui.mdc.Field#setConditions
@@ -578,15 +675,13 @@ sap.ui.define([
 	 */
 
 	/**
-	 * Gets conditions of the property <code>conditions</code>.
+	 * Gets current value of property {@link #getConditions conditions}.
 	 *
 	 * Do not use the <code>conditions</code> property,
 	 * use the <code>value</code> and <code>additionalValue</code> properties instead.
 	 *
-	 * @returns {object[]} conditions of the field
-	 * @private
-	 * @ui5-restricted sap.fe
-	 * @MDC_PUBLIC_CANDIDATE
+	 * @returns {object[]} Conditions of the field
+	 * @public
 	 * @deprecated Not supported, use the <code>value</code> property and <code>additionalValue</code> property to bind the control.
 	 * @ui5-not-supported
 	 * @name sap.ui.mdc.Field#getConditions
@@ -594,18 +689,47 @@ sap.ui.define([
 	 */
 
 	/**
-	 * Sets a new value for property <code>dataType</code>.
+	 * Binds property {@link #getConditions conditions} to model data.
+	 *
+	 * See {@link sap.ui.base.ManagedObject#bindProperty ManagedObject.bindProperty} for a detailed description of the possible properties of oBindingInfo
+	 *
+	 * Do not use the <code>conditions</code> property,
+	 * use the <code>value</code> and <code>additionalValue</code> properties instead.
+	 *
+	 * @param {sap.ui.base.ManagedObject.PropertyBindingInfo} oBindingInfo The binding information
+	 * @returns {this} Reference to <code>this</code> to allow method chaining
+	 * @public
+	 * @deprecated Not supported, use the <code>value</code> property and <code>additionalValue</code> property to bind the control.
+	 * @ui5-not-supported
+	 * @name sap.ui.mdc.Field#bindConditions
+	 * @function
+	 */
+
+	/**
+	 * Unbinds property {@link #getConditions conditions} from model data.
+	 *
+	 * Do not use the <code>conditions</code> property,
+	 * use the <code>value</code> and <code>additionalValue</code> properties instead.
+	 *
+	 * @returns {this} Reference to <code>this</code> to allow method chaining
+	 * @public
+	 * @deprecated Not supported, use the <code>value</code> property and <code>additionalValue</code> property to bind the control.
+	 * @ui5-not-supported
+	 * @name sap.ui.mdc.Field#unbindConditions
+	 * @function
+	 */
+
+	/**
+	 * Sets a new value for property {@link #getDataType dataType}.
 	 *
 	 * The type of data handled by the field. The type is used to parse, format, and validate the value.
 	 *
 	 * <b>Note:</b> If the <code>value</code> property is bound to a model using a type, this type is used.
 	 * In this case the value of the <code>dataType</code> property is ignored.
 	 *
-	 * @param {string} sDataType DataType to be set
+	 * @param {string|undefined} sDataType DataType that is set
 	 * @returns {this} Reference to <code>this</code> to allow method chaining
-	 * @private
-	 * @ui5-restricted sap.fe
-	 * @MDC_PUBLIC_CANDIDATE
+	 * @public
 	 * @deprecated Not supported, the type in the binding to the <code>value</code> property is used.
 	 * @ui5-not-supported
 	 * @name sap.ui.mdc.Field#setDataType
@@ -613,18 +737,15 @@ sap.ui.define([
 	 */
 
 	/**
-	 * Gets a new value for property <code>dataType</code>.
+	 * Gets current value of property {@link #getDataType dataType}.
 	 *
 	 * The type of data handled by the field. The type is used to parse, format, and validate the value.
 	 *
 	 * <b>Note:</b> If the <code>value</code> property is bound to a model using a type, this type is used.
 	 * In this case the value of the <code>dataType</code> property is ignored.
 	 *
-	 * @param {string} sDataType DataType to be set
-	 * @returns {this} Reference to <code>this</code> to allow method chaining
-	 * @private
-	 * @ui5-restricted sap.fe
-	 * @MDC_PUBLIC_CANDIDATE
+	 * @returns {string} Value of property <code>dataType</code>
+	 * @public
 	 * @deprecated Not supported, the type in the binding to the <code>value</code> property is used.
 	 * @ui5-not-supported
 	 * @name sap.ui.mdc.Field#getDataType
@@ -632,18 +753,16 @@ sap.ui.define([
 	 */
 
 	/**
-	 * Sets a new value for property <code>dataTypeConstraints</code>.
+	 * Sets a new value for property {@link #getDataTypeConstraints dataTypeConstraints}.
 	 *
 	 * The constraints of the type specified in <code>dataType</code>.
 	 *
 	 * <b>Note:</b> If the <code>value</code> property is bound to a model using a type, this type is used.
 	 * In this case the values of the <code>dataType</code> property and the <code>dataTypeConstraints</code> property are ignored.
 	 *
-	 * @param {string} oDataTypeConstraints Constraints to be set
+	 * @param {object|undefined} oDataTypeConstraints Constraints that are set
 	 * @returns {this} Reference to <code>this</code> to allow method chaining
-	 * @private
-	 * @ui5-restricted sap.fe
-	 * @MDC_PUBLIC_CANDIDATE
+	 * @public
 	 * @deprecated Not supported, the <code>Constraints</code> of the type in the binding to the <code>value</code> property is used.
 	 * @ui5-not-supported
 	 * @name sap.ui.mdc.Field#setDataTypeConstraints
@@ -651,18 +770,15 @@ sap.ui.define([
 	 */
 
 	/**
-	 * Gets a new value for property <code>dataTypeConstraints</code>.
+	 * Gets current value of property {@link #getDataTypeConstraints dataTypeConstraints}.
 	 *
 	 * The constraints of the type specified in <code>dataType</code>.
 	 *
 	 * <b>Note:</b> If the <code>value</code> property is bound to a model using a type, this type is used.
 	 * In this case the values of the <code>dataType</code> property and the <code>dataTypeConstraints</code> property are ignored.
 	 *
-	 * @param {string} oDataTypeConstraints Constraints to be set
-	 * @returns {this} Reference to <code>this</code> to allow method chaining
-	 * @private
-	 * @ui5-restricted sap.fe
-	 * @MDC_PUBLIC_CANDIDATE
+	 * @returns {object} Value of property <code>dataTypeConstraints</code>
+	 * @public
 	 * @deprecated Not supported, the <code>Constraints</code> of the type in the binding to the <code>value</code> property is used.
 	 * @ui5-not-supported
 	 * @name sap.ui.mdc.Field#getDataTypeConstraints
@@ -670,18 +786,16 @@ sap.ui.define([
 	 */
 
 	/**
-	 * Sets a new value for property <code>dataTypeFormatOptions</code>.
+	 * Sets a new value for property {@link #getDataTypeFormatOptions dataTypeFormatOptions}.
 	 *
 	 * The format options of the type specified in <code>dataType</code>.
 	 *
 	 * <b>Note:</b> If the <code>value</code> property is bound to a model using a type, this type is used.
 	 * In this case the values of the <code>dataType</code> property and the <code>dataTypeFormatOptions</code> property are ignored.
 	 *
-	 * @param {string} oDataTypeFormatOptions Format options to be set
+	 * @param {object|undefined} oDataTypeFormatOptions Format options that are set
 	 * @returns {this} Reference to <code>this</code> to allow method chaining
-	 * @private
-	 * @ui5-restricted sap.fe
-	 * @MDC_PUBLIC_CANDIDATE
+	 * @public
 	 * @deprecated Not supported, the <code>FormatOptions</code> of the type in the binding to the <code>value</code> property is used.
 	 * @ui5-not-supported
 	 * @name sap.ui.mdc.Field#setDataTypeFormatOptions
@@ -689,18 +803,15 @@ sap.ui.define([
 	 */
 
 	/**
-	 * Gets a new value for property <code>dataTypeFormatOptions</code>.
+	 * Gets current value of property {@link #getDataTypeFormatOptions dataTypeFormatOptions}.
 	 *
 	 * The format options of the type specified in <code>dataType</code>.
 	 *
 	 * <b>Note:</b> If the <code>value</code> property is bound to a model using a type, this type is used.
 	 * In this case the values of the <code>dataType</code> property and the <code>dataTypeFormatOptions</code> property are ignored.
 	 *
-	 * @param {string} oDataTypeFormatOptions Format options to be set
-	 * @returns {this} Reference to <code>this</code> to allow method chaining
-	 * @private
-	 * @ui5-restricted sap.fe
-	 * @MDC_PUBLIC_CANDIDATE
+	 * @returns {object} Value of property <code>dataTypeFormatOptions</code>
+	 * @public
 	 * @deprecated Not supported, the <code>FormatOptions</code> of the type in the binding to the <code>value</code> property is used.
 	 * @ui5-not-supported
 	 * @name sap.ui.mdc.Field#getDataTypeFormatOptions

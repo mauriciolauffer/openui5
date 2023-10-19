@@ -11,7 +11,7 @@ sap.ui.define([
 ) {
 	"use strict";
 
-	var oStorageResultMerger = {};
+	var StorageResultMerger = {};
 
 	/**
 	 * Concatenates all flex objects from a list of flex data request responses, into a passed result array and removes duplicates.
@@ -20,10 +20,9 @@ sap.ui.define([
 	 * @param {string} sPath Type of flex object signified by object property
 	 * @returns {object[]} Merged array of flex objects
 	 * @private
-	 * @ui5-restricted sap.ui.fl.Cache, sap.ui.fl.apply._internal.flexState.FlexState
 	 */
 	function concatFlexObjects(aResponses, sPath) {
-		var aFlexObjects = aResponses.reduce(function (aFlexObjects, oResponse) {
+		var aFlexObjects = aResponses.reduce(function(aFlexObjects, oResponse) {
 			if (ObjectPath.get(sPath, oResponse)) {
 				return aFlexObjects.concat(ObjectPath.get(sPath, oResponse));
 			}
@@ -31,7 +30,7 @@ sap.ui.define([
 		}, []);
 
 		var aFlexObjectIds = [];
-		return aFlexObjects.filter(function (oFlexObject) {
+		return aFlexObjects.filter(function(oFlexObject) {
 			var sFileName = oFlexObject.fileName;
 			var bObjectAlreadyAdded = aFlexObjectIds.indexOf(sFileName) !== -1;
 			if (bObjectAlreadyAdded) {
@@ -50,10 +49,9 @@ sap.ui.define([
 	 * @param {object[]} aResponses.ui2personalization List of the change definitions
 	 * @returns {object[]} Merged array of ui2personalization
 	 * @private
-	 * @ui5-restricted sap.ui.fl.Cache
 	 */
 	function concatUi2personalization(aResponses) {
-		return aResponses.reduce(function (oUi2Section, oResponse) {
+		return aResponses.reduce(function(oUi2Section, oResponse) {
 			return merge({}, oUi2Section, oResponse.ui2personalization);
 		}, {});
 	}
@@ -65,30 +63,12 @@ sap.ui.define([
 	 * @param {string} [aResponses.etag] Etag value
 	 * @returns {string | null} Concatenated string of all etag values or null if no responses headers carry a etag value
 	 * @private
-	 * @ui5-restricted sap.ui.fl.Cache
 	 */
 	function _concatEtag(aResponses) {
-		return aResponses.reduce(function (sCacheKey, oResponse) {
+		return aResponses.reduce(function(sCacheKey, oResponse) {
 			// eslint-disable-next-line no-return-assign
 			return oResponse.cacheKey ? sCacheKey += oResponse.cacheKey : sCacheKey;
 		}, "") || null;
-	}
-
-	/**
-	 * Concatenates all allContextsProvided from a list of flex data request responses headers into a passed result string.
-	 *
-	 * @param {object[]} aResponses List of responses containing allContextsProvided header to be concatenated
-	 * @param {string} [aResponses.allContextsProvided] allContextsProvided value
-	 * @returns {boolean | undefined} Returns allContextsProvided value if response has allContextsProvided true or false, otherwise returns undefined
-	 * @private
-	 * @ui5-restricted sap.ui.fl.Cache
-	 */
-	function isAllContextsProvided(aResponses) {
-		for (var i = 0; i < aResponses.length; i++) {
-			if (aResponses[i].info) {
-				return aResponses[i].info.allContextsProvided;
-			}
-		}
 	}
 
 	/**
@@ -100,7 +80,7 @@ sap.ui.define([
 	 * @private
 	 * @ui5-restricted sap.ui.fl.initial._internal.Storage
 	 */
-	oStorageResultMerger.merge = function(aResponses) {
+	StorageResultMerger.merge = function(aResponses) {
 		var oResult = {
 			appDescriptorChanges: concatFlexObjects(aResponses, "appDescriptorChanges"),
 			changes: concatFlexObjects(aResponses, "changes"),
@@ -117,14 +97,12 @@ sap.ui.define([
 			variantManagementChanges: concatFlexObjects(aResponses, "variantManagementChanges"),
 			cacheKey: _concatEtag(aResponses)
 		};
-		var bAllContextsProvided = isAllContextsProvided(aResponses);
-		if (bAllContextsProvided !== undefined) {
-			oResult.info = {
-				allContextsProvided: bAllContextsProvided
-			};
+		var oInfoObject = concatFlexObjects(aResponses, "info");
+		if (oInfoObject.length > 0) {
+			[oResult.info] = oInfoObject;
 		}
 		return oResult;
 	};
 
-	return oStorageResultMerger;
+	return StorageResultMerger;
 });

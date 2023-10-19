@@ -4,7 +4,7 @@
 
 // Provides control sap.ui.webc.main.Token.
 sap.ui.define([
-	"sap/ui/webc/common/WebComponent",
+	"sap/ui/core/webc/WebComponent",
 	"./library",
 	"./thirdparty/Token"
 ], function(WebComponent, library) {
@@ -16,7 +16,7 @@ sap.ui.define([
 	 * @param {string} [sId] ID for the new control, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new control
 	 *
-	 * @extends sap.ui.webc.common.WebComponent
+	 * @extends sap.ui.core.webc.WebComponent
 	 * @class
 	 *
 	 * <h3>Overview</h3>
@@ -48,14 +48,16 @@ sap.ui.define([
 				 * <b>Note:</b> A read-only component can not be deleted or selected, but still provides visual feedback upon user interaction.
 				 */
 				readonly: {
-					type: "boolean"
+					type: "boolean",
+					defaultValue: false
 				},
 
 				/**
 				 * Defines whether the component is selected or not.
 				 */
 				selected: {
-					type: "boolean"
+					type: "boolean",
+					defaultValue: false
 				},
 
 				/**
@@ -73,7 +75,7 @@ sap.ui.define([
 				 */
 				closeIcon: {
 					type: "sap.ui.webc.main.IIcon",
-					multiple: false,
+					multiple: true,
 					slot: "closeIcon"
 				}
 			},

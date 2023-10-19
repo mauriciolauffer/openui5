@@ -8,9 +8,9 @@ sap.ui.define([
 	"sap/m/Panel",
 	"sap/ui/Device",
 	"sap/ui/thirdparty/jquery",
-	"sap/ui/core/Core",
+	"sap/ui/qunit/utils/nextUIUpdate",
 	"sap/ui/dom/jquery/scrollLeftRTL"
-], function (
+], function(
 	ElementOverlay,
 	DesignTime,
 	OverlayRegistry,
@@ -18,18 +18,18 @@ sap.ui.define([
 	Panel,
 	Device,
 	jQuery,
-	oCore
+	nextUIUpdate
 ) {
 	"use strict";
 
 	QUnit.module("Given that an Overlay is created on RTL mode", {
-		beforeEach: function(assert) {
+		async beforeEach(assert) {
 			var fnDone = assert.async();
 			this.oButton = new Button({
 				text: "Button"
 			});
 			this.oButton.placeAt("qunit-fixture");
-			oCore.applyChanges();
+			await nextUIUpdate();
 
 			this.oOverlay = new ElementOverlay({
 				element: this.oButton,
@@ -41,10 +41,10 @@ sap.ui.define([
 				fnDone();
 			}.bind(this));
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oButton.destroy();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("then ", function(assert) {
 			var done = assert.async();
 			this.oOverlay.attachEventOnce("geometryChanged", function() {
@@ -67,7 +67,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given that an Overlay is created on RTL mode and scrolling is present", {
-		beforeEach: function(assert) {
+		async beforeEach(assert) {
 			var done = assert.async();
 			this.oButton = new Button({
 				text: "Button"
@@ -88,14 +88,14 @@ sap.ui.define([
 			});
 
 			this.oOuterPanel.placeAt("qunit-fixture");
-			oCore.applyChanges();
+			await nextUIUpdate();
 			var iScrollLeftValue = -20;
 			// Chrome uses positive leftScroll
 			if (Device.browser.blink) {
 				iScrollLeftValue = -iScrollLeftValue;
 			}
-			jQuery(this.oOuterPanel.$().find('>.sapMPanelContent')).scrollLeftRTL(iScrollLeftValue);
-			this.oOuterPanel.$().find('>.sapMPanelContent').scrollTop(20);
+			jQuery(this.oOuterPanel.$().find(">.sapMPanelContent")).scrollLeftRTL(iScrollLeftValue);
+			this.oOuterPanel.$().find(">.sapMPanelContent").scrollTop(20);
 
 			this.oDesignTime = new DesignTime({
 				rootElements: [this.oOuterPanel]
@@ -111,13 +111,13 @@ sap.ui.define([
 				}
 			}.bind(this));
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oDesignTime.destroy();
 			this.oOuterPanel.destroy();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("then", function(assert) {
-			//Math.round is required for IE and Edge
+			// Math.round is required for IE and Edge
 			assert.equal(
 				Math.ceil(this.oButtonOverlay.$().offset().top),
 				Math.ceil(this.oButton.$().offset().top),

@@ -7,83 +7,93 @@
 sap.ui.define([
 	"sap/ui/mdc/table/PropertyHelper",
 	"sap/ui/mdc/table/Column",
-	"sap/base/Log"
-], function(PropertyHelper, Column, Log) {
+	"sap/ui/mdc/DefaultTypeMap",
+	"sap/base/Log",
+	"sap/ui/model/type/String" // in LegacyFree-UI5 used data types needs to be loaded.
+], function(PropertyHelper, Column, DefaultTypeMap, Log, StringType) {
 	"use strict";
 
-	QUnit.module("Validation", {
-		beforeEach: function() {
-			this.logWarning = sinon.spy(Log, "warning");
-		},
-		afterEach: function() {
-			this.logWarning.restore();
-		}
-	});
+	QUnit.module("Validation");
 
 	QUnit.test("Simple property with attribute 'aggregatable'", function(assert) {
-		new PropertyHelper([{
-			name: "prop",
-			label: "Property",
-			dataType: "String",
-			aggregatable: true
-		}]).destroy();
-		assert.equal(this.logWarning.callCount, 1, "Warning logged");
+		assert.throws(function () {
+			new PropertyHelper([{
+				name: "prop",
+				label: "Property",
+				dataType: "String",
+				aggregatable: true
+			}]).destroy();
+		}, function(oError) {
+			return oError instanceof Error;
+		},  "Error thrown");
 	});
 
 	QUnit.test("Complex property with attribute 'groupable'", function(assert) {
-		new PropertyHelper([{
-			name: "prop",
-			label: "Property",
-			dataType: "String"
-		}, {
-			name: "complexProp",
-			label: "ComplexProperty",
-			propertyInfos: ["prop"],
-			groupable: true
-		}]).destroy();
-		assert.equal(this.logWarning.callCount, 1, "Warning logged");
+		assert.throws(function () {
+			new PropertyHelper([{
+				name: "prop",
+				label: "Property",
+				dataType: "String"
+			}, {
+				name: "complexProp",
+				label: "ComplexProperty",
+				propertyInfos: ["prop"],
+				groupable: true
+			}]).destroy();
+		}, function(oError) {
+			return oError instanceof Error;
+		},  "Error thrown");
 	});
 
 	QUnit.test("Complex property with attribute 'key'", function(assert) {
-		new PropertyHelper([{
-			name: "prop",
-			label: "Property",
-			dataType: "String"
-		}, {
-			name: "complexProp",
-			label: "ComplexProperty",
-			propertyInfos: ["prop"],
-			key: true
-		}]).destroy();
-		assert.equal(this.logWarning.callCount, 1, "Warning logged");
+		assert.throws(function () {
+			new PropertyHelper([{
+				name: "prop",
+				label: "Property",
+				dataType: "String"
+			}, {
+				name: "complexProp",
+				label: "ComplexProperty",
+				propertyInfos: ["prop"],
+				key: true
+			}]).destroy();
+		}, function(oError) {
+			return oError instanceof Error;
+		},  "Error thrown");
 	});
 
 	QUnit.test("Complex property with attribute 'unit'", function(assert) {
-		new PropertyHelper([{
-			name: "prop",
-			label: "Property",
-			dataType: "String"
-		}, {
-			name: "complexProp",
-			label: "ComplexProperty",
-			propertyInfos: ["prop"],
-			unit: "prop"
-		}]).destroy();
-		assert.equal(this.logWarning.callCount, 1, "Warning logged");
+		assert.throws(function () {
+			new PropertyHelper([{
+				name: "prop",
+				label: "Property",
+				dataType: "String"
+			}, {
+				name: "complexProp",
+				label: "ComplexProperty",
+				propertyInfos: ["prop"],
+				unit: "prop"
+			}]).destroy();
+		}, function(oError) {
+			return oError instanceof Error;
+		},  "Error thrown");
 	});
 
 	QUnit.test("Complex property with attribute 'text'", function(assert) {
-		new PropertyHelper([{
-			name: "prop",
-			label: "Property",
-			dataType: "String"
-		}, {
-			name: "complexProp",
-			label: "ComplexProperty",
-			propertyInfos: ["prop"],
-			text: "prop"
-		}]).destroy();
-		assert.equal(this.logWarning.callCount, 1, "Warning logged");
+		assert.throws(function () {
+            new PropertyHelper([{
+				name: "prop",
+				label: "Property",
+				dataType: "String"
+			}, {
+				name: "complexProp",
+				label: "ComplexProperty",
+				propertyInfos: ["prop"],
+				text: "prop"
+			}]).destroy();
+        }, function(oError) {
+            return oError instanceof Error;
+        },  "Error thrown");
 	});
 
 	QUnit.module("Defaults", {
@@ -95,6 +105,9 @@ sap.ui.define([
 				tooltip: "",
 				caseSensitive: true,
 				exportSettings: {},
+				clipboardSettings: {
+					template: ""
+				},
 				filterable: true,
 				group: "",
 				groupLabel: "",
@@ -127,6 +140,9 @@ sap.ui.define([
 				label: "Complex Property",
 				tooltip: "",
 				exportSettings: {},
+				clipboardSettings: {
+					template: ""
+				},
 				filterable: false,
 				group: "",
 				groupLabel: "",
@@ -156,7 +172,7 @@ sap.ui.define([
 	});
 
 	QUnit.test("Simple property", function(assert) {
-		var oPropertyHelper = new PropertyHelper([{
+		const oPropertyHelper = new PropertyHelper([{
 			name: "prop",
 			label: "Property",
 			dataType: "String"
@@ -167,9 +183,10 @@ sap.ui.define([
 	});
 
 	QUnit.test("Complex property", function(assert) {
-		var oPropertyHelper = new PropertyHelper([{
+		const oPropertyHelper = new PropertyHelper([{
 			name: "prop",
-			label: "Property"
+			label: "Property",
+			dataType: "String"
 		}, {
 			name: "complexProp",
 			label: "Complex Property",
@@ -182,6 +199,16 @@ sap.ui.define([
 
 	QUnit.module("API", {
 		beforeEach: function() {
+			sinon.stub(PropertyHelper.prototype, "getParent").returns({
+				getControlDelegate: sinon.stub().returns({
+					getTypeMap: sinon.stub().returns({
+						getTypeConfig: function() {
+							return DefaultTypeMap.getTypeConfig.apply(DefaultTypeMap, arguments);
+						}
+					})
+				})
+			});
+
 			this.oPropertyHelper = new PropertyHelper([{
 				name: "propA",
 				label: "Property A",
@@ -207,20 +234,22 @@ sap.ui.define([
 				path: "propCPath",
 				label: "Property C",
 				dataType: "String",
-				exportSettings: null
+				exportSettings: null,
+				clipboardSettings: null
 			}, {
 				name: "complexPropA",
-				path: "complexPropA",
 				label: "Complex Property A",
 				propertyInfos: ["propA", "propB"],
 				exportSettings: {
 					template: "{0} ({1})",
 					width: 25
 				},
+				clipboardSettings: {
+					template: "{0} ({1})"
+				},
 				visible: false
 			}, {
 				name: "complexPropB",
-				path: "complexPropB",
 				label: "Complex Property B",
 				propertyInfos: ["propB"],
 				exportSettings: {
@@ -261,7 +290,6 @@ sap.ui.define([
 				filterable: false
 			}, {
 				name: "complexPropC",
-				path: "complexPropC",
 				label: "Complex Property C",
 				propertyInfos: ["noDataColumn1", "noDataColumn2"],
 				exportSettings: {
@@ -270,7 +298,6 @@ sap.ui.define([
 				}
 			}, {
 				name: "complexPropD",
-				path: "complexPropD",
 				label: "Complex Property D",
 				propertyInfos: ["propA", "propB", "propC"]
 			}]);
@@ -278,71 +305,78 @@ sap.ui.define([
 
 			this.oColumnPropA = new Column({
 				id: "propAColumn",
-				dataProperty: "propA"
+				propertyKey: "propA"
 			});
 
 			this.oColumnPropB = new Column({
 				id: "propBColumn",
 				header: "Property B",
-				dataProperty: "propB",
+				propertyKey: "propB",
 				hAlign: "End"
+			});
+
+			this.oColumnPropC = new Column({
+				id: "propCColumn",
+				propertyKey: "propC"
 			});
 
 			this.oColumnComplexPropA = new Column({
 				id: "columnComplexPropA",
 				header: "Complex Property A",
-				dataProperty: "complexPropA"
+				propertyKey: "complexPropA"
 			});
 
 			this.oColumnComplexPropB = new Column({
 				id: "columnComplexPropB",
-				dataProperty: "complexPropB"
+				propertyKey: "complexPropB"
 			});
 
 			this.oColumnPrice = new Column({
 				id: "priceColumn",
 				header: "Price",
-				dataProperty: "price",
+				propertyKey: "price",
 				hAlign: "End"
 			});
 
 			this.oInvalidColumn = new Column({
 				id: "invalidColumn",
 				header: "Invalid",
-				dataProperty: "invalidProperty"
+				propertyKey: "invalidProperty"
 			});
 
 			this.oNoDataColumn1 = new Column({
 				id: "noDataColumn1",
 				header: "NoDataColumn1",
 				hAlign: "Begin",
-				dataProperty: "noDataColumn1"
+				propertyKey: "noDataColumn1"
 			});
 
 			this.oNoDataColumn2 = new Column({
 				id: "noDataColumn2",
 				header: "NoDataColumn2",
 				hAlign: "Begin",
-				dataProperty: "noDataColumn2"
+				propertyKey: "noDataColumn2"
 			});
 
 			this.oColumnComplexPropC = new Column({
 				id: "columnComplexPropC",
 				header: "Complex Property C",
-				dataProperty: "complexPropC"
+				propertyKey: "complexPropC"
 			});
 
 			this.oColumnComplexPropD = new Column({
 				id: "columnComplexPropD",
 				header: "Complex Property D",
-				dataProperty: "complexPropD"
+				propertyKey: "complexPropD"
 			});
 		},
 		afterEach: function() {
+			PropertyHelper.prototype.getParent.restore();
 			this.oPropertyHelper.destroy();
 			this.aProperties = null;
 			this.oColumnPropA.destroy();
 			this.oColumnPropB.destroy();
+			this.oColumnPropC.destroy();
 			this.oColumnComplexPropA.destroy();
 			this.oColumnComplexPropB.destroy();
 			this.oColumnComplexPropC.destroy();
@@ -449,6 +483,33 @@ sap.ui.define([
 		}], "Complex property without exportSettings referencing property with exportSettings=null");
 	});
 
+	QUnit.test("getColumnClipboardSettings", function(assert) {
+		assert.deepEqual(this.oPropertyHelper.getColumnClipboardSettings(this.oInvalidColumn), null, "Column pointing to invalid property");
+		assert.deepEqual(this.oPropertyHelper.getColumnClipboardSettings(this.oColumnPropA), {
+			properties: ["propAPath"],
+			types: [this.oPropertyHelper.getProperty("propA").typeConfig.typeInstance],
+			template: "{0}"
+		}, "Expected column clipboard settings returned");
+		assert.deepEqual(this.oPropertyHelper.getColumnClipboardSettings(this.oColumnPropC), null, "Expected column clipboard settings returned");
+		assert.deepEqual(this.oPropertyHelper.getColumnClipboardSettings(this.oColumnComplexPropA), {
+			properties: ["propAPath", "propBPath"],
+			types: [
+				this.oPropertyHelper.getProperty("propA").typeConfig.typeInstance,
+				this.oPropertyHelper.getProperty("propB").typeConfig.typeInstance
+			],
+			template: "{0} ({1})"
+		}, "Expected column export settings returned");
+		assert.deepEqual(this.oPropertyHelper.getColumnClipboardSettings(this.oColumnComplexPropD), {
+			properties: ["propAPath", "propBPath", "propCPath"],
+			types: [
+				this.oPropertyHelper.getProperty("propA").typeConfig.typeInstance,
+				this.oPropertyHelper.getProperty("propB").typeConfig.typeInstance,
+				this.oPropertyHelper.getProperty("propC").typeConfig.typeInstance
+			],
+			template: "{0} {1} {2}"
+		}, "Expected column export settings returned");
+	});
+
 	QUnit.module("Property", {
 		beforeEach: function() {
 			this.oPropertyHelper = new PropertyHelper([{
@@ -489,8 +550,8 @@ sap.ui.define([
 	});
 
 	QUnit.test("getGroupableProperties", function(assert) {
-		var oSimpleProperty = this.oPropertyHelper.getProperty("prop");
-		var oComplexProperty = this.oPropertyHelper.getProperty("complexProp");
+		const oSimpleProperty = this.oPropertyHelper.getProperty("prop");
+		const oComplexProperty = this.oPropertyHelper.getProperty("complexProp");
 
 		oSimpleProperty.getGroupableProperties().push("s"); // Returned array must not be influenced by changes to previously returned arrays.
 		assert.deepEqual(oSimpleProperty.getGroupableProperties(), [oSimpleProperty], "Groupable simple property");
@@ -504,27 +565,23 @@ sap.ui.define([
 		assert.deepEqual(oComplexProperty.getGroupableProperties(), [oSimpleProperty], "After destruction");
 	});
 
-	QUnit.module("Extension attributes", {
-		beforeEach: function() {
-			this.logWarning = sinon.spy(Log, "warning");
-		},
-		afterEach: function() {
-			this.logWarning.restore();
-		}
-	});
+	QUnit.module("Extension attributes");
 
 	QUnit.test("Property with extension when no extension attributes are defined", function(assert) {
-		new PropertyHelper([{
-			name: "foo",
-			label: "bar",
-			dataType: "String",
-			extension: {}
-		}]).destroy();
-		assert.equal(this.logWarning.callCount, 1, "Warning logged");
+		assert.throws(function () {
+            new PropertyHelper([{
+				name: "foo",
+				label: "bar",
+				dataType: "String",
+				extension: {}
+			}]).destroy();
+        }, function(oError) {
+            return oError instanceof Error;
+        },  "Error thrown");
 	});
 
 	QUnit.test("Set 'extension' attribute", function(assert) {
-		var oPropertyHelper = new PropertyHelper([{
+		const oPropertyHelper = new PropertyHelper([{
 			name: "foo",
 			label: "bar",
 			dataType: "String",
@@ -543,7 +600,7 @@ sap.ui.define([
 	});
 
 	QUnit.test("'extension' attribute has default value", function(assert) {
-		var oPropertyHelper = new PropertyHelper([{
+		const oPropertyHelper = new PropertyHelper([{
 			name: "foo",
 			label: "bar",
 			dataType: "String"
@@ -570,7 +627,7 @@ sap.ui.define([
 	});
 
 	QUnit.test("Complex property", function(assert) {
-		var oPropertyHelper = new PropertyHelper([{
+		const oPropertyHelper = new PropertyHelper([{
 			name: "foo",
 			label: "bar",
 			dataType: "String"
@@ -594,23 +651,26 @@ sap.ui.define([
 
 		oPropertyHelper.destroy();
 
-		this.logWarning.reset();
-		new PropertyHelper([{
-			name: "foo",
-			label: "bar",
-			dataType: "String"
-		}, {
-			name: "complexFoo",
-			label: "Complex Foo",
-			propertyInfos: ["foo"],
-			extension: {
-				notAllowedForComplex: "allowed?"
-			}
-		}], null, {
-			allowedForComplex: {type: "string", forComplexProperty: {allowed: true}},
-			notAllowedForComplex: {type: "string", forComplexProperty: {valueIfNotAllowed: "not allowed"}}
-		}).destroy();
-		assert.equal(this.logWarning.callCount, 1, "Warning logged if a complex property contains an extension attribute that is not allowed.");
+		assert.throws(function () {
+			new PropertyHelper([{
+				name: "foo",
+				label: "bar",
+				dataType: "String"
+			}, {
+				name: "complexFoo",
+				label: "Complex Foo",
+				propertyInfos: ["foo"],
+				extension: {
+					notAllowedForComplex: "allowed?"
+				}
+			}], null, {
+				allowedForComplex: {type: "string", forComplexProperty: {allowed: true}},
+				notAllowedForComplex: {type: "string", forComplexProperty: {valueIfNotAllowed: "not allowed"}}
+			}).destroy();
+        }, function(oError) {
+            return oError instanceof Error;
+        },  "Error thrown if a complex property contains an extension attribute that is not allowed.");
+
 	});
 
 	QUnit.module("Computed attributes", {
@@ -618,7 +678,7 @@ sap.ui.define([
 			this.oGetTypeConfigStub = sinon.stub().returns("MyFakeTypeConfig");
 			sinon.stub(PropertyHelper.prototype, "getParent").returns({
 				getControlDelegate: sinon.stub().returns({
-					getTypeUtil: sinon.stub().returns({
+					getTypeMap: sinon.stub().returns({
 						getTypeConfig: this.oGetTypeConfigStub
 					})
 				})
@@ -643,7 +703,7 @@ sap.ui.define([
 	});
 
 	QUnit.test("typeConfig", function(assert) {
-		var oSimpleProperty = this.oPropertyHelper.getProperty("prop");
+		const oSimpleProperty = this.oPropertyHelper.getProperty("prop");
 
 		assert.strictEqual(oSimpleProperty.typeConfig, "MyFakeTypeConfig", "Reading 'typeConfig' is possible");
 		assert.ok(this.oGetTypeConfigStub.calledOnceWithExactly(oSimpleProperty.dataType, oSimpleProperty.formatOptions, oSimpleProperty.constraints),

@@ -4,24 +4,56 @@
 sap.ui.define([
 	"sap/base/Log",
 	"sap/ui/base/EventProvider",
+	"sap/ui/core/Messaging",
 	"sap/ui/model/Binding",
-	"sap/ui/model/ChangeReason",
-	"sap/ui/test/TestUtils"
-], function (Log, EventProvider, Binding, ChangeReason, TestUtils) {
+	"sap/ui/model/ChangeReason"
+], function (Log, EventProvider, Messaging, Binding, ChangeReason) {
 	/*global QUnit, sinon*/
 	"use strict";
 
 	//*********************************************************************************************
 	QUnit.module("sap.ui.model.Binding", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach : function () {
 			this.oLogMock = this.mock(Log);
 			this.oLogMock.expects("error").never();
 			this.oLogMock.expects("warning").never();
-		},
-
-		afterEach : function (assert) {
-			return TestUtils.awaitRendering();
 		}
+	});
+
+	//*********************************************************************************************
+	QUnit.test("constructor", function (assert) {
+		var oBinding = new Binding("~oModel", "some/path", "~oContext", "~mParameters");
+
+		// code under test
+		assert.strictEqual(oBinding.oModel, "~oModel");
+		assert.strictEqual(oBinding.sPath, "some/path");
+		assert.strictEqual(oBinding.oContext, "~oContext");
+		assert.strictEqual(oBinding.mParameters, "~mParameters");
+		assert.strictEqual(oBinding.bInitial, false);
+		assert.strictEqual(oBinding.bSuspended, false);
+		assert.strictEqual(oBinding.oDataState, null);
+		assert.ok(oBinding.hasOwnProperty("bIgnoreMessages"));
+		assert.strictEqual(oBinding.bIgnoreMessages, undefined);
+		assert.ok(oBinding.hasOwnProperty("bIsBeingDestroyed"));
+		assert.strictEqual(oBinding.bIsBeingDestroyed, undefined);
+		assert.ok(oBinding.hasOwnProperty("bFiredAsync"));
+		assert.strictEqual(oBinding.bFiredAsync, undefined);
+	});
+
+	//*********************************************************************************************
+	QUnit.test("constructor, bRelative", function (assert) {
+		var oBinding = new Binding(/*oModel*/null, "/absolute");
+
+		// code under test
+		assert.strictEqual(oBinding.bRelative, false);
+
+		oBinding = new Binding(/*oModel*/null, "relative");
+
+		// code under test
+		assert.strictEqual(oBinding.bRelative, true);
 	});
 
 	//*********************************************************************************************
@@ -32,16 +64,16 @@ sap.ui.define([
 				getControlMessages : function () {},
 				reset : function () {}
 			},
-			oMessageManager = {removeMessages : function () {}};
+			oMessaging = {removeMessages : function () {}};
 
 		assert.strictEqual(oBinding.getContext(), oContext);
 
-		this.mock(sap.ui.getCore()).expects("getMessageManager").withExactArgs()
-			.returns(oMessageManager);
+		this.mock(sap.ui).expects("require").withExactArgs("sap/ui/core/Messaging")
+			.returns(oMessaging);
 		this.mock(oBinding).expects("getDataState").withExactArgs().twice().returns(oDataState);
 		this.mock(oDataState).expects("getControlMessages").withExactArgs()
 			.returns("~messages");
-		this.mock(oMessageManager).expects("removeMessages").withExactArgs("~messages", true);
+		this.mock(oMessaging).expects("removeMessages").withExactArgs("~messages", true);
 		this.mock(oDataState).expects("reset").withExactArgs();
 		this.mock(oBinding).expects("checkDataState").withExactArgs();
 		this.mock(oBinding).expects("_fireChange").withExactArgs({
@@ -87,11 +119,8 @@ sap.ui.define([
 });
 
 	//*********************************************************************************************
-	QUnit.test("setIgnoreMessages and constructor", function (assert) {
+	QUnit.test("setIgnoreMessages", function (assert) {
 		var oBinding = new Binding(/*oModel*/null, "some/path");
-
-		// code under test
-		assert.strictEqual(oBinding.bIgnoreMessages, undefined, "not yet set");
 
 		// code under test
 		oBinding.setIgnoreMessages("~boolean");
@@ -177,15 +206,14 @@ sap.ui.define([
 				getControlMessages : function () {},
 				setModelMessages : function () {}
 			},
-			oDataStateMock = this.mock(oDataState),
-			oMessageManager = sap.ui.getCore().getMessageManager();
+			oDataStateMock = this.mock(oDataState);
 
 		if (oFixture.dataStateSet) {
 			oBinding.oDataState = oDataState;
 
 			oDataStateMock.expects("getControlMessages")
 				.withExactArgs().returns("~oControlMessages");
-			this.mock(oMessageManager).expects("removeMessages")
+			this.mock(Messaging).expects("removeMessages")
 				.withExactArgs("~oControlMessages", true);
 			oDataStateMock.expects("setModelMessages").withExactArgs();
 			oDataStateMock.expects("changed").withExactArgs().returns(oFixture.dataStateChanged);

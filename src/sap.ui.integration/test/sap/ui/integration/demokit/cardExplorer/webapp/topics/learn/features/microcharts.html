@@ -35,6 +35,7 @@
 					<tr>
 						<th>Property</th>
 						<th>Type</th>
+						<th>Default Value</th>
 						<th>Required</th>
 						<th>Description</th>
 						<th>Schema Version</th>
@@ -42,16 +43,17 @@
 					</tr>
 					<tr>
 						<td>type</td>
-						<td>Bullet, StackedBar</td>
+						<td>"Bullet", "StackedBar"</td>
+						<td></td>
 						<td>Yes</td>
-						<td>Specifies one of the available microchart types. See details for every different type below.
-						</td>
+						<td>Specifies one of the available microchart types. See details for every different type below.</td>
 						<td>1.24</td>
 						<td>1.80</td>
 					</tr>
 					<tr>
 						<td>displayValue</td>
 						<td>string</td>
+						<td></td>
 						<td>No</td>
 						<td>The value, which is displayed next to the chart.</td>
 						<td>1.24</td>
@@ -60,17 +62,27 @@
 					<tr>
 						<td>maxValue</td>
 						<td>float</td>
+						<td></td>
 						<td>No</td>
 						<td>The maximum value.</td>
 						<td>1.24</td>
 						<td>1.80</td>
+					</tr>
+					<tr>
+						<td>visible</td>
+						<td>boolean</td>
+						<td>true</td>
+						<td>No</td>
+						<td>Visibility of the microchart.</td>
+						<td>1.56.0</td>
+						<td>1.116</td>
 					</tr>
 				</table>
 			</div>
 
 			<h2 id="bullet">Bullet Microchart</h2>
 			<img src="../../images/microChart_bullet.png" alt="Stacked Bar chart">
-			<h4>Properties</h4>
+			<div id="bulletProperties" class="boldBlock">Properties</div>
 			<div class="tableWrapper">
 				<table>
 					<tr>
@@ -124,7 +136,7 @@
 				</table>
 			</div>
 
-			<h4 id="thresholdApi">Threshold</h4>
+			<div id="thresholdApi" class="boldBlock">Threshold</div>
 			<div class="tableWrapper">
 				<table>
 					<tr>
@@ -157,7 +169,7 @@
 			<h2 id="stackedBar">StackedBar Microchart</h2>
 			<img src="../../images/microChart_stackedBar.png" alt="Stacked Bar chart">
 			<p><b>Note:</b> For this type of chart a legend is also displayed in the card.</p>
-			<h4>Properties</h4>
+			<div id="stackedBarProperties" class="boldBlock">Properties</div>
 			<div class="tableWrapper">
 				<table>
 					<tr>
@@ -179,7 +191,7 @@
 				</table>
 			</div>
 
-			<h4 id="barApi">Bar</h4>
+			<div id="barApi" class="boldBlock">Bar</div>
 			<div class="tableWrapper">
 				<table>
 					<tr>
@@ -335,13 +347,6 @@
 }
 </pre>
 			<a class="try-button" href="../../../index.html#/explore/list/bulletChart" target="_parent">Try it Out</a>
-		</div>
-		<div class="navigation">
-			<h4>Table of Contents</h4>
-			<div><a href="#properties">Properties</a></div>
-			<div><a href="#bullet">Bullet Microchart</a></div>
-			<div><a href="#stackedBar">StackedBar Microchart</a></div>
-			<div><a href="#examples">Examples</a></div>
 		</div>
 	</div>
 

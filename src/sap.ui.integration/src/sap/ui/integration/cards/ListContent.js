@@ -7,6 +7,7 @@ sap.ui.define([
 	"sap/ui/util/openWindow",
 	"sap/m/library",
 	"sap/m/List",
+	"sap/f/cards/loading/ListPlaceholder",
 	"sap/ui/integration/controls/ObjectStatus",
 	"sap/ui/integration/library",
 	"sap/ui/integration/util/BindingHelper",
@@ -22,6 +23,7 @@ sap.ui.define([
 	openWindow,
 	mLibrary,
 	List,
+	ListPlaceholder,
 	ObjectStatus,
 	library,
 	BindingHelper,
@@ -33,9 +35,6 @@ sap.ui.define([
 	MicrochartsResizeHelper
 ) {
 	"use strict";
-
-	// shortcut for sap.m.AvatarSize
-	var AvatarSize = mLibrary.AvatarSize;
 
 	// shortcut for sap.m.AvatarColor
 	var AvatarColor = mLibrary.AvatarColor;
@@ -101,27 +100,6 @@ sap.ui.define([
 	};
 
 	/**
-	 * Called when control is initialized.
-	 */
-	ListContent.prototype.init = function () {
-		BaseListContent.prototype.init.apply(this, arguments);
-
-		var oList = this._getList();
-		var that = this;
-
-		this.setAggregation("_content", oList);
-
-		oList.attachUpdateFinished(function () {
-			if (that._iVisibleItems) {
-				var aItems = oList.getItems();
-				for (var i = that._iVisibleItems + 1; i < aItems.length; i++) {
-					aItems[i].setVisible(false);
-				}
-			}
-		});
-	};
-
-	/**
 	 * Called when control is destroyed.
 	 */
 	ListContent.prototype.exit = function () {
@@ -141,6 +119,26 @@ sap.ui.define([
 	/**
 	 * @override
 	 */
+	ListContent.prototype.createLoadingPlaceholder = function (oConfiguration) {
+		var oCard = this.getCardInstance(),
+			iContentMinItems = oCard.getContentMinItems(oConfiguration);
+		const oResolvedConfig = BindingResolver.resolveValue(oConfiguration.item, this);
+		const oPlaceholderInfo = ListContentItem.getPlaceholderInfo(oResolvedConfig);
+
+		return new ListPlaceholder({
+			minItems: iContentMinItems !== null ? iContentMinItems : 2,
+			hasIcon: oPlaceholderInfo.hasIcon,
+			attributesLength: oPlaceholderInfo.attributesLength,
+			hasChart: oPlaceholderInfo.hasChart,
+			hasActionsStrip: oPlaceholderInfo.hasActionsStrip,
+			hasDescription: oPlaceholderInfo.hasDescription,
+			itemHeight: ListContentRenderer.getItemMinHeight(oConfiguration, this) + "rem"
+		});
+	};
+
+	/**
+	 * @override
+	 */
 	ListContent.prototype.loadDependencies = function (oCardManifest) {
 		if (!this.isSkeleton() && oCardManifest.get("/sap.card/content/item/chart")) {
 			return Microchart.loadDependencies();
@@ -152,24 +150,23 @@ sap.ui.define([
 	/**
 	 * @override
 	 */
-	ListContent.prototype.setConfiguration = function (oConfiguration) {
-		BaseListContent.prototype.setConfiguration.apply(this, arguments);
-		oConfiguration = this.getParsedConfiguration();
+	ListContent.prototype.applyConfiguration = function () {
+		BaseListContent.prototype.applyConfiguration.apply(this, arguments);
+
+		var oConfiguration = this.getParsedConfiguration();
 
 		if (!oConfiguration) {
-			return this;
+			return;
 		}
 
 		if (oConfiguration.items) {
 			this._setStaticItems(oConfiguration.items);
-			return this;
+			return;
 		}
 
 		if (oConfiguration.item) {
 			this._setItem(oConfiguration);
 		}
-
-		return this;
 	};
 
 	/**
@@ -195,7 +192,13 @@ sap.ui.define([
 					items: aResolvedItems
 				};
 			} else {
-				aResolvedItems.push(BindingResolver.resolveValue(oConfiguration.item, this, oItem.getBindingContext().getPath()));
+				var oResolvedItem = BindingResolver.resolveValue(oConfiguration.item, this, oItem.getBindingContext().getPath());
+
+				if (oResolvedItem.icon && oResolvedItem.icon.src) {
+					oResolvedItem.icon.src = this._oIconFormatter.formatSrc(oResolvedItem.icon.src);
+				}
+
+				aResolvedItems.push(oResolvedItem);
 			}
 		}.bind(this));
 
@@ -219,10 +222,18 @@ sap.ui.define([
 	};
 
 	/**
+	 * @override
+	 */
+	ListContent.prototype.getItemsLength = function () {
+		return this._getList().getItems().filter((item) => !item.isA("sap.m.GroupHeaderListItem")).length;
+	};
+
+	/**
 	 * Handler for when data is changed.
 	 */
 	ListContent.prototype.onDataChanged = function () {
-		this._handleNoItemsError(this.getParsedConfiguration().item);
+		BaseListContent.prototype.onDataChanged.apply(this, arguments);
+
 		this._checkHiddenNavigationItems(this.getParsedConfiguration().item);
 	};
 
@@ -241,8 +252,23 @@ sap.ui.define([
 			this._oList = new List({
 				id: this.getId() + "-list",
 				growing: false,
-				showNoData: false
+				showNoData: false,
+				ariaLabelledBy: this.getHeaderTitleId(),
+				updateFinished: function () {
+					if (this._iVisibleItems) {
+						var aItems = this._oList.getItems();
+						for (var i = this._iVisibleItems + 1; i < aItems.length; i++) {
+							aItems[i].setVisible(false);
+						}
+					}
+				}.bind(this)
 			});
+
+			// remove the custom accessibility announcement from the sap.m.ListBase
+			// so the additional elements (like attributes) are also read
+			this._oList.onItemFocusIn = function (oItem, oFocusedControl) {
+				this._oList._handleStickyItemFocus(oItem.getDomRef());
+			}.bind(this);
 
 			this._oList.addEventDelegate({
 				onfocusin: function (oEvent) {
@@ -260,6 +286,8 @@ sap.ui.define([
 					}
 				}
 			}, this);
+
+			this.setAggregation("_content", this._oList);
 		}
 
 		return this._oList;
@@ -280,10 +308,14 @@ sap.ui.define([
 			mSettings = {
 				title: mItem.title && (mItem.title.value || mItem.title),
 				description: mItem.description && (mItem.description.value || mItem.description),
+				descriptionVisible: mItem.description ? mItem.description.visible : undefined,
 				highlight: mItem.highlight,
+				highlightText: mItem.highlightText,
 				info: mItem.info && mItem.info.value,
 				infoState: mItem.info && mItem.info.state,
+				infoVisible: mItem.info && mItem.info.visible,
 				showInfoStateIcon: mItem.info && mItem.info.showStateIcon,
+				customInfoStatusIcon: mItem.info && mItem.info.customStateIcon,
 				attributes: []
 			};
 
@@ -296,13 +328,9 @@ sap.ui.define([
 			mSettings.iconInitials = mItem.icon.initials || mItem.icon.text;
 			mSettings.iconVisible = mItem.icon.visible;
 
-			if (ListContentItem.getLinesCount(mItem) === 1) {
-				mSettings.iconSize = AvatarSize.XS;
-			} else {
-				mSettings.iconSize = AvatarSize.S;
+			if (mItem.icon.size) {
+				mSettings.iconSize = mItem.icon.size;
 			}
-
-			mSettings.iconSize = mItem.icon.size || mSettings.iconSize;
 			mSettings.iconBackgroundColor = mItem.icon.backgroundColor || (mSettings.iconInitials ? undefined : AvatarColor.Transparent);
 		}
 
@@ -317,7 +345,8 @@ sap.ui.define([
 					state: attr.state,
 					emptyIndicatorMode: EmptyIndicatorMode.On,
 					visible: attr.visible,
-					showStateIcon: attr.showStateIcon
+					showStateIcon: attr.showStateIcon,
+					icon: attr.customStateIcon
 				});
 
 				mSettings.attributes.push(oObjectStatus);
@@ -372,7 +401,8 @@ sap.ui.define([
 				chart: oChart.getChart(),
 				colorsLoad: function () {
 					this.fireEvent(LEGEND_COLORS_LOAD);
-				}.bind(this)
+				}.bind(this),
+				visible: oChartSettings.visible
 			});
 
 			oLegend.initItemsTitles(oChartSettings.bars, this.getBindingContext().getPath());
@@ -401,7 +431,8 @@ sap.ui.define([
 				icon: oItem.icon ? oItem.icon : "",
 				infoState: oItem.infoState ? oItem.infoState : "None",
 				info: oItem.info ? oItem.info : "",
-				highlight: oItem.highlight ? oItem.highlight : "None"
+				highlight: oItem.highlight ? oItem.highlight : "None",
+				highlightText: oItem.highlightText ? oItem.highlightText : ""
 			});
 
 			// Here can be called _attachAction so that navigation service can be used

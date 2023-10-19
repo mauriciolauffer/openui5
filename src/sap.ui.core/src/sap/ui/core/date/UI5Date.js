@@ -45,12 +45,15 @@ sap.ui.define([
 	 * @class A date implementation considering the configured time zone
 	 *
 	 *   A subclass of JavaScript <code>Date</code> that considers the configured time zone, see
-	 *   {@link sap.ui.core.Configuration.getTimezone}. All JavaScript <code>Date</code> functions
+	 *   {@link sap.ui.core.Configuration#getTimezone}. All JavaScript <code>Date</code> functions
 	 *   that use the local browser time zone, like <code>getDate</code>,
 	 *   <code>setDate</code>, and <code>toString</code>, are overwritten and use the
 	 *   configured time zone to compute the values.
 	 *
 	 *   Use {@link module:sap/ui/core/date/UI5Date.getInstance} to create new date instances.
+	 *
+	 *   <b>Note:</b> Adjusting the time zone in a running application can lead to unexpected data
+	 *   inconsistencies. For more information, see {@link sap.ui.core.Configuration#setTimezone}.
 	 *
 	 * @hideconstructor
 	 * @public
@@ -190,6 +193,17 @@ sap.ui.define([
 	};
 
 	/**
+	 * Clones this UI5Date instance.
+	 *
+	 * @returns {Date|module:sap/ui/core/date/UI5Date} The cloned date instance
+	 *
+	 * @private
+	 */
+	UI5Date.prototype.clone = function () {
+		return UI5Date.getInstance(this);
+	};
+
+	/**
 	 * Returns the day of the month of this date instance according to the configured time zone,
 	 * see <code>Date.prototype.getDate</code>.
 	 *
@@ -319,7 +333,7 @@ sap.ui.define([
 	 * @returns {int}
 	 *   The year of this date instance minus 1900 according to the configured time zone
 	 *
-	 * @deprecated since version 1.111.0 as it is deprecated in JavaScript Date; use
+	 * @deprecated As of version 1.111 as it is deprecated in the base class JavaScript Date; use
 	 *   {@link #getFullYear} instead
 	 * @public
 	 */
@@ -463,17 +477,23 @@ sap.ui.define([
 	 * Sets the year for this date instance plus 1900 considering the configured time zone, see
 	 * <code>Date.prototype.setYear</code>.
 	 *
-	 * @param {int} iYear The year which is to be set for this date plus 1900
+	 * @param {int} iYear The year which is to be set for this date. If iYear is a number between 0
+	 *   and 99 (inclusive), then the year for this date is set to 1900 + iYear. Otherwise, the year
+	 *   for this date is set to iYear.
 	 * @returns {int}
 	 *   The milliseconds of the new timestamp based on the UNIX epoch, or <code>NaN</code> if the
 	 *   timestamp could not be updated
 	 *
-	 * @deprecated since version 1.111.0 as it is deprecated in JavaScript Date; use
+	 * @deprecated As of version 1.111 as it is deprecated in the base class JavaScript Date; use
 	 *   {@link #setFullYear} instead
 	 * @public
 	 */
 	UI5Date.prototype.setYear = function (iYear) {
-		return this._setParts(["year"], [(parseInt(iYear) + 1900)]);
+		var iValue = parseInt(iYear);
+
+		iValue =  (iValue < 0 || iValue > 99) ?  iValue : iValue + 1900;
+
+		return this._setParts(["year"], [iValue]);
 	};
 
 	/**
@@ -927,20 +947,23 @@ sap.ui.define([
 	 * in <code>getDate</code>, <code>toString</code>, or <code>setHours</code>. The supported
 	 * parameters are the same as the ones supported by the JavaScript Date constructor.
 	 *
+	 * <b>Note:</b> Adjusting the time zone in a running application can lead to unexpected data
+	 * inconsistencies. For more information, see {@link sap.ui.core.Configuration#setTimezone}.
+	 *
 	 * @param {int|string|Date|module:sap/ui/core/date/UI5Date|null} [vYearOrValue]
 	 *   Same meaning as in the JavaScript Date constructor
 	 * @param {int|string} [vMonthIndex]
 	 *   Same meaning as in the JavaScript Date constructor
-	 * @param {int|string} [vDay=1] Same meaning as in the Date constructor
-	 * @param {int|string} [vHours=0] Same meaning as in the Date constructor
-	 * @param {int|string} [vMinutes=0] Same meaning as in the Date constructor
-	 * @param {int|string} [vSeconds=0] Same meaning as in the Date constructor
-	 * @param {int|string} [vMilliseconds=0] Same meaning as in the Date constructor
+	 * @param {int|string} [vDay=1] Same meaning as in the JavaScript Date constructor
+	 * @param {int|string} [vHours=0] Same meaning as in the JavaScript Date constructor
+	 * @param {int|string} [vMinutes=0] Same meaning as in the JavaScript Date constructor
+	 * @param {int|string} [vSeconds=0] Same meaning as in the JavaScript Date constructor
+	 * @param {int|string} [vMilliseconds=0] Same meaning as in the JavaScript Date constructor
 	 * @returns {Date|module:sap/ui/core/date/UI5Date}
 	 *   The date instance that considers the configured time zone in all local getters and setters.
 	 *
 	 * @public
-	 * @see sap.ui.core.Configuration.getTimezone
+	 * @see sap.ui.core.Configuration#getTimezone
 	 */
 	UI5Date.getInstance = function () {
 		var sTimezone = Configuration.getTimezone();

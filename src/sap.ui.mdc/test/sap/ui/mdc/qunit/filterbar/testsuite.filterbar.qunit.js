@@ -4,7 +4,8 @@ sap.ui.define([
 	Device
 ){
 	"use strict";
-	var oUnitTest =  {
+
+	const oUnitTest =  {
 		name: "Package 'sap.ui.mdc.filterbar'",
 		defaults: {
 			group: "FilterBar",

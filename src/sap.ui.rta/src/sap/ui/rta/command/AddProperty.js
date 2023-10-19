@@ -3,7 +3,7 @@
  */
 sap.ui.define([
 	"sap/ui/rta/command/FlexCommand"
-], function (FlexCommand) {
+], function(FlexCommand) {
 	"use strict";
 
 	/**
@@ -17,8 +17,6 @@ sap.ui.define([
 	 * @private
 	 * @since 1.78
 	 * @alias sap.ui.rta.command.AddProperty
-	 * @experimental Since 1.78. This class is experimental and provides only limited functionality. Also the API might be
-	 *               changed in future.
 	 */
 	var AddProperty = FlexCommand.extend("sap.ui.rta.command.AddProperty", {
 		metadata: {
@@ -30,7 +28,7 @@ sap.ui.define([
 				newControlId: {
 					type: "string"
 				},
-				//the name "bindingPath" conflicts with getBindingPath() method from ManagedObject
+				// the name "bindingPath" conflicts with getBindingPath() method from ManagedObject
 				bindingString: {
 					type: "string"
 				},
@@ -67,13 +65,13 @@ sap.ui.define([
 			newControlId: this.getNewControlId(),
 			bindingPath: this.getBindingString(),
 			parentId: this.getParentId(),
-			//used to connect to default delegate
+			// used to connect to default delegate
 			modelType: this.getModelType(),
-			//allow change handlers to access delegates if the change is not done on the relevant container
+			// allow change handlers to access delegates if the change is not done on the relevant container
 			relevantContainerId: this.getRelevantContainerId(),
-			//used to connect to change handler mediator
+			// used to connect to change handler mediator
 			oDataServiceVersion: this.getODataServiceVersion(),
-			//necessary for custom fields support tools
+			// necessary for custom fields support tools
 			oDataInformation: {
 				oDataServiceUri: this.getODataServiceUri(),
 				propertyName: this.getPropertyName(),

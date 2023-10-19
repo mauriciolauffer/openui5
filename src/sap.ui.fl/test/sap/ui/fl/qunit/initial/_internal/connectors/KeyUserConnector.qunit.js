@@ -1,14 +1,14 @@
 /* global QUnit */
 
 sap.ui.define([
-	"sap/ui/fl/write/api/Version",
-	"sap/ui/fl/initial/_internal/connectors/Utils",
 	"sap/ui/fl/initial/_internal/connectors/KeyUserConnector",
+	"sap/ui/fl/initial/_internal/connectors/Utils",
+	"sap/ui/fl/initial/api/Version",
 	"sap/ui/thirdparty/sinon-4"
 ], function(
-	Version,
-	Utils,
 	KeyUserConnector,
+	Utils,
+	Version,
 	sinon
 ) {
 	"use strict";
@@ -16,14 +16,14 @@ sap.ui.define([
 	var sandbox = sinon.createSandbox();
 
 	QUnit.module("Connector", {
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
 		QUnit.test("loadFlexData trigger the correct request to back end then:" +
 			"- store the token and settings values" +
 			"- return cacheKey value" +
-			"- merges the compVariants in the changes", function (assert) {
+			"- merges the compVariants in the changes", function(assert) {
 			var mPropertyBag = {
 				url: "/flexKeyuser",
 				reference: "reference",
@@ -33,7 +33,7 @@ sap.ui.define([
 				version: Version.Number.Draft,
 				"sap-language": "en"
 			};
-			var sExpectedUrl = "/flexKeyuser/flex/keyuser/v2/data/reference?version=" + Version.Number.Draft;
+			var sExpectedUrl = `/flexKeyuser/flex/keyuser/v2/data/reference?version=${Version.Number.Draft}`;
 			var oStubGetUrlWithQueryParameters = sandbox.stub(Utils, "getUrl").returns(sExpectedUrl);
 			var oStubSendRequest = sandbox.stub(Utils, "sendRequest").resolves({
 				response: {
@@ -55,7 +55,7 @@ sap.ui.define([
 				status: "200",
 				etag: "abc123"
 			});
-			return KeyUserConnector.loadFlexData(mPropertyBag).then(function (oFlexData) {
+			return KeyUserConnector.loadFlexData(mPropertyBag).then(function(oFlexData) {
 				assert.ok(oStubGetUrlWithQueryParameters.calledOnce, "getUrl is called once");
 				assert.equal(oStubGetUrlWithQueryParameters.getCall(0).args[0], "/flex/keyuser/v2/data/", "with correct route path");
 				assert.deepEqual(oStubGetUrlWithQueryParameters.getCall(0).args[1], mPropertyBag, "with correct property bag");
@@ -74,14 +74,14 @@ sap.ui.define([
 			});
 		});
 
-		QUnit.test("loadFlexData requests the 'Original App'", function (assert) {
+		QUnit.test("loadFlexData requests the 'Original App'", function(assert) {
 			var mPropertyBag = {
 				url: "/flexKeyuser",
 				reference: "reference",
 				version: Version.Number.Original
 			};
 
-			var sExpectedUrl = "/flexKeyuser/flex/keyuser/v1/data/reference?version=" + Version.Number.Original;
+			var sExpectedUrl = `/flexKeyuser/flex/keyuser/v1/data/reference?version=${Version.Number.Original}`;
 			sandbox.stub(Utils, "getUrl").returns(sExpectedUrl);
 			var oStubSendRequest = sandbox.stub(Utils, "sendRequest").resolves({
 				response: {
@@ -96,7 +96,7 @@ sap.ui.define([
 				status: "200",
 				etag: "abc123"
 			});
-			return KeyUserConnector.loadFlexData(mPropertyBag).then(function () {
+			return KeyUserConnector.loadFlexData(mPropertyBag).then(function() {
 				assert.ok(oStubSendRequest.calledOnce, "sendRequest is called once");
 				assert.equal(oStubSendRequest.getCall(0).args[0], sExpectedUrl, "with correct url");
 				assert.equal(oStubSendRequest.getCall(0).args[1], "GET", "with correct method");
@@ -104,7 +104,7 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

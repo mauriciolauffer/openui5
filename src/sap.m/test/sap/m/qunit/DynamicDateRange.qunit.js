@@ -1,10 +1,9 @@
 /*global QUnit, sinon */
 sap.ui.define([
 	"sap/m/DynamicDateRange",
-	"sap/m/CustomDynamicDateOption",
+	"sap/m/DynamicDateOption",
 	"sap/m/StandardDynamicDateOption",
 	"sap/m/DynamicDateValueHelpUIType",
-	"sap/m/DynamicDateUtil",
 	"sap/ui/unified/DateRange",
 	"sap/ui/core/Core",
 	"sap/ui/core/Element",
@@ -12,13 +11,15 @@ sap.ui.define([
 	"sap/m/Button",
 	"sap/ui/core/Icon",
 	"sap/m/Label",
-	'sap/ui/Device'
+	"sap/ui/Device",
+	"sap/ui/core/date/UI5Date",
+	"sap/ui/core/date/CalendarWeekNumbering",
+	"sap/ui/core/Configuration"
 ], function(
 	DynamicDateRange,
-	CustomDynamicDateOption,
+	DynamicDateOption,
 	StandardDynamicDateOption,
 	DynamicDateValueHelpUIType,
-	DynamicDateUtil,
 	DateRange,
 	oCore,
 	Element,
@@ -26,17 +27,29 @@ sap.ui.define([
 	Button,
 	Icon,
 	Label,
-	Device
+	Device,
+	UI5Date,
+	CalendarWeekNumbering,
+	Configuration
 ) {
 	"use strict";
 
 	// shortcut for library resource bundle
-	var oRb = oCore.getLibraryResourceBundle("sap.m");
+	var oRb = oCore.getLibraryResourceBundle("sap.m"),
+		testDate = function(assert, oDate, iDuration, sUnit, iFullYear, iMonth, iDate, iHours, iMinutes, iSecond, iMilliseconds) {
+			assert.strictEqual(oDate.getFullYear(), iFullYear, "toDates " + iDuration +  " " + sUnit + ": year set correctly");
+			assert.strictEqual(oDate.getMonth(), iMonth, "toDates " + iDuration +  " " + sUnit + ": month set correctly");
+			assert.strictEqual(oDate.getDate(), iDate, "toDates " + iDuration +  " " + sUnit + ": date set correctly");
+			assert.strictEqual(oDate.getHours(), iHours, "toDates " + iDuration +  " " + sUnit + ": hours set correctly");
+			assert.strictEqual(oDate.getMinutes(), iMinutes, "toDates " + iDuration +  " " + sUnit + ": minutes set correctly");
+			assert.strictEqual(oDate.getSeconds(), iSecond, "toDates " + iDuration +  " " + sUnit + ": seconds set correctly");
+			assert.strictEqual(oDate.getMilliseconds(), iMilliseconds, "toDates " + iDuration +  " " + sUnit + ": milliseconds set correctly");
+		};
 
 	QUnit.module("initialization", {
 		beforeEach: function() {
 			this.ddr = new DynamicDateRange();
-			this.ddr.setOptions([]);
+			this.ddr.setStandardOptions([]);
 			this.ddr.placeAt("qunit-fixture");
 			oCore.applyChanges();
 		},
@@ -49,8 +62,8 @@ sap.ui.define([
 		var oResultOptions;
 
 		// act
-		this.ddr.addOption("LASTDAYS");
-		oResultOptions = this.ddr.getOptions();
+		this.ddr.addStandardOption("LASTDAYS");
+		oResultOptions = this.ddr.getStandardOptions();
 
 		// assert
 		assert.strictEqual(oResultOptions.length, 1, "correct number of options");
@@ -59,27 +72,27 @@ sap.ui.define([
 
 	QUnit.test("creating custom option with working ID", function(assert) {
 		//arrange
-		var oOption = new CustomDynamicDateOption({
+		var oOption = new DynamicDateOption({
 			key: "X To Last Work Week",
-			valueTypes: ["int"],
-			getValueHelpUITypes: function() {
-				return [new DynamicDateValueHelpUIType({ type: "int" })];
-			},
-			createValueHelpUI: function () { return {}; },
-			format: function(oValue) {
-				return oValue.values[0] + " To Last Work Week";
-			},
-			parse: function(sValue) {
-				return {};
-			},
-			validateValueHelpUI: function () { return {}; },
-			toDates: function(oValue) {
-				return {};
-			}
-		});
+			valueTypes: ["int"]});
+
+		oOption.getValueHelpUITypes = function() {
+			return [new DynamicDateValueHelpUIType({ type: "int" })];
+		};
+		oOption.createValueHelpUI = function () { return {}; };
+		oOption.format = function(oValue) {
+			return oValue.values[0] + " To Last Work Week";
+		};
+		oOption.parse = function() {
+			return {};
+		};
+		oOption.validateValueHelpUI = function () { return {}; };
+		oOption.toDates = function() {
+			return {};
+		};
 
 		// act
-		this.ddr.addOption(oOption);
+		this.ddr.addCustomOption(oOption);
 		var oOptionListItem = this.ddr._createListItem(oOption);
 
 		// assert
@@ -92,6 +105,15 @@ sap.ui.define([
 			this.ddr.getAggregation("_input").getFocusDomRef().id,
 			"getFocusDomRef returns the DOM of the inner input control"
 		);
+	});
+
+	QUnit.test("Native autocomplete is swiched off", function(assert) {
+		// prepare
+		var oInput = this.ddr._oInput;
+		var oInputDom = oInput.getDomRef().querySelector("input");
+
+		// assert
+		assert.strictEqual(oInputDom.getAttribute("autocomplete"), "off", "The autocomplete is off");
 	});
 
 	QUnit.module("basic functionality", {
@@ -164,7 +186,7 @@ sap.ui.define([
 
 	QUnit.test("Setting value", function(assert) {
 		// arrange
-		var oCustomValue = { operator: "DATE", values: [new Date(2020, 2, 31)]};
+		var oCustomValue = { operator: "DATE", values: [UI5Date.getInstance(2020, 2, 31)]};
 		// act
 		this.ddr.setValue(oCustomValue);
 
@@ -176,6 +198,17 @@ sap.ui.define([
 
 		// assert
 		assert.strictEqual(this.ddr._oInput.getValue(), "", "The set empty value is the correct value");
+	});
+
+	QUnit.test("Setting tooltip", function(assert) {
+		// arrange
+		var sTooltip = "Select a year range";
+
+		// act
+		this.ddr.setTooltip(sTooltip);
+
+		// assert
+		assert.strictEqual(this.ddr._oInput.getTooltip(), sTooltip, "The tooltip is set to the inner input field");
 	});
 
 	QUnit.test("Date ranges are handled properly", function(assert) {
@@ -197,7 +230,7 @@ sap.ui.define([
 		// act
 		this.stub(oDDR._oSelectedOption, "getValueHelpOutput").returns({
 			operator: "DATETIMERANGE",
-			values: [new Date(2022, 10, 15), new Date(2022, 10, 10)]
+			values: [UI5Date.getInstance(2022, 10, 15), UI5Date.getInstance(2022, 10, 10)]
 		});
 		this.stub(oDDR, "_closePopup").returns(function() {});
 
@@ -208,7 +241,7 @@ sap.ui.define([
 		// act
 		this.stub(oDDR._oSelectedOption, "getValueHelpOutput").returns({
 			operator: "DATETIMERANGE",
-			values: [new Date(2022, 10, 15), new Date(2022, 10, 10)]
+			values: [UI5Date.getInstance(2022, 10, 15), UI5Date.getInstance(2022, 10, 10)]
 		});
 		this.stub(oDDR, "_getDatesLabel").returns({
 			setText: function() {}
@@ -219,6 +252,7 @@ sap.ui.define([
 		oDDR._updateDatesLabel();
 		// assert
 		assert.ok(oSwapDatesSpy.calledThrice, "Dates are swapped on for the label");
+		oDDR.destroy();
 	});
 
 	QUnit.module("CustomDynamicDateOption", {
@@ -233,7 +267,7 @@ sap.ui.define([
 	});
 
 	QUnit.test("createValueHelpUI - no UI types", function(assert) {
-		var oOption = new CustomDynamicDateOption({ key: "KEY" });
+		var oOption = new DynamicDateOption({ key: "KEY" });
 
 		assert.throws(function() {
 			oOption.createValueHelpUI(this.ddr);
@@ -245,17 +279,17 @@ sap.ui.define([
 	});
 
 	QUnit.test("createValueHelpUI - calendar types", function(assert) {
-		var oOption = new CustomDynamicDateOption({
-			key: "KEY",
-			getValueHelpUITypes: function(oControl) {
-				return [
-					new DynamicDateValueHelpUIType({ type: "date" }),
-					new DynamicDateValueHelpUIType({ type: "daterange" }),
-					new DynamicDateValueHelpUIType({ type: "month" }),
-					new DynamicDateValueHelpUIType({ type: "custommonth" }),
-					new DynamicDateValueHelpUIType({ type: "int" })];
-			}
+		var oOption = new DynamicDateOption({
+			key: "KEY"
 		});
+		oOption.getValueHelpUITypes = function() {
+			return [
+				new DynamicDateValueHelpUIType({ type: "date" }),
+				new DynamicDateValueHelpUIType({ type: "daterange" }),
+				new DynamicDateValueHelpUIType({ type: "month" }),
+				new DynamicDateValueHelpUIType({ type: "custommonth" }),
+				new DynamicDateValueHelpUIType({ type: "int" })];
+		};
 
 		var aControls = oOption.createValueHelpUI(this.ddr);
 
@@ -273,15 +307,16 @@ sap.ui.define([
 	});
 
 	QUnit.test("createValueHelpUI - control with label", function(assert) {
-		var oOption = new CustomDynamicDateOption({
-			key: "KEY",
-			getValueHelpUITypes: function(oControl) {
-				return [
-					new DynamicDateValueHelpUIType({ type: "int", text: "days before Christmas" })
-				];
-			}
+		var oOption = new DynamicDateOption({
+			key: "KEY"
 		}),
-			aControls;
+		aControls;
+
+		oOption.getValueHelpUITypes = function(oControl) {
+			return [
+				new DynamicDateValueHelpUIType({ type: "int", text: "days before Christmas" })
+			];
+		};
 
 		aControls = oOption.createValueHelpUI(this.ddr);
 
@@ -295,14 +330,15 @@ sap.ui.define([
 	});
 
 	QUnit.test("getValueHelpOutput - integer", function(assert) {
-		var oOption = new CustomDynamicDateOption({
-			key: "KEY",
-			getValueHelpUITypes: function(oControl) {
-				return [new DynamicDateValueHelpUIType({ type: "int" })];
-			}
+		var oOption = new DynamicDateOption({
+			key: "KEY"
 		}),
-			aControls,
-			oOutput;
+		aControls,
+		oOutput;
+
+		oOption.getValueHelpUITypes = function(oControl) {
+			return [new DynamicDateValueHelpUIType({ type: "int" })];
+		};
 
 		aControls = oOption.createValueHelpUI(this.ddr);
 
@@ -318,19 +354,20 @@ sap.ui.define([
 	});
 
 	QUnit.test("getValueHelpOutput - date", function(assert) {
-		var oOption = new CustomDynamicDateOption({
-			key: "KEY",
-			getValueHelpUITypes: function(oControl) {
-				return [new DynamicDateValueHelpUIType({ type: "date" })];
-			}
+		var oOption = new DynamicDateOption({
+			key: "KEY"
 		}),
-			aControls,
-			oOutput;
+		aControls,
+		oOutput;
+
+		oOption.getValueHelpUITypes = function(oControl) {
+			return [new DynamicDateValueHelpUIType({ type: "date" })];
+		};
 
 		aControls = oOption.createValueHelpUI(this.ddr);
 
 		aControls[0].addSelectedDate(new DateRange({
-			startDate: new Date(2021, 3, 3)
+			startDate: UI5Date.getInstance(2021, 3, 3)
 		}));
 
 		oOutput = oOption.getValueHelpOutput(this.ddr);
@@ -345,7 +382,7 @@ sap.ui.define([
 	});
 
 	QUnit.test("no format", function(assert) {
-		var oOption = new CustomDynamicDateOption({ key: "KEY" });
+		var oOption = new DynamicDateOption({ key: "KEY" });
 
 		assert.throws(function() {
 			oOption.format({ operator: "KEY", values: [5] });
@@ -357,7 +394,7 @@ sap.ui.define([
 	});
 
 	QUnit.test("no parse", function(assert) {
-		var oOption = new CustomDynamicDateOption({ key: "KEY" });
+		var oOption = new DynamicDateOption({ key: "KEY" });
 
 		assert.throws(function() {
 			oOption.parse("some 5");
@@ -373,7 +410,7 @@ sap.ui.define([
 	});
 
 	QUnit.test("no toDates", function(assert) {
-		var oOption = new CustomDynamicDateOption({ key: "KEY" });
+		var oOption = new DynamicDateOption({ key: "KEY" });
 
 		assert.throws(function() {
 			oOption.toDates({ operator: "KEY", values: [5] });
@@ -385,12 +422,13 @@ sap.ui.define([
 	});
 
 	QUnit.test("format", function(assert) {
-		var oOption = new CustomDynamicDateOption({
-			key: "KEY",
-			format: function(oValue) {
-				return "some 5";
-			}
+		var oOption = new DynamicDateOption({
+			key: "KEY"
 		});
+
+		oOption.format = function(oValue) {
+			return "some 5";
+		};
 
 		assert.strictEqual(oOption.format({ operator: "KEY", values: [5] }), "some 5", "custom function is used to format");
 
@@ -398,12 +436,13 @@ sap.ui.define([
 	});
 
 	QUnit.test("parse", function(assert) {
-		var oOption = new CustomDynamicDateOption({
-			key: "KEY",
-			parse: function(sValue) {
-				return { operator: "KEY", values: [5] };
-			}
+		var oOption = new DynamicDateOption({
+			key: "KEY"
 		});
+
+		oOption.parse =  function(sValue) {
+			return { operator: "KEY", values: [5] };
+		};
 
 		var oValue = oOption.parse("some 5");
 
@@ -414,12 +453,13 @@ sap.ui.define([
 	});
 
 	QUnit.test("toDates", function(assert) {
-		var oOption = new CustomDynamicDateOption({
-			key: "KEY",
-			toDates: function(oValue) {
-				return [new Date(123456788), new Date(123456789)];
-			}
+		var oOption = new DynamicDateOption({
+			key: "KEY"
 		});
+
+		oOption.toDates = function(oValue) {
+			return [UI5Date.getInstance(123456788), UI5Date.getInstance(123456789)];
+		};
 
 		var aDates = oOption.toDates({ operator: "KEY", values: [5] });
 
@@ -430,15 +470,15 @@ sap.ui.define([
 	});
 
 	QUnit.test("getText", function(assert) {
-		var oOption = new CustomDynamicDateOption({
+		var oOption = new DynamicDateOption({
 			key: "KEY"
 		});
 
 		assert.strictEqual(oOption.getText(this.ddr), "KEY", "the default UI text is the same as the option key");
 
-		oOption.setGetText(function(oControl) {
+		oOption.getText = function(oControl) {
 			return "custom text";
-		});
+		};
 
 		assert.strictEqual(oOption.getText(this.ddr), "custom text", "custom getText is used when provided");
 
@@ -446,15 +486,15 @@ sap.ui.define([
 	});
 
 	QUnit.test("getGroup", function(assert) {
-		var oOption = new CustomDynamicDateOption({
+		var oOption = new DynamicDateOption({
 			key: "KEY"
 		});
 
 		assert.strictEqual(oOption.getGroup(this.ddr), 0, "the default UI group is correct");
 
-		oOption.setGetGroup(function(oControl) {
+		oOption.getGroup = function(oControl) {
 			return 7;
-		});
+		};
 
 		assert.strictEqual(oOption.getGroup(this.ddr), 7, "custom getGroup is used when provided");
 
@@ -462,21 +502,19 @@ sap.ui.define([
 	});
 
 	QUnit.test("getGroupHeader", function(assert) {
-		var oOption = new CustomDynamicDateOption({
+		var oOption = new DynamicDateOption({
 			key: "KEY"
 		});
 
 		assert.strictEqual(oOption.getGroupHeader(this.ddr), "No Group", "the default UI group header is correct");
 
-		oOption.setGetGroupHeader(function(oControl) {
+		oOption.getGroupHeader = function(oControl) {
 			return "custom group header";
-		});
+		};
 
-		assert.strictEqual(oOption.getGroupHeader(this.ddr), "No Group", "custom header does not matter when the group is not defined");
-
-		oOption.setGetGroup(function(oControl) {
+		oOption.getGroup = function(oControl) {
 			return 7;
-		});
+		};
 
 		assert.strictEqual(oOption.getGroupHeader(this.ddr), "custom group header", "custom getGroupHeader is used when provided");
 
@@ -486,12 +524,12 @@ sap.ui.define([
 	QUnit.module("StandardDynamicDateOption last/next x", {
 		beforeEach: function() {
 			this.ddr = new DynamicDateRange();
-			this.ddr.setOptions([]);
+			this.ddr.setStandardOptions([]);
 
-			this.ddr.addOption("LASTDAYS");
-			this.ddr.addOption("LASTMONTHS");
-			this.ddr.addOption("NEXTWEEKS");
-			this.ddr.addOption("NEXTQUARTERS");
+			this.ddr.addStandardOption("LASTDAYS");
+			this.ddr.addStandardOption("LASTMONTHS");
+			this.ddr.addStandardOption("NEXTWEEKS");
+			this.ddr.addStandardOption("NEXTQUARTERS");
 
 			this.ddr.placeAt("qunit-fixture");
 
@@ -545,7 +583,7 @@ sap.ui.define([
 			aControls;
 
 		// leave only one option
-		this.ddr.setOptions(["LASTQUARTERS"]);
+		this.ddr.setStandardOptions(["LASTQUARTERS"]);
 
 		aControls = oOptionLast.createValueHelpUI(this.ddr);
 
@@ -599,9 +637,8 @@ sap.ui.define([
 	});
 
 	QUnit.test("today -x/+y creating and validating the option UI", function(assert) {
-		this.ddr.placeAt("qunit-fixture");
 		this.ddr.open();
-
+		this.ddr.addStandardOption("TODAYFROMTO");
 		var oOptionToday = new StandardDynamicDateOption({ key: "TODAYFROMTO" }),
 			oValidateValueHelpUISpy = this.spy(oOptionToday, "validateValueHelpUI"),
 			oStepInput,
@@ -752,7 +789,7 @@ sap.ui.define([
 
 	QUnit.test("Last/Next 1 days values", function(assert) {
 		// arrange
-		this.ddr.setOptions(["LASTDAYS", "NEXTDAYS"]);
+		this.ddr.setStandardOptions(["LASTDAYS", "NEXTDAYS"]);
 
 		// act
 		this.ddr.setValue({ operator: "LASTDAYS", values:[1] });
@@ -771,7 +808,7 @@ sap.ui.define([
 
 	QUnit.test("Last/Next 1 days values when tomorrow and yesterday are included", function(assert) {
 		// arrange
-		this.ddr.setOptions(["LASTDAYS", "NEXTDAYS", "TOMORROW", "YESTERDAY"]);
+		this.ddr.setStandardOptions(["LASTDAYS", "NEXTDAYS", "TOMORROW", "YESTERDAY"]);
 
 		// act
 		this.ddr.setValue({ operator: "LASTDAYS", values:[1] });
@@ -791,7 +828,7 @@ sap.ui.define([
 
 	QUnit.test("Next 0 days values", function(assert) {
 		// arrange
-		this.ddr.setOptions(["NEXTDAYS", "TODAY"]);
+		this.ddr.setStandardOptions(["NEXTDAYS", "TODAY"]);
 
 		// act
 		this.ddr.setValue({ operator: "NEXTDAYS", values:[0] });
@@ -803,7 +840,7 @@ sap.ui.define([
 
 	QUnit.test("Last 0 days values", function(assert) {
 		// arrange
-		this.ddr.setOptions(["LASTDAYS", "TODAY"]);
+		this.ddr.setStandardOptions(["LASTDAYS", "TODAY"]);
 
 		// act
 		this.ddr.setValue({ operator: "LASTDAYS", values:[0] });
@@ -813,70 +850,57 @@ sap.ui.define([
 		assert.equal(this.ddr._oInput.getValue().indexOf("Today"), 0, "the formatted value is correct");
 	});
 
-	QUnit.test("DynamicDateUtil - removeTimezoneOffset", function(assert) {
-		// arrange
-		var oDateFormatter = DateFormat.getDateTimeInstance(),
-			aResultRange;
-
-		//act
-		aResultRange = DynamicDateUtil.toDates({ operator: "DATE", values: [ DynamicDateUtil.removeTimezoneOffset(new Date(2021, 8, 23))] });
-
-		// assert
-		assert.equal(oDateFormatter.format(aResultRange[0]), "Sep 23, 2021, 12:00:00 AM", "correct start date");
-		assert.equal(oDateFormatter.format(aResultRange[1]), "Sep 23, 2021, 11:59:59 PM", "correct end date");
-	});
-
 	QUnit.test("DynamicDateRange - Last/Next options", function(assert) {
-		var oCurrentDate = new Date('2023-01-08T00:13:37'),
+		// arrange
+		var oCurrentDate = UI5Date.getInstance('2023-01-08T00:13:37'),
 		oClock = sinon.useFakeTimers(oCurrentDate.getTime());
 
 		oCore.applyChanges();
-		var oDDR = oCore.byId("__range8");
+		var oDDR = new DynamicDateRange({id: "myDDRLast"});
 		var oLastMinutesOption;
-		var oNextMinutesOption;
+		var oLastHoursOption;
 		var sLabelText;
 		var oPages;
 
-		oDDR.addOption("NEXTHOURS");
-		oDDR.addOption("LASTHOURS");
-		oLastMinutesOption = oCore.byId('__range8-option-LASTMINUTES');
-		oNextMinutesOption = oCore.byId('__range8-option-NEXTMINUTES');
+		//act
+		oDDR.placeAt("qunit-fixture");
+		oCore.applyChanges();
+		oDDR.setStandardOptions([]);
+		oDDR.addStandardOption("LASTMINUTES");
+		oDDR.open();
+		oLastMinutesOption = oCore.byId('myDDRLast-option-LASTMINUTES');
 
 		oLastMinutesOption.firePress();
+		oCore.applyChanges();
+
 		oPages = oDDR._oNavContainer.getPages()[1];
 		sLabelText = oPages
 			.getAggregation('footer')
 			.getAggregation('content')[0]
 			.getText();
 
-		//Check the label.
-		assert.strictEqual(sLabelText, "Selected: Jan 8, 2023, 12:12:37 AM – Jan 8, 2023, 12:13:37 AM", "correct label for last minute");
+		//Check the label. Char code \u202f is a Narrow No-Break Space and \u2009 is a thin space (both introduced with CLDR version 43), \u2013 is a dash
+		assert.strictEqual(sLabelText, "Selected: Jan 8, 2023, 12:12:37\u202fAM\u2009\u2013\u2009Jan 8, 2023, 12:13:37\u202fAM", "correct label for last minute");
 
-		oNextMinutesOption.firePress();
-		sLabelText = oPages
-			.getAggregation('footer')
-			.getAggregation('content')[0]
-			.getText();
-
-		//Check the label.
-		assert.strictEqual(sLabelText, "Selected: Jan 8, 2023, 12:13:37 AM – Jan 8, 2023, 12:14:37 AM", "correct label for next minute");
-
-		//act
-		oDDR.setValue({ operator: "LASTHOURS", values:[1] });
-		oLastMinutesOption = oCore.byId('__range8-option-LASTMINUTES');
-		oLastMinutesOption.firePress();
+		oDDR.setStandardOptions([]);
+		oDDR.addStandardOption("LASTHOURS");
+		oDDR.open();
+		oLastHoursOption = oCore.byId('myDDRLast-option-LASTHOURS');
+		oLastHoursOption.firePress();
+		oCore.applyChanges();
 
 		sLabelText = oDDR._oNavContainer.getPages()[1]
 			.getAggregation('footer')
 			.getAggregation('content')[0]
 			.getText();
 
-		//Check the label.
-		assert.strictEqual(sLabelText, "Selected: Jan 7, 2023, 11:13:37 PM – Jan 8, 2023, 12:13:37 AM", "correct label for last hour");
+		//Check the label. Char code \u202f is a Narrow No-Break Space and \u2009 is a thin space (both introduced with CLDR version 43), \u2013 is a dash
+		assert.strictEqual(sLabelText, "Selected: Jan 7, 2023, 11:13:37\u202fPM\u2009\u2013\u2009Jan 8, 2023, 12:13:37\u202fAM", "correct label for last hour");
 
+		//cleanup
+		oDDR.destroy();
 		oClock.restore();
 	});
-
 
 	QUnit.test("toDates - DATE", function(assert) {
 		// arrange
@@ -884,11 +908,11 @@ sap.ui.define([
 			aResultRange;
 
 		//act
-		aResultRange = DynamicDateUtil.toDates({ operator: "DATE", values: [new Date(2021, 8, 23)] });
+		aResultRange = DynamicDateRange.toDates({ operator: "DATE", values: [UI5Date.getInstance(2021, 8, 23)] });
 
-		// assert
-		assert.equal(oDateFormatter.format(aResultRange[0]), "Sep 23, 2021, 12:00:00 AM", "correct start date");
-		assert.equal(oDateFormatter.format(aResultRange[1]), "Sep 23, 2021, 11:59:59 PM", "correct end date");
+		// assert; \u202f is a Narrow No-Break Space which has been introduced with CLDR version 43
+		assert.equal(oDateFormatter.format(aResultRange[0]), "Sep 23, 2021, 12:00:00\u202fAM", "correct start date");
+		assert.equal(oDateFormatter.format(aResultRange[1]), "Sep 23, 2021, 11:59:59\u202fPM", "correct end date");
 	});
 
 	QUnit.test("toDates - DATERANGE", function(assert) {
@@ -897,11 +921,11 @@ sap.ui.define([
 			aResultRange;
 
 		//act
-		aResultRange = DynamicDateUtil.toDates({ operator: "DATERANGE", values: [new Date(2021, 8, 23), new Date(2021, 8, 24)] });
+		aResultRange = DynamicDateRange.toDates({ operator: "DATERANGE", values: [UI5Date.getInstance(2021, 8, 23), UI5Date.getInstance(2021, 8, 24)] });
 
-		// assert
-		assert.equal(oDateFormatter.format(aResultRange[0]), "Sep 23, 2021, 12:00:00 AM", "correct start date");
-		assert.equal(oDateFormatter.format(aResultRange[1]), "Sep 24, 2021, 11:59:59 PM", "correct end date");
+		// assert; \u202f is a Narrow No-Break Space which has been introduced with CLDR version 43
+		assert.equal(oDateFormatter.format(aResultRange[0]), "Sep 23, 2021, 12:00:00\u202fAM", "correct start date");
+		assert.equal(oDateFormatter.format(aResultRange[1]), "Sep 24, 2021, 11:59:59\u202fPM", "correct end date");
 	});
 
 	QUnit.test("valueHelpUITypes objects lifecycle", function(assert) {
@@ -931,9 +955,9 @@ sap.ui.define([
 	QUnit.module("StandardDynamicDateOption DateTime (single)", {
 		beforeEach: function() {
 			this.ddr = new DynamicDateRange();
-			this.ddr.setOptions([]);
+			this.ddr.setStandardOptions([]);
 
-			this.ddr.addOption("DATETIME");
+			this.ddr.addStandardOption("DATETIME");
 
 			this.ddr.placeAt("qunit-fixture");
 
@@ -959,7 +983,7 @@ sap.ui.define([
 			aControls;
 
 		// leave only one option
-		this.ddr.setOptions(["DATETIME"]);
+		this.ddr.setStandardOptions(["DATETIME"]);
 
 		aControls = oDateTimeOption.createValueHelpUI(this.ddr);
 
@@ -995,7 +1019,7 @@ sap.ui.define([
 
 	QUnit.test("DateTime - getValueHelpOutput", function(assert) {
 		var oDateTimeOption = new StandardDynamicDateOption({ key: "DATETIME" }),
-			oDate = new Date(),
+			oDate = UI5Date.getInstance(),
 			aControls,
 			oOutput;
 
@@ -1025,14 +1049,14 @@ sap.ui.define([
 	QUnit.test("toDates - DATETIME", function(assert) {
 		// arrange
 		var oDateFormatter = DateFormat.getDateTimeInstance(),
-			oDate = new Date(2021, 11, 20, 15, 50, 0),
+			oDate = UI5Date.getInstance(2021, 11, 20, 15, 50, 0),
 			oResult;
 
 		//act
-		oResult = DynamicDateUtil.toDates({ operator: "DATETIME", values: [oDate] });
+		oResult = DynamicDateRange.toDates({ operator: "DATETIME", values: [oDate] });
 
-		// assert
-		assert.equal(oDateFormatter.format(oResult[0]), "Dec 20, 2021, 3:50:00 PM", "correct date/time");
+		// assert; \u202f is a Narrow No-Break Space which has been introduced with CLDR version 43
+		assert.equal(oDateFormatter.format(oResult[0]), "Dec 20, 2021, 3:50:00\u202fPM", "correct date/time");
 	});
 
 	QUnit.test("valueHelpUITypes objects lifecycle", function(assert) {
@@ -1062,9 +1086,9 @@ sap.ui.define([
 	QUnit.module("StandardDynamicDateOption DateTimeRange", {
 		beforeEach: function() {
 			this.ddr = new DynamicDateRange();
-			this.ddr.setOptions([]);
+			this.ddr.setStandardOptions([]);
 
-			this.ddr.addOption("DATETIMERANGE");
+			this.ddr.addStandardOption("DATETIMERANGE");
 
 			this.ddr.placeAt("qunit-fixture");
 
@@ -1078,7 +1102,7 @@ sap.ui.define([
 	QUnit.test("DateTimeRange text", function(assert) {
 		this.ddr.open();
 
-		var oDateTimeOption = DynamicDateUtil.getOption("DATETIMERANGE"),
+		var oDateTimeOption = this.ddr.getOption("DATETIMERANGE"),
 			sText = oDateTimeOption.getText(this.ddr),
 			sOptionText = oRb.getText("DYNAMIC_DATE_DATETIMERANGE_TITLE");
 
@@ -1086,7 +1110,7 @@ sap.ui.define([
 	});
 
 	QUnit.test("DateTimeRange creating value help UI", function(assert) {
-		var oDateTimeOption = DynamicDateUtil.getOption("DATETIMERANGE"),
+		var oDateTimeOption = this.ddr.getOption("DATETIMERANGE"),
 			aControls;
 
 		aControls = oDateTimeOption.createValueHelpUI(this.ddr);
@@ -1097,7 +1121,7 @@ sap.ui.define([
 	});
 
 	QUnit.test("DateTimeRange - values update callback", function(assert) {
-		var oDateTimeOption = DynamicDateUtil.getOption("DATETIMERANGE"),
+		var oDateTimeOption = this.ddr.getOption("DATETIMERANGE"),
 			fnUpdateCallback = this.spy(),
 			aControls,
 			oFirstDateTimePicker,
@@ -1119,8 +1143,8 @@ sap.ui.define([
 	});
 
 	QUnit.test("DateTimeRange - getValueHelpOutput", function(assert) {
-		var oDateTimeOption = DynamicDateUtil.getOption("DATETIMERANGE"),
-			oDate = new Date(),
+		var oDateTimeOption = this.ddr.getOption("DATETIMERANGE"),
+			oDate = UI5Date.getInstance(),
 			aControls,
 			oOutput;
 
@@ -1137,7 +1161,7 @@ sap.ui.define([
 	});
 
 	QUnit.test("getGroup and getGroupHeader - several options", function(assert) {
-		var oOption = DynamicDateUtil.getOption("DATETIMERANGE");
+		var oOption = this.ddr.getOption("DATETIMERANGE");
 
 		assert.strictEqual(oOption.getGroup(), 2, "the group is correct");
 		assert.strictEqual(oOption.getGroupHeader(), "Date Ranges", "the group is correct");
@@ -1146,15 +1170,15 @@ sap.ui.define([
 	QUnit.test("toDates - DATETIMERANGE", function(assert) {
 		// arrange
 		var oDateFormatter = DateFormat.getDateTimeInstance(),
-			oDate = new Date(2021, 11, 20, 15, 50, 0),
-			oDate2 = new Date(2021, 11, 29, 15, 50, 0),
+			oDate = UI5Date.getInstance(2021, 11, 20, 15, 50, 0),
+			oDate2 = UI5Date.getInstance(2021, 11, 29, 15, 50, 0),
 			oResult;
 
 		//act
-		oResult = DynamicDateUtil.toDates({ operator: "DATETIMERANGE", values: [oDate, oDate2] });
+		oResult = this.ddr.toDates({ operator: "DATETIMERANGE", values: [oDate, oDate2] });
 
-		// assert
-		assert.equal(oDateFormatter.format(oResult[0]) + " - " + oDateFormatter.format(oResult[1]), "Dec 20, 2021, 3:50:00 PM - Dec 29, 2021, 3:50:00 PM", "correct date/time");
+		// assert; \u202f is a Narrow No-Break Space which has been introduced with CLDR version 43
+		assert.equal(oDateFormatter.format(oResult[0]) + " - " + oDateFormatter.format(oResult[1]), "Dec 20, 2021, 3:50:00\u202fPM - Dec 29, 2021, 3:50:00\u202fPM", "correct date/time");
 	});
 
 	QUnit.test("valueHelpUITypes objects lifecycle", function(assert) {
@@ -1181,7 +1205,7 @@ sap.ui.define([
 		assert.ok(aValueHelpUITypes1[0].isDestroyed(), "the UI types are destroyed with the option");
 	});
 
-	QUnit.test("labels are redirected to the inner input", function (assert) {
+	QUnit.test("labels are redirected to the inner input", function(assert) {
 		// Prepare
 		var oDynamicDateRange = new DynamicDateRange(),
 			oLabel = new Label({
@@ -1190,7 +1214,6 @@ sap.ui.define([
 				required: true
 			}),
 			oDynamicDateRangeInput;
-
 
 		oLabel.placeAt("qunit-fixture");
 		oDynamicDateRange.placeAt("qunit-fixture");
@@ -1221,6 +1244,109 @@ sap.ui.define([
 		oDynamicDateRange.destroy();
 	});
 
+	QUnit.module("StandardDynamicDateOption first day of week / this week", {
+		beforeEach: function() {
+			this.ddr = new DynamicDateRange();
+			this.ddr.setStandardOptions([]);
+
+			this.ddr.addStandardOption("FIRSTDAYWEEK");
+			this.ddr.addStandardOption("THISWEEK");
+
+			this.ddr.placeAt("qunit-fixture");
+
+			oCore.applyChanges();
+		},
+		afterEach: function() {
+			this.ddr.destroy();
+		}
+	});
+
+	QUnit.test("Week options respect calendarWeekNumbering", function(assert) {
+		var sOriginalLocale = oCore.getConfiguration().getFormatLocale();
+
+		// test with "en" locale
+		testFirstDayOfWeek(this.ddr, "en", CalendarWeekNumbering.Default, 0);
+		testFirstDayOfWeek(this.ddr, "en", CalendarWeekNumbering.ISO_8601, 1);
+		testFirstDayOfWeek(this.ddr, "en", CalendarWeekNumbering.WesternTraditional, 0);
+		testFirstDayOfWeek(this.ddr, "en", CalendarWeekNumbering.MiddleEastern, 6);
+
+		// test with "en_GB" locale
+		testFirstDayOfWeek(this.ddr, "en_GB", CalendarWeekNumbering.Default, 1);
+		testFirstDayOfWeek(this.ddr, "en_GB", CalendarWeekNumbering.ISO_8601, 1);
+		testFirstDayOfWeek(this.ddr, "en_GB", CalendarWeekNumbering.WesternTraditional, 0);
+		testFirstDayOfWeek(this.ddr, "en_GB", CalendarWeekNumbering.MiddleEastern, 6);
+
+		// test with "bg" locale
+		testFirstDayOfWeek(this.ddr, "bg_BG", CalendarWeekNumbering.Default, 1);
+		testFirstDayOfWeek(this.ddr, "bg_BG", CalendarWeekNumbering.ISO_8601, 1);
+		testFirstDayOfWeek(this.ddr, "bg_BG", CalendarWeekNumbering.WesternTraditional, 0);
+		testFirstDayOfWeek(this.ddr, "bg_BG", CalendarWeekNumbering.MiddleEastern, 6);
+
+		// restore original locale
+		oCore.getConfiguration().setFormatLocale(sOriginalLocale);
+
+		// Tests the DDR control 'First Day Of Week' and 'This Week' options return values first day of week by setting specific locale and calendarWeekNumbering
+		function testFirstDayOfWeek(oDDR, sLocale, sCalendarWeekNumbering, iFirstDayOfWeek) {
+			var oFirstDayOfWeek,
+				oThisWeek,
+				aDates;
+
+			// arrange
+			oCore.getConfiguration().setFormatLocale(sLocale);
+			oDDR.setCalendarWeekNumbering(sCalendarWeekNumbering);
+			oDDR.open();
+			oCore.applyChanges();
+			oFirstDayOfWeek = oCore.byId(oDDR.getId() + '-option-FIRSTDAYWEEK');
+			oThisWeek = oCore.byId(oDDR.getId() + '-option-THISWEEK');
+
+			// act
+			oFirstDayOfWeek.firePress();
+			oCore.applyChanges();
+			aDates = oDDR.toDates(oDDR.getValue());
+
+			// assert
+			assert.strictEqual(aDates[0].getDay(), iFirstDayOfWeek, "FIRSTDAYWEEK: First day of week is proper for locale '" + sLocale + "' and calendarWeekNumbering '" + sCalendarWeekNumbering + "'");
+
+			// act
+			oThisWeek.firePress();
+			oCore.applyChanges();
+			aDates = oDDR.toDates(oDDR.getValue());
+
+			// assert
+			assert.strictEqual(aDates[0].getDay(), iFirstDayOfWeek, "THISWEEK: First day of week is proper for locale '" + sLocale + "' and calendarWeekNumbering '" + sCalendarWeekNumbering + "'");
+		}
+	});
+
+	QUnit.module("Clear Icon", {
+		beforeEach: function() {
+			this.oDDR = new DynamicDateRange({});
+			this.oDDR.placeAt("qunit-fixture");
+			oCore.applyChanges();
+		},
+		afterEach: function() {
+			this.oDDR.destroy();
+		}
+	});
+
+	QUnit.test("showClearIcon property is propagated to the inner Input", function (assert){
+		// Assert
+		assert.equal(this.oDDR.getShowClearIcon(), this.oDDR._oInput.getShowClearIcon(), "showClearIcon property is in sync initially");
+
+		// Act
+		this.oDDR.setShowClearIcon(true);
+		oCore.applyChanges();
+
+		// Assert
+		assert.equal(this.oDDR.getShowClearIcon(), this.oDDR._oInput.getShowClearIcon(), "showClearIcon property is properly propagated");
+
+		// Act
+		this.oDDR.setShowClearIcon(false);
+		oCore.applyChanges();
+
+		// Assert
+		assert.equal(this.oDDR.getShowClearIcon(), this.oDDR._oInput.getShowClearIcon(), "showClearIcon property is properly propagated");
+	});
+
 	QUnit.module("Misc", {
 		beforeEach: function() {
 			this.ddr = new DynamicDateRange();
@@ -1235,9 +1361,10 @@ sap.ui.define([
 	QUnit.test("calendarWeekNumbering affects days of week", function(assert) {
 		var oDRS = new DynamicDateRange({
 				id: 'myDDR',
-				value: {operator: 'DATE', values: [new Date('2023-01-09T18:00:00')]},
+				value: {operator: 'DATE', values: [UI5Date.getInstance('2023-01-09T18:00:00')]},
 				calendarWeekNumbering: "MiddleEastern"
-			});
+			}),
+			sCalendarId;
 
 			oDRS.placeAt("qunit-fixture");
 			oCore.applyChanges();
@@ -1249,8 +1376,9 @@ sap.ui.define([
 
 			oDateOptionDomRef.firePress();
 			oCore.applyChanges();
-			var oMonthDomRef = oCore.byId("__calendar3").getAggregation("month")[0].getDomRef();
-			var aWeekHeaders = oMonthDomRef.querySelectorAll("#__calendar3 .sapUiCalWH:not(.sapUiCalDummy)");
+			sCalendarId = document.querySelector("#" + oDRS.getId() + "-RP-popover .sapUiCal").getAttribute("id");
+			var oMonthDomRef = oCore.byId(sCalendarId).getAggregation("month")[0].getDomRef();
+			var aWeekHeaders = oMonthDomRef.querySelectorAll("#" + sCalendarId + " .sapUiCalWH:not(.sapUiCalDummy)");
 
 			//Assert
 			assert.strictEqual(aWeekHeaders.length, 7, "7 weekheaders rendered");
@@ -1260,8 +1388,9 @@ sap.ui.define([
 			oCore.applyChanges();
 			oDateOptionDomRef.firePress();
 			oCore.applyChanges();
-			oMonthDomRef = oCore.byId("__calendar4").getAggregation("month")[0].getDomRef();
-			aWeekHeaders = oMonthDomRef.querySelectorAll("#__calendar4 .sapUiCalWH:not(.sapUiCalDummy)");
+			sCalendarId = document.querySelector("#" + oDRS.getId() + "-RP-popover .sapUiCal").getAttribute("id");
+			oMonthDomRef = oCore.byId(sCalendarId).getAggregation("month")[0].getDomRef();
+			aWeekHeaders = oMonthDomRef.querySelectorAll("#" + sCalendarId + " .sapUiCalWH:not(.sapUiCalDummy)");
 			//Assert
 			assert.equal(aWeekHeaders[0].textContent, "Mon", "Monday is the first weekday for ISO_8601");
 
@@ -1269,8 +1398,9 @@ sap.ui.define([
 			oCore.applyChanges();
 			oDateOptionDomRef.firePress();
 			oCore.applyChanges();
-			oMonthDomRef = oCore.byId("__calendar5").getAggregation("month")[0].getDomRef();
-			aWeekHeaders = oMonthDomRef.querySelectorAll("#__calendar5 .sapUiCalWH:not(.sapUiCalDummy)");
+			sCalendarId = document.querySelector("#" + oDRS.getId() + "-RP-popover .sapUiCal").getAttribute("id");
+			oMonthDomRef = oCore.byId(sCalendarId).getAggregation("month")[0].getDomRef();
+			aWeekHeaders = oMonthDomRef.querySelectorAll("#" + sCalendarId + " .sapUiCalWH:not(.sapUiCalDummy)");
 			//Assert
 			assert.equal(aWeekHeaders[0].textContent, "Sun", "Sunday is the first weekday for WesternTraditional");
 
@@ -1314,6 +1444,21 @@ sap.ui.define([
 		assert.strictEqual(oResult, null, "(datetime) When year is > 9999, parsing returns null (value is not parsed)");
 	});
 
+
+	QUnit.test("DynamicDateFormat doesn't cut ' in different language", function (assert) {
+		var sLanguage = oCore.getConfiguration().getLanguage();
+
+		oCore.getConfiguration().setLanguage("fr_FR");
+
+		// act
+		this.ddr.setValue({values: Array(0), operator: 'TODAY'});
+
+		// assert
+		assert.ok(this.ddr._oInput.getValue().indexOf("Aujourd'hui") !== -1, "The year is correct");
+
+		oCore.getConfiguration().setLanguage(sLanguage);
+	});
+
 	QUnit.test("Open DynamicDateRange from Button", function(assert) {
 		// Prepare
 		var oDDR = new DynamicDateRange("HDDR", {
@@ -1344,14 +1489,354 @@ sap.ui.define([
 
 	QUnit.test("icon is properly configured", function (assert) {
 		// arrange
-		var oIcon = new DynamicDateRange().getAggregation("_input").getAggregation("_endIcon")[0];
+		var oIconOne = new DynamicDateRange().getAggregation("_input").getAggregation("_endIcon")[0];
 
 		// act
 		// assert
-		assert.notOk(oIcon.getTooltip(), "icon has no tooltip");
-		assert.notOk(oIcon.getDecorative(), "icon isn't decorative");
-		assert.notOk(oIcon.getUseIconTooltip(), "icon doesn't have default tooltip");
-		assert.strictEqual(oIcon.getAlt(), oCore.getLibraryResourceBundle("sap.m").getText("INPUT_VALUEHELP_BUTTON") , "icon alt is present");
+		assert.notOk(oIconOne.getTooltip(), "icon has no tooltip");
+		assert.ok(oIconOne.getDecorative(), "icon is decorative");
+		assert.notOk(oIconOne.getUseIconTooltip(), "icon doesn't have default tooltip");
+		assert.strictEqual(oIconOne.getAlt(), oCore.getLibraryResourceBundle("sap.m").getText("INPUT_VALUEHELP_BUTTON") , "icon alt is present");
+
+		// arrange
+		var oTouchStub = this.stub(Device, "support").value({touch: true});
+		var oDeviceStub = this.stub(Device, "system").value({phone: true});
+		var oIconTwo = new DynamicDateRange().getAggregation("_input").getAggregation("_endIcon")[0];
+
+		// assert
+		assert.notOk(oIconTwo.getDecorative(), "icon is not decorative");
+
+		// clean
+		oTouchStub.restore();
+		oDeviceStub.restore();
+	});
+
+	QUnit.test("DynamicDateRange.toDates method with timezones", function(assert) {
+		var oTimezoneStub = this.stub(Configuration, 'getTimezone').returns("Pacific/Chatham"),
+			myGetInstance = UI5Date.getInstance,
+			oCurrentDateStub = this.stub(UI5Date, 'getInstance'),
+			aDateRange;
+
+		oCurrentDateStub.callsFake(function() {
+			if (arguments.length > 0) {
+				return myGetInstance.apply(UI5Date, arguments);
+			} else {
+				return UI5Date.getInstance(2023, 0, 8);
+			}
+		});
+
+		aDateRange = DynamicDateRange.toDates({operator: "TODAYFROMTO", values: [3, 4]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], '-3/+4', "TODAYFROMTO", 2023, 0, 5, 0,0,0,0);
+		testDate(assert, aDateRange[1], '-3/+4', "TODAYFROMTO", 2023, 0, 12, 23,59,59,999);
+		aDateRange = DynamicDateRange.toDates({operator: "DATE", values: [UI5Date.getInstance(2023, 0, 8)]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "DATE", 2023, 0, 8, 0,0,0,0);
+		testDate(assert, aDateRange[1], 1, "DATE", 2023, 0, 8, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "DATETIME", values: [UI5Date.getInstance(2023, 0, 8, 6, 0, 0)]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "DATETIME", 2023, 0, 8, 6,0,0,0);
+		testDate(assert, aDateRange[1], 1, "DATETIME", 2023, 0, 8, 6,0,0,0);
+
+		aDateRange = DynamicDateRange.toDates({operator: "DATERANGE", values: [UI5Date.getInstance(2023, 0, 8), UI5Date.getInstance(2023, 0, 9)]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "DATERANGE", 2023, 0, 8, 0,0,0,0);
+		testDate(assert, aDateRange[1], 1, "DATERANGE", 2023, 0, 9, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "DATETIMERANGE", values: [UI5Date.getInstance(2023, 0, 8, 6, 0, 0), UI5Date.getInstance(2023, 0, 9, 6, 1, 0)]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "DATETIMERANGE", 2023, 0, 8, 6,0,0,0);
+		testDate(assert, aDateRange[1], 1, "DATETIMERANGE", 2023, 0, 9, 6,1,0,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "YESTERDAY", values: []}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "YESTERDAY", 2023, 0, 7, 0,0,0,0);
+		testDate(assert, aDateRange[1], 1, "YESTERDAY", 2023, 0, 7, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "TOMORROW", values: []}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "TOMORROW", 2023, 0, 9, 0,0,0,0);
+		testDate(assert, aDateRange[1], 1, "TOMORROW", 2023, 0, 9, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "TODAY", values: []}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "TODAY", 2023, 0, 8, 0,0,0,0);
+		testDate(assert, aDateRange[1], 1, "TODAY", 2023, 0, 8, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "THISWEEK", values: []}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "THISWEEK", 2023, 0, 8, 0,0,0,0);
+		testDate(assert, aDateRange[1], 1, "THISWEEK", 2023, 0, 14, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "LASTWEEK", values: []}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "LASTWEEK", 2023, 0, 1, 0,0,0,0);
+		testDate(assert, aDateRange[1], 1, "LASTWEEK", 2023, 0, 7, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "NEXTWEEK", values: []}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "NEXTWEEK", 2023, 0, 15, 0,0,0,0);
+		testDate(assert, aDateRange[1], 1, "NEXTWEEK", 2023, 0, 21, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "LASTDAYS", values: [2]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 2, "LASTDAYS", 2023, 0, 6, 0,0,0,0);
+		testDate(assert, aDateRange[1], 2, "LASTDAYS", 2023, 0, 7, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "LASTDAYS", values: [-2]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], -2, "LASTDAYS", 2023, 0, 9, 0,0,0,0);
+		testDate(assert, aDateRange[1], -2, "LASTDAYS", 2023, 0, 10, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "NEXTDAYS", values: [2]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 2, "NEXTDAYS", 2023, 0, 9, 0,0,0,0);
+		testDate(assert, aDateRange[1], 2, "NEXTDAYS", 2023, 0, 10, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "NEXTDAYS", values: [-2]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], -2, "NEXTDAYS", 2023, 0, 6, 0,0,0,0);
+		testDate(assert, aDateRange[1], -2, "NEXTDAYS", 2023, 0, 7, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "LASTWEEKS", values: [2]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 2, "LASTWEEKS", 2022, 11, 25, 0,0,0,0);
+		testDate(assert, aDateRange[1], 2, "LASTWEEKS", 2023, 0, 7, 23,59,59,999);
+
+		oTimezoneStub.returns("Pacific/Honolulu");
+
+		aDateRange = DynamicDateRange.toDates({operator: "TODAYFROMTO", values: [3, 4]}, "WesternTraditional");
+		testDate(assert, aDateRange[0], "-3/+4", "TODAYFROMTO", 2023, 0, 5, 0,0,0,0);
+		testDate(assert, aDateRange[1], "-3/+4", "TODAYFROMTO", 2023, 0, 12, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "DATE", values: [UI5Date.getInstance(2023, 0, 8)]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "DATE", 2023, 0, 8, 0,0,0,0);
+		testDate(assert, aDateRange[1], 1, "DATE", 2023, 0, 8, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "DATETIME", values: [UI5Date.getInstance(2023, 0, 8, 6, 0, 0)]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "DATETIME", 2023, 0, 8, 6,0,0,0);
+		testDate(assert, aDateRange[1], 1, "DATETIME", 2023, 0, 8, 6,0,0,0);
+
+		aDateRange = DynamicDateRange.toDates({operator: "DATERANGE", values: [UI5Date.getInstance(2023, 0, 8), UI5Date.getInstance(2023, 0, 9)]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 2, "DATERANGE", 2023, 0, 8, 0,0,0,0);
+		testDate(assert, aDateRange[1], 2, "DATERANGE", 2023, 0, 9, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "DATETIMERANGE", values: [UI5Date.getInstance(2023, 0, 8, 0, 0, 0), UI5Date.getInstance(2023, 0, 9, 0, 0, 0)]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "DATETIMERANGE", 2023, 0, 8, 0,0,0,0);
+		testDate(assert, aDateRange[1], 1, "DATETIMERANGE", 2023, 0, 9, 0,0,0,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "TODAY", values: []}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "TODAY", 2023, 0, 8, 0,0,0,0);
+		testDate(assert, aDateRange[1], 1, "TODAY", 2023, 0, 8, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "YESTERDAY", values: []}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "YESTERDAY", 2023, 0, 7, 0,0,0,0);
+		testDate(assert, aDateRange[1], 1, "YESTERDAY", 2023, 0, 7, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "TOMORROW", values: []}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "TOMORROW", 2023, 0, 9, 0,0,0,0);
+		testDate(assert, aDateRange[1], 1, "TOMORROW", 2023, 0, 9, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "THISWEEK", values: []}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "THISWEEK", 2023, 0, 8, 0,0,0,0);
+		testDate(assert, aDateRange[1], 1, "THISWEEK", 2023, 0, 14, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "LASTWEEK", values: []}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "LASTWEEK", 2023, 0, 1, 0,0,0,0);
+		testDate(assert, aDateRange[1], 1, "LASTWEEK", 2023, 0, 7, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "NEXTWEEK", values: []}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "NEXTWEEK", 2023, 0, 15, 0,0,0,0);
+		testDate(assert, aDateRange[1], 1, "NEXTWEEK", 2023, 0, 21, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "LASTDAYS", values: [2]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 2, "LASTDAYS", 2023, 0, 6, 0,0,0,0);
+		testDate(assert, aDateRange[1], 2, "LASTDAYS", 2023, 0, 7, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "LASTDAYS", values: [-2]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], -2, "LASTDAYS", 2023, 0, 9, 0,0,0,0);
+		testDate(assert, aDateRange[1], -2, "LASTDAYS", 2023, 0, 10, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "NEXTDAYS", values: [2]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 2, "NEXTDAYS", 2023, 0, 9, 0,0,0,0);
+		testDate(assert, aDateRange[1], 2, "NEXTDAYS", 2023, 0, 10, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "NEXTDAYS", values: [-2]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], -2, "NEXTDAYS", 2023, 0, 6, 0,0,0,0);
+		testDate(assert, aDateRange[1], -2, "NEXTDAYS", 2023, 0, 7, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "LASTWEEKS", values: [2]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 2, "LASTWEEKS", 2022, 11, 25, 0,0,0,0);
+		testDate(assert, aDateRange[1], 2, "LASTWEEKS", 2023, 0, 7, 23,59,59,999);
+
+		oTimezoneStub.returns("America/Chicago");
+
+		aDateRange = DynamicDateRange.toDates({operator: "TODAYFROMTO", values: [3, 4]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], "-3/+4", "TODAYFROMTO", 2023, 0, 5, 0,0,0,0);
+		testDate(assert, aDateRange[1], "-3/+4", "TODAYFROMTO", 2023, 0, 12, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "DATE", values: [UI5Date.getInstance(2023, 0, 8)]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "DATE", 2023, 0, 8, 0,0,0,0);
+		testDate(assert, aDateRange[1], 1, "DATE", 2023, 0, 8, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "DATETIME", values: [UI5Date.getInstance(2023, 0, 8, 6, 0, 0)]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "DATETIME", 2023, 0, 8, 6,0,0,0);
+		testDate(assert, aDateRange[1], 1, "DATETIME", 2023, 0, 8, 6,0,0,0);
+
+		aDateRange = DynamicDateRange.toDates({operator: "DATERANGE", values: [UI5Date.getInstance(2023, 0, 8), UI5Date.getInstance(2023, 0, 9)]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "DATERANGE", 2023, 0, 8, 0,0,0,0);
+		testDate(assert, aDateRange[1], 1, "DATERANGE", 2023, 0, 9, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "DATETIMERANGE", values: [UI5Date.getInstance(2023, 0, 8), UI5Date.getInstance(2023, 0, 9 ,1)]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 2, "DATETIMERANGE", 2023, 0, 8, 0,0,0,0);
+		testDate(assert, aDateRange[1], 2, "DATETIMERANGE", 2023, 0, 9, 1,0,0,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "TODAY", values: []}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "TODAY", 2023, 0, 8, 0,0,0,0);
+		testDate(assert, aDateRange[1], 1, "TODAY", 2023, 0, 8, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "YESTERDAY", values: []}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "YESTERDAY", 2023, 0, 7, 0,0,0,0);
+		testDate(assert, aDateRange[1], 1, "YESTERDAY", 2023, 0, 7, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "TOMORROW", values: []}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "TOMORROW", 2023, 0, 9, 0,0,0,0);
+		testDate(assert, aDateRange[1], 1, "TOMORROW", 2023, 0, 9, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "THISWEEK", values: []}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "THISWEEK", 2023, 0, 8, 0,0,0,0);
+		testDate(assert, aDateRange[1], 1, "THISWEEK", 2023, 0, 14, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "LASTWEEK", values: []}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "LASTWEEK", 2023, 0, 1, 0,0,0,0);
+		testDate(assert, aDateRange[1], 1, "LASTWEEK", 2023, 0, 7, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "NEXTWEEK", values: []}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 1, "NEXTWEEK", 2023, 0, 15, 0,0,0,0);
+		testDate(assert, aDateRange[1], 1, "NEXTWEEK", 2023, 0, 21, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "LASTDAYS", values: [2]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 2, "LASTDAYS", 2023, 0, 6, 0,0,0,0);
+		testDate(assert, aDateRange[1], 2, "LASTDAYS", 2023, 0, 7, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "LASTDAYS", values: [-2]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], -2, "LASTDAYS", 2023, 0, 9, 0,0,0,0);
+		testDate(assert, aDateRange[1], -2, "LASTDAYS", 2023, 0, 10, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "NEXTDAYS", values: [2]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 2, "LASTDAYS", 2023, 0, 9, 0,0,0,0);
+		testDate(assert, aDateRange[1], 2, "LASTDAYS", 2023, 0, 10, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "NEXTDAYS", values: [-2]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], -2, "NEXTDAYS", 2023, 0, 6, 0,0,0,0);
+		testDate(assert, aDateRange[1], -2, "NEXTDAYS", 2023, 0, 7, 23,59,59,999);
+
+		aDateRange = DynamicDateRange.toDates({operator: "LASTWEEKS", values: [2]}, "WesternTraditional");
+
+		testDate(assert, aDateRange[0], 2, "NEXTDAYS", 2022, 11, 25, 0,0,0,0);
+		testDate(assert, aDateRange[1], 2, "NEXTDAYS", 2023, 0, 7, 23,59,59,999);
+	});
+
+	QUnit.test("ValueHelp responsive popover cancels bubbling of internal validation errors", function(assert) {
+		var validationErrorHandler = {
+				handler: function(){}
+			},
+			validationErrorSpy = this.spy(validationErrorHandler, "handler"),
+			oLastMinutes,
+			oInnerInput,
+			oPopup,
+			fnDone = assert.async();
+
+		// act
+		this.ddr.attachValidationError(validationErrorHandler.handler);
+		this.ddr.setStandardOptions(["LASTDAYS"]);
+		this.ddr.open();
+		oCore.applyChanges();
+		oPopup = this.ddr._oPopup;
+
+		oPopup.attachAfterClose(function() {
+			// assert - check if the validation handler's bubbling is cancelled by the responsive popover
+			assert.ok(validationErrorSpy.notCalled, "Validation Error Handler is not called when there is validation error in an option");
+			fnDone();
+		});
+
+		// open LASTDAYS option
+		oLastMinutes =  oCore.byId(this.ddr.getId() + '-option-LASTDAYS');
+		oLastMinutes.firePress();
+		oCore.applyChanges();
+
+		// simulate entering of 0
+		oInnerInput = oCore.byId(document.querySelector(".sapMStepInput").id);
+		oInnerInput.setValue(0);
+		oInnerInput._verifyValue();
+		oCore.applyChanges();
+
+		// close the DDR option
+		this.ddr._oPopup.close();
+	});
+
+	QUnit.module("Groups", {
+		beforeEach: function() {
+			this.ddr = new DynamicDateRange();
+			this.ddr.placeAt("qunit-fixture");
+			oCore.applyChanges();
+		},
+		afterEach: function() {
+			this.ddr.destroy();
+		}
+	});
+
+	QUnit.test("addGroup and removeGroups", function(assert) {
+		this.ddr.addGroup("Test", "Test Group");
+
+		assert.strictEqual(this.ddr._getGroups()["Test"], 7, "A new group is added");
+
+		this.ddr.removeCustomGroups();
+
+		assert.strictEqual(Object.keys(this.ddr._getGroups()).length, 6, "All new groups are deleted");
+	});
+
+	QUnit.test("changne group header", function(assert) {
+		this.ddr.addGroup("Test", "Test Group");
+
+		assert.strictEqual(this.ddr._getGroups()["Test"], 7, "A new group is added");
+		assert.strictEqual(this.ddr._getCustomGroupHeader("Test"), "Test Group", "A new group is added");
+
+		this.ddr.setGroupHeader("Test", "Not a Test Group");
+
+		assert.strictEqual(this.ddr._getCustomGroupHeader("Test"), "Not a Test Group", "A new group is added");
 	});
 
 });
+

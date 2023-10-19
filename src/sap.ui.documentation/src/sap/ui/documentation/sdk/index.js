@@ -28,12 +28,12 @@
             type: "LOAD"
         });
             sap.ui.require([
+				"sap/ui/core/Core",
                 "sap/ui/core/ComponentContainer",
                 "sap/ui/core/Component",
                 "sap/ui/documentation/library",
-                "sap/base/Log",
-                "sap/ui/thirdparty/jquery"
-            ], function (ComponentContainer, Component, library, Log, jQuery) {
+                "sap/base/Log"
+            ], function (Core, ComponentContainer, Component, library, Log) {
                 var setDensityClass = function(sDensityClass) {
                     var sBodyDensityClass = Array.prototype.find.call(document.body.classList, function(el){
                         return el.includes("sapUiSize");
@@ -76,39 +76,39 @@
                     });
                 };
 
-                loadInfo().then(function(){
+                // the fl lib has to be loaded before the Component gets created
+                Promise.all([
+                    loadInfo(),
+                    Core.loadLibrary("sap.ui.fl", {async: true}),
+                    Core.loadLibrary("sap.ui.rta", {async: true})
+                ]).then(function(){
 
                     Log.info("Samples paths added successfully");
                     var sCompId = 'sampleComp-' + sSampleId;
                     var sCompName = sSampleId;
 
-                    Promise.all([
-                        sap.ui.getCore().loadLibrary("sap.ui.fl", {async: true}),
-                        sap.ui.getCore().loadLibrary("sap.ui.rta", {async: true})
-                    ]).then(function () {
-                        sap.ui.require([
-                            "sap/ui/fl/Utils",
-                            "sap/ui/fl/FakeLrepConnectorLocalStorage",
-                            "sap/ui/core/util/reflection/JsControlTreeModifier"
-                        ], function(Utils,
-                                FakeLrepConnectorLocalStorage,
-                                JsControlTreeModifier) {
-                                // fake stable IDs
-                                JsControlTreeModifier.checkControlId = function () {
-                                    return true;
-                                };
-                                Utils.checkControlId = function() {
-                                    return true;
-                                };
-                                FakeLrepConnectorLocalStorage.enableFakeConnector({
-                                    "isProductiveSystem": true
-                                });
-                                postMessageToOrigin({
-                                type: "RTA",
-                                data: {
-                                    "msg": "RTA is loaded"
-                                }
-                            });
+                    sap.ui.require([
+                        "sap/ui/fl/Utils",
+                        "sap/ui/core/util/reflection/JsControlTreeModifier"
+                    ], function(
+                        Utils,
+                        JsControlTreeModifier
+                    ) {
+                        // fake stable IDs and app component
+                        JsControlTreeModifier.checkControlId = function () {
+                            return true;
+                        };
+                        Utils.checkControlId = function() {
+                            return true;
+                        };
+                        Utils.isApplication = function() {
+                            return true;
+                        };
+                        postMessageToOrigin({
+                            type: "RTA",
+                            data: {
+                                "msg": "RTA is loaded"
+                            }
                         });
                     });
 
@@ -116,11 +116,11 @@
                         id: sCompId,
                         name: sCompName
                     }).then(function (oComponent) {
+                        var oConfig = oComponent.getManifestEntry("/sap.ui5/config");
 
                         var oContainer = new ComponentContainer({component : oComponent, height: "100%"})
                                 .placeAt("content");
 
-                        var oConfig = oComponent.getMetadata().getConfig();
                         var bOpenStandalone = new URLSearchParams(window.location.search).has("dk-sample-standalone");
                         // if dk-sample-standalone is used,
                         // display message for samples with own index.html
@@ -144,7 +144,7 @@
                             "msg": "fired after component container is placed in DOM"
                         };
 
-                        oMessage.config = oComponent.getMetadata().getConfig();
+                        oMessage.config = oConfig;
                         postMessageToOrigin(oMessage);
                         window.addEventListener("message", function(eMessage){
                             if (eMessage.data.type === "EXIT") {
@@ -157,14 +157,14 @@
                                     type: "SETTINGS",
                                     data: {
                                         "density": document.body.classList[1],
-                                        "theme": sap.ui.getCore().getConfiguration().getTheme(),
-                                        "RTL": sap.ui.getCore().getConfiguration().getRTL()
+                                        "theme": Core.getConfiguration().getTheme(),
+                                        "RTL": Core.getConfiguration().getRTL()
                                     }
                                 });
                                 } else if (eMessage.data.reason === "set") {
                                     setDensityClass(eMessage.data.data.density);
-                                    sap.ui.getCore().getConfiguration().setRTL(eMessage.data.data.RTL);
-                                    sap.ui.getCore().applyTheme(eMessage.data.data.theme);
+                                    Core.getConfiguration().setRTL(eMessage.data.data.RTL);
+                                    Core.applyTheme(eMessage.data.data.theme);
                                 }
                             }
                         });
@@ -237,6 +237,7 @@
     oScriptTag.dataset.sapUiCompatversion = "edge";
     oScriptTag.dataset.sapUiOninit = "onInit";
     oScriptTag.dataset.sapUiBindingsyntax = "complex";
+    oScriptTag.dataset.sapUiFlexibilityservices = '[{"connector": "LocalStorageConnector"}]';
 
     document.write(oScriptTag.outerHTML);
 

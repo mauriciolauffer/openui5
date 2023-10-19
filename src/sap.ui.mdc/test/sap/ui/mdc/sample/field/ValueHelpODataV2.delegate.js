@@ -1,19 +1,21 @@
-/*!
- * ${copyright}
- */
 
 sap.ui.define([
-	"sap/ui/mdc/ValueHelpDelegate",
-	"sap/ui/model/FilterType"
+    "sap/ui/mdc/ValueHelpDelegate",
+    'sap/ui/mdc/odata/TypeMap'
 ], function(
-	MDCValueHelpDelegate,
-	FilterType
+    MDCValueHelpDelegate,
+    ODataTypeMap
 ) {
-	"use strict";
+    "use strict";
 
-	var ValueHelpDelegate = Object.assign({}, MDCValueHelpDelegate);
+    var ValueHelpDelegate = Object.assign({}, MDCValueHelpDelegate);
 
-	ValueHelpDelegate.executeFilter = function(oPayload, oListBinding, iRequestedItems) {
+    ValueHelpDelegate.getTypeMap = function (oValueHelp) {
+        return ODataTypeMap;
+    };
+
+
+	ValueHelpDelegate.executeFilter = function(oValueHelp, oListBinding, iRequestedItems) {
 		if (oListBinding.isA("sap.ui.model.odata.v2.ODataListBinding")) {
 			oListBinding.getContexts(0, iRequestedItems); // trigger request. not all entries needed, we only need to know if there is one, none or more
 			return new Promise(function (fResolve) {
@@ -25,7 +27,7 @@ sap.ui.define([
 		return MDCValueHelpDelegate.executeFilter.apply(this, arguments);
 	};
 
-	ValueHelpDelegate.checkListBindingPending = function(oPayload, oListBinding, iRequestedItems) {
+	ValueHelpDelegate.checkListBindingPending = function(oValueHelp, oListBinding, iRequestedItems) {
 
 		if (!oListBinding || oListBinding.isSuspended() || !oListBinding.bPendingRequest) {
 			return false;

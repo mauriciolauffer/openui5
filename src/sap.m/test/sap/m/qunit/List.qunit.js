@@ -22,13 +22,15 @@ sap.ui.define([
 	"sap/m/CustomListItem",
 	"sap/m/ActionListItem",
 	"sap/m/Input",
+	"sap/m/Text",
 	"sap/ui/events/KeyCodes",
 	"sap/ui/core/Control",
 	"sap/ui/core/Element",
 	"sap/m/ListItemBase",
 	"sap/base/Log",
-	"sap/ui/model/Sorter"
-], function(jQuery, Core, createAndAppendDiv, qutils, JSONModel, Parameters, CustomData, coreLibrary, library, Device, App, Page, Avatar, Button, Bar, List, DisplayListItem, StandardListItem, InputListItem, CustomListItem, ActionListItem, Input, KeyCodes, Control, Element, ListItemBase, Log, Sorter) {
+	"sap/ui/model/Sorter",
+	"sap/ui/core/date/UI5Date"
+], function(jQuery, Core, createAndAppendDiv, qutils, JSONModel, Parameters, CustomData, coreLibrary, library, Device, App, Page, Avatar, Button, Bar, List, DisplayListItem, StandardListItem, InputListItem, CustomListItem, ActionListItem, Input, Text, KeyCodes, Control, Element, ListItemBase, Log, Sorter, UI5Date) {
 	"use strict";
 	createAndAppendDiv("content").style.height = "100%";
 
@@ -270,7 +272,7 @@ sap.ui.define([
 			}),
 			swipe : function(e) {
 				var li = e.getParameter("listItem");
-				li.setLabel(li.getLabel() + " " + new Date().toLocaleTimeString());
+				li.setLabel(li.getLabel() + " " + UI5Date.getInstance().toLocaleTimeString());
 				swipeDirection = e.getParameter("swipeDirection");
 				Core.applyChanges();
 			},
@@ -2077,6 +2079,47 @@ sap.ui.define([
 		oList.destroy();
 	});
 
+	QUnit.test("StandardListItem wrapping", function(assert) {
+		var oData = {
+			names: [
+				{firstName: "Peter", lastName: undefined},
+				{firstName: "Petra", lastName: "Maier"}
+			]
+		};
+		var oModel = new JSONModel();
+		oModel.setData(oData);
+
+		var oList = new List({
+			headerText:"Names",
+			mode:"MultiSelect"
+		});
+
+		oList.bindItems({
+			path : "/names",
+			template : new StandardListItem({
+				wrapping: true,
+				title: "{lastName}",
+				info: "{firstName}"
+			})
+		});
+
+		oList.setModel(oModel);
+		oList.placeAt("qunit-fixture");
+		Core.applyChanges();
+
+		var oItemDomRef = document.getElementById(oList.getItems()[0].getId() + "-info");
+		assert.equal(oList.getItems()[0].getTitle(), "", "title is empty string");
+		assert.equal(oList.getItems()[0].getInfo(), "Peter", "info is given");
+		assert.ok(oItemDomRef, "info is rendered although title is empty string");
+
+		oItemDomRef = document.getElementById(oList.getItems()[1].getId() + "-info");
+		assert.equal(oList.getItems()[1].getTitle(), "Maier", "title is given");
+		assert.equal(oList.getItems()[1].getInfo(), "Petra", "info is given");
+		assert.ok(oItemDomRef, "info is rendered");
+
+		oList.destroy();
+	});
+
 	QUnit.module("ListItemBase");
 
 	QUnit.test("ListItemBase RenderOutlineClass", function(assert) {
@@ -2296,15 +2339,15 @@ sap.ui.define([
 		check("Selected + Highlight + Unread (showUnread = true) + Counter + Type (Navigation) + Content");
 
 		oItem.setType("Detail");
-		aState.splice(4, 1, oRb.getText("LIST_ITEM_DETAIL"));
+		aState.splice(4, 1);
 		check("Selected + Highlight + Unread (showUnread = true) + Counter + Type (Detail) + Content");
 
 		oItem.setType("DetailAndActive");
-		aState.splice(5, 0, oRb.getText("LIST_ITEM_ACTIVE"));
+		aState.splice(4, 0, oRb.getText("LIST_ITEM_ACTIVE"));
 		check("Selected + Highlight + Unread (showUnread = true) + Counter + Type (DetailAndActive) + Content");
 
 		sGroup = "<GROUP>";
-		aState.splice(6, 0, sGroup);
+		aState.splice(5, 0, sGroup);
 		check("Selected + Highlight + Unread (showUnread = true) + Counter + Type (DetailAndActive) + Group + Content");
 
 		//Reset
@@ -2549,10 +2592,10 @@ sap.ui.define([
 		aGroupHeaderListItems.forEach(function(oGroupItem) {
 			assert.ok(oGroupItem.isA("sap.m.CustomListItem"), "GroupHeader is the sap.m.CustomListItem, since groupHeaderFactory is defined");
 			var $GroupItem = oGroupItem.$();
-			assert.strictEqual($GroupItem.attr("role"), "option", "role=option assigned to CustomListItem, since its groupHeader and parent's role=listbox");
+			assert.strictEqual($GroupItem.attr("role"), "group", "role=group assigned to CustomListItem, since its groupHeader");
 			assert.notOk($GroupItem.attr("aria-posinset"), "aria-posinset not added, since its groupHeader");
 			assert.notOk($GroupItem.attr("aria-setsize"), "aria-setsize not added, since its groupHeader");
-			assert.notOk($GroupItem.attr("aria-owns"), "aria-owns not added");
+			assert.ok($GroupItem.attr("aria-owns"), "aria-owns added");
 		});
 	});
 

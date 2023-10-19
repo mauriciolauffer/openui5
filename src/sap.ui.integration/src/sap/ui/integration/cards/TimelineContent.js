@@ -4,12 +4,14 @@
 sap.ui.define([
 	"./BaseListContent",
 	"./TimelineContentRenderer",
+	"sap/f/cards/loading/TimelinePlaceholder",
 	"sap/ui/integration/library",
 	"sap/ui/core/Core",
 	"sap/ui/integration/util/BindingHelper"
 ], function (
 	BaseListContent,
 	TimelineContentRenderer,
+	TimelinePlaceholder,
 	library,
 	Core,
 	BindingHelper
@@ -66,6 +68,20 @@ sap.ui.define([
 	/**
 	 * @override
 	 */
+	TimelineContent.prototype.createLoadingPlaceholder = function (oConfiguration) {
+		var oCard = this.getCardInstance(),
+			iContentMinItems = oCard.getContentMinItems(oConfiguration);
+
+		return new TimelinePlaceholder({
+			minItems: iContentMinItems !== null ? iContentMinItems : 2,
+			item: oConfiguration.item,
+			itemHeight: TimelineContentRenderer.getItemMinHeight(oConfiguration, this) + "rem"
+		});
+	};
+
+	/**
+	 * @override
+	 */
 	TimelineContent.prototype.loadDependencies = function (oCardManifest) {
 		return new Promise(function (resolve, reject) {
 			Core.loadLibrary("sap.suite.ui.commons", { async: true })
@@ -105,7 +121,8 @@ sap.ui.define([
 				id: this.getId() + "-Timeline",
 				showHeaderBar: false,
 				enableScroll: false,
-				growingThreshold: 0
+				growingThreshold: 0,
+				ariaLabelledBy: this.getHeaderTitleId()
 			});
 			this.setAggregation("_content", oTimeline);
 		}
@@ -116,31 +133,38 @@ sap.ui.define([
 	/**
 	 * @override
 	 */
-	TimelineContent.prototype.setConfiguration = function (oConfiguration) {
-		BaseListContent.prototype.setConfiguration.apply(this, arguments);
-		oConfiguration = this.getParsedConfiguration();
+	TimelineContent.prototype.applyConfiguration = function () {
+		BaseListContent.prototype.applyConfiguration.apply(this, arguments);
+
+		var oConfiguration = this.getParsedConfiguration();
 
 		if (!oConfiguration) {
-			return this;
+			return;
 		}
 
 		if (oConfiguration.items) {
 			this._setStaticItems(oConfiguration.items);
-			return this;
+			return;
 		}
 
 		if (oConfiguration.item) {
 			this._setItem(oConfiguration.item);
 		}
+	};
 
-		return this;
+	/**
+	 * @override
+	 */
+	TimelineContent.prototype.getItemsLength = function () {
+		return this._getTimeline().getContent().length;
 	};
 
 	/**
 	 * Handler for when data is changed.
 	 */
 	TimelineContent.prototype.onDataChanged = function () {
-		this._handleNoItemsError(this.getParsedConfiguration().item);
+		BaseListContent.prototype.onDataChanged.apply(this, arguments);
+
 		this._checkHiddenNavigationItems(this.getParsedConfiguration().item);
 	};
 

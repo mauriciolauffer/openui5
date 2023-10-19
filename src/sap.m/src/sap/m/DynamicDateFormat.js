@@ -4,6 +4,7 @@
 
 // Provides class sap.m.DynamicDateFormat
 sap.ui.define([
+	'sap/ui/core/date/UI5Date',
 	'sap/ui/core/format/DateFormat',
 	'sap/ui/core/format/NumberFormat',
 	'sap/ui/core/Locale',
@@ -13,7 +14,7 @@ sap.ui.define([
 	"./library",
 	"sap/ui/core/Configuration"
 ],
-	function(DateFormat, NumberFormat, Locale, LocaleData, deepExtend, CalendarUtils, library, Configuration) {
+	function(UI5Date, DateFormat, NumberFormat, Locale, LocaleData, deepExtend, CalendarUtils, library, Configuration) {
 		"use strict";
 
 		/**
@@ -26,7 +27,6 @@ sap.ui.define([
 		 * @public
 		 * @hideconstructor
 		 * @alias sap.m.DynamicDateFormat
-		 * @experimental Since 1.92. This class is experimental and provides only limited functionality. Also the API might be changed in future.
 		 */
 		var DynamicDateFormat = function() {
 			// Do not use the constructor
@@ -193,11 +193,11 @@ sap.ui.define([
 				aParams = oObj.values.slice(0);
 
 			if (sKey === "SPECIFICMONTH") {
-				var oDate = new Date();
+				var oDate = UI5Date.getInstance();
 				oDate.setMonth(aParams[0]);
 				aParams[0] = this._monthFormatter.format(oDate);
 			} else if (sKey === "SPECIFICMONTHINYEAR") {
-				var oDate = new Date();
+				var oDate = UI5Date.getInstance();
 
 				oDate.setMonth(aParams[0]);
 				oDate.setYear(aParams[1]);
@@ -224,17 +224,21 @@ sap.ui.define([
 			}
 
 			var aFormattedParams = aParams.map(function(param) {
-				if (param instanceof Date) {
-					if (sKey === "DATETIMERANGE" || sKey === "FROMDATETIME" || sKey === "TODATETIME") {
-						return this._dateTimeFormatter.format(param);
+				var oParamValue = param;
+				if (param.getJSDate) {
+					oParamValue = param.getJSDate();
+				}
+				if (oParamValue instanceof Date) {
+					if (sKey === "DATETIMERANGE" || sKey === "FROMDATETIME" || sKey === "TODATETIME" || sKey === "DATETIME") {
+						return this._dateTimeFormatter.format(oParamValue);
 					}
-					return this._dateFormatter.format(param);
+					return this._dateFormatter.format(oParamValue);
 				}
 
-				if (typeof (param) === "number") {
-					return this._numberFormatter.format(param);
+				if (typeof (oParamValue) === "number") {
+					return this._numberFormatter.format(oParamValue);
 				} else {
-					return param.toString();
+					return oParamValue.toString();
 				}
 			}, this);
 
@@ -246,6 +250,10 @@ sap.ui.define([
 						arr[index] = aParams[index] < 0 ? item.toString() : this.oLocaleData.getNumberSymbol("plusSign") + item;
 					}
 				}, this);
+			}
+
+			if (aFormattedParams.length === 0) {
+				aFormattedParams = null;
 			}
 
 			return this._resourceBundle.getText("DYNAMIC_DATE_" + sKey.toUpperCase() + "_FORMAT", aFormattedParams);
@@ -286,7 +294,7 @@ sap.ui.define([
 							break;
 						case "month":
 							var aMonthNames = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(function(i) {
-								var oDate = new Date();
+								var oDate = UI5Date.getInstance();
 								oDate.setMonth(i);
 								return this._monthFormatter.format(oDate);
 							}, this);
@@ -333,31 +341,6 @@ sap.ui.define([
 					return aResult;
 				}
 			}
-		};
-
-		/**
-		 * Checks if a UTC flag is set to a specific formatter.
-		 *
-		 * @param {string} sOption The key of specific option
-		 * @return {boolean} If the format for this option has UTC flag set to true
-		 * @private
-		 */
-		DynamicDateFormat.prototype._checkFormatterUTCTimezone = function(sOption) {
-			var sType = "";
-			if (aParameterTypesByStandardOptionKey[sOption]) {
-				sType = aParameterTypesByStandardOptionKey[sOption][0];
-			}
-
-			// ensure that in options like last/next days or +/- days we still use correct timezone when formatting the dates.
-			if (sType === "" || sType[0] === "int") {
-				sType = "date";
-			}
-
-			if (this.oOriginalFormatOptions[sType]) {
-				return this.oOriginalFormatOptions[sType].UTC;
-			}
-
-			return false;
 		};
 
 		return DynamicDateFormat;

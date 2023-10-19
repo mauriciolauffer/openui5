@@ -5,16 +5,15 @@
 // Provides control sap.m.ListItemBase.
 sap.ui.define([
 	"sap/ui/base/DataType",
-	"sap/ui/events/KeyCodes",
 	"sap/ui/model/BindingMode",
 	"sap/ui/Device",
-	"sap/ui/core/Core",
 	"sap/ui/core/library",
 	"sap/ui/core/Control",
 	"sap/ui/core/IconPool",
 	"sap/ui/core/Icon",
 	"sap/ui/core/InvisibleText",
 	"sap/ui/core/theming/Parameters",
+	"sap/ui/core/ShortcutHintsMixin",
 	"./library",
 	"./Button",
 	"./CheckBox",
@@ -22,34 +21,32 @@ sap.ui.define([
 	"./ListItemBaseRenderer",
 	"sap/base/strings/capitalize",
 	"sap/ui/thirdparty/jquery",
+	"sap/ui/core/Lib",
 	// jQuery custom selectors ":sapTabbable", ":sapFocusable"
 	"sap/ui/dom/jquery/Selectors"
 ],
 function(
 	DataType,
-	KeyCodes,
 	BindingMode,
 	Device,
-	Core,
 	coreLibrary,
 	Control,
 	IconPool,
 	Icon,
 	InvisibleText,
 	ThemeParameters,
+	ShortcutHintsMixin,
 	library,
 	Button,
 	CheckBox,
 	RadioButton,
 	ListItemBaseRenderer,
 	capitalize,
-	jQuery
+	jQuery,
+	Library
 ) {
 	"use strict";
 
-
-	// shortcut for sap.m.ListKeyboardMode
-	var ListKeyboardMode = library.ListKeyboardMode;
 
 	// shortcut for sap.m.ListMode
 	var ListMode = library.ListMode;
@@ -191,7 +188,7 @@ function(
 	});
 
 	ListItemBase.getAccessibilityText = function(oControl, bDetectEmpty, bHeaderAnnouncement) {
-		var oBundle = Core.getLibraryResourceBundle("sap.m");
+		var oBundle = Library.getResourceBundleFor("sap.m");
 
 		if (!oControl || !oControl.getVisible || !oControl.getVisible()) {
 			return bDetectEmpty ? oBundle.getText("CONTROL_EMPTY") : "";
@@ -399,9 +396,10 @@ function(
 	ListItemBase.prototype.getAccessibilityDescription = function(oBundle) {
 		var aOutput = [],
 			sType = this.getType(),
-			sHighlight = this.getHighlight();
+			sHighlight = this.getHighlight(),
+			bIsTree = this.getListProperty("ariaRole") === "tree";
 
-		if (this.getSelected()) {
+		if (this.getSelected() && !bIsTree) {
 			aOutput.push(oBundle.getText("LIST_ITEM_SELECTED"));
 		}
 
@@ -420,15 +418,12 @@ function(
 		}
 
 		if (this.getCounter()) {
-			aOutput.push(oBundle.getText("LIST_ITEM_COUNTER", this.getCounter()));
+			aOutput.push(oBundle.getText("LIST_ITEM_COUNTER", [this.getCounter()]));
 		}
 
 		if (sType == ListItemType.Navigation) {
 			aOutput.push(oBundle.getText("LIST_ITEM_NAVIGATION"));
 		} else {
-			if (sType == ListItemType.Detail || sType == ListItemType.DetailAndActive) {
-				aOutput.push(oBundle.getText("LIST_ITEM_DETAIL"));
-			}
 			if (sType == ListItemType.Active || sType == ListItemType.DetailAndActive) {
 				aOutput.push(oBundle.getText("LIST_ITEM_ACTIVE"));
 			}
@@ -444,7 +439,7 @@ function(
 			sContentAnnouncement && aOutput.push(sContentAnnouncement);
 		}
 
-		if (this.getListProperty("ariaRole") != "listbox" && this.isSelectable() && !this.getSelected()) {
+		if (this.getListProperty("ariaRole") == "list" && !bIsTree && this.isSelectable() && !this.getSelected()) {
 			aOutput.push(oBundle.getText("LIST_ITEM_NOT_SELECTED"));
 		}
 
@@ -453,7 +448,7 @@ function(
 	};
 
 	ListItemBase.prototype.getAccessibilityInfo = function() {
-		var oBundle = Core.getLibraryResourceBundle("sap.m");
+		var oBundle = Library.getResourceBundleFor("sap.m");
 		return {
 			type: this.getAccessibilityType(oBundle),
 			description: this.getAccessibilityDescription(oBundle),
@@ -524,14 +519,17 @@ function(
 			id: this.getId() + "-imgDel",
 			icon: this.DeleteIconURI,
 			type: ButtonType.Transparent,
-			tooltip: Core.getLibraryResourceBundle("sap.m").getText("LIST_ITEM_DELETE")
+			tooltip: Library.getResourceBundleFor("sap.m").getText("LIST_ITEM_DELETE")
 		}).addStyleClass("sapMLIBIconDel sapMLIBSelectD").setParent(this, null, true).attachPress(function(oEvent) {
 			this.informList("Delete");
 		}, this);
 
-		this._oDeleteControl._bExcludeFromTabChain = true;
+		ShortcutHintsMixin.addConfig(
+			this._oDeleteControl, {
+				messageBundleKey: "LIST_ITEM_DELETE_SHORTCUT"
+			},
+		this);
 
-		// prevent disabling of internal controls by the sap.ui.core.EnabledPropagator
 		this._oDeleteControl.useEnabledPropagator(false);
 
 		return this._oDeleteControl;
@@ -561,15 +559,18 @@ function(
 			id: this.getId() + "-imgDet",
 			icon: this.DetailIconURI,
 			type: ButtonType.Transparent,
-			tooltip: Core.getLibraryResourceBundle("sap.m").getText("LIST_ITEM_EDIT")
+			tooltip: Library.getResourceBundleFor("sap.m").getText("LIST_ITEM_EDIT")
 		}).addStyleClass("sapMLIBType sapMLIBIconDet").setParent(this, null, true).attachPress(function() {
 			this.fireDetailTap();
 			this.fireDetailPress();
 		}, this);
 
-		this._oDetailControl._bExcludeFromTabChain = true;
+		ShortcutHintsMixin.addConfig(
+			this._oDetailControl, {
+				messageBundleKey: Device.os.macintosh ? "LIST_ITEM_EDIT_SHORTCUT_MAC" : "LIST_ITEM_EDIT_SHORTCUT"
+			},
+		this);
 
-		// prevent disabling of internal controls by the sap.ui.core.EnabledPropagator
 		this._oDetailControl.useEnabledPropagator(false);
 
 		return this._oDetailControl;
@@ -589,7 +590,9 @@ function(
 		this._oNavigationControl = new Icon({
 			id: this.getId() + "-imgNav",
 			src: this.NavigationIconURI,
+			tooltip: Library.getResourceBundleFor("sap.m").getText("LIST_ITEM_NAVIGATION_ICON"),
 			useIconTooltip: false,
+			decorative: false,
 			noTabStop: true
 		}).setParent(this, null, true).addStyleClass("sapMLIBType sapMLIBImgNav");
 
@@ -614,7 +617,7 @@ function(
 			activeHandling: false,
 			selected: this.getSelected(),
 			ariaLabelledBy: InvisibleText.getStaticId("sap.m", "LIST_ITEM_SELECTION")
-		}).addStyleClass("sapMLIBSelectS").setParent(this, null, true).setTabIndex(-1).attachSelect(function(oEvent) {
+		}).addStyleClass("sapMLIBSelectS").setParent(this, null, true).attachSelect(function(oEvent) {
 			var bSelected = oEvent.getParameter("selected");
 			this.setSelected(bSelected);
 			this.informList("Select", bSelected);
@@ -643,7 +646,7 @@ function(
 			activeHandling: false,
 			selected: this.getSelected(),
 			ariaLabelledBy: InvisibleText.getStaticId("sap.m", "LIST_ITEM_SELECTION")
-		}).addStyleClass("sapMLIBSelectM").setParent(this, null, true).setTabIndex(-1).addEventDelegate({
+		}).addStyleClass("sapMLIBSelectM").setParent(this, null, true).addEventDelegate({
 			onkeydown: function (oEvent) {
 				this.informList("KeyDown", oEvent);
 			},
@@ -959,7 +962,7 @@ function(
 		var oSelection = window.getSelection(),
 			sTextSelection = oSelection.toString().replace("\n", "");
 
-		return sTextSelection && jQuery.contains(oDomRef, oSelection.focusNode);
+		return sTextSelection && (oDomRef !== oSelection.focusNode && oDomRef.contains(oSelection.focusNode));
 	};
 
 	ListItemBase.prototype.ontap = function(oEvent) {
@@ -995,8 +998,8 @@ function(
 			// active feedback
 			this.setActive(true);
 
-			// even though the tabindex=-1, list items are not focusable on iPhone
-			if (Device.os.ios) {
+			// make sure that the list item is focused
+			if (document.activeElement != this.getFocusDomRef()) {
 				this.focus();
 			}
 
@@ -1089,7 +1092,7 @@ function(
 	ListItemBase.prototype.onsapspace = function(oEvent) {
 
 		// handle only the events that are coming from ListItemBase
-		if (oEvent.srcControl !== this) {
+		if (oEvent.srcControl !== this || oEvent.target !== this.getDomRef()) {
 			return;
 		}
 
@@ -1120,15 +1123,8 @@ function(
 			return;
 		}
 
-		// exit from edit mode
-		if (oEvent.srcControl !== this && oList.getKeyboardMode() == ListKeyboardMode.Edit) {
-			oList.setKeyboardMode(ListKeyboardMode.Navigation);
-			this._switchFocus(oEvent);
-			return;
-		}
-
 		// handle only item events
-		if (oEvent.srcControl !== this) {
+		if (oEvent.srcControl !== this || oEvent.target !== this.getDomRef()) {
 			return;
 		}
 
@@ -1162,31 +1158,12 @@ function(
 	ListItemBase.prototype.onsapdelete = function(oEvent) {
 		if (oEvent.isMarked() ||
 			oEvent.srcControl !== this ||
-			this.getMode() != ListMode.Delete) {
+			this.getMode() != ListMode.Delete ||
+			oEvent.target !== this.getDomRef()) {
 			return;
 		}
 
 		this.informList("Delete");
-		oEvent.preventDefault();
-		oEvent.setMarked();
-	};
-
-	ListItemBase.prototype._switchFocus = function(oEvent) {
-		var oList = this.getList();
-		if (!oList) {
-			return;
-		}
-
-		var $Tabbables = this.getTabbables();
-		if (oEvent.srcControl !== this) {
-			oList._iLastFocusPosOfItem = $Tabbables.index(oEvent.target);
-			this.focus();
-		} else if ($Tabbables.length) {
-			var iFocusPos = oList._iLastFocusPosOfItem || 0;
-			iFocusPos = $Tabbables[iFocusPos] ? iFocusPos : -1;
-			$Tabbables.eq(iFocusPos).trigger("focus");
-		}
-
 		oEvent.preventDefault();
 		oEvent.setMarked();
 	};
@@ -1197,33 +1174,17 @@ function(
 			return;
 		}
 
-		// switch focus to row and focused item with F7
-		if (oEvent.which == KeyCodes.F7) {
-			this._switchFocus(oEvent);
-			return;
-		}
-
-		// F2 fire detail event or switch keyboard mode
-		if (oEvent.which == KeyCodes.F2) {
-			if (oEvent.srcControl === this &&
-				this.getType().indexOf("Detail") == 0 &&
-				this.hasListeners("detailPress") ||
-				this.hasListeners("detailTap")) {
+		// F2 fire detail event or handle editing
+		if (oEvent.code == "KeyE" && (oEvent.metaKey || oEvent.ctrlKey)) {
+			if (oEvent.target === this.getDomRef() && (this.hasListeners("detailPress") || this.hasListeners("detailTap"))) {
 				this.fireDetailTap();
 				this.fireDetailPress();
 				oEvent.preventDefault();
 				oEvent.setMarked();
-			} else {
-				var oList = this.getList();
-				if (oList) {
-					this.$().prop("tabIndex", -1);
-					oList.setKeyboardMode(oList.getKeyboardMode() == ListKeyboardMode.Edit ? ListKeyboardMode.Navigation : ListKeyboardMode.Edit);
-					this._switchFocus(oEvent);
-				}
 			}
 		}
 
-		if (oEvent.srcControl !== this) {
+		if (oEvent.srcControl !== this || oEvent.target !== this.getDomRef()) {
 			return;
 		}
 
@@ -1231,7 +1192,7 @@ function(
 	};
 
 	ListItemBase.prototype.onkeyup = function(oEvent) {
-		if (oEvent.isMarked() || oEvent.srcControl !== this) {
+		if (oEvent.isMarked() || oEvent.srcControl !== this || oEvent.target !== this.getDomRef()) {
 			return;
 		}
 
@@ -1265,38 +1226,6 @@ function(
 		return this.$().find(":sapTabbable");
 	};
 
-	// handle the TAB key
-	ListItemBase.prototype.onsaptabnext = function(oEvent) {
-		// check whether event is marked or not
-		var oList = this.getList();
-		if (!oList || oEvent.isMarked() || oList.getKeyboardMode() == ListKeyboardMode.Edit) {
-			return;
-		}
-
-		// if tab key is pressed while the last tabbable element of the list item
-		// has been focused, we forward tab to the last pseudo element of the table
-		var oLastTabbableDomRef = this.getTabbables().get(-1) || this.getDomRef();
-		if (oEvent.target === oLastTabbableDomRef) {
-			oList.forwardTab(true);
-			oEvent.setMarked();
-		}
-	};
-
-	// handle the SHIFT-TAB key
-	ListItemBase.prototype.onsaptabprevious = function(oEvent) {
-		var oList = this.getList();
-		if (!oList || oEvent.isMarked() || oList.getKeyboardMode() == ListKeyboardMode.Edit) {
-			return;
-		}
-
-		// if shift-tab is pressed while the list item has been focused,
-		// we forward tab to the root element of the list
-		if (oEvent.target === this.getDomRef()) {
-			oList.forwardTab(false);
-			oEvent.setMarked();
-		}
-	};
-
 	// handle propagated focus to make the item row focusable
 	ListItemBase.prototype.onfocusin = function(oEvent) {
 		var oList = this.getList();
@@ -1306,26 +1235,24 @@ function(
 
 		this.informList("FocusIn", oEvent.srcControl);
 		oEvent.setMarked();
+	};
 
-		if (oEvent.srcControl === this) {
+	ListItemBase.prototype.onfocusout = function(oEvent) {
+		if (oEvent.isMarked() || oEvent.srcControl !== this) {
 			return;
 		}
 
-		if (oList.getKeyboardMode() == ListKeyboardMode.Edit ||
-			!jQuery(oEvent.target).is(":sapFocusable")) {
-			return;
-		}
-
-		// inform the list async that this item should be focusable
-		setTimeout(oList["setItemFocusable"].bind(oList, this), 0);
+		this.informList("FocusOut", oEvent.srcControl);
+		oEvent.setMarked();
 	};
 
 	// inform the list for the vertical navigation
-	ListItemBase.prototype.onsapup = function(oEvent) {
+	ListItemBase.prototype.onsapup = ListItemBase.prototype.onsapdown = function(oEvent) {
 		if (oEvent.isMarked() ||
 			oEvent.srcControl === this ||
 			oEvent.target instanceof HTMLInputElement ||
-			oEvent.target instanceof HTMLTextAreaElement) {
+			oEvent.target instanceof HTMLTextAreaElement ||
+			oEvent.target.classList.contains("sapMTblCellFocusable")) {
 			return;
 		}
 
@@ -1339,18 +1266,11 @@ function(
 		}
 
 		// allow the context menu to open on the SingleSelect or MultiSelect control
-		// is(":focusable") check is required as IE sets activeElement also to text controls
-		if (jQuery(document.activeElement).is(":focusable") &&
-			document.activeElement !== this.getDomRef() &&
-			oEvent.srcControl !== this.getModeControl()) {
-			return;
+		if (oEvent.srcControl == this.getModeControl() ||
+			document.activeElement.matches(".sapMLIB,.sapMListTblCell,.sapMListTblSubRow")) {
+			this.informList("ContextMenu", oEvent);
 		}
-
-		this.informList("ContextMenu", oEvent);
 	};
-
-	// inform the list for the vertical navigation
-	ListItemBase.prototype.onsapdown = ListItemBase.prototype.onsapup;
 
 	return ListItemBase;
 

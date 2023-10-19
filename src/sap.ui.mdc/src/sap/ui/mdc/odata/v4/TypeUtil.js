@@ -2,7 +2,7 @@
  * ${copyright}
  */
 
-sap.ui.define(['sap/ui/mdc/odata/TypeUtil', 'sap/ui/mdc/enum/BaseType',	'sap/base/util/merge'], function(ODataTypeUtil, BaseType, merge) {
+sap.ui.define(['sap/ui/mdc/odata/TypeUtil', 'sap/ui/mdc/enums/BaseType',	'sap/base/util/merge'], function(ODataTypeUtil, BaseType, merge) {
 	"use strict";
 
 	/**
@@ -14,10 +14,11 @@ sap.ui.define(['sap/ui/mdc/odata/TypeUtil', 'sap/ui/mdc/enum/BaseType',	'sap/bas
 	 * @private
 	 * @experimental As of version 1.79
 	 * @since 1.79.0
+	 * @deprecated since 1.115.0 - please see {@link module:sap/ui/mdc/BaseDelegate.getTypeMap}
 	 * @alias sap.ui.mdc.odata.v4.TypeUtil
 	 * @ui5-restricted sap.ui.mdc
 	 */
-	var ODataV4TypeUtil = Object.assign({}, ODataTypeUtil);
+	const ODataV4TypeUtil = Object.assign({}, ODataTypeUtil);
 
 	ODataV4TypeUtil.getBaseType = function(sType, oFormatOptions, oConstraints) {
 
@@ -45,7 +46,7 @@ sap.ui.define(['sap/ui/mdc/odata/TypeUtil', 'sap/ui/mdc/enum/BaseType',	'sap/bas
 	ODataV4TypeUtil.getDataTypeClassName = function(sType) {
 
 		// V4 specific types
-		var mEdmTypes = {
+		const mEdmTypes = {
 			"Edm.Date": "sap.ui.model.odata.type.Date", // V4 Date
 			"Edm.TimeOfDay": "sap.ui.model.odata.type.TimeOfDay" // V4 constraints: {precision}
 		};
@@ -68,7 +69,7 @@ sap.ui.define(['sap/ui/mdc/odata/TypeUtil', 'sap/ui/mdc/enum/BaseType',	'sap/bas
 			default:
 		}
 
-		var TypeClass = this.getDataTypeClass(sDataType);
+		const TypeClass = this.getDataTypeClass(sDataType);
 		return new TypeClass(oFormatOptions, oConstraints);
 	};
 

@@ -3,18 +3,16 @@
  */
 
 sap.ui.define([
-	"../library", "sap/ui/core/Element"
-], function(Library, Element) {
+	"sap/ui/core/Element", "sap/ui/mdc/enums/TableType"
+], function(Element, TableType) {
 	"use strict";
-
-	var TableType = Library.TableType;
 
 	/**
 	 * Constructor for a new <code>CreationRow</code>.
 	 *
 	 * @param {string} [sId] Optional ID for the new object; generated automatically if no non-empty ID is given
 	 * @param {object} [mSettings] Initial settings for the new control
-	 * @class Row that allows the user to enter data in a row-shaped form if the {@link sap.ui.mdc.TableType TableType} is "<code>Table</code>".
+	 * @class Row that allows the user to enter data in a row-shaped form if the {@link sap.ui.mdc.enums.TableType TableType} is "<code>Table</code>".
 	 * The form elements are aligned with the columns of the table and are created automatically based on the
 	 * {@link sap.ui.mdc.table.Column#getCreationTemplate creationTemplate} aggregation of the {@link sap.ui.mdc.table.Column}.
 	 * @extends sap.ui.core.Element
@@ -27,7 +25,7 @@ sap.ui.define([
 	 * @since 1.65
 	 * @alias sap.ui.mdc.table.CreationRow
 	 */
-	var CreationRow = Element.extend("sap.ui.mdc.table.CreationRow", {
+	const CreationRow = Element.extend("sap.ui.mdc.table.CreationRow", {
 		metadata: {
 			library: "sap.ui.mdc",
 			properties: {
@@ -151,8 +149,8 @@ sap.ui.define([
 	};
 
 	CreationRow.prototype._updateInnerCreationRow = function() {
-		var oTable = this._getTable();
-		var pCreateInnerCreationRow;
+		const oTable = this._getTable();
+		let pCreateInnerCreationRow;
 
 		if (!oTable || !oTable._oTable) {
 			return Promise.resolve();
@@ -199,8 +197,8 @@ sap.ui.define([
 
 			this._getTable()._oTable.getRowMode().setHideEmptyRows(this.getVisible());
 
-			for (var sModelName in this._mBindingContexts) {
-				var mBindingContext = this._mBindingContexts[sModelName];
+			for (const sModelName in this._mBindingContexts) {
+				const mBindingContext = this._mBindingContexts[sModelName];
 				this._oInnerCreationRow.setBindingContext(mBindingContext.context, mBindingContext.modelName);
 			}
 
@@ -235,7 +233,7 @@ sap.ui.define([
 	 * @private
 	 */
 	CreationRow.prototype._getTable = function() {
-		var oParent = this.getParent();
+		const oParent = this.getParent();
 		return oParent && oParent.isA("sap.ui.mdc.Table") ? oParent : null;
 	};
 

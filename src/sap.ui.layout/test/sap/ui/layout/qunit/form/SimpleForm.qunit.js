@@ -114,13 +114,13 @@ sap.ui.define([
 
 	function asyncLayoutTest(assert, sLayout, fnTest) {
 		if (oFormLayout) {
-			fnTest(assert);
+			fnTest(assert, sLayout);
 		} else {
 			// wait until Layout is loaded
 			var fnDone = assert.async();
 			sap.ui.require([sLayout], function() {
 				oFormLayout = oForm.getLayout();
-				fnTest(assert);
+				fnTest(assert, sLayout);
 				fnDone();
 			});
 		}
@@ -131,8 +131,10 @@ sap.ui.define([
 		afterEach: afterTest
 	});
 
-	function layoutAfterRendering(assert) {
-		assert.ok(oFormLayout, "FormLayout is created after rendering if no Layout is set");
+	function usedLayout(assert, sLayout) {
+		assert.ok(oFormLayout, "FormLayout is created");
+		var sName = sLayout.replace(/\//g, ".");
+		assert.ok(oFormLayout && oFormLayout.isA(sName), "Right FormLayout used");
 		assert.equal(oFormLayout.getId(), "SF1--Layout", "Stable ID of FormLayout");
 	}
 
@@ -141,7 +143,7 @@ sap.ui.define([
 		assert.ok(oForm, "internal Form is created");
 		assert.equal(oForm.getId(), "SF1--Form", "Stable ID of Form");
 		assert.notOk(oFormLayout, "no FormLayout is created before rendering if no Layout is set");
-		assert.equal(oSimpleForm.getLayout(), library.form.SimpleFormLayout.ResponsiveLayout, "ResponsiveLayout is default");
+		assert.equal(oSimpleForm.getLayout(), library.form.SimpleFormLayout.ResponsiveGridLayout, "ResponsiveGridLayout is default");
 		var aContent = oSimpleForm.getContent();
 		assert.equal(aContent.length, 0, "SimpleForm has no content");
 		var aFormContainers = oForm.getFormContainers();
@@ -151,7 +153,12 @@ sap.ui.define([
 		oCore.applyChanges();
 		oFormLayout = oForm.getLayout();
 
-		asyncLayoutTest(assert, "sap/ui/layout/form/ResponsiveLayout", layoutAfterRendering);
+		asyncLayoutTest(assert, "sap/ui/layout/form/ResponsiveGridLayout", usedLayout);
+	});
+
+	QUnit.test("DefaultLayout explicit set", function(assert) {
+		oSimpleForm.setLayout(oSimpleForm.getLayout());
+		asyncLayoutTest(assert, "sap/ui/layout/form/ResponsiveGridLayout", usedLayout);
 	});
 
 	QUnit.test("width", function(assert) {
@@ -238,7 +245,7 @@ sap.ui.define([
 		var aFormContainers = oForm.getFormContainers();
 		assert.equal(aFormContainers.length, 1, "Form has 1 FormContainer");
 		assert.equal(aFormContainers[0].getTitle().getId(), "T1", "FormContainer has Title set");
-		assert.equal(aFormContainers[0].getId(), "T1--FC", "FormContainer has stable ID based on Title");
+		assert.equal(aFormContainers[0].getId(), "SF1--T1--FC", "FormContainer has stable ID based on Title");
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 0, "FormContainer has no FormElements");
 	});
@@ -253,7 +260,7 @@ sap.ui.define([
 		var aFormContainers = oForm.getFormContainers();
 		assert.equal(aFormContainers.length, 1, "Form has 1 FormContainer");
 		assert.equal(aFormContainers[0].getToolbar().getId(), "TB1", "FormContainer has Toolbar set");
-		assert.equal(aFormContainers[0].getId(), "TB1--FC", "FormContainer has stable ID based on Toolbar");
+		assert.equal(aFormContainers[0].getId(), "SF1--TB1--FC", "FormContainer has stable ID based on Toolbar");
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 0, "FormContainer has no FormElements");
 	});
@@ -273,7 +280,7 @@ sap.ui.define([
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 1, "FormContainer has 1 FormElement");
 		assert.equal(aFormElements[0].getLabel().getId(), "L1", "FormElement has Label set");
-		assert.equal(aFormElements[0].getId(), "L1--FE", "FormElement has stable ID based on Label");
+		assert.equal(aFormElements[0].getId(), "SF1--L1--FE", "FormElement has stable ID based on Label");
 		var aFields = aFormElements[0].getFields();
 		assert.equal(aFields.length, 0, "FormElement has no Fields");
 	});
@@ -310,7 +317,7 @@ sap.ui.define([
 		var aFormContainers = oForm.getFormContainers();
 		assert.equal(aFormContainers.length, 2, "Form has 2 FormContainers");
 		assert.equal(aFormContainers[1].getTitle().getId(), "T2", "2. FormContainer has Title set");
-		assert.equal(aFormContainers[1].getId(), "T2--FC", "FormContainer has stable ID based on Title");
+		assert.equal(aFormContainers[1].getId(), "SF1--T2--FC", "FormContainer has stable ID based on Title");
 		var aFormElements = aFormContainers[1].getFormElements();
 		assert.equal(aFormElements.length, 0, "2. FormContainer has no FormElements");
 	}
@@ -346,7 +353,7 @@ sap.ui.define([
 		var aFormContainers = oForm.getFormContainers();
 		assert.equal(aFormContainers.length, 2, "Form has 2 FormContainers");
 		assert.equal(aFormContainers[1].getToolbar().getId(), "TB2", "2. FormContainer has Toolbar set");
-		assert.equal(aFormContainers[1].getId(), "TB2--FC", "FormContainer has stable ID based on Toolbar");
+		assert.equal(aFormContainers[1].getId(), "SF1--TB2--FC", "FormContainer has stable ID based on Toolbar");
 		var aFormElements = aFormContainers[1].getFormElements();
 		assert.equal(aFormElements.length, 0, "2. FormContainer has no FormElements");
 	}
@@ -384,7 +391,7 @@ sap.ui.define([
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 1, "FormContainer has 1 FormElement");
 		assert.equal(aFormElements[0].getLabel().getId(), "L2", "FormElement has Label set");
-		assert.equal(aFormElements[0].getId(), "L2--FE", "FormElement has stable ID based on Label");
+		assert.equal(aFormElements[0].getId(), "SF1--L2--FE", "FormElement has stable ID based on Label");
 		var aFields = aFormElements[0].getFields();
 		assert.equal(aFields.length, 0, "FormElement has no Fields");
 	}
@@ -412,7 +419,7 @@ sap.ui.define([
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 2, "FormContainer has 2 FormElements");
 		assert.equal(aFormElements[1].getLabel().getId(), "L2", "2. FormElement has Label set");
-		assert.equal(aFormElements[1].getId(), "L2--FE", "2. FormElement has stable ID based on Label");
+		assert.equal(aFormElements[1].getId(), "SF1--L2--FE", "2. FormElement has stable ID based on Label");
 		var aFields = aFormElements[1].getFields();
 		assert.equal(aFields.length, 0, "2. FormElement has no Fields");
 	}
@@ -440,9 +447,9 @@ sap.ui.define([
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 1, "FormContainer has 1 FormElement");
 		if (oControl.isA("sap.ui.core.Label")) {
-			assert.equal(aFormElements[0].getId(), oControl.getId() + "--FE", "FormElement has stable ID based on Label");
+			assert.equal(aFormElements[0].getId(), "SF1--" + oControl.getId() + "--FE", "FormElement has stable ID based on Label");
 		} else {
-			assert.equal(aFormElements[0].getId(), oControl.getId() + "--FC--FE-NoLabel", "FormElement has stable ID for no Label");
+			assert.equal(aFormElements[0].getId(), "SF1--" + oControl.getId() + "--FC--FE-NoLabel", "FormElement has stable ID for no Label");
 		}
 		var aFields = aFormElements[0].getFields();
 		assert.equal(aFields.length, 1, "FormElement has 1 Field");
@@ -510,8 +517,8 @@ sap.ui.define([
 		var aFormContainers = oForm.getFormContainers();
 		assert.equal(aFormContainers.length, 2, "Form has 2 FormContainers");
 		assert.equal(aFormContainers[0].getTitle().getId(), "T2", "1. FormContainer has Title set");
-		assert.equal(aFormContainers[0].getId(), "T2--FC", "FormContainer has stable ID based on Title");
-		assert.equal(aFormContainers[1].getId(), oControl.getId() + "--FC", "FormContainer has stable ID based on Header control");
+		assert.equal(aFormContainers[0].getId(), "SF1--T2--FC", "FormContainer has stable ID based on Title");
+		assert.equal(aFormContainers[1].getId(), "SF1--" + oControl.getId() + "--FC", "FormContainer has stable ID based on Header control");
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 0, "1. FormContainer has no FormElements");
 	}
@@ -537,7 +544,7 @@ sap.ui.define([
 		var aFormContainers = oForm.getFormContainers();
 		assert.equal(aFormContainers.length, 1, "Form has 1 FormContainer");
 		assert.equal(aFormContainers[0].getTitle().getId(), "T2", "FormContainer has Title set");
-		assert.equal(aFormContainers[0].getId(), "T2--FC", "FormContainer has stable ID based on Title");
+		assert.equal(aFormContainers[0].getId(), "SF1--T2--FC", "FormContainer has stable ID based on Title");
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 1, "FormContainer has 1 FormElement");
 	}
@@ -563,8 +570,8 @@ sap.ui.define([
 		var aFormContainers = oForm.getFormContainers();
 		assert.equal(aFormContainers.length, 2, "Form has 2 FormContainers");
 		assert.equal(aFormContainers[0].getToolbar().getId(), "TB2", "1. FormContainer has Toolbar set");
-		assert.equal(aFormContainers[0].getId(), "TB2--FC", "FormContainer has stable ID based on Toolbar");
-		assert.equal(aFormContainers[1].getId(), oControl.getId() + "--FC", "FormContainer has stable ID based on Header control");
+		assert.equal(aFormContainers[0].getId(), "SF1--TB2--FC", "FormContainer has stable ID based on Toolbar");
+		assert.equal(aFormContainers[1].getId(), "SF1--" + oControl.getId() + "--FC", "FormContainer has stable ID based on Header control");
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 0, "1. FormContainer has no FormElements");
 	}
@@ -590,7 +597,7 @@ sap.ui.define([
 		var aFormContainers = oForm.getFormContainers();
 		assert.equal(aFormContainers.length, 1, "Form has 1 FormContainer");
 		assert.equal(aFormContainers[0].getToolbar().getId(), "TB2", "FormContainer has Toolbar set");
-		assert.equal(aFormContainers[0].getId(), "TB2--FC", "FormContainer has stable ID based on Toolbar");
+		assert.equal(aFormContainers[0].getId(), "SF1--TB2--FC", "FormContainer has stable ID based on Toolbar");
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 1, "FormContainer has 1 FormElement");
 	}
@@ -618,11 +625,11 @@ sap.ui.define([
 		assert.notOk(aFormContainers[0].getTitle(), "1. FormContainer has no Title set");
 		assert.notOk(aFormContainers[0].getToolbar(), "1. FormContainer has no Toolbar set");
 		assert.equal(aFormContainers[0].getId(), "SF1--FC-NoHead", "FormContainer has stable ID for no Title");
-		assert.equal(aFormContainers[1].getId(), oControl.getId() + "--FC", "FormContainer has stable ID based on Header control");
+		assert.equal(aFormContainers[1].getId(), "SF1--" + oControl.getId() + "--FC", "FormContainer has stable ID based on Header control");
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 1, "FormContainer has 1 FormElement");
 		assert.equal(aFormElements[0].getLabel().getId(), "L2", "FormElement has Label set");
-		assert.equal(aFormElements[0].getId(), "L2--FE", "FormElement has stable ID based on Label");
+		assert.equal(aFormElements[0].getId(), "SF1--L2--FE", "FormElement has stable ID based on Label");
 		var aFields = aFormElements[0].getFields();
 		assert.equal(aFields.length, 0, "FormElement has no Fields");
 	}
@@ -652,8 +659,8 @@ sap.ui.define([
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 2, "FormContainer has 2 FormElements");
 		assert.equal(aFormElements[0].getLabel().getId(), "L2", "FormElement has Label set");
-		assert.equal(aFormElements[0].getId(), "L2--FE", "FormElement has stable ID based on Label");
-		assert.equal(aFormElements[1].getId(), "L1--FE", "FormElement has stable ID based on Label");
+		assert.equal(aFormElements[0].getId(), "SF1--L2--FE", "FormElement has stable ID based on Label");
+		assert.equal(aFormElements[1].getId(), "SF1--L1--FE", "FormElement has stable ID based on Label");
 		var aFields = aFormElements[0].getFields();
 		assert.equal(aFields.length, 0, "FormElement has no Fields");
 	});
@@ -673,7 +680,7 @@ sap.ui.define([
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 1, "FormContainer has 1 FormElement");
 		assert.equal(aFormElements[0].getLabel().getId(), "L2", "FormElement has Label set");
-		assert.equal(aFormElements[0].getId(), "L2--FE", "FormElement has stable ID based on Label");
+		assert.equal(aFormElements[0].getId(), "SF1--L2--FE", "FormElement has stable ID based on Label");
 		var aFields = aFormElements[0].getFields();
 		assert.equal(aFields.length, 1, "FormElement has 1 Field");
 	});
@@ -701,10 +708,10 @@ sap.ui.define([
 		assert.equal(aContent[1].getId(), "T3", "SimpleForm Title as second content");
 		var aFormContainers = oForm.getFormContainers();
 		assert.equal(aFormContainers.length, 3, "Form has 3 FormContainers");
-		assert.equal(aFormContainers[0].getId(), oControl1.getId() + "--FC", "1. FormContainer has stable ID based on Header control");
+		assert.equal(aFormContainers[0].getId(), "SF1--" + oControl1.getId() + "--FC", "1. FormContainer has stable ID based on Header control");
 		assert.equal(aFormContainers[1].getTitle().getId(), "T3", "2. FormContainer has Title set");
-		assert.equal(aFormContainers[1].getId(), "T3--FC", "2. FormContainer has stable ID based on Title");
-		assert.equal(aFormContainers[2].getId(), oControl2.getId() + "--FC", "3. FormContainer has stable ID based on Header control");
+		assert.equal(aFormContainers[1].getId(), "SF1--T3--FC", "2. FormContainer has stable ID based on Title");
+		assert.equal(aFormContainers[2].getId(), "SF1--" + oControl2.getId() + "--FC", "3. FormContainer has stable ID based on Header control");
 		var aFormElements = aFormContainers[1].getFormElements();
 		assert.equal(aFormElements.length, 0, "2. FormContainer has no FormElements");
 	}
@@ -736,15 +743,15 @@ sap.ui.define([
 		assert.equal(aContent[1].getId(), "T2", "SimpleForm Title as second content");
 		var aFormContainers = oForm.getFormContainers();
 		assert.equal(aFormContainers.length, 2, "Form has 2 FormContainers");
-		assert.equal(aFormContainers[0].getId(), "T1--FC", "1. FormContainer has stable ID based on Title");
+		assert.equal(aFormContainers[0].getId(), "SF1--T1--FC", "1. FormContainer has stable ID based on Title");
 		assert.equal(aFormContainers[1].getTitle().getId(), "T2", "2. FormContainer has Title set");
-		assert.equal(aFormContainers[1].getId(), "T2--FC", "2. FormContainer has stable ID based on Title");
+		assert.equal(aFormContainers[1].getId(), "SF1--T2--FC", "2. FormContainer has stable ID based on Title");
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 0, "1. FormContainer has no FormElements");
 		aFormElements = aFormContainers[1].getFormElements();
 		assert.equal(aFormElements.length, 1, "2. FormContainer has 1 FormElement");
 		assert.equal(aFormElements[0].getLabel().getId(), "L1", "FormElement has Label set");
-		assert.equal(aFormElements[0].getId(), "L1--FE", "FormElement has stable ID based on Label");
+		assert.equal(aFormElements[0].getId(), "SF1--L1--FE", "FormElement has stable ID based on Label");
 		var aFields = aFormElements[0].getFields();
 		assert.equal(aFields.length, 1, "FormElement has 1 Field");
 	});
@@ -764,19 +771,19 @@ sap.ui.define([
 		assert.equal(aContent[2].getId(), "T2", "SimpleForm Title as 3. content");
 		var aFormContainers = oForm.getFormContainers();
 		assert.equal(aFormContainers.length, 2, "Form has 2 FormContainers");
-		assert.equal(aFormContainers[0].getId(), "T1--FC", "1. FormContainer has stable ID based on Title");
+		assert.equal(aFormContainers[0].getId(), "SF1--T1--FC", "1. FormContainer has stable ID based on Title");
 		assert.equal(aFormContainers[1].getTitle().getId(), "T2", "2. FormContainer has Title set");
-		assert.equal(aFormContainers[1].getId(), "T2--FC", "2. FormContainer has stable ID based on Title");
+		assert.equal(aFormContainers[1].getId(), "SF1--T2--FC", "2. FormContainer has stable ID based on Title");
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 1, "1. FormContainer has 1 FormElement");
 		assert.equal(aFormElements[0].getLabel().getId(), "L1", "1. FormElement has Label set");
-		assert.equal(aFormElements[0].getId(), "L1--FE", "1. FormElement has stable ID based on Label");
+		assert.equal(aFormElements[0].getId(), "SF1--L1--FE", "1. FormElement has stable ID based on Label");
 		var aFields = aFormElements[0].getFields();
 		assert.equal(aFields.length, 0, "1. FormElement has no Field");
 		aFormElements = aFormContainers[1].getFormElements();
 		assert.equal(aFormElements.length, 1, "2. FormContainer has 1 FormElement");
 		assert.notOk(aFormElements[0].getLabel(), "2. FormElement has no Label set");
-		assert.equal(aFormElements[0].getId(), "T2--FC--FE-NoLabel", "2. FormElement has stable ID for no Label");
+		assert.equal(aFormElements[0].getId(), "SF1--T2--FC--FE-NoLabel", "2. FormElement has stable ID for no Label");
 		aFields = aFormElements[0].getFields();
 		assert.equal(aFields.length, 1, "FormElement has 1 Field");
 	});
@@ -798,19 +805,19 @@ sap.ui.define([
 		assert.equal(aContent[3].getId(), "T2", "SimpleForm Title as 4. content");
 		var aFormContainers = oForm.getFormContainers();
 		assert.equal(aFormContainers.length, 2, "Form has 2 FormContainers");
-		assert.equal(aFormContainers[0].getId(), "T1--FC", "1. FormContainer has stable ID based on Title");
+		assert.equal(aFormContainers[0].getId(), "SF1--T1--FC", "1. FormContainer has stable ID based on Title");
 		assert.equal(aFormContainers[1].getTitle().getId(), "T2", "2. FormContainer has Title set");
-		assert.equal(aFormContainers[1].getId(), "T2--FC", "2. FormContainer has stable ID based on Title");
+		assert.equal(aFormContainers[1].getId(), "SF1--T2--FC", "2. FormContainer has stable ID based on Title");
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 1, "1. FormContainer has 1 FormElement");
 		assert.equal(aFormElements[0].getLabel().getId(), "L1", "1. FormElement has Label set");
-		assert.equal(aFormElements[0].getId(), "L1--FE", "1. FormElement has stable ID based on Label");
+		assert.equal(aFormElements[0].getId(), "SF1--L1--FE", "1. FormElement has stable ID based on Label");
 		var aFields = aFormElements[0].getFields();
 		assert.equal(aFields.length, 1, "1. FormElement has 1 Field");
 		aFormElements = aFormContainers[1].getFormElements();
 		assert.equal(aFormElements.length, 1, "2. FormContainer has 1 FormElement");
 		assert.notOk(aFormElements[0].getLabel(), "2. FormElement has no Label set");
-		assert.equal(aFormElements[0].getId(), "T2--FC--FE-NoLabel", "2. FormElement has stable ID for no Label");
+		assert.equal(aFormElements[0].getId(), "SF1--T2--FC--FE-NoLabel", "2. FormElement has stable ID for no Label");
 		aFields = aFormElements[0].getFields();
 		assert.equal(aFields.length, 1, "FormElement has 1 Field");
 	});
@@ -833,19 +840,19 @@ sap.ui.define([
 		assert.equal(aContent[3].getId(), "TB2", "SimpleForm Toolbar as 4. content");
 		var aFormContainers = oForm.getFormContainers();
 		assert.equal(aFormContainers.length, 2, "Form has 2 FormContainers");
-		assert.equal(aFormContainers[0].getId(), "T1--FC", "1. FormContainer has stable ID based on Title");
+		assert.equal(aFormContainers[0].getId(), "SF1--T1--FC", "1. FormContainer has stable ID based on Title");
 		assert.equal(aFormContainers[1].getToolbar().getId(), "TB2", "2. FormContainer has Toolbar set");
-		assert.equal(aFormContainers[1].getId(), "TB2--FC", "2. FormContainer has stable ID based on Toolbar");
+		assert.equal(aFormContainers[1].getId(), "SF1--TB2--FC", "2. FormContainer has stable ID based on Toolbar");
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 1, "1. FormContainer has 1 FormElement");
 		assert.equal(aFormElements[0].getLabel().getId(), "L1", "1. FormElement has Label set");
-		assert.equal(aFormElements[0].getId(), "L1--FE", "1. FormElement has stable ID based on Label");
+		assert.equal(aFormElements[0].getId(), "SF1--L1--FE", "1. FormElement has stable ID based on Label");
 		var aFields = aFormElements[0].getFields();
 		assert.equal(aFields.length, 1, "1. FormElement has 1 Field");
 		aFormElements = aFormContainers[1].getFormElements();
 		assert.equal(aFormElements.length, 1, "2. FormContainer has 1 FormElement");
 		assert.notOk(aFormElements[0].getLabel(), "2. FormElement has no Label set");
-		assert.equal(aFormElements[0].getId(), "TB2--FC--FE-NoLabel", "2. FormElement has stable ID for no Label");
+		assert.equal(aFormElements[0].getId(), "SF1--TB2--FC--FE-NoLabel", "2. FormElement has stable ID for no Label");
 		aFields = aFormElements[0].getFields();
 		assert.equal(aFields.length, 1, "FormElement has 1 Field");
 	});
@@ -871,11 +878,11 @@ sap.ui.define([
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 2, "1. FormContainer has 2 FormElements");
 		assert.equal(aFormElements[0].getLabel().getId(), "L1", "1. FormElement has 1st Label set");
-		assert.equal(aFormElements[0].getId(), "L1--FE", "1. FormElement has stable ID based on Label");
+		assert.equal(aFormElements[0].getId(), "SF1--L1--FE", "1. FormElement has stable ID based on Label");
 		var aFields = aFormElements[0].getFields();
 		assert.equal(aFields.length, 1, "1. FormElement has 1 Field");
 		assert.equal(aFormElements[1].getLabel().getId(), "L2", "2. FormElement has Label set");
-		assert.equal(aFormElements[1].getId(), "L2--FE", "2. FormElement has stable ID based on Label");
+		assert.equal(aFormElements[1].getId(), "SF1--L2--FE", "2. FormElement has stable ID based on Label");
 		aFields = aFormElements[1].getFields();
 		assert.equal(aFields.length, 0, "2. FormElement has 0 Field");
 	});
@@ -898,11 +905,11 @@ sap.ui.define([
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 2, "FormContainer has 2 FormElements");
 		assert.equal(aFormElements[0].getLabel().getId(), "L1", "1. FormElement has 1st Label set");
-		assert.equal(aFormElements[0].getId(), "L1--FE", "1. FormElement has stable ID based on Label");
+		assert.equal(aFormElements[0].getId(), "SF1--L1--FE", "1. FormElement has stable ID based on Label");
 		var aFields = aFormElements[0].getFields();
 		assert.equal(aFields.length, 0, "1. FormElement has 0 Field");
 		assert.equal(aFormElements[1].getLabel().getId(), "L2", "2. FormElement has Label set");
-		assert.equal(aFormElements[1].getId(), "L2--FE", "2. FormElement has stable ID based on Label");
+		assert.equal(aFormElements[1].getId(), "SF1--L2--FE", "2. FormElement has stable ID based on Label");
 		aFields = aFormElements[1].getFields();
 		assert.equal(aFields.length, 1, "2. FormElement has 1 Field");
 	});
@@ -927,11 +934,11 @@ sap.ui.define([
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 2, "FormContainer has 2 FormElements");
 		assert.equal(aFormElements[0].getLabel().getId(), "L1", "1. FormElement has 1st Label set");
-		assert.equal(aFormElements[0].getId(), "L1--FE", "1. FormElement has stable ID based on Label");
+		assert.equal(aFormElements[0].getId(), "SF1--L1--FE", "1. FormElement has stable ID based on Label");
 		var aFields = aFormElements[0].getFields();
 		assert.equal(aFields.length, 1, "1. FormElement has 1 Field");
 		assert.equal(aFormElements[1].getLabel().getId(), "L2", "2. FormElement has Label set");
-		assert.equal(aFormElements[1].getId(), "L2--FE", "2. FormElement has stable ID based on Label");
+		assert.equal(aFormElements[1].getId(), "SF1--L2--FE", "2. FormElement has stable ID based on Label");
 		aFields = aFormElements[1].getFields();
 		assert.equal(aFields.length, 1, "2. FormElement has 1 Field");
 	});
@@ -958,12 +965,12 @@ sap.ui.define([
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 2, "FormContainer has 2 FormElements");
 		assert.equal(aFormElements[0].getLabel().getId(), "L1", "1. FormElement has 1st Label set");
-		assert.equal(aFormElements[0].getId(), "L1--FE", "1. FormElement has stable ID based on Label");
+		assert.equal(aFormElements[0].getId(), "SF1--L1--FE", "1. FormElement has stable ID based on Label");
 		var aFields = aFormElements[0].getFields();
 		assert.equal(aFields.length, 2, "1. FormElement has 2 Fields");
 		assert.equal(aFields[1].getId(), "I3", "1. FormElement has new second field");
 		assert.equal(aFormElements[1].getLabel().getId(), "L2", "2. FormElement has second Label set");
-		assert.equal(aFormElements[1].getId(), "L2--FE", "2. FormElement has stable ID based on Label");
+		assert.equal(aFormElements[1].getId(), "SF1--L2--FE", "2. FormElement has stable ID based on Label");
 		aFields = aFormElements[1].getFields();
 		assert.equal(aFields.length, 1, "3. FormElement has 1 Field");
 	});
@@ -990,12 +997,12 @@ sap.ui.define([
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 2, "FormContainer has 2 FormElements");
 		assert.equal(aFormElements[0].getLabel().getId(), "L1", "1. FormElement has 1st Label set");
-		assert.equal(aFormElements[0].getId(), "L1--FE", "1. FormElement has stable ID based on Label");
+		assert.equal(aFormElements[0].getId(), "SF1--L1--FE", "1. FormElement has stable ID based on Label");
 		var aFields = aFormElements[0].getFields();
 		assert.equal(aFields.length, 2, "1. FormElement has 2 Fields");
 		assert.equal(aFields[0].getId(), "I3", "1. FormElement has new first field");
 		assert.equal(aFormElements[1].getLabel().getId(), "L2", "2. FormElement has second Label set");
-		assert.equal(aFormElements[1].getId(), "L2--FE", "2. FormElement has stable ID based on Label");
+		assert.equal(aFormElements[1].getId(), "SF1--L2--FE", "2. FormElement has stable ID based on Label");
 		aFields = aFormElements[1].getFields();
 		assert.equal(aFields.length, 1, "2. FormElement has 1 Field");
 	});
@@ -1019,7 +1026,7 @@ sap.ui.define([
 		assert.equal(aFields.length, 1, "1. FormElement has 1 Fields");
 		assert.equal(aFields[0].getId(), "I1", "1. FormElement has new field");
 		assert.equal(aFormElements[1].getLabel().getId(), "L1", "2. FormElement has Label set");
-		assert.equal(aFormElements[1].getId(), "L1--FE", "2. FormElement has stable ID based on Label");
+		assert.equal(aFormElements[1].getId(), "SF1--L1--FE", "2. FormElement has stable ID based on Label");
 		aFields = aFormElements[1].getFields();
 		assert.equal(aFields.length, 0, "2. FormElement has no Field");
 	});
@@ -1044,7 +1051,7 @@ sap.ui.define([
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 1, "FormContainer has 1 FormElements");
 		assert.equal(aFormElements[0].getLabel().getId(), "L1", "1. FormElement has Label set");
-		assert.equal(aFormElements[0].getId(), "L1--FE", "1. FormElement has stable ID based on Label");
+		assert.equal(aFormElements[0].getId(), "SF1--L1--FE", "1. FormElement has stable ID based on Label");
 		var aFields = aFormElements[0].getFields();
 		assert.equal(aFields.length, 3, "FormElement has 3 Fields");
 		assert.equal(aFields[1].getId(), "I3", "FormElement has new second field");
@@ -1064,7 +1071,7 @@ sap.ui.define([
 		var aFormContainers = oForm.getFormContainers();
 		assert.equal(aFormContainers.length, 2, "Form has 2 FormContainer");
 		assert.equal(aFormContainers[0].getId(), "SF1--FC-NoHead", "1. FormContainer has stable ID for no Title");
-		assert.equal(aFormContainers[1].getId(), "T1--FC", "2. FormContainer has stable ID based on Title");
+		assert.equal(aFormContainers[1].getId(), "SF1--T1--FC", "2. FormContainer has stable ID based on Title");
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 1, "FormContainer has 1 FormElements");
 		assert.notOk(aFormElements[0].getLabel(), "1. FormElement has no Label set");
@@ -1110,7 +1117,7 @@ sap.ui.define([
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 1, "FormContainer has 1 FormElement");
 		assert.equal(aFormElements[0].getLabel().getId(), "L1", "FormElement has Label set");
-		assert.equal(aFormElements[0].getId(), "L1--FE", "FormElement has stable ID based on Label");
+		assert.equal(aFormElements[0].getId(), "SF1--L1--FE", "FormElement has stable ID based on Label");
 		var aFields = aFormElements[0].getFields();
 		assert.equal(aFields.length, 1, "FormElement has 1 Field");
 		assert.equal(aFields[0].getId(), "I1", "1. FormElement has field");
@@ -1152,16 +1159,16 @@ sap.ui.define([
 		assert.equal(aContent.length, 5, "SimpleForm has 5 content elements");
 		var aFormContainers = oForm.getFormContainers();
 		assert.equal(aFormContainers.length, 1, "Form has 1 FormContainer");
-		assert.equal(aFormContainers[0].getId(), "T1--FC", "FormContainer has stable ID based on Title");
+		assert.equal(aFormContainers[0].getId(), "SF1--T1--FC", "FormContainer has stable ID based on Title");
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 2, "FormContainer has 2 FormElement");
 		assert.equal(aFormElements[0].getLabel().getId(), "L1", "1. FormElement has 1. Label set");
-		assert.equal(aFormElements[0].getId(), "L1--FE", "1. FormElement has stable ID based on Label");
+		assert.equal(aFormElements[0].getId(), "SF1--L1--FE", "1. FormElement has stable ID based on Label");
 		var aFields = aFormElements[0].getFields();
 		assert.equal(aFields.length, 1, "1. FormElement has 1 Field");
 		assert.equal(aFields[0].getId(), "I1", "1. FormElement has 1. field");
 		assert.equal(aFormElements[1].getLabel().getId(), "L2", "2. FormElement has 2. Label set");
-		assert.equal(aFormElements[1].getId(), "L2--FE", "2. FormElement has stable ID based on Label");
+		assert.equal(aFormElements[1].getId(), "SF1--L2--FE", "2. FormElement has stable ID based on Label");
 		aFields = aFormElements[1].getFields();
 		assert.equal(aFields.length, 1, "1. FormElement has 1 Field");
 		assert.equal(aFields[0].getId(), "I2", "1. FormElement has 2. field");
@@ -1189,11 +1196,11 @@ sap.ui.define([
 		assert.equal(aContent.length, 4, "SimpleForm has 4 content elements");
 		aFormContainers = oForm.getFormContainers();
 		assert.equal(aFormContainers.length, 1, "Form has 1 FormContainer");
-		assert.equal(aFormContainers[0].getId(), "T1--FC", "FormContainer has stable ID based on Title");
+		assert.equal(aFormContainers[0].getId(), "SF1--T1--FC", "FormContainer has stable ID based on Title");
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 1, "FormContainer has 1 FormElement");
 		assert.equal(aFormElements[0].getLabel().getId(), "L1", "FormElement has Label set");
-		assert.equal(aFormElements[0].getId(), "L1--FE", "FormElement has stable ID based on Label");
+		assert.equal(aFormElements[0].getId(), "SF1--L1--FE", "FormElement has stable ID based on Label");
 		var aFields = aFormElements[0].getFields();
 		assert.equal(aFields.length, 2, "FormElement has 2 Fields");
 		assert.equal(aFields[0].getId(), "I1", "FormElement has 1. field");
@@ -1256,8 +1263,8 @@ sap.ui.define([
 		assert.equal(oRemoved.getId(), "L1", "Label removed");
 		var aContent = oSimpleForm.getContent();
 		assert.equal(aContent.length, 2, "SimpleForm has 2 content elements");
-		assert.equal(aFormContainers[0].getId(), "T1--FC", "1. FormContainer has stable ID based on Title");
-		assert.equal(aFormContainers[1].getId(), "T2--FC", "2. FormContainer has stable ID based on Title");
+		assert.equal(aFormContainers[0].getId(), "SF1--T1--FC", "1. FormContainer has stable ID based on Title");
+		assert.equal(aFormContainers[1].getId(), "SF1--T2--FC", "2. FormContainer has stable ID based on Title");
 		aFormContainers = oForm.getFormContainers();
 		assert.equal(aFormContainers.length, 2, "Form has 2 FormContainers");
 		aFormElements = aFormContainers[0].getFormElements();
@@ -1293,7 +1300,7 @@ sap.ui.define([
 		aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 1, "FormContainer has 1 FormElement");
 		assert.equal(aFormElements[0].getLabel().getId(), "L1", "FormElement has 1. Label set");
-		assert.equal(aFormElements[0].getId(), "L1--FE", "FormElement has stable ID based on Label");
+		assert.equal(aFormElements[0].getId(), "SF1--L1--FE", "FormElement has stable ID based on Label");
 		var aFields = aFormElements[0].getFields();
 		assert.equal(aFields.length, 3, "FormElement has 3 Fields");
 		assert.equal(aFields[0].getId(), "I1", "FormElement has 1. field");
@@ -1318,7 +1325,7 @@ sap.ui.define([
 		assert.equal(aContent.length, 1, "SimpleForm has 1 content elements");
 		aFormContainers = oForm.getFormContainers();
 		assert.equal(aFormContainers.length, 1, "Form has 1 FormContainer");
-		assert.equal(aFormContainers[0].getId(), "T1--FC", "FormContainer has stable ID based on Title");
+		assert.equal(aFormContainers[0].getId(), "SF1--T1--FC", "FormContainer has stable ID based on Title");
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 0, "FormContainer has no FormElement");
 		assert.notOk(oCore.byId(sContainerId), "old FormContainer destroyed");
@@ -1364,8 +1371,8 @@ sap.ui.define([
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 2, "FormContainer has 2 FormElement");
 		assert.equal(aFormElements[0].getLabel().getId(), "L1", "1. FormElement has 1. Label set");
-		assert.equal(aFormElements[0].getId(), "L1--FE", "1. FormElement has stable ID based on Label");
-		assert.equal(aFormElements[1].getId(), "L2--FE", "2. FormElement has stable ID based on Label");
+		assert.equal(aFormElements[0].getId(), "SF1--L1--FE", "1. FormElement has stable ID based on Label");
+		assert.equal(aFormElements[1].getId(), "SF1--L2--FE", "2. FormElement has stable ID based on Label");
 		var aFields = aFormElements[0].getFields();
 		assert.equal(aFields.length, 0, "1. FormElement has no Field");
 
@@ -1395,8 +1402,8 @@ sap.ui.define([
 		var aFormElements = aFormContainers[0].getFormElements();
 		assert.equal(aFormElements.length, 2, "FormContainer has 2 FormElement");
 		assert.equal(aFormElements[0].getLabel().getId(), "L1", "1. FormElement has 1. Label set");
-		assert.equal(aFormElements[0].getId(), "L1--FE", "1. FormElement has stable ID based on Label");
-		assert.equal(aFormElements[1].getId(), "L2--FE", "2. FormElement has stable ID based on Label");
+		assert.equal(aFormElements[0].getId(), "SF1--L1--FE", "1. FormElement has stable ID based on Label");
+		assert.equal(aFormElements[1].getId(), "SF1--L2--FE", "2. FormElement has stable ID based on Label");
 		var aFields = aFormElements[0].getFields();
 		assert.equal(aFields.length, 1, "1. FormElement has 1 Field");
 		assert.equal(aFields[0].getId(), "I2", "1. FormElement has 2. field");
@@ -1550,17 +1557,16 @@ sap.ui.define([
 		assert.equal(oSimpleForm.indexOfContent(oField3), 6, "Index of Field3");
 	});
 
+	/**
+	 * @deprecated as of version 1.93 ResponsiveLayout is deprecated, so test should only be executed if still available
+	 */
 	QUnit.module("ResponsiveLayout", {
 		beforeEach: initTestWithContentRL,
 		afterEach: afterTest
 	});
 
-	function RlUsedLayout(assert) {
-		assert.ok(oFormLayout.isA("sap.ui.layout.form.ResponsiveLayout"), "ResponsiveLayout used");
-	}
-
 	QUnit.test("used Layout", function(assert) {
-		asyncLayoutTest(assert, "sap/ui/layout/form/ResponsiveLayout", RlUsedLayout);
+		asyncLayoutTest(assert, "sap/ui/layout/form/ResponsiveLayout", usedLayout);
 	});
 
 	function defaultLayoutDataOnContent(assert) {
@@ -1853,6 +1859,9 @@ sap.ui.define([
 		asyncLayoutTest(assert, "sap/ui/layout/form/ResponsiveLayout", RlBackgroundDesign);
 	});
 
+	/**
+	 * @deprecated as of version 1.67 GridLayout is deprecated, so test should only be executed if still available
+	 */
 	QUnit.module("GridLayout", {
 		beforeEach: initTestWithContentGL,
 		afterEach: afterTest
@@ -1950,12 +1959,8 @@ sap.ui.define([
 		afterEach: afterTest
 	});
 
-	function RGlUsedLayout(assert) {
-		assert.ok(oFormLayout.isA("sap.ui.layout.form.ResponsiveGridLayout"), "ResponsiveGridLayout used");
-	}
-
 	QUnit.test("used Layout", function(assert) {
-		asyncLayoutTest(assert, "sap/ui/layout/form/ResponsiveGridLayout", RGlUsedLayout);
+		asyncLayoutTest(assert, "sap/ui/layout/form/ResponsiveGridLayout", usedLayout);
 	});
 
 	function RGlNoDefaultLayoutData(assert) {
@@ -2095,12 +2100,8 @@ sap.ui.define([
 		afterEach: afterTest
 	});
 
-	function ClUsedLayout(assert) {
-		assert.ok(oFormLayout.isA("sap.ui.layout.form.ColumnLayout"), "ColumnLayout used");
-	}
-
 	QUnit.test("used Layout", function(assert) {
-		asyncLayoutTest(assert, "sap/ui/layout/form/ColumnLayout", ClUsedLayout);
+		asyncLayoutTest(assert, "sap/ui/layout/form/ColumnLayout", usedLayout);
 	});
 
 	function ClNoDefaultLayoutData(assert) {
@@ -2186,19 +2187,16 @@ sap.ui.define([
 	});
 
 	function changeLayout(assert, oOldLayout) {
-		assert.ok(oFormLayout.isA("sap.ui.layout.form.ResponsiveLayout"), "ResponsiveLayout used");
+		assert.ok(oFormLayout.isA("sap.ui.layout.form.ColumnLayout"), "ColumnLayout used");
 		assert.ok(oOldLayout._bIsBeingDestroyed, "old layout destroyed");
 
 		var oLabel = oCore.byId("L1");
 		var oLayoutData = oLabel.getLayoutData();
-		assert.ok(oLayoutData, "Label has LayoutData");
-		assert.ok(oLayoutData.isA("sap.ui.layout.ResponsiveFlowLayoutData"), "sap.ui.layout.ResponsiveFlowLayoutData used");
-		assert.equal(oLayoutData.getWeight(), 3, "Label LayoutData weight");
+		assert.notOk(!!oLayoutData, "Label has no LayoutData");
 
 		var aFormContainers = oForm.getFormContainers();
 		oLayoutData = aFormContainers[0].getLayoutData();
-		assert.ok(oLayoutData, "FormContainer has LayoutData");
-		assert.ok(oLayoutData.isA("sap.ui.layout.ResponsiveFlowLayoutData"), "sap.ui.layout.ResponsiveFlowLayoutData used");
+		assert.notOk(!!oLayoutData, "FormContainer has no LayoutData");
 
 		oOldLayout = oFormLayout;
 		oSimpleForm.setLayout("ResponsiveGridLayout");
@@ -2218,14 +2216,14 @@ sap.ui.define([
 		var fnDone;
 		if (oFormLayout) {
 			oOldLayout = oFormLayout;
-			oSimpleForm.setLayout("ResponsiveLayout");
+			oSimpleForm.setLayout(library.form.SimpleFormLayout.ColumnLayout);
 			oCore.applyChanges();
 			oFormLayout = oForm.getLayout();
 			if (oFormLayout) {
 				changeLayout(assert, oOldLayout);
 			} else {
 				fnDone = assert.async();
-				sap.ui.require(["sap/ui/layout/form/ResponsiveLayout"], function() {
+				sap.ui.require(["sap/ui/layout/form/ColumnLayout"], function() {
 					oFormLayout = oForm.getLayout();
 					changeLayout(assert, oOldLayout);
 					fnDone();
@@ -2237,7 +2235,7 @@ sap.ui.define([
 			sap.ui.require(["sap/ui/layout/form/ResponsiveGridLayout"], function() {
 				oFormLayout = oForm.getLayout();
 				oOldLayout = oFormLayout;
-				oSimpleForm.setLayout("ResponsiveLayout");
+				oSimpleForm.setLayout(library.form.SimpleFormLayout.ColumnLayout);
 				oCore.applyChanges();
 				oFormLayout = oForm.getLayout();
 
@@ -2245,7 +2243,7 @@ sap.ui.define([
 					changeLayout(assert, oOldLayout);
 					fnDone();
 				} else {
-					sap.ui.require(["sap/ui/layout/form/ResponsiveLayout"], function() {
+					sap.ui.require(["sap/ui/layout/form/ColumnLayout"], function() {
 						oFormLayout = oForm.getLayout();
 						changeLayout(assert, oOldLayout);
 						fnDone();
@@ -2308,27 +2306,20 @@ sap.ui.define([
 
 		var oLabel = aContent[1];
 		var oLayoutData = oLabel.getLayoutData();
-		assert.ok(oLayoutData, "Clone-Label has LayoutData");
-		assert.ok(oLayoutData.isA("sap.ui.layout.ResponsiveFlowLayoutData"), "sap.ui.layout.ResponsiveFlowLayoutData used");
-		assert.equal(oLayoutData.getWeight(), 3, "Clone-Label LayoutData weight");
+		assert.notOk(!!oLayoutData, "Clone-Label has no LayoutData");
 		var oField = aContent[12];
 		oLayoutData = oField.getLayoutData();
 		assert.ok(oLayoutData.isA("sap.ui.core.VariantLayoutData"), "sap.ui.core.VariantLayoutData used");
 		var aLayoutData = oLayoutData.getMultipleLayoutData();
-		assert.equal(aLayoutData.length, 2, "2 layoutData used");
+		assert.equal(aLayoutData.length, 1, "1 layoutData used");
 		var oGD;
-		var oRD;
 		for (var i = 0; i < aLayoutData.length; i++) {
-			if (aLayoutData[i].isA("sap.ui.layout.ResponsiveFlowLayoutData")) {
-				oRD = aLayoutData[i];
-			} else if (aLayoutData[i].isA("sap.ui.layout.GridData")) {
+			if (aLayoutData[i].isA("sap.ui.layout.GridData")) {
 				oGD = aLayoutData[i];
 			}
 		}
-		assert.ok(oRD, "sap.ui.layout.ResponsiveFlowLayoutData used");
 		assert.ok(oGD, "sap.ui.layout.GridData used");
-		assert.equal(oRD.getWeight(), 8, "Clone-Field LayoutData weight");
-		assert.equal(oClone._aLayouts.length, 10, "Clone has own LayoutData");
+		assert.equal(oClone._aLayouts.length, 0, "Clone has no own LayoutData");
 
 		//visibility change
 		oField = oCore.byId("I3");
@@ -2348,7 +2339,7 @@ sap.ui.define([
 	}
 
 	QUnit.test("clone", function(assert) {
-		oSimpleForm.setLayout("ResponsiveLayout");
+		oSimpleForm.setLayout("ColumnLayout");
 		var oToolbar = new Toolbar("TB1");
 		oSimpleForm.addContent(oToolbar);
 
@@ -2358,9 +2349,12 @@ sap.ui.define([
 		oSimpleForm.addContent(oField);
 		oCore.applyChanges();
 
-		asyncLayoutTest(assert, "sap/ui/layout/form/ResponsiveLayout", clone);
+		asyncLayoutTest(assert, "sap/ui/layout/form/ColumnLayout", clone);
 	});
 
+	/**
+	 * @deprecated as of version 1.93 ResponsiveLayout is deprecated, so test should only be executed if still available
+	 */
 	QUnit.test("resize", function(assert) {
 		oSimpleForm.setLayout("ResponsiveLayout");
 		oCore.applyChanges();

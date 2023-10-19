@@ -4,7 +4,7 @@
 
 // Provides control sap.ui.webc.fiori.SideNavigationSubItem.
 sap.ui.define([
-	"sap/ui/webc/common/WebComponent",
+	"sap/ui/core/webc/WebComponent",
 	"./library",
 	"./thirdparty/SideNavigationSubItem"
 ], function(WebComponent, library) {
@@ -16,7 +16,7 @@ sap.ui.define([
 	 * @param {string} [sId] ID for the new control, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new control
 	 *
-	 * @extends sap.ui.webc.common.WebComponent
+	 * @extends sap.ui.core.webc.WebComponent
 	 * @class
 	 *
 	 * <h3>Overview</h3>
@@ -69,6 +69,15 @@ sap.ui.define([
 				text: {
 					type: "string",
 					defaultValue: ""
+				}
+			},
+			events: {
+
+				/**
+				 * Fired when the component is activated either with a click/tap or by using the Enter or Space key.
+				 */
+				click: {
+					parameters: {}
 				}
 			},
 			designtime: "sap/ui/webc/fiori/designtime/SideNavigationSubItem.designtime"

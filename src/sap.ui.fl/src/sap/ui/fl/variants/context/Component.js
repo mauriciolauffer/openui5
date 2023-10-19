@@ -4,7 +4,7 @@
 
 sap.ui.define([
 	"sap/ui/core/UIComponent"
-], function (UIComponent) {
+], function(UIComponent) {
 	"use strict";
 
 	/**
@@ -17,12 +17,10 @@ sap.ui.define([
 	 * @ui5-restricted sap.ui.comp, sap.ui.fl
 	 */
 
-
 	/**
 	 * Provides a UI component for context sharing.
 	 *
 	 * @namespace sap.ui.fl.variants.context.Component
-	 * @experimental
 	 * @since 1.88.0
 	 * @private
 	 * @ui5-restricted sap.ui.comp, sap.ui.fl
@@ -32,7 +30,7 @@ sap.ui.define([
 		metadata: {
 			manifest: "json"
 		},
-		onInit: function() {
+		onInit() {
 			var oSelectedContextsModel = this.getModel("selectedContexts");
 			oSelectedContextsModel.setProperty("/selected", []);
 		},
@@ -42,7 +40,7 @@ sap.ui.define([
 		 *
 		 * @returns {sap.ui.fl.variants.context.Component.SelectedContexts} Object containing selected contexts
 		 */
-		getSelectedContexts: function() {
+		getSelectedContexts() {
 			var oSelectedRoles = this.getModel("selectedContexts").getProperty("/selected");
 			var aSelectedRoleIds = oSelectedRoles.map(function(oRole) {
 				return oRole.id;
@@ -51,19 +49,30 @@ sap.ui.define([
 		},
 
 		/**
+		 * Sets the text for an empty list with the advice to select at least one role
+		 */
+		setEmptyListTextWithAdvice() {
+			var oRoleSelectionModel = this.getModel("selectedContexts");
+			oRoleSelectionModel.setProperty("/noDataText",
+				this.getRootControl().getController().oI18n.getText("NO_SELECTED_ROLES_WITH_ADVICE"));
+			oRoleSelectionModel.refresh(true);
+		},
+
+		/**
 		 * Returns context sharing data binding model
 		 *
 		 * @returns {sap.ui.model.Model} Model containing selected contexts
 		 */
-		getSelectedContextsModel: function() {
+		getSelectedContextsModel() {
 			return this.getModel("selectedContexts");
 		},
+
 		/**
 		 * Sets selected contexts.
 		 *
 		 * @param {sap.ui.fl.variants.context.Component.SelectedContexts} oSelectedContexts - Selected contexts
 		 */
-		setSelectedContexts: function(oSelectedContexts) {
+		setSelectedContexts(oSelectedContexts) {
 			var aSelectedRoles = oSelectedContexts.role.map(function(oRole) {
 				return {id: oRole, description: ""};
 			});
@@ -71,7 +80,7 @@ sap.ui.define([
 			oSelectedContextsModel.setProperty("/selected", aSelectedRoles);
 			oSelectedContextsModel.refresh(true);
 		},
-		resetSelectedContexts: function() {
+		resetSelectedContexts() {
 			var oSelectedContextsModel = this.getModel("selectedContexts");
 			oSelectedContextsModel.setProperty("/selected", []);
 			oSelectedContextsModel.refresh(true);
@@ -84,7 +93,7 @@ sap.ui.define([
 		 * @deprecated As of version 1.100
 		 * @returns {boolean} <code>true</code> if the component has errors, <code>false</code> if there are no errors
 		 */
-		hasErrorsAndShowErrorMessage: function() {
+		hasErrorsAndShowErrorMessage() {
 			return false;
 		},
 
@@ -92,7 +101,7 @@ sap.ui.define([
 		 * Sets if message strip is shown
 		 * @param {boolean} bShowMessageStrip - Visibility of the message strip
 		 */
-		showMessageStrip: function(bShowMessageStrip) {
+		showMessageStrip(bShowMessageStrip) {
 			var oRoleSelectionModel = this.getModel("selectedContexts");
 			oRoleSelectionModel.setProperty("/showMessageStrip", bShowMessageStrip);
 			oRoleSelectionModel.refresh(true);

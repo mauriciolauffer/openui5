@@ -14,12 +14,10 @@ sap.ui.define(['sap/ui/layout/VerticalLayout', 'sap/ui/layout/VerticalLayoutRend
 	 * @class Represents a filter item on the UI.
 	 * @extends sap.ui.layout.VerticalLayout
 	 * @constructor
-	 * @private
-	 * @ui5-restricted sap.ui.mdc, sap.fe
 	 * @since 1.61.0
 	 * @alias sap.ui.mdc.filterbar.aligned.FilterItemLayout
 	 */
-	var FilterItemLayout = VerticalLayout.extend("sap.ui.mdc.filterbar.aligned.FilterItemLayout", /** @lends sap.ui.mdc.filterbar.aligned.FilterItemLayout.prototype */ {
+	const FilterItemLayout = VerticalLayout.extend("sap.ui.mdc.filterbar.aligned.FilterItemLayout", /** @lends sap.ui.mdc.filterbar.aligned.FilterItemLayout.prototype */ {
 		metadata: {
 			library: "sap.ui.mdc"
 		},
@@ -35,7 +33,7 @@ sap.ui.define(['sap/ui/layout/VerticalLayout', 'sap/ui/layout/VerticalLayoutRend
 
 		oFilterField.connectLabel(this._oLabel);
 
-		if (oFilterField.getFieldPath() === "$search") {
+		if (this._getFieldPath() === "$search") {
 			this._oLabel.setText("\u2008");
 		} else {
 			this._oLabel.addStyleClass("sapUiMdcFilterBarBaseLabel");
@@ -47,17 +45,16 @@ sap.ui.define(['sap/ui/layout/VerticalLayout', 'sap/ui/layout/VerticalLayoutRend
 	};
 
 	FilterItemLayout.prototype._getFieldPath = function () {
-		return this._sFieldPath;
+		return this._oFilterField ? this._oFilterField.getPropertyKey() : null;
 	};
 
 	FilterItemLayout.prototype.setFilterField = function (oFilterField) {
-		this._setLabel(oFilterField);
 		this._oFilterField = oFilterField;
-		this._sFieldPath = oFilterField.getFieldPath();
+		this._setLabel(oFilterField);
 	};
 
 	FilterItemLayout.prototype.getContent = function () {
-		var aContent = [];
+		const aContent = [];
 		aContent.push(this._oLabel);
 		aContent.push(this._oFilterField);
 
@@ -66,7 +63,6 @@ sap.ui.define(['sap/ui/layout/VerticalLayout', 'sap/ui/layout/VerticalLayoutRend
 
 	FilterItemLayout.prototype.exit = function () {
 		this._oFilterField = null;
-		this._sFieldPath = null;
 
 		if (this._oLabel && !this._oLabel.bIsDestroyed) {
 			this._oLabel.destroy();

@@ -2,17 +2,17 @@
  * ${copyright}
  */
 
-sap.ui.define([], function () {
+sap.ui.define([], function() {
 	"use strict";
 
 	return {
 		doSomething: {
 			changeHandler: {
-				applyChange: function () {
+				applyChange() {
 				},
-				completeChangeContent: function () {
+				completeChangeContent() {
 				},
-				revertChange: function() {
+				revertChange() {
 				},
 				dummyId: "testChangeHandler-doSomething"
 			},
@@ -23,11 +23,11 @@ sap.ui.define([], function () {
 		},
 		doSomethingElse: {
 			changeHandler: {
-				applyChange: function () {
+				applyChange() {
 				},
-				completeChangeContent: function () {
+				completeChangeContent() {
 				},
-				revertChange: function() {
+				revertChange() {
 				}
 			},
 			layers: {

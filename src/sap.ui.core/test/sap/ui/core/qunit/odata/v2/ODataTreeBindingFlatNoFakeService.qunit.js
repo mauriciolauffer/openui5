@@ -7,9 +7,8 @@ sap.ui.define([
 	"sap/ui/model/ChangeReason",
 	"sap/ui/model/Filter",
 	"sap/ui/model/TreeBinding",
-	"sap/ui/model/odata/ODataTreeBindingFlat",
-	"sap/ui/test/TestUtils"
-], function (Log, _Helper, ChangeReason, Filter, TreeBinding, ODataTreeBindingFlat, TestUtils) {
+	"sap/ui/model/odata/ODataTreeBindingFlat"
+], function (Log, _Helper, ChangeReason, Filter, TreeBinding, ODataTreeBindingFlat) {
 	/*global QUnit,sinon*/
 	"use strict";
 
@@ -21,10 +20,6 @@ sap.ui.define([
 			this.oLogMock = this.mock(Log);
 			this.oLogMock.expects("error").never();
 			this.oLogMock.expects("warning").never();
-		},
-
-		afterEach : function (assert) {
-			return TestUtils.awaitRendering();
 		}
 	});
 
@@ -74,6 +69,7 @@ sap.ui.define([
 				var oRecursionBreaker = {broken : false};
 
 				fnMap({key : "notMatched"}, oRecursionBreaker);
+				fnMap(/*server index node not yet read*/undefined, oRecursionBreaker);
 				assert.strictEqual(oRecursionBreaker.broken, false);
 			});
 
@@ -166,8 +162,8 @@ sap.ui.define([
 }, {
 	inputParameters : {bar : "~baz", groupId : "~value0", refreshAfterChange : "~value1"},
 	expectedParameters : {bar : "~baz", groupId : "~groupId", refreshAfterChange : false}
-}].forEach(function (oFixture) {
-	QUnit.test("createEntry: resolved binding", function (assert) {
+}].forEach(function (oFixture, i) {
+	QUnit.test("createEntry: resolved binding, #" + i, function (assert) {
 		var oBinding = {
 				oModel : {
 					_resolveGroup : function () {},
@@ -214,6 +210,28 @@ sap.ui.define([
 	});
 
 	//*********************************************************************************************
+[{
+	parameters: {expand : "~expand"},
+	error: new Error("Parameter 'expand' is not supported")
+ }, {
+	parameters: {inactive : "~inactive"},
+	error: new Error("Parameter 'inactive' is not supported")
+}].forEach((oFixture) => {
+	QUnit.test("createEntry: unsupported parameter", function (assert) {
+		const oBinding = {
+				getResolvedPath() {}
+			};
+		this.mock(oBinding).expects("getResolvedPath").withExactArgs().returns("~sPath");
+
+		assert.throws(() => {
+			// code under test
+			ODataTreeBindingFlat.prototype.createEntry.call(oBinding, oFixture.parameters);
+		}, oFixture.error );
+	});
+});
+	/**
+	 * @deprecated As of version 1.104.0
+	 */
 	QUnit.test("submitChanges: unresolved binding", function (assert) {
 		var oBinding = {
 				getPath : function () {},
@@ -228,8 +246,9 @@ sap.ui.define([
 		// code under test
 		ODataTreeBindingFlat.prototype.submitChanges.call(oBinding);
 	});
-
-	//*********************************************************************************************
+	/**
+	 * @deprecated As of version 1.104.0
+	 */
 	QUnit.test("submitChanges: call ODataModel#submitChanges", function (assert) {
 		var oBinding = {
 				_bSubmitChangesCalled : false,
@@ -251,8 +270,9 @@ sap.ui.define([
 
 		assert.strictEqual(oBinding._bSubmitChangesCalled, true);
 	});
-
-	//*********************************************************************************************
+	/**
+	 * @deprecated As of version 1.104.0
+	 */
 	QUnit.test("submitChanges: call ODataModel#submitChanges (w/ mParameters)", function (assert) {
 		var oBinding = {
 				_bSubmitChangesCalled : false,
@@ -276,7 +296,6 @@ sap.ui.define([
 
 		assert.strictEqual(oBinding._bSubmitChangesCalled, true);
 	});
-
 
 	//*********************************************************************************************
 	QUnit.test("_submitChanges: binding is unresolved", function (assert) {
@@ -743,14 +762,15 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("_generateDeleteRequest: for added node", function (assert) {
 		var oBinding = {
-				oModel : {deleteCreatedEntry : function () {}}
+				oModel : {_discardEntityChanges : function () {}}
 			},
 			oNode = {
-				context : "~oContext",
+				context : {getPath : function () {}},
 				nodeState : {added : true}
 			};
 
-		this.mock(oBinding.oModel).expects("deleteCreatedEntry").withExactArgs("~oContext");
+		this.mock(oNode.context).expects("getPath").withExactArgs().returns("/~key");
+		this.mock(oBinding.oModel).expects("_discardEntityChanges").withExactArgs("~key", /*bDeleteEntity*/true);
 
 		// code under test
 		assert.strictEqual(
@@ -1611,6 +1631,7 @@ sap.ui.define([
 					"hierarchy-node-for" : "~nodeKey",
 					"hierarchy-preorder-rank-for" : "~preorderRank"
 				},
+				_getHeaders() {},
 				_updateNodeInfoAfterSave : function () {},
 				getNumberOfExpandedLevels : function () {},
 				getResolvedPath : function () {}
@@ -1644,6 +1665,7 @@ sap.ui.define([
 				.and(sinon.match.has("select",
 					"~key0,~key1,~nodeKey,~descendantCount,~drillState,~preorderRank")))
 			.returns("~URLParameters");
+		this.mock(oBinding).expects("_getHeaders").withExactArgs().returns("~headers");
 		this.mock(oModel).expects("read")
 			.withExactArgs("~resolvedPath", {
 				error : "~fnError",
@@ -1658,6 +1680,7 @@ sap.ui.define([
 						and : true})
 				],
 				groupId : "~groupID",
+				headers : "~headers",
 				sorters : "~aSorters",
 				success : sinon.match.func,
 				urlParameters : "~URLParameters"
@@ -1701,6 +1724,7 @@ sap.ui.define([
 					"hierarchy-node-for" : "~nodeKey",
 					"hierarchy-preorder-rank-for" : "~preorderRank"
 				},
+				_getHeaders() {},
 				_updateNodeInfoAfterSave : function () {},
 				getNumberOfExpandedLevels : function () {},
 				getResolvedPath : function () {}
@@ -1727,6 +1751,7 @@ sap.ui.define([
 				.and(sinon.match.has("select",
 					"~key0,~key1,~nodeKey,~descendantCount,~drillState,~preorderRank")))
 			.returns("~URLParameters");
+		this.mock(oBinding).expects("_getHeaders").withExactArgs().returns("~headers");
 		this.mock(oModel).expects("read")
 			.withExactArgs("~resolvedPath", {
 				error : undefined,
@@ -1740,6 +1765,7 @@ sap.ui.define([
 						and : true})
 				],
 				groupId : "~groupID",
+				headers : "~headers",
 				sorters : [],
 				success : sinon.match.func,
 				urlParameters : "~URLParameters"
@@ -1805,5 +1831,213 @@ sap.ui.define([
 
 		// code under test
 		assert.strictEqual(ODataTreeBindingFlat.prototype._calcIndexDelta.call(oBinding, 5), 1);
+	});
+
+	//*********************************************************************************************
+	QUnit.test("_requestServerIndexNodes: calls _getHeaders", function (assert) {
+		const oBinding = {
+			_aPendingRequests: [],
+			oModel: {
+				read() {}
+			},
+			oTreeProperties: {
+				"hierarchy-level-for": "~hierarchy-level-for"
+			},
+			_getHeaders() {},
+			getNumberOfExpandedLevels() {},
+			getResolvedPath() {}
+		};
+		const oBindingMock = this.mock(oBinding);
+		oBindingMock.expects("getNumberOfExpandedLevels").withExactArgs().returns(13);
+		oBindingMock.expects("getResolvedPath").withExactArgs().returns("~sAbsolutePath");
+		oBindingMock.expects("_getHeaders").withExactArgs().returns("~headers");
+		const oReadExpectation = this.mock(oBinding.oModel).expects("read")
+			.withExactArgs("~sAbsolutePath", {
+				error: sinon.match.func,
+				filters: [new Filter({filters: [new Filter("~hierarchy-level-for", "LE", 13)], and: true})],
+				groupId: undefined, // not relevant for this test
+				headers: "~headers",
+				sorters: [],
+				success: sinon.match.func,
+				urlParameters: ["$skip=3", "$top=142", "$inlinecount=allpages"]
+			})
+			.returns("~oReadHandle");
+
+		// code under test
+		const oResultPromise = ODataTreeBindingFlat.prototype._requestServerIndexNodes.call(oBinding, 3, 42, 100);
+
+		assert.deepEqual(oBinding._aPendingRequests,
+			[{oRequestHandle: "~oReadHandle", iSkip: 3, iTop: 142, iThreshold: 100}]);
+		assert.ok(oResultPromise instanceof Promise);
+
+		// code under test
+		oReadExpectation.args[0][1].success("~oData");
+
+		return oResultPromise.then((oResult) => {
+			assert.deepEqual(oResult, {oData: "~oData", iSkip: 3, iTop: 142});
+			assert.deepEqual(oBinding._aPendingRequests, []);
+		});
+	});
+
+	//*********************************************************************************************
+	QUnit.test("_requestChildren: calls _getHeaders", function (assert) {
+		const oBinding = {
+			_aPendingChildrenRequests: [],
+			oModel: {
+				read() {}
+			},
+			oTreeProperties: {
+				"hierarchy-node-for": "~hierarchy-node-for",
+				"hierarchy-parent-node-for": "~hierarchy-parent-node-for"
+			},
+			_getHeaders() {},
+			getResolvedPath() {}
+		};
+		const oParentNode = {
+			key: "~parentNodeKey",
+			context: {
+				getProperty() {}
+			}
+		};
+		this.mock(oParentNode.context).expects("getProperty")
+			.withExactArgs("~hierarchy-node-for")
+			.returns("~sHierarchyNodeValue");
+		this.mock(oBinding).expects("getResolvedPath").withExactArgs().returns("~sAbsolutePath");
+		this.mock(oBinding).expects("_getHeaders").withExactArgs().returns("~headers");
+		const oReadExpectation = this.mock(oBinding.oModel).expects("read")
+			.withExactArgs("~sAbsolutePath", {
+				error: sinon.match.func,
+				filters: [
+					new Filter({
+						filters: [new Filter("~hierarchy-parent-node-for", "EQ", "~sHierarchyNodeValue")],
+						and: true
+					})],
+				groupId: undefined, // not relevant for this test
+				headers: "~headers",
+				sorters: [],
+				success: sinon.match.func,
+				urlParameters: ["$skip=~skip", "$top=~top", "$inlinecount=allpages"]
+			})
+			.returns("~oReadHandle");
+
+		// code under test
+		const oResultPromise = ODataTreeBindingFlat.prototype._requestChildren.call(oBinding, oParentNode,
+			"~skip", "~top");
+
+		assert.deepEqual(oBinding._aPendingChildrenRequests,
+			[{sParent: "~parentNodeKey", oRequestHandle: "~oReadHandle", iSkip: "~skip", iTop: "~top"}]);
+		assert.ok(oResultPromise instanceof Promise);
+
+		// code under test
+		oReadExpectation.args[0][1].success("~oData");
+
+		return oResultPromise.then((oResult) => {
+			assert.deepEqual(oResult, {oData: "~oData", iSkip: "~skip", iTop: "~top"});
+			assert.deepEqual(oBinding._aPendingChildrenRequests, []);
+		});
+	});
+
+	//*********************************************************************************************
+	QUnit.test("_requestSubTree: calls _getHeaders", function (assert) {
+		const oBinding = {
+			_aPendingSubtreeRequests: [],
+			oModel: {
+				read() {}
+			},
+			oTreeProperties: {
+				"hierarchy-level-for": "~hierarchy-level-for",
+				"hierarchy-node-for": "~hierarchy-node-for"
+			},
+			_getHeaders() {},
+			getResolvedPath() {}
+		};
+		const oParentNode = {
+			key: "~parentNodeKey",
+			context: {
+				getProperty() {}
+			}
+		};
+		this.mock(oParentNode.context).expects("getProperty")
+			.withExactArgs("~hierarchy-node-for")
+			.returns("~sHierarchyNodeForProperty");
+		this.mock(oBinding).expects("getResolvedPath").withExactArgs().returns("~sAbsolutePath");
+		const oExpectedNodeFilter = new Filter("~hierarchy-node-for", "EQ", "~sHierarchyNodeForProperty");
+		const oExpectedLevelFilter = new Filter("~hierarchy-level-for", "LE", "~iLevel");
+		this.mock(oBinding).expects("_getHeaders").withExactArgs().returns("~headers");
+		const oReadExpectation = this.mock(oBinding.oModel).expects("read")
+			.withExactArgs("~sAbsolutePath", {
+				error: sinon.match.func,
+				filters: [new Filter({filters: [oExpectedNodeFilter, oExpectedLevelFilter], and: true})],
+				groupId: undefined, // not relevant for this test
+				headers: "~headers",
+				sorters: [],
+				success: sinon.match.func,
+				urlParameters: []
+			})
+			.returns("~oReadHandle");
+
+		// code under test
+		const oResultPromise = ODataTreeBindingFlat.prototype._requestSubTree.call(oBinding, oParentNode, "~iLevel");
+
+		assert.deepEqual(oBinding._aPendingSubtreeRequests,
+			[{sParent: "~parentNodeKey", iLevel: "~iLevel", oRequestHandle: "~oReadHandle"}]);
+		assert.ok(oResultPromise instanceof Promise);
+
+		// code under test
+		oReadExpectation.args[0][1].success("~oData");
+
+		return oResultPromise.then((oResult) => {
+			assert.deepEqual(oResult, {oData: "~oData", iLevel: "~iLevel", sParent: "~parentNodeKey"});
+			assert.deepEqual(oBinding._aPendingSubtreeRequests, []);
+		});
+	});
+
+	//*********************************************************************************************
+	QUnit.test("_generateSiblingsPositionRequest: calls _getHeaders", function (assert) {
+		const oBinding = {
+			oModel: {
+				createCustomParams() {},
+				read() {}
+			},
+			mParameters: {foo: "~bar"},
+			oTreeProperties: {
+				"hierarchy-sibling-rank-for": "~hierarchy-sibling-rank-for"
+			},
+			_getHeaders() {}
+		};
+		const oNode = {
+			context: {
+				getPath() {}
+			}
+		};
+		this.mock(oNode.context).expects("getPath").withExactArgs().returns("~sAbsolutePath");
+		this.mock(oBinding.oModel).expects("createCustomParams")
+			.withExactArgs(sinon.match((oParams) => {
+				assert.notStrictEqual(oParams, oBinding.mParameters);
+				assert.deepEqual(oParams, {
+					foo: "~bar",
+					select: "~hierarchy-sibling-rank-for"
+				});
+				return true;
+			}))
+			.returns("~mCustomParams");
+		this.mock(oBinding).expects("_getHeaders").withExactArgs().returns("~headers");
+		this.mock(oBinding.oModel).expects("read")
+			.withExactArgs("~sAbsolutePath", {
+				error: "~error",
+				groupId: "~groupId",
+				headers: "~headers",
+				success: "~success",
+				urlParameters: "~mCustomParams"
+			})
+			.returns("~oReadHandle");
+		const mParameters = {
+			error: "~error",
+			groupId: "~groupId",
+			success: "~success"
+		};
+
+		// code under test
+		ODataTreeBindingFlat.prototype._generateSiblingsPositionRequest.call(oBinding, oNode, mParameters);
 	});
 });

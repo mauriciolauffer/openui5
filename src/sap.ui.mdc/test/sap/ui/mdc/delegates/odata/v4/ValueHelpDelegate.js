@@ -4,16 +4,17 @@
 
 sap.ui.define([
 	"sap/ui/mdc/ValueHelpDelegate",
-	"delegates/odata/v4/TypeUtil",
 	'sap/base/Log',
 	'sap/ui/model/FilterType',
-	'sap/base/util/deepEqual'
+	'sap/base/util/deepEqual',
+	'sap/ui/mdc/odata/v4/TypeMap'
+
 ], function(
 	ValueHelpDelegate,
-	TypeUtil,
 	Log,
 	FilterType,
-	deepEqual
+	deepEqual,
+	ODataV4TypeMap
 ) {
 	"use strict";
 
@@ -23,21 +24,26 @@ sap.ui.define([
 	 *
 	 * @namespace
 	 * @author SAP SE
-	 * @private
-	 * @ui5-restricted sap.fe
-	 * @MDC_PUBLIC_CANDIDATE
-	 * @experimental As of version 1.95
+	 * @public
 	 * @since 1.95.0
 	 * @extends module:sap/ui/mdc/ValueHelpDelegate
 	 * @alias module:delegates/odata/v4/ValueHelpDelegate
 	 */
 	var ODataV4ValueHelpDelegate = Object.assign({}, ValueHelpDelegate);
 
-	ODataV4ValueHelpDelegate.isSearchSupported = function(oPayload, oContent, oListBinding) {
+	ODataV4ValueHelpDelegate.getTypeMap = function (oValueHelp) {
+		return ODataV4TypeMap;
+	};
+
+	ODataV4ValueHelpDelegate.isSearchSupported = function(oValueHelp, oContent, oListBinding) {
 		return !!oListBinding.changeParameters;
 	};
 
-	ODataV4ValueHelpDelegate.updateBindingInfo = function(oPayload, oContent, oBindingInfo) {
+	ODataV4ValueHelpDelegate.updateBindingInfo = function(oValueHelp, oContent, oBindingInfo) {
+		var oPayload;
+		if (oValueHelp) {
+			oPayload = oValueHelp.getPayload();
+		}
 		ValueHelpDelegate.updateBindingInfo(oPayload, oContent, oBindingInfo);
 
 		if (oContent.getFilterFields() === "$search"){
@@ -50,7 +56,7 @@ sap.ui.define([
 		}
 	};
 
-	ODataV4ValueHelpDelegate.updateBinding = function(oPayload, oListBinding, oBindingInfo) {
+	ODataV4ValueHelpDelegate.updateBinding = function(oValueHelp, oListBinding, oBindingInfo) {
 		var oRootBinding = oListBinding.getRootBinding() || oListBinding;
 		if (!oRootBinding.isSuspended()) {
 			oRootBinding.suspend();
@@ -63,24 +69,24 @@ sap.ui.define([
 		}
 	};
 
-	ODataV4ValueHelpDelegate.executeFilter = function(oPayload, oListBinding, iRequestedItems) {
+	ODataV4ValueHelpDelegate.executeFilter = function(oValueHelp, oListBinding, iRequestedItems) {
+		var oPayload;
+		if (oValueHelp) {
+			oPayload = oValueHelp.getPayload();
+		}
 		oListBinding.getContexts(0, iRequestedItems);
 		return Promise.resolve(this.checkListBindingPending(oPayload, oListBinding, iRequestedItems)).then(function () {
 			return oListBinding;
 		});
 	};
 
-	ODataV4ValueHelpDelegate.checkListBindingPending = function(oPayload, oListBinding, iRequestedItems) {
+	ODataV4ValueHelpDelegate.checkListBindingPending = function(oValueHelp, oListBinding, iRequestedItems) {
 		if (!oListBinding || oListBinding.isSuspended()) {
 			return false;
 		}
 		return oListBinding.requestContexts(0, iRequestedItems).then(function(aContexts) {
 			return aContexts.length === 0;
 		});
-	};
-
-	ODataV4ValueHelpDelegate.getTypeUtil = function (oPayload) {
-		return TypeUtil;
 	};
 
 	return ODataV4ValueHelpDelegate;

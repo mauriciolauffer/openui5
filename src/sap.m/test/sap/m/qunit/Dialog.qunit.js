@@ -768,8 +768,6 @@ sap.ui.define([
 		jQuery("html").css("overflow", ""); // restore scrollbar after test
 	});
 
-
-
 	QUnit.test("Set contentWidth to a fixed value on desktop", function (assert) {
 		var oSystem = {
 			desktop: true,
@@ -1664,6 +1662,58 @@ sap.ui.define([
 			"When there is only one interactive Control (Button), role 'toolbar' should not be set");
 
 		// cleanup
+		oDialog.destroy();
+	});
+
+	QUnit.test("Dialog header actions toolbar should have aria-labelledby set correctly", function(assert) {
+		// Arrange
+		var oDialog = new Dialog({
+			title: "Dialog Title",
+			content: [
+				new Text({
+					text: "Dialog Content",
+					textAlign: "Center"
+				})
+			]
+		});
+
+		oDialog.open();
+		this.clock.tick(500);
+
+		var oHeader = oDialog._getAnyHeader(),
+			headerInvisibleText = document.getElementById("__headerActionsToolbar-invisibleText");
+
+		// Assert
+		assert.ok(headerInvisibleText, "Invisible text of the header actions toolbar is rendered in the static area");
+		assert.strictEqual(oHeader.getAriaLabelledBy()[0], headerInvisibleText.id, "aria-labelledby is set correctly on the header actions toolbar");
+
+		// Clean up
+		oDialog.destroy();
+	});
+
+	QUnit.test("Dialog footer actions toolbar should have aria-labelledby set correctly", function(assert) {
+		// Arrange
+		var oDialog = new Dialog({
+			title: "Dialog Title",
+			content: [
+				new Text({
+					text: "Dialog Content",
+					textAlign: "Center"
+				})
+			]
+		});
+
+		oDialog.open();
+		this.clock.tick(500);
+
+		var oFooter = oDialog._oToolbar,
+			footerInvisibleText = document.getElementById("__footerActionsToolbar-invisibleText");
+
+		// Assert
+		assert.ok(footerInvisibleText, "Invisible text of the footer actions toolbar is rendered in the static area");
+		assert.strictEqual(oFooter.getAriaLabelledBy()[0], footerInvisibleText.id, "aria-labelledby is set correctly on the footer actions toolbar");
+
+		// Cleanup
 		oDialog.destroy();
 	});
 
@@ -3506,32 +3556,32 @@ sap.ui.define([
 	QUnit.module("Footer", {
 		beforeEach: function () {
 			this.oDialog = new Dialog({
-				content: new sap.ui.core.HTML({
+				content: new HTML({
 					content: '<div>Lipsum limple text</div>'
 				}),
 				buttons: [
-					new sap.m.Button({
+					new Button({
 						text: "Accept"
 					}),
-					new sap.m.Button({
+					new Button({
 						text: "Reject",
 						icon: "sap-icon://employee"
 					})
 				],
-				footer: new sap.m.Toolbar({
-					content: [new sap.m.Button({
+				footer: new Toolbar({
+					content: [new Button({
 							icon: "sap-icon://error",
 							type: "Negative",
 							text: "2"
 						}),
-						new sap.m.Button({
+						new Button({
 							type: "Emphasized",
 							text: "Accept",
 							press: function () {
 								this.getParent().getParent().close();
 							}
 						}),
-						new sap.m.Button({
+						new Button({
 							text: "Reject"
 						})
 					]

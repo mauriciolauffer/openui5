@@ -805,4 +805,68 @@ sap.ui.define([
 		// Clean up
 		oAttr.destroy();
 	});
+
+	QUnit.test("Focus is applied on the first available anchor tag", function (assert) {
+		// Arrange
+		var oAttrActive = new ObjectAttribute({
+				text: "sample text",
+				active: true
+			}),
+			oAttrCustomLink = new ObjectAttribute({
+				text: "sample text",
+				customContent: new Link({text: "sample link"})
+			});
+
+		oAttrActive.placeAt("qunit-fixture");
+		oAttrCustomLink.placeAt("qunit-fixture");
+		oCore.applyChanges();
+
+		// Act
+		oAttrActive.focus();
+
+		// Assert
+		assert.ok(document.activeElement.classList.contains("sapMObjectAttributeText"), "Focus is properly applied");
+
+		// Act
+		oAttrCustomLink.focus();
+
+		assert.ok(document.activeElement.classList.contains("sapMLnk"), "Focus is properly applied");
+
+		// Cleanup
+		oAttrActive.destroy();
+		oAttrCustomLink.destroy();
+	});
+
+	QUnit.test("getFocusDomRef returns null when the control is hidden", function (assert) {
+		// Arrange
+		var oAttrActive = new ObjectAttribute({
+				text: "sample text",
+				active: true
+			}),
+			oAttrCustomLink = new ObjectAttribute({
+				text: "sample text",
+				customContent: new Link({text: "sample link"})
+			});
+
+		oAttrActive.placeAt("qunit-fixture");
+		oAttrCustomLink.placeAt("qunit-fixture");
+		oCore.applyChanges();
+
+		// Assert
+		assert.ok(oAttrActive.getFocusDomRef(), "Active ObjectAttribute focus DOM ref is returned when the control is visible");
+		assert.ok(oAttrCustomLink.getFocusDomRef(), "Custom link ObjectAttribute focus DOM ref is returned when the control is visible");
+
+		// Act
+		oAttrActive.setVisible(false);
+		oAttrCustomLink.setVisible(false);
+		oCore.applyChanges();
+
+		// Assert
+		assert.notOk(oAttrActive.getFocusDomRef(), "Active ObjectAttribute focus DOM ref isn't returned when the control is hidden");
+		assert.notOk(oAttrCustomLink.getFocusDomRef(), "Custom link ObjectAttribute focus DOM ref isn't returned when the control is hidden");
+
+		// Cleanup
+		oAttrActive.destroy();
+		oAttrCustomLink.destroy();
+	});
 });

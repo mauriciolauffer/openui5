@@ -3,12 +3,13 @@
  */
 sap.ui.define([
 	"sap/base/util/isEmptyObject",
-	'sap/ui/core/format/DateFormat',
-	'sap/ui/model/CompositeType',
-	'sap/ui/model/FormatException',
-	'sap/ui/model/ParseException',
-	'sap/ui/model/ValidateException'
-], function (isEmptyObject, DateFormat, CompositeType, FormatException, ParseException,
+	"sap/ui/core/date/UI5Date",
+	"sap/ui/core/format/DateFormat",
+	"sap/ui/model/CompositeType",
+	"sap/ui/model/FormatException",
+	"sap/ui/model/ParseException",
+	"sap/ui/model/ValidateException"
+], function (isEmptyObject, UI5Date, DateFormat, CompositeType, FormatException, ParseException,
 		ValidateException) {
 	"use strict";
 
@@ -123,7 +124,7 @@ sap.ui.define([
 									oValue = parseInt(oValue);
 								}
 							}
-							oValue = new Date(oValue);
+							oValue = UI5Date.getInstance(oValue);
 						} else {
 							oValue = that.oInputFormat.parse(oValue);
 							if (oValue == null) {
@@ -144,7 +145,7 @@ sap.ui.define([
 	/**
 	 * Parses the given value to an array of two values representing the start date and the end date
 	 * of the interval, where the time part of the start date is 0 and the time part of end date is
-	 * the end of day (23:59:59.999). If the <code>singleIntervalValue</code> format option is used,
+	 * the end of day (23:59:59). If the <code>singleIntervalValue</code> format option is used,
 	 * the second entry is <code>null</code> if no end date is given.
 	 *
 	 * @param {string} sValue
@@ -189,10 +190,11 @@ sap.ui.define([
 				// for client side filtering, ensure to set the end of day for the second value;
 				// don't do it for subclasses like DateTimeInterval as they consider the time part
 				if (aDates[1] && this.sName === "DateInterval") {
+					// to avoid rounding issues with some back-ends keep the milliseconds empty
 					if (this.oFormatOptions.UTC) {
-						aDates[1].setUTCHours(23, 59, 59, 999);
+						aDates[1].setUTCHours(23, 59, 59, 0);
 					} else {
-						aDates[1].setHours(23, 59, 59, 999);
+						aDates[1].setHours(23, 59, 59, 0);
 					}
 				}
 
@@ -291,6 +293,19 @@ sap.ui.define([
 			}
 			this.oInputFormat = DateFormat.getDateInstance(oSourceOptions);
 		}
+	};
+
+	/**
+	 * Returns a language-dependent placeholder text such as "e.g. <sample value>" where <sample value> is formatted
+	 * using this type.
+	 *
+	 * @returns {string|undefined}
+	 *   The language-dependent placeholder text or <code>undefined</code> if the type does not offer a placeholder
+	 *
+	 * @public
+	 */
+	DateInterval.prototype.getPlaceholderText = function () {
+		return this.oOutputFormat.getPlaceholderText();
 	};
 
 	return DateInterval;

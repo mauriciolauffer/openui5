@@ -1,19 +1,27 @@
 /*global QUnit, sinon */
 sap.ui.define([
 	'sap/ui/test/RecordReplay',
+	'sap/ui/test/autowaiter/_autoWaiter',
+	'sap/ui/test/autowaiter/_autoWaiterAsync',
+	'sap/ui/core/ListItem',
+	'sap/m/Button',
+	'sap/m/Input',
+	'sap/m/MultiInput',
+	'sap/m/OverflowToolbar',
+	'sap/m/Popover',
 	'sap/m/SearchField',
 	"sap/ui/thirdparty/jquery",
 	'sap/m/App',
-	'sap/ui/core/mvc/XMLView'
-], function (RecordReplay, SearchField, $, App, XMLView) {
+	'sap/ui/core/mvc/XMLView',
+	"sap/ui/qunit/utils/nextUIUpdate"
+], function (RecordReplay, _autoWaiter, _autoWaiterAsync, ListItem, Button, Input, MultiInput, OverflowToolbar, Popover, SearchField, $, App, XMLView, nextUIUpdate) {
 	"use strict";
 
 	QUnit.module("RecordReplay - control selector", {
 		beforeEach: function (assert) {
 			// Note: This test is executed with QUnit 1 and QUnit 2.
 			//       We therefore cannot rely on the built-in promise handling of QUnit 2.
-			var done = assert.async();
-			XMLView.create({
+			return XMLView.create({
 				id: "myView",
 				definition:
 					'<mvc:View xmlns:core="sap.ui.core" xmlns:mvc="sap.ui.core.mvc" xmlns="sap.m">' +
@@ -26,8 +34,7 @@ sap.ui.define([
 					'</mvc:View>'
 			}).then(function(oView) {
 				this.oView = oView.placeAt("qunit-fixture");
-				sap.ui.getCore().applyChanges();
-				done();
+				return nextUIUpdate();
 			}.bind(this), function(oErr) {
 				assert.strictEqual(oErr, undefined, "failed to load view");
 			});
@@ -64,7 +71,7 @@ sap.ui.define([
 			this.oSearchFieldMulti = new SearchField("mySecondSearch", {placeholder: "Multi"});
 			this.oSearchField.placeAt("qunit-fixture");
 			this.oSearchFieldMulti.placeAt("qunit-fixture");
-			sap.ui.getCore().applyChanges();
+			return nextUIUpdate();
 		},
 		afterEach: function () {
 			this.oSearchField.destroy();
@@ -166,7 +173,7 @@ sap.ui.define([
 			this.oSearchField = new SearchField();
 			this.oSearchField.attachSearch(this.oActionSpy);
 			this.oSearchField.placeAt("qunit-fixture");
-			sap.ui.getCore().applyChanges();
+			return nextUIUpdate();
 		},
 		afterEach: function () {
 			this.oSearchField.destroy();
@@ -199,6 +206,125 @@ sap.ui.define([
 		}.bind(this));
 	});
 
+	QUnit.test("Should open Suggestions Popover through EnterText Action on MultiInput", async function (assert) {
+		var fnDone = assert.async(),
+			oMultiInput = new MultiInput({
+				value: "",
+				showSuggestion: true,
+				showValueHelp: false,
+				suggestionItems: [
+					new ListItem({text: "Item 1"}),
+					new ListItem({text: "Item 2"})
+				]
+			}),
+			oPopover = oMultiInput._getSuggestionsPopover().getPopover();
+
+		oPopover.attachAfterOpen(function () {
+			assert.ok(true, "Suggest list is shown");
+			assert.strictEqual(oMultiInput.getValue(), "Item", "Should enter search text");
+
+			oMultiInput.destroy();
+			fnDone();
+		});
+		oMultiInput.placeAt("qunit-fixture");
+		await nextUIUpdate();
+
+		RecordReplay.interactWithControl({
+			selector: {controlType: "sap.m.MultiInput"},
+			interactionType: RecordReplay.InteractionType.EnterText,
+			enterText: "Item",
+			keepFocus: true
+		});
+	});
+
+	QUnit.test("Should enter text in Popover - Popover should remain open", async function (assert) {
+		var fnDone = assert.async(),
+			oButton = new Button({
+				id: "open"
+			}),
+			oInput1 = new Input({
+				id: "test1"
+			}),
+			oInput2 = new Input({
+				id: "test2"
+			}),
+			oPopover = new Popover({
+				content: [
+					oInput1,
+					oInput2
+				]
+			});
+
+		oButton.placeAt("qunit-fixture");
+		await nextUIUpdate();
+
+		oPopover.openBy(oButton);
+		oPopover.$().css("display", "block");
+
+		oInput1.attachEvent("change", function () {
+			assert.strictEqual(oInput1.getValue(), "value");
+			assert.ok(oPopover.isOpen());
+
+			setTimeout(function () {
+				oInput2.attachEvent("change", function () {
+					assert.strictEqual(oInput2.getValue(), "value");
+					assert.ok(oPopover.isOpen());
+
+					setTimeout(function () {
+						oButton.destroy();
+						oPopover.destroy();
+						fnDone();
+					}, 100);
+				});
+
+				RecordReplay.interactWithControl({
+					selector: {id: "test2"},
+					interactionType: RecordReplay.InteractionType.EnterText,
+					enterText: "value",
+					pressEnterKey: true
+				});
+			}, 100);
+		});
+
+		RecordReplay.interactWithControl({
+			selector: {id: "test1"},
+			interactionType: RecordReplay.InteractionType.EnterText,
+			enterText: "value",
+			pressEnterKey: true
+		});
+	});
+
+	QUnit.test("Should interact with Control with provided idSuffix", async function (assert) {
+		var fnDone = assert.async(),
+			oOFT = new OverflowToolbar({
+				content: [
+					new Button({text: "Button 1", width: "100%"}),
+					new Button({text: "Button 2"})
+				]
+			}),
+			oPopover = oOFT._getPopover();
+
+		oOFT.placeAt("qunit-fixture");
+		await nextUIUpdate();
+
+		oPopover.attachAfterOpen(function () {
+			assert.ok(true, "Overflow button of OverflowToolbar is pressed");
+
+			oOFT.destroy();
+			fnDone();
+		});
+
+		RecordReplay.interactWithControl({
+			selector: {
+				controlType: "sap.m.OverflowToolbar",
+				interaction: {
+					idSuffix: "overflowButton"
+				}
+			},
+			interactionType: RecordReplay.InteractionType.Press
+		});
+	});
+
 	QUnit.test("Should complain when interaction is not supported", function (assert) {
 		var fnDone = assert.async();
 		RecordReplay.interactWithControl({
@@ -223,9 +349,9 @@ sap.ui.define([
 	QUnit.module("RecordReplay - AutoWait", {
 		beforeEach: function () {
 			this.clock = sinon.useFakeTimers();
-			this.fnWaitAsyncSpy = sinon.spy(sap.ui.test.autowaiter._autoWaiterAsync, "waitAsync");
-			this.fnConfigSpy = sinon.spy(sap.ui.test.autowaiter._autoWaiterAsync, "extendConfig");
-			this.fnHasToWaitStub = sinon.stub(sap.ui.test.autowaiter._autoWaiter, "hasToWait");
+			this.fnWaitAsyncSpy = sinon.spy(_autoWaiterAsync, "waitAsync");
+			this.fnConfigSpy = sinon.spy(_autoWaiterAsync, "extendConfig");
+			this.fnHasToWaitStub = sinon.stub(_autoWaiter, "hasToWait");
 		},
 		afterEach: function () {
 			this.clock.restore();
@@ -241,7 +367,7 @@ sap.ui.define([
 		this.fnHasToWaitStub.returns(false);
 		RecordReplay.waitForUI5({timeout: 10000, interval: 100}).then(function () {
 			assert.ok(this.fnHasToWaitStub.called, "Should call autoWaiter");
-			assert.ok(!sap.ui.test.autowaiter._autoWaiter.hasToWait(), "Should wait for processing to end");
+			assert.ok(!_autoWaiter.hasToWait(), "Should wait for processing to end");
 			assert.ok(this.fnConfigSpy.calledOnce, "Should configure polling parameters");
 			assert.ok(this.fnWaitAsyncSpy.calledOnce, "Should poll for autoWaiter conditions to be met");
 		}.bind(this)).catch(function (error) {
@@ -260,7 +386,7 @@ sap.ui.define([
 			assert.ok(false, "Should not reach here");
 		}).catch(function (oError) {
 			assert.ok(this.fnHasToWaitStub.called, "Should call autoWaiter");
-			assert.ok(sap.ui.test.autowaiter._autoWaiter.hasToWait(), "Should have pending processing");
+			assert.ok(_autoWaiter.hasToWait(), "Should have pending processing");
 			assert.ok(oError.toString().match(/Polling stopped.*there is still pending asynchronous work/), "Should receive polling error message");
 		}.bind(this)).finally(function () {
 			fnDone();

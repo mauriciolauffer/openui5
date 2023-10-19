@@ -2,12 +2,14 @@
  * ${copyright}
  */
 
-sap.ui.define([], function () {
+sap.ui.define([
+	"sap/f/cards/BaseHeaderRenderer",
+	"sap/ui/core/Renderer"
+], function (BaseHeaderRenderer, Renderer) {
 	"use strict";
 
-	var HeaderRenderer = {
-		apiVersion: 2
-	};
+	var HeaderRenderer = Renderer.extend(BaseHeaderRenderer);
+	HeaderRenderer.apiVersion = 2;
 
 	/**
 	 * Render a header.
@@ -22,13 +24,12 @@ sap.ui.define([], function () {
 			oTitle = oHeader.getAggregation("_title"),
 			oSubtitle = oHeader.getAggregation("_subtitle"),
 			bHasSubtitle = oHeader.getSubtitle() || oBindingInfos.subtitle,
-			oAvatar = oHeader.getAggregation("_avatar"),
 			oDataTimestamp = oHeader.getAggregation("_dataTimestamp"),
 			bHasDataTimestamp = oHeader.getDataTimestamp() || oBindingInfos.dataTimestamp,
 			bLoading = oHeader.isLoading(),
 			oError = oHeader.getAggregation("_error"),
 			oToolbar = oHeader.getToolbar(),
-			bIconVisible = oHeader.getIconVisible ? oHeader.getIconVisible() : true;
+			bUseTileLayout = oHeader.getProperty("useTileLayout");
 
 		oRm.openStart("div", oHeader)
 			.class("sapFCardHeader");
@@ -37,12 +38,12 @@ sap.ui.define([], function () {
 			oRm.class("sapFCardHeaderLoading");
 		}
 
-		if (oHeader._isInteractive()) {
-			oRm.class("sapFCardClickable");
+		if (oHeader.isInteractive()) {
+			oRm.class("sapFCardSectionClickable");
 		}
 
-		if (oError) {
-			oRm.class("sapFCardHeaderError");
+		if (oHeader.getIconSrc() && oHeader.getIconVisible()) {
+			oRm.class("sapFCardHeaderHasIcon");
 		}
 
 		oRm.openEnd();
@@ -73,17 +74,8 @@ sap.ui.define([], function () {
 			return;
 		}
 
-		if (bIconVisible && (!oHeader.isPropertyInitial("iconSrc") || !oHeader.isPropertyInitial("iconInitials"))) {
-			oRm.openStart("div")
-				.class("sapFCardHeaderImage")
-				.openEnd();
-
-			if (oBindingInfos.iconSrc && oBindingInfos.iconSrc.binding && !oBindingInfos.iconSrc.binding.getValue()) {
-				oAvatar.addStyleClass("sapFCardHeaderItemBinded");
-			}
-			oRm.renderControl(oAvatar);
-			oRm.renderControl(oHeader._oAriaAvatarText);
-			oRm.close("div");
+		if (!bUseTileLayout) {
+			BaseHeaderRenderer.renderAvatar(oRm, oHeader);
 		}
 
 		oRm.openStart("div")
@@ -101,7 +93,7 @@ sap.ui.define([], function () {
 
 			oRm.renderControl(oTitle);
 
-			if (sStatus) {
+			if (sStatus && oHeader.getStatusVisible()) {
 				oRm.openStart("span", sId + "-status")
 					.class("sapFCardStatus");
 
@@ -144,6 +136,12 @@ sap.ui.define([], function () {
 		}
 
 		oRm.close("div");
+
+		if (bUseTileLayout) {
+			BaseHeaderRenderer.renderAvatar(oRm, oHeader);
+		}
+
+		BaseHeaderRenderer.renderBanner(oRm, oHeader);
 
 		oRm.close("div");
 

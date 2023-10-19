@@ -3,11 +3,13 @@ sap.ui.define([
 	"sap/ui/base/Object",
 	"sap/ui/core/cache/CacheManager",
 	"sap/ui/core/Component",
+	"sap/ui/core/Element",
 	"sap/ui/core/mvc/Controller",
 	"sap/ui/core/mvc/View",
 	"sap/ui/core/mvc/ViewType",
 	"sap/ui/core/mvc/XMLView",
 	"sap/ui/VersionInfo",
+	"./AnyViewAsync.qunit",
 	"./testdata/TestPreprocessor",
 	"sap/base/Log",
 	"sap/base/strings/hash",
@@ -17,11 +19,13 @@ sap.ui.define([
 	BaseObject,
 	Cache,
 	Component,
+	Element,
 	Controller,
 	View,
 	ViewType,
 	XMLView,
 	VersionInfo,
+	asyncTestsuite,
 	TestPreprocessor,
 	Log,
 	hash,
@@ -29,6 +33,30 @@ sap.ui.define([
 	Configuration
 ) {
 	"use strict";
+
+	var oConfig = {
+		type : "XML",
+		receiveSource : function(source) {
+			return new XMLSerializer().serializeToString(source);
+		}
+	};
+
+	// set generic view factory
+	oConfig.factory = function() {
+		return View.create({
+			type: ViewType.XML,
+			viewName : "testdata.mvc.Async"
+		});
+	};
+	asyncTestsuite("Generic View Factory", oConfig);
+
+	// set XMLView factory
+	oConfig.factory = function() {
+		return XMLView.create({
+			viewName : "testdata.mvc.Async"
+		});
+	};
+	asyncTestsuite("XMLView Factory", oConfig);
 
 	QUnit.module("Additional tests");
 
@@ -50,7 +78,7 @@ sap.ui.define([
 			id: sId,
 			definition: sXml
 		}).catch(function(error) {
-			assert.notOk(sap.ui.getCore().byId(sId), "Must deregister an erroneous instance");
+			assert.notOk(Element.getElementById(sId), "Must deregister an erroneous instance");
 			assert.equal(error.message, sError, "Must reject with an error");
 		});
 	});
@@ -72,7 +100,7 @@ sap.ui.define([
 			id: sId,
 			definition: sXml
 		}).catch(function(error) {
-			assert.notOk(sap.ui.getCore().byId(sId), "Must deregister an erroneous instance");
+			assert.notOk(Element.getElementById(sId), "Must deregister an erroneous instance");
 			assert.equal(error.message, sError, "Must reject with an error");
 		});
 	});
@@ -92,7 +120,7 @@ sap.ui.define([
 				id: sId,
 				definition: sXml
 			}).catch(function(error) {
-				assert.notOk(sap.ui.getCore().byId(sId), "Must deregister an erroneous instance");
+				assert.notOk(Element.getElementById(sId), "Must deregister an erroneous instance");
 				assert.equal(error.message, "Controller error", "Must reject with an error");
 			});
 		});

@@ -14,7 +14,8 @@ sap.ui.define([
 	"sap/ui/core/InvisibleText",
 	"sap/m/Text",
 	"sap/m/VBox",
-	"sap/ui/Device"
+	"sap/ui/Device",
+	"sap/f/semantic/SemanticPage"
 ],
 function (
 	SemanticUtil,
@@ -31,13 +32,16 @@ function (
 	InvisibleText,
 	Text,
 	VBox,
-	Device
+	Device,
+	SemanticPage
 ) {
 	"use strict";
 
 	sinon.config.useFakeTimers = false;
 
-	// shortcut for sap.f.DynamicPageTitleArea
+	/**
+	 * @deprecated As of version 1.54
+	 */
 	var DynamicPageTitleArea = fioriLibrary.DynamicPageTitleArea;
 
 	var oFactory = SemanticUtil.oFactory,
@@ -167,6 +171,20 @@ function (
 			"SemanticPage preserveHeaderStateOnScroll set to true and retrieved successfully.");
 	});
 
+	QUnit.test("test SemanticPage clone", function(assert) {
+		//Arrange
+		var oStub = this.stub(SemanticPage.prototype, "setContent"),
+			oText = new Text({ text: "yo"});
+
+		this.oSemanticPage._getPage().setContent(oText);
+
+		//Act
+		this.oSemanticPage.clone();
+
+		//Assert
+		assert.equal(oStub.callCount, 1, "Function 'setContent' was called once");
+		assert.strictEqual(oStub.args[0][0].getText(), oText.getText(), "SemanticPage's content is properly set to the DynamicPage's content clone");
+	});
 
 	QUnit.test("test SemanticPage toggleHeaderOnTitleClick setter and getter", function (assert) {
 		// Assert default
@@ -999,8 +1017,7 @@ function (
 		var oSnappedTitle = oFactory.getTitle(),
 			oExpandedTitle = oFactory.getDynamicPageTitle(),
 			oPage = this.oSemanticPage._getPage(),
-			done = assert.async(),
-			assert = assert;
+			done = assert.async();
 
 		this.oSemanticPage.setHeaderExpanded(false);
 		this.oSemanticPage.addTitleSnappedContent(oSnappedTitle);
@@ -1369,12 +1386,14 @@ function (
 				bubbles: true, key: "S", shiftKey: true, ctrlKey: !bMacOS, metaKey: bMacOS
 			}));
 
-			// Assert
-			assert.strictEqual(oActionSheet.isOpen(), true, "Share menu is shown");
+			setTimeout(function() {
+				// Assert
+				assert.strictEqual(oActionSheet.isOpen(), true, "Share menu is shown");
 
-			// Clean up
-			this.oSemanticPage.destroy();
-			done();
+				// Clean up
+				this.oSemanticPage.destroy();
+				done();
+			}.bind(this));
 		}.bind(this)});
 	});
 });

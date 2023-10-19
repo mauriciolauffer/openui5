@@ -2,7 +2,7 @@
  * ${copyright}
  */
 
-sap.ui.define([], function () {
+sap.ui.define([], function() {
 	"use strict";
 
 	/**
@@ -28,44 +28,44 @@ sap.ui.define([], function () {
 		 * @param {string} [mPropertyBag.layer] current layer
 		 * @param {function} fnPredicate The function to apply for each change
 		 */
-		forEachObjectInStorage: function(mPropertyBag, fnPredicate) {
+		forEachObjectInStorage(mPropertyBag, fnPredicate) {
 			// getItems() is used in the internal keys of the JsObjectStorage
 			var oRealStorage = mPropertyBag.storage.getItems && mPropertyBag.storage.getItems() || mPropertyBag.storage;
 
 			// ensure a Promise
 			return Promise.resolve(oRealStorage)
-				.then(function (oRealStorage) {
-					var aPromises = Object.keys(oRealStorage).map(function(sKey) {
-						var bIsFlexObject = sKey.includes(FL_PREFIX);
+			.then(function(oRealStorage) {
+				var aPromises = Object.keys(oRealStorage).map(function(sKey) {
+					var bIsFlexObject = sKey.includes(FL_PREFIX);
 
-						if (!bIsFlexObject) {
-							return;
-						}
+					if (!bIsFlexObject) {
+						return;
+					}
 
-						var vStorageEntry = oRealStorage[sKey];
-						var oFlexObject = mPropertyBag.storage._itemsStoredAsObjects ? vStorageEntry : JSON.parse(vStorageEntry);
-						var bSameReference = true;
-						if (mPropertyBag.reference) {
-							bSameReference = this.isSameReference(oFlexObject, mPropertyBag.reference);
-						}
+					var vStorageEntry = oRealStorage[sKey];
+					var oFlexObject = mPropertyBag.storage._itemsStoredAsObjects ? vStorageEntry : JSON.parse(vStorageEntry);
+					var bSameReference = true;
+					if (mPropertyBag.reference) {
+						bSameReference = this.isSameReference(oFlexObject, mPropertyBag.reference);
+					}
 
-						var bSameLayer = true;
-						if (mPropertyBag.layer) {
-							bSameLayer = oFlexObject.layer === mPropertyBag.layer;
-						}
+					var bSameLayer = true;
+					if (mPropertyBag.layer) {
+						bSameLayer = oFlexObject.layer === mPropertyBag.layer;
+					}
 
-						if (!bSameReference || !bSameLayer) {
-							return;
-						}
+					if (!bSameReference || !bSameLayer) {
+						return;
+					}
 
-						return fnPredicate({
-							changeDefinition: oFlexObject,
-							key: sKey
-						});
-					}.bind(this));
-
-					return Promise.all(aPromises);
+					return fnPredicate({
+						changeDefinition: oFlexObject,
+						key: sKey
+					});
 				}.bind(this));
+
+				return Promise.all(aPromises);
+			}.bind(this));
 		},
 
 		/**
@@ -74,12 +74,12 @@ sap.ui.define([], function () {
 		 * @param {object} mPropertyBag - object with the necessary information
 		 * @returns {Promise} Returns a Promise resolving with an array containing maps with two keys: 'key' and 'changeDefinition'
 		 */
-		getAllFlexObjects: function(mPropertyBag) {
+		getAllFlexObjects(mPropertyBag) {
 			var aFlexObjects = [];
 			return this.forEachObjectInStorage(mPropertyBag, function(mFlexObject) {
 				aFlexObjects.push(mFlexObject);
 			})
-			.then(function () {
+			.then(function() {
 				return aFlexObjects;
 			});
 		},
@@ -89,9 +89,9 @@ sap.ui.define([], function () {
 		 * @param  {string} sId The flex object ID
 		 * @returns {string} the prefixed ID
 		 */
-		createFlexKey: function(sId) {
+		createFlexKey(sId) {
 			if (sId) {
-				return FL_PREFIX + "." + sId;
+				return `${FL_PREFIX}.${sId}`;
 			}
 		},
 
@@ -101,7 +101,7 @@ sap.ui.define([], function () {
 		 * @param {object} oFlexObject The definition of the flex Object
 		 * @returns {string} Returns the prefixed ID
 		 */
-		createFlexObjectKey: function(oFlexObject) {
+		createFlexObjectKey(oFlexObject) {
 			return this.createFlexKey(oFlexObject.fileName);
 		},
 
@@ -112,10 +112,11 @@ sap.ui.define([], function () {
 		 * @param {object} oFlexObject - The definition of the flex Object
 		 * @param {string} sReference - The input reference
 		 * @returns {boolean} <code>true</code> when flex object reference is equivalent with the input reference
+		 * @private
 		 * @ui5-restricted sap.ui.fl.FakeLrepConnector
 		 */
-		isSameReference: function(oFlexObject, sReference) {
-			var sEquivalentReference = sReference.endsWith(".Component") ? sReference.replace(/\.Component$/, "") : sReference + ".Component";
+		isSameReference(oFlexObject, sReference) {
+			var sEquivalentReference = sReference.endsWith(".Component") ? sReference.replace(/\.Component$/, "") : `${sReference}.Component`;
 			return oFlexObject.reference === sReference || oFlexObject.reference === sEquivalentReference;
 		}
 	};

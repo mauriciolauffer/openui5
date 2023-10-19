@@ -19,14 +19,13 @@ sap.ui.define([
 	];
 
 	var oConnectorImplementation = merge({}, FileListBaseConnector, {
-		getFileList: function () {
+		getFileList() {
 			return Promise.resolve(aFilePaths);
 		}
 	});
 
-
 	QUnit.module("Given FileListBaseConnector without implementation", {
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
@@ -39,7 +38,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given a ListConnector implementing the FileListBaseConnector", {
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
@@ -53,7 +52,7 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

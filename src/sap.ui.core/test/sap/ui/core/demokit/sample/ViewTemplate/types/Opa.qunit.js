@@ -3,17 +3,20 @@
  */
 QUnit.config.autostart = false;
 
-sap.ui.getCore().attachInit(function () {
+sap.ui.require([
+	"sap/base/Log",
+	"sap/ui/core/Core",
+	"sap/ui/core/library",
+	"sap/ui/core/date/UI5Date",
+	"sap/ui/core/format/DateFormat",
+	"sap/ui/core/sample/common/pages/Any",
+	"sap/ui/core/sample/ViewTemplate/types/pages/Main",
+	"sap/ui/test/opaQunit",
+	"sap/ui/test/TestUtils"
+], function (Log, Core, library, UI5Date, DateFormat, Any, Main, opaTest, TestUtils) {
 	"use strict";
 
-	sap.ui.require([
-		"sap/base/Log",
-		"sap/ui/core/library",
-		"sap/ui/core/sample/common/pages/Any",
-		"sap/ui/core/sample/ViewTemplate/types/pages/Main",
-		"sap/ui/test/opaQunit",
-		"sap/ui/test/TestUtils"
-	], function (Log, library, Any, Main, opaTest, TestUtils) {
+	Core.ready().then(function () {
 		var sDefaultLanguage = sap.ui.getCore().getConfiguration().getLanguage(),
 			MessageType = library.MessageType, // shortcut for sap.ui.core.MessageType
 			ValueState = library.ValueState; // shortcut for sap.ui.core.ValueState
@@ -61,6 +64,13 @@ sap.ui.getCore().attachInit(function () {
 				oBundle.getText("EnterNumberMinExclusive", ["100.000"]));
 			When.onTheMainPage.enterInputValue("decimalInput", "101");
 			Then.onTheMainPage.checkInputValueState("decimalInput", ValueState.None, "");
+
+			When.onTheMainPage.enterInputValue("I87", "");
+			Then.onTheMainPage.checkInputValueState("I87", ValueState.None);
+			Then.onTheMainPage.checkInputValue("I87", "0");
+			When.onTheMainPage.enterInputValue("I83", "");
+			Then.onTheMainPage.checkInputValueState("I83", ValueState.None);
+			Then.onTheMainPage.checkInputValue("I83", "0");
 
 			When.onTheMainPage.enterStepInputValue("stepInput", "102");
 			Then.onTheMainPage.checkStepInputValueState("stepInput", ValueState.Error,
@@ -122,7 +132,8 @@ sap.ui.getCore().attachInit(function () {
 			When.onTheMainPage.enterInputValue("Identification::TimezoneID", "Europe/Berlin",
 				"sap.ui.core.sample.ViewTemplate.types.TemplateV4");
 			Then.onTheMainPage.checkInputValue("Identification::DateTimeOffset",
-				"Apr 19, 2029, 8:25:21 AM Europe, Berlin",
+				DateFormat.getDateTimeWithTimezoneInstance()
+					.format(UI5Date.getInstance(2029, 3, 19, 8, 25, 21), "Europe/Berlin"),
 				"sap.ui.core.sample.ViewTemplate.types.TemplateV4");
 
 			Then.onAnyPage.checkLog([{component : "sap.ui.model.odata.v4.ODataMetaModel",

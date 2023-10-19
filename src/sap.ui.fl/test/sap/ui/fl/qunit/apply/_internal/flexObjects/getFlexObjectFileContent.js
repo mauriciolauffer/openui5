@@ -5,11 +5,11 @@ sap.ui.define([
 ) {
 	"use strict";
 
-	return function () {
+	return function() {
 		return {
 			fileName: "foo",
 			fileType: "change",
-			reference: "sap.ui.demoapps.rta.fiorielements.Component",
+			reference: "sap.ui.demoapps.rta.fiorielements",
 			packageName: "$TMP",
 			content: {
 				originalControlType: "sap.m.Label"

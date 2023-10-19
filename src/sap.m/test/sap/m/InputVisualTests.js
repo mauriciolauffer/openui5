@@ -1,48 +1,52 @@
-sap.ui.require([
-	"sap/ui/layout/form/SimpleForm",
-	"sap/ui/layout/GridData",
-	"sap/ui/layout/form/GridElementData",
-	"sap/ui/layout/form/ColumnElementData",
+sap.ui.define([
+	"sap/m/App",
+	"sap/m/Button",
+	"sap/m/CheckBox",
 	"sap/m/Column",
 	"sap/m/ColumnListItem",
-	"sap/ui/core/VariantLayoutData",
-	"sap/ui/core/Item",
-	"sap/ui/core/ListItem",
-	"sap/m/Button",
+	"sap/m/FormattedText",
+	"sap/m/HBox",
+	"sap/m/Input",
+	"sap/m/Label",
+	"sap/m/Link",
+	"sap/m/Page",
 	"sap/m/Title",
 	"sap/m/ToolbarSpacer",
-	"sap/m/Label",
-	"sap/m/Input",
-	"sap/m/App",
-	"sap/m/Page",
-	"sap/m/HBox",
 	"sap/m/VBox",
+	"sap/ui/core/Item",
+	"sap/ui/core/ListItem",
+	"sap/ui/core/VariantLayoutData",
+	"sap/ui/layout/GridData",
+	"sap/ui/layout/form/ColumnElementData",
+	"sap/ui/layout/form/GridElementData",
+	"sap/ui/layout/form/SimpleForm",
 	"sap/ui/model/Sorter",
-	"sap/ui/model/json/JSONModel",
-	"sap/ui/thirdparty/jquery"
+	"sap/ui/model/json/JSONModel"
 	],
 	function(
-		SimpleForm,
-		GridData,
-		GridElementData,
-		ColumnElementData,
+		App,
+		Button,
+		CheckBox,
 		Column,
 		ColumnListItem,
-		VariantLayoutData,
-		Item,
-		ListItem,
-		Button,
+		FormattedText,
+		HBox,
+		Input,
+		Label,
+		Link,
+		Page,
 		Title,
 		ToolbarSpacer,
-		Label,
-		Input,
-		App,
-		Page,
-		HBox,
 		VBox,
+		Item,
+		ListItem,
+		VariantLayoutData,
+		GridData,
+		ColumnElementData,
+		GridElementData,
+		SimpleForm,
 		Sorter,
-		JSONModel,
-		jQuery
+		JSONModel
 	){
 
 		"use strict";
@@ -99,10 +103,10 @@ sap.ui.require([
 			placeholder: "Error value message text with link",
 			valueState: "Error",
 			width: "300px",
-			formattedValueStateText: new sap.m.FormattedText({
+			formattedValueStateText: new FormattedText({
 				htmlText: "Error value state message with formatted text containing %%0",
 				controls: [
-					new sap.m.Link({
+					new Link({
 						text: "link",
 						href: "https://www.sap.com"
 					})
@@ -120,10 +124,10 @@ sap.ui.require([
 			placeholder: "Information value message text with link",
 			valueState: "Information",
 			width: "300px",
-			formattedValueStateText: new sap.m.FormattedText({
+			formattedValueStateText: new FormattedText({
 				htmlText: "Information value state message with formatted text containing %%0",
 				controls: [
-					new sap.m.Link({
+					new Link({
 						text: "link",
 						href: "https://www.sap.com"
 					})
@@ -396,6 +400,16 @@ sap.ui.require([
 			]
 		});
 
+		var oLongSuggInput = new Input("inputLongSugg", {
+			placeholder: "Input Long Suggestions - type 'L'",
+			showSuggestion: true,
+			width: "30rem",
+			suggestionItems: [
+				new Item({text: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum is simply dummy text of the printing and typesetting industry."}),
+				new Item({text: "Lorem ipsu"})
+			]
+		});
+
 		var oClearIconInput = new Input("inputClearIcon", {
 			value: "Test",
 			showClearIcon: true
@@ -408,11 +422,11 @@ sap.ui.require([
 			}
 		});
 
-		var theCompactMode = new sap.m.CheckBox("compactMode", {
+		var theCompactMode = new CheckBox("compactMode", {
 			text: "Compact Mode",
 			selected : false,
 			select : function() {
-				jQuery("body").toggleClass("sapUiSizeCompact");
+				document.body.classList.toggle("sapUiSizeCompact");
 			}
 		});
 
@@ -488,6 +502,8 @@ sap.ui.require([
 						oLongSuggestionsInput,
 						new Label({text: "Input with two columns layout", labelFor: "inputSecondaryValue"}),
 						oSecondaryValueInput,
+						new Label({text: "Input with long suggestions", labelFor: "inputLongSugg"}),
+						oLongSuggInput,
 						new Label({text: "Input with clear icon", labelFor: "inputClearIcon"}),
 						oClearIconInput
 					]

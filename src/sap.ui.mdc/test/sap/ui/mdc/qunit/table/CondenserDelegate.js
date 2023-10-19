@@ -17,11 +17,11 @@ sap.ui.define([
     IdentifierUtil) {
     "use strict";
 
-    var CondenserTableDelegate = Object.assign({}, TableDelegate);
+    const CondenserTableDelegate = Object.assign({}, TableDelegate);
 
-    CondenserTableDelegate.addItem = function(sPropertyName, oTable, mPropertyBag) {
-        var sId;
-        var sHeader;
+    CondenserTableDelegate.addItem = function(oTable, sPropertyName, mPropertyBag) {
+        let sId;
+        let sHeader;
         function getIdAndHeader(sPropertyName, sViewId) {
             switch (sPropertyName) {
                 case "name":
@@ -45,13 +45,13 @@ sap.ui.define([
                     sId = sViewId;
             }
         }
-        var oModifier = mPropertyBag ? mPropertyBag.modifier : JsControlTreeModifier;
-        var oAppComponent = mPropertyBag ? mPropertyBag.appComponent : FlUtils.getAppComponentForControl(oTable);
-		var oView = (mPropertyBag && mPropertyBag.view ) ? mPropertyBag.view : FlUtils.getViewForControl(oTable);
-		var sViewId = mPropertyBag ? mPropertyBag.viewId : null;
+        const oModifier = mPropertyBag ? mPropertyBag.modifier : JsControlTreeModifier;
+        const oAppComponent = mPropertyBag ? mPropertyBag.appComponent : FlUtils.getAppComponentForControl(oTable);
+		const oView = (mPropertyBag && mPropertyBag.view ) ? mPropertyBag.view : FlUtils.getViewForControl(oTable);
+		let sViewId = mPropertyBag ? mPropertyBag.viewId : null;
 
-		var oColumn;
-		var oExistingColumn = sap.ui.getCore().byId(sId);
+		let oColumn;
+		const oExistingColumn = sap.ui.getCore().byId(sId);
 
 		if (oExistingColumn) {
 			return Promise.resolve(oExistingColumn);
@@ -61,7 +61,7 @@ sap.ui.define([
         if (!oTable.isA) {
             getIdAndHeader(sPropertyName, sViewId);
 			return oModifier.createControl("sap.ui.mdc.table.Column", oAppComponent, oView, sId, {
-                dataProperty: sPropertyName,
+                propertyKey: sPropertyName,
                 header: sHeader
             }, true)
             .then(function(oCreatedColumn) {
@@ -74,7 +74,7 @@ sap.ui.define([
         getIdAndHeader(sPropertyName, sViewId);
 		return Promise.resolve(
             new Column(sId, {
-                dataProperty: sPropertyName,
+                propertyKey: sPropertyName,
                 header: sHeader
             }));
 	};

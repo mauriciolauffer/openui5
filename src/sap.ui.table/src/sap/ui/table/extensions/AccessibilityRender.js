@@ -80,16 +80,6 @@ sap.ui.define([
 			_writeAccText(oRm, sTableId, "ariacount");
 			// aria description for toggling the edit mode
 			_writeAccText(oRm, sTableId, "toggleedit", TableUtils.getResourceText("TBL_TOGGLE_EDIT_KEY"));
-			// aria description for select all button
-			var bAllRowsSelected = TableUtils.areAllRowsSelected(oTable);
-			var mRenderConfig = oTable._getSelectionPlugin().getRenderConfig();
-			var sSelectAllResourceTextID;
-			if (mRenderConfig.headerSelector.type === "toggle") {
-				sSelectAllResourceTextID = bAllRowsSelected ? "TBL_DESELECT_ALL" : "TBL_SELECT_ALL";
-			} else if (mRenderConfig.headerSelector.type === "clear") {
-				sSelectAllResourceTextID = "TBL_DESELECT_ALL";
-			}
-			_writeAccText(oRm, sTableId, "ariaselectall", TableUtils.getResourceText(sSelectAllResourceTextID));
 			// aria label for group rows
 			_writeAccText(oRm, sTableId, "ariarowgrouplabel", TableUtils.getResourceText("TBL_ROW_GROUP_LABEL"));
 			// aria label for grand total sums
@@ -181,16 +171,15 @@ sap.ui.define([
 		 * @param {sap.ui.core.RenderManager} oRm The RenderManager that can be used for writing to the Render-Output-Buffer.
 		 * @param {sap.ui.table.Table} oTable Instance of the table.
 		 * @param {sap.ui.table.Row} oRow Instance of the row.
-		 * @param {int} iRowIndex The index of the row.
 		 * @see sap.ui.table.TableRenderer.writeRowSelectorContent
 		 * @public
 		 */
-		writeAccRowSelectorText: function(oRm, oTable, oRow, iRowIndex) {
+		writeAccRowSelectorText: function(oRm, oTable, oRow) {
 			if (!oTable._getAccExtension().getAccMode()) {
 				return;
 			}
 
-			var bIsSelected = oTable._getSelectionPlugin().isIndexSelected(iRowIndex);
+			var bIsSelected = oTable._getSelectionPlugin().isSelected(oRow);
 			var mTooltipTexts = oTable._getAccExtension().getAriaTextsForSelectionMode(true);
 			var sText = mTooltipTexts.keyboard[bIsSelected ? "rowDeselect" : "rowSelect"];
 

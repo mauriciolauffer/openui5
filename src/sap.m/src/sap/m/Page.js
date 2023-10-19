@@ -6,6 +6,7 @@
 sap.ui.define([
 	"./library",
 	"sap/ui/core/Control",
+	"sap/ui/core/Lib",
 	"sap/ui/core/delegate/ScrollEnablement",
 	"sap/m/Title",
 	"sap/m/Button",
@@ -14,6 +15,7 @@ sap.ui.define([
 	"sap/ui/core/util/ResponsivePaddingsEnablement",
 	"sap/ui/core/library",
 	"sap/ui/core/Element",
+	"sap/ui/core/InvisibleText",
 	"./TitlePropagationSupport",
 	"./PageRenderer",
 	"sap/ui/thirdparty/jquery",
@@ -22,6 +24,7 @@ sap.ui.define([
 function(
 	library,
 	Control,
+	Library,
 	ScrollEnablement,
 	Title,
 	Button,
@@ -30,6 +33,7 @@ function(
 	ResponsivePaddingsEnablement,
 	coreLibrary,
 	Element,
+	InvisibleText,
 	TitlePropagationSupport,
 	PageRenderer,
 	jQuery,
@@ -302,7 +306,12 @@ function(
 		};
 
 		Page.prototype.onBeforeRendering = function () {
-			var oHeader = this.getCustomHeader() || this.getAggregation("_internalHeader");
+			var oHeader = this.getCustomHeader() || this.getAggregation("_internalHeader"),
+				oFooter = this.getFooter();
+
+			if (oFooter && !oFooter.getAriaLabelledBy().length) {
+				oFooter.addAriaLabelledBy(this._getFooterToolbarAriaLabelledBy(oFooter.getId()));
+			}
 
 			if (this._oScroller && !this._hasScrolling()) {
 				this._oScroller.destroy();
@@ -323,9 +332,8 @@ function(
 
 			// title alignment
 			if (oHeader && oHeader.setTitleAlignment) {
-				oHeader.setProperty("titleAlignment", this.getTitleAlignment(), true);
+				oHeader.setTitleAlignment(this.getTitleAlignment());
 			}
-
 		};
 
 		Page.prototype.onAfterRendering = function () {
@@ -357,6 +365,14 @@ function(
 			if (this._appIcon) {
 				this._appIcon.destroy();
 				this._appIcon = null;
+			}
+			if (this._oHeaderToolbarInvisibleText) {
+				this._oHeaderToolbarInvisibleText.destroy();
+				this._oHeaderToolbarInvisibleText = null;
+			}
+			if (this._oFooterToolbarInvisibleText) {
+				this._oFooterToolbarInvisibleText.destroy();
+				this._oFooterToolbarInvisibleText = null;
 			}
 		};
 
@@ -390,7 +406,7 @@ function(
 				return;
 			}
 
-			var sBackText = this.getNavButtonTooltip() || sap.ui.getCore().getLibraryResourceBundle("sap.m").getText("PAGE_NAVBUTTON_TEXT"); // any other types than "Back" do not make sense anymore in Blue Crystal
+			var sBackText = this.getNavButtonTooltip() || Library.getResourceBundleFor("sap.m").getText("PAGE_NAVBUTTON_TEXT"); // any other types than "Back" do not make sense anymore in Blue Crystal
 
 			if (!this._navBtn) {
 				this._navBtn = new Button(this.getId() + "-navButton", {
@@ -525,8 +541,11 @@ function(
 		Page.prototype._getInternalHeader = function () {
 			var oInternalHeader = this.getAggregation("_internalHeader");
 			if (!oInternalHeader) {
-				this.setAggregation("_internalHeader", new Bar(this.getId() + "-intHeader", {
-					titleAlignment: this.getTitleAlignment()
+				var sId = this.getId() + "-intHeader";
+
+				this.setAggregation("_internalHeader", new Bar(sId, {
+					titleAlignment: this.getTitleAlignment(),
+					ariaLabelledBy: this._getHeaderToolbarAriaLabelledBy(sId)
 				}), true); // don"t invalidate - this is only called before/during rendering, where invalidation would lead to double rendering,  or when invalidation anyway happens
 				oInternalHeader = this.getAggregation("_internalHeader");
 
@@ -557,8 +576,8 @@ function(
 		};
 
 		/**
-		 * Returns the sap.ui.core.ScrollEnablement delegate which is used with this control.
-		 * @returns {sap.ui.core.ScrollEnablement} The scroll enablement delegate
+		 * Returns the sap.ui.core.delegate.ScrollEnablement delegate which is used with this control.
+		 * @returns {sap.ui.core.delegate.ScrollEnablement} The scroll enablement delegate
 		 * @private
 		 */
 		Page.prototype.getScrollDelegate = function () {
@@ -699,6 +718,46 @@ function(
 
 		Page.prototype._getAdaptableContent = function () {
 			return this._getAnyHeader();
+		};
+
+		/**
+		 * Returns an InvisibleText control for the ARIA labelled-by attribute of the header toolbar of the page.
+		 *
+		 * @memberof Page.prototype
+		 * @function
+		 * @name _getHeaderToolbarAriaLabelledBy
+		 * @param {string} sId - The ID of header toolbar aggregation.
+		 * @returns {sap.ui.core.InvisibleText} The InvisibleText control for the header toolbar ARIA labelled-by attribute.
+		 *
+		 */
+		Page.prototype._getHeaderToolbarAriaLabelledBy = function (sId) {
+			if (!this._oHeaderToolbarInvisibleText) {
+				this._oHeaderToolbarInvisibleText = new InvisibleText(sId + "-InvisibleText", {
+					text: Library.getResourceBundleFor("sap.m").getText("ARIA_LABEL_TOOLBAR_HEADER_ACTIONS")
+				}).toStatic();
+			}
+
+			return this._oHeaderToolbarInvisibleText;
+		};
+
+		/**
+		 * Returns an InvisibleText control for the ARIA labelled-by attribute of the footer toolbar of the page.
+		 *
+		 * @memberof Page.prototype
+		 * @function
+		 * @name _getFooterToolbarAriaLabelledBy
+		 * @param {string} sId - The ID of the page.
+		 * @returns {sap.ui.core.InvisibleText} The InvisibleText control for the footer toolbar ARIA labelled-by attribute.
+		 *
+		 */
+		Page.prototype._getFooterToolbarAriaLabelledBy = function (sId) {
+			if (!this._oFooterToolbarInvisibleText) {
+				this._oFooterToolbarInvisibleText = new InvisibleText(sId + "-InvisibleText", {
+					text: Library.getResourceBundleFor("sap.m").getText("ARIA_LABEL_TOOLBAR_FOOTER_ACTIONS")
+				}).toStatic();
+			}
+
+			return this._oFooterToolbarInvisibleText;
 		};
 
 		return Page;

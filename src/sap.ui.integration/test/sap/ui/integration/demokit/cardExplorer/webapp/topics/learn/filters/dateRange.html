@@ -17,7 +17,8 @@
 				Experimental feature since version 1.96. The API may change.
 			</div>
 			<p>
-				Date range filter allows users to select a relative or an absolute time period.
+				Date Range filter allows users to select a relative or an absolute time period. <br/>
+				The Date Range filter is implemented based on the <a data-demokit-href="#/api/sap.m.DynamicDateRange" target="_blank">sap.m.DynamicDateRange</a> control and follows the date and time format of the latter.
 			</p>
 
 			<h2 id="properties">Properties</h2>
@@ -66,7 +67,7 @@
 				</table>
 			</div>
 
-			<h3 id="dateRangeFilterValueProperties">DateRangeFilterValue Properties</h3>
+			<div id="dateRangeFilterValueProperties" class="boldBlock">DateRangeFilterValue Properties</div>
 			<div class="tableWrapper">
 				<table>
 					<tr>
@@ -103,7 +104,7 @@
 				</table>
 			</div>
 
-			<h3 id="options">Options</h3>
+			<div id="options" class="boldBlock">Options Properties</div>
 			<div class="tableWrapper">
 				<table class="plainFirstColumn">
 					<tr>
@@ -117,6 +118,11 @@
 						<td>date</td>
 						<td>Specific date</td>
 						<td>[Date]</td>
+					</tr>
+					<tr>
+						<td>dateTime</td>
+						<td>Specific date and time</td>
+						<td>[Datetime]</td>
 					</tr>
 					<tr>
 						<td>today</td>
@@ -141,6 +147,11 @@
 						<td>[Date, Date]</td>
 					</tr>
 					<tr>
+						<td>dateTimeRange</td>
+						<td>Period between two dates and times</td>
+						<td>[Datetime, Datetime]</td>
+					</tr>
+					<tr>
 						<td>from</td>
 						<td></td>
 						<td>[Date]</td>
@@ -149,6 +160,16 @@
 						<td>to</td>
 						<td></td>
 						<td>[Date]</td>
+					</tr>
+					<tr>
+						<td>fromDateTime</td>
+						<td></td>
+						<td>[Datetime]</td>
+					</tr>
+					<tr>
+						<td>toDateTime</td>
+						<td></td>
+						<td>[Datetime]</td>
 					</tr>
 					<tr>
 						<td>yearToDate</td>
@@ -320,19 +341,35 @@
 				</tr>
 				<tr>
 					<td>{filters>/keyOfTheFilter/range/start}</td>
-					<td>The start date of the range in ISO 8601 format.</td>
+					<td>The start date of the range in ISO 8601 format in UTC time zone.</td>
 				</tr>
 				<tr>
 					<td>{filters>/keyOfTheFilter/range/end}</td>
-					<td>The end date of the range in ISO 8601 format.</td>
+					<td>The end date of the range in ISO 8601 format in UTC time zone.</td>
+				</tr>
+				<tr>
+					<td>{filters>/keyOfTheFilter/range/startLocalDate}</td>
+					<td>The start date of the range in short ISO 8601 date format in the local time zone. Use this property if you want to select a single date without reference to the time of the day.</td>
+				</tr>
+				<tr>
+					<td>{filters>/keyOfTheFilter/range/endLocalDate}</td>
+					<td>The end date of the range in short ISO 8601 date format in the local time zone.</td>
 				</tr>
 				<tr>
 					<td>{filters>/keyOfTheFilter/rangeOData/start}</td>
-					<td>The start date of the range in ISO 8601 format. It is in the boundaries of Edm.DateTime type of the OData protocol.</td>
+					<td>The start date of the range in ISO 8601 format in UTC time zone. It is in the boundaries of Edm.DateTime type of the OData protocol.</td>
 				</tr>
 				<tr>
 					<td>{filters>/keyOfTheFilter/rangeOData/end}</td>
-					<td>The end date of the range in ISO 8601 format.  It is in the boundaries of Edm.DateTime type of the OData protocol.</td>
+					<td>The end date of the range in ISO 8601 format in UTC time zone. It is in the boundaries of Edm.DateTime type of the OData protocol.</td>
+				</tr>
+				<tr>
+					<td>{filters>/keyOfTheFilter/range/startLocalDate}</td>
+					<td>The start date of the range in short ISO 8601 date format in the local time zone. It is in the boundaries of Edm.DateTime type of the OData protocol.</td>
+				</tr>
+				<tr>
+					<td>{filters>/keyOfTheFilter/range/endLocalDate}</td>
+					<td>The end date of the range in short ISO 8601 date format in the local time zone. It is in the boundaries of Edm.DateTime type of the OData protocol.</td>
 				</tr>
 			</table>
 
@@ -374,15 +411,6 @@
 }</pre>
 
 			<a class="try-button" href="../../../index.html#/explore/dateRangeFilter" target="_parent">Try it Out</a>
-		</div>
-		<div class="navigation">
-			<h4>Table of Contents</h4>
-			<div><a href="#overview">Date Range Filter</a></div>
-			<div><a href="#properties">Properties</a></div>
-			<div><a href="#dateRangeFilterValueProperties">DateRangeFilterValue Properties</a></div>
-			<div><a href="#options">Options</a></div>
-			<div><a href="#filtersModel">Filters Model</a></div>
-			<div><a href="#examples">Examples</a></div>
 		</div>
 	</div>
 </body>

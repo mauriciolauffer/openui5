@@ -11,6 +11,10 @@
 			{
 				"namespace": "delegates",
 				"ref": "test-resources/sap/ui/mdc/delegates"
+			},
+			{
+				"namespace": "sap.ui.mdc.demokit.sample",
+				"ref": "test-resources/sap/ui/mdc/demokit/sample"
 			}
 		],
 		"entities": [
@@ -53,6 +57,16 @@
 				"since": "1.99",
 				"samples": [
 					"sap.ui.mdc.sample.StateUtil"
+				]
+			},
+			{
+				"id": "sap.ui.mdc",
+				"name": "MDC Samples",
+				"category": "Smart Controls",
+				"since": "1.116",
+				"samples": [
+					"sap.ui.mdc.demokit.sample.TableFilterBarJson",
+					"sap.ui.mdc.demokit.sample.FieldValueHelpJson"
 				]
 			}
 		],
@@ -142,7 +156,17 @@
 				"id": "sap.ui.mdc.sample.StateUtil",
 				"name": "7.1 StateUtil overview",
 				"description": "example demonstrating StateUtil functionality"
+			}, {
+				"id": "sap.ui.mdc.demokit.sample.TableFilterBarJson",
+                "name": "Table with FilterBar and JSON model",
+                "description": "A basic delegate setup using a combination of a table with a filter bar including variant management, with a simplified metadata definition in a separate file."
+			},
+			{
+				"id": "sap.ui.mdc.demokit.sample.FieldValueHelpJson",
+				"name": "Field with ValueHelp and JSON model",
+				"description": "A field and value help setup including a sophisticated value help dialog with filter and search capabilities."
 			}
+
 		]
 	}
 }

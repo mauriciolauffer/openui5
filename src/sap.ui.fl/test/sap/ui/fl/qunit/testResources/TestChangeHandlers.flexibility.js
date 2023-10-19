@@ -2,25 +2,25 @@
  * ${copyright}
  */
 
-sap.ui.define([], function () {
+sap.ui.define([], function() {
 	"use strict";
 
 	return {
 		doSomething: {
-			applyChange: function () {
+			applyChange() {
 			},
-			completeChangeContent: function () {
+			completeChangeContent() {
 			},
-			revertChange: function() {
+			revertChange() {
 			},
 			dummyId: "testChangeHandler-doSomething"
 		},
 		doSomethingElse: {
-			applyChange: function () {
+			applyChange() {
 			},
-			completeChangeContent: function () {
+			completeChangeContent() {
 			},
-			revertChange: function() {
+			revertChange() {
 			}
 		}
 	};

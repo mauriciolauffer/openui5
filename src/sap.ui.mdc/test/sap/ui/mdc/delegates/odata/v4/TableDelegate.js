@@ -7,25 +7,26 @@ sap.ui.define([
 	"sap/ui/mdc/odata/v4/TableDelegate",
 	"delegates/odata/v4/FilterBarDelegate",
 	"delegates/odata/v4/ODataMetaModelUtil",
-	"delegates/odata/v4/TypeUtil",
 	"delegates/odata/v4/util/DelegateUtil",
 	"sap/ui/mdc/util/FilterUtil",
 	"sap/ui/unified/Currency",
 	"sap/ui/model/Filter",
 	"sap/ui/core/Core",
-	"sap/base/Log"
+	"sap/base/Log",
+	'sap/ui/mdc/odata/v4/TypeMap'
+
 ], function(
 	TableDelegateUtils,
 	TableDelegate,
 	FilterBarDelegate,
 	ODataMetaModelUtil,
-	TypeUtil,
 	DelegateUtil,
 	FilterUtil,
 	Currency,
 	Filter,
 	Core,
-	Log
+	Log,
+	ODataV4TypeMap
 ) {
 	"use strict";
 
@@ -34,7 +35,7 @@ sap.ui.define([
 	 */
 	var TestTableDelegate = Object.assign({}, TableDelegate);
 
-	TestTableDelegate.addItem = function(sPropertyName, oTable, mPropertyBag) {
+	TestTableDelegate.addItem = function(oTable, sPropertyName, mPropertyBag) {
 		return TableDelegateUtils.createColumn(oTable, sPropertyName, function(oTable, oProperty) {
 			if (oProperty.name.endsWith("_ComplexWithUnit")) {
 				var aProperties = oProperty.getSimpleProperties();
@@ -83,7 +84,7 @@ sap.ui.define([
 
 		if (bFilterEnabled) {
 			var aTableProperties = oTable.getPropertyHelper().getProperties();
-			var oInnerFilterInfo = FilterUtil.getFilterInfo(TestTableDelegate.getTypeUtil(), oTable.getConditions(), aTableProperties);
+			var oInnerFilterInfo = FilterUtil.getFilterInfo(TestTableDelegate.getTypeMap(), oTable.getConditions(), aTableProperties);
 
 			if (oInnerFilterInfo.filters) {
 				aFilters.push(oInnerFilterInfo.filters);
@@ -106,7 +107,7 @@ sap.ui.define([
 		if (mConditions) {
 			var aPropertiesMetadata = oFilter.getPropertyInfoSet ? oFilter.getPropertyInfoSet() : null;
 			var aParameterNames = DelegateUtil.getParameterNames(oFilter);
-			var oOuterFilterInfo = FilterUtil.getFilterInfo(TestTableDelegate.getTypeUtil(), mConditions, aPropertiesMetadata, aParameterNames);
+			var oOuterFilterInfo = FilterUtil.getFilterInfo(TestTableDelegate.getTypeMap(), mConditions, aPropertiesMetadata, aParameterNames);
 
 			if (oOuterFilterInfo.filters) {
 				aFilters.push(oOuterFilterInfo.filters);
@@ -184,7 +185,7 @@ sap.ui.define([
 				var oDataObject = oEntityType[sKey];
 
 				if (oDataObject && oDataObject.$kind === "Property") {
-					if (oDataObject.$isCollection) {
+					if (oDataObject.$isCollection || !oDataObject.$Type.startsWith('Edm')) {
 						Log.warning("Complex property with type " + oDataObject.$Type + " has been ignored");
 						continue;
 					}
@@ -209,13 +210,21 @@ sap.ui.define([
 						mConstraints.scale = oDataObject.$Scale;
 					}
 
+					var oType;
+					try {
+						oType = oDataObject.$Type; //, null, mConstraints);
+					} catch (error) {
+						Log.error(error);
+					}
+
 					var oPropertyInfo = {
 						name: sKey,
 						path: sKey,
 						label: oPropertyAnnotations["@com.sap.vocabularies.Common.v1.Label"] || sKey,
 						sortable: oSortRestrictionsInfo[sKey] ? oSortRestrictionsInfo[sKey].sortable : true,
 						filterable: oFilterRestrictionsInfo[sKey] ? oFilterRestrictionsInfo[sKey].filterable : true,
-						typeConfig: TypeUtil.getTypeConfig(oDataObject.$Type, null, mConstraints),
+						dataType: oType,
+						constraints : mConstraints,
 						maxConditions: ODataMetaModelUtil.isMultiValueFilterExpression(oFilterRestrictionsInfo.propertyInfo[sKey]) ? -1 : 1,
 						groupable: oPropertyAnnotations["@Org.OData.Aggregation.V1.Groupable"] || false,
 						unit: oUnitAnnotation && !bUnitIsFromNavigationProperty ? oUnitAnnotation.$Path : undefined,
@@ -281,10 +290,6 @@ sap.ui.define([
 
 	TestTableDelegate.getFilterDelegate = function() {
 		return FilterBarDelegate;
-	};
-
-	TestTableDelegate.getTypeUtil = function(oPayload) {
-		return TypeUtil;
 	};
 
 	return TestTableDelegate;

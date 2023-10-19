@@ -25,15 +25,15 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
   _tntDialogChartFlow = _interopRequireDefault(_tntDialogChartFlow);
   _tntSceneChartFlow = _interopRequireDefault(_tntSceneChartFlow);
   _tntSpotChartFlow = _interopRequireDefault(_tntSpotChartFlow);
-
   function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
   const name = "ChartFlow";
   const set = "tnt";
+  const collection = "V4";
   (0, _Illustrations.registerIllustration)(name, {
     dialogSvg: _tntDialogChartFlow.default,
     sceneSvg: _tntSceneChartFlow.default,
     spotSvg: _tntSpotChartFlow.default,
-    set
+    set,
+    collection
   });
 });

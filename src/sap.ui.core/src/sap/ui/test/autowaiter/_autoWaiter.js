@@ -3,10 +3,11 @@
  */
 
 sap.ui.define([
-	"sap/ui/thirdparty/jquery",
+	"sap/base/util/isEmptyObject",
 	"sap/ui/base/Object",
 	"sap/ui/test/_OpaLogger",
 	"sap/ui/test/autowaiter/_XHRWaiter",
+	"sap/ui/test/autowaiter/_fetchWaiter",
 	"sap/ui/test/autowaiter/_timeoutWaiter",
 	"sap/ui/test/autowaiter/_promiseWaiter",
 	"sap/ui/test/autowaiter/_navigationContainerWaiter",
@@ -17,10 +18,11 @@ sap.ui.define([
 	"sap/ui/test/autowaiter/_moduleWaiter",
 	"sap/ui/test/autowaiter/_resourceWaiter"
 ], function(
-	jQueryDOM,
+	isEmptyObject,
 	UI5Object,
 	_OpaLogger,
 	_XHRWaiter,
+	_fetchWaiter,
 	_timeoutWaiter,
 	_promiseWaiter,
 	_navigationContainerWaiter,
@@ -63,7 +65,7 @@ sap.ui.define([
 			return result;
 		},
 		extendConfig: function (oConfig) {
-			if (!jQueryDOM.isEmptyObject(oConfig)) {
+			if (!isEmptyObject(oConfig)) {
 				aWaiters.forEach(function (mWaiter) {
 					if (mWaiter.waiter.extendConfig) {
 						mWaiter.waiter.extendConfig(oConfig[mWaiter.name]);
@@ -106,6 +108,7 @@ sap.ui.define([
 	var oAutoWaiter = new AutoWaiter();
 	var mDefaultWaiters = {
 		xhrWaiter: _XHRWaiter,
+		fetchWaiter: _fetchWaiter,
 		timeoutWaiter: _timeoutWaiter,
 		promiseWaiter: _promiseWaiter,
 		navigationWaiter: _navigationContainerWaiter,
@@ -118,7 +121,7 @@ sap.ui.define([
 	};
 
 	Object.keys(mDefaultWaiters).forEach(function (sWaiter) {
-		return oAutoWaiter._addWaiter(sWaiter)(mDefaultWaiters[sWaiter]);
+		oAutoWaiter._addWaiter(sWaiter)(mDefaultWaiters[sWaiter]);
 	});
 
 	return oAutoWaiter;

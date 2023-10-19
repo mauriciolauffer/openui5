@@ -331,7 +331,7 @@ sap.ui.define([
 	/**
 	 * Generates helper object from passed date
 	 * @param {sap.ui.unified.calendar.Month} oMonth the month instance
-	 * @param {sap.ui.unified.calendar.CalendarDate} oDate JavaScript date object
+	 * @param {sap.ui.unified.calendar.CalendarDate} oDate date instance
 	 * @returns {object} helper object
 	 * @private
 	 */
@@ -456,6 +456,10 @@ sap.ui.define([
 			oRm.class("sapUiCalItemSelEnd"); // interval end
 			mAccProps["describedby"] = mAccProps["describedby"] + " " + oHelper.sId + "-Start";
 			mAccProps["describedby"] = mAccProps["describedby"] + " " + oHelper.sId + "-End";
+		}
+
+		if (this.renderWeekNumbers && oMonth._oDate) {
+			mAccProps["describedby"] = mAccProps["describedby"] + " " + oMonth.getId() + "-week-" + oMonth._calculateWeekNumber(oDay) + "-text";
 		}
 
 		if (bShouldBeMarkedAsSpecialDate) {

@@ -4,7 +4,7 @@
 
 sap.ui.define([
 	'sap/ui/mdc/valuehelp/base/Content',
-	'sap/ui/mdc/enum/ConditionValidated'
+	'sap/ui/mdc/enums/ConditionValidated'
 ], function(
 	Content,
 	ConditionValidated
@@ -14,6 +14,8 @@ sap.ui.define([
 	/**
 	 * Constructor for a new <code>ListContent</code>.
 	 *
+	 * This is the basis for various types of value help list content. It cannot be used directly.
+	 *
 	 * @param {string} [sId] ID for the new element, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new element
 	 * @class Content for the {@link sap.ui.mdc.valuehelp.base.Container Container} element.
@@ -21,13 +23,11 @@ sap.ui.define([
 	 * @version ${version}
 	 * @constructor
 	 * @abstract
-	 * @private
-	 * @ui5-restricted sap.ui.mdc
+	 * @public
 	 * @since 1.95.0
-	 * @experimental As of version 1.95
 	 * @alias sap.ui.mdc.valuehelp.base.ListContent
 	 */
-	var ListContent = Content.extend("sap.ui.mdc.valuehelp.base.ListContent", /** @lends sap.ui.mdc.valuehelp.base.ListContent.prototype */
+	const ListContent = Content.extend("sap.ui.mdc.valuehelp.base.ListContent", /** @lends sap.ui.mdc.valuehelp.base.ListContent.prototype */
 	{
 		metadata: {
 			library: "sap.ui.mdc",
@@ -47,7 +47,10 @@ sap.ui.define([
 				/**
 				 * If set, <code>getItemForValue</code> returns the first item that matches the text.
 				 *
-				 * This is the case if the text of the item starts with the text entered.
+				 * In the default implementation, this is the first item that matches the entered text. Which item is used can be determined
+				 * by implementing {@link sap.ui.mdc.ValueHelpDelegate#getFirstMatch}.
+				 *
+				 * The matching item is returned in the <code>typeaheadSuggested</code> event and used for the autocomplete feature in the connected field.
 				 */
 				 useFirstMatch: {
 					type: "boolean",
@@ -55,7 +58,7 @@ sap.ui.define([
 					defaultValue: true
 				},
 				/**
-				 * If set, the List is also opened if the ValueHelp icon is pressed.
+				 * If set, the list is opened whenever the value help icon is pressed.
 				 */
 				 useAsValueHelp: {
 					type: "boolean",
@@ -80,21 +83,21 @@ sap.ui.define([
 
 	};
 
-	ListContent.prototype._observeChanges = function(oChanges) {
+	ListContent.prototype.observeChanges = function(oChanges) {
 
 		if (oChanges.name === "caseSensitive") {
-			this._handleFilterValueUpdate(oChanges);
+			this.handleFilterValueUpdate(oChanges);
 		}
 
-		Content.prototype._observeChanges.apply(this, arguments);
+		Content.prototype.observeChanges.apply(this, arguments);
 
 	};
 
 	ListContent.prototype.getCount = function (aConditions) {
-		var iCount = 0;
+		let iCount = 0;
 
-		for (var i = 0; i < aConditions.length; i++) {
-			var oCondition = aConditions[i];
+		for (let i = 0; i < aConditions.length; i++) {
+			const oCondition = aConditions[i];
 			if (oCondition.isEmpty !== true && oCondition.validated === ConditionValidated.Validated) {
 				iCount++;
 			}
@@ -102,7 +105,22 @@ sap.ui.define([
 		return iCount;
 	};
 
+	/**
+	 * Gets the <code>ListBinding</code> of the content.
+	 * @returns {sap.ui.model.ListBinding} <code>ListBinding</code>
+	 * @protected
+	 */
 	ListContent.prototype.getListBinding = function () {
+		throw new Error("ListContent: Every listcontent must implement this method.");
+	};
+
+	/**
+	 * Gets the relevant <code>BindingContexts</code> of the content.
+	 * @param {sap.ui.mdc.valuehelp.base.ItemForValueConfiguration} oConfig
+	 * @returns {sap.ui.model.Context[]} <code>BindingContexts</code>
+	 * @protected
+	 */
+	ListContent.prototype.getRelevantContexts = function(oConfig) {
 		throw new Error("ListContent: Every listcontent must implement this method.");
 	};
 

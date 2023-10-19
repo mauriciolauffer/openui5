@@ -2,11 +2,12 @@
 sap.ui.define([
 	"sap/ui/base/ManagedObject",
 	"sap/ui/core/Configuration",
+	"sap/ui/core/Control",
 	"sap/ui/model/CompositeBinding",
 	"sap/ui/model/StaticBinding",
 	"sap/ui/model/json/JSONModel",
 	"sap/ui/model/type/Float"
-], function(ManagedObject, Configuration, CompositeBinding, StaticBinding, JSONModel, TypeFloat) {
+], function(ManagedObject, Configuration, Control, CompositeBinding, StaticBinding, JSONModel, TypeFloat) {
 	"use strict";
 
 	var sDefaultLanguage = Configuration.getLanguage(),
@@ -26,6 +27,9 @@ sap.ui.define([
 	});
 
 	QUnit.module("sap.ui.model.StaticBinding", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach: function() {
 			Configuration.setLanguage("en-US");
 			this.static = new StaticBinding("test");

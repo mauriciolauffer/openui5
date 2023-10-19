@@ -7,59 +7,65 @@
 // Provides helper class sap.ui.core.Popup
 sap.ui.define([
 	'sap/ui/Device',
+	'sap/ui/base/DataType',
 	'sap/ui/base/Event',
 	'sap/ui/base/ManagedObject',
 	'sap/ui/base/Object',
 	'sap/ui/base/ObjectPool',
 	'./Control',
 	'./Element',
+	'./EventBus',
 	'./FocusHandler',
 	'./IntervalTrigger',
 	'./RenderManager',
 	'./ResizeHandler',
-	'./UIArea',
 	'./library',
+	'./StaticArea',
 	"sap/base/assert",
 	"sap/base/Log",
+	"sap/base/i18n/Localization",
 	"sap/base/util/Version",
 	"sap/base/util/uid",
 	"sap/base/util/extend",
 	"sap/base/util/each",
 	"sap/base/util/deepExtend",
-	"sap/ui/thirdparty/jquery",
 	"sap/ui/events/F6Navigation",
 	"sap/ui/events/isMouseEventDelayed",
 	"sap/ui/base/EventProvider",
-	"sap/ui/core/Configuration",
+	"sap/ui/thirdparty/jquery",
+	"sap/ui/thirdparty/jqueryui/jquery-ui-position",
 	"sap/ui/dom/jquery/control", // jQuery Plugin "control"
 	"sap/ui/dom/jquery/Focusable", // jQuery Plugin "firstFocusableDomRef"
 	"sap/ui/dom/jquery/rect" // jQuery Plugin "rect"
 ], function(
 	Device,
+	DataType,
 	Event,
 	ManagedObject,
 	BaseObject,
 	ObjectPool,
 	Control,
 	Element,
+	EventBus,
 	FocusHandler,
 	IntervalTrigger,
 	RenderManager,
 	ResizeHandler,
-	UIArea,
 	library,
+	StaticArea,
 	assert,
 	Log,
+	Localization,
 	Version,
 	uid,
 	extend,
 	each,
 	deepExtend,
-	jQuery,
 	F6Navigation,
 	isMouseEventDelayed,
 	EventProvider,
-	Configuration
+	jQuery
+	//jquery-ui-position
 	//control
 	//Focusable
 	//rect
@@ -81,6 +87,8 @@ sap.ui.define([
 
 	var oResizeObserver;
 	var sResizeHandlerIdAttribute = "sapUiPopupResize";
+
+	var oEventBus = new EventBus();
 
 	if (window.ResizeObserver) {
 		oResizeObserver = new window.ResizeObserver(function(aEntries){
@@ -112,11 +120,10 @@ sap.ui.define([
 			return oStaticUIArea;
 		}
 
-		var oStaticAreaRef, oControl;
+		var oControl;
 		try {
-			oStaticAreaRef = UIArea.getStaticAreaRef();
 			// only a facade of the static UIArea is returned that contains only the public methods
-			oStaticUIArea = UIArea.registry.get(oStaticAreaRef.id);
+			oStaticUIArea = StaticArea.getUIArea();
 		} catch (e) {
 			Log.error(e);
 			throw new Error("Popup cannot be opened because static UIArea cannot be determined.");
@@ -216,20 +223,6 @@ sap.ui.define([
 	 * <code>autoclose</code> or <code>modal</code> is enabled. E.g. the <code>RichTextEditor</code> with running
 	 * TinyMCE uses this method to be able to focus the popups of the TinyMCE if the <code>RichTextEditor</code> runs
 	 * within a <code>Popup</code>/<code>Dialog</code> etc.
-	 *
-	 * To provide an additional DOM element that can get the focus the following should be done:
-	 * <pre>
-	 *   // create an object with the corresponding DOM-ID
-	 *   var oObject = {
-	 *     id : "this_is_the_most_valuable_id_of_the_DOM_element"
-	 *   };
-	 *
-	 *   // add the event prefix for adding an element to the ID of the corresponding Popup
-	 *   var sEventId = "sap.ui.core.Popup.addFocusableContent-" + oPopup.getId();
-	 *
-	 *   // fire the event with the created event-ID and the object with the DOM-ID
-	 *   sap.ui.getCore().getEventBus().publish("sap.ui", sEventId, oObject);
-	 * </pre>
 	 *
 	 * <strong>Since 1.75</strong>, DOM elements which have the attribute
 	 * <code>data-sap-ui-integration-popup-content</code> are considered to be part of all opened popups. Those DOM
@@ -380,6 +373,15 @@ sap.ui.define([
 
 	});
 
+	/**
+	 * @typedef {object} sap.ui.core.Popup.PositionInfo
+	 * @public
+	 *
+	 * @property {object} lastPosition The last position value
+	 * @property {DOMRect} lastOfRect The DOMRect of the previous "of" element
+	 * @property {DOMRect} currentOfRect The DOMRect of the current "of" element
+	 */
+
 	Popup.prototype.getChildPopups = function() {
 		return this.getAssociation("childPopups", []);
 	};
@@ -496,6 +498,8 @@ sap.ui.define([
 		EndBottom  : "end bottom"
 	};
 
+	DataType.registerEnum("sap.ui.core.Popup.Dock", Popup.Dock);
+
 	/**
 	 * This property changes how the autoClose behaves on the Popup.
 	 *
@@ -535,26 +539,25 @@ sap.ui.define([
 	 *
 	 * @class
 	 * @private
-	 * @name sap.ui.core.Popup.Layer
+	 * @alias sap.ui.core.Popup.Layer
 	*/
-	BaseObject.extend("sap.ui.core.Popup.Layer", {
+	var Layer = BaseObject.extend("sap.ui.core.Popup.Layer", {
 		constructor: function() {
+			BaseObject.call(this);
 			var sDomString = this.getDomString();
-			this._$Ref = jQuery(sDomString).appendTo(sap.ui.getCore().getStaticAreaRef());
+			this._$Ref = jQuery(sDomString).appendTo(StaticArea.getDomRef());
 		}
 	});
 
 	/**
-	* Initializes the popup layer by adding z-index and visibility to the popup layer
-	* and insert the popup directly after the given <code>oRef</code> element
-	*
-	* @param {jQuery} oRef The element as a jQuery object
-	* @param {int} iZIndex The z-index value
-	* @private
-	* @name sap.ui.core.Popup.Layer#init
-	* @function
-	*/
-	Popup.Layer.prototype.init = function(oRef, iZIndex) {
+	 * Initializes the popup layer by adding z-index and visibility to the popup layer
+	 * and insert the popup directly after the given <code>oRef</code> element
+	 *
+	 * @param {jQuery} oRef The element as a jQuery object
+	 * @param {int} iZIndex The z-index value
+	 * @private
+	 */
+	Layer.prototype.init = function(oRef, iZIndex) {
 		this._$Ref.css({
 			"visibility" : "visible",
 			"z-index" : iZIndex
@@ -569,10 +572,8 @@ sap.ui.define([
 	 * @param {jQuery} oRef The element as a jQuery object
 	 * @param {int} iZIndex The z-index value
 	 * @protected
-	 * @name sap.ui.core.Popup.Layer#update
-	 * @function
-	*/
-	Popup.Layer.prototype.update = function(/** jQuery */oRef, iZIndex){
+	 */
+	Layer.prototype.update = function(/** jQuery */oRef, iZIndex){
 		if (oRef.length) {
 			var oRect = oRef.rect();
 			this._$Ref.css({
@@ -613,15 +614,13 @@ sap.ui.define([
 	 * Resets the popup layer by hidding and assigning to the static area
 	 *
 	 * @private
-	 * @name sap.ui.core.Popup.Layer#reset
-	 * @function
 	 */
-	Popup.Layer.prototype.reset = function(){
+	Layer.prototype.reset = function(){
 		if (this._$Ref.length) {
 			this._$Ref[0].style.display = "none";
 			this._$Ref[0].style.visibility = "hidden";
 
-			this._$Ref.appendTo(sap.ui.getCore().getStaticAreaRef());
+			this._$Ref.appendTo(StaticArea.getDomRef());
 		}
 	};
 
@@ -630,10 +629,8 @@ sap.ui.define([
 	 *
 	 * @abstract
 	 * @returns {string} The DOM string
-	 * @name sap.ui.core.Popup.Layer#getDomString
-	 * @function
 	 */
-	Popup.Layer.prototype.getDomString = function(){
+	Layer.prototype.getDomString = function(){
 		Log.error("sap.ui.core.Popup.Layer: getDomString function must be overwritten!");
 
 		return "";
@@ -648,15 +645,15 @@ sap.ui.define([
 	/**
 	* @class
 	* @private
-	* @name sap.ui.core.Popup.ShieldLayer
+	* @alias sap.ui.core.Popup.ShieldLayer
 	*/
-	Popup.Layer.extend("sap.ui.core.Popup.ShieldLayer", {
+	var ShieldLayer = Layer.extend("sap.ui.core.Popup.ShieldLayer", {
 		constructor: function() {
-			Popup.Layer.apply(this);
+			Layer.apply(this);
 		}
 	});
 
-	Popup.ShieldLayer.prototype.getDomString = function(){
+	ShieldLayer.prototype.getDomString = function(){
 		return "<div class=\"sapUiPopupShield\" id=\"sap-ui-shieldlayer-" + uid() + "\"></div>";
 	};
 
@@ -665,7 +662,7 @@ sap.ui.define([
 	* @type sap.ui.base.ObjectPool
 	* @private
 	*/
-	Popup.prototype.oShieldLayerPool = new ObjectPool(Popup.ShieldLayer);
+	Popup.prototype.oShieldLayerPool = new ObjectPool(ShieldLayer);
 	//End of ShieldLayer
 
 	// Begin of Popup-Stacking facilities
@@ -784,7 +781,7 @@ sap.ui.define([
 	 * @param {string} [offset='0 0'] the offset relative to the docking point, specified as a string with space-separated pixel values (e.g. "10 0" to move the popup 10 pixels to the right). If the docking of both "my" and "at" are both RTL-sensitive ("begin" or "end"), this offset is automatically mirrored in the RTL case as well.
 	 * @param {sap.ui.core.Collision} [collision='flip'] defines how the position of an element should be adjusted in case it overflows the within area in some direction.
 	 * @param {string | sap.ui.core.Element | Element | Window} [within=Window] defines the area the popup should be placed in. This affects the collision detection.
-	 * @param {boolean | function | null} [followOf=false] defines whether the popup should follow the dock reference when the reference changes its position.
+	 * @param {boolean | function(sap.ui.core.Popup.PositionInfo) | null} [followOf=false] defines whether the popup should follow the dock reference when the reference changes its position.
 	 * @ui5-omissible-params iDuration
 	 * @public
 	 */
@@ -916,7 +913,7 @@ sap.ui.define([
 
 		this._iZIndex = this._iZIndex === this.getLastZIndex() ? this._iZIndex : this.getNextZIndex();
 
-		var oStaticArea = sap.ui.getCore().getStaticAreaRef();
+		var oStaticArea = StaticArea.getDomRef();
 		$Ref.css({
 			"position" : "absolute",
 			"visibility" : "hidden"
@@ -964,7 +961,7 @@ sap.ui.define([
 
 		if (this._shouldGetFocusAfterOpen()) {
 			if (this._sInitialFocusId) {
-				oControl = sap.ui.getCore().byId(this._sInitialFocusId);
+				oControl = Element.getElementById(this._sInitialFocusId);
 
 				if (oControl) {
 					oDomRefToFocus = oControl.getFocusDomRef();
@@ -1046,7 +1043,7 @@ sap.ui.define([
 	 */
 	Popup.prototype._duringOpen = function(bOpenAnimated) {
 		var $Ref = this._$(/* bForceReRender */false, /* bGetOnly */true),
-			oStaticArea = sap.ui.getCore().getStaticAreaRef(),
+			oStaticArea = StaticArea.getDomRef(),
 			oFirstFocusableInStaticArea = document.getElementById(oStaticArea.id + "-firstfe");
 
 		Popup._clearSelection();
@@ -1157,7 +1154,7 @@ sap.ui.define([
 					var oData = {
 						domRef: oDomRef
 					};
-					sap.ui.getCore().getEventBus().publish("sap.ui", sEventId, oData);
+					oEventBus.publish("sap.ui", sEventId, oData);
 
 					bContains = oData.contains;
 				}
@@ -1264,7 +1261,7 @@ sap.ui.define([
 								// Parent popup can check whether the current focused element is inside the parent popup. If it's still inside the
 								// parent popup, it keeps open, otherwise parent popup is also closed.
 								var sEventId = "sap.ui.core.Popup.onFocusEvent-" + sParentPopupId;
-								sap.ui.getCore().getEventBus().publish("sap.ui", sEventId, oEvent);
+								oEventBus.publish("sap.ui", sEventId, oEvent);
 							}
 						}
 					}.bind(this), iDuration);
@@ -1334,9 +1331,8 @@ sap.ui.define([
 			// Assumption: application did not move the content in the meantime!
 			if (this._bContentAddedToStatic ) {
 				//Fix for RTE in PopUp
-				sap.ui.getCore().getEventBus().publish("sap.ui","__beforePopupClose", { domNode : this._$().get(0) });
-				var oStatic = UIArea.getStaticAreaRef();
-				oStatic = UIArea.registry.get(oStatic.id);
+				oEventBus.publish("sap.ui","__beforePopupClose", { domNode : this._$().get(0) });
+				var oStatic = StaticArea.getUIArea();
 				oStatic.removeContent(oStatic.indexOfContent(this.oContent), true);
 			} else if (this._bUIAreaPatched) { // if the getUIArea function is patched, delete it
 				delete this.oContent.getUIArea;
@@ -1517,22 +1513,17 @@ sap.ui.define([
 	 */
 	Popup.getCurrentFocusInfo = function() {
 		var _oPreviousFocus = null;
-		var focusedControlId = sap.ui.getCore().getCurrentFocusedControlId();
-		if (focusedControlId) {
-			// an SAPUI5 control was focused before
-			var oFocusedControl = sap.ui.getCore().byId(focusedControlId);
+		var oActiveElement = Element.closestTo(document.activeElement);
+		if (oActiveElement) {
 			_oPreviousFocus = {
-				'sFocusId' : focusedControlId,
-				// add empty oFocusInfo to avoid the need for all recipients to check
-				'oFocusInfo' : oFocusedControl ? oFocusedControl.getFocusInfo() : {}
+				'sFocusId' : oActiveElement.getId(),
+				'oFocusInfo' : oActiveElement.getFocusInfo()
 			};
 		} else {
 			// not an SAPUI5 control... but if something has focus, save as much information about it as available
-			var oElement = document.activeElement;
-
 			_oPreviousFocus = {
-				'sFocusId' : oElement.id,
-				'oFocusedElement' : oElement,
+				'sFocusId' : document.activeElement.id,
+				'oFocusedElement' : document.activeElement,
 				// add empty oFocusInfo to avoid the need for all recipients to check
 				'oFocusInfo': {}
 			};
@@ -1567,7 +1558,7 @@ sap.ui.define([
 		};
 
 		if (oPreviousFocus) {
-			var oFocusedControl = sap.ui.getCore().byId(oPreviousFocus.sFocusId);
+			var oFocusedControl = Element.getElementById(oPreviousFocus.sFocusId);
 			if (oFocusedControl) {
 
 				// if an SAPUI5 control had been focused, just re-focus it
@@ -1760,7 +1751,7 @@ sap.ui.define([
 	 * @private
 	 */
 	Popup.prototype._applyPosition = function(oPosition) {
-		var bRtl = Configuration.getRTL();
+		var bRtl = Localization.getRTL();
 		var $Ref = this._$();
 
 		if ($Ref.length) {
@@ -2210,8 +2201,8 @@ sap.ui.define([
 	 * - the requested animation duration
 	 * - a function that MUST be called once the animation has completed
 	 *
-	 * @param {function} fnOpen The function which executes the custom opening animation
-	 * @param {function} fnClose The function  which executes the custom closing animation
+	 * @param {function(jQuery, int, function())} fnOpen The function which executes the custom opening animation
+	 * @param {function(jQuery, int, function())} fnClose The function  which executes the custom closing animation
 	 * @return {this} <code>this</code> to allow method chaining
 	 * @public
 	 */
@@ -2260,10 +2251,7 @@ sap.ui.define([
 	/**
 	 * Closes the popup instance
 	 *
-	 * @param {object} oEventParameters The event parameters
-	 * @param {object} oEventParameters.lastPosition The last position value
-	 * @param {object} oEventParameters.lastOfRect The last rect value
-	 * @param {object} oEventParameters.currentOfRect The current rect value
+	 * @param {sap.ui.core.Popup.PositionInfo} oEventParameters The event parameters
 	 * @private
 	 */
 	Popup.prototype._fnCloseOnScroll = function(oEventParameters) {
@@ -2274,7 +2262,7 @@ sap.ui.define([
 	 * This enabled/disables the Popup to follow its opening reference. If the Popup is open and a followOf should
 	 * be set the corresponding listener will be attached.
 	 *
-	 * @param {boolean | function | null} followOf a boolean value enabled/disables the default followOf-Handler. Or an individual handler can be given.
+	 * @param {boolean|function(sap.ui.core.Popup.PositionInfo)|null} followOf a boolean value enabled/disables the default followOf-Handler. Or an individual handler can be given.
 	 * null deletes all followOf settings.
 	 * @since 1.13.0
 	 * @public
@@ -2327,7 +2315,7 @@ sap.ui.define([
 	 * This returns true/false if the default followOf method should be used. If a separate followOf-handler was previously added
 	 * the corresponding function is returned.
 	 *
-	 * @returns {boolean | function} if a function was set it is returned otherwise a boolean value whether the follow of is activated
+	 * @returns {boolean|function(sap.ui.core.Popup.PositionInfo)} if a function was set it is returned otherwise a boolean value whether the follow of is activated
 	 * @since 1.13.0
 	 * @public
 	 */
@@ -2523,7 +2511,7 @@ sap.ui.define([
 		var that = this;
 
 		each(that._mEvents, function(sEventId, fnListener) {
-			sap.ui.getCore().getEventBus().subscribe("sap.ui", sEventId, fnListener, that);
+			oEventBus.subscribe("sap.ui", sEventId, fnListener, that);
 		});
 
 		this._bEventBusEventsRegistered = true;
@@ -2538,7 +2526,7 @@ sap.ui.define([
 		var that = this;
 
 		each(that._mEvents, function(sEventId, fnListener) {
-			sap.ui.getCore().getEventBus().unsubscribe("sap.ui", sEventId, fnListener, that);
+			oEventBus.unsubscribe("sap.ui", sEventId, fnListener, that);
 		});
 
 		delete this._bEventBusEventsRegistered;
@@ -2634,7 +2622,7 @@ sap.ui.define([
 				if ($ContentRef.length > 0) {
 					RenderManager.preserveContent($ContentRef[0], /* bPreserveRoot */ true, /* bPreserveNodesWithId */ false);
 				}
-				sap.ui.getCore().createRenderManager().render(this.oContent, sap.ui.getCore().getStaticAreaRef());
+				new RenderManager().render(this.oContent, StaticArea.getDomRef());
 				$ContentRef = this.oContent.$();
 			}
 		} else if (this.oContent instanceof Element) {
@@ -2773,7 +2761,7 @@ sap.ui.define([
 			var aChildPopups = this.getChildPopups();
 			bExtended = aChildPopups.some(function(sChildID) {
 				var sEventId = sEventPrefix + sChildID;
-				sap.ui.getCore().getEventBus().publish("sap.ui", sEventId, oData);
+				oEventBus.publish("sap.ui", sEventId, oData);
 
 				return oData.extended;
 			});
@@ -2797,7 +2785,7 @@ sap.ui.define([
 
 		if ($BlockRef.length === 0) {
 			$BlockRef = jQuery('<div id="sap-ui-blocklayer-popup" tabindex="0" class="' + sClassName + '"></div>');
-			$BlockRef.appendTo(sap.ui.getCore().getStaticAreaRef());
+			$BlockRef.appendTo(StaticArea.getDomRef());
 		} else {
 			$BlockRef.removeClass().addClass(sClassName);
 		}
@@ -3182,7 +3170,7 @@ sap.ui.define([
 	 */
 	Popup.prototype.addChildToPopup = function(sParentPopupId, sChildPopupId) {
 		var sEventId = "sap.ui.core.Popup.addFocusableContent-" + sParentPopupId;
-		sap.ui.getCore().getEventBus().publish("sap.ui", sEventId, {
+		oEventBus.publish("sap.ui", sEventId, {
 			id : sChildPopupId
 		});
 	};
@@ -3199,7 +3187,7 @@ sap.ui.define([
 	 */
 	Popup.prototype.removeChildFromPopup = function(sParentPopupId, sChildPopupId) {
 		var sEventId = "sap.ui.core.Popup.removeFocusableContent-" + sParentPopupId;
-		sap.ui.getCore().getEventBus().publish("sap.ui", sEventId, {
+		oEventBus.publish("sap.ui", sEventId, {
 			id : sChildPopupId
 		});
 	};
@@ -3212,7 +3200,7 @@ sap.ui.define([
 	 */
 	Popup.prototype.closePopup = function(sPopupId) {
 		var sEventId = "sap.ui.core.Popup.closePopup-" + sPopupId;
-		sap.ui.getCore().getEventBus().publish("sap.ui", sEventId);
+		oEventBus.publish("sap.ui", sEventId);
 	};
 
 	/**
@@ -3226,7 +3214,7 @@ sap.ui.define([
 	 */
 	Popup.prototype.increaseZIndex = function(sPopupId, bIsParent) {
 		var sEventId = "sap.ui.core.Popup.increaseZIndex-" + sPopupId;
-		sap.ui.getCore().getEventBus().publish("sap.ui", sEventId, {
+		oEventBus.publish("sap.ui", sEventId, {
 			isFromParentPopup : bIsParent ? bIsParent : false
 		});
 	};
@@ -3244,7 +3232,7 @@ sap.ui.define([
 	 * @param {object}
 	 *            mParameters contain all necessary parameters
 	 * @param {object}
-	 *            mParameter.that is the control that calls this function.
+	 *            mParameters.that is the control that calls this function.
 	 *            Needed for debug logging info
 	 * @param {object}
 	 *            mParameters.event is the event that is being forwarded
@@ -3308,7 +3296,7 @@ sap.ui.define([
 				// if the element is a control the focus should be called
 				// via the control
 				// especially if the control has an individual focus DOM-ref
-				var oControl = sap.ui.getCore().byId(oFocusDomRef.id);
+				var oControl = Element.getElementById(oFocusDomRef.id);
 				if (oControl instanceof Control) {
 					Log.debug("Focus will be handled by " + oControl.getMetadata().getName(), "", sName);
 				} else {

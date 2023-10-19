@@ -7,14 +7,16 @@ sap.ui.define([
 	"sap/ui/integration/util/BindingResolver",
 	"sap/ui/integration/util/Utils",
 	"sap/m/IllustratedMessageType",
-	"sap/m/IllustratedMessageSize"
+	"sap/m/IllustratedMessageSize",
+	"sap/base/Log"
 ], function (
 	Core,
 	BindingHelper,
 	BindingResolver,
 	Utils,
 	IllustratedMessageType,
-	IllustratedMessageSize
+	IllustratedMessageSize,
+	Log
 ) {
 	"use strict";
 
@@ -87,6 +89,9 @@ sap.ui.define([
 		}
 
 		try {
+			// Prepare binding infos only once for all sections
+			oManifest = BindingHelper.createBindingInfos(oManifest, oCard.getBindingNamespaces());
+
 			if (oCard.getAggregation("_filterBar")) {
 				aFilters =  oCard.getAggregation("_filterBar")._getFilters().map(function (oFilter) {
 					return ["/sap.card/configuration/filters/" + oFilter.getKey(), oFilter];
@@ -112,9 +117,13 @@ sap.ui.define([
 						message: oContentMessage
 					};
 				} else if (oContext.getStaticConfiguration) {
-					oSubConfig = oContext.getStaticConfiguration();
+					oSubConfig = oContext.getStaticConfiguration(Utils.getNestedPropertyValue(oManifest, sManifestPath));
 				} else {
 					oSubConfig = Utils.getNestedPropertyValue(oManifest, sManifestPath);
+				}
+
+				if (oContext.extendStaticConfiguration) {
+					oContext.extendStaticConfiguration(oSubConfig);
 				}
 
 				if (oSubConfig.data) {
@@ -122,8 +131,8 @@ sap.ui.define([
 					delete oSubConfig.data;
 				}
 
-				oSubConfig = BindingHelper.createBindingInfos(oSubConfig, oCard.getBindingNamespaces());
-				oSubConfig = BindingResolver.resolveValue(oSubConfig, oContext, sDataPath);
+				// Resolve only binding infos which are left unresolved, we must not resolve sections twice.
+				oSubConfig = BindingResolver.resolveValue(oSubConfig, oContext, sDataPath, true);
 				Utils.setNestedPropertyValue(oManifest, sManifestPath, oSubConfig);
 			});
 
@@ -144,6 +153,8 @@ sap.ui.define([
 		var oManifest = oCard.getManifestEntry("/"),
 			oResourceBundle = Core.getLibraryResourceBundle("sap.ui.integration");
 
+		Log.error(oError, "sap.ui.integration.util.ManifestResolver");
+
 		if (oManifest === null) {
 			oManifest = {};
 		}
@@ -152,8 +163,9 @@ sap.ui.define([
 			content: {
 				message: {
 					type: "error",
-					title: oResourceBundle.getText("CARD_ERROR_OCCURED"),
-					description: oError.toString(),
+					title: oResourceBundle.getText("CARD_ERROR_CONFIGURATION_TITLE"),
+					description: oResourceBundle.getText("CARD_ERROR_CONFIGURATION_DESCRIPTION"),
+					details: oError.toString(),
 					illustrationType: IllustratedMessageType.SimpleError,
 					illustrationSize: IllustratedMessageSize.Spot
 				}

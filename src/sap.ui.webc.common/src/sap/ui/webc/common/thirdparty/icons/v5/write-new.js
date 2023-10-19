@@ -6,7 +6,7 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
   });
   _exports.pathData = _exports.ltr = _exports.default = _exports.accData = void 0;
   const name = "write-new";
-  const pathData = "M499 88q8 7 8 18 0 12-8 19L126 504q-8 8-19 8H27q-12 0-19.5-7.5T0 485v-80q0-10 8-18L382 8q7-8 18-8 12 0 19 8zM27 161q-12 0-19-7.5T1 134V81q0-35 22.5-57.5T80 1h54q26 0 26 26 0 12-7 19.5T134 54H80q-12 0-19 7.5T54 81v53q0 12-7.5 19.5T27 161zm416-55l-43-42-42 42 42 43zm-80 80l-43-42L64 405l43 43zm122 166q12 0 19.5 7.5T512 379v53q0 35-23 57.5T432 512h-54q-26 0-26-26 0-12 7-19.5t19-7.5h54q12 0 19-7.5t7-19.5v-53q0-12 7.5-19.5T485 352z";
+  const pathData = "M26 160q-11 0-18.5-7.5T0 134V90q0-38 26-64T90 0h44q11 0 18.5 7.5T160 26t-7.5 18-18.5 7H90q-17 0-28 11T51 90v44q0 11-7 18.5T26 160zm479-66q7 7 7 18t-7 18L130 505q-9 7-18 7H26q-11 0-18.5-7.5T0 486v-86q0-10 8-18L382 7q9-7 18-7t18 7zm-55 18l-50-50-50 50 50 50zm-86 86l-50-50L62 400l50 50zm122 154q11 0 18.5 7.5T512 378v44q0 38-26 64t-64 26h-44q-11 0-18.5-7.5T352 486t7.5-18 18.5-7h44q17 0 28-11t11-28v-44q0-11 7-18.5t18-7.5z";
   _exports.pathData = pathData;
   const ltr = false;
   _exports.ltr = ltr;
@@ -20,6 +20,6 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
     collection,
     packageName
   });
-  var _default = "write-new";
+  var _default = "SAP-icons-v5/write-new";
   _exports.default = _default;
 });

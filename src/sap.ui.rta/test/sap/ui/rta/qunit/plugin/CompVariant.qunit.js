@@ -6,11 +6,14 @@ sap.ui.define([
 	"sap/m/MessageBox",
 	"sap/ui/comp/smartvariants/SmartVariantManagement",
 	"sap/ui/core/Core",
+	"sap/ui/core/Lib",
 	"sap/ui/dt/DesignTime",
 	"sap/ui/dt/OverlayRegistry",
 	"sap/ui/events/KeyCodes",
 	"sap/ui/fl/apply/api/SmartVariantManagementApplyAPI",
+	"sap/ui/fl/write/api/ContextSharingAPI",
 	"sap/ui/fl/write/api/SmartVariantManagementWriteAPI",
+	"sap/ui/fl/registry/Settings",
 	"sap/ui/fl/Layer",
 	"sap/ui/rta/command/CommandFactory",
 	"sap/ui/rta/plugin/CompVariant",
@@ -23,11 +26,14 @@ sap.ui.define([
 	MessageBox,
 	SmartVariantManagement,
 	Core,
+	Lib,
 	DesignTime,
 	OverlayRegistry,
 	KeyCodes,
 	SmartVariantManagementApplyAPI,
+	ContextSharingAPI,
 	SmartVariantManagementWriteAPI,
+	Settings,
 	Layer,
 	CommandFactory,
 	CompVariant,
@@ -61,25 +67,26 @@ sap.ui.define([
 	}
 
 	function setTextAndTriggerEnterOnEditableField(oPlugin, sText) {
-		oPlugin._$oEditableControlDomRef.text(sText);
-		oPlugin._$editableField.text(oPlugin._$oEditableControlDomRef.text());
+		oPlugin._oEditableControlDomRef.textContent = sText;
+		oPlugin._oEditableField.textContent = oPlugin._oEditableControlDomRef.textContent;
 		var oEvent = new Event("keydown");
 		oEvent.keyCode = KeyCodes.ENTER;
-		oPlugin._$editableField.get(0).dispatchEvent(oEvent);
+		oPlugin._oEditableField.dispatchEvent(oEvent);
 	}
 
 	QUnit.module("Given a designTime and ControlVariant plugin are instantiated", {
-		before: function() {
+		before() {
 			this.oVariantManagementControl = new SmartVariantManagement("svm", {
 				persistencyKey: "myPersistencyKey"
 			});
-			this.oLibraryBundle = sap.ui.getCore().getLibraryResourceBundle("sap.ui.rta");
+			this.oLibraryBundle = Lib.getResourceBundleFor("sap.ui.rta");
 			return SmartVariantManagementApplyAPI.loadVariants({
 				control: this.oVariantManagementControl,
 				standardVariant: {}
 			});
 		},
-		beforeEach: function(assert) {
+		beforeEach(assert) {
+			sandbox.stub(Settings, "getInstanceOrUndef").returns({getUserId() {return undefined;}});
 			var done = assert.async();
 			this.oPlugin = new CompVariant({
 				commandFactory: new CommandFactory()
@@ -112,11 +119,11 @@ sap.ui.define([
 				done();
 			}.bind(this));
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 			this.oDesignTime.destroy();
 		},
-		after: function() {
+		after() {
 			this.oVariantManagementControl.destroy();
 		}
 	}, function() {
@@ -257,10 +264,10 @@ sap.ui.define([
 			}, "the third variant is there and correct");
 
 			var oEvent = {
-				getParameters: function () {
+				getParameters() {
 					return {
 						item: {
-							getProperty: function() {
+							getProperty() {
 								return "id3";
 							}
 						}
@@ -311,10 +318,10 @@ sap.ui.define([
 			var oMenuItem = getContextMenuEntryById.call(this, "CTX_COMP_VARIANT_SWITCH");
 
 			var oEvent = {
-				getParameters: function () {
+				getParameters() {
 					return {
 						item: {
-							getProperty: function() {
+							getProperty() {
 								return "id2";
 							}
 						}
@@ -427,10 +434,13 @@ sap.ui.define([
 			var sNewDefaultVarId = "newDefaultVar";
 			sandbox.stub(this.oVariantManagementControl, "getDefaultVariantId").returns(sPreviousDefaultVarId);
 			var oNewVariantProperties = {foo: "bar"};
+			var oCreateComponentSpy = sandbox.spy(ContextSharingAPI, "createComponent");
 			sandbox.stub(this.oVariantManagementControl, "openManageViewsDialogForKeyUser").callsFake(function(mPropertyBag, fnCallback) {
 				assert.strictEqual(mPropertyBag.rtaStyleClass, Utils.getRtaStyleClassName(), "the style class is set");
 				assert.notEqual(mPropertyBag.contextSharingComponentContainer, undefined, "the component container is set");
 				assert.strictEqual(mPropertyBag.layer, Layer.CUSTOMER, "the layer is passed");
+				var oArgs = oCreateComponentSpy.getCall(0).args[0];
+				assert.ok(oArgs.variantManagementControl, "then the correct control is used");
 				fnCallback(Object.assign({}, oNewVariantProperties, {"default": sNewDefaultVarId}));
 			});
 
@@ -448,7 +458,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given a control implementing the 'variantContent' action", {
-		before: function() {
+		before() {
 			this.oVariantManagementControl = new SmartVariantManagement("svm", {
 				persistencyKey: "myPersistencyKey"
 			});
@@ -464,7 +474,8 @@ sap.ui.define([
 				standardVariant: {}
 			});
 		},
-		beforeEach: function(assert) {
+		beforeEach(assert) {
+			sandbox.stub(Settings, "getInstanceOrUndef").returns({getUserId() {return undefined;}});
 			var done = assert.async();
 			this.oPlugin = new CompVariant({
 				commandFactory: new CommandFactory()
@@ -508,11 +519,11 @@ sap.ui.define([
 				done();
 			}.bind(this));
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 			this.oDesignTime.destroy();
 		},
-		after: function() {
+		after() {
 			this.oHBox.destroy();
 		}
 	}, function() {
@@ -570,7 +581,7 @@ sap.ui.define([
 		});
 
 		QUnit.test("when the current variant is read only and the content gets changed and a new variant is created", function(assert) {
-			var oLibraryBundle = sap.ui.getCore().getLibraryResourceBundle("sap.ui.rta");
+			var oLibraryBundle = Lib.getResourceBundleFor("sap.ui.rta");
 			sandbox.stub(this.oVariant, "isEditEnabled").returns(false);
 			this.oDTHandlerStub.resolves([
 				{
@@ -627,6 +638,7 @@ sap.ui.define([
 		QUnit.test("when the current variant is read only and the content gets changed and the save as is canceled", function(assert) {
 			var fnDone = assert.async();
 			sandbox.stub(this.oVariant, "isEditEnabled").returns(false);
+			var oCreateComponentSpy = sandbox.spy(ContextSharingAPI, "createComponent");
 			this.oDTHandlerStub.resolves([
 				{
 					changeSpecificData: {
@@ -640,6 +652,8 @@ sap.ui.define([
 			]);
 			sandbox.stub(this.oVariantManagementControl, "openSaveAsDialogForKeyUser").callsFake(function(sStyleClass, fnCallback) {
 				fnCallback();
+				var oArgs = oCreateComponentSpy.getCall(0).args[0];
+				assert.ok(oArgs.variantManagementControl, "then the correct control is used");
 			});
 			sandbox.stub(MessageBox, "warning").callsFake(function(sMessage, oParameters) {
 				oParameters.onClose(oParameters.emphasizedAction);

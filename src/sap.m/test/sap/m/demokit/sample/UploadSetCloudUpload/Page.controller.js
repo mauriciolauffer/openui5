@@ -1,16 +1,19 @@
 sap.ui.define([
 	"sap/m/library",
+	"sap/m/upload/Uploader",
 	"sap/ui/core/mvc/Controller",
 	"sap/ui/core/Item",
 	"sap/ui/model/json/JSONModel",
-	"sap/m/upload/Uploader",
-	"sap/m/sample/UploadSetCloudUpload/mockserver/mockServer"
-], function (MobileLibrary, Controller, Item, JSONModel, Uploader, MockServer) {
+	"sap/ui/model/odata/v4/ODataModel",
+	"./mockserver/mockServer",
+	"require",
+	"sap/m/ObjectStatus"
+], function (MobileLibrary, Uploader, Controller, Item, JSONModel, ODataModel, MockServer, require,ObjectStatus) {
 	"use strict";
 
 	return Controller.extend("sap.m.sample.UploadSetCloudUpload.Page", {
 		onInit: function () {
-			var sPath = sap.ui.require.toUrl("sap/m/sample/UploadSet/items.json");
+			var sPath = require.toUrl("./items.json");
 
 			this.getView().setModel(new JSONModel(sPath));
 
@@ -29,11 +32,12 @@ sap.ui.define([
 					confirmButtonText: oUploadSet._oRb.getText("SELECT_PICKER_TITLE_TEXT"),
 					title: oUploadSet._oRb.getText("SELECT_PICKER_TITLE_TEXT"),
 					fileNameMandatory: true,
+					filePickerType: "Upload",
 					enableDuplicateCheck:oUploadSet.getSameFilenameAllowed(),
 					select: oUploadSet._onCloudPickerFileChange.bind(oUploadSet)
 				});
 
-				var oModel = new sap.ui.model.odata.v4.ODataModel({
+				var oModel = new ODataModel({
 				 serviceUrl: oCloudPickerInstance.getContent()[0].getModel().sServiceUrl,
 				 synchronizationMode: "None",
 				 earlyRequests: false
@@ -43,6 +47,14 @@ sap.ui.define([
 
 				return oCloudPickerInstance;
 			};
+		},
+		beforeUpload: function(oEvent) {
+			var oItem = oEvent.getParameter("item");
+			if (oItem.getUploadType() === "Cloud") {
+				oItem.addMarkerAsStatus(
+					new ObjectStatus({ text: "Managed By Google", icon:"sap-icon://share-2",state:"Indication07"})
+				);
+			}
 		}
 	});
 });

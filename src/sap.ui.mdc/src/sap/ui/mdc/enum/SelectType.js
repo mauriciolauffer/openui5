@@ -15,8 +15,9 @@ sap.ui.define(function() {
 	 * @ui5-restricted sap.ui.mdc
 	 * @since 1.90.1
 	 * @alias sap.ui.mdc.enum.SelectType
+     * @deprecated since 1.115.0 - please see {@link sap.ui.mdc.enums.ValueHelpSelectionType}
 	 */
-	var SelectType = {
+	const SelectType = {
 		/**
 		 * The given conditions are set and replace the existing ones.
 		 * @private

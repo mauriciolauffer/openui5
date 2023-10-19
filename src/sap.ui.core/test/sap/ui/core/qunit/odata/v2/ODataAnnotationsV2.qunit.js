@@ -692,7 +692,7 @@ sap.ui.define([
 		// Instantiate without options argument - use defaults
 		var oAnnotationsFromMetadata = new ODataAnnotations(oModel.oMetadata);
 
-		assert.equal(oAnnotationsFromMetadata.getAnnotationsData(), oAnnotationsFromMetadata.getData(), "Check deprecated API");
+		assert.deepEqual(oAnnotationsFromMetadata.getData(), {});
 
 		var oAnnotations = new ODataAnnotations(oModel.oMetadata, { skipMetadata: true });
 
@@ -748,7 +748,9 @@ sap.ui.define([
 	};
 
 	QUnit.test("Loading and accessing annotations", fnTestMisc1);
-
+	/**
+	 * @deprecated As of version 1.37.0
+	 */
 	QUnit.test("ODataAnnotations#getAnnotationsData is alias of ODataAnnotations#getData", function (assert) {
 		assert.strictEqual(ODataAnnotations.prototype.getData, ODataAnnotations.prototype.getAnnotationsData);
 	});
@@ -770,7 +772,7 @@ sap.ui.define([
 		});
 
 		oModel.annotationsLoaded().then(function(aAnnotations) {
-			var iLastModified = new Date("Wed, 15 Nov 1995 04:58:08 GMT").getTime();
+			var iLastModified = Date.UTC(1995, 10, 15, 4, 58, 8); // "Wed, 15 Nov 1995 04:58:08 GMT"
 
 			assert.equal(Date.parse(aAnnotations[0].lastModified), iLastModified, "LastModified header exists for first annotation document");
 			assert.equal(Date.parse(aAnnotations[1].lastModified), iLastModified, "LastModified header exists for second annotation document");
@@ -815,7 +817,7 @@ sap.ui.define([
 		});
 
 		oModel.annotationsLoaded().then(function(aAnnotations) {
-			var iEtag = new Date("Wed, 15 Nov 1995 04:58:08 GMT").getTime();
+			var iEtag = Date.UTC(1995, 10, 15, 4, 58, 8); // "Wed, 15 Nov 1995 04:58:08 GMT"
 
 			assert.equal(Date.parse(aAnnotations[0].eTag), iEtag, "ETag header exists for first annotation document");
 			assert.equal(Date.parse(aAnnotations[1].eTag), iEtag, "ETag header exists for second annotation document");

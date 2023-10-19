@@ -28,7 +28,8 @@ sap.ui.define([
 		CountMode, ODataFilter, ODataUtils,  OperationMode) {
 	"use strict";
 
-	var aCreateParametersAllowlist = ["changeSetId", "error", "expand", "groupId", "inactive",
+	var sClassName = "sap.ui.model.odata.v2.ODataListBinding",
+		aCreateParametersAllowlist = ["changeSetId", "error", "expand", "groupId", "inactive",
 			"success"];
 
 	/**
@@ -99,10 +100,8 @@ sap.ui.define([
 
 			this.sFilterParams = null;
 			this.sSortParams = null;
-			this.sRangeParams = null;
 			this.sCustomParams = this.oModel.createCustomParams(this.mParameters);
 			this.mCustomParams = mParameters && mParameters.custom;
-			this.iStartIndex = 0;
 			this.iLength = 0;
 			this.bPendingChange = false;
 			this.aAllKeys = null;
@@ -110,6 +109,10 @@ sap.ui.define([
 			this.sCountMode = (mParameters && mParameters.countMode) || this.oModel.sDefaultCountMode;
 			this.sOperationMode = (mParameters && mParameters.operationMode) || this.oModel.sDefaultOperationMode;
 			this.bUsePreliminaryContext = (mParameters && mParameters.usePreliminaryContext) || oModel.bPreliminaryContext;
+			// avoid data request if the binding receives a preliminary context on construction, but does not use it
+			if (!this.bUsePreliminaryContext && oContext && oContext.isPreliminary && oContext.isPreliminary()) {
+				this.oContext = oContext = undefined;
+			}
 			this.bRefresh = false;
 			this.bNeedsUpdate = false;
 			this.bDataAvailable = false;
@@ -172,10 +175,14 @@ sap.ui.define([
 
 	/**
 	 * The 'createActivate' event is fired when a property is changed on a context in an 'inactive'
-	 * state (see {@link #create}). The context then changes its state to 'transient'.
+	 * state (see {@link #create}). The context then changes its state to 'transient'. Since
+	 * 1.113.0, this default behavior can be prevented by calling
+	 * {@link sap.ui.base.Event#preventDefault}. The context will then remain in the 'inactive'
+	 * state.
 	 *
 	 * @param {sap.ui.base.Event} oEvent The event object
-	 * @param {sap.ui.model.odata.v2.ODataListBinding} oEvent.getSource() This binding
+	 * @param {sap.ui.model.odata.v2.ODataListBinding} oEvent.getSource This binding
+	 * @param {sap.ui.model.odata.v2.Context} oEvent.getParameters.context The affected context
 	 *
 	 * @event sap.ui.model.odata.v2.ODataListBinding#createActivate
 	 * @public
@@ -267,6 +274,21 @@ sap.ui.define([
 	};
 
 	/**
+	 * Returns the context at the given index.
+	 *
+	 * @param {number} iIndex The index of the context
+	 *
+	 * @returns {sap.ui.model.odata.v2.Context|undefined}
+	 *   The context at the given index or <code>undefined</code> if no context exists at the given index
+	 *
+	 * @private
+	 * @ui5-restricted sap.ui.table
+	 */
+	ODataListBinding.prototype.getContextByIndex = function (iIndex) {
+		return this._getContexts(iIndex, 1)[0];
+	};
+
+	/**
 	 * Return contexts for the list.
 	 *
 	 * @param {int} [iStartIndex=0]
@@ -332,7 +354,7 @@ sap.ui.define([
 			}
 		}
 		aContexts = this._getContexts(iStartIndex, iLength);
-		if (this._hasTransientParentContext()) {
+		if (this.oCombinedFilter === Filter.NONE || this._hasTransientParentContext()) {
 			// skip #loadData
 		} else if (this.useClientMode()) {
 			if (!this.aAllKeys && !this.bPendingRequest && this.oModel.getServiceMetadata()) {
@@ -512,7 +534,7 @@ sap.ui.define([
 			sResolvedPath = this.getResolvedPath(); // resolved path with the new context
 			this.sDeepPath = this.oModel.resolveDeep(this.sPath, this.oContext);
 			if (!this._checkPathType()) {
-				Log.error("List Binding is not bound against a list for " + sResolvedPath);
+				Log.error("List Binding is not bound against a list for " + sResolvedPath, undefined, sClassName);
 			}
 			// ensure that data state is updated with each change of the context
 			this.checkDataState();
@@ -766,49 +788,52 @@ sap.ui.define([
 	/**
 	 * Load data for the given range from server.
 	 *
-	 * @param {int} iStartIndex The start index
-	 * @param {int} iLength The amount of data to be requested
+	 * @param {int} [iStartIndex] The start index
+	 * @param {int} [iLength] The amount of data to be requested
 	 * @private
 	 */
 	ODataListBinding.prototype.loadData = function(iStartIndex, iLength) {
-		var sGroupId,
+		var sGroupId, oReadParameters,
 			sGuid = uid(),
 			bInlineCountRequested = false,
-			aParams = [],
+			iLimit = this.oModel.iSizeLimit,
 			sPath = this.sPath,
 			bRemovePersistedCreatedAfterRefresh = this.bRemovePersistedCreatedAfterRefresh,
+			aResultPages = [],
+			bUseClientMode = this.useClientMode(),
 			that = this;
 
-		// create range parameters and store start index for sort/filter requests
-		if (iStartIndex || iLength) {
-			this.sRangeParams = "$skip=" + iStartIndex + "&$top=" + iLength;
-			this.iStartIndex = iStartIndex;
-		} else {
-			iStartIndex = this.iStartIndex;
-		}
+		function getUrlParameters() {
+			var aParameters = [];
+			// create range parameters and store start index for sort/filter requests
+			if (iLength) {
+				aParameters.push("$skip=" + iStartIndex + "&$top=" + iLength);
+			} else {
+				// For OperationMode.Client and OperationMode.Auto (if the threshold was sufficient)
+				// loadData is called without iStartIndex and iLength, try reading all data without
+				// $skip and $top
+				iStartIndex = 0;
+			}
+			if (that.sSortParams) {
+				aParameters.push(that.sSortParams);
+			}
+			that._addFilterQueryOption(aParameters, !bUseClientMode);
+			if (that.sCustomParams) {
+				aParameters.push(that.sCustomParams);
+			}
+			if (that.sCountMode == CountMode.InlineRepeat
+					|| !that.bLengthFinal
+						&& (that.sCountMode === CountMode.Inline || that.sCountMode === CountMode.Both)) {
+				aParameters.push("$inlinecount=allpages");
+				bInlineCountRequested = true;
+			} else {
+				bInlineCountRequested = false;
+			}
 
-		// create the request url
-		// $skip/$top and are excluded for OperationMode.Client and Auto if the threshold was sufficient
-		if (this.sRangeParams && !this.useClientMode()) {
-			aParams.push(this.sRangeParams);
-		}
-		if (this.sSortParams) {
-			aParams.push(this.sSortParams);
-		}
-		this._addFilterQueryOption(aParams, !this.useClientMode());
-		if (this.sCustomParams) {
-			aParams.push(this.sCustomParams);
-		}
-		if (this.sCountMode == CountMode.InlineRepeat ||
-			!this.bLengthFinal &&
-			(this.sCountMode === CountMode.Inline ||
-			 this.sCountMode === CountMode.Both)) {
-			aParams.push("$inlinecount=allpages");
-			bInlineCountRequested = true;
+			return aParameters;
 		}
 
 		function fnSuccess(oData) {
-
 			// update iLength (only when the inline count was requested and is available)
 			if (bInlineCountRequested && oData.__count !== undefined) {
 				that.iLength = parseInt(oData.__count);
@@ -836,12 +861,24 @@ sap.ui.define([
 				}
 			}
 
-			if (that.useClientMode()) {
+			if (bUseClientMode) {
 				// For clients mode, store all keys separately and set length to final
-				that.aKeys = [];
+				if (!iStartIndex) {
+					that.aKeys = [];
+				}
 				each(oData.results, function(i, entry) {
-					that.aKeys[i] = that.oModel._getKey(entry);
+					that.aKeys[iStartIndex + i] = that.oModel._getKey(entry);
 				});
+				aResultPages.push(oData.results);
+				if (oData.__next && that.aKeys.length < iLimit /*first request may return enough*/) {
+					// continue reading
+					iStartIndex = that.aKeys.length;
+					iLength = iLimit - iStartIndex; // read up to model size limit
+					oReadParameters.urlParameters = getUrlParameters();
+					that.mRequestHandles[sGuid] = that.oModel.read(that.sPath, oReadParameters);
+
+					return;
+				}
 				that.updateExpandedList(that.aKeys);
 				that.aAllKeys = that.aKeys.slice();
 				that.iLength = that.aKeys.length;
@@ -902,9 +939,17 @@ sap.ui.define([
 				that._removePersistedCreatedContexts();
 			}
 
-			//register datareceived call as  callAfterUpdate
-			that.oModel.callAfterUpdate(function() {
-				that.fireDataReceived({data: oData});
+			that.oModel.callAfterUpdate(function () {
+				if (aResultPages.length > 1) {
+					that.fireDataReceived({
+						data: {
+							__count: String(that.iLength),
+							results: Array.prototype.concat.apply([], aResultPages)
+						}
+					});
+				} else {
+					that.fireDataReceived({data: oData});
+				}
 			});
 		}
 
@@ -931,13 +976,11 @@ sap.ui.define([
 			if (!that.bSkipDataEvents) {
 				that.fireDataReceived();
 			}
-
 		}
 
 		if (this.isRelative()){
 			sPath = this.getResolvedPath();
 		}
-
 		if (sPath) {
 			// Execute the request and use the metadata if available
 			this.bPendingRequest = true;
@@ -947,20 +990,20 @@ sap.ui.define([
 			this.bSkipDataEvents = false;
 			//if load is triggered by a refresh we have to check the refreshGroup
 			sGroupId = this.sRefreshGroupId ? this.sRefreshGroupId : this.sGroupId;
-			this.mRequestHandles[sGuid] = this.oModel.read(this.sPath, {
+			oReadParameters = {
 				headers: this.bTransitionMessagesOnly
 					? {"sap-messages" : "transientOnly"}
 					: undefined,
 				context: this.oContext,
 				groupId: sGroupId,
-				urlParameters: aParams,
+				urlParameters: getUrlParameters(),
 				success: fnSuccess,
 				error: fnError,
 				canonicalRequest: this.bCanonicalRequest,
 				updateAggregatedMessages: this.bRefresh
-			});
+			};
+			this.mRequestHandles[sGuid] = this.oModel.read(this.sPath, oReadParameters);
 		}
-
 	};
 
 	ODataListBinding.prototype.isLengthFinal = function() {
@@ -1018,7 +1061,8 @@ sap.ui.define([
 			that.bLengthRequested = true;
 			that.oCountHandle = null;
 
-			// in the OpertionMode.Auto, we check if the count is LE than the given threshold and set the client operation flag accordingly
+			// in the OperationMode.Auto, we check if the count is LE than the given threshold and
+			// set the client operation flag accordingly
 			if (that.sOperationMode == OperationMode.Auto) {
 				if (that.iLength <= that.mParameters.threshold) {
 					that.bThresholdRejected = false;
@@ -1036,7 +1080,7 @@ sap.ui.define([
 			if (oError.response){
 				sErrorMsg += ", " + oError.response.statusCode + ", " + oError.response.statusText + ", " + oError.response.body;
 			}
-			Log.warning(sErrorMsg);
+			Log.warning(sErrorMsg, undefined, sClassName);
 		}
 
 		// Use context and check for relative binding
@@ -1241,7 +1285,8 @@ sap.ui.define([
 		if (this.oModel.oMetadata && this.oModel.oMetadata.isLoaded() && this.bInitial
 				&& !this._hasTransientParentWithoutSubContexts()) {
 			if (!this._checkPathType()) {
-				Log.error("List Binding is not bound against a list for " + this.getResolvedPath());
+				Log.error("List Binding is not bound against a list for " + this.getResolvedPath(), undefined,
+					sClassName);
 			}
 			this.bInitial = false;
 			this._initSortersFilters();
@@ -1357,7 +1402,8 @@ sap.ui.define([
 		this.aKeys = [];
 		this.aAllKeys = null;
 		this.iLength = 0;
-		this.bLengthFinal = this._hasTransientParentContext() || !this.isResolved();
+		this.bLengthFinal = this.oCombinedFilter === Filter.NONE || this._hasTransientParentContext()
+			|| !this.isResolved();
 		this.sChangeReason = undefined;
 		this.bDataAvailable = false;
 		this.bLengthRequested = false;
@@ -1399,6 +1445,8 @@ sap.ui.define([
 	 *
 	 * @param {string} sFormat Value for the $format Parameter
 	 * @return {string} URL which can be used for downloading
+ 	 * @throws {Error} If this binding uses {@link sap.ui.model.Filter.NONE}
+	 *
 	 * @since 1.24
 	 * @public
 	 */
@@ -1406,6 +1454,9 @@ sap.ui.define([
 		var aParams = [],
 			sPath;
 
+		if (this.oCombinedFilter === Filter.NONE) {
+			throw new Error("Computation of download URL for binding with Filter.NONE not supported");
+		}
 		if (sFormat) {
 			aParams.push("$format=" + encodeURIComponent(sFormat));
 		}
@@ -1516,6 +1567,7 @@ sap.ui.define([
 				this.sChangeReason = ChangeReason.Sort;
 				this._fireRefresh({reason : this.sChangeReason});
 			}
+			/** @deprecated As of version 1.11.0 */
 			this._fireSort({sorter: aSorters});
 			bSuccess = true;
 		}
@@ -1545,7 +1597,8 @@ sap.ui.define([
 			fnCompare;
 
 		if (!oEntityType) {
-			Log.warning("Cannot determine sort/filter comparators, as entitytype of the collection is unknown!");
+			Log.warning("Cannot determine sort/filter comparators, as entity type of the collection is unknown!",
+				undefined, sClassName);
 			return;
 		}
 		aEntries.forEach(function(oEntry) {
@@ -1707,17 +1760,19 @@ sap.ui.define([
 		if (!this.aApplicationFilters || !Array.isArray(this.aApplicationFilters)) {
 			this.aApplicationFilters = [];
 		}
-
+		/** @deprecated As of version 1.22.0, reason sap.ui.model.odata.Filter.js */
 		this.convertFilters();
 		this.oCombinedFilter = FilterProcessor.combineFilters(this.aFilters, this.aApplicationFilters);
 
-		if (!this.useClientMode()) {
+		if (!this.useClientMode() && this.oCombinedFilter !== Filter.NONE) {
 			this.createFilterParams(this.oCombinedFilter);
 		}
 
 		if (!this.bInitial) {
-			this.addComparators(this.aFilters);
-			this.addComparators(this.aApplicationFilters);
+			if (this.oCombinedFilter !== Filter.NONE) {
+				this.addComparators(this.aFilters);
+				this.addComparators(this.aApplicationFilters);
+			}
 
 			if (this.useClientMode()) {
 				// apply clientside filters/sorters only if data is available
@@ -1736,6 +1791,7 @@ sap.ui.define([
 				this.sChangeReason = ChangeReason.Filter;
 				this._fireRefresh({reason: this.sChangeReason});
 			}
+			/** @deprecated As of version 1.11.0 */
 			if (sFilterType === FilterType.Application) {
 				this._fireFilter({filters: this.aApplicationFilters});
 			} else {
@@ -1754,6 +1810,7 @@ sap.ui.define([
 	/**
 	 * Convert sap.ui.model.odata.Filter to sap.ui.model.Filter
 	 *
+	 * @deprecated As of version 1.22.0, reason sap.ui.model.odata.Filter.js
 	 * @private
 	 */
 	ODataListBinding.prototype.convertFilters = function() {
@@ -1792,6 +1849,7 @@ sap.ui.define([
 		this.addComparators(this.aSorters, true);
 		this.addComparators(this.aFilters);
 		this.addComparators(this.aApplicationFilters);
+		/** @deprecated As of version 1.22.0, reason sap.ui.model.odata.Filter.js */
 		this.convertFilters();
 		this.oCombinedFilter = FilterProcessor.combineFilters(this.aFilters, this.aApplicationFilters);
 
@@ -1919,8 +1977,14 @@ sap.ui.define([
 	 *   batch request
 	 * @param {boolean} [mParameters.inactive]
 	 *   Whether the created context is inactive. An inactive context will only be sent to the
-	 *   server after the first property update. From then on it behaves like any other created
-	 *   context.
+	 *   server when it has become active after a property update. From then on it behaves like any
+	 *   other created context.<br>
+	 *   When a property update happens on an inactive context, the
+	 *   {@link sap.ui.model.odata.v2.ODataListBinding#event:createActivate 'createActivate'} event
+	 *   is fired, and the context becomes active, unless the event handler prevents this. While
+	 *   inactive, the context does not count as a
+	 *   {@link sap.ui.model.odata.v2.ODataModel#hasPendingChanges pending change} and does not
+	 *   contribute to the {@link #getCount count}.
 	 * @param {function} [mParameters.success]
 	 *   The success callback function
 	 * @returns {sap.ui.model.odata.v2.Context}
@@ -1948,8 +2012,7 @@ sap.ui.define([
 				context : this.oContext,
 				properties : oInitialData
 			},
-			bCreationAreaAtEnd = this.isFirstCreateAtEnd(),
-			that = this;
+			bCreationAreaAtEnd = this.isFirstCreateAtEnd();
 
 		bAtEnd = !!bAtEnd;
 		if (bCreationAreaAtEnd === undefined) {
@@ -1984,9 +2047,9 @@ sap.ui.define([
 		oCreatedContextsCache.addContext(oCreatedContext, sResolvedPath,
 			this.sCreatedEntitiesKey, bAtEnd);
 		if (mCreateParameters.inactive) {
-			oCreatedContext.fetchActivated().then(function () {
-				that.fireEvent("createActivate");
-			});
+			oCreatedContext.fetchActivationStarted()
+				.then(this.fireCreateActivate.bind(this, oCreatedContext))
+				.catch(this.oModel.getReporter(sClassName));
 		}
 		this._fireChange({reason : ChangeReason.Add});
 
@@ -2007,9 +2070,13 @@ sap.ui.define([
 	 *   given {@link sap.ui.core.message.Message} is considered. If no callback function is given,
 	 *   all messages are considered.
 	 * @returns {Promise<sap.ui.model.Filter|null>}
-	 *   A Promise that resolves with a {@link sap.ui.model.Filter} representing the entries with
-	 *   messages; it resolves with <code>null</code> if the binding is not resolved or if there is
-	 *   no message for any entry
+	 *   A Promise that resolves with an {@link sap.ui.model.Filter} representing the entries with
+	 *   messages, except in the following cases:
+	 *   <ul>
+	 *     <li> If only transient entries have messages, it resolves with {@link sap.ui.model.Filter.NONE}
+	 *     <li> If the binding is not resolved or if there is no message for any entry, it resolves with
+	 *     <code>null</code>
+	 *   </ul>
 	 *
 	 * @protected
 	 * @since 1.77.0
@@ -2020,23 +2087,34 @@ sap.ui.define([
 			aFilters = [],
 			aPredicateSet = new Set(),
 			sResolvedPath = this.getResolvedPath(),
+			bTransientMatched = false,
 			that = this;
+
+		function isNonTransientTarget(sFullTarget) {
+			return aCreatedContextDeepPaths
+				.every((sCreatedContextDeepPath) => !sFullTarget.startsWith(sCreatedContextDeepPath));
+		}
 
 		if (!sResolvedPath) {
 			return Promise.resolve(null);
 		}
 
+		const aCreatedContextDeepPaths = this._getCreatedContexts()
+			.map((oCreatedContext) => oCreatedContext.getDeepPath());
 		this.oModel.getMessagesByPath(sDeepPath, true).forEach(function (oMessage) {
 			var sPredicate;
 
 			if (!fnFilter || fnFilter(oMessage)) {
-				// this.oModel.getMessagesByPath returns only messages with full target starting with
-				// deep path
+				// this.oModel.getMessagesByPath returns only messages with full target starting with deep path
 				oMessage.aFullTargets.forEach(function (sFullTarget) {
 					if (sFullTarget.startsWith(sDeepPath)) {
-						sPredicate = sFullTarget.slice(sDeepPath.length).split("/")[0];
-						if (sPredicate) {
-							aPredicateSet.add(sPredicate);
+						if (isNonTransientTarget(sFullTarget)) {
+							sPredicate = sFullTarget.slice(sDeepPath.length).split("/")[0];
+							if (sPredicate) {
+								aPredicateSet.add(sPredicate);
+							}
+						} else {
+							bTransientMatched = true;
 						}
 					}
 				});
@@ -2050,6 +2128,8 @@ sap.ui.define([
 			oFilter = aFilters[0];
 		} else if (aFilters.length > 1) {
 			oFilter = new Filter({filters : aFilters});
+		} else if (bTransientMatched) {
+			oFilter = Filter.NONE;
 		} // else oFilter = null
 
 		return Promise.resolve(oFilter);
@@ -2107,10 +2187,15 @@ sap.ui.define([
 			bFirstCreateAtStart = this.isFirstCreateAtEnd() === false,
 			aKeys = bFirstCreateAtStart && this.aKeys.length
 				? aCreatedContexts.concat(this.aKeys)
-				: this.aKeys;
+				: this.aKeys,
+			iLimit = this.bLengthFinal ? this.iLength : undefined;
 
-		aIntervals = ODataUtils._getReadIntervals(aKeys, iStartIndex, iLength, iMaximumPrefetchSize,
-			/*iLimit*/this.bLengthFinal ? this.iLength : undefined);
+		if (bFirstCreateAtStart && iLimit) {
+			// when adding the created contexts to aKeys the final length has to be increased too
+			iLimit += aCreatedContexts.length;
+		}
+
+		aIntervals = ODataUtils._getReadIntervals(aKeys, iStartIndex, iLength, iMaximumPrefetchSize, iLimit);
 		oInterval = ODataUtils._mergeIntervals(aIntervals);
 
 		if (oInterval && bFirstCreateAtStart && this.aKeys.length) {
@@ -2210,20 +2295,25 @@ sap.ui.define([
 	 *   Set of entity types that are affected by side-effects requests
 	 * @param {string} [sGroupId]
 	 *   The ID of a request group
+	 * @returns {boolean}
+	 *   Whether the list binding is affected by the side effect
 	 *
 	 * @private
 	 */
 	ODataListBinding.prototype._refreshForSideEffects = function (oAffectedEntityTypes, sGroupId) {
-		if (!this._isExpandedListUsable() && oAffectedEntityTypes.has(this.oEntityType)) {
+		var bIsAffected = !this._hasTransientParentContext() && oAffectedEntityTypes.has(this.oEntityType);
+
+		if (bIsAffected && !this._isExpandedListUsable()) {
 			this.sRefreshGroupId = sGroupId;
 			this._refresh();
 			this.sRefreshGroupId = undefined;
 		}
+		return bIsAffected;
 	};
 
 	/**
-	 * Assigns the "createActivate"-event to all already exisiting inactive contexts which are
-	 * belonging to this binding.
+	 * Assigns the "createActivate"-event to all already existing inactive contexts which belong to
+	 * this binding.
 	 *
 	 * @private
 	 */
@@ -2232,11 +2322,34 @@ sap.ui.define([
 
 		this._getCreatedContexts().forEach(function (oContext) {
 			if (oContext.isInactive()) {
-				oContext.fetchActivated().then(function () {
-					that.fireEvent("createActivate");
-				});
+				oContext.fetchActivationStarted()
+					.then(that.fireCreateActivate.bind(that, oContext))
+					.catch(that.oModel.getReporter(sClassName));
 			}
 		});
+	};
+
+	/**
+	 * Fires the 'createActivate' event and deactivates the given context in case the application's event handler
+	 * calls <code>preventDefault</code> on the event.
+	 *
+	 * @param {sap.ui.model.odata.v2.Context} oContext
+	 *   The context which is activated
+	 *
+	 * @private
+	 */
+	ODataListBinding.prototype.fireCreateActivate = function (oContext) {
+		if (!this.bIsBeingDestroyed) {
+			if (this.fireEvent("createActivate", {context : oContext}, /*bAllowPreventDefault*/true)) {
+				oContext.finishActivation();
+				this._fireChange({reason : ChangeReason.Change});
+			} else {
+				oContext.cancelActivation();
+				oContext.fetchActivationStarted()
+					.then(this.fireCreateActivate.bind(this, oContext))
+					.catch(this.oModel.getReporter(sClassName));
+			}
+		}
 	};
 
 	return ODataListBinding;

@@ -43,6 +43,9 @@ sap.ui.define([
 	// shortcut for sap.m.ButtonAccessibilityType
 	var ButtonAccessibilityType = mobileLibrary.ButtonAccessibilityType;
 
+	// shortcut for sap.m.ButtonAccessibleRole
+	var ButtonAccessibleRole = mobileLibrary.ButtonAccessibleRole;
+
 	function createDivWithTopMargin(sName) {
 		var div = createAndAppendDiv(sName);
 		div.style.marginTop = "10px";
@@ -405,7 +408,9 @@ sap.ui.define([
 		oButton.destroy();
 	});
 
-
+	/**
+	 * @deprecated As of version 1.20 the <code>tap</code> event has been replaced by the <code>press</code> event
+	 */
 	QUnit.test("Tap event should not be fired when the button is set to invisible", function(assert) {
 		// Arrange
 		var oRenderSpy,
@@ -532,7 +537,18 @@ sap.ui.define([
 		oButton.setIcon("sap-icon://search");
 		oInfo = oButton.getAccessibilityInfo();
 		assert.strictEqual(oInfo.description, "Search", "Description");
+		oButton.setAccessibleRole(ButtonAccessibleRole.Link);
+		oInfo = oButton.getAccessibilityInfo();
+		assert.strictEqual(oInfo.role, "link", "role");
 		oButton.destroy();
+	});
+
+	QUnit.test("getAccessibilityInfo", function(assert) {
+		var oButton = new Button("btnLink", {
+			accessibleRole: ButtonAccessibleRole.Link
+		}).placeAt("qunit-fixture");
+		oCore.applyChanges();
+		assert.strictEqual(oButton.getDomRef().getAttribute("role"), "link", "role is correct");
 	});
 
 	// BCP: 0020751294 0000677825 2019
@@ -1004,8 +1020,10 @@ sap.ui.define([
 		}
 	});
 
-		// this test is needed only on non-IE browsers
-
+	/**
+	 * This test is needed only on non-IE browsers
+	 * @deprecated as of version 1.20, replaced by <code>press</code> event
+	 */
 	QUnit.test("Trigger TAP event in some cases missed by the core (for non-IE browsers only)", function(assert) {
 		var spy = this.spy(b15, "ontap");
 

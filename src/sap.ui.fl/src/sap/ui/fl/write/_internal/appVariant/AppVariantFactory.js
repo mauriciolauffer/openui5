@@ -20,9 +20,7 @@ sap.ui.define([
 	"use strict";
 
 	function _getAppVariant(mPropertyBag) {
-		if (!mPropertyBag.url) {
-			mPropertyBag.url = "/sap/bc/lrep";
-		}
+		mPropertyBag.url ||= "/sap/bc/lrep";
 		// Since this method is only called internally for app variants on ABAP platform, the direct usage of write LrepConnector is triggered.
 		return LrepConnector.appVariant.load(mPropertyBag);
 	}
@@ -53,7 +51,7 @@ sap.ui.define([
 	 */
 	AppVariantFactory.load = function(mPropertyBag) {
 		if (mPropertyBag.id === undefined || typeof mPropertyBag.id !== "string") {
-			throw new Error("Parameter " + mPropertyBag.id + " must be provided of type string");
+			throw new Error(`Parameter ${mPropertyBag.id} must be provided of type string`);
 		}
 
 		return _getAppVariant({
@@ -61,7 +59,7 @@ sap.ui.define([
 		}).then(function(oResult) {
 			var oAppVariantConfig = oResult.response;
 			if (!isPlainObject(oAppVariantConfig)) {
-				//Parse if needed. Happens if backend sends wrong content type
+				// Parse if needed. Happens if backend sends wrong content type
 				oAppVariantConfig = JSON.parse(oAppVariantConfig);
 			}
 			mPropertyBag = merge(
@@ -100,7 +98,7 @@ sap.ui.define([
 				Utils.checkParameterAndType(mPropertyBag, "version", "string");
 			}
 
-			//default layer to CUSTOMER
+			// default layer to CUSTOMER
 			if (!mPropertyBag.layer) {
 				mPropertyBag.layer = Layer.CUSTOMER;
 			} else {
@@ -165,10 +163,10 @@ sap.ui.define([
 	 */
 	AppVariantFactory.prepareDelete = function(mPropertyBag) {
 		return ((mPropertyBag.isForSmartBusiness) ? Promise.resolve(new AppVariant(mPropertyBag)) : AppVariantFactory.load(mPropertyBag))
-			.then(function(oAppVariant) {
-				oAppVariant.setMode("DELETION");
-				return oAppVariant;
-			});
+		.then(function(oAppVariant) {
+			oAppVariant.setMode("DELETION");
+			return oAppVariant;
+		});
 	};
 
 	return AppVariantFactory;

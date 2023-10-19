@@ -4,9 +4,8 @@
 sap.ui.define([
 	"sap/base/Log",
 	"sap/ui/model/ClientListBinding",
-	"sap/ui/model/FilterProcessor",
-	"sap/ui/test/TestUtils"
-], function (Log, ClientListBinding, FilterProcessor, TestUtils) {
+	"sap/ui/model/FilterProcessor"
+], function (Log, ClientListBinding, FilterProcessor) {
 	/*global QUnit, sinon*/
 	"use strict";
 
@@ -20,14 +19,13 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.module("sap.ui.model.ClientListBinding", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach : function () {
 			this.oLogMock = this.mock(Log);
 			this.oLogMock.expects("error").never();
 			this.oLogMock.expects("warning").never();
-		},
-
-		afterEach : function (assert) {
-			return TestUtils.awaitRendering();
 		}
 	});
 

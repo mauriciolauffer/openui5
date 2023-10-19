@@ -21,7 +21,7 @@
 			</p>
 			<img class="cardHeadersImg" src="../../images/NumericHeaderExample.png" alt="Example of numeric header ">
 
-			<h2>Usage</h2>
+			<h2 id="usage">Usage</h2>
 			<p>
 				To show only basic information, use the <a href="../../../index.html#/learn/headers/default"
 					target="_parent">default header</a> instead.
@@ -143,7 +143,7 @@
 					</tr>
 					<tr>
 						<td>status</td>
-						<td></td>
+						<td><a href="#headerStatusProperties">HeaderStatus</a></td>
 						<td></td>
 						<td>No</td>
 						<td>Represents the status of the card.</td>
@@ -196,127 +196,204 @@
 						<td>1.47.0</td>
 						<td>1.107</td>
 					</tr>
+					<tr>
+						<td>closeButton</td>
+						<td><a href="#closeButtonProperties">CloseButton</a></td>
+						<td></td>
+						<td>No</td>
+						<td>
+							Represents the Close button when a card is opened by the <a href="../../../index.html#/learn/actions/showCard" target="_parent">ShowCard action</a>.<br>
+							<b>Note:</b> This property is experimental and may change!
+						</td>
+						<td>1.59.0</td>
+						<td>1.119</td>
+					</tr>
 				</table>
+			</div>
 
-				<h4 id="mainIndicatorProperties">MainIndicator properties</h4>
-				<div class="tableWrapper">
-					<table>
-						<tr>
-							<th>Property</th>
-							<th>Type</th>
-							<th>Default Value</th>
-							<th>Required</th>
-							<th>Description</th>
-							<th>Schema Version</th>
-							<th>Since</th>
-						</tr>
-						<tr>
-							<td>number</td>
-							<td>string</td>
-							<td></td>
-							<td>No</td>
-							<td>The value of the main indicator.</td>
-							<td>1.14.0</td>
-							<td>1.64</td>
-						</tr>
-						<tr>
-							<td>unit</td>
-							<td>string</td>
-							<td></td>
-							<td>No</td>
-							<td>The unit of measurement of the main indicator.</td>
-							<td>1.14.0</td>
-							<td>1.64</td>
-						</tr>
-						<tr>
-							<td>trend</td>
-							<td><a data-demokit-href="#/api/sap.m.DeviationIndicator" target="_blank">sap.m.DeviationIndicator</a></td>
-							<td>"None"</td>
-							<td>No</td>
-							<td>The trend indicator (direction).</td>
-							<td>1.14.0</td>
-							<td>1.64</td>
-						</tr>
-						<tr>
-							<td>state</td>
-							<td><a data-demokit-href="#/api/sap.m.ValueColor" target="_blank">sap.m.ValueColor</a></td>
-							<td>"Neutral"</td>
-							<td>No</td>
-							<td>The state color of the main indicator.</td>
-							<td>1.14.0</td>
-							<td>1.64</td>
-						</tr>
-						<tr>
-							<td>visible</td>
-							<td>boolean</td>
-							<td>true</td>
-							<td>No</td>
-							<td>The visibility of the main indicator.</td>
-							<td>1.50.0</td>
-							<td>1.109</td>
-						</tr>
-					</table>
-				</div>
+			<div id="mainIndicatorProperties" class="boldBlock">MainIndicator Properties</div>
+			<div class="tableWrapper">
+				<table>
+					<tr>
+						<th>Property</th>
+						<th>Type</th>
+						<th>Default Value</th>
+						<th>Required</th>
+						<th>Description</th>
+						<th>Schema Version</th>
+						<th>Since</th>
+					</tr>
+					<tr>
+						<td>number</td>
+						<td>string</td>
+						<td></td>
+						<td>No</td>
+						<td>The value of the main indicator.</td>
+						<td>1.14.0</td>
+						<td>1.64</td>
+					</tr>
+					<tr>
+						<td>unit</td>
+						<td>string</td>
+						<td></td>
+						<td>No</td>
+						<td>The unit of measurement of the main indicator.</td>
+						<td>1.14.0</td>
+						<td>1.64</td>
+					</tr>
+					<tr>
+						<td>trend</td>
+						<td><a data-demokit-href="#/api/sap.m.DeviationIndicator" target="_blank">sap.m.DeviationIndicator</a></td>
+						<td>"None"</td>
+						<td>No</td>
+						<td>The trend indicator (direction).</td>
+						<td>1.14.0</td>
+						<td>1.64</td>
+					</tr>
+					<tr>
+						<td>state</td>
+						<td><a data-demokit-href="#/api/sap.m.ValueColor" target="_blank">sap.m.ValueColor</a></td>
+						<td>"Neutral"</td>
+						<td>No</td>
+						<td>The state color of the main indicator.</td>
+						<td>1.14.0</td>
+						<td>1.64</td>
+					</tr>
+					<tr>
+						<td>visible</td>
+						<td>boolean</td>
+						<td>true</td>
+						<td>No</td>
+						<td>The visibility of the main indicator.</td>
+						<td>1.50.0</td>
+						<td>1.109</td>
+					</tr>
+				</table>
+			</div>
 
-				<h4 id="sideIndicatorProperties">SideIndicator properties</h4>
-				<div class="tableWrapper">
-					<table>
-						<tr>
-							<th>Property</th>
-							<th>Type</th>
-							<th>Default Value</th>
-							<th>Required</th>
-							<th>Description</th>
-							<th>Schema Version</th>
-							<th>Since</th>
-						</tr>
-						<tr>
-							<td>title</td>
-							<td>string</td>
-							<td></td>
-							<td>No</td>
-							<td>The title of the side indicator.</td>
-							<td>1.14.0</td>
-							<td>1.64</td>
-						</tr>
-						<tr>
-							<td>number</td>
-							<td>string</td>
-							<td></td>
-							<td>No</td>
-							<td>The value of the side indicator.</td>
-							<td>1.14.0</td>
-							<td>1.64</td>
-						</tr>
-						<tr>
-							<td>unit</td>
-							<td>string</td>
-							<td></td>
-							<td>No</td>
-							<td>The unit of measurement of the side indicator.</td>
-							<td>1.14.0</td>
-							<td>1.64</td>
-						</tr>
-						<tr>
-							<td>state</td>
-							<td><a data-demokit-href="#/api/sap.m.ValueColor" target="_blank">sap.m.ValueColor</a></td>
-							<td>"None"</td>
-							<td>No</td>
-							<td>The state color of the side indicator.</td>
-							<td>1.36.0</td>
-							<td>1.95</td>
-						</tr>
-						<tr>
-							<td>visible</td>
-							<td>boolean</td>
-							<td>true</td>
-							<td>No</td>
-							<td>The visibility of the side indicator.</td>
-							<td>1.50.0</td>
-							<td>1.109</td>
-						</tr>
-					</table>
-				</div>
+			<div id="sideIndicatorProperties" class="boldBlock">SideIndicator Properties</div>
+			<div class="tableWrapper">
+				<table>
+					<tr>
+						<th>Property</th>
+						<th>Type</th>
+						<th>Default Value</th>
+						<th>Required</th>
+						<th>Description</th>
+						<th>Schema Version</th>
+						<th>Since</th>
+					</tr>
+					<tr>
+						<td>title</td>
+						<td>string</td>
+						<td></td>
+						<td>No</td>
+						<td>The title of the side indicator.</td>
+						<td>1.14.0</td>
+						<td>1.64</td>
+					</tr>
+					<tr>
+						<td>number</td>
+						<td>string</td>
+						<td></td>
+						<td>No</td>
+						<td>The value of the side indicator.</td>
+						<td>1.14.0</td>
+						<td>1.64</td>
+					</tr>
+					<tr>
+						<td>unit</td>
+						<td>string</td>
+						<td></td>
+						<td>No</td>
+						<td>The unit of measurement of the side indicator.</td>
+						<td>1.14.0</td>
+						<td>1.64</td>
+					</tr>
+					<tr>
+						<td>state</td>
+						<td><a data-demokit-href="#/api/sap.m.ValueColor" target="_blank">sap.m.ValueColor</a></td>
+						<td>"None"</td>
+						<td>No</td>
+						<td>The state color of the side indicator.</td>
+						<td>1.36.0</td>
+						<td>1.95</td>
+					</tr>
+					<tr>
+						<td>visible</td>
+						<td>boolean</td>
+						<td>true</td>
+						<td>No</td>
+						<td>The visibility of the side indicator.</td>
+						<td>1.50.0</td>
+						<td>1.109</td>
+					</tr>
+				</table>
+			</div>
+
+			<div id="headerStatusProperties" class="boldBlock">HeaderStatus Properties</div>
+			<div class="tableWrapper">
+				<table>
+					<tr>
+						<th>Property</th>
+						<th>Type</th>
+						<th>Default Value</th>
+						<th>Required</th>
+						<th>Description</th>
+						<th>Schema Version</th>
+						<th>Since</th>
+					</tr>
+					<tr>
+						<td>text</td>
+						<td>string</td>
+						<td></td>
+						<td>Yes</td>
+						<td>Status text.</td>
+						<td>1.14.0</td>
+						<td>1.64</td>
+					</tr>
+					<tr>
+						<td>visible</td>
+						<td>boolean</td>
+						<td>true</td>
+						<td>No</td>
+						<td>
+							Defines whether the status should be displayed.
+							<br>
+							<b>Note:</b> This property is experimental and may change!
+						</td>
+						<td>1.56.0</td>
+						<td>1.116</td>
+					</tr>
+				</table>
+			</div>
+
+			<div id="closeButtonProperties" class="boldBlock">CloseButton Properties</div>
+			<div class="tableWrapper">
+				<table>
+					<tr>
+						<th>Property</th>
+						<th>Type</th>
+						<th>Default Value</th>
+						<th>Required</th>
+						<th>Description</th>
+						<th>Schema Version</th>
+						<th>Since</th>
+					</tr>
+					<tr>
+						<td>visible</td>
+						<td>boolean</td>
+						<td>true</td>
+						<td>No</td>
+						<td>
+							Defines whether the button should be displayed.
+							<br>
+							<b>Note:</b> This property is experimental and may change!
+						</td>
+						<td>1.59.0</td>
+						<td>1.119</td>
+					</tr>
+				</table>
 			</div>
 
 			<h2 id="example">Example</h2>
@@ -347,13 +424,6 @@
 }</pre>
 
 			<a href="../../../index.html#/explore/analytical" target="_parent" class="try-button">Try It Out</a>
-		</div>
-		<div class="navigation">
-			<h4>Table of Contents</h4>
-			<div><a href="#numericHeader">Numeric Header</a></div>
-			<div><a href="#properties">Properties</a></div>
-			<div><a href="#sideIndicatorProperties">SideIndicator Properties</a></div>
-			<div><a href="#example">Example</a></div>
 		</div>
 	</div>
 </body>

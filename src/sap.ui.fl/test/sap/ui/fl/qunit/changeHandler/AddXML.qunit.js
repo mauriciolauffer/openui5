@@ -1,4 +1,4 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/ui/core/util/reflection/JsControlTreeModifier",
@@ -36,9 +36,8 @@ sap.ui.define([
 	// that's why we need to patch it in there before a change is applied.
 	// in the code this is done in the command.
 
-
 	QUnit.module("Given a AddXML Change Handler", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oChangeHandler = AddXML;
 			this.oHBox = new HBox("hbox", {
 				items: [this.oButton]
@@ -63,7 +62,7 @@ sap.ui.define([
 
 			this.oChange = FlexObjectFactory.createFromFileContent(oChangeJson);
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oHBox.destroy();
 		}
 	}, function() {
@@ -106,7 +105,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given a AddXML Change Handler with JSTreeModifier", {
-		beforeEach: function () {
+		beforeEach() {
 			// general modifier beforeEach (can be extracted as soon as nested modules are supported)
 			this.oChangeHandler = AddXML;
 
@@ -145,50 +144,50 @@ sap.ui.define([
 
 			this.oPropertyBag = {
 				modifier: JsControlTreeModifier, view: {
-					getController: function () {
-					}, getId: function () {
+					getController() {
+					}, getId() {
 					}
 				}
 			};
 		},
-		afterEach: function () {
+		afterEach() {
 			this.oHBox.destroy();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("When applying the change on a js control tree", function(assert) {
 			return this.oChangeHandler.applyChange(this.oChange, this.oHBox, this.oPropertyBag)
-				.then(function() {
-					assert.equal(this.oHBox.getItems().length, 2, "after the change there are 2 items in the hbox");
-					assert.equal(this.oHBox.getItems()[1].getId(), "projectId.button", "the fragments control id is prefixed with project id");
-					var mRevertData = {
-						id: "projectId.button",
-						aggregationName: "items"
-					};
-					assert.deepEqual(this.oChange.getRevertData(), [mRevertData], "then the revert data is build properly");
-				}.bind(this));
+			.then(function() {
+				assert.equal(this.oHBox.getItems().length, 2, "after the change there are 2 items in the hbox");
+				assert.equal(this.oHBox.getItems()[1].getId(), "projectId.button", "the fragments control id is prefixed with project id");
+				var mRevertData = {
+					id: "projectId.button",
+					aggregationName: "items"
+				};
+				assert.deepEqual(this.oChange.getRevertData(), [mRevertData], "then the revert data is build properly");
+			}.bind(this));
 		});
 
 		QUnit.test("When applying the change on a js control tree with an invalid targetAggregation", function(assert) {
 			this.oChangeSpecificContent.targetAggregation = "invalidAggregation";
 			this.oChangeHandler.completeChangeContent(this.oChange, this.oChangeSpecificContent);
 			return this.oChangeHandler.applyChange(this.oChange, this.oHBox, this.oPropertyBag)
-				.catch(function(oError) {
-					assert.equal(oError.message, sWrongAggregationError, "then apply change throws an error");
-				});
+			.catch(function(oError) {
+				assert.equal(oError.message, sWrongAggregationError, "then apply change throws an error");
+			});
 		});
 
 		QUnit.test("When reverting the change on a js control tree", function(assert) {
 			return this.oChangeHandler.applyChange(this.oChange, this.oHBox, this.oPropertyBag)
-				.then(this.oChangeHandler.revertChange.bind(this.oChangeHandler, this.oChange, this.oHBox, this.oPropertyBag))
-				.then(function() {
-					assert.equal(this.oHBox.getItems().length, 1, "after reversal there is again only one child of the HBox");
-					assert.equal(this.oChange.getRevertData(), undefined, "and the revert data got reset");
-				}.bind(this));
+			.then(this.oChangeHandler.revertChange.bind(this.oChangeHandler, this.oChange, this.oHBox, this.oPropertyBag))
+			.then(function() {
+				assert.equal(this.oHBox.getItems().length, 1, "after reversal there is again only one child of the HBox");
+				assert.equal(this.oChange.getRevertData(), undefined, "and the revert data got reset");
+			}.bind(this));
 		});
 	});
 
 	QUnit.module("Given a AddXML Change Handler with XMLTreeModifier", {
-		beforeEach: function() {
+		beforeEach() {
 			// general modifier beforeEach (can be extracted as soon as nested modules are supported)
 			this.oChangeHandler = AddXML;
 
@@ -223,18 +222,18 @@ sap.ui.define([
 			}).then(function(oComponent) {
 				this.oComponent = oComponent;
 				this.oXmlString =
-					'<mvc:View id="testComponentAsync---myView" xmlns:mvc="sap.ui.core.mvc" xmlns="sap.m">' +
-					'<HBox id="' + this.sHBoxId + '">' +
-					'<tooltip>' +	//0..1 aggregation
-					'<TooltipBase xmlns="sap.ui.core"></TooltipBase>' + //inline namespace as sap.ui.core is use case for not existing namespace
-					'</tooltip>' +
-					'<items>' +
-					'<Button id="button123"></Button>' + //content in default aggregation
-					'</items>' +
-					'</HBox>' +
-					'</mvc:View>';
+					`<mvc:View id="testComponentAsync---myView" xmlns:mvc="sap.ui.core.mvc" xmlns="sap.m">` +
+					`<HBox id="${this.sHBoxId}">` +
+					`<tooltip>` +	// 0..1 aggregation
+					`<TooltipBase xmlns="sap.ui.core"></TooltipBase>` + // inline namespace as sap.ui.core is use case for not existing namespace
+					`</tooltip>` +
+					`<items>` +
+					`<Button id="button123"></Button>` + // content in default aggregation
+					`</items>` +
+					`</HBox>` +
+					`</mvc:View>`;
 				this.oXmlView = XMLHelper.parse(this.oXmlString, "application/xml").documentElement;
-				this.oHBox = this.oXmlView.childNodes[0];
+				[this.oHBox] = this.oXmlView.childNodes;
 				this.sAggregationType = "sap.ui.core.Control";
 
 				this.oPropertyBag = {
@@ -244,7 +243,7 @@ sap.ui.define([
 				};
 			}.bind(this));
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oComponent.destroy();
 		}
 	}, function() {
@@ -255,30 +254,30 @@ sap.ui.define([
 				aggregationName: "items"
 			};
 			return this.oChangeHandler.applyChange(this.oChange, this.oHBox, this.oPropertyBag)
-				.then(function() {
-					assert.equal(oHBoxItems.childNodes.length, 2, "after the addXML there are two children of the HBox");
-					assert.deepEqual(this.oChange.getRevertData(), [mRevertData], "then the revert data is build properly");
-				}.bind(this));
+			.then(function() {
+				assert.equal(oHBoxItems.childNodes.length, 2, "after the addXML there are two children of the HBox");
+				assert.deepEqual(this.oChange.getRevertData(), [mRevertData], "then the revert data is build properly");
+			}.bind(this));
 		});
 
 		QUnit.test("When applying the change on a xml control tree with an invalid targetAggregation", function(assert) {
 			this.oChangeSpecificContent.targetAggregation = "invalidAggregation";
 			this.oChangeHandler.completeChangeContent(this.oChange, this.oChangeSpecificContent);
 			return this.oChangeHandler.applyChange(this.oChange, this.oHBox, this.oPropertyBag)
-				.catch(function(oError) {
-					assert.equal(oError.message, sWrongAggregationError, "then apply change throws an error");
-				});
+			.catch(function(oError) {
+				assert.equal(oError.message, sWrongAggregationError, "then apply change throws an error");
+			});
 		});
 
 		QUnit.test("When reverting the change on an xml control tree", function(assert) {
 			var oHBoxItems = this.oHBox.childNodes[1];
 
 			return this.oChangeHandler.applyChange(this.oChange, this.oHBox, this.oPropertyBag)
-				.then(this.oChangeHandler.revertChange.bind(this.oChangeHandler, this.oChange, this.oHBox, this.oPropertyBag))
-				.then(function() {
-					assert.equal(oHBoxItems.childNodes.length, 1, "after reversal there is again only one child of the HBox");
-					assert.equal(this.oChange.getRevertData(), undefined, "and the revert data got reset");
-				}.bind(this));
+			.then(this.oChangeHandler.revertChange.bind(this.oChangeHandler, this.oChange, this.oHBox, this.oPropertyBag))
+			.then(function() {
+				assert.equal(oHBoxItems.childNodes.length, 1, "after reversal there is again only one child of the HBox");
+				assert.equal(this.oChange.getRevertData(), undefined, "and the revert data got reset");
+			}.bind(this));
 		});
 	});
 

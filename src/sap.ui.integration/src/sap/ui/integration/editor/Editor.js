@@ -16,8 +16,6 @@ sap.ui.define([
 	"sap/ui/integration/util/Destinations",
 	"sap/ui/integration/util/DataProviderFactory",
 	"sap/m/Label",
-	"sap/m/Title",
-	"sap/m/Panel",
 	"sap/m/HBox",
 	"sap/m/VBox",
 	"sap/ui/core/Icon",
@@ -27,6 +25,7 @@ sap.ui.define([
 	"sap/base/Log",
 	"sap/ui/core/Popup",
 	"sap/base/i18n/ResourceBundle",
+	"sap/ui/integration/editor/EditorResourceBundles",
 	"sap/ui/dom/includeStylesheet",
 	"sap/base/util/LoaderExtensions",
 	"sap/ui/core/theming/Parameters",
@@ -40,10 +39,7 @@ sap.ui.define([
 	"./Settings",
 	"sap/m/FlexItemData",
 	"sap/m/FlexBox",
-	"sap/m/Button",
-	"sap/m/OverflowToolbar",
-	"sap/m/IconTabBar",
-	"sap/m/IconTabFilter"
+	"sap/m/Button"
 ], function (
 	Control,
 	Core,
@@ -58,8 +54,6 @@ sap.ui.define([
 	Destinations,
 	DataProviderFactory,
 	Label,
-	Title,
-	Panel,
 	HBox,
 	VBox,
 	Icon,
@@ -69,6 +63,7 @@ sap.ui.define([
 	Log,
 	Popup,
 	ResourceBundle,
+	EditorResourceBundles,
 	includeStylesheet,
 	LoaderExtensions,
 	Parameters,
@@ -82,10 +77,7 @@ sap.ui.define([
 	Settings,
 	FlexItemData,
 	FlexBox,
-	Button,
-	OverflowToolbar,
-	IconTabBar,
-	IconTabFilter
+	Button
 ) {
 	"use strict";
 
@@ -118,7 +110,7 @@ sap.ui.define([
 		REGEXP_PARAMETERS = /\{\{parameters\.([^\}\}]+)/g,
 		CONTEXT_TIMEOUT = 5000,
 		oResourceBundle = Core.getLibraryResourceBundle("sap.ui.integration"),
-		MessageStripId = "__strip0",
+		MessageStripId = "_strip",
 		MODULE_PREFIX = "module:";
 
 	/**
@@ -266,9 +258,9 @@ sap.ui.define([
 					if (oControl.getMode() !== "translation") {
 						oRm.renderControl(oControl.getAggregation("_messageStrip"));
 					}
-					var aItems = oControl.getAggregation("_formContent");
+					var oItems = oControl.getAggregation("_formContent");
 					//render items
-					if (aItems) {
+					if (oItems) {
 						var oPanel;
 						var oSubGroup;
 						var oLanguagePanel;
@@ -349,8 +341,8 @@ sap.ui.define([
 								oIconTabBar.addItem(oSubGroup);
 							}
 						};
-						for (var i = 0; i < aItems.length; i++) {
-							var oItem = aItems[i];
+						for (var i = 0; i < oItems.length; i++) {
+							var oItem = oItems[i];
 							if (oControl.getMode() !== "translation") {
 								if (oItem.isA("sap.ui.integration.editor.fields.GroupField")) {
 									var oGroupControl = oItem.getAggregation("_field");
@@ -422,7 +414,7 @@ sap.ui.define([
 										oPanel._subItems = oPanel._subItems || [];
 										oPanel.addStyleClass("sapUiIntegrationEditorItem");
 									}
-									if (i === aItems.length - 1) {
+									if (i === oItems.length - 1) {
 										//add current col fields to panel, then empty the col fields list
 										addColFields();
 										renderPanel(oPanel);
@@ -436,7 +428,7 @@ sap.ui.define([
 									} else {
 										oPanel.addContent(oItem.addStyleClass("sapUiIntegrationEditorHint"));
 									}
-									if (i === aItems.length - 1) {
+									if (i === oItems.length - 1) {
 										if (oSubGroup) {
 											//add current col fields to previous sub panel, then empty the col fields list
 											addColFieldsOfSubGroup();
@@ -616,7 +608,7 @@ sap.ui.define([
 													addColFieldsOfSubGroup();
 												}
 												if (oConfig.hint) {
-													var oHint = oControl._createHint(oConfig.hint);
+													var oHint = oControl._createHint(oConfig.hint, oItem.getParameterId());
 													var oColVBox = new VBox({
 														items: [
 															oHBox,
@@ -634,7 +626,7 @@ sap.ui.define([
 													addColFields();
 												}
 												if (oConfig.hint) {
-													var oHint = oControl._createHint(oConfig.hint);
+													var oHint = oControl._createHint(oConfig.hint, oItem.getParameterId());
 													var oColVBox = new VBox({
 														items: [
 															oHBox,
@@ -692,7 +684,7 @@ sap.ui.define([
 												]
 											});
 											if (oConfig.hint) {
-												var oHint = oControl._createHint(oConfig.hint);
+												var oHint = oControl._createHint(oConfig.hint, oItem.getParameterId());
 												oColVBox.addItem(oHint.addStyleClass("sapUiIntegrationEditorHint"));
 											}
 											oColVBox.addStyleClass("col1");
@@ -720,7 +712,7 @@ sap.ui.define([
 										"itemId": oItem.getId()
 									});
 								}
-								if (i === aItems.length - 1) {
+								if (i === oItems.length - 1) {
 									if (oSubGroup) {
 										//add current col fields to previous sub panel, then empty the col fields list
 										addColFieldsOfSubGroup();
@@ -763,7 +755,7 @@ sap.ui.define([
 									}
 									if (tItemLevel === "1") {
 										if (oGroupControl.isA("sap.m.IconTabBar")) {
-											if (i !== aItems.length - 1 || (i < aItems.length && (aItems[i].isA("sap.m.IconTabBar") || aItems[i].isA("sap.m.Panel")))) {
+											if (i !== oItems.length - 1 || (i < oItems.length && (oItems[i].isA("sap.m.IconTabBar") || oItems[i].isA("sap.m.Panel")))) {
 												var tSubItems = oPanel.getContent(),
 											    tIconTabBarExist = false;
 												if (tSubItems.length > 0) {
@@ -794,7 +786,7 @@ sap.ui.define([
 										oPanel = oGroupControl;
 										oPanel.addStyleClass("sapUiIntegrationEditorSubGroup");
 									}
-									if (i === aItems.length - 1) {
+									if (i === oItems.length - 1) {
 										//add current col fields to panel, then empty the col fields list
 										addColFields();
 										renderPanel(oPanel);
@@ -833,7 +825,7 @@ sap.ui.define([
 								} else {
 									oPanel.addContent(oHBox);
 								}
-								if (i === aItems.length - 1) {
+								if (i === oItems.length - 1) {
 									if (oSubGroup) {
 										//add sub panel to panel
 										if (oSubGroup.isA("sap.m.Panel")) {
@@ -874,7 +866,7 @@ sap.ui.define([
 		this._appliedLayerManifestChanges = [];
 		this._currentLayerManifestChanges = {};
 		this._mDestinationDataProviders = {};
-		var oMessageStrip = new MessageStrip({
+		var oMessageStrip = new MessageStrip(this.getId() + MessageStripId, {
 			showIcon: false
 		});
 		oMessageStrip.addStyleClass("sapUiIntegrationEditorFieldMessageStrip");
@@ -1051,7 +1043,7 @@ sap.ui.define([
 				this._manifestModel = new JSONModel(oManifestJson);
 				this._isManifestReady = true;
 				this.fireManifestReady();
-				this._createResourceBundlesForMultiTranslation();
+				this._initResourceBundlesForMultiTranslation();
 				//use the translations
 				this._loadDefaultTranslations();
 				//add a context model
@@ -1066,9 +1058,9 @@ sap.ui.define([
 	};
 
 	/**
-	 * Create the Resource Bundles for Multi Translation
+	 * Init the Resource Bundles for Multi Translation
 	 */
-	Editor.prototype._createResourceBundlesForMultiTranslation = function () {
+	Editor.prototype._initResourceBundlesForMultiTranslation = function () {
 		var vI18n = this._oEditorManifest.get("/sap.app/i18n");
 		var sResourceBundleURL;
 		var aSupportedLocales;
@@ -1082,36 +1074,11 @@ sap.ui.define([
 				aSupportedLocales = vI18n.supportedLocales;
 			}
 		}
-		this._aResourceBundles = [];
-		//according to the language list, load each resource bundle
-		for (var p in Editor._oLanguages) {
-			var oResourceBundleTemp;
-			if (sResourceBundleURL) {
-				var aFallbacks = [p];
-				if (p.indexOf("-") > -1) {
-					aFallbacks.push(p.substring(0, p.indexOf("-")));
-				}
-				//add en into fallbacks
-				if (!aFallbacks.includes("en")) {
-					aFallbacks.push("en");
-				}
-				oResourceBundleTemp = ResourceBundle.create({
-					url: sResourceBundleURL,
-					async: false,
-					locale: p,
-					supportedLocales: aFallbacks
-				});
-			}
-			var oResourceBundleObject = {
-				"language": Editor._oLanguages[p],
-				"resourceBundle": oResourceBundleTemp,
-				"isSupportedLocale": true
-			};
-			if (Array.isArray(aSupportedLocales) && !aSupportedLocales.includes(p) && !aSupportedLocales.includes(p.replace('-', '_'))) {
-				oResourceBundleObject.isSupportedLocale = false;
-			}
-			this._aResourceBundles[p] = oResourceBundleObject;
-		}
+		this._oEditorResourceBundles = new EditorResourceBundles({
+			url: sResourceBundleURL,
+			languages: Editor._oLanguages,
+			supportedLocales: aSupportedLocales
+		});
 	};
 
 	/**
@@ -1204,6 +1171,8 @@ sap.ui.define([
 	};
 
 	Editor.prototype.initDestinations = function (vHost) {
+		this._destinationsModel = new JSONModel({});
+		this.setModel(this._destinationsModel, "destinations");
 		var oHostInstance = this.getHostInstance();
 
 		if (vHost && !oHostInstance) {
@@ -1442,8 +1411,11 @@ sap.ui.define([
 			that.initDestinations();
 			that.initDataProviderFactory();
 			if (that.getMode() === "admin" || that.getMode() === "all") {
-				//always add destination settings
-				that._addDestinationSettings(oConfiguration, that._oDesigntimeInstance);
+				//always add destination settings for admin and all modes
+				that._addDestinationSettings(oConfiguration);
+			} else {
+				//delete destination settings in dt for other modes
+				that._deleleDestinationSettings();
 			}
 			//create a settings model
 			that._settingsModel = new JSONModel(that._oDesigntimeInstance.getSettings());
@@ -1583,23 +1555,31 @@ sap.ui.define([
 						mResult[oItem.manifestpath] = oItem.value;
 					}
 					if (oItem._next && (this.getAllowSettings())) {
-						var bVisibleDefault = typeof (oItem.visibleToUser) === "undefined" ? true : oItem.visibleToUser;
-						var bEditableDefault = typeof (oItem.editableToUser) === "undefined" ? true : oItem.editableToUser;
-						if (oItem._next.visible === !bVisibleDefault) {
-							mNext = mNext || {};
-							mNext[oItem._settingspath + "/visible"] = oItem._next.visible;
-						}
-						if (oItem._next.editable === !bEditableDefault) {
-							mNext = mNext || {};
-							mNext[oItem._settingspath + "/editable"] = oItem._next.editable;
-						}
-						if (oItem._next.pageAdminValues) {
-							mNext = mNext || {};
-							mNext[oItem._settingspath + "/pageAdminValues"] = oItem._next.pageAdminValues;
-						}
-						if (typeof oItem._next.allowDynamicValues === "boolean" && this.getAllowDynamicValues()) {
-							mNext = mNext || {};
-							mNext[oItem._settingspath + "/allowDynamicValues"] = oItem._next.allowDynamicValues;
+						if (oItem.type === "destination") {
+							if (oItem._next.pageAdminNewDestinationParameter) {
+								mNext = mNext || {};
+								mNext[oItem._settingspath + "/pageAdminNewDestinationParameter"] = oItem._next.pageAdminNewDestinationParameter;
+							}
+						} else {
+							var bVisibleDefault = typeof (oItem.visibleToUser) === "undefined" ? true : oItem.visibleToUser;
+							var bEditableDefault = typeof (oItem.editableToUser) === "undefined" ? true : oItem.editableToUser;
+							var bAllowDynamicValuesDefault = typeof (oItem.allowDynamicValues) === "undefined" ? true : oItem.allowDynamicValues;
+							if (oItem._next.visible === !bVisibleDefault) {
+								mNext = mNext || {};
+								mNext[oItem._settingspath + "/visible"] = oItem._next.visible;
+							}
+							if (oItem._next.editable === !bEditableDefault) {
+								mNext = mNext || {};
+								mNext[oItem._settingspath + "/editable"] = oItem._next.editable;
+							}
+							if (oItem._next.allowDynamicValues === !bAllowDynamicValuesDefault) {
+								mNext = mNext || {};
+								mNext[oItem._settingspath + "/allowDynamicValues"] = oItem._next.allowDynamicValues;
+							}
+							if (oItem._next.pageAdminValues) {
+								mNext = mNext || {};
+								mNext[oItem._settingspath + "/pageAdminValues"] = oItem._next.pageAdminValues;
+							}
 						}
 					}
 				}
@@ -1885,13 +1865,13 @@ sap.ui.define([
 		});
 	};
 
-	Editor.prototype._createDescription = function (oConfig) {
-		var oDescIcon = new Icon({
+	Editor.prototype._createDescription = function (oConfig, sParameterKey) {
+		var oDescIcon = new Icon(this.getId() + "_" + sParameterKey + "_description_icon", {
 			src: "sap-icon://message-information",
 			color: "Marker",
 			size: "12px",
 			useIconTooltip: false,
-			visible: oConfig.visible,
+			visible: typeof oConfig.visible === "boolean" ? "{currentSettings>visible}" : oConfig.visible,
 			objectBindings: {
 				currentSettings: {
 					path: "currentSettings>" + oConfig._settingspath
@@ -1917,12 +1897,12 @@ sap.ui.define([
 		return oDescIcon;
 	};
 
-	Editor.prototype._createMessageIcon = function (oField) {
+	Editor.prototype._createMessageIcon = function (oField, sParameterKey) {
 		var oConfig = oField.getConfiguration();
-		var oMsgIcon = new Icon({
+		var oMsgIcon = new Icon(this.getId() + "_" + sParameterKey + "_message_icon", {
 			src: "sap-icon://message-information",
 			size: "12px",
-			visible: oConfig.visible,
+			visible: typeof oConfig.visible === "boolean" ? "{currentSettings>visible}" : oConfig.visible,
 			useIconTooltip: false,
 			objectBindings: {
 				currentSettings: {
@@ -1948,16 +1928,17 @@ sap.ui.define([
 
 	/**
 	 * Creates a label based on the configuration settings
-	 * @param {} oConfig
+	 * @param {object} oConfig
+	 * @param {string} sParameterKey
 	 */
-	Editor.prototype._createLabel = function (oConfig) {
-		var oLabel = new Label({
+	Editor.prototype._createLabel = function (oConfig, sParameterKey) {
+		var oLabel = new Label(this.getId() + "_" + sParameterKey + "_label", {
 			text: oConfig.label,
 			tooltip: oConfig.tooltip || oConfig.label,
 			//mark only fields that are required and editable,
 			//otherwise this is confusing because user will not be able to correct it
 			required: oConfig.required && oConfig.editable || false,
-			visible: oConfig.visible,
+			visible: typeof oConfig.visible === "boolean" ? "{currentSettings>visible}" : oConfig.visible,
 			objectBindings: {
 				currentSettings: {
 					path: "currentSettings>" + oConfig._settingspath
@@ -1981,16 +1962,16 @@ sap.ui.define([
 	/**
 	 * Create the settings button
 	 */
-	 Editor.prototype._createSettingsButton = function (oField) {
+	 Editor.prototype._createSettingsButton = function (oField, sParameterKey) {
 		var oConfig = oField.getConfiguration();
-		var oSettingsButton = new Button({
+		var oSettingsButton = new Button(this.getId() + "_" + sParameterKey + "_settings_btn", {
 			icon: "{= ${currentSettings>_hasDynamicValue} ? 'sap-icon://display-more' : 'sap-icon://enter-more'}",
 			type: "Transparent",
 			tooltip: this._oResourceBundle.getText("EDITOR_FIELD_MORE_SETTINGS"),
 			press: function (oEvent) {
 				this._openSettingsDialog(200, oEvent.oSource, oField);
 			}.bind(this),
-			visible: oConfig.visible,
+			visible: typeof oConfig.visible === "boolean" ? "{currentSettings>visible}" : oConfig.visible,
 			objectBindings: {
 				currentSettings: {
 					path: "currentSettings>" + oConfig._settingspath
@@ -2017,11 +1998,10 @@ sap.ui.define([
 		var oSettingsPanel = this._getSettingsPanel(oField);
 		window.setTimeout(function () {
 			oSettingsPanel.setConfiguration(oField.getConfiguration());
-			var oPreview = this.getAggregation("_preview");
 			oSettingsPanel.open(
 				oSettingsButton,
 				oSettingsButton,
-				oPreview,
+				this,
 				oField.getHost(),
 				oField,
 				oField._applySettings.bind(oField),
@@ -2037,7 +2017,7 @@ sap.ui.define([
 			text: ""
 		});
 		oText.addStyleClass("sapUiTinyMargin sapUiIntegrationEditorDescriptionText");
-		this._oPopover = new RPopover({
+		this._oPopover = new RPopover(this.getId() + "_popover", {
 			showHeader: false,
 			content: [oText]
 		});
@@ -2047,13 +2027,15 @@ sap.ui.define([
 
 	/**
 	 * Creates a Field based on the configuration settings
-	 * @param {*} oConfig
+	 * @param {object} oConfig
+	 * @param {string} sParameterKey
 	 */
-	Editor.prototype._createField = function (oConfig) {
-		var oField = new Editor.Fields[oConfig.type]({
+	Editor.prototype._createField = function (oConfig, sParameterKey) {
+		var oField = new Editor.Fields[oConfig.type](this.getId() + "_" + sParameterKey + "_field", {
 			configuration: oConfig,
 			mode: this.getMode(),
 			host: this.getHostInstance(),
+			parameterKey: sParameterKey,
 			objectBindings: {
 				currentSettings: {
 					path: "currentSettings>" + oConfig._settingspath
@@ -2063,10 +2045,14 @@ sap.ui.define([
 				},
 				context: {
 					path: "context>/"
+				},
+				destinations: {
+					path: "destinations>/"
 				}
 			},
-			visible: oConfig.visible
+			visible: typeof oConfig.visible === "boolean" ? "{currentSettings>visible}" : oConfig.visible
 		});
+		oField.setAssociation("_editor", this);
 
 		this._aFieldReadyPromise.push(oField._readyPromise.then(function() {
 			// for group field, will do nothing else
@@ -2075,14 +2061,14 @@ sap.ui.define([
 					|| oConfig.validation
 					|| (oConfig.validations && oConfig.validations.length > 0)
 					|| (oConfig.values && oConfig.values.data && !oConfig.values.data.json)) {
-					var oMsgIcon = this._createMessageIcon(oField);
+					var oMsgIcon = this._createMessageIcon(oField, sParameterKey);
 					oField.setAssociation("_messageIcon", oMsgIcon);
 				}
 				if (oConfig.description && this.getMode() !== "translation") {
-					oField._descriptionIcon = this._createDescription(oConfig);
+					oField._descriptionIcon = this._createDescription(oConfig, sParameterKey);
 				}
 				if (oConfig._changeDynamicValues) {
-					oField._settingsButton = this._createSettingsButton(oField);
+					oField._settingsButton = this._createSettingsButton(oField, sParameterKey);
 					oField._applyButtonStyles();
 				}
 			}
@@ -2127,7 +2113,7 @@ sap.ui.define([
 		if (oConfig.layout) {
 			oField._layout = oConfig.layout;
 		}
-		oField._aResourceBundles = this._aResourceBundles;
+		oField._oEditorResourceBundles = this._oEditorResourceBundles;
 		oField.setAssociation("_messageStrip", MessageStripId);
 		return oField;
 	};
@@ -2304,36 +2290,53 @@ sap.ui.define([
 			}
 			this._settingsModel.setProperty(oConfig._settingspath + "/_loading", false);
 			oField._hideValueState(true, true);
-		}.bind(this)).catch(function (oError) {
-			var sError = this._oResourceBundle.getText("EDITOR_BAD_REQUEST");
-			if (Array.isArray(oError) && oError.length > 0) {
-				sError = oError[0];
-				var jqXHR = oError[1];
-				if (jqXHR) {
-					var oErrorInResponse;
-					if (jqXHR.responseJSON) {
-						oErrorInResponse = jqXHR.responseJSON.error;
-					} else if (jqXHR.responseText) {
-						if (Utils.isJson(jqXHR.responseText)) {
-							oErrorInResponse = JSON.parse(jqXHR.responseText).error;
-						} else {
-							sError = jqXHR.responseText;
-						}
+		}.bind(this))
+		.catch(function (oError) {
+			var oErrorPromise = new Promise(function (resolve) {
+				var sError = this._oResourceBundle.getText("EDITOR_BAD_REQUEST");
+				if (Array.isArray(oError) && oError.length > 0) {
+					sError = oError[0];
+					var oResponse = oError[1];
+					if (oResponse) {
+						var oErrorInResponse;
+						oResponse.text().then(function (sResponseText) {
+							if (Utils.isJson(sResponseText)) {
+								oErrorInResponse = JSON.parse(sResponseText).error;
+							} else {
+								sError = sResponseText;
+							}
+
+							if (oErrorInResponse) {
+								sError = (oErrorInResponse.code || oErrorInResponse.errorCode || oResponse.status) + ": " + oErrorInResponse.message;
+							}
+
+							resolve(sError);
+						});
+						return;
+					} else {
+						resolve(sError);
+						return;
 					}
-					if (oErrorInResponse) {
-						sError = (oErrorInResponse.code || oErrorInResponse.errorCode || jqXHR.status) + ": " + oErrorInResponse.message;
-					}
+				} else if (typeof (oError) === "string") {
+					sError = oError;
+					resolve(sError);
+					return;
+				} else {
+					resolve(sError);
+					return;
 				}
-			} else if (typeof (oError) === "string") {
-				sError = oError;
-			}
-			var oValueModel = oField.getModel();
-			oValueModel.firePropertyChange();
-			if (oConfig.type === "object" || oConfig.type === "object[]") {
-				oField.mergeValueWithRequestResult();
-			}
-			this._settingsModel.setProperty(oConfig._settingspath + "/_loading", false);
-			oField._showValueState("error", sError, true);
+			}.bind(this));
+
+			return oErrorPromise.then(function (sError) {
+				var oValueModel = oField.getModel();
+				oValueModel.firePropertyChange();
+				if (oConfig.type === "object" || oConfig.type === "object[]") {
+					oField.mergeValueWithRequestResult();
+				}
+				this._settingsModel.setProperty(oConfig._settingspath + "/_loading", false);
+				oField._showValueState("error", sError, true);
+			}.bind(this));
+
 		}.bind(this));
 	};
 
@@ -2392,26 +2395,27 @@ sap.ui.define([
 			var sError = this._oResourceBundle.getText("EDITOR_BAD_REQUEST");
 			if (Array.isArray(oError) && oError.length > 0) {
 				sError = oError[0];
-				var jqXHR = oError[1];
-				if (jqXHR) {
+				var oResponse = oError[1];
+				if (oResponse) {
 					var oErrorInResponse;
-					if (jqXHR.responseJSON) {
-						oErrorInResponse = jqXHR.responseJSON.error;
-					} else if (jqXHR.responseText) {
-						if (Utils.isJson(jqXHR.responseText)) {
-							oErrorInResponse = JSON.parse(jqXHR.responseText).error;
+					oResponse.text().then(function (sResponseText) {
+						if (Utils.isJson(sResponseText)) {
+							oErrorInResponse = JSON.parse(sResponseText).error;
 						} else {
-							sError = jqXHR.responseText;
+							sError = sResponseText;
 						}
-					}
-					if (oErrorInResponse) {
-						sError = (oErrorInResponse.code || oErrorInResponse.errorCode || jqXHR.status) + ": " + oErrorInResponse.message;
-					}
+
+						if (oErrorInResponse) {
+							sError = (oErrorInResponse.code || oErrorInResponse.errorCode || oResponse.status) + ": " + oErrorInResponse.message;
+						}
+
+						Log.error("Request extension data failed, " + sError);
+					});
 				}
 			} else if (typeof (oError) === "string") {
 				sError = oError;
+				Log.error("Request extension data failed, " + sError);
 			}
-			Log.error("Request extension data failed, " + sError);
 		}.bind(this));
 	};
 
@@ -2581,9 +2585,10 @@ sap.ui.define([
 
 	/**
 	 * Adds an item to the _formContent aggregation based on the config settings
-	 * @param {} oConfig
+	 * @param {object} oConfig
+	 * @param {string} sParameterKey
 	 */
-	 Editor.prototype._addItem = function (oConfig) {
+	 Editor.prototype._addItem = function (oConfig, sParameterKey) {
 		var sMode = this.getMode();
 		//force to turn off features for settings and dynamic values and set the default if not configured
 		if (this.getAllowDynamicValues() === false || !oConfig.allowDynamicValues) {
@@ -2601,10 +2606,10 @@ sap.ui.define([
 		//display subPanel as iconTabBar or Panel
 		if (oConfig.type === "group") {
 			oConfig.expanded = oConfig.expanded !== false;
-			var oField = this._createField(oConfig);
+			var oField = this._createField(oConfig, sParameterKey);
 			this.addAggregation("_formContent", oField);
 			if (oConfig.hint) {
-				this._addHint(oConfig.hint);
+				this._addHint(oConfig.hint, this.getId() + "_" + sParameterKey);
 			}
 			return;
 		}
@@ -2655,11 +2660,11 @@ sap.ui.define([
 				//the original language field shows only a text control. If empty we show a dash to avoid empty text.
 				origLangFieldConfig.value = "-";
 			}
-			var oLabel = this._createLabel(origLangFieldConfig);
+			var oLabel = this._createLabel(origLangFieldConfig, sParameterKey);
 			this.addAggregation("_formContent",
 				oLabel
 			);
-			var oOrigLanguageField = this._createField(origLangFieldConfig);
+			var oOrigLanguageField = this._createField(origLangFieldConfig, sParameterKey + "_ori");
 			oOrigLanguageField.isOrigLangField = true;
 			this.addAggregation("_formContent", oOrigLanguageField);
 
@@ -2676,7 +2681,7 @@ sap.ui.define([
 			//change the label for the translation field
 			oConfig.label = oConfig._translatedLabel || "";
 			oConfig.required = false; //translation is never required
-			var oTranslateLanguageField = this._createField(oConfig);
+			var oTranslateLanguageField = this._createField(oConfig, sParameterKey + "_trans");
 			//accessibility set aria-label
 			var tfDelegate = {
 				onAfterRendering: function(oEvent) {
@@ -2689,7 +2694,7 @@ sap.ui.define([
 				oTranslateLanguageField
 			);
 		} else {
-			oNewLabel = this._createLabel(oConfig);
+			oNewLabel = this._createLabel(oConfig, sParameterKey);
 			this.addAggregation("_formContent",
 				oNewLabel
 			);
@@ -2711,7 +2716,7 @@ sap.ui.define([
 					oConfig.value = sTranslateText;
 				}
 			}
-			var oField = this._createField(oConfig);
+			var oField = this._createField(oConfig, sParameterKey);
 			//accessibility set aria-label
 			var fDelegate = {
 				onAfterRendering: function(oEvent) {
@@ -2726,58 +2731,97 @@ sap.ui.define([
 		}
 		//add hint in the new row.
 		if (oConfig.hint && (!oConfig.cols || oConfig.cols === 2)) {
-			this._addHint(oConfig.hint);
+			this._addHint(oConfig.hint, this.getId() + "_" + sParameterKey);
 		}
 		//reset the cols to original
 		oConfig.cols = oConfig.__cols;
 		delete oConfig.__cols;
 	};
 
-	Editor.prototype._createHint = function (sHint) {
+	Editor.prototype._createHint = function (sHint, sHintIdPrefix) {
 		sHint = sHint.replace(/<a href/g, "<a target='blank' href");
-		var oFormattedText = new FormattedText({
+		var oFormattedText = new FormattedText(sHintIdPrefix + "_hint", {
 			htmlText: sHint
 		});
 		return oFormattedText;
 	};
 
-	Editor.prototype._addHint = function (sHint) {
-		var oHint = this._createHint(sHint);
+	Editor.prototype._addHint = function (sHint, sHintIdPrefix) {
+		var oHint = this._createHint(sHint, sHintIdPrefix);
 		this.addAggregation("_formContent", oHint);
 	};
 	/**
 	 * Returns the current language specific text for a given key or "" if no translation for the key exists
 	 */
 	Editor.prototype._getCurrentLanguageSpecificText = function (sKey) {
-		if (!this._oTranslationBundle && this._language) {
-			var aFallbacks = [];
-			if (this._language.indexOf("-") > -1) {
-				aFallbacks.push(this._language.substring(0, this._language.indexOf("-")));
+		if (this._oTranslationBundle) {
+			var sText = this._oTranslationBundle.getText(sKey, [], true);
+			if (sText === undefined) {
+				return "";
+			}
+			return sText;
+		}
+		var sLanguage = this._language;
+		if (!sLanguage) {
+			return "";
+		}
+		var vI18n = this._oEditorManifest.get("/sap.app/i18n"),
+			sResourceBundleURL,
+			aSupportedLocales;
+		if (!vI18n) {
+			return "";
+		}
+		if (typeof vI18n === "string") {
+			sResourceBundleURL = this.getBaseUrl() + vI18n;
+		} else if (typeof vI18n === "object") {
+			if (vI18n.bundleUrl) {
+				sResourceBundleURL = this.getBaseUrl() + vI18n.bundleUrl;
+			}
+			if (vI18n.supportedLocales && Array.isArray(vI18n.supportedLocales)) {
+				aSupportedLocales = vI18n.supportedLocales;
+				for (var i = 0; i < aSupportedLocales.length; i++) {
+					aSupportedLocales[i] = aSupportedLocales[i].replaceAll('_', '-');
+				}
+			}
+		}
+		if (sResourceBundleURL) {
+			var aFallbacks = [sLanguage];
+			if (sLanguage.indexOf("-") > -1) {
+				aFallbacks.push(sLanguage.substring(0, sLanguage.indexOf("-")));
 			}
 			//add en into fallbacks
 			if (!aFallbacks.includes("en")) {
 				aFallbacks.push("en");
 			}
-			if (this._aResourceBundles[this._language] && this._aResourceBundles[this._language].isSupportedLocale) {
-				this._oTranslationBundle = this._aResourceBundles[this._language];
-			} else {
-				for (var i = 0; i < aFallbacks.length; i++) {
-					if (this._aResourceBundles[aFallbacks[i]] && this._aResourceBundles[aFallbacks[i]].isSupportedLocale) {
-						this._oTranslationBundle = this._aResourceBundles[aFallbacks[i]];
-						break;
-					}
-				}
-			}
-		}
-		if (this._oTranslationBundle && this._oTranslationBundle.resourceBundle) {
-			var sText = this._oTranslationBundle.resourceBundle.getText(sKey, [], true);
-			if (sText === undefined) {
-				return "";
-			}
-			return sText;
+			aFallbacks = this._filterSupportedFallbackLanguages(aFallbacks, aSupportedLocales);
+			// load the ResourceBundle relative to the manifest
+			this._oTranslationBundle = ResourceBundle.create({
+				url: sResourceBundleURL,
+				async: false,
+				locale: aFallbacks[0],
+				supportedLocales: aFallbacks,
+				fallbackLocale: "en"
+			});
+			return this._getCurrentLanguageSpecificText(sKey);
 		} else {
 			return "";
 		}
+	};
+
+	/**
+	 * Filter the supported fallback languages
+	 */
+	Editor.prototype._filterSupportedFallbackLanguages = function (aFallbacks, aSupportedLocales) {
+		if (Array.isArray(aSupportedLocales)) {
+			var aSupportedFallbacks = [];
+			for (var i = 0; i < aFallbacks.length; i++) {
+				if (aSupportedLocales.includes(aFallbacks[i])) {
+					aSupportedFallbacks.push(aFallbacks[i]);
+				}
+			}
+			aFallbacks = aSupportedFallbacks;
+		}
+		return aFallbacks;
 	};
 
 	/**
@@ -2790,14 +2834,35 @@ sap.ui.define([
 		}
 
 		var oSettingsData = this._settingsModel.getData();
-		var aItems;
+		var oItems;
 		if (oSettingsData.form && oSettingsData.form.items) {
-			aItems = oSettingsData.form.items;
-			//add general configuration group
-			var bAddGeneralSettingsPanel = false;
-			for (var m in aItems) {
-				var oItem = aItems[m];
-				if (oItem.type === "group" && oItem.level !== "1") {
+			oItems = oSettingsData.form.items;
+			// ### check if need to add general configuration group ###
+			// since the items had already reordered in _addDestinationSettings function according by this._destinationGroupAtTop,
+			// if destination group is at top:
+			//    a. check item from 2nd position (the 1st item is the destination group itme)
+			//    b. if item is a destination item, set iInsertPosition to current position number, then check the next item
+			//    c. if item is a group and not a sub group, break, no need to add general configuration group
+			//    d. if item is not a group and visible is true, which means it is a valid item, so need to add general configuration group, or check the next item
+			// if destination group is NOT at top:
+			//    a. check item from 1st position
+			//    b. if item is destination item, which means no parameters exist(items sorted in _addDestinationSettings), no need to add general configuration group
+			//    c. if item is a group and not a sub group, break, no need to add general configuration group
+			//    d. if item is not a group and visible is true, which means it is a valid item, so need to add general configuration group, or check the next item
+			var bAddGeneralSettingsPanel = false,
+				iStartIndex = this._destinationGroupAtTop ? 1 : 0,
+				aKeys = Object.keys(oItems),
+				iLength = aKeys.length,
+				iInsertPosition = 0;
+			for (var i = iStartIndex; i < iLength; i++) {
+				var oItem = oItems[aKeys[i]];
+				if (oItem.type === "destination") {
+					if (!this._destinationGroupAtTop) {
+						break;
+					}
+					iInsertPosition = i;
+					continue;
+				} else if (oItem.type === "group" && oItem.level !== "1") {
 					break;
 				} else if (oItem.visible) {
 					bAddGeneralSettingsPanel = true;
@@ -2805,19 +2870,33 @@ sap.ui.define([
 				}
 			}
 			if (bAddGeneralSettingsPanel) {
-				//add general settings panel
-				aItems = merge(
-					{
-						generalPanel : {
-							type: "group",
-							translatable: true,
-							expanded: true,
-							label: this._oResourceBundle.getText("EDITOR_PARAMETERS_GENERALSETTINGS"),
-							_settingspath: "/form/items/generalPanel"
+				var oGeneralPanel = {
+					type: "group",
+					translatable: true,
+					expanded: true,
+					label: this._oResourceBundle.getText("EDITOR_PARAMETERS_GENERALSETTINGS"),
+					_settingspath: "/form/items/generalPanel"
+				};
+				//insert general settings panel in position iInsertPosition
+				if (this._destinationGroupAtTop) {
+					var oNewItems = {};
+					var iPosition = 0;
+					aKeys.forEach(function(sKey) {
+						oNewItems[sKey] = oItems[sKey];
+						if (iPosition === iInsertPosition) {
+							oNewItems["generalPanel"] = oGeneralPanel;
 						}
-					}, aItems
-				);
-				oSettingsData.form.items = aItems;
+						iPosition++;
+					});
+					oItems = oNewItems;
+				} else {
+					oItems = merge(
+						{
+							"generalPanel": oGeneralPanel
+						}, oItems
+					);
+				}
+				oSettingsData.form.items = oItems;
 				this._settingsModel.setData(oSettingsData);
 			}
 		}
@@ -2825,7 +2904,7 @@ sap.ui.define([
 		var oSettings = this._settingsModel.getProperty("/");
 		this._mItemsByPaths = {};
 		if (oSettings.form && oSettings.form.items) {
-			aItems = oSettings.form.items;
+			oItems = oSettings.form.items;
 			//get current language
 			var sLanguage = this._language || this.getLanguage() || Core.getConfiguration().getLanguage().replaceAll('_', '-');
 			if (this.getMode() === "translation") {
@@ -2836,10 +2915,10 @@ sap.ui.define([
 					expandable: false,
 					expanded: true,
 					label: this._oResourceBundle.getText("EDITOR_ORIGINALLANG") + ": " + Editor._oLanguages[sLanguage]
-				});
+				}, "translationTopPanel");
 			}
-			for (var n in aItems) {
-				var oItem = aItems[n];
+			for (var n in oItems) {
+				var oItem = oItems[n];
 				if (oItem) {
 					//force a label setting, set it to the name of the item
 					oItem.label = oItem.label || n;
@@ -2986,9 +3065,9 @@ sap.ui.define([
 			}
 		}
 
-		for (var n in aItems) {
-			var oItem = aItems[n];
-			this._addItem(oItem);
+		for (var n in oItems) {
+			var oItem = oItems[n];
+			this._addItem(oItem, n);
 		}
 		// customize the size of card editor, define the size in dt.js
 		var editorHeight = this._settingsModel.getProperty("/form/height") !== undefined ? this._settingsModel.getProperty("/form/height") : "350px",
@@ -2996,6 +3075,7 @@ sap.ui.define([
 		if (this.getProperty("height") === "") {
 			this.setProperty("height", editorHeight);
 			document.body.style.setProperty("--sapUiIntegrationEditorFormHeight", editorHeight);
+			document.body.style.setProperty("--sapUiIntegrationEditorPreviewHeight", editorHeight);
 		}
 		if (this.getProperty("width") === "") {
 			this.setProperty("width", editorWidth);
@@ -3015,6 +3095,7 @@ sap.ui.define([
 		if (sValue) {
 			this.setProperty("height", sValue);
 			document.body.style.setProperty("--sapUiIntegrationEditorFormHeight", sValue);
+			document.body.style.setProperty("--sapUiIntegrationEditorPreviewHeight", sValue);
 		}
 	};
 
@@ -3047,6 +3128,7 @@ sap.ui.define([
 		this._beforeManifestModel = null;
 		this._oInitialManifestModel = null;
 		this._settingsModel = null;
+		this._destinationsModel = null;
 		document.body.style.removeProperty("--sapUiIntegrationEditorFormWidth");
 		document.body.style.removeProperty("--sapUiIntegrationEditorFormHeight");
 		Control.prototype.destroy.apply(this, arguments);
@@ -3068,6 +3150,10 @@ sap.ui.define([
 		var mItems = oSettings.form.items || oSettings.form.items;
 		for (var n in mItems) {
 			var oItem = mItems[n];
+			// do not apply default values for destination
+			if (oItem.type === "destination") {
+				continue;
+			}
 			if (oItem.manifestpath) {
 				oItem.value = this._manifestModel.getProperty(oItem.manifestpath);
 			}
@@ -3131,13 +3217,24 @@ sap.ui.define([
 					var aKeys = Object.keys(oChanges);
 					for (var j = 0; j < aKeys.length; j++) {
 						var vValue = oChanges[aKeys[j]];
-						// if the value of design time is object type,it should for the object field/object list field
-						// add it into designtime of settings
 						if (typeof vValue === "object") {
-							oDesigntime[aKeys[j]] = merge(oDesigntime[aKeys[j]], vValue);
-							continue;
+							// if vValue is a object type
+							if (vValue.configuration && vValue.configuration.parameterFromDestination) {
+								//if it is a parameter transformed from destination, add it into form/items as new parameter for this layer
+								var oNewParameterConfig = vValue.configuration;
+								delete oNewParameterConfig.parameterFromDestination;
+								oNewParameterConfig.value = this._manifestModel.getProperty(oNewParameterConfig.manifestpath);
+								oNewParameterConfig._settingspath = "/form/items/" + vValue.parameter;
+								this._settingsModel.setProperty(oNewParameterConfig._settingspath, oNewParameterConfig);
+							} else {
+								// else it should for the object field/object list field
+								// add it into designtime of settings
+								oDesigntime[aKeys[j]] = merge(oDesigntime[aKeys[j]], vValue);
+								continue;
+							}
+						} else {
+							this._settingsModel.setProperty(aKeys[j], vValue);
 						}
-						this._settingsModel.setProperty(aKeys[j], vValue);
 					}
 				}
 				var oAppliedLayerManifestChangeTexts = this._appliedLayerManifestChanges[i]["texts"];
@@ -3156,11 +3253,13 @@ sap.ui.define([
 					var sPath = aKeys[j],
 						vValue = oChanges[sPath];
 						sNext = sPath.substring(0, sPath.lastIndexOf("/") + 1) + "_next";
-					// if the value of design time is object type,it should for the object field/object list field
-					// add it into designtime of settings
 					if (typeof vValue === "object") {
-						oDesigntime[sPath] = merge(oDesigntime[sPath], vValue);
-						continue;
+						// if the value of design time is object type and not a parameter transformed from destination, it should for the object field/object list field
+						// add it into designtime of settings, else add it into _next property
+						if (!vValue.configuration || !vValue.configuration.parameterFromDestination) {
+							oDesigntime[sPath] = merge(oDesigntime[sPath], vValue);
+							continue;
+						}
 					}
 					if (!this._settingsModel.getProperty(sNext)) {
 						//create a _next entry if it does not exist
@@ -3212,9 +3311,10 @@ sap.ui.define([
 		}
 		return new Designtime(oSettings);
 	};
+
 	/**
-	 * Adds additional settings for destinations section in admin mode
-	 * @param {} oConfiguration
+	 * Adds additional settings for destinations section in admin mode and all modeß
+	 * @param {object} oConfiguration
 	 */
 	Editor.prototype._addDestinationSettings = function (oConfiguration) {
 		var oSettings = this._oDesigntimeInstance.getSettings(),
@@ -3222,20 +3322,26 @@ sap.ui.define([
 		oSettings.form = oSettings.form || {};
 		oSettings.form.items = oSettings.form.items || {};
 		if (oSettings && oConfiguration && oConfiguration.destinations) {
-			if (!oSettings.form.items["destination.group"]) {
-				//destination section separated by a group header
-				oSettings.form.items["destination.group"] = {
-					label: this._oResourceBundle.getText("EDITOR_DESTINATIONS") || "Destinations",
-					type: "group",
-					expanded: true,
-					visible: true,
-					_settingspath: "/form/items/destination.group"
-				};
-			}
+			this._destinationGroupAtTop = false;
 			var oItems = oSettings.form.items,
+				oDestinations = {},
 				oHost = this.getHostInstance();
+			var oDestinationGroup = {
+				label: this._oResourceBundle.getText("EDITOR_DESTINATIONS") || "Destinations",
+				type: "group",
+				expanded: true,
+				visible: true,
+				_settingspath: "/form/items/destination.group"
+			};
+			if (oItems["destination.group"]) {
+				// if the 1st item is destination group, set this._destinationGroupAtTop to true. Then render destination group at top
+				this._destinationGroupAtTop = Object.keys(oItems)[0] === "destination.group";
+				oDestinationGroup = merge(oDestinationGroup, oItems["destination.group"]);
+				delete oItems["destination.group"];
+			}
+			oDestinations["destination.group"] = oDestinationGroup;
 			Object.keys(oConfiguration.destinations).forEach(function (n) {
-				oItems[n + ".destination"] = merge({
+				var oDestination = merge({
 					manifestpath: sBasePath + "/" + n + "/name", //destination points to name not value
 					visible: true,
 					type: "destination",
@@ -3248,22 +3354,31 @@ sap.ui.define([
 					_values: [],
 					_destinationName: n
 				}, oConfiguration.destinations[n]);
-				if (typeof oItems[n + ".destination"].label === "undefined") {
-					oItems[n + ".destination"].label = n;
+				if (typeof oDestination.label === "undefined") {
+					oDestination.label = n;
 				}
-				if (oHost) {
-					oItems[n + ".destination"]._loading = true;
+				if (oItems[n + ".destination"]) {
+					oDestination = merge(oDestination, oItems[n + ".destination"]);
+					delete oItems[n + ".destination"];
 				}
+				oDestinations[n + ".destination"] = oDestination;
 			});
+			// reorder the items according by this._destinationGroupAtTop
+			if (this._destinationGroupAtTop) {
+				oSettings.form.items = merge(oDestinations, oItems);
+			} else {
+				oSettings.form.items = merge(oItems, oDestinations);
+			}
 			var getDestinationsDone = false;
 			if (oHost) {
+				this._destinationsModel.setProperty("/_loading", true);
+				this._destinationsModel.checkUpdate(true);
 				this.getHostInstance().getDestinations().then(function (a) {
 					getDestinationsDone = true;
-					Object.keys(oConfiguration.destinations).forEach(function (n) {
-						oItems[n + ".destination"]._values = a;
-						oItems[n + ".destination"]._loading = false;
-						this._settingsModel.checkUpdate(true);
-					}.bind(this));
+					this._destinationsModel.setProperty("/_values", a);
+					this._destinationsModel.setProperty("/_loading", false);
+					this._destinationsModel.setSizeLimit(a.length);
+					this._destinationsModel.checkUpdate(true);
 				}.bind(this)).catch(function () {
 					//Fix DIGITALWORKPLACE-4359, retry once for the timeout issue
 					return this.getHostInstance().getDestinations();
@@ -3271,18 +3386,31 @@ sap.ui.define([
 					if (getDestinationsDone) {
 						return;
 					}
-					Object.keys(oConfiguration.destinations).forEach(function (n) {
-						oItems[n + ".destination"]._values = b;
-						oItems[n + ".destination"]._loading = false;
-						this._settingsModel.checkUpdate(true);
-					}.bind(this));
+					this._destinationsModel.setProperty("/_values", b);
+					this._destinationsModel.setProperty("/_loading", false);
+					this._destinationsModel.setSizeLimit(b.length);
+					this._destinationsModel.checkUpdate(true);
 				}.bind(this)).catch(function (e) {
-					Object.keys(oConfiguration.destinations).forEach(function (n) {
-						oItems[n + ".destination"]._loading = false;
-						this._settingsModel.checkUpdate(true);
-					}.bind(this));
+					this._destinationsModel.setProperty("/_loading", false);
+					this._destinationsModel.checkUpdate(true);
 					Log.error("Can not get destinations list from '" + oHost.getId() + "'.");
 				}.bind(this));
+			}
+		}
+	};
+
+	/**
+	 * Delete destinations if mode is NOT admin or all
+	 */
+	Editor.prototype._deleleDestinationSettings = function () {
+		var oSettings = this._oDesigntimeInstance.getSettings();
+		oSettings.form = oSettings.form || {};
+		oSettings.form.items = oSettings.form.items || {};
+		delete oSettings.form.items["destination.group"];
+		for (var n in oSettings.form.items) {
+			var oItem = oSettings.form.items[n];
+			if (oItem.type === "destination") {
+				delete oSettings.form.items[n];
 			}
 		}
 	};

@@ -3,7 +3,6 @@
  */
 
 sap.ui.define([
-	"sap/base/util/UriParameters",
 	"sap/m/Button",
 	"sap/m/library",
 	"sap/m/Dialog",
@@ -13,21 +12,23 @@ sap.ui.define([
 	"sap/m/Text",
 	"sap/ui/core/sample/common/Controller",
 	"sap/ui/core/Title",
+	"sap/ui/core/date/UI5Date",
+	"sap/ui/layout/form/ColumnLayout",
 	"sap/ui/layout/form/SimpleForm",
 	"sap/ui/model/Sorter",
 	"sap/ui/model/odata/v4/ODataModel",
 	"sap/ui/test/TestUtils"
-], function (UriParameters, Button, mobileLibrary, Dialog, Input, Label, MessageToast, Text,
-		Controller, Title, SimpleForm, Sorter, ODataModel, TestUtils) {
+], function (Button, mobileLibrary, Dialog, Input, Label, MessageToast, Text,
+		Controller, Title, UI5Date, _ColumnLayout, SimpleForm, Sorter, ODataModel, TestUtils) {
 	"use strict";
 
 	// shortcut for sap.m.ButtonType
 	var ButtonType = mobileLibrary.ButtonType,
-		sOptimisticBatch = UriParameters.fromQuery(window.location.search).get("optimisticBatch");
+		sOptimisticBatch = new URLSearchParams(window.location.search).get("optimisticBatch");
 
 	return Controller.extend("sap.ui.core.sample.odata.v4.LateProperties.Main", {
 		onCleanUpOptimisticBatchCache : function (oEvent) {
-			var oTimeStamp = new Date(Date.now()
+			var oTimeStamp = UI5Date.getInstance(Date.now()
 				- parseInt(oEvent.getParameter("id").split("days")[1]) * 60 * 60 * 24 * 1000);
 
 			ODataModel.cleanUpOptimisticBatch(oTimeStamp).then(function () {
@@ -69,6 +70,7 @@ sap.ui.define([
 			var oDialog = new Dialog({
 					title : "Edit Delivery Date",
 					content : new SimpleForm({
+						layout : "ColumnLayout",
 						content : [
 							new Title({text : "Sales Order"}),
 							new Label({text : "Sales Order ID "}),

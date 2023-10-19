@@ -18,7 +18,8 @@ sap.ui.define([
 	"sap/m/Button",
 	"sap/m/ResponsivePopover",
 	"sap/m/IconTabBarSelectList",
-	"sap/m/BadgeEnabler"
+	"sap/m/BadgeEnabler",
+	"sap/m/ImageHelper"
 ], function (
 	library,
 	AccButton,
@@ -34,7 +35,8 @@ sap.ui.define([
 	Button,
 	ResponsivePopover,
 	IconTabBarSelectList,
-	BadgeEnabler
+	BadgeEnabler,
+	ImageHelper
 ) {
 	"use strict";
 
@@ -49,9 +51,6 @@ sap.ui.define([
 
 	// shortcut for sap.m.PlacementType
 	var PlacementType = library.PlacementType;
-
-	// shortcut for sap.m.ImageHelper
-	var ImageHelper = library.ImageHelper;
 
 	// shortcut for sap.m.IconTabFilterDesign
 	var IconTabFilterDesign = library.IconTabFilterDesign;
@@ -634,7 +633,8 @@ sap.ui.define([
 		oRM.close("div");
 
 		if (this.getItems().length && !bIsUnselectable) {
-			oRM.openStart("span")
+
+			oRM.openStart("span").class("sapMITBFilterExpandBtnSeparator")
 				.accessibilityState({ role: "separator" })
 				.openEnd()
 			.close("span");
@@ -687,7 +687,6 @@ sap.ui.define([
 		if (iIndexInSet !== undefined && iSetSize !== undefined) {
 			oRM.attr("aria-posinset", iIndexInSet + 1);
 			oRM.attr("aria-setsize", iSetSize);
-			oRM.attr("aria-level", this._getNestedLevel());
 		}
 
 		var sTooltip = this.getTooltip_AsString();
@@ -1359,7 +1358,7 @@ sap.ui.define([
 				oRbArgs = [sText, oRootTab.getText()];
 			} else {
 				sRbKey = "ICONTABFILTER_BADGE_MSG";
-				oRbArgs = sText;
+				oRbArgs = [sText];
 			}
 		}
 

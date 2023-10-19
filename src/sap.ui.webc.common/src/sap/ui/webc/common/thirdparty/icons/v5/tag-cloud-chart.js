@@ -6,7 +6,7 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
   });
   _exports.pathData = _exports.ltr = _exports.default = _exports.accData = void 0;
   const name = "tag-cloud-chart";
-  const pathData = "M405 183q23 0 42.5 8.5T481 214t22.5 33.5T512 290q0 22-8.5 41.5T481 365t-33.5 22.5T405 396H263l-124 81q-10 7-21 0-11-6-11-19v-66q-22-4-41.5-15.5t-33.5-28T9.5 311 1 266q0-25 9.5-47T36 180t38.5-27.5T122 141q18-39 53.5-62.5T256 55q28 0 53 10t45 27 33.5 40.5T405 183zm0 168q27 0 45.5-18t18.5-45q0-28-18.5-46T405 224h-21q-21 0-21-22t-8.5-41.5T332 127t-33.5-22.5T256 96q-29 0-52 13t-37 36q38 13 63.5 45.5T256 266q0 22-21 22t-21-22q0-17-7-32t-18.5-26.5-27-18T128 183q-17 0-32.5 6.5t-27 18-18.5 27-7 33.5 7 33.5 18.5 27 27 18.5 32.5 7q22 0 22 21v45l93-64 7-3.5 6-1.5h149z";
+  const pathData = "M405 160q23 0 42.5 9.5t33.5 25 22.5 35.5 8.5 42q0 23-8.5 43.5T480 351t-34.5 24-42.5 9H231l-91 89q-9 7-18 7-11 0-18.5-7.5T96 454v-74q-42-11-69-45T0 256q0-26 9.5-49T38 166q34-29 77-37 18-43 56-70t85-27q28 0 53 9.5t45 27 33.5 41T405 160zm-2 173q24 0 41-17.5t17-43.5q0-25-17.5-43T403 211h-21q-11 0-18.5-8.5T356 176t-8-34.5-21.5-29.5T295 91t-39-8q-27 0-50 14.5T169 135q14 5 29 15t27.5 23 20.5 28 8 29q0 12-6.5 21t-19.5 9q-20 0-26-26-5-21-25-38t-46-17h-3q-32 0-54.5 22.5T51 256q0 30 20 52t45 24q15 1 23 8.5t8 17.5v36l55-54q7-7 18-7h183z";
   _exports.pathData = pathData;
   const ltr = false;
   _exports.ltr = ltr;
@@ -20,6 +20,6 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
     collection,
     packageName
   });
-  var _default = "tag-cloud-chart";
+  var _default = "SAP-icons-v5/tag-cloud-chart";
   _exports.default = _default;
 });

@@ -5,7 +5,7 @@
       "fileType":"change",
       "changeType":"standardVariant",
       "layer":"USER",
-      "reference":"sap.ui.demoapps.rta.fiorielements.Component",
+      "reference":"sap.ui.demoapps.rta.fiorielements",
       "selector":  {
         "persistencyKey":"variantManagement1"
       },
@@ -22,6 +22,17 @@
         "executeOnSelect": true
       },
       "creation":"2020-12-11T06:21:52.183Z"
+    }],
+    "defaultVariants": [{
+      "fileName": "defaultVariant1",
+      "fileType": "change",
+      "changeType": "defaultVariant",
+      "selector": {
+        "persistencyKey": "variantManagement1"
+      },
+      "content": {
+        "defaultVariantName": "variant_2"
+      }
     }],
     "variants": [{
       "fileName": "variant_1",
@@ -65,13 +76,28 @@
           "value": "B Variant"
         }
       }
+    },
+    {
+      "fileName": "variant_invisible",
+      "fileType": "variant",
+      "selector": {
+        "persistencyKey": "variantManagement1"
+      },
+      "content": {},
+      "executeOnSelection": true,
+      "favorite": true,
+      "texts": {
+        "variantName": {
+          "value": "Variant which will be set to invisble"
+        }
+      }
     }],
     "changes": [{
       "fileName": "id_1606828544793_204_addFavorite",
       "fileType": "change",
       "changeType": "addFavorite",
       "moduleName": "",
-      "reference": "sap.ui.demoapps.rta.fiorielements.Component",
+      "reference": "sap.ui.demoapps.rta.fiorielements",
       "packageName": "",
       "content": {
         "key": "variant_1",
@@ -104,7 +130,7 @@
       "fileType": "change",
       "changeType": "removeFavorite",
       "moduleName": "",
-      "reference": "sap.ui.demoapps.rta.fiorielements.Component",
+      "reference": "sap.ui.demoapps.rta.fiorielements",
       "packageName": "",
       "content": {
         "key": "variant_1",
@@ -137,7 +163,7 @@
       "fileType": "change",
       "changeType": "addFavorite",
       "moduleName": "",
-      "reference": "sap.ui.demoapps.rta.fiorielements.Component",
+      "reference": "sap.ui.demoapps.rta.fiorielements",
       "packageName": "",
       "content": {
         "key": "variant_3",
@@ -171,7 +197,7 @@
         "fileType": "change",
         "changeType": "updateVariant",
         "moduleName": "",
-        "reference": "sap.ui.demoapps.rta.fiorielements.Component",
+        "reference": "sap.ui.demoapps.rta.fiorielements",
         "packageName": "",
         "content": {
           "key": "variant_6",
@@ -198,7 +224,7 @@
       "fileType": "change",
       "changeType": "updateVariant",
       "moduleName": "",
-      "reference": "sap.ui.demoapps.rta.fiorielements.Component",
+      "reference": "sap.ui.demoapps.rta.fiorielements",
       "packageName": "",
       "content": {
         "variantContent": {
@@ -234,6 +260,45 @@
       "jsOnly": false,
       "variantReference": "",
       "appDescriptorChange": false
+    },
+    {
+      "fileName": "id_1606828544793_206_updateVariant",
+      "fileType": "change",
+      "changeType": "updateVariant",
+      "moduleName": "",
+      "reference": "sap.ui.demoapps.rta.fiorielements",
+      "packageName": "",
+      "content": {
+        "visible": false
+      },
+      "selector": {
+       "variantId": "variant_invisible",
+        "persistencyKey": "variantManagement1"
+      },
+      "layer": "USER",
+      "texts": {
+        "variantName": {
+          "value": "a new name",
+          "type": "XFLD"
+        },
+        "namespace": "apps/sap.ui.demoapps.rta.fiorielements/changes/",
+        "projectId": "sap.ui.demoapps.rta.fiorielements",
+        "creation": "2020-12-02T13:15:45.208Z",
+        "originalLanguage": "EN",
+        "support": {
+          "generator": "Change.createInitialFileContent",
+          "service": "",
+          "user": "some.user@sap.com",
+          "sapui5Version": "1.82.2",
+          "sourceChangeFileName": "",
+          "compositeCommand": ""
+        },
+        "oDataInformation": {},
+        "dependentSelector": {},
+        "jsOnly": false,
+        "variantReference": "",
+        "appDescriptorChange": false
+      }
     }]
   }
 }

@@ -11,8 +11,8 @@ sap.ui.define([
 	"sap/ui/mdc/filterbar/vh/FilterBar",
 	"sap/ui/mdc/condition/FilterOperatorUtil",
 	"sap/ui/mdc/condition/Operator",
-	"sap/ui/mdc/enum/SelectType",
-	"sap/ui/mdc/enum/ConditionValidated",
+	"sap/ui/mdc/enums/ValueHelpSelectionType",
+	"sap/ui/mdc/enums/ConditionValidated",
 	"sap/ui/core/Icon",
 	"sap/ui/model/json/JSONModel",
 	"sap/m/library",
@@ -25,7 +25,7 @@ sap.ui.define([
 		FilterBar,
 		FilterOperatorUtil,
 		Operator,
-		SelectType,
+		ValueHelpSelectionType,
 		ConditionValidated,
 		Icon,
 		JSONModel,
@@ -35,10 +35,10 @@ sap.ui.define([
 	) {
 	"use strict";
 
-	var oContent;
-	var oResourceBundle = oCore.getLibraryResourceBundle("sap.ui.mdc");
+	let oContent;
+	const oResourceBundle = oCore.getLibraryResourceBundle("sap.ui.mdc");
 
-	var _teardown = function() {
+	const _teardown = function() {
 		oContent.destroy();
 		oContent = null;
 	};
@@ -51,7 +51,7 @@ sap.ui.define([
 	});
 
 	QUnit.test("_createDefaultFilterBar", function(assert) {
-		var fnDone = assert.async();
+		const fnDone = assert.async();
 		oContent._createDefaultFilterBar().then(function (oFilterBar) {
 			assert.ok(oFilterBar, "FilterBar is created");
 			assert.equal(oFilterBar, oContent.getAggregation("_defaultFilterBar"), "FilerBar is set as defaultFilterBar");
@@ -60,11 +60,11 @@ sap.ui.define([
 	});
 
 	QUnit.test("_getPriorityFilterBar", function(assert) {
-		var fnDone = assert.async();
+		const fnDone = assert.async();
 		oContent._createDefaultFilterBar().then(function () {
-			var oFilterBar = oContent._getPriorityFilterBar();
+			let oFilterBar = oContent._getPriorityFilterBar();
 			assert.equal(oFilterBar, oContent.getAggregation("_defaultFilterBar"), "returns defaultFilterBar if none is set");
-			var oMyFilterBar = new FilterBar();
+			const oMyFilterBar = new FilterBar();
 			oContent.setFilterBar(oMyFilterBar);
 			oFilterBar = oContent._getPriorityFilterBar();
 			assert.equal(oFilterBar, oMyFilterBar, "returns dedicated filterbar, if available");
@@ -85,21 +85,21 @@ sap.ui.define([
 
 	QUnit.test("_getListItemBindingContext", function(assert) {
 
-		var sModelName = "MyModel";
+		const sModelName = "MyModel";
 
-		sinon.stub(oContent, "_getListBindingInfo").callsFake(function () {
+		sinon.stub(oContent, "getListBindingInfo").callsFake(function () {
 			return {
 				model: sModelName
 			};
 		});
 
-		var oItem = { getBindingContext: function () {}};
+		const oItem = { getBindingContext: function () {}};
 		sinon.spy(oItem, "getBindingContext");
 
 		oContent._getListItemBindingContext(oItem);
 
 		assert.ok(oItem.getBindingContext.called, "getBindingContext was called");
-		assert.ok(oContent._getListBindingInfo.called, "_getListBindingInfo was called");
+		assert.ok(oContent.getListBindingInfo.called, "getListBindingInfo was called");
 		assert.equal(oItem.getBindingContext.lastCall.args[0], sModelName, "modelname was considered");
 
 	});

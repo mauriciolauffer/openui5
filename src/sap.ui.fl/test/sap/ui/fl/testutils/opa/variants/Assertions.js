@@ -3,7 +3,7 @@
  */
 sap.ui.define([
 	"sap/ui/test/Opa5",
-	'sap/base/Log',
+	"sap/base/Log",
 	"sap/m/VariantManagement",
 	"sap/ui/test/matchers/Ancestor"
 ], function(
@@ -16,33 +16,33 @@ sap.ui.define([
 
 	return {
 
-		theVariantShouldBeDisplayed: function (sFlVMId, sVariantTitle) {
+		theVariantShouldBeDisplayed(sFlVMId, sVariantTitle) {
 			return this.waitFor({
 				id: sFlVMId,
-				success: function (oVariantManagement) {
-					Opa5.assert.equal(oVariantManagement.getTitle().getText(), sVariantTitle, "Expected " + sVariantTitle + " to be displayed.");
+				success(oVariantManagement) {
+					Opa5.assert.equal(oVariantManagement.getTitle().getText(), sVariantTitle, `Expected ${sVariantTitle} to be displayed.`);
 				},
 				errorMessage: "VariantManagement could't be found"
 			});
 		},
 
-		theMyViewShouldContain: function (sFlVMId, aVariantNames) {
+		theMyViewShouldContain(sFlVMId, aVariantNames) {
 			return this.waitFor({
-				id: sFlVMId + "-vm-popover-popover",
-				success: function () {
+				id: `${sFlVMId}-vm-popover-popover`,
+				success() {
 					return this.waitFor({
 						controlType: "sap.m.SelectList",
-						id: sFlVMId + "-vm-list",
-						success: function() {
+						id: `${sFlVMId}-vm-list`,
+						success() {
 							return this.waitFor({
 								controlType: "sap.ui.core.Item",
-								matchers: function(oItem) {
-									return oItem.getId().indexOf(sFlVMId + "-vm-list-") >= 0;
+								matchers(oItem) {
+									return oItem.getId().indexOf(`${sFlVMId}-vm-list-`) >= 0;
 								},
-								success: function(aItems) {
+								success(aItems) {
 									var aIsVariantTitle = [];
 									aItems.forEach(function(oItem) { aIsVariantTitle.push(oItem.getText());});
-									Opa5.assert.deepEqual(aVariantNames, aIsVariantTitle, "expected [" + aVariantNames + "] views found");
+									Opa5.assert.deepEqual(aVariantNames, aIsVariantTitle, `expected [${aVariantNames}] views found`);
 								}
 							});
 						},
@@ -53,35 +53,37 @@ sap.ui.define([
 			});
 		},
 
-		theOpenDialog: function (sId) {
+		theOpenDialog(sId) {
 			return this.waitFor({
 				id: sId,
-				success: function (oDialog) {
+				success(oDialog) {
 					Opa5.assert.ok(oDialog);
 				}
 			});
 		},
 
-		theOpenManageViewsDialogTitleShouldContain: function (aVariantNames) {
+		theOpenManageViewsDialogTitleShouldContain(aVariantNames) {
 			return	this.waitFor({
 				controlType: "sap.m.Dialog",
-				success: function(aDialogs) {
+				success(aDialogs) {
 					var oDialog = aDialogs[0];
 					this.waitFor({
 						controlType: "sap.m.Table",
 						matchers: new Ancestor(oDialog),
-						success: function(aTables) {
+						success(aTables) {
 							var oTable = aTables[0];
 							var aIsVariantTitle = [];
 							oTable.getItems().forEach(function(oItem) {
-								var oCell = oItem.getCells()[VariantManagement.COLUMN_NAME_IDX];
-								if (oCell.isA("sap.m.ObjectIdentifier")) {
-									aIsVariantTitle.push(oCell.getTitle());
-								} else {
-									aIsVariantTitle.push(oCell.getValue());
+								if (oItem.getVisible()) {
+									var oCell = oItem.getCells()[VariantManagement.COLUMN_NAME_IDX];
+									if (oCell.isA("sap.m.ObjectIdentifier")) {
+										aIsVariantTitle.push(oCell.getTitle());
+									} else {
+										aIsVariantTitle.push(oCell.getValue());
+									}
 								}
 							});
-							Opa5.assert.deepEqual(aVariantNames, aIsVariantTitle, "expected [" + aVariantNames + "] views found");
+							Opa5.assert.deepEqual(aVariantNames, aIsVariantTitle, `expected [${aVariantNames}] views found`);
 						},
 						errorMessage: "No variant list found"
 					});
@@ -89,22 +91,24 @@ sap.ui.define([
 			});
 		},
 
-		theOpenManageViewsDialogFavoritesShouldContain: function (aVariantFavorites) {
+		theOpenManageViewsDialogFavoritesShouldContain(aVariantFavorites) {
 			return	this.waitFor({
 				controlType: "sap.m.Dialog",
-				success: function(aDialogs) {
+				success(aDialogs) {
 					var oDialog = aDialogs[0];
 					this.waitFor({
 						controlType: "sap.m.Table",
 						matchers: new Ancestor(oDialog),
-						success: function(aTables) {
+						success(aTables) {
 							var oTable = aTables[0];
 							var aIsVariantFavorites = [];
 							oTable.getItems().forEach(function(oItem) {
-								var oCell = oItem.getCells()[VariantManagement.COLUMN_FAV_IDX];
-								aIsVariantFavorites.push(oCell.getSrc() === "sap-icon://favorite");
+								if (oItem.getVisible()) {
+									var oCell = oItem.getCells()[VariantManagement.COLUMN_FAV_IDX];
+									aIsVariantFavorites.push(oCell.getSrc() === "sap-icon://favorite");
+								}
 							});
-							Opa5.assert.deepEqual(aVariantFavorites, aIsVariantFavorites, "expected [" + aVariantFavorites + "] favorite states found");
+							Opa5.assert.deepEqual(aVariantFavorites, aIsVariantFavorites, `expected [${aVariantFavorites}] favorite states found`);
 						},
 						errorMessage: "No variant list found"
 					});
@@ -112,23 +116,25 @@ sap.ui.define([
 			});
 		},
 
-		theOpenManageViewsDialogApplyAutomaticallyShouldContain: function (aVariantApplayAutos) {
+		theOpenManageViewsDialogApplyAutomaticallyShouldContain(aVariantApplayAutos) {
 			return	this.waitFor({
 				controlType: "sap.m.Dialog",
-				success: function(aDialogs) {
+				success(aDialogs) {
 					var oDialog = aDialogs[0];
 					this.waitFor({
 						controlType: "sap.m.Table",
 						matchers: new Ancestor(oDialog),
-						success: function(aTables) {
+						success(aTables) {
 							var oTable = aTables[0];
 							var aIsVariantApplyAutos = [];
 							oTable.getItems().forEach(function(oItem) {
-								var oCell = oItem.getCells()[4]; //EXEC
-								aIsVariantApplyAutos.push(oCell.getSelected());
+								if (oItem.getVisible()) {
+									var oCell = oItem.getCells()[4]; // EXEC
+									aIsVariantApplyAutos.push(oCell.getSelected());
+								}
 							});
 
-							Opa5.assert.deepEqual(aVariantApplayAutos, aIsVariantApplyAutos, "expected [" + aVariantApplayAutos + "] apply automatically states found");
+							Opa5.assert.deepEqual(aVariantApplayAutos, aIsVariantApplyAutos, `expected [${aVariantApplayAutos}] apply automatically states found`);
 						},
 						errorMessage: "No variant list items found"
 					});
@@ -136,23 +142,25 @@ sap.ui.define([
 			});
 		},
 
-		theOpenManageViewsDialogSharingShouldContain: function (aVariantSharing) {
+		theOpenManageViewsDialogSharingShouldContain(aVariantSharing) {
 			return	this.waitFor({
 				controlType: "sap.m.Dialog",
-				success: function(aDialogs) {
+				success(aDialogs) {
 					var oDialog = aDialogs[0];
 					this.waitFor({
 						controlType: "sap.m.Table",
 						matchers: new Ancestor(oDialog),
-						success: function(aTables) {
+						success(aTables) {
 							var oTable = aTables[0];
 							var aIsVariantSharing = [];
 							oTable.getItems().forEach(function(oItem) {
-								var oCell = oItem.getCells()[2]; //SHARING
-								aIsVariantSharing.push(oCell.getText());
+								if (oItem.getVisible()) {
+									var oCell = oItem.getCells()[2]; // SHARING
+									aIsVariantSharing.push(oCell.getText());
+								}
 							});
 
-							Opa5.assert.deepEqual(aVariantSharing, aIsVariantSharing, "expected [" + aVariantSharing + "] sharing information found");
+							Opa5.assert.deepEqual(aVariantSharing, aIsVariantSharing, `expected [${aVariantSharing}] sharing information found`);
 						},
 						errorMessage: "No variant list items found"
 					});
@@ -160,15 +168,15 @@ sap.ui.define([
 			});
 		},
 
-		theOpenManageViewsDialogDefaultShouldBe: function (sVariantName) {
+		theOpenManageViewsDialogDefaultShouldBe(sVariantName) {
 			return	this.waitFor({
 				controlType: "sap.m.Dialog",
-				success: function(aDialogs) {
+				success(aDialogs) {
 					var oDialog = aDialogs[0];
 					this.waitFor({
 						controlType: "sap.m.Table",
 						matchers: new Ancestor(oDialog),
-						success: function(aTables) {
+						success(aTables) {
 							var oTable = aTables[0];
 							var oListItem = oTable.getItems().filter(function(oItem) {
 								var oCell = oItem.getCells()[VariantManagement.COLUMN_NAME_IDX];
@@ -179,10 +187,10 @@ sap.ui.define([
 							})[0];
 
 							if (!oListItem) {
-								Log.error("No variant with name " + sVariantName + " was found in 'Manage Views'");
+								Log.error(`No variant with name ${sVariantName} was found in 'Manage Views'`);
 							} else {
-								var oDefault = oListItem.getCells()[3]; //DEF
-								Opa5.assert.ok(oDefault.getSelected(), "the default for " + sVariantName + " was expected to be set");
+								var oDefault = oListItem.getCells()[3]; // DEF
+								Opa5.assert.ok(oDefault.getSelected(), `the default for ${sVariantName} was expected to be set`);
 							}
 						},
 						errorMessage: "No variant list items found"

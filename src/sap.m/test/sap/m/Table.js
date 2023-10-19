@@ -17,6 +17,7 @@ sap.ui.define([
 	"sap/ui/core/Icon",
 	"sap/m/Title",
 	"sap/m/Button",
+	"sap/m/plugins/CopyProvider",
 	"sap/m/plugins/PasteProvider",
 	"sap/m/Column",
 	"sap/m/Link",
@@ -48,6 +49,7 @@ sap.ui.define([
 	Icon,
 	Title,
 	Button,
+	CopyProvider,
 	PasteProvider,
 	Column,
 	Link,
@@ -387,7 +389,10 @@ sap.ui.define([
 				text : "Available",
 				wrapping: true,
 				wrappingType: "Hyphenated"
-			})
+			}),
+			demandPopin: true,
+			popinDisplay: "Inline",
+			minScreenWidth: "Tablet"
 		}).data("clipboard", "checked"),
 		new Column({
 			header : new Link({
@@ -536,11 +541,11 @@ sap.ui.define([
 		infoToolbar : oTableInfo,
 		swipeContent : oSwipe,
 		columns : aColumns,
-		dependents: new sap.m.plugins.CopyProvider({
+		/*dependents: new CopyProvider({
 			extractData: function(oContext, oColumn) {
 				return oContext.getProperty(oColumn.data("clipboard"));
 			}
-		}),
+		}),*/
 		selectionChange : function(e) {
 			MessageToast.show("selection is changed");
 		},
@@ -560,6 +565,7 @@ sap.ui.define([
 					oModel.setData(oData);
 
 					setTimeout(function() {
+						MessageToast.show("Item deleted");
 						oTable.focus();
 					}, 0);
 				}
@@ -579,6 +585,8 @@ sap.ui.define([
 	});
 
 	var oPage = new Page({
+		title: "Page Title",
+		titleLevel: "H1",
 		enableScrolling : true,
 		footer: oTableActions,
 		content : [oTable]

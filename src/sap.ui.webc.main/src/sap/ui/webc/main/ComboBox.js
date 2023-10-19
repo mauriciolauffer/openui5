@@ -4,7 +4,7 @@
 
 // Provides control sap.ui.webc.main.ComboBox.
 sap.ui.define([
-	"sap/ui/webc/common/WebComponent",
+	"sap/ui/core/webc/WebComponent",
 	"./library",
 	"sap/ui/core/EnabledPropagator",
 	"sap/ui/core/library",
@@ -13,6 +13,7 @@ sap.ui.define([
 	"use strict";
 
 	var ValueState = coreLibrary.ValueState;
+	var ComboBoxFilter = library.ComboBoxFilter;
 
 	/**
 	 * Constructor for a new <code>ComboBox</code>.
@@ -20,7 +21,7 @@ sap.ui.define([
 	 * @param {string} [sId] ID for the new control, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new control
 	 *
-	 * @extends sap.ui.webc.common.WebComponent
+	 * @extends sap.ui.core.webc.WebComponent
 	 * @class
 	 *
 	 * <h3>Overview</h3>
@@ -30,8 +31,10 @@ sap.ui.define([
 	 * It is commonly used to enable users to select an option from a predefined list.
 	 *
 	 * <h3>Structure</h3> The <code>sap.ui.webc.main.ComboBox</code> consists of the following elements:
+	 *
+	 *
 	 * <ul>
-	 *     <li> Input field - displays the selected option or a custom user entry. Users can type to narrow down the list or enter their own value.
+	 *     <li> Input field - displays the selected option or a custom user entry. Users can type to narrow down the list or enter their own value.</li>
 	 *     <li> Drop-down arrow - expands\collapses the option list.</li>
 	 *     <li> Option list - the list of available options.</li>
 	 * </ul>
@@ -74,10 +77,11 @@ sap.ui.define([
 			properties: {
 
 				/**
-				 * Defines the accessible aria name of the component.
+				 * Defines the accessible ARIA name of the component.
 				 */
 				accessibleName: {
-					type: "string"
+					type: "string",
+					defaultValue: ""
 				},
 
 				/**
@@ -87,18 +91,18 @@ sap.ui.define([
 					type: "boolean",
 					defaultValue: true,
 					mapping: {
-						type: "attribute",
+						type: "property",
 						to: "disabled",
 						formatter: "_mapEnabled"
 					}
 				},
 
 				/**
-				 * Defines the filter type of the component. Available options are: <code>StartsWithPerTerm</code>, <code>StartsWith</code> and <code>Contains</code>.
+				 * Defines the filter type of the component.
 				 */
 				filter: {
-					type: "string",
-					defaultValue: "StartsWithPerTerm"
+					type: "sap.ui.webc.main.ComboBoxFilter",
+					defaultValue: ComboBoxFilter.StartsWithPerTerm
 				},
 
 				/**
@@ -144,16 +148,7 @@ sap.ui.define([
 				},
 
 				/**
-				 * Defines the value state of the component. <br>
-				 * <br>
-				 * Available options are:
-				 * <ul>
-				 *     <li><code>None</code></li>
-				 *     <li><code>Error</code></li>
-				 *     <li><code>Warning</code></li>
-				 *     <li><code>Success</code></li>
-				 *     <li><code>Information</code></li>
-				 * </ul>
+				 * Defines the value state of the component.
 				 */
 				valueState: {
 					type: "sap.ui.core.ValueState",
@@ -193,7 +188,7 @@ sap.ui.define([
 				 */
 				icon: {
 					type: "sap.ui.webc.main.IIcon",
-					multiple: false,
+					multiple: true,
 					slot: "icon"
 				},
 
@@ -247,7 +242,7 @@ sap.ui.define([
 						 * item to be selected.
 						 */
 						item: {
-							type: "HTMLElement"
+							type: "sap.ui.webc.main.IComboBoxItem"
 						}
 					}
 				}

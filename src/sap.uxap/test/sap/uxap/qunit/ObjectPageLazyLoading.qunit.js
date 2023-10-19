@@ -2,9 +2,10 @@
 sap.ui.define(["sap/ui/thirdparty/jquery",
                "sap/ui/core/Core",
                "sap/ui/model/json/JSONModel",
+			   "sap/uxap/ObjectPageDynamicHeaderTitle",
                "sap/uxap/ObjectPageLayout",
                "sap/ui/core/mvc/XMLView"],
-function (jQuery, Core, JSONModel, ObjectPageLayout, XMLView) {
+function (jQuery, Core, JSONModel, ObjectPageDynamicHeaderTitle, ObjectPageLayout, XMLView) {
 	"use strict";
 
 	// utility function that will be used in these tests
@@ -66,10 +67,13 @@ function (jQuery, Core, JSONModel, ObjectPageLayout, XMLView) {
 				viewName: "view.UxAP-27_ObjectPageConfig"
 			}).then(function (oView) {
 				this.oView = oView;
+				this.oComponentContainer = this.oView.byId("objectPageContainer");
 				this.oView.setModel(oConfigModel, "objectPageLayoutMetadata");
 				this.oView.placeAt("qunit-fixture");
 				Core.applyChanges();
-				done();
+				this.oComponentContainer.attachEventOnce("componentCreated", function () {
+					done();
+				});
 			}.bind(this));
 		},
 		afterEach: function () {
@@ -78,9 +82,7 @@ function (jQuery, Core, JSONModel, ObjectPageLayout, XMLView) {
 	});
 
 	QUnit.test("load first visible sections", function (assert) {
-		var oComponentContainer = this.oView
-			.byId("objectPageContainer");
-		var oObjectPageLayout = oComponentContainer
+		var oObjectPageLayout = this.oComponentContainer
 			.getObjectPageLayoutInstance();
 
 		var oData = oConfigModel.getData();
@@ -106,9 +108,7 @@ function (jQuery, Core, JSONModel, ObjectPageLayout, XMLView) {
 
 	QUnit.test("load first visible sections is relative to selectedSection", function (assert) {
 
-		var oComponentContainer = this.oView
-			.byId("objectPageContainer");
-		var oObjectPageLayout = oComponentContainer
+		var oObjectPageLayout = this.oComponentContainer
 			.getObjectPageLayoutInstance(),
 			secondSection;
 
@@ -123,9 +123,7 @@ function (jQuery, Core, JSONModel, ObjectPageLayout, XMLView) {
 
 	QUnit.test("load scrolled sections", function (assert) {
 
-		var oComponentContainer = this.oView
-			.byId("objectPageContainer");
-		var oObjectPageLayout = oComponentContainer
+		var oObjectPageLayout = this.oComponentContainer
 			.getObjectPageLayoutInstance(),
 			oThirdSubSection = oObjectPageLayout.getSections()[3].getSubSections()[0];
 
@@ -149,9 +147,7 @@ function (jQuery, Core, JSONModel, ObjectPageLayout, XMLView) {
 
 	QUnit.test("model mapping for scrolled sections", function (assert) {
 
-		var oComponentContainer = this.oView
-			.byId("objectPageContainer");
-		var oObjectPageLayout = oComponentContainer
+		var oObjectPageLayout = this.oComponentContainer
 			.getObjectPageLayoutInstance();
 
 		var oDataModel = new JSONModel();
@@ -175,8 +171,7 @@ function (jQuery, Core, JSONModel, ObjectPageLayout, XMLView) {
 	});
 
 	QUnit.test("scrollToSection with animation does not load intermediate sections", function (assert) {
-		var oComponentContainer = this.oView.byId("objectPageContainer"),
-			oObjectPageLayout = oComponentContainer.getObjectPageLayoutInstance(),
+			var oObjectPageLayout = this.oComponentContainer.getObjectPageLayoutInstance(),
 			oData = oConfigModel.getData(),
 			done = assert.async(),
 			that = this;
@@ -222,8 +217,7 @@ function (jQuery, Core, JSONModel, ObjectPageLayout, XMLView) {
 	});
 
 	QUnit.test("BCP: 1970115549 - _grepCurrentTabSectionBases should always return a value", function (assert) {
-		var oComponentContainer = this.oView.byId("objectPageContainer"),
-			oObjectPageLayout = oComponentContainer.getObjectPageLayoutInstance(),
+			var oObjectPageLayout = this.oComponentContainer.getObjectPageLayoutInstance(),
 			aSectionBases = oObjectPageLayout._aSectionBases,
 			fnCustomGetParent = function () {
 				return undefined;
@@ -385,7 +379,7 @@ function (jQuery, Core, JSONModel, ObjectPageLayout, XMLView) {
 				oObjectPage._triggerVisibleSubSectionsEvents(); // enable early lazy loading
 				iExpectedLazyLoadingDelay = 0; // expect very small delay
 				window["qunit-fixture"].style.display = "none";
-				oObjectPage.rerender();
+				oObjectPage.invalidate();
 
 
 
@@ -395,6 +389,43 @@ function (jQuery, Core, JSONModel, ObjectPageLayout, XMLView) {
 		oObjectPage.placeAt("qunit-fixture");
 		Core.applyChanges();
 	});
+
+	QUnit.test("Sections are lazy loaded when header content is pinned initially", function (assert) {
+		// Arrange
+		var oObjectPageLayout = new ObjectPageLayout({
+				enableLazyLoading: true,
+				headerContentPinned: true,
+				headerTitle: [new ObjectPageDynamicHeaderTitle()]
+			}),
+			fnDone = assert.async(),
+			fnOnBeforeRendering = function () {
+				oObjectPageLayout.removeEventDelegate(fnOnBeforeRendering);
+				oLazyLoadingSpy = this.spy(oObjectPageLayout._oLazyLoading, "doLazyLoading");
+			}.bind(this),
+			oLazyLoadingSpy;
+
+		assert.expect(1);
+
+		// Setup: mock framework call on before rendering
+		oObjectPageLayout.addEventDelegate({
+			"onBeforeRendering": fnOnBeforeRendering
+		});
+
+		oObjectPageLayout.attachEventOnce("onAfterRenderingDOMReady",
+			function () {
+				// Assert
+				assert.ok(oLazyLoadingSpy.calledOnce, "LazyLoading is called");
+
+				// Clean up
+				oObjectPageLayout.destroy();
+				fnDone();
+			}
+		);
+
+		oObjectPageLayout.placeAt("qunit-fixture");
+		Core.applyChanges();
+	});
+
 
 	QUnit.module("Lifecycle");
 

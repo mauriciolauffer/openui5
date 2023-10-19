@@ -3,13 +3,17 @@ sap.ui.define([
 	"sap/ui/thirdparty/jquery",
 	"sap/m/GenericTile",
 	"sap/m/NumericContent",
+	"sap/m/Table",
+	"sap/m/Column",
+	"sap/m/ColumnListItem",
+	"sap/ui/model/json/JSONModel",
 	"sap/m/TileContent",
 	"sap/ui/core/TooltipBase",
 	"sap/ui/core/ResizeHandler",
 	"sap/m/library",
 	"sap/ui/util/Mobile",
 	"sap/ui/core/Core"
-], function (jQuery, GenericTile, NumericContent, TileContent, TooltipBase, ResizeHandler, library, Mobile, oCore) {
+], function (jQuery, GenericTile, NumericContent, Table, Column, ColumnListItem, JSONModel, TileContent, TooltipBase, ResizeHandler, library, Mobile, oCore) {
 	"use strict";
 
 	var oResourceBundle = oCore.getLibraryResourceBundle("sap.m");
@@ -142,29 +146,77 @@ sap.ui.define([
 	 * @deprecated Since version 1.38.0.
 	 */
 	QUnit.test("setIndicator function", function (assert) {
-		var fnAssert = function (sExpectedIcon, sExpectedIndicator) {
-			assert.strictEqual(this.oNumericContent._oIndicatorIcon.getSrc(), sExpectedIcon, "Indicator icon src should be correct.");
-			assert.strictEqual(this.oNumericContent._oIndicatorIcon.getSize(), "0.875rem", "Indicator icon size should be correct.");
-			assert.ok(this.oNumericContent._oIndicatorIcon.hasStyleClass("sapMNCIndIcon"), "Indicator icon size should have correct style class.");
-			assert.strictEqual(this.oNumericContent.getIndicator(), sExpectedIndicator, "Indicator property should be set correctly.");
-		}.bind(this);
+        var fnAssert = function (sExpectedIcon, sExpectedIndicator) {
+            if (sExpectedIndicator !== "None") {
+            assert.strictEqual(this.oNumericContent._oIndicatorIcon.getSrc(), sExpectedIcon, "Indicator icon src should be correct.");
+            }
+            assert.strictEqual(this.oNumericContent._oIndicatorIcon.getSize(), "0.875rem", "Indicator icon size should be correct.");
+            assert.ok(this.oNumericContent._oIndicatorIcon.hasStyleClass("sapMNCIndIcon"), "Indicator icon size should have correct style class.");
+            assert.strictEqual(this.oNumericContent.getIndicator(), sExpectedIndicator, "Indicator property should be set correctly.");
+            if (sExpectedIndicator === DeviationIndicator.None) {
+            assert.strictEqual(this.oNumericContent._oIndicatorIcon.src === undefined, true, "No object for None deviation");
+			}
+        }.bind(this);
+        //Act
+        this.oNumericContent.setIndicator(DeviationIndicator.None);
+        // Assert
+        fnAssert("sap-icon://none", DeviationIndicator.None);
+        // Act
+        this.oNumericContent.setIndicator(DeviationIndicator.Down);
+        // Assert
+        fnAssert("sap-icon://down", DeviationIndicator.Down);
+        // Act
+        this.oNumericContent.setIndicator(DeviationIndicator.Up);
+        // Assert
+        fnAssert("sap-icon://up", DeviationIndicator.Up);
+    });
 
-		// Act
-		this.oNumericContent.setIndicator(DeviationIndicator.Down);
-		// Assert
-		fnAssert("sap-icon://down", DeviationIndicator.Down);
-		// Act
-		this.oNumericContent.setIndicator(DeviationIndicator.None);
-		// Assert
-		fnAssert("sap-icon://none", DeviationIndicator.None);
-		// Act
-		this.oNumericContent.setIndicator(DeviationIndicator.Up);
-		// Assert
-		fnAssert("sap-icon://up", DeviationIndicator.Up);
-		// Act
-		this.oNumericContent.setIndicator();
-		// Assert
-		fnAssert("sap-icon://none", DeviationIndicator.None);
+	QUnit.module("Rendering test - sap.m.NumericContent inside sap.m.Table");
+
+	QUnit.test("Numeric content inside sap.m.Table", function(assert) {
+		var oModel = new sap.ui.model.json.JSONModel();
+				oModel.setData({
+					numbers: [
+						{
+						   number1: "12"
+						},
+						{
+							number1: "14"
+						}]
+				});
+
+				var oTable = new sap.m.Table("idRandomDataTable", {
+					headerToolbar: new sap.m.Toolbar({
+						content: [new sap.m.Label({
+							text: "Test"
+						}), new sap.m.ToolbarSpacer({}), new sap.m.Button("idPersonalizationButton", {
+							icon: "sap-icon://person-placeholder"
+						})]
+					}),
+
+					columns: [new sap.m.Column({
+						width: "2em",
+						header: new sap.m.Label({
+							text: "Number1"
+						})
+
+					})]
+
+				});
+
+				oTable.setModel(oModel);
+
+				oTable.bindItems("/numbers", new sap.m.ColumnListItem({
+
+					cells: [new sap.m.NumericContent({
+						value: "{number1}"
+					})]
+
+				}));
+		oTable.setWidth("320px");
+		oTable.placeAt("qunit-fixture");
+		oCore.applyChanges();
+		assert.equal(oTable.mAggregations.items[0].mAggregations.cells[0].$("value").hasClass("sapMNCValue"), true , "Success");
 	});
 
 	QUnit.module("Rendering test - sap.m.NumericContent inside sap.m.GenericTile");
@@ -474,6 +526,28 @@ sap.ui.define([
 		//Assert
 		assert.strictEqual(hasAttribute("tabindex", this.oNumericContent), false, "Attribute has been removed successfully");
 		assert.strictEqual(this.oNumericContent.$().hasClass("sapMPointer"), false, "Class has been removed successfully");
+	});
+	QUnit.module("Negative values", {
+		beforeEach: function () {
+			this.oNumericContent = new NumericContent("numeric-cnt", {
+				indicator: DeviationIndicator.Up,
+				value: "−859,65 t.",
+				truncateValueTo: 7,
+				formatterValue: true,
+				animateTextChange: false,
+				icon:  "sap-icon://line-charts"
+			}).placeAt("qunit-fixture");
+			oCore.applyChanges();
+		},
+		afterEach: function () {
+			this.oNumericContent.destroy();
+			this.oNumericContent = null;
+		}
+	});
+
+	QUnit.test("Negative values in Finnish displayed Properly in formatter mode", function (assert){
+		assert.strictEqual(this.oNumericContent.getDomRef("value-inner").textContent, "−859,65", "Value is correct");
+		assert.strictEqual(this.oNumericContent.getDomRef("scale").textContent, "t", "Scale is correct");
 	});
 
 	QUnit.module("Adaptive font size", {

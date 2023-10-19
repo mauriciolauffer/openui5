@@ -5,12 +5,15 @@
 // Provides control sap.ui.core.InvisibleText.
 sap.ui.define([
 	"sap/base/Log",
+	"sap/base/i18n/Localization",
 	"sap/base/security/encodeXML",
-	"./Configuration",
 	"./Control",
+	"./ControlBehavior",
+	"./Element",
 	"./Lib",
+	"./StaticArea",
 	"./library" // ensure loading of CSS
-], function(Log, encodeXML, Configuration, Control, Library) {
+], function(Log, Localization, encodeXML, Control, ControlBehavior, Element, Library, StaticArea) {
 	"use strict";
 
 
@@ -49,7 +52,7 @@ sap.ui.define([
 		},
 
 		renderer : {
-			apiVersion : 4,
+			apiVersion : 2,
 			render: function(oRm, oControl) {
 				// The text is hidden through "display: none" in the shared CSS class
 				// "sapUiInvisibleText", as an alternative in case screen readers have trouble with
@@ -145,10 +148,8 @@ sap.ui.define([
 	 * @see sap.ui.core.Control#placeAt
 	 */
 	InvisibleText.prototype.toStatic = function() {
-		var oCore = sap.ui.getCore();
-
 		try {
-			var oStatic = oCore.getStaticAreaRef();
+			var oStatic = StaticArea.getDomRef();
 			oStatic.insertAdjacentHTML("beforeend", this.getRendererMarkup());
 			this.bOutput = true;
 		} catch (e) {
@@ -156,6 +157,22 @@ sap.ui.define([
 		}
 
 		return this;
+	};
+
+	/**
+	 * Overridden version of the 'exit' method to explicit remove the DOM element when the control is rendered
+	 * in the static UIArea because the control's DOM can't be removed when its parent gets invalidated
+	 *
+	 * @private
+	 */
+	InvisibleText.prototype.exit = function() {
+		var oDomRef = this.getDomRef();
+		if (oDomRef && StaticArea.contains(oDomRef)) {
+			// when a InvisibleText is rendered in the static UIArea, it has to remove itself when getting
+			// destroyed because its potential parent can't remove it since it's not rendered within its
+			// parent
+			oDomRef.remove();
+		}
 	};
 
 	// map of text IDs
@@ -177,17 +194,14 @@ sap.ui.define([
 	 * @public
 	 */
 	InvisibleText.getStaticId = function(sLibrary, sTextKey) {
-		var sTextId = "", sKey, oBundle, oText, oLibrary;
+		var sTextId = "", sKey, oBundle, oText;
 
-		if ( Configuration.getAccessibility() && sTextKey ) {
+		if ( ControlBehavior.isAccessibilityEnabled() && sTextKey ) {
 			// Note: identify by lib and text key, not by text to avoid conflicts after a language change
 			sKey = sLibrary + "|" + sTextKey;
 			sTextId = mTextIds[sKey];
 			if ( sTextId == null ) {
-				oLibrary = Library.get(sLibrary);
-				if (oLibrary) {
-					oBundle = oLibrary.getResourceBundle();
-				}
+				oBundle = Library.getResourceBundleFor(sLibrary);
 				oText = new InvisibleText().setText(oBundle ? oBundle.getText(sTextKey) : sTextKey);
 				oText.toStatic();
 				sTextId = mTextIds[sKey] = oText.getId();
@@ -201,13 +215,12 @@ sap.ui.define([
 	};
 
 	// listen to localizationChange event and update shared texts
-	sap.ui.getCore().attachLocalizationChanged(function(oEvent) {
-		var oCore = sap.ui.getCore(),
-			sKey, p, oBundle, oText;
+	Localization.attachChange(function(oEvent) {
+		var sKey, p, oBundle, oText;
 		for ( sKey in mTextIds ) {
 			p = sKey.indexOf('|');
-			oBundle = Library.get(sKey.slice(0, p)).getResourceBundle();
-			oText = oCore.byId(mTextIds[sKey]);
+			oBundle = Library.getResourceBundleFor(sKey.slice(0, p));
+			oText = Element.getElementById(mTextIds[sKey]);
 			oText && oText.setText(oBundle.getText(sKey.slice(p + 1)));
 		}
 	});

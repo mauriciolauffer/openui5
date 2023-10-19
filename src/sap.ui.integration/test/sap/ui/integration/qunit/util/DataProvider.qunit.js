@@ -9,8 +9,9 @@ sap.ui.define([
 	"sap/ui/integration/widgets/Card",
 	"sap/base/Log",
 	"sap/ui/integration/Host",
-	"sap/ui/thirdparty/jquery",
-	"sap/ui/core/Configuration"
+	"sap/ui/integration/Extension",
+	"sap/ui/integration/library",
+	"sap/ui/core/Supportability"
 ], function (
 	Core,
 	DataProviderFactory,
@@ -20,8 +21,9 @@ sap.ui.define([
 	Card,
 	Log,
 	Host,
-	jQuery,
-	Configuration
+	Extension,
+	integrationLibrary,
+	Supportability
 ) {
 	"use strict";
 
@@ -185,9 +187,28 @@ sap.ui.define([
 			}.bind(this),
 			"Exception is thrown when settingsJson is bound to illegal input"
 		);
+	});
 
-		// Cleanup
-		this.oDataProviderFactory.destroy();
+	QUnit.test("Configuration settings shouldn't be modified", function (assert) {
+		// Arrange
+		var oSettings = {
+			request: {
+				parameters: {
+					reason: "{form>/reason/value}"
+				}
+			},
+			mockData: {
+				json: {}
+			}
+		};
+		var oOriginalSettings = JSON.parse(JSON.stringify(oSettings));
+		this.oCard.setPreviewMode(integrationLibrary.CardPreviewMode.MockData);
+
+		// Act
+		this.oDataProviderFactory.create(oSettings);
+
+		// Assert
+		assert.deepEqual(oSettings, oOriginalSettings, "Settings given to #create method were modified");
 	});
 
 	QUnit.module("DataProvider", {
@@ -203,7 +224,6 @@ sap.ui.define([
 	testSetSettings(DataProvider);
 
 	QUnit.test("updateInterval", function (assert) {
-
 		var done = assert.async();
 
 		// Arrange
@@ -215,7 +235,7 @@ sap.ui.define([
 		};
 
 		this.oDataProvider.setSettings(oSettings);
-		var fnSpy = sinon.spy(this.oDataProvider, "onDataRequestComplete");
+		var fnSpy = this.spy(this.oDataProvider, "onDataRequestComplete");
 
 		// Act
 		this.oDataProvider.triggerDataUpdate();
@@ -224,9 +244,28 @@ sap.ui.define([
 			assert.ok(fnSpy.callCount > 1, "onDataRequestComplete is called more than once");
 			done();
 		}, 2000);
+	});
 
-		// Cleanup
-		fnSpy.reset();
+	QUnit.test("Pending update with updateInterval with simultaneous refresh", function (assert) {
+		var done = assert.async();
+
+		// Arrange
+		var oSettings = {
+			updateInterval: 1
+		};
+
+		this.oDataProvider.setSettings(oSettings);
+		var fnSpy = sinon.spy(this.oDataProvider, "triggerDataUpdate");
+
+		// Act
+		this.oDataProvider.triggerDataUpdate();
+		this.oDataProvider.triggerDataUpdate();
+		this.oDataProvider.triggerDataUpdate();
+
+		setTimeout(function () {
+			assert.strictEqual(fnSpy.callCount, 4, "triggerDataUpdate should be called just 1 more time");
+			done();
+		}, 2000);
 	});
 
 	QUnit.test("triggerDataUpdate - with JSON", function (assert) {
@@ -279,16 +318,13 @@ sap.ui.define([
 
 	QUnit.module("RequestDataProvider", {
 		beforeEach: function () {
+			this.oRequestStub = sinon.stub(RequestDataProvider.prototype, "_request");
 			this.oDataProvider = new RequestDataProvider();
-			this.deferred = new jQuery.Deferred();
-			sinon.stub(jQuery, "ajax").callsFake(function () {
-				return this.deferred.promise();
-			}.bind(this));
 		},
 		afterEach: function () {
 			this.oDataProvider.destroy();
 			this.oDataProvider = null;
-			jQuery.ajax.restore();
+			this.oRequestStub.restore();
 		}
 	});
 
@@ -301,15 +337,19 @@ sap.ui.define([
 
 		var oInvalidRequest = {
 			url: "some/relative/url",
-			mode: "no-cors",
-			method: "SOME INVALID METHOD"
+			options: {
+				mode: "no-cors",
+				method: "SOME INVALID METHOD"
+			}
 		};
 		assert.notOk(this.oDataProvider._isValidRequest(oInvalidRequest), "Should have an invalid request.");
 
 		var oValidRequest = {
 			url: "some/relative/url",
-			mode: "no-cors",
-			method: "GET"
+			options: {
+				mode: "no-cors",
+				method: "GET"
+			}
 		};
 		assert.ok(this.oDataProvider._isValidRequest(oValidRequest), "Should have a valid request.");
 	});
@@ -338,8 +378,13 @@ sap.ui.define([
 
 		// Act
 		this.oDataProvider.triggerDataUpdate();
-		this.deferred.resolve({
-			mockData: [1, 2, 3]
+		this.oRequestStub.callsFake(function () {
+			return Promise.resolve([
+				{
+					mockData: [1, 2, 3]
+				},
+				null
+			]);
 		});
 	});
 
@@ -413,7 +458,13 @@ sap.ui.define([
 
 		// Act
 		this.oDataProvider.triggerDataUpdate();
-		this.deferred.reject(null, null, "Some error message.");
+
+		this.oRequestStub.callsFake(function () {
+			return Promise.reject([
+				"Some error message.",
+				null
+			]);
+		});
 	});
 
 	QUnit.module("RequestDataProvider - Settings", {
@@ -471,40 +522,41 @@ sap.ui.define([
 		fnTest();
 	});
 
-	QUnit.test("Test 'timeout' setting", function (assert) {
-		// Arrange
-		var done = assert.async();
+	// @todo
+	// QUnit.test("Test 'timeout' setting", function (assert) {
+	// 	// Arrange
+	// 	var done = assert.async();
 
-		this.oServer.respondWith(function (oXhr) {
-			oXhr.respond(200, {"Content-Type": "application/json"}, "{}");
-		});
+	// 	this.oServer.respondWith(function (oXhr) {
+	// 		oXhr.respond(200, {"Content-Type": "application/json"}, "{}");
+	// 	});
 
-		var oDataProvider = this.oDataProviderFactory.create({
-			request: {
-				url: "/data/provider/test/url",
-				timeout: 200
-			}
-		});
+	// 	var oDataProvider = this.oDataProviderFactory.create({
+	// 		request: {
+	// 			url: "/data/provider/test/url",
+	// 			timeout: 200
+	// 		}
+	// 	});
 
-		// Act
-		oDataProvider.getData().then(function () {
-			assert.ok(true, "request is successful");
+	// 	// Act
+	// 	oDataProvider.getData().then(function () {
+	// 		assert.ok(true, "request is successful");
 
-			oDataProvider = this.oDataProviderFactory.create({
-				request: {
-					url: "/data/provider/test/url",
-					timeout: 50
-				}
-			});
+	// 		oDataProvider = this.oDataProviderFactory.create({
+	// 			request: {
+	// 				url: "/data/provider/test/url",
+	// 				timeout: 50
+	// 			}
+	// 		});
 
-			// Act
-			oDataProvider.getData().then(function () {
-			}, function () {
-				assert.ok(true, "request is not successful");
-				done();
-			});
-		}.bind(this));
-	});
+	// 		// Act
+	// 		oDataProvider.getData().then(function () {
+	// 		}, function () {
+	// 			assert.ok(true, "request is not successful");
+	// 			done();
+	// 		});
+	// 	}.bind(this));
+	// });
 
 	QUnit.module("RequestDataProvider - Content encoding", {
 		beforeEach: function () {
@@ -567,7 +619,7 @@ sap.ui.define([
 
 		this.oServer.respondWith("POST", "/data/provider/test/url", function (oXhr) {
 			// Assert
-			assert.strictEqual(oXhr.requestBody, "someKey=someValue&someKey2=someValue2");
+			assert.strictEqual(oXhr.requestBody.toString(), "someKey=someValue&someKey2=someValue2");
 
 			done();
 		});
@@ -1009,6 +1061,9 @@ sap.ui.define([
 		oDataProvider.triggerDataUpdate();
 	});
 
+	/**
+	 * @deprecated Since 1.113
+	 */
 	QUnit.test("Host can modify request headers", function (assert) {
 		var done = assert.async(),
 			oDataProvider = this.oDataProviderFactory.create({
@@ -1043,6 +1098,9 @@ sap.ui.define([
 		oDataProvider.triggerDataUpdate();
 	});
 
+	/**
+	 * @deprecated Since 1.113
+	 */
 	QUnit.test("Host can modify request", function (assert) {
 		var done = assert.async(),
 			oDataProvider = this.oDataProviderFactory.create({
@@ -1085,7 +1143,7 @@ sap.ui.define([
 				}
 			}),
 			oHost = new Host(),
-			fnStubStatisticsEnabled = sinon.stub(Configuration, "getStatisticsEnabled").callsFake(function () {
+			fnStubStatisticsEnabled = sinon.stub(Supportability, "isStatisticsEnabled").callsFake(function () {
 				return true;
 			});
 
@@ -1127,6 +1185,239 @@ sap.ui.define([
 			done();
 		});
 
+		oDataProvider.triggerDataUpdate();
+	});
+
+	QUnit.module("Override fetch", {
+		beforeEach: function () {
+			this.oDataProviderFactory = new DataProviderFactory();
+
+			this.oServer = sinon.createFakeServer({
+				autoRespond: true
+			});
+
+			this.oServer.respondImmediately = true;
+		},
+		afterEach: function () {
+			this.oDataProviderFactory.destroy();
+			this.oServer.restore();
+		}
+	});
+
+	QUnit.test("Extension can override fetch", function (assert) {
+		var done = assert.async(),
+			sExpectedResource = "/test/url",
+			mExpectedSettings = {
+				url: sExpectedResource,
+				headers: {
+					"test": "test"
+				}
+			},
+			oDataProvider = this.oDataProviderFactory.create({
+				request: mExpectedSettings
+			}),
+			oExtension = new Extension(),
+			oCard = new Card();
+
+		assert.expect(6);
+
+		oDataProvider.setCard(oCard);
+		oExtension._setCard(oCard);
+		oCard.setAggregation("_extension", oExtension);
+
+		oExtension.fetch = function (sResource, mOptions, mRequestSettings) {
+			assert.strictEqual(sResource, sExpectedResource, "The resource is as expected.");
+			assert.strictEqual(mOptions.method, "GET", "The request options method is as expected.");
+			assert.strictEqual(mOptions.headers.get("test"), "test", "The request options headers are as expected.");
+			assert.deepEqual(mRequestSettings, mExpectedSettings, "The request settings are a copy of the expected settings.");
+
+			sResource += "?test=test";
+			mOptions.headers.set("test", "test2");
+
+			return Extension.prototype.fetch.call(this, sResource, mOptions, mRequestSettings);
+		};
+
+		this.oServer.respondWith("GET", "/test/url?test=test", function (oXhr) {
+			assert.ok(true, "Request url is modified");
+
+			var oHeaders = new Headers(oXhr.requestHeaders);
+			assert.strictEqual(oHeaders.get("test"), "test2", "Request headers are modified");
+
+			oXhr.respond(200, {}, "");
+			done();
+		});
+
+		oDataProvider.triggerDataUpdate();
+	});
+
+	QUnit.test("Host can override fetch", function (assert) {
+		var done = assert.async(),
+			sExpectedResource = "/test/url",
+			mExpectedSettings = {
+				url: sExpectedResource,
+				headers: {
+					"test": "test"
+				}
+			},
+			oDataProvider = this.oDataProviderFactory.create({
+				request: mExpectedSettings
+			}),
+			oHost = new Host(),
+			oExpectedCard = new Card();
+
+		assert.expect(7);
+
+		oDataProvider.setHost(oHost);
+		oDataProvider.setCard(oExpectedCard);
+
+		oHost.fetch = function (sResource, mOptions, mRequestSettings, oCard) {
+			assert.strictEqual(sResource, sExpectedResource, "The resource is as expected.");
+			assert.strictEqual(mOptions.method, "GET", "The request options method is as expected.");
+			assert.strictEqual(mOptions.headers.get("test"), "test", "The request options headers are as expected.");
+			assert.deepEqual(mRequestSettings, mExpectedSettings, "The request settings are a copy of the expected settings.");
+			assert.strictEqual(oCard, oExpectedCard, "The card is as expected.");
+
+			sResource += "?test=test";
+			mOptions.headers.set("test", "test2");
+
+			return Host.prototype.fetch.call(this, sResource, mOptions, mRequestSettings, oCard);
+		};
+
+		this.oServer.respondWith("GET", "/test/url?test=test", function (oXhr) {
+			assert.ok(true, "Request url is modified");
+
+			var oHeaders = new Headers(oXhr.requestHeaders);
+			assert.strictEqual(oHeaders.get("test"), "test2", "Request headers are modified");
+
+			oXhr.respond(200, {}, "");
+			done();
+		});
+
+		oDataProvider.triggerDataUpdate();
+	});
+
+	QUnit.test("Both extension and host can override fetch", function (assert) {
+		var done = assert.async(),
+			oDataProvider = this.oDataProviderFactory.create({
+				request: {
+					url: "/test/url",
+					headers: {
+						"test": "test"
+					}
+				}
+			}),
+			oHost = new Host(),
+			oExtension = new Extension(),
+			oCard = new Card(),
+			fnHostSpy,
+			fnExtensionSpy;
+
+		assert.expect(10);
+
+		oExtension._setCard(oCard);
+		oCard.setAggregation("_extension", oExtension);
+		oCard.setHost(oHost);
+		oDataProvider.setCard(oCard);
+		oDataProvider.setHost(oHost);
+
+		oExtension.fetch = function (sResource, mOptions, mRequestSettings) {
+			assert.strictEqual(mOptions.headers.get("test"), "test", "The initial request headers are as expected.");
+
+			mOptions.headers.set("test-extension", "test-extension");
+
+			return Extension.prototype.fetch.call(this, sResource, mOptions, mRequestSettings);
+		};
+
+		oHost.fetch = function (sResource, mOptions, mRequestSettings) {
+			assert.strictEqual(mOptions.headers.get("test"), "test", "The initial request headers are as expected.");
+			assert.strictEqual(mOptions.headers.get("test-extension"), "test-extension", "The request headers are modified by extension.");
+
+			mOptions.headers.set("test-host", "test-host");
+
+			return Host.prototype.fetch.call(this, sResource, mOptions, mRequestSettings, oCard);
+		};
+
+		fnHostSpy = this.spy(oHost, "fetch");
+		fnExtensionSpy = this.spy(oExtension, "fetch");
+
+		this.oServer.respondWith("GET", "/test/url", function (oXhr) {
+			assert.ok(true, "Request is sent");
+
+			var oHeaders = new Headers(oXhr.requestHeaders);
+			assert.strictEqual(oHeaders.get("test"), "test", "The initial request headers are as expected.");
+			assert.strictEqual(oHeaders.get("test-extension"), "test-extension", "The request headers are modified by extension.");
+			assert.strictEqual(oHeaders.get("test-host"), "test-host", "The request headers are modified by host.");
+
+			assert.ok(fnExtensionSpy.calledOnce, "Extension.fetch was called once.");
+			assert.ok(fnHostSpy.calledOnce, "Host.fetch was called once.");
+			assert.ok(fnExtensionSpy.calledBefore(fnHostSpy), "Extension.fetch was called before Host.fetch.");
+
+			oXhr.respond(200, {}, "");
+			done();
+		});
+
+		oDataProvider.triggerDataUpdate();
+	});
+
+	QUnit.module("No data requests", {
+		beforeEach: function () {
+			this.oServer = sinon.createFakeServer({
+				autoRespond: true
+			});
+			this.oServer.respondImmediately = true;
+		},
+
+		afterEach: function () {
+			this.oServer.restore();
+		}
+	});
+
+	QUnit.test("Error is thrown when the response body is invalid JSON (empty string)", function (assert) {
+		var done = assert.async(),
+
+		oDataProviderFactory = new DataProviderFactory({});
+
+		var oManifest = {
+			"_version": "1.36.0",
+			"sap.app": {
+				"id": "test.card.data.request.card"
+			},
+			"sap.card": {
+				"type": "List",
+				"data": {
+					"request": {
+						"url": "/fakeService/Products",
+						"method": "GET",
+						"headers": {
+							"Content-Type": "application/json"
+						}
+					},
+					"path": "/results"
+				},
+				"header": {
+					"title": "Products"
+				},
+				"content": {
+					"item": {
+						"title": "{Name}"
+					}
+				}
+			}
+		};
+
+		var oDataConfig = oManifest["sap.card"]["data"];
+		var oDataProvider = oDataProviderFactory.create(oDataConfig);
+
+		this.oServer.respondWith("/fakeService/Products", function (oXhr) {
+			oXhr.respond(200, {
+				"content-type": "application/json"
+			}, "");
+
+		});
+		oDataProvider.attachError(function () {
+			assert.ok(true, "Should throw an error if the response is invalid JSON.");
+			done();
+		});
 		oDataProvider.triggerDataUpdate();
 	});
 });

@@ -227,7 +227,7 @@ sap.ui.define([
 	QUnit.module("Rendering", {
 		beforeEach: function() {
 			createTables();
-			oTreeTable.setVisibleRowCount(12);
+			oTreeTable.getRowMode().setRowCount(12);
 			oCore.applyChanges();
 		},
 		afterEach: function() {
@@ -446,6 +446,9 @@ sap.ui.define([
 		TableUtils.Grouping.showGroupMenuButton.restore();
 	});
 
+	/**
+	 * @deprecated As of version 1.28
+	 */
 	QUnit.module("sap.ui.table.Table: Experimental Grouping", {
 		beforeEach: function() {
 			createTables();
@@ -455,7 +458,7 @@ sap.ui.define([
 			}
 			oModel.setData(oData);
 			oTable.getColumns()[0].setSortProperty(aFields[0]);
-			oTable.setVisibleRowCount(12);
+			oTable.getRowMode().setRowCount(12);
 			oTable.setFixedColumnCount(0);
 			oTable.setEnableGrouping(true);
 			oCore.applyChanges();
@@ -490,6 +493,9 @@ sap.ui.define([
 		}
 	});
 
+	/**
+	 * @deprecated As of version 1.28
+	 */
 	QUnit.test("Activate / Deactivate", function(assert) {
 		var oBinding = oTable.getBinding();
 		var that = this;
@@ -523,6 +529,9 @@ sap.ui.define([
 		});
 	});
 
+	/**
+	 * @deprecated As of version 1.28
+	 */
 	QUnit.test("Collapse / Expand", function(assert) {
 		var that = this;
 

@@ -12,7 +12,8 @@ sap.ui.define([
 	"../model/DesigntimeNavigationModel",
 	"../model/ExploreSettingsModel",
 	"../model/HomeModel",
-	"../model/AppSettingsModel"
+	"../model/AppSettingsModel",
+	"../model/URLFormatter"
 ], function (
 	mLibrary,
 	BaseController,
@@ -27,11 +28,21 @@ sap.ui.define([
 	DesigntimeNavigationModel,
 	ExploreSettingsModel,
 	HomeModel,
-	AppSettingsModel
+	AppSettingsModel,
+	URLFormatter
 ) {
 	"use strict";
 
+	var URLHelper = mLibrary.URLHelper;
+	var LEGAL_LINKS = {
+		"legal": "https://www.sap.com/corporate/en/legal/impressum.html",
+		"privacy": "https://www.sap.com/corporate/en/legal/privacy.html",
+		"terms_of_use": "https://www.sap.com/corporate/en/legal/terms-of-use.html"
+	};
+
 	return BaseController.extend("sap.ui.demo.cardExplorer.controller.App", {
+		_appSettingsDialog: null,
+		URLFormatter: URLFormatter,
 
 		/**
 		 * Called when the app is started.
@@ -52,7 +63,9 @@ sap.ui.define([
 			Device.media.attachHandler(this.onDeviceSizeChange, this);
 			this.onDeviceSizeChange();
 
-			oComponent.getCookiesManagement().enable(oComponent.getRootControl());
+			oComponent.getCookiesManagement().then(function(oCookieMgmtComponent) {
+				oCookieMgmtComponent.enable(oComponent.getRootControl());
+			});
 		},
 
 		onExit: function () {
@@ -267,8 +280,6 @@ sap.ui.define([
 			this.setModel(oModel);
 		},
 
-		_appSettingsDialog: null,
-
 		handleAppSettings: function (sAction) {
 			switch (sAction) {
 				case 'open': {
@@ -303,6 +314,12 @@ sap.ui.define([
 				}
 				default: break;
 			}
+		},
+
+		onSideNavigationFixedItemPress: function (oEvent) {
+			var sTargetText = oEvent.getParameter("item").getKey(),
+				sTarget = LEGAL_LINKS[sTargetText];
+			URLHelper.redirect(sTarget, true);
 		}
 	});
 });

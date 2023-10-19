@@ -10,7 +10,7 @@
 <script src="../../../resources/sap-ui-core.js"
 		id="sap-ui-bootstrap"
 		data-sap-ui-libs="sap.m"
-		data-sap-ui-theme="sap_fiori_3">
+		data-sap-ui-theme="sap_horizon">
 </script>
 
 </head>
@@ -18,6 +18,7 @@
 	<script>
 		jQuery.sap.require("sap.ui.core.HTML");
 		jQuery.sap.require("sap.ui.core.IconPool");
+		var UI5Date = sap.ui.require("sap/ui/core/date/UI5Date");
 
 		var app = new sap.m.App("myApp", {
 			initialPage:"page1"
@@ -126,11 +127,11 @@
 			{
 				id: "TP18",
 				value: "22:33",
-				initialFocusedDateValue: new Date(2017, 8, 9, 10, 11, 12)
+				initialFocusedDateValue: UI5Date.getInstance(2017, 8, 9, 10, 11, 12)
 			},
 			{
 				id: "TP19",
-				initialFocusedDateValue: new Date(2017, 8, 9, 10, 11, 12)
+				initialFocusedDateValue: UI5Date.getInstance(2017, 8, 9, 10, 11, 12)
 			},
 			{
 				id: "TP20",
@@ -138,6 +139,22 @@
 				displayFormat: "HH:mm:ss",
 				support2400: true,
 				value: "24:00:00"
+			},
+			{
+				id: "TP21",
+				displayFormat: "HHmmss",
+			},
+			{
+				id: "TP22",
+				displayFormat: "h 'hr' mm 'min' ss 'sec'",
+			},
+			{
+				id: "TP23",
+				displayFormat: "'time' h 'hr' mm 'min' ss 'sec'",
+			},
+			{
+				id: "TP24",
+				displayFormat: "'time' hmmss 'now'",
 			}
 		];
 
@@ -182,7 +199,7 @@
 
 		var oModel = new sap.ui.model.json.JSONModel();
 		oModel.setData({
-			timeValue: new Date()
+			timeValue: UI5Date.getInstance()
 		});
 		sap.ui.getCore().setModel(oModel);
 

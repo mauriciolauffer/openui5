@@ -84,7 +84,7 @@ sap.ui.define([
 			width : {type : "sap.ui.core.CSSSize", group : "Dimension", defaultValue : null},
 
 			/**
-			 * Start date of the Interval as JavaScript Date object.
+			 * Start date of the Interval as UI5Date or JavaScript Date object.
 			 * The time interval corresponding to this Date and <code>items</code> and <code>intervalMinutes</code>
 			 * will be the first time in the displayed row.
 			 */
@@ -127,7 +127,7 @@ sap.ui.define([
 			pickerPopup : {type : "boolean", group : "Appearance", defaultValue : false},
 
 			/**
-			 * Minimum date that can be shown and selected in the Calendar. This must be a JavaScript date object.
+			 * Minimum date that can be shown and selected in the Calendar. This must be a UI5Date or JavaScript Date object.
 			 *
 			 * <b>Note:</b> If the <code>minDate</code> is set to be after the <code>maxDate</code>,
 			 * the <code>maxDate</code> is set to the end of the month of the <code>minDate</code>.
@@ -136,7 +136,7 @@ sap.ui.define([
 			minDate : {type : "object", group : "Misc", defaultValue : null},
 
 			/**
-			 * Maximum date that can be shown and selected in the Calendar. This must be a JavaScript date object.
+			 * Maximum date that can be shown and selected in the Calendar. This must be a UI5Date or JavaScript Date object.
 			 *
 			 * <b>Note:</b> If the <code>maxDate</code> is set to be before the <code>minDate</code>,
 			 * the <code>minDate</code> is set to the begin of the month of the <code>maxDate</code>.
@@ -254,10 +254,17 @@ sap.ui.define([
 	};
 
 	CalendarTimeInterval.prototype._initializeHeader = function() {
-		var oHeader = new Header(this.getId() + "--Head");
+		var oHeader = new Header(this.getId() + "--Head"),
+			oResourceBundle = Core.getLibraryResourceBundle("sap.m");
 		oHeader.attachEvent("pressPrevious", this._handlePrevious, this);
 		oHeader.attachEvent("pressNext", this._handleNext, this);
 		this.setAggregation("header", oHeader);
+
+		if (oHeader) {
+			oHeader.setAriaLabelButton0(oResourceBundle.getText("DATETIMEPICKER_DATE"));
+			oHeader.setAriaLabelButton1(oResourceBundle.getText("MOBISCROLL_MONTH"));
+			oHeader.setAriaLabelButton2(oResourceBundle.getText("MOBISCROLL_YEAR"));
+		}
 	};
 
 	CalendarTimeInterval.prototype._initializeTimesRow = function() {
@@ -429,9 +436,11 @@ sap.ui.define([
 	};
 
 	/**
-	 * Sets start date of the interval.
-	 * @param {Date} oStartDate A JavaScript date
+	 * Sets start date for the interval.
+	 *
+	 * @param {Date|module:sap/ui/core/date/UI5Date} oStartDate A date instance
 	 * @returns {this} Reference to <code>this</code> for method chaining
+	 * @public
 	 */
 	CalendarTimeInterval.prototype.setStartDate = function(oStartDate){
 
@@ -592,7 +601,7 @@ sap.ui.define([
 	/**
 	 * Sets the focused item of the <code>CalendarTimeInterval</code>.
 	 *
-	 * @param {Date} oDate JavaScript date object for focused item
+	 * @param {Date|module:sap/ui/core/date/UI5Date} oDate date instance for focused item
 	 * @returns {this} Reference to <code>this</code> for method chaining
 	 * @public
 	 */
@@ -619,7 +628,7 @@ sap.ui.define([
 	/**
 	 * Displays an item in the <code>CalendarTimeInterval</code> but doesn't set the focus.
 	 *
-	 * @param {Date} oDate JavaScript date object for displayed item.
+	 * @param {Date|module:sap/ui/core/date/UI5Date} oDate date instance for displayed item.
 	 * @returns {this} Reference to <code>this</code> for method chaining
 	 * @public
 	 */
@@ -771,8 +780,10 @@ sap.ui.define([
 
 	/**
 	 * Set minimum date that can be shown and selected in the Calendar.
+	 *
 	 * @param {Date} [oDate] Min date as a JS Date object
 	 * @returns {this} Reference to <code>this</code> for method chaining
+	 * @public
 	 */
 	CalendarTimeInterval.prototype.setMinDate = function(oDate){
 		var oTimesRow,
@@ -835,8 +846,10 @@ sap.ui.define([
 
 	/**
 	 * Set maximum date that can be shown and selected in the Calendar.
+	 *
 	 * @param {Date} [oDate] Max date as a JS Date object
 	 * @returns {this} Reference to <code>this</code> for method chaining
+	 * @public
 	 */
 	CalendarTimeInterval.prototype.setMaxDate = function(oDate){
 		var oTimesRow,

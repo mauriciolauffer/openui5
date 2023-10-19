@@ -4,13 +4,10 @@
 
 // Provides control sap.ui.table.Column.
 sap.ui.define([
-	"./ColumnMenu",
 	"./utils/TableUtils",
 	"./menus/ColumnHeaderMenuAdapter",
-	"./library",
 	"sap/ui/core/Core",
 	"sap/ui/core/Element",
-	"sap/ui/core/Popup",
 	"sap/ui/core/library",
 	"sap/ui/model/Filter",
 	"sap/ui/model/FilterOperator",
@@ -18,40 +15,34 @@ sap.ui.define([
 	"sap/ui/model/Sorter",
 	"sap/ui/model/Type",
 	"sap/ui/model/type/String",
-	"sap/base/util/ObjectPath",
+	"sap/base/util/ObjectPath", // TODO: Remove in UI5 2.0
 	"sap/base/util/JSTokenizer",
 	"sap/base/Log"
 ], function(
-	ColumnMenu,
 	TableUtils,
 	ColumnHeaderMenuAdapter,
-	library,
 	Core,
 	Element,
-	Popup,
-	coreLibrary,
+	CoreLibrary,
 	Filter,
 	FilterOperator,
 	FilterType,
 	Sorter,
 	Type,
 	StringType,
-	ObjectPath,
+	ObjectPath, // TODO: Remove in UI5 2.0
 	JSTokenizer,
 	Log
 ) {
 	"use strict";
 
-	// shortcuts
-	var HorizontalAlign = coreLibrary.HorizontalAlign,
-		SortOrder = library.SortOrder,
-		ValueState = coreLibrary.ValueState;
-
+	var HorizontalAlign = CoreLibrary.HorizontalAlign;
+	var SortOrder = CoreLibrary.SortOrder;
+	var ValueState = CoreLibrary.ValueState;
 	var TemplateType = {
 		Standard: "Standard",
 		Creation: "Creation"
 	};
-
 	var _private = TableUtils.createWeakMapFacade();
 
 	/**
@@ -127,15 +118,20 @@ sap.ui.define([
 			/**
 			 * Indicates if the column is sorted. This property only controls if a sort indicator is displayed in the
 			 * column header - it does not trigger the sort function. The column can be sorted using {@link sap.ui.table.Table#sort}.
+			 *
+			 * If this property is set to <code>true</code> and the <code>sortOrder</code> property is <code>None</code>, <code>sortOrder</code> is
+			 * automatically set to <code>Ascending</code>.
+			 * If this property is <code>true</code> and <code>sortOrder</code> is <code>None</code>, the sort indicator is not shown.
+			 *
+			 * @deprecated As of version 1.120, replaced by {@link sap.ui.core.SortOrder SortOrder.None} for the <code>sortOrder</code> property
 			 */
-			sorted: {type: "boolean", group: "Appearance", defaultValue: false},
+			sorted: {type: "boolean", group: "Appearance", defaultValue: false, deprecated: true},
 
 			/**
-			 * This property indicates the sort direction (Ascending or Descending). The corresponding icon will be
-			 * rendered if the property <code>sorted</code> is <code>true</code>
-			 * @see sap.ui.table.SortOrder (default value: "Ascending")
+			 * Controls whether a sort indicator is displayed in the column header.
+			 * <b>Note:</b> Setting this property does not sort the table. The column can be sorted using {@link sap.ui.table.Table#sort}.
 			 */
-			sortOrder: {type: "sap.ui.table.SortOrder", group: "Appearance", defaultValue: SortOrder.Ascending},
+			sortOrder: {type: "sap.ui.core.SortOrder", group: "Appearance", defaultValue: SortOrder.None},
 
 			/**
 			 * Specifies the binding property on which the column will sort.
@@ -210,14 +206,19 @@ sap.ui.define([
 			 * As an alternative, a function can be passed that takes over the conversion. This cannot be done in the
 			 * XMLView, use {@link #setFilterType} instead.
 			 *
+			 * <b>Note:</b> The usage of string-based type definitions without explicitly loading these types (<code>sap.ui.require</code>)
+			 * in the controller has been deprecated and might no longer work in future releases.
+			 * Please ensure that the types are requested correctly before setting this property.
+			 *
 			 * @since 1.9.2
 			 */
 			filterType: {type: "any", group: "Misc", defaultValue: null},
 
 			/**
 			 * Indicates if the column is grouped.
+			 * @deprecated As of version 1.118.
 			 */
-			grouped: {type: "boolean", group: "Appearance", defaultValue: false},
+			grouped: {type: "boolean", group: "Appearance", defaultValue: false, deprecated: true},
 
 			/**
 			 * Invisible controls are not rendered.
@@ -275,6 +276,8 @@ sap.ui.define([
 			 * Label of the column which is displayed in the column header. This aggregation is for the standard behavior,
 			 * where you only want to display one single row header. If a string is supplied, a default label control will be
 			 * created. Which control this is depends on the loaded libraries.
+			 *
+			 * <b>Note:</b> The <code>altType</code> string is deprecated as of version 1.118. Use a <code>Control</code> instead.
 			 */
 			label: {type: "sap.ui.core.Control", altTypes: ["string"], multiple: false},
 
@@ -295,6 +298,8 @@ sap.ui.define([
 			 * The set of supported controls is limited. See section "{@link topic:148892ff9aea4a18b912829791e38f3e Tables: Which One Should I
 			 * Choose?}" in the documentation for more details. While it is technically possible to also use other controls, doing so might lead to
 			 * issues with regards to scrolling, alignment, condensed mode, screen reader support, and keyboard support.
+			 *
+			 * <b>Note:</b> The <code>altType</code> string is deprecated as of version 1.118. Use a <code>Control</code> instead.
 			 */
 			template: {type: "sap.ui.core.Control", altTypes: ["string"], multiple: false},
 
@@ -319,6 +324,8 @@ sap.ui.define([
 			 * a column in any way or create own instances of <code>sap.ui.table.ColumnMenu</code>.
 			 * To add a custom menu to a column, use the aggregation <code>menu</code> with a new instance of
 			 * <code>sap.ui.unified.Menu</code>.
+			 *
+			 * @deprecated As of version 1.117, use the <code>headerMenu</code> association instead.
 			 */
 			menu: {type: "sap.ui.unified.Menu", multiple: false}
 		},
@@ -334,6 +341,8 @@ sap.ui.define([
 			/**
 			 * Fires before the column menu is opened.
 			 * @since 1.33.0
+			 *
+			 * @deprecated As of version 1.117.
 			 */
 			columnMenuOpen: {
 				allowPreventDefault: true,
@@ -389,19 +398,6 @@ sap.ui.define([
 		ColumnHeaderMenuAdapter.unlink(this);
 	};
 
-	/**
-	 * called when the column's parent is set
-	 */
-	Column.prototype.setParent = function() {
-		var vReturn = Element.prototype.setParent.apply(this, arguments);
-		var oMenu = this.getAggregation("menu");
-		if (oMenu && typeof oMenu._updateReferences === "function") {
-			//if menu is set update menus internal references
-			oMenu._updateReferences(this);
-		}
-		return vReturn;
-	};
-
 	/*
 	 * @see JSDoc generated by SAPUI5 control API generator
 	 */
@@ -450,7 +446,7 @@ sap.ui.define([
 				this.getLabel().setText(vLabel);
 				return this;
 			}
-			oLabel = library.TableHelper.createLabel({text: vLabel});
+			oLabel = TableUtils._getTableTemplateHelper().createLabel({text: vLabel});
 			_private(this).bHasDefaultLabel = true;
 		} else if (_private(this).bHasDefaultLabel) {
 			this.destroyLabel();
@@ -482,7 +478,7 @@ sap.ui.define([
 				this.getTemplate().bindProperty("text", vTemplate);
 				bNewTemplate = false;
 			} else {
-				oTemplate = library.TableHelper.createTextView().bindProperty("text", vTemplate);
+				oTemplate = TableUtils._getTableTemplateHelper().createTextView().bindProperty("text", vTemplate);
 				_private(this).bHasDefaulTemplate = true;
 			}
 		} else if (_private(this).bHasDefaulTemplate) {
@@ -584,47 +580,20 @@ sap.ui.define([
 		return this;
 	};
 
-	/*
-	 * @see JSDoc generated by SAPUI5 control API generator
-	 */
-	Column.prototype.getMenu = function() {
-		var oMenu = this.getAggregation("menu");
-		if (!oMenu) {
-			oMenu = this._createMenu();
-			this.setMenu(oMenu);
-		}
-		return oMenu;
-	};
-
 	/**
-	 * This function invalidates the column's menu. All items will be re-created the next time the menu opens. This only
-	 * happens for generated menus.
-	 * @private
-	 */
-	Column.prototype._invalidateMenu = function() {
-		var oMenu = this.getAggregation("menu");
-
-		if (oMenu && this._bMenuIsColumnMenu) {
-			oMenu._invalidate();
-		}
-	};
-
-	/**
-	 * Checks whether or not the menu has items. This function considers table and column
-	 * properties to determine whether the column menu would have items. If there is a menu set,
-	 * it will just check whether there are items in the item aggregation.
+	 * Checks whether the menu has items. This function considers table and column
+	 * properties to determine whether the column menu would have items.
 	 * @returns {boolean} True if the menu has or could have items.
 	 * @private
+	 * @deprecated As of Version 1.117
 	 */
 	Column.prototype._menuHasItems = function() {
-		var oMenu = this.getAggregation("menu");
 		var oTable = this._getTable();
-		var bHasOwnItems = (oMenu ? oMenu.getItems().length > 0 : false)
-						   || (oTable ? oTable.getEnableColumnFreeze() : false)
-						   || (oTable ? oTable.getShowColumnVisibilityMenu() : false)
-						   || this.isSortableByMenu()
-						   || this.isFilterableByMenu()
-						   || this.isGroupableByMenu();
+		var bHasOwnItems = (oTable ? oTable.getEnableColumnFreeze() : false)
+			|| (oTable ? oTable.getShowColumnVisibilityMenu() : false)
+			|| this.isSortableByMenu()
+			|| this.isFilterableByMenu()
+			|| this.isGroupableByMenu();
 
 		if (bHasOwnItems) {
 			return true;
@@ -672,87 +641,39 @@ sap.ui.define([
 	 * - sortProperty must be defined
 	 * - showFilterMenuEntry must be true (which is the default)
 	 *
+	 * @deprecated As of version 1.118.
 	 * @returns {boolean}
 	 */
 	Column.prototype.isGroupableByMenu = function() {
-		var oTable = this.getParent();
+		var oTable = this._getTable();
 		return !!(oTable && oTable.getEnableGrouping && oTable.getEnableGrouping() && this.getSortProperty());
 	};
 
-	/*
-	 * @see JSDoc generated by SAPUI5 control API generator
-	 */
-	Column.prototype.setMenu = function(oMenu) {
-		this.setAggregation("menu", oMenu, true);
-		this._bMenuIsColumnMenu = TableUtils.isA(oMenu, "sap.ui.table.ColumnMenu");
-		return this;
+	Column.prototype._isGroupableByMenu = function() {
+		var bIsGroupableByMenu = false;
+		/**
+		 *  @deprecated As of version 1.119.
+		 */
+		bIsGroupableByMenu = this.isGroupableByMenu();
+
+		return bIsGroupableByMenu;
 	};
 
-	/*
-	 * Factory method. Creates the column menu.
-	 *
-	 * @returns {sap.ui.table.ColumnMenu} The created column menu.
-	 */
-	Column.prototype._createMenu = function() {
-		if (!this._defaultMenu) {
-			this._defaultMenu = new ColumnMenu(this.getId() + "-menu", {ariaLabelledBy: this});
+	Column.prototype.setSorted = function(bSorted) {
+		this.setProperty("sorted", bSorted, true);
+
+		if (bSorted && this.getSortOrder() === SortOrder.None) {
+			this.setSortOrder(SortOrder.Ascending); // "Ascending" was the default value of "sortOrder" before "sorted" was deprecated.
 		}
-		return this._defaultMenu;
-	};
 
-	/*
-	 * @see JSDoc generated by SAPUI5 control API generator
-	 */
-	Column.prototype.setSortProperty = function(sValue) {
-		this.setProperty("sortProperty", sValue);
-		this._invalidateMenu();
-		return this;
-	};
-
-	/*
-	 * @see JSDoc generated by SAPUI5 control API generator
-	 */
-	Column.prototype.setShowSortMenuEntry = function(sValue) {
-		if (this.getShowSortMenuEntry() != sValue) {
-			this._invalidateMenu();
-		}
-		return this.setProperty("showSortMenuEntry", sValue);
-	};
-
-	/*
-	 * @see JSDoc generated by SAPUI5 control API generator
-	 */
-	Column.prototype.setSorted = function(bFlag) {
-		this.setProperty("sorted", bFlag, true);
 		this._updateIcons();
 		return this;
 	};
 
-	/*
-	 * @see JSDoc generated by SAPUI5 control API generator
-	 */
-	Column.prototype.setSortOrder = function(tSortOrder) {
-		this.setProperty("sortOrder", tSortOrder, true);
+	Column.prototype.setSortOrder = function(sSortOrder) {
+		this.setProperty("sortOrder", sSortOrder, true);
 		this._updateIcons();
 		return this;
-	};
-
-	/*
-	 * @see JSDoc generated by SAPUI5 control API generator
-	 */
-	Column.prototype.setFilterProperty = function(sValue) {
-		this._invalidateMenu();
-		return this.setProperty("filterProperty", sValue);
-	};
-
-	/*
-	 * @see JSDoc generated by SAPUI5 control API generator
-	 */
-	Column.prototype.setShowFilterMenuEntry = function(sValue) {
-		if (this.getShowFilterMenuEntry() != sValue) {
-			this._invalidateMenu();
-		}
-		return this.setProperty("showFilterMenuEntry", sValue);
 	};
 
 	/*
@@ -767,62 +688,21 @@ sap.ui.define([
 	/*
 	 * @see JSDoc generated by SAPUI5 control API generator
 	 */
-	Column.prototype.setFilterValue = function(sValue) {
-		this.setProperty("filterValue", sValue, true);
-
-		var oMenu = this.getMenu();
-		if (this._bMenuIsColumnMenu) {
-			oMenu._setFilterValue(sValue);
-		}
-
-		return this;
-	};
-
-	/*
-	 * @see JSDoc generated by SAPUI5 control API generator
-	 */
 	Column.prototype.setFilterOperator = function(sValue) {
 		return this.setProperty("filterOperator", sValue, true);
 	};
 
-	/**
-	 * Open the column menu.
-	 * @param {Object} [oDomRef] DOM reference of the element to which the menu should be visually attached. Fallback is the focused DOM reference.
-	 * @returns {boolean} Whether the menu was opened.
-	 * @private
-	 */
-	Column.prototype._openMenu = function(oDomRef) {
-		var oMenu = this.getMenu();
-
-		if (!this._menuHasItems()) {
-			return false;
-		}
-
-		var bExecuteDefault = this.fireColumnMenuOpen({
-			menu: oMenu
-		});
-
-		if (bExecuteDefault) {
-			var eDock = Popup.Dock;
-			var oFocusDomRef = oDomRef;
-			if (!oDomRef) {
-				oDomRef = this.getDomRef();
-				oFocusDomRef = this.getFocusDomRef();
-			}
-			oMenu.open(null, oFocusDomRef, eDock.BeginTop, eDock.BeginBottom, oDomRef);
-			return true;
-		} else {
-			return true; // We do not know whether the event handler opens a context menu or not, so we just assume it is done.
-		}
-	};
-
 	Column.prototype._openHeaderMenu = function(oDomRef) {
 		var oHeaderMenu = this.getHeaderMenuInstance();
-		if (oHeaderMenu) {
-			ColumnHeaderMenuAdapter.activateFor(this).then(function() {
+		/**
+		 * @deprecated As of Version 1.117
+		 */
+		this._cellPressed = oDomRef;
+		ColumnHeaderMenuAdapter.activateFor(this).then(function() {
+			if (oHeaderMenu) {
 				oHeaderMenu.openBy(oDomRef);
-			});
-		}
+			}
+		});
 	};
 
 	Column.prototype._isHeaderMenuOpen = function() {
@@ -830,11 +710,12 @@ sap.ui.define([
 		if (oHeaderMenu) {
 			return oHeaderMenu.isOpen();
 		}
-
-		var oMenu = this.getAggregation("menu");
-		return oMenu ? oMenu.bOpen : false;
 	};
 
+	/**
+	 * @deprecated As of version 1.118.
+	 * @private
+	*/
 	Column.prototype._setGrouped = function(bGrouped) {
 		var oTable = this._getTable();
 		oTable.setGroupBy(bGrouped ? this : null);
@@ -865,91 +746,106 @@ sap.ui.define([
 	 * @deprecated Since version 1.5.1. Please use the function "sap.ui.Table.prototype.sort".
 	 */
 	Column.prototype.sort = function(bDescending, bAdd) {
-		var oTable = this.getParent();
-		if (oTable) {
-			// add current column to list of sorted columns
-			oTable.pushSortedColumn(this, bAdd);
-			// get the sort order type
-			var sNewSortOrder = bDescending ? SortOrder.Descending : SortOrder.Ascending;
-
-			// notify the event listeners
-			var bExecuteDefault = oTable.fireSort({
-				column: this,
-				sortOrder: sNewSortOrder,
-				columnAdded: bAdd
-			});
-
-			if (bExecuteDefault) {
-				// update properties of current column
-				this.setProperty("sorted", true, true);
-				this.setProperty("sortOrder", sNewSortOrder, true);
-				_private(this).oSorter = new Sorter(this.getSortProperty(), this.getSortOrder() === SortOrder.Descending);
-
-				this._applySorters(sNewSortOrder, bAdd);
-			}
-		}
+		this._sort(bDescending ? SortOrder.Descending : SortOrder.Ascending, bAdd);
 		return this;
 	};
 
-	Column.prototype._unsort = function() {
-		var oTable = this.getParent();
-		if (oTable) {
-			// add current column to list of sorted columns
+	/**
+	 * Changes the sort order of this column. Sorts the binding and updates properties.
+	 *
+	 * @param {sap.ui.core.SortOrder} sSortOrder The new sort order
+	 * @param {boolean} [bAdd=false]
+	 *     Determines whether to append this column to the list of sorted columns. By default, previously sorted columns are unsorted. This parameter
+	 *     has no effect if the column is unsorted.
+	 */
+	Column.prototype._sort = function(sSortOrder, bAdd) {
+		var oTable = this._getTable();
+
+		if (!oTable) {
+			return;
+		}
+
+		if (sSortOrder === SortOrder.None) {
 			oTable._removeSortedColumn(this);
-
-			this._applySorters();
+		} else {
+			oTable.pushSortedColumn(this, bAdd);
 		}
-		return this;
+
+		var bExecuteDefault = oTable.fireSort({
+			column: this,
+			sortOrder: sSortOrder,
+			columnAdded: sSortOrder !== SortOrder.None && bAdd === true
+		});
+
+		if (!bExecuteDefault) {
+			return;
+		}
+
+		/** @deprecated As of version 1.120 */
+		this.setProperty("sorted", sSortOrder !== SortOrder.None, true);
+		this.setProperty("sortOrder", sSortOrder, true);
+		this._updateSorters();
 	};
 
-	Column.prototype._applySorters = function(sNewSortOrder, bAdd) {
-		var oTable = this.getParent();
-		var aSortedCols = oTable.getSortedColumns();
+	Column.prototype._updateSorters = function() {
+		var oTable = this._getTable();
+		var aSortedColumns = oTable.getSortedColumns();
 		var aColumns = oTable.getColumns();
+		var sSortOrder = this.getSortOrder();
 
-		// reset the sorting status of all columns which are not sorted anymore
-		for (var i = 0, l = aColumns.length; i < l; i++) {
-			if (aSortedCols.indexOf(aColumns[i]) < 0) {
-				// column is not sorted anymore -> reset default and remove sorter
+		// Reset the sorting status of all columns which are not sorted anymore.
+		for (let i = 0, l = aColumns.length; i < l; i++) {
+			if (aSortedColumns.indexOf(aColumns[i]) < 0) {
+				// Column is not sorted anymore. Reset to default and remove sorter.
+				/** @deprecated As of version 1.120 */
 				aColumns[i].setProperty("sorted", false, true);
-				aColumns[i].setProperty("sortOrder", SortOrder.Ascending, true);
+				aColumns[i].setProperty("sortOrder", SortOrder.None, true);
 				aColumns[i]._updateIcons(true);
 				delete _private(aColumns[i]).oSorter;
 			}
 		}
 
-		// add sorters of all sorted columns to one sorter-array and update sort icon rendering for sorted columns
-		var aSorters = [];
-		for (var i = 0, l = aSortedCols.length; i < l; i++) {
-			aSortedCols[i]._updateIcons(true);
-			aSorters.push(_private(aSortedCols[i]).oSorter);
+		// Update the sorter of this column. If the sorter needs to be removed, this was already done above.
+		if (sSortOrder !== SortOrder.None) {
+			_private(this).oSorter = new Sorter(this.getSortProperty(), sSortOrder === SortOrder.Descending);
+		}
+
+		// Make sure sorted columns show the sort icon.
+		for (let i = 0, l = aSortedColumns.length; i < l; i++) {
+			aSortedColumns[i]._updateIcons(true);
 		}
 
 		oTable._resetColumnHeaderHeights();
 		oTable._updateRowHeights(oTable._collectRowHeights(true), true);
+		this._applySorters();
+	};
 
-		var oBinding = oTable.getBinding();
-		if (oBinding) {
-			// For the AnalyticalTable with an AnalyticalColumn.
-			if (this._updateTableAnalyticalInfo) {
-				// The analytical info must be updated before sorting via the binding. The request will still be correct, but the binding
-				// will create its internal data structure based on the analytical info. We also do not need to get the contexts right
-				// now (therefore "true" is passed"), this will be done later in refreshRows.
-				this._updateTableAnalyticalInfo(true);
-			}
+	Column.prototype._applySorters = function() {
+		const oTable = this._getTable();
+		const oBinding = oTable.getBinding();
 
-			// sort the binding
-			oBinding.sort(aSorters);
-
-		} else {
+		if (!oBinding) {
 			Log.warning("Sorting not performed because no binding present", this);
+			return;
 		}
+
+		const aSortedColumns = oTable.getSortedColumns();
+		const aSorters = aSortedColumns.map((oSortedColumn) => {
+			return _private(oSortedColumn).oSorter;
+		});
+
+		oBinding.sort(aSorters);
 	};
 
 	Column.prototype._updateIcons = function(bSkipUpdateRowHeights) {
-		var oTable = this.getParent(),
-			bSorted = this.getSorted(),
-			bFiltered = this.getFiltered();
+		var oTable = this._getTable();
+		var bSorted = this.getSortOrder() !== SortOrder.None;
+		var bFiltered = this.getFiltered();
+
+		/** @deprecated As of version 1.120 */
+		if (!this.getSorted()) {
+			bSorted = false;
+		}
 
 		if (!oTable || !oTable.getDomRef()) {
 			return;
@@ -1069,7 +965,7 @@ sap.ui.define([
 	};
 
 	Column.prototype.filter = function(sValue) {
-		var oTable = this.getParent();
+		var oTable = this._getTable();
 
 		if (oTable && oTable.isBound("rows")) {
 
@@ -1083,33 +979,27 @@ sap.ui.define([
 				this.setProperty("filtered", !!sValue, true);
 				this.setProperty("filterValue", sValue, true);
 
-				var oMenu = this.getMenu();
-				if (this._bMenuIsColumnMenu) {
-					// update column menu input field
-					oMenu._setFilterValue(sValue);
-				}
-
 				var aFilters = [];
 				var aCols = oTable.getColumns();
 				for (var i = 0, l = aCols.length; i < l; i++) {
 					var oCol = aCols[i],
-						oFilter;
+						oFilter,
+						sState;
 
-					oMenu = oCol.getMenu();
 					try {
 						oFilter = oCol._getFilter();
-						if (oCol._bMenuIsColumnMenu) {
-							oMenu._setFilterState(ValueState.None);
-						}
+						sState = ValueState.None;
 					} catch (e) {
-						if (oCol._bMenuIsColumnMenu) {
-							oMenu._setFilterState(ValueState.Error);
-						}
-						continue;
+						sState = ValueState.Error;
 					}
 					if (oFilter) {
 						aFilters.push(oFilter);
 					}
+
+					/**
+					* @deprecated As of Version 1.117
+					*/
+					TableUtils.Hook.call(this._getTable(), TableUtils.Hook.Keys.Column.SetFilterState, oCol, sState);
 				}
 				oTable.getBinding().filter(aFilters, FilterType.Control);
 
@@ -1140,7 +1030,14 @@ sap.ui.define([
 	 * @protected
 	 */
 	Column.prototype.shouldRender = function() {
-		return this.getVisible() && !this.getGrouped() && this.getTemplate() != null;
+		var bShouldRender = this.getVisible() && this.getTemplate() != null;
+
+		/**
+		 * @deprecated As of Version 1.118
+		 */
+		bShouldRender = bShouldRender && !this.getGrouped();
+
+		return bShouldRender;
 	};
 
 	/*
@@ -1178,7 +1075,13 @@ sap.ui.define([
 	 * @public
 	 *
 	 * @example <caption>Class name of a type.</caption>
+	 * // The usage of string-based type definitions without explicitly loading these types (<code>sap.ui.require</code>) in the controller has been deprecated and might no longer work in future releases.
+	 * // Please ensure that the types are requested correctly before setting this property.
 	 * oColumn.setFilterType("sap.ui.model.type.Date");
+	 *
+	 * @example <caption>Module path of a type.</caption>
+	 * // The type needs to be loaded in advance by the application.
+	 * oColumn.setFilterType("sap/ui/model/type/Date");
 	 *
 	 * @example <caption>Binding expression similar to the binding syntax.</caption>
 	 * // The escaping is mandatory to avoid handling by the binding parser.
@@ -1197,11 +1100,23 @@ sap.ui.define([
 				// similar to BindingParser allow to specify formatOptions and constraints for types
 				var mConfig = JSTokenizer.parseJS(vType);
 				if (typeof (mConfig.type) === "string") {
-					var fnType = ObjectPath.get(mConfig.type);
+					var fnType = sap.ui.require(mConfig.type.replaceAll(".", "/"));
+
+					/** @deprecated As of version 1.120 */
+					if (!fnType) {
+						fnType = ObjectPath.get(vType);
+					}
+
 					oType = fnType && new fnType(mConfig.formatOptions, mConfig.constraints);
 				}
 			} catch (ex) {
-				var fnType = ObjectPath.get(vType);
+				var fnType = sap.ui.require(vType.replaceAll(".", "/"));
+
+				/** @deprecated As of version 1.120 */
+				if (!fnType) {
+					fnType = ObjectPath.get(vType);
+				}
+
 				oType = fnType && new fnType();
 			}
 			// check for a valid type
@@ -1220,7 +1135,7 @@ sap.ui.define([
 	 * @returns {int} the column index.
 	 */
 	Column.prototype.getIndex = function() {
-		var oTable = this.getParent();
+		var oTable = this._getTable();
 		if (oTable) {
 			return oTable.indexOfColumn(this);
 		} else {
@@ -1295,7 +1210,7 @@ sap.ui.define([
 		if (oClone) {
 			CellMap.set(oClone, this);
 
-			var oTable = this.getParent();
+			var oTable = this._getTable();
 			if (oTable) {
 				oTable._getAccExtension().addColumnHeaderLabel(this, oClone);
 			}
@@ -1327,13 +1242,6 @@ sap.ui.define([
 		} else {
 			destroyClones(this._mTemplateClones[sTemplateType]);
 			this._mTemplateClones[sTemplateType] = [];
-		}
-	};
-
-	Column.prototype._closeMenu = function() {
-		var oMenu = this.getAggregation("menu");
-		if (oMenu) {
-			oMenu.close();
 		}
 	};
 

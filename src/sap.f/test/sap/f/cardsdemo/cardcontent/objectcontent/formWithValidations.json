@@ -54,7 +54,9 @@
 					}
 				],
 				"selectedKey": "",
-				"msg": "dddd"
+				"msg": "dddd",
+				"inputValue": "Some Value",
+				"durationValue": "PT11H22M"
 			}
 		},
 		"header": {
@@ -134,6 +136,19 @@
 							]
 						},
 						{
+							"id": "input1",
+							"label": "Enter Value",
+							"type": "Input",
+							"placeholder": "Enter value",
+							"value": "{/inputValue}",
+							"required": true,
+							"validations": [
+								{
+									"required": true
+								}
+							]
+						},
+						{
 							"id": "reason3",
 							"label": "Reason 3",
 							"type": "ComboBox",
@@ -148,6 +163,18 @@
 							"validations": [
 								{
 									"restrictToPredefinedOptions": true
+								}
+							]
+						},
+						{
+							"id": "duration1",
+							"label": "Duration",
+							"type": "Duration",
+							"placeholder": "Enter duration",
+							"value": "{/durationValue}",
+							"validations": [
+								{
+									"required": true
 								}
 							]
 						},
@@ -186,6 +213,17 @@
 								{
 									"pattern": "^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$",
 									"message": "Enter a valid email"
+								}
+							]
+						},
+						{
+							"id": "dateRange",
+							"label": "Date Range",
+							"type": "DateRange",
+							"required": true,
+							"validations": [
+								{
+									"required": true
 								}
 							]
 						}

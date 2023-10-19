@@ -12,6 +12,7 @@ sap.ui.define([
 	"sap/ui/fl/apply/_internal/flexObjects/FlVariant",
 	"sap/ui/fl/apply/_internal/flexObjects/States",
 	"sap/ui/fl/apply/_internal/flexObjects/UIChange",
+	"sap/ui/fl/registry/Settings",
 	"sap/ui/fl/Layer",
 	"sap/ui/fl/LayerUtils",
 	"sap/ui/fl/Utils"
@@ -26,6 +27,7 @@ sap.ui.define([
 	FlVariant,
 	States,
 	UIChange,
+	Settings,
 	Layer,
 	LayerUtils,
 	Utils
@@ -55,10 +57,15 @@ sap.ui.define([
 	}
 
 	function createBasePropertyBag(mProperties) {
-		var sChangeType = mProperties.type || mProperties.changeType;
-		var sFileName = mProperties.fileName || mProperties.id || Utils.createDefaultFileName(sChangeType);
+		const sChangeType = mProperties.type || mProperties.changeType;
+		const sFileName = mProperties.fileName || mProperties.id || Utils.createDefaultFileName(sChangeType);
+		const sUser = mProperties.user ||
+			(!LayerUtils.isDeveloperLayer(mProperties.layer)
+				? Settings.getInstanceOrUndef() && Settings.getInstanceOrUndef().getUserId()
+				: undefined);
 		return {
 			id: sFileName,
+			adaptationId: mProperties.adaptationId,
 			layer: mProperties.layer,
 			content: mProperties.content,
 			texts: mProperties.texts,
@@ -68,12 +75,11 @@ sap.ui.define([
 				command: mProperties.command,
 				compositeCommand: mProperties.compositeCommand,
 				generator: mProperties.generator,
-				sapui5Version: Core.getConfiguration().getVersion().toString(),
 				sourceChangeFileName: mProperties.support && mProperties.support.sourceChangeFileName,
 				sourceSystem: mProperties.sourceSystem,
 				sourceClient: mProperties.sourceClient,
 				originalLanguage: mProperties.originalLanguage,
-				user: mProperties.user
+				user: sUser
 			},
 			flexObjectMetadata: {
 				changeType: sChangeType,
@@ -103,7 +109,7 @@ sap.ui.define([
 	 * @param {boolean} [bPersisted] - Whether to set the state to PERSISTED after creation
 	 * @returns {sap.ui.fl.apply._internal.flexObjects.FlexObject} Created flex object
 	 */
-	FlexObjectFactory.createFromFileContent = function (oFileContent, ObjectClass, bPersisted) {
+	FlexObjectFactory.createFromFileContent = function(oFileContent, ObjectClass, bPersisted) {
 		var oNewFileContent = Object.assign({}, oFileContent);
 		var FlexObjectClass = ObjectClass || getFlexObjectClass(oNewFileContent);
 		if (!FlexObjectClass) {
@@ -111,38 +117,38 @@ sap.ui.define([
 		}
 		oNewFileContent.support = Object.assign(
 			{
-				generator: "FlexObjectFactory.createFromFileContent",
-				sapui5Version: Core.getConfiguration().getVersion().toString()
+				generator: "FlexObjectFactory.createFromFileContent"
 			},
 			oNewFileContent.support || {}
 		);
 		var oMappingInfo = FlexObjectClass.getMappingInfo();
 		var mCreationInfo = FlexObject.mapFileContent(oNewFileContent, oMappingInfo);
-		var mProperties = Object.entries(mCreationInfo).reduce(function (mPropertyMap, aProperty) {
-			ObjectPath.set(aProperty[0].split('.'), aProperty[1], mPropertyMap);
+		var mProperties = Object.entries(mCreationInfo).reduce(function(mPropertyMap, aProperty) {
+			ObjectPath.set(aProperty[0].split("."), aProperty[1], mPropertyMap);
 			return mPropertyMap;
 		}, {});
 		var oFlexObject = new FlexObjectClass(mProperties);
 		if (bPersisted) {
-			oFlexObject.setState(States.LifecycleState.PERSISTED);
+			// Set the property directly for the initial state to avoid state change validation
+			oFlexObject.setProperty("state", States.LifecycleState.PERSISTED);
 		}
 		return oFlexObject;
 	};
 
 	FlexObjectFactory.createUIChange = function(mPropertyBag) {
+		mPropertyBag.packageName ||= "$TMP";
 		var mProperties = createBasePropertyBag(mPropertyBag);
-		if (!mProperties.layer) {
-			mProperties.layer = mPropertyBag.isUserDependent ? Layer.USER : LayerUtils.getCurrentLayer();
-		}
+		mProperties.layer ||= mPropertyBag.isUserDependent ? Layer.USER : LayerUtils.getCurrentLayer();
 		mProperties.selector = mPropertyBag.selector;
 		mProperties.jsOnly = mPropertyBag.jsOnly;
 		mProperties.variantReference = mPropertyBag.variantReference;
+		mProperties.isChangeOnStandardVariant = mPropertyBag.isChangeOnStandardVariant;
 		mProperties.fileType = mPropertyBag.fileType || "change";
 		return new UIChange(mProperties);
 	};
 
 	FlexObjectFactory.createAppDescriptorChange = function(mPropertyBag) {
-		mPropertyBag.compositeCommand = mPropertyBag.compositeCommand || mPropertyBag.support && mPropertyBag.support.compositeCommand;
+		mPropertyBag.compositeCommand ||= mPropertyBag.support && mPropertyBag.support.compositeCommand;
 		var mProperties = createBasePropertyBag(mPropertyBag);
 		return new AppDescriptorChange(mProperties);
 	};
@@ -160,7 +166,7 @@ sap.ui.define([
 	 * @returns {sap.ui.fl.apply._internal.flexObjects.ControllerExtensionChange} Created ControllerExtensionChange instance
 	 */
 	FlexObjectFactory.createControllerExtensionChange = function(mPropertyBag) {
-		mPropertyBag.generator = mPropertyBag.generator || "FlexObjectFactory.createControllerExtensionChange";
+		mPropertyBag.generator ||= "FlexObjectFactory.createControllerExtensionChange";
 		mPropertyBag.changeType = "codeExt";
 		mPropertyBag.content = {
 			codeRef: mPropertyBag.codeRef
@@ -188,7 +194,7 @@ sap.ui.define([
 	 * @returns {sap.ui.fl.apply._internal.flexObjects.FlVariant} Variant instance
 	 */
 	FlexObjectFactory.createFlVariant = function(mPropertyBag) {
-		mPropertyBag.generator = mPropertyBag.generator || "FlexObjectFactory.createFlVariant";
+		mPropertyBag.generator ||= "FlexObjectFactory.createFlVariant";
 		var mProperties = createBasePropertyBag(mPropertyBag);
 		mProperties.variantManagementReference = mPropertyBag.variantManagementReference;
 		mProperties.variantReference = mPropertyBag.variantReference;
@@ -233,8 +239,8 @@ sap.ui.define([
 	 *
 	 * @returns {sap.ui.fl.apply._internal.flexObjects.CompVariant} Created comp variant object
 	 */
-	FlexObjectFactory.createCompVariant = function (oFileContent) {
-		oFileContent.generator = oFileContent.generator || "FlexObjectFactory.createCompVariant";
+	FlexObjectFactory.createCompVariant = function(oFileContent) {
+		oFileContent.generator ||= "FlexObjectFactory.createCompVariant";
 		oFileContent.user = ObjectPath.get("support.user", oFileContent);
 		var mCompVariantContent = createBasePropertyBag(oFileContent);
 

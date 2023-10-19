@@ -24,6 +24,7 @@ sap.ui.define(["sap/ui/model/json/JSONModel", 'sap/ui/core/mvc/Controller', 'sap
 						{ key: oIllustratedMessageType.NoSavedItemsV1, text: 'NoSavedItemsV1'},
 						{ key: oIllustratedMessageType.AddColumn, text: 'AddColumn'},
 						{ key: oIllustratedMessageType.SortColumn, text: 'SortColumn'},
+						{ key: oIllustratedMessageType.NoColumnsSet, text: 'NoColumnsSet'},
 						{ key: oIllustratedMessageType.FilterTable, text: 'FilterTable'},
 						{ key: oIllustratedMessageType.ResizeColumn, text: 'ResizeColumn'},
 						{ key: oIllustratedMessageType.GroupTable, text: 'GroupTable'},
@@ -39,7 +40,8 @@ sap.ui.define(["sap/ui/model/json/JSONModel", 'sap/ui/core/mvc/Controller', 'sap
 						{ key: oIllustratedMessageType.UnableToLoadImage, text: 'UnableToLoadImage'},
 						{ key: oIllustratedMessageType.BalloonSky, text: 'BalloonSky'},
 						{ key: oIllustratedMessageType.SuccessScreen, text: 'SuccessScreen'},
-						{ key: oIllustratedMessageType.SuccessHighFive, text: 'SuccessHighFive'}
+						{ key: oIllustratedMessageType.SuccessHighFive, text: 'SuccessHighFive'},
+						{ key: oIllustratedMessageType.Survey, text: 'Survey'}
 					];
 
 				Object.keys(oIllustratedMessageSize).forEach(function (sKey) {

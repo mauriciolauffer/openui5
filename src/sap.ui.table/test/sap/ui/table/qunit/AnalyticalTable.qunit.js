@@ -1,23 +1,42 @@
+/*global QUnit,sinon*/
 
 sap.ui.define([
 	"sap/ui/table/qunit/TableQUnitUtils",
 	"sap/ui/table/AnalyticalTable",
+	"sap/ui/table/rowmodes/Fixed",
 	"sap/ui/table/utils/TableUtils",
 	"sap/ui/model/odata/ODataModel",
 	"sap/ui/model/odata/v2/ODataModel",
 	"sap/ui/core/qunit/analytics/o4aMetadata",
 	"sap/ui/model/TreeAutoExpandMode",
 	"sap/ui/table/AnalyticalColumn",
+	"sap/ui/model/Filter",
 	"sap/ui/model/type/Float",
 	"sap/ui/table/Row",
 	"sap/ui/table/library",
 	"sap/ui/core/TooltipBase",
 	"sap/ui/core/Core",
+	"sap/m/table/columnmenu/Menu",
 	"sap/ui/core/qunit/analytics/TBA_ServiceDocument", // provides mock data
 	"sap/ui/core/qunit/analytics/ATBA_Batch_Contexts" // provides mock data
-], function(TableQUnitUtils, AnalyticalTable, TableUtils, ODataModel, ODataModelV2, o4aFakeService,
-			TreeAutoExpandMode, AnalyticalColumn, FloatType, Row, library, TooltipBase, Core) {
-	/*global QUnit,sinon*/
+], function(
+	TableQUnitUtils,
+	AnalyticalTable,
+	FixedRowMode,
+	TableUtils,
+	ODataModel,
+	ODataModelV2,
+	o4aFakeService,
+	TreeAutoExpandMode,
+	AnalyticalColumn,
+	Filter,
+	FloatType,
+	Row,
+	library,
+	TooltipBase,
+	Core,
+	ColumnMenu
+) {
 	"use strict";
 
 	// ************** Preparation Code **************
@@ -29,6 +48,143 @@ sap.ui.define([
 	});
 
 	sinon.config.useFakeTimers = false;
+
+	function createResponseData(iSkip, iTop, iCount) {
+		var sRecordTemplate = "{\"__metadata\":{\"uri\":\"http://o4aFakeService:8080/ActualPlannedCostsResults('{index}')\","
+							  + "\"type\":\"tmp.u012345.cca.CCA.ActualPlannedCostsResultsType\"},"
+							  + "\"CostCenter\":\"CostCenter-{index}\""
+							  + ",\"PlannedCosts\":\"499.99\""
+							  + ",\"Currency\":\"EUR\""
+							  + "}";
+		var aRecords = [];
+		var sCount = iCount != null ? ",\"__count\":\"" + iCount + "\"" : "";
+
+		for (var i = iSkip, iLastIndex = iSkip + iTop; i < iLastIndex; i++) {
+			aRecords.push(sRecordTemplate.replace(/({index})/g, i));
+		}
+
+		return "{\"d\":{\"results\":[" + aRecords.join(",") + "]" + sCount + "}}";
+	}
+
+	function createResponse(iSkip, iTop, iCount, bGrandTotal, bGrandTotalEmpty) {
+		var sGrandTotal = "{\"__metadata\":{\"uri\":\"http://o4aFakeService:8080/ActualPlannedCostsResults(\'142544452006589331\')\","
+						  + "\"type\":\"tmp.u012345.cca.CCA.ActualPlannedCostsResultsType\"},"
+						  + "\"Currency\":\"USD\",\"PlannedCosts\":\"9848641.68\"}";
+		var sGrandTotalResponse =
+			bGrandTotal
+				? "--AAD136757C5CF75E21C04F59B8682CEA0\r\n" +
+				  "Content-Type: application/http\r\n" +
+				  "Content-Length: 356\r\n" +
+				  "content-transfer-encoding: binary\r\n" +
+				  "\r\n" +
+				  "HTTP/1.1 200 OK\r\n" +
+				  "Content-Type: application/json\r\n" +
+				  "content-language: en-US\r\n" +
+				  "Content-Length: 259\r\n" +
+				  "\r\n" +
+				  "{\"d\":{\"results\":[" + (bGrandTotalEmpty ? "" : sGrandTotal) + "],"
+				  + "\"__count\":\"" + (bGrandTotalEmpty ? "0" : "1") + "\"}}\r\n"
+				: "";
+
+		var sCountResponse =
+			iCount != null
+				? "--AAD136757C5CF75E21C04F59B8682CEA0\r\n" +
+				  "Content-Type: application/http\r\n" +
+				  "Content-Length: 131\r\n" +
+				  "content-transfer-encoding: binary\r\n" +
+				  "\r\n" +
+				  "HTTP/1.1 200 OK\r\n" +
+				  "Content-Type: application/json\r\n" +
+				  "content-language: en-US\r\n" +
+				  "Content-Length: 35\r\n" +
+				  "\r\n" +
+				  "{\"d\":{\"results\":[],\"__count\":\"" + iCount + "\"}}\r\n"
+				: "";
+
+		return sGrandTotalResponse +
+			   sCountResponse +
+			   "--AAD136757C5CF75E21C04F59B8682CEA0\r\n" +
+			   "Content-Type: application/http\r\n" +
+			   "Content-Length: 3113\r\n" +
+			   "content-transfer-encoding: binary\r\n" +
+			   "\r\n" +
+			   "HTTP/1.1 200 OK\r\n" +
+			   "Content-Type: application/json\r\n" +
+			   "content-language: en-US\r\n" +
+			   "Content-Length: 3015\r\n" +
+			   "\r\n" +
+			   createResponseData(iSkip, iTop, iCount) + "\r\n" +
+			   "--AAD136757C5CF75E21C04F59B8682CEA0--\r\n" +
+			   "";
+	}
+
+	o4aFakeService.addResponse({
+		batch: true,
+		uri: [
+			"ActualPlannedCosts(P_ControllingArea='US01',P_CostCenter='100-1000',P_CostCenterTo='999-9999')"
+			+ "/Results?$select=ActualCosts,Currency,PlannedCosts"
+			+ "&$filter=(CostCenter%20eq%20%27DoesNotExist%27)"
+			+ "&$top=100&$inlinecount=allpages",
+			"ActualPlannedCosts(P_ControllingArea='US01',P_CostCenter='100-1000',P_CostCenterTo='999-9999')"
+			+ "/Results?$select=CostCenter,CostCenterText,ActualCosts,Currency,PlannedCosts"
+			+ "&$filter=(CostCenter%20eq%20%27DoesNotExist%27)"
+			+ "&$orderby=CostCenter%20asc"
+			+ "&$top=110&$inlinecount=allpages",
+			"ActualPlannedCosts(P_ControllingArea='US01',P_CostCenter='100-1000',P_CostCenterTo='999-9999')"
+			+ "/Results?$select=CostCenter,CostElement,Currency"
+			+ "&$filter=(CostCenter%20eq%20%27DoesNotExist%27)"
+			+ "&$top=0&$inlinecount=allpages"
+		],
+		header: o4aFakeService.headers.BATCH,
+		content: createResponse(0, 0, 0, true, true)
+	});
+
+	o4aFakeService.addResponse({
+		batch: true,
+		uri: [
+			"ActualPlannedCosts(P_ControllingArea='US01',P_CostCenter='100-1000',P_CostCenterTo='999-9999')"
+			+ "/Results?$select=ActualCosts,Currency,PlannedCosts"
+			+ "&$filter=(CostCenter%20eq%20%27DoesNotExistButReturnsGrandTotal%27)"
+			+ "&$top=100&$inlinecount=allpages",
+			"ActualPlannedCosts(P_ControllingArea='US01',P_CostCenter='100-1000',P_CostCenterTo='999-9999')"
+			+ "/Results?$select=CostCenter,CostCenterText,ActualCosts,Currency,PlannedCosts"
+			+ "&$filter=(CostCenter%20eq%20%27DoesNotExistButReturnsGrandTotal%27)"
+			+ "&$orderby=CostCenter%20asc"
+			+ "&$top=110&$inlinecount=allpages",
+			"ActualPlannedCosts(P_ControllingArea='US01',P_CostCenter='100-1000',P_CostCenterTo='999-9999')"
+			+ "/Results?$select=CostCenter,CostElement,Currency"
+			+ "&$filter=(CostCenter%20eq%20%27DoesNotExistButReturnsGrandTotal%27)"
+			+ "&$top=0&$inlinecount=allpages"
+		],
+		header: o4aFakeService.headers.BATCH,
+		content: createResponse(0, 0, 0, true)
+	});
+
+	o4aFakeService.addResponse({
+		batch: true,
+		uri: [
+			"ActualPlannedCosts(P_ControllingArea='US01',P_CostCenter='100-1000',P_CostCenterTo='999-9999')"
+			+ "/Results?$select=CostCenter,Currency"
+			+ "&$top=0&$inlinecount=allpages",
+			"ActualPlannedCosts(P_ControllingArea='US01',P_CostCenter='100-1000',P_CostCenterTo='999-9999')"
+			+ "/Results?$select=CostCenter,Currency,PlannedCosts"
+			+ "&$top=120&$inlinecount=allpages"
+		],
+		header: o4aFakeService.headers.BATCH,
+		content: createResponse(0, 120, 120)
+	});
+
+	o4aFakeService.addResponse({
+		batch: true,
+		uri: [
+			"ActualPlannedCosts(P_ControllingArea='US01',P_CostCenter='100-1000',P_CostCenterTo='999-9999')"
+			+ "/Results?$select=CostCenter"
+			+ "&$orderby=CostCenter%20asc"
+			+ "&$top=120&$inlinecount=allpages"
+		],
+		header: o4aFakeService.headers.BATCH,
+		content: createResponse(0, 10)
+	});
 
 	function attachEventHandler(oControl, iSkipCalls, fnHandler, that) {
 		var iCalled = 0;
@@ -87,7 +243,6 @@ sap.ui.define([
 
 		var mParams = {
 			title: "AnalyticalTable",
-
 			columns: [
 				//dimensions + description texts
 				createColumn({grouped: true, name: "CostCenter"}),
@@ -100,9 +255,13 @@ sap.ui.define([
 				createColumn({summed: true, name: "ActualCosts"}),
 				createColumn({summed: true, name: "PlannedCosts"})
 			],
-
-			visibleRowCount: 20,
+			rowMode: new FixedRowMode({
+				rowCount: 20
+			}),
 			enableColumnReordering: true,
+			/**
+			 * @deprecated As of Version 1.117
+			 */
 			showColumnVisibilityMenu: true,
 			enableColumnFreeze: true,
 			enableCellFilter: true,
@@ -150,6 +309,9 @@ sap.ui.define([
 		assert.equal(this.oTable.getSelectionBehavior(), library.SelectionBehavior.RowOnly, "SelectionBehavior.RowOnly");
 	});
 
+	/**
+	 * @deprecated As of version 1.21.2
+	 */
 	QUnit.test("Dirty", function(assert) {
 		assert.equal(this.oTable.getDirty(), false, "Default dirty");
 		assert.equal(this.oTable.getShowOverlay(), false, "Default showOverlay");
@@ -158,12 +320,18 @@ sap.ui.define([
 		assert.equal(this.oTable.getShowOverlay(), true, "ShowOverlay set");
 	});
 
+	/**
+	 * @deprecated As of version 1.21.2
+	 */
 	QUnit.test("FixedRowCount", function(assert) {
 		assert.equal(this.oTable.getFixedRowCount(), 0, "Default fixedRowCount");
 		this.oTable.setFixedRowCount(5);
 		assert.equal(this.oTable.getFixedRowCount(), 0, "FixedRowCount cannot be changed");
 	});
 
+	/**
+	 * @deprecated As of version 1.21.2
+	 */
 	QUnit.test("FixedBottomRowCount", function(assert) {
 		var done = assert.async();
 
@@ -202,7 +370,10 @@ sap.ui.define([
 		performTestAfterTableIsUpdated.call(this, doTest);
 	});
 
-	QUnit.test("CollapseRecursive", function(assert) {
+	/**
+	 * deprecated As of version 1.76
+	 */
+	QUnit.test("CollapseRecursive property", function(assert) {
 		assert.expect(7);
 		var done = assert.async();
 
@@ -444,7 +615,7 @@ sap.ui.define([
 		Core.applyChanges();
 
 		function doTest(oTable) {
-			oTable.$().find(".sapUiTableGroupMenuButton").trigger("click");
+			oTable.$().find(".sapUiTableGroupMenuButton").trigger("tap");
 			assert.ok(oTable._oCellContextMenu.bOpen, "Menu is open");
 			oShowGroupMenuButton.restore();
 			done();
@@ -459,7 +630,7 @@ sap.ui.define([
 		function doTest(oTable) {
 			assert.strictEqual(oTable._mGroupHeaderMenuItems, null, "Group header menu items do not exist");
 
-			TableUtils.Menu.openContextMenu(oTable, oTable.getRows()[0].getCells()[4].getDomRef());
+			TableUtils.Menu.openContextMenu(oTable, {target: oTable.getRows()[0].getCells()[4].getDomRef()});
 			assert.notEqual(oTable._mGroupHeaderMenuItems, null, "Group header menu items exist");
 
 			oTable._adaptLocalization(true, false).then(function() {
@@ -482,6 +653,85 @@ sap.ui.define([
 		afterEach: function() {
 			this.oTable.destroy();
 		}
+	});
+
+	/**
+	 * @deprecated As of Version 1.117
+	 */
+	QUnit.test("Grouping and focus handling - legacy menu", function(assert) {
+		var done = assert.async();
+		this.oModel.metadataLoaded().then(function() {
+			var mSettings = {
+				columns: [
+					createColumn({name: "CostCenter"}),
+					createColumn({name: "PlannedCosts"}),
+					createColumn({name: "Currency"})
+				]
+			};
+			this.oTable = createTable.call(this, mSettings);
+
+			var fnHandler1 = function() {
+				var oColumn = this.oTable.getColumns()[0];
+				oColumn.attachEventOnce("columnMenuOpen", () => {
+					TableQUnitUtils.wait(0).then(() => {
+						this.oTable.getBinding().attachChange(() => {
+							this.oTable.attachEventOnce("rowsUpdated", () => {
+								assert.deepEqual(document.activeElement, this.oTable.getDomRef("rowsel0"));
+								done();
+							});
+						});
+
+						oColumn.getMenu().getItems()[3].fireSelect();
+					});
+				});
+
+				oColumn._openHeaderMenu(oColumn.getDomRef());
+			};
+
+			attachEventHandler(this.oTable, 0, fnHandler1, this);
+			this.oTable.bindRows("/ActualPlannedCosts(P_ControllingArea='US01',P_CostCenter='100-1000',P_CostCenterTo='999-9999')/Results");
+
+		}.bind(this));
+	});
+
+	QUnit.test("Grouping and focus handling", function(assert) {
+		var done = assert.async();
+		this.oModel.metadataLoaded().then(function() {
+			var mSettings = {
+				columns: [
+					createColumn({name: "CostCenter"}),
+					createColumn({name: "PlannedCosts"}),
+					createColumn({name: "Currency"})
+				]
+			};
+			this.oTable = createTable.call(this, mSettings);
+
+			var fnHandler1 = function() {
+				var oColumn = this.oTable.getColumns()[0];
+				var oColumnMenu = new ColumnMenu();
+				oColumn.setHeaderMenu(oColumnMenu);
+
+				oColumnMenu.attachEventOnce("beforeOpen", () => {
+					TableQUnitUtils.wait(0).then(() => {
+						var oGroupButton = oColumnMenu._getAllEffectiveQuickActions()[2].getContent()[0];
+						oGroupButton.$().trigger("tap");
+
+						this.oTable.getBinding().attachChange(() => {
+							this.oTable.attachEventOnce("rowsUpdated", () => {
+								assert.deepEqual(document.activeElement, this.oTable.getDomRef("rowsel0"));
+								done();
+							});
+						});
+					});
+				});
+
+				oColumn._openHeaderMenu(oColumn.getDomRef());
+			};
+
+			attachEventHandler(this.oTable, 0, fnHandler1, this);
+			this.oTable.bindRows("/ActualPlannedCosts(P_ControllingArea='US01',P_CostCenter='100-1000',P_CostCenterTo='999-9999')/Results");
+
+		}.bind(this));
 	});
 
 	QUnit.test("getAnalyticalInfoOfRow", function(assert) {
@@ -540,7 +790,10 @@ sap.ui.define([
 		}.bind(this));
 	});
 
-	QUnit.test("TreeAutoExpandMode", function(assert) {
+	/**
+	 * @deprecated As of version 1.44
+	 */
+	QUnit.test("TreeAutoExpandMode property", function(assert) {
 		var done = assert.async();
 		var oExpandMode = TreeAutoExpandMode;
 
@@ -561,10 +814,6 @@ sap.ui.define([
 		this.oTable._applyAnalyticalBindingInfo(oBindingInfo);
 		assert.equal(oBindingInfo.parameters.autoExpandMode, oExpandMode.Bundled, "Property AutoExpandMode - Default");
 
-		oBindingInfo = {parameters: {autoExpandMode: "Sequential"}};
-		this.oTable._applyAnalyticalBindingInfo(oBindingInfo);
-		assert.equal(oBindingInfo.parameters.autoExpandMode, oExpandMode.Sequential, "Property AutoExpandMode - From BindingInfo");
-
 		oBindingInfo = {};
 		this.oTable.setAutoExpandMode(oExpandMode.Sequential);
 		this.oTable._applyAnalyticalBindingInfo(oBindingInfo);
@@ -581,15 +830,14 @@ sap.ui.define([
 		assert.equal(oBindingInfo.parameters.autoExpandMode, oExpandMode.Bundled, "Property AutoExpandMode - Wrong");
 	});
 
-	QUnit.test("SumOnTop", function(assert) {
+	/**
+	 * @deprecated As of version 1.44
+	 */
+	QUnit.test("SumOnTop property", function(assert) {
 		this.oTable = new AnalyticalTable();
 		var oBindingInfo = {};
 		this.oTable._applyAnalyticalBindingInfo(oBindingInfo);
 		assert.equal(oBindingInfo.parameters.sumOnTop, false, "Property SumOnTop - Default");
-
-		oBindingInfo = {parameters: {sumOnTop: true}};
-		this.oTable._applyAnalyticalBindingInfo(oBindingInfo);
-		assert.equal(oBindingInfo.parameters.sumOnTop, true, "Property SumOnTop - From BindingInfo");
 
 		oBindingInfo = {};
 		this.oTable.setSumOnTop(true);
@@ -597,21 +845,14 @@ sap.ui.define([
 		assert.equal(oBindingInfo.parameters.sumOnTop, true, "Property SumOnTop - Custom");
 	});
 
-	QUnit.test("NumberOfExpandedLevels", function(assert) {
+	/**
+	 * @deprecated As of version 1.44
+	 */
+	QUnit.test("NumberOfExpandedLevels property", function(assert) {
 		this.oTable = new AnalyticalTable();
 		var oBindingInfo = {};
 		this.oTable._applyAnalyticalBindingInfo(oBindingInfo);
 		assert.equal(oBindingInfo.parameters.numberOfExpandedLevels, 0, "Property NumberOfExpandedLevels - Default");
-
-		this.oTable._aGroupedColumns = new Array(5);
-		oBindingInfo = {parameters: {numberOfExpandedLevels: 5}};
-		this.oTable._applyAnalyticalBindingInfo(oBindingInfo);
-		assert.equal(oBindingInfo.parameters.numberOfExpandedLevels, 5, "Property NumberOfExpandedLevels - From BindingInfo");
-
-		this.oTable._aGroupedColumns = [];
-		oBindingInfo = {parameters: {numberOfExpandedLevels: 5}};
-		this.oTable._applyAnalyticalBindingInfo(oBindingInfo);
-		assert.equal(oBindingInfo.parameters.numberOfExpandedLevels, 0, "Property NumberOfExpandedLevels (no grouped columns) - From BindingInfo");
 
 		this.oTable._aGroupedColumns = new Array(4);
 		oBindingInfo = {};
@@ -811,11 +1052,16 @@ sap.ui.define([
 				var oColumn = this.oTable.getColumns()[1];
 				assert.equal(oColumn.getTooltip_AsString(), "Cost Center", "getTooltip_AsString: Default Tooltip");
 				assert.equal(oColumn.getTooltip_Text(), "Cost Center", "getTooltip_Text: Default Tooltip");
+				this.oTable._setHideStandardTooltips(true);
+				assert.ok(!oColumn.getTooltip_AsString(), "getTooltip_AsString: Skipped Default Tooltip");
+				assert.ok(!oColumn.getTooltip_Text(), "getTooltip_Text: Skipped Default Tooltip");
 				oColumn.setTooltip("Some other tooltip");
 				assert.equal(oColumn.getTooltip_AsString(), "Some other tooltip", "getTooltip_AsString: Custom String Tooltip");
 				assert.equal(oColumn.getTooltip_Text(), "Some other tooltip", "getTooltip_Text: Custom String Tooltip");
 				oColumn.setTooltip(new TooltipBase());
 				assert.ok(!oColumn.getTooltip_AsString(), "getTooltip_AsString: Custom Object Tooltip without text");
+				assert.ok(!oColumn.getTooltip_Text(), "getTooltip_Text: Custom Object Tooltip without text and skipped defaults");
+				this.oTable._setHideStandardTooltips(false);
 				assert.equal(oColumn.getTooltip_Text(), "Cost Center", "getTooltip_Text: Custom Object Tooltip without text");
 				oColumn.getTooltip().setText("Again some other tooltip");
 				assert.ok(!oColumn.getTooltip_AsString(), "getTooltip_AsString: Custom Object Tooltip with text");
@@ -1060,12 +1306,6 @@ sap.ui.define([
 		assert.ok(!this._oColumn.isFilterableByMenu(), "Not filterable by menu: " +
 			"filterProperty: '" + (this._oColumn.getFilterProperty() ? this._oColumn.getFilterProperty() : "") + "', " +
 			"showFilterMenuEntry: " + this._oColumn.getShowFilterMenuEntry());
-	});
-
-	QUnit.test("Menu Creation", function(assert) {
-		var oMenu = this._oColumn._createMenu();
-		assert.ok(oMenu.isA("sap.ui.table.AnalyticalColumnMenu"), "Menu available");
-		assert.equal(oMenu.getId(), this._oColumn.getId() + "-menu", "Menu Id");
 	});
 
 	QUnit.module("BusyIndicator", {
@@ -1347,10 +1587,36 @@ sap.ui.define([
 				path: "/ActualPlannedCosts(P_ControllingArea='US01',P_CostCenter='100-1000',P_CostCenterTo='999-9999')/Results",
 				parameters: {
 					useBatchRequests: true
-				}
+				},
+				filters: [new Filter({path: "CostCenter", operator: "eq", value1: "DoesNotExist"})]
 			}
 		}, function(oTable) {
-			oTable.getBinding().getLength = function() { return 0; }; // It seems that the MockServer with the analytical fake service can't filter.
+			pDone = new Promise(function(resolve) {
+				TableQUnitUtils.addDelegateOnce(oTable, "onAfterRendering", function() {
+					TableQUnitUtils.assertNoDataVisible(assert, oTable, true);
+					resolve();
+				});
+			}).then(oTable.qunit.whenRenderingFinished).then(function() {
+				TableQUnitUtils.assertNoDataVisible(assert, oTable, true);
+			});
+		});
+
+		return pDone;
+	});
+
+	QUnit.test("After rendering without data but with the grand total", function(assert) {
+		var pDone;
+
+		this.oTable.destroy();
+		this.oTable = TableQUnitUtils.createTable(AnalyticalTable, {
+			rows: {
+				path: "/ActualPlannedCosts(P_ControllingArea='US01',P_CostCenter='100-1000',P_CostCenterTo='999-9999')/Results",
+				parameters: {
+					useBatchRequests: true
+				},
+				filters: [new Filter({path: "CostCenter", operator: "eq", value1: "DoesNotExistButReturnsGrandTotal"})]
+			}
+		}, function(oTable) {
 			pDone = new Promise(function(resolve) {
 				TableQUnitUtils.addDelegateOnce(oTable, "onAfterRendering", function() {
 					TableQUnitUtils.assertNoDataVisible(assert, oTable, true);
@@ -1384,20 +1650,24 @@ sap.ui.define([
 		var that = this;
 
 		this.oTable.unbindRows();
-		this.oTable.rerender();
+		this.oTable.invalidate();
+		Core.applyChanges();
 		return this.oTable.qunit.whenBindingChange().then(this.oTable.qunit.whenRenderingFinished).then(function() {
 			TableQUnitUtils.assertNoDataVisible(assert, that.oTable, true, "Unbind");
 			that.assertNoDataVisibilityChangeCount(assert, 1);
-			that.oTable.rerender();
+			that.oTable.invalidate();
+			Core.applyChanges();
 		}).then(this.oTable.qunit.whenRenderingFinished).then(function() {
 			TableQUnitUtils.assertNoDataVisible(assert, that.oTable, true, "Rerender");
 			that.assertNoDataVisibilityChangeCount(assert, 0);
 			that.oTable.bindRows(oBindingInfo);
-			that.oTable.rerender();
+			that.oTable.invalidate();
+			Core.applyChanges();
 		}).then(this.oTable.qunit.whenBindingChange).then(this.oTable.qunit.whenRenderingFinished).then(function() {
 			TableQUnitUtils.assertNoDataVisible(assert, that.oTable, false, "Bind");
 			that.assertNoDataVisibilityChangeCount(assert, 1);
-			that.oTable.rerender();
+			that.oTable.invalidate();
+			Core.applyChanges();
 		}).then(this.oTable.qunit.whenRenderingFinished).then(function() {
 			TableQUnitUtils.assertNoDataVisible(assert, that.oTable, false, "Rerender");
 			that.assertNoDataVisibilityChangeCount(assert, 0);
@@ -1422,6 +1692,38 @@ sap.ui.define([
 		oTable.destroy();
 	});
 
+	/**
+	 * @deprecated As of version 1.76
+	 */
+	QUnit.test("Correct Proxy Calls - collapseRecursive property", function(assert) {
+		// Initialise spies
+		var fnSetCollapseRecursiveSpy = sinon.spy(this.oProxy, "setCollapseRecursive");
+
+		// Stub oTable.getBinding
+		var fnGetBinding = sinon.stub(this.oTable, "getBinding");
+		fnGetBinding.returns({
+			getMetadata: function() {
+				return {
+					getName: function() {
+						return undefined;
+					}
+				};
+			},
+			getNodes: function() {
+				return [];
+			}
+		});
+
+		// setCollapseRecursive
+		this.oTable.setCollapseRecursive(true);
+		assert.ok(fnSetCollapseRecursiveSpy.called, "proxy#setCollapseRecursive was called");
+
+		// Restore spies and stubs
+		fnSetCollapseRecursiveSpy.restore();
+
+		fnGetBinding.restore();
+	});
+
 	QUnit.test("Correct Proxy Calls", function(assert) {
 		// Initialise spies
 		var fnGetContextsSpy = sinon.spy(this.oProxy, "getContexts");
@@ -1432,7 +1734,6 @@ sap.ui.define([
 		var fnIsExpandedSpy = sinon.spy(this.oProxy, "isExpanded");
 		var fnGetContextByIndexSpy = sinon.spy(this.oProxy, "getContextByIndex");
 		var fnGetNodeByIndexSpy = sinon.spy(this.oProxy, "getNodeByIndex");
-		var fnSetCollapseRecursiveSpy = sinon.spy(this.oProxy, "setCollapseRecursive");
 
 		// Stub oTable.getBinding
 		var fnGetBinding = sinon.stub(this.oTable, "getBinding");
@@ -1481,10 +1782,6 @@ sap.ui.define([
 		this.oTable.isExpanded(0);
 		assert.ok(fnIsExpandedSpy.called, "proxy#isExpanded was called");
 
-		// setCollapseRecursive
-		this.oTable.setCollapseRecursive(true);
-		assert.ok(fnSetCollapseRecursiveSpy.called, "proxy#setCollapseRecursive was called");
-
 		// Restore spies and stubs
 		fnGetContextsSpy.restore();
 		fnExpandSpy.restore();
@@ -1494,7 +1791,6 @@ sap.ui.define([
 		fnIsExpandedSpy.restore();
 		fnGetContextByIndexSpy.restore();
 		fnGetNodeByIndexSpy.restore();
-		fnSetCollapseRecursiveSpy.restore();
 
 		fnGetBinding.restore();
 	});

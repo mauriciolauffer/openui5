@@ -25,11 +25,10 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
   _sapIllusDialogSimpleBell = _interopRequireDefault(_sapIllusDialogSimpleBell);
   _sapIllusSceneSimpleBell = _interopRequireDefault(_sapIllusSceneSimpleBell);
   _sapIllusSpotSimpleBell = _interopRequireDefault(_sapIllusSpotSimpleBell);
-
   function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
   const name = "SimpleBell";
   const set = "fiori";
+  const collection = "V4";
   const title = _i18nDefaults.IM_TITLE_NONOTIFICATIONS;
   const subtitle = _i18nDefaults.IM_SUBTITLE_NONOTIFICATIONS;
   (0, _Illustrations.registerIllustration)(name, {
@@ -38,6 +37,7 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
     spotSvg: _sapIllusSpotSimpleBell.default,
     title,
     subtitle,
-    set
+    set,
+    collection
   });
 });

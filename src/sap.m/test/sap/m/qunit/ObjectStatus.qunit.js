@@ -11,6 +11,7 @@ sap.ui.define([
 	"sap/m/library",
 	"sap/ui/events/KeyCodes",
 	"sap/ui/core/Core",
+	"sap/m/Label",
 	"sap/ui/events/jquery/EventExtension" // side effect: provides jQuery.event.prototype.getMark
 ], function(
 	qutils,
@@ -23,7 +24,8 @@ sap.ui.define([
 	Panel,
 	mobileLibrary,
 	KeyCodes,
-	oCore
+	oCore,
+	Label
 ) {
 	"use strict";
 
@@ -614,8 +616,8 @@ sap.ui.define([
 		oCore.applyChanges();
 
 		// Assert
-		assert.ok(document.getElementById(sId + "-state"), "Hidden state text element has been created");
-		assert.strictEqual(document.getElementById(sId + "-state").innerHTML, oObjectStatus._getStateText(ValueState.Error),
+		assert.ok(document.getElementById(sId + "-state-text"), "Hidden state text element has been created");
+		assert.strictEqual(document.getElementById(sId + "-state-text").innerHTML, oObjectStatus._getStateText(ValueState.Error),
 			"The value of the hidden state text element is proper");
 
 		//Cleanup
@@ -646,6 +648,34 @@ sap.ui.define([
 
 		//Cleanup
 		oObjectStatus.destroy();
+	});
+
+	QUnit.test("Labelling using aria-labelledby", function (assert) {
+		// Arrange
+		var sId = "oslab",
+		oLabel = new Label("info", {
+			text: "Label",
+			labelFor: sId
+		}).placeAt("qunit-fixture"),
+		oObjectStatus = new ObjectStatus(sId, {
+			title: "Curious",
+			text: "Cat",
+			icon: "sap-icon://information",
+			state: "Information",
+			active: true
+		}).placeAt("qunit-fixture");
+
+		// Act
+		oCore.applyChanges();
+
+		// Assert
+		assert.strictEqual(oObjectStatus.getDomRef().getAttribute("aria-labelledby"),
+			"info oslab-title oslab-text oslab-statusIcon",
+			"ObjecStatus's content information is added in aria-labelledby alongside the label");
+
+		// Cleanup
+		oObjectStatus.destroy();
+		oLabel.destroy();
 	});
 
 	QUnit.test("Internal icon ARIA for icon-only ObjectStatus", function (assert) {
@@ -686,6 +716,27 @@ sap.ui.define([
 		// Assert
 		assert.strictEqual($oInternalIcon.attr("role"), "presentation", "Icon is decorative in non-icon-only ObjectStatus");
 		assert.notOk($oInternalIcon.attr("aria-label"), "Icon doesn't have alternative text in non-icon-only ObjectStatus");
+
+		// Cleanup
+		oObjectStatus.destroy();
+	});
+
+	QUnit.test("accessibilityState on inactive control instance", function (assert) {
+		// Arrange
+		var oObjectStatus = new ObjectStatus({
+			ariaLabelledBy: ["label"],
+			ariaDescribedBy: ["description"],
+			active: false,
+			text: "test"
+		});
+
+		oObjectStatus.placeAt("qunit-fixture");
+		oCore.applyChanges();
+		var oObjectStatusDOM = oObjectStatus.getDomRef();
+
+		// Assert
+		assert.notOk(oObjectStatusDOM.getAttribute("aria-labelledby"), "The aria-labelledby attribute is no set");
+		assert.notOk(oObjectStatusDOM.getAttribute("aria-describedby"), "The aria-labelledby attribute is no set");
 
 		// Cleanup
 		oObjectStatus.destroy();

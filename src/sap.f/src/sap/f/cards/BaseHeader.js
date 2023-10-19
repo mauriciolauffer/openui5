@@ -7,6 +7,7 @@ sap.ui.define([
 	"sap/ui/core/IntervalTrigger",
 	"sap/ui/core/format/DateFormat",
 	"sap/ui/core/date/UniversalDate",
+	"sap/ui/core/library",
 	"sap/m/Text"
 ], function (
 	Control,
@@ -14,6 +15,7 @@ sap.ui.define([
 	IntervalTrigger,
 	DateFormat,
 	UniversalDate,
+	coreLibrary,
 	Text
 ) {
 	"use strict";
@@ -22,6 +24,8 @@ sap.ui.define([
 	 * @const int The refresh interval for dataTimestamp in ms.
 	 */
 	var DATA_TIMESTAMP_REFRESH_INTERVAL = 60000;
+
+	var TextAlign = coreLibrary.TextAlign;
 
 	/**
 	 * Constructor for a new <code>BaseHeader</code>.
@@ -60,6 +64,12 @@ sap.ui.define([
 				dataTimestamp: { type: "string", defaultValue: ""},
 
 				/**
+				 * Defines the status text visibility.
+				 * @experimental Since 1.116 this feature is experimental and the API may change.
+				 */
+				statusVisible: { type: "boolean", defaultValue: true },
+
+				/**
 				 * Set to true to show that the data timestamp is currently updating.
 				 * @private
 				 */
@@ -69,7 +79,13 @@ sap.ui.define([
 				 * Set to false if header shouldn't be focusable.
 				 * @private
 				 */
-				focusable: { type: "boolean", defaultValue: true, visibility: "hidden" }
+				focusable: { type: "boolean", defaultValue: true, visibility: "hidden" },
+
+				/**
+				 * If the header should be rendered as a tile.
+				 * @private
+				 */
+				useTileLayout: { type: "boolean", group: "Appearance", visibility: "hidden" }
 			},
 			aggregations: {
 				/**
@@ -87,7 +103,14 @@ sap.ui.define([
 				/**
 				 * Defines an error which will be displayed in the header.
 				 */
-				_error: { type: "sap.ui.core.Control", multiple: false, visibility: "hidden" }
+				_error: { type: "sap.ui.core.Control", multiple: false, visibility: "hidden" },
+
+				/**
+				 * Show as a banner in the header area. Use for example for system info and application shortcut.
+				 * @experimental Since 1.118. For usage only by Work Zone.
+				 * @since 1.118
+				 */
+				bannerLines: { type: "sap.m.Text", group: "Appearance", multiple: true  }
 			}
 		}
 	});
@@ -112,11 +135,18 @@ sap.ui.define([
 	};
 
 	BaseHeader.prototype.onBeforeRendering = function () {
-		var oToolbar = this.getToolbar();
+		var oToolbar = this.getToolbar(),
+			aBannerLines = this.getBannerLines();
 
 		if (oToolbar) {
 			oToolbar.addStyleClass("sapFCardHeaderToolbar");
 			oToolbar.removeEventDelegate(this._oToolbarDelegate, this);
+		}
+
+		if (aBannerLines) {
+			aBannerLines.forEach((oText) => {
+				oText.setTextAlign(TextAlign.End);
+			});
 		}
 	};
 
@@ -133,13 +163,13 @@ sap.ui.define([
 	};
 
 	BaseHeader.prototype.ontap = function (oEvent) {
-		if (this._isInteractive() && !this._isInsideToolbar(oEvent.target)) {
+		if (this.isInteractive() && !this._isInsideToolbar(oEvent.target)) {
 			this.firePress();
 		}
 	};
 
 	BaseHeader.prototype.onsapselect = function (oEvent) {
-		if (this._isInteractive() && !this._isInsideToolbar(oEvent.target)) {
+		if (this.isInteractive() && !this._isInsideToolbar(oEvent.target)) {
 			this.firePress();
 		}
 	};
@@ -246,7 +276,7 @@ sap.ui.define([
 		sFormattedText = oDateFormat.format(oUniversalDate);
 
 		// no less than "1 minute ago" should be shown, "30 seconds ago" should not be shown
-		if (oUniversalDate.getTime() + 59000 > (new Date()).getTime()) {
+		if (oUniversalDate.getTime() + 59000 > Date.now()) {
 			sFormattedText = "now"; //@todo get formatted (translated text) for "now"
 		}
 
@@ -321,6 +351,16 @@ sap.ui.define([
 	};
 
 	/**
+	 * Gets the ids of the banner lines to be used in aria-labelledby
+	 * @returns {string} The ids of the banner lines.
+	 */
+	BaseHeader.prototype._getBannerLinesIds = function () {
+		return this.getBannerLines().map((oBannerLine) => {
+			return oBannerLine.getId();
+		}).join(" ");
+	};
+
+	/**
 	 * Returns if the control is inside a sap.f.GridContainer
 	 *
 	 * @private
@@ -339,7 +379,7 @@ sap.ui.define([
 		return oParent.isA("sap.f.GridContainer");
 	};
 
-	BaseHeader.prototype._isInteractive = function() {
+	BaseHeader.prototype.isInteractive = function() {
 		return this.hasListeners("press");
 	};
 

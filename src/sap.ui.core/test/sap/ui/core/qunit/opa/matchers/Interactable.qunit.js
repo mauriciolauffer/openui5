@@ -10,6 +10,7 @@ sap.ui.define([
 	'sap/ui/test/opaQunit',
 	'sap/ui/test/Opa5',
 	'sap/ui/test/_LogCollector',
+	"sap/ui/qunit/utils/nextUIUpdate",
 	'../utils/customQUnitAssertions'
 ], function (Interactable,
 			 $,
@@ -20,7 +21,8 @@ sap.ui.define([
 			 Dialog,
 			 opaTest,
 			 Opa5,
-			 _LogCollector) {
+			 _LogCollector,
+			 nextUIUpdate) {
 	"use strict";
 
 	[NavContainer, App].forEach(function (FnConstructor) {
@@ -42,7 +44,7 @@ sap.ui.define([
 
 				this.oInteractable = new Interactable();
 				this.oSpy = sinon.spy(this.oInteractable._oLogger, "debug");
-				sap.ui.getCore().applyChanges();
+				return nextUIUpdate();
 			},
 
 			afterEach: function () {
@@ -101,9 +103,9 @@ sap.ui.define([
 				content: this.oButtonInDialog
 			});
 			this.oButtonInPage.placeAt("qunit-fixture");
-			sap.ui.getCore().applyChanges();
 			// Async tests use global spy
 			this.oSpy = sinon.spy(this.oInteractable._oLogger, "debug");
+			return nextUIUpdate();
 		},
 		afterEach: function () {
 			this.oButtonInPage.destroy();
@@ -144,12 +146,18 @@ sap.ui.define([
 			success: function (oButton) {
 				oButtonInPage = oButton;
 				// success => button is found => button is interactable before dialog is opened
-				oDialog = new (Opa5.getWindow().sap.m.Dialog)();
-				oDialog.open();
+				Opa5.getWindow().sap.ui.require(["sap/m/Dialog"], function(Dialog) {
+					oDialog = new Dialog();
+					oDialog.open();
+				});
 			}
 		});
 		When.waitFor({
 			interactable: false,
+			check: function() {
+				// additionally wait until the dialog has been loaded and created
+				return oDialog != null;
+			},
 			success: function () {
 				var bResultAfterOpening = this.oInteractable.isMatching(oButtonInPage);
 				Opa5.assert.ok(!bResultAfterOpening, "Control isn't matching after a dialog is opened");
@@ -221,14 +229,14 @@ sap.ui.define([
 
 			this.oButton = new Button();
 			this.oButton.placeAt("qunit-fixture");
-			sap.ui.getCore().applyChanges();
 			// Async tests use global spy
 			this.oSpy = sinon.spy(this.oInteractable._oLogger, "debug");
+			return nextUIUpdate();
 		},
 		afterEach: function () {
 			this.oSpy.restore();
 			this.oButton.destroy();
-			sap.ui.getCore().applyChanges();
+			return nextUIUpdate();
 		}
 	});
 

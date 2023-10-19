@@ -29,10 +29,10 @@ sap.ui.define([
 	};
 
 	QUnit.module("handleUrlParametersOnExit", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oReloadStub = sandbox.stub(ReloadManager, "triggerReload");
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
@@ -54,12 +54,12 @@ sap.ui.define([
 	});
 
 	QUnit.module("checkReloadOnExit", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oMessageBoxStub = sandbox.stub(Utils, "showMessageBox").resolves();
 			this.oGetReloadMethodStub = sandbox.stub(ReloadInfoAPI, "getReloadMethod");
 			ReloadManager.setUShellServices({URLParsing: "foo"});
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
@@ -163,6 +163,32 @@ sap.ui.define([
 				},
 				testName: "with only allContexts",
 				expectedMessageKey: "MSG_RELOAD_WITHOUT_ALL_CONTEXT"
+			},
+			{
+				oReloadInfo: {
+					hasHigherLayerChanges: false,
+					layer: Layer.CUSTOMER,
+					isDraftAvailable: false,
+					allContexts: false,
+					initialDraftGotActivated: false,
+					changesNeedReload: false,
+					switchEndUserAdaptation: true
+				},
+				testName: "with only switchEndUserAdaptation",
+				expectedMessageKey: "MSG_RELOAD_OTHER_CONTEXT_BASED_ADAPTATION"
+			},
+			{
+				oReloadInfo: {
+					hasHigherLayerChanges: true,
+					layer: Layer.CUSTOMER,
+					isDraftAvailable: false,
+					allContexts: false,
+					initialDraftGotActivated: false,
+					changesNeedReload: false,
+					switchEndUserAdaptation: true
+				},
+				testName: "with hasHigherLayerChanges in Customer layer and switchEndUserAdaptation",
+				expectedMessageKey: "MSG_RELOAD_WITH_PERSONALIZATION_AND_CONTEXT_BASED_ADAPTATION"
 			}
 		].forEach(function(oTestInfo) {
 			QUnit.test(oTestInfo.testName, function(assert) {
@@ -181,16 +207,25 @@ sap.ui.define([
 	});
 
 	QUnit.module("handleReloadOnStart", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oMessageBoxStub = sandbox.stub(Utils, "showMessageBox").resolves();
 			this.oGetReloadReasonsStub = sandbox.stub(ReloadInfoAPI, "getReloadReasonsForStart");
 			this.oReloadStub = sandbox.stub(ReloadManager, "triggerReload");
 			this.oAutoStartStub = sandbox.stub(ReloadManager, "enableAutomaticStart");
-			this.oLoadDraftStub = sandbox.stub(VersionsAPI, "loadDraftForApplication");
-			this.oLoadVersionStub = sandbox.stub(VersionsAPI, "loadVersionForApplication");
+			this.oLoadVersionStubFinished = false;
+			var fnSlowCall = function() {
+				return new Promise(function(resolve) {
+					setTimeout(function() {
+						this.oLoadVersionStubFinished = true;
+						resolve();
+					}.bind(this), 0);
+				}.bind(this));
+			}.bind(this);
+			this.oLoadDraftStub = sandbox.stub(VersionsAPI, "loadDraftForApplication").callsFake(fnSlowCall);
+			this.oLoadVersionStub = sandbox.stub(VersionsAPI, "loadVersionForApplication").callsFake(fnSlowCall);
 			ReloadManager.setUShellServices({URLParsing: "foo", CrossApplicationNavigation: "bar"});
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
@@ -224,6 +259,10 @@ sap.ui.define([
 
 		QUnit.test("with versioning and with a reload reason", function(assert) {
 			this.oGetReloadReasonsStub.resolves({hasHigherLayerChanges: true});
+			this.oReloadStub.callsFake(function() {
+				assert.ok(this.oLoadVersionStubFinished, "then calls are properly chained");
+				return Promise.resolve();
+			}.bind(this));
 			return ReloadManager.handleReloadOnStart({versioningEnabled: true}).then(function() {
 				assert.strictEqual(this.oLoadDraftStub.callCount, 0, "the draft was not loaded");
 				assert.strictEqual(this.oLoadVersionStub.callCount, 1, "the version was loaded");
@@ -232,6 +271,10 @@ sap.ui.define([
 
 		QUnit.test("with versioning and a draft and with a reload reason", function(assert) {
 			this.oGetReloadReasonsStub.resolves({isDraftAvailable: true});
+			this.oReloadStub.callsFake(function() {
+				assert.ok(this.oLoadVersionStubFinished, "then calls are properly chained");
+				return Promise.resolve();
+			}.bind(this));
 			return ReloadManager.handleReloadOnStart({versioningEnabled: true}).then(function() {
 				assert.strictEqual(this.oLoadDraftStub.callCount, 1, "the draft was loaded");
 				assert.strictEqual(this.oLoadVersionStub.callCount, 0, "the version was not loaded");
@@ -244,6 +287,28 @@ sap.ui.define([
 				assert.strictEqual(this.oLoadDraftStub.callCount, 1, "the draft was loaded");
 				assert.strictEqual(this.oLoadDraftStub.getCall(0).args[0].allContexts, true, "with allContext=true parameter");
 				assert.strictEqual(this.oLoadVersionStub.callCount, 0, "the version was not loaded");
+			}.bind(this));
+		});
+
+		QUnit.test("with versioning and a draft and all context and adaptationId and with a reload reason", function(assert) {
+			this.oGetReloadReasonsStub.resolves({isDraftAvailable: true, allContexts: true, adaptationId: "id_1234"});
+			return ReloadManager.handleReloadOnStart({versioningEnabled: true}).then(function() {
+				assert.strictEqual(this.oLoadDraftStub.callCount, 1, "the draft was loaded");
+				var oLoadDraftPropertyBag = this.oLoadDraftStub.getCall(0).args[0];
+				assert.strictEqual(oLoadDraftPropertyBag.allContexts, true, "with allContext=true parameter");
+				assert.strictEqual(oLoadDraftPropertyBag.adaptationId, "id_1234", "with adaptationId  parameter");
+				assert.strictEqual(this.oLoadVersionStub.callCount, 0, "the version was not loaded");
+			}.bind(this));
+		});
+
+		QUnit.test("with versioning and all context and adaptationId and with a reload reason", function(assert) {
+			this.oGetReloadReasonsStub.resolves({hasHigherLayerChanges: true, allContexts: true, adaptationId: "id_1234"});
+			return ReloadManager.handleReloadOnStart({versioningEnabled: true}).then(function() {
+				assert.strictEqual(this.oLoadDraftStub.callCount, 0, "the draft was loaded");
+				assert.strictEqual(this.oLoadVersionStub.callCount, 1, "the version was not loaded");
+				var oLoadVersionPropertyBag = this.oLoadVersionStub.getCall(0).args[0];
+				assert.strictEqual(oLoadVersionPropertyBag.allContexts, true, "with allContext=true parameter");
+				assert.strictEqual(oLoadVersionPropertyBag.adaptationId, "id_1234", "with adaptationId  parameter");
 			}.bind(this));
 		});
 
@@ -321,7 +386,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("FLP: triggerReload", {
-		beforeEach: function() {
+		beforeEach() {
 			sandbox.stub(FlUtils, "getUshellContainer").returns(true);
 			this.oHardReloadStub = sandbox.stub(ReloadManager, "reloadPage");
 			this.oHandleParamsOnStartStub = sandbox.stub(ReloadInfoAPI, "handleParametersOnStart");
@@ -341,7 +406,7 @@ sap.ui.define([
 				CrossApplicationNavigation: {toExternal: this.oToExternalStub}
 			});
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
@@ -403,14 +468,14 @@ sap.ui.define([
 	});
 
 	QUnit.module("Standalone: triggerReload", {
-		beforeEach: function() {
+		beforeEach() {
 			sandbox.stub(FlUtils, "getUshellContainer").returns(false);
 			this.oHardReloadStub = sandbox.stub(ReloadManager, "reloadPage");
 			this.oSetUriStub = sandbox.stub(ReloadManager, "setUriParameters");
 			this.oHandleParamsOnStartStub = sandbox.stub(ReloadInfoAPI, "handleParametersOnStart");
 			this.oHandleUrlParamsStub = sandbox.stub(ReloadInfoAPI, "handleUrlParameters");
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
@@ -449,19 +514,19 @@ sap.ui.define([
 	});
 
 	QUnit.module("automatic start", {
-		beforeEach: function() {
+		beforeEach() {
 			sandbox.stub(FlexRuntimeInfoAPI, "getFlexReference");
 			ReloadManager.disableAutomaticStart(Layer.USER);
 			ReloadManager.disableAutomaticStart(Layer.CUSTOMER);
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
 		QUnit.test("with USER layer", function(assert) {
 			FlexRuntimeInfoAPI.getFlexReference.returns("flexReference");
 			ReloadManager.enableAutomaticStart(Layer.USER, {});
-			var sValue = window.sessionStorage.getItem("sap.ui.rta.restart." + Layer.USER);
+			var sValue = window.sessionStorage.getItem(`sap.ui.rta.restart.${Layer.USER}`);
 			assert.strictEqual(sValue, "flexReference", "the value is correct");
 			assert.strictEqual(ReloadManager.needsAutomaticStart(Layer.USER), true, "restart is needed in the USER layer");
 			assert.strictEqual(ReloadManager.needsAutomaticStart(Layer.CUSTOMER), false, "restart is not needed in a different layer");
@@ -473,8 +538,8 @@ sap.ui.define([
 
 		QUnit.test("without reference", function(assert) {
 			ReloadManager.enableAutomaticStart(Layer.CUSTOMER, {});
-			window.sessionStorage.getItem("sap.ui.rta.restart." + Layer.CUSTOMER);
-			var sValue = window.sessionStorage.getItem("sap.ui.rta.restart." + Layer.CUSTOMER);
+			window.sessionStorage.getItem(`sap.ui.rta.restart.${Layer.CUSTOMER}`);
+			var sValue = window.sessionStorage.getItem(`sap.ui.rta.restart.${Layer.CUSTOMER}`);
 			assert.strictEqual(sValue, "true", "the value is correct");
 		});
 	});

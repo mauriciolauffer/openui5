@@ -4,19 +4,21 @@
 
 // Provides class sap.ui.dt.MutationObserver.
 sap.ui.define([
-	"sap/ui/thirdparty/jquery",
-	"sap/ui/dt/OverlayUtil",
+	"sap/base/util/restricted/_intersection",
+	"sap/base/util/restricted/_uniq",
+	"sap/ui/core/StaticArea",
 	"sap/ui/base/ManagedObject",
 	"sap/ui/dt/DOMUtil",
-	"sap/base/util/restricted/_intersection",
-	"sap/base/util/restricted/_uniq"
+	"sap/ui/dt/OverlayUtil",
+	"sap/ui/thirdparty/jquery"
 ], function(
-	jQuery,
-	OverlayUtil,
+	_intersection,
+	_uniq,
+	StaticArea,
 	ManagedObject,
 	DOMUtil,
-	_intersection,
-	_uniq
+	OverlayUtil,
+	jQuery
 ) {
 	"use strict";
 
@@ -33,14 +35,14 @@ sap.ui.define([
 	 * @private
 	 * @since 1.30
 	 * @alias sap.ui.dt.MutationObserver
-	 * @experimental Since 1.30. This class is experimental and provides only limited functionality. Also the API might be modified in future.
 	 */
 	var MutationObserver = ManagedObject.extend("sap.ui.dt.MutationObserver", /** @lends sap.ui.dt.MutationObserver.prototype */ {
 		metadata: {
 			library: "sap.ui.dt",
 			events: {
 			/**
-			 * Event fired when the observed object is modified or some changes which might affect dom position and styling of overlays happens
+			 * Event fired when the observed object is modified or some changes which might affect dom position
+			 * and styling of overlays happens
 			 */
 				domChanged: {
 					parameters: {
@@ -99,7 +101,7 @@ sap.ui.define([
 	 * @param {HTMLElement} mParams.target - DOM Node of the target
 	 * @param {string} mParams.type - Type of the mutation, possible values = childList | attributes, see {@link https://developer.mozilla.org/en-US/docs/Web/API/MutationRecord}
 	 */
-	MutationObserver.prototype.ignoreOnce = function (mParams) {
+	MutationObserver.prototype.ignoreOnce = function(mParams) {
 		this._aIgnoredMutations.push(mParams);
 	};
 
@@ -109,7 +111,7 @@ sap.ui.define([
 	 * @param {function} fnDomChangedHandler - Callbackfunction is called on a mutation for the overlay
 	 * @param {boolean} [bIsRoot] - <code>true</code> if overlay is a root overlay
 	 */
-	MutationObserver.prototype.registerHandler = function (sId, fnDomChangedHandler, bIsRoot) {
+	MutationObserver.prototype.registerHandler = function(sId, fnDomChangedHandler, bIsRoot) {
 		if (!this._mMutationHandlers[sId]) {
 			this._mMutationHandlers[sId] = [];
 			this._bHandlerRegistered = true;
@@ -124,7 +126,7 @@ sap.ui.define([
 	 * Deregister mutation handler for an overlay.
 	 * @param {string} sId - Overlay id as registration key
 	 */
-	MutationObserver.prototype.deregisterHandler = function (sId) {
+	MutationObserver.prototype.deregisterHandler = function(sId) {
 		delete this._mMutationHandlers[sId];
 		if (Object.keys(this._mMutationHandlers).length === 0) {
 			this._bHandlerRegistered = false;
@@ -134,18 +136,16 @@ sap.ui.define([
 		});
 	};
 
-	MutationObserver.prototype._hasScrollbar = function (bScrollbarOnElement, $Element) {
+	MutationObserver.prototype._hasScrollbar = function(bScrollbarOnElement, $Element) {
 		return bScrollbarOnElement || DOMUtil.hasScrollBar($Element);
 	};
 
-	MutationObserver.prototype._getIdsWhenRegistered = function (bScrollbarOnElement, sElementId, mElementIds) {
+	MutationObserver.prototype._getIdsWhenRegistered = function(bScrollbarOnElement, sElementId, mElementIds) {
 		var sRegisteredParentId;
 		if (sElementId && this._mMutationHandlers[sElementId]) {
 			sRegisteredParentId = sElementId;
 			// remember the closest registered element id on mutated dom node
-			if (!mElementIds.closestElementInWhitlist) {
-				mElementIds.closestElementInWhitlist = sElementId;
-			}
+			mElementIds.closestElementInWhitlist ||= sElementId;
 		}
 		mElementIds.result = bScrollbarOnElement ? sRegisteredParentId : mElementIds.closestElementInWhitlist;
 		return mElementIds;
@@ -155,7 +155,8 @@ sap.ui.define([
 	 * Searches for the closest element that is registered. However, we also need to consider the scrollbar use case.
 	 * There is no notification from <code>MutationObserver</code> when scrollbars appear on parent controls.
 	 * Example: A mutation from a node inside a container is detected that is also mutated with a new scrollbar (but without own mutations).
-	 * This means that the mutation has to be handled not only for the triggering element but also for the container element that mutated with the scrollbar.
+	 * This means that the mutation has to be handled not only for the triggering element but also for the container element that mutated
+	 * with the scrollbar.
 	 * The following cases are possible and must be considered:
 	 *
 	 *  Return values:
@@ -163,14 +164,15 @@ sap.ui.define([
 	 *			=> returns the last registered element ID
 	 *		2. Registered element found but no scrollbar element available on parents
 	 *			=> returns the closest element ID registered on mutated node
-	 *		3. Registered element with scrollbar element available on parents but not registered itself and without own registered parents found
+	 *		3. Registered element with scrollbar element available on parents but not registered itself
+	 *			and without own registered parents found
 	 *			=> returns the closest element ID registered on mutated node
 	 *		4. Registered element with scrollbar element available on parents and is registered itself of with own registered parents found
 	 *			=> returns the closest element ID registered on scrollbar element
 	 *		5. No registered element available
 	 *			=> undefined
 	 */
-	MutationObserver.prototype._getClosestParentIdForNodeRegisteredWithScrollbar = function (sNodeId, oNode) {
+	MutationObserver.prototype._getClosestParentIdForNodeRegisteredWithScrollbar = function(sNodeId, oNode) {
 		var mElementIds = {
 			closestElementInWhitlist: undefined,
 			result: undefined
@@ -191,10 +193,11 @@ sap.ui.define([
 			&& $ClosestParentElement[0] !== document
 		);
 
-		return mElementIds.result || mElementIds.closestElementInWhitlist/* when element with scrollbar and his parents are not registered */;
+		return mElementIds.result
+			|| mElementIds.closestElementInWhitlist; /* when element with scrollbar and his parents are not registered */
 	};
 
-	MutationObserver.prototype._isNodeOverlayRelated = function (oNode, oMutation) {
+	MutationObserver.prototype._isNodeOverlayRelated = function(oNode, oMutation) {
 		var sOverlayContainerId = "overlay-container";
 		if (DOMUtil.contains(sOverlayContainerId, oNode)) {
 			return true;
@@ -204,13 +207,13 @@ sap.ui.define([
 				&& oMutation.addedNodes
 				&& oMutation.addedNodes[0]
 				&& oMutation.addedNodes[0].getAttribute
-				&& oMutation.addedNodes[0].getAttribute('id') === sOverlayContainerId;
+				&& oMutation.addedNodes[0].getAttribute("id") === sOverlayContainerId;
 		}
 		return false;
 	};
 
-	MutationObserver.prototype._getRelevantElementId = function (oNode, oMutation) {
-		var sNodeId = oNode && oNode.getAttribute && oNode.getAttribute('id');
+	MutationObserver.prototype._getRelevantElementId = function(oNode, oMutation) {
+		var sNodeId = oNode && oNode.getAttribute && oNode.getAttribute("id");
 		var sRelevantElementId;
 		if (
 			// 1. Filter out overlay related mutations (overlays, overlay-container and body mutation when overlay-container is added)
@@ -221,7 +224,7 @@ sap.ui.define([
 			&& document.body.contains(oNode)
 
 			// 3. Ignore direct mutation on static area Node
-			&& sNodeId !== "sap-ui-static"
+			&& sNodeId !== StaticArea.STATIC_UIAREA_ID
 
 			// 4. Node is not part of preserve area
 			&& !DOMUtil.contains("sap-ui-preserve", oNode)
@@ -250,17 +253,17 @@ sap.ui.define([
 		return sRelevantElementId;
 	};
 
-	MutationObserver.prototype._getRelevantElementIdsFromStaticArea = function (oMutation) {
-		return oMutation.target.id === "sap-ui-static"
+	MutationObserver.prototype._getRelevantElementIdsFromStaticArea = function(oMutation) {
+		return oMutation.target.id === StaticArea.STATIC_UIAREA_ID
 			&& 	_intersection(
 				[]
-					.concat(
-						Array.prototype.slice.call(oMutation.addedNodes),
-						Array.prototype.slice.call(oMutation.removedNodes)
-					)
-					.map(function (oNode) {
-						return oNode.id;
-					}),
+				.concat(
+					Array.prototype.slice.call(oMutation.addedNodes),
+					Array.prototype.slice.call(oMutation.removedNodes)
+				)
+				.map(function(oNode) {
+					return oNode.id;
+				}),
 				Object.keys(this._mMutationHandlers)
 			);
 	};
@@ -274,10 +277,11 @@ sap.ui.define([
 				aSource.splice(iIndex, 1);
 				return true;
 			}
+			return false;
 		});
 	};
 
-	MutationObserver.prototype._getTargetNode = function (oMutation) {
+	MutationObserver.prototype._getTargetNode = function(oMutation) {
 		// text mutations have no class list, so we use a parent node as a target
 		var oMutationTarget = oMutation.type === "characterData"
 			? oMutation.target.parentNode
@@ -294,10 +298,10 @@ sap.ui.define([
 		return oMutationTarget;
 	};
 
-	MutationObserver.prototype._callRelevantCallbackFunctions = function (aTargetElementId, sType) {
+	MutationObserver.prototype._callRelevantCallbackFunctions = function(aTargetElementId, sType) {
 		aTargetElementId = _uniq(aTargetElementId);
-		aTargetElementId.forEach(function (sTargetElementId) {
-			(this._mMutationHandlers[sTargetElementId] || []).forEach(function (fnTargetElementCallback) {
+		aTargetElementId.forEach(function(sTargetElementId) {
+			(this._mMutationHandlers[sTargetElementId] || []).forEach(function(fnTargetElementCallback) {
 				fnTargetElementCallback({ type: sType });
 			});
 		}.bind(this));
@@ -313,10 +317,10 @@ sap.ui.define([
 		});
 	}
 
-	MutationObserver.prototype._startMutationObserver = function () {
+	MutationObserver.prototype._startMutationObserver = function() {
 		this._oMutationObserver = new window.MutationObserver(function(aMutations) {
 			if (this._bHandlerRegistered) {
-				var aOverallTargetElementIds = aMutations.reduce(function (aOverallTargetElementIds, oMutation) {
+				var aOverallTargetElementIds = aMutations.reduce(function(aOverallTargetElementIds, oMutation) {
 					var aTargetElementIds = [];
 					var oTargetNode = this._getTargetNode(oMutation);
 					var sTargetElementId = this._getRelevantElementId(oTargetNode, oMutation);
@@ -364,7 +368,7 @@ sap.ui.define([
 		}
 	};
 
-	MutationObserver.prototype._callDomChangedCallback = function (sMutationType, oEvent) {
+	MutationObserver.prototype._callDomChangedCallback = function(sMutationType, oEvent) {
 		var oTarget = oEvent.target;
 		if (this._bHandlerRegistered && oTarget !== window) {
 			var sTargetElementId = this._getRelevantElementId(oTarget);
@@ -374,19 +378,19 @@ sap.ui.define([
 		}
 	};
 
-	MutationObserver.prototype._callDomChangedOnResizeWithRoot = function (sMutationType) {
+	MutationObserver.prototype._callDomChangedOnResizeWithRoot = function(sMutationType) {
 		if (this._aRootIds.length) {
 			if (this._iApplyStylesRequest) {
 				window.cancelAnimationFrame(this._iApplyStylesRequest);
 			}
-			this._iApplyStylesRequest = window.requestAnimationFrame(function () {
+			this._iApplyStylesRequest = window.requestAnimationFrame(function() {
 				this._callRelevantCallbackFunctions(this._aRootIds, sMutationType);
 				delete this._iApplyStylesRequest;
 			}.bind(this));
 		}
 	};
 
-	MutationObserver.prototype._fireDomChangeOnScroll = function (oEvent) {
+	MutationObserver.prototype._fireDomChangeOnScroll = function(oEvent) {
 		var oTarget = oEvent.target;
 		var aTargetElementIds = [];
 		// The line below is required to avoid double scrollbars on the browser
@@ -398,9 +402,9 @@ sap.ui.define([
 				aTargetElementIds.push(sTargetElementId);
 			} else if (
 				// Target Node is an ancestor of one of the root element, but not a static area
-				oTarget.getAttribute("id") !== "sap-ui-static"
+				oTarget.getAttribute("id") !== StaticArea.STATIC_UIAREA_ID
 			) {
-				aTargetElementIds = this._aRootIds.filter(function (sTargetElementId) {
+				aTargetElementIds = this._aRootIds.filter(function(sTargetElementId) {
 					return oTarget.contains(document.getElementById(sTargetElementId));
 				});
 			}

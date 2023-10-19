@@ -4,12 +4,12 @@
 
 // Provides control sap.ui.webc.main.Select.
 sap.ui.define([
-	"sap/ui/webc/common/WebComponent",
+	"sap/ui/core/webc/WebComponent",
 	"./library",
 	"sap/ui/core/EnabledPropagator",
 	"sap/ui/core/library",
-	"./thirdparty/Select",
-	"./thirdparty/features/InputElementsFormSupport"
+	"./thirdparty/features/InputElementsFormSupport",
+	"./thirdparty/Select"
 ], function(WebComponent, library, EnabledPropagator, coreLibrary) {
 	"use strict";
 
@@ -21,10 +21,26 @@ sap.ui.define([
 	 * @param {string} [sId] ID for the new control, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new control
 	 *
-	 * @extends sap.ui.webc.common.WebComponent
+	 * @extends sap.ui.core.webc.WebComponent
 	 * @class
 	 *
-	 * <h3>Overview</h3> The <code>sap.ui.webc.main.Select</code> component is used to create a drop-down list. The items inside the <code>sap.ui.webc.main.Select</code> define the available options by using the <code>sap.ui.webc.main.Option</code> component.
+	 * <h3>Overview</h3>
+	 *
+	 * The <code>sap.ui.webc.main.Select</code> component is used to create a drop-down list.
+	 *
+	 * <h3>Usage</h3>
+	 *
+	 * There are two main usages of the <code>ui5-select></code>.
+	 *
+	 * 1. With Option (<code>sap.ui.webc.main.Option</code>) web component: <br>
+	 * The available options of the Select are defined by using the Option component. The Option comes with predefined design and layout, including <code>icon</code>, <code>text</code> and <code>additional-text</code>. <br>
+	 * <br>
+	 *
+	 *
+	 * 2. With SelectMenu (<code>sap.ui.webc.main.SelectMenu</code>) and SelectMenuOption (<code>sap.ui.webc.main.SelectMenuOption</code>) web components: <br>
+	 * The SelectMenu can be used as alternative to define the Select's dropdown and can be used via the <code>menu</code> property of the Select to reference SelectMenu by its ID. The component gives the possibility to customize the Select's dropdown by slotting entirely custom options (via the SelectMenuOption component) and adding custom styles.
+	 *
+	 * <b>Note:</b> SelectMenu is a popover and placing it top-level in the HTML page is recommended, because some page styles (for example transitions) can misplace the SelectMenu.
 	 *
 	 * <h3>Keyboard Handling</h3> The <code>sap.ui.webc.main.Select</code> provides advanced keyboard handling. <br>
 	 *
@@ -57,10 +73,11 @@ sap.ui.define([
 			properties: {
 
 				/**
-				 * Defines the accessible aria name of the component.
+				 * Defines the accessible ARIA name of the component.
 				 */
 				accessibleName: {
-					type: "string"
+					type: "string",
+					defaultValue: ""
 				},
 
 				/**
@@ -70,7 +87,7 @@ sap.ui.define([
 					type: "boolean",
 					defaultValue: true,
 					mapping: {
-						type: "attribute",
+						type: "property",
 						to: "disabled",
 						formatter: "_mapEnabled"
 					}
@@ -143,6 +160,23 @@ sap.ui.define([
 			aggregations: {
 
 				/**
+				 * Defines the HTML element that will be displayed in the component input part, representing the selected option. <br>
+				 * <br>
+				 *
+				 *
+				 * <b>Note:</b> If not specified and <code>sap.ui.webc.main.SelectMenuOption</code> is used, either the option's <code>display-text</code> or its textContent will be displayed. <br>
+				 * <br>
+				 *
+				 *
+				 * <b>Note:</b> If not specified and <code>sap.ui.webc.main.Option</code> is used, the option's textContent will be displayed.
+				 */
+				label: {
+					type: "sap.ui.core.Control",
+					multiple: true,
+					slot: "label"
+				},
+
+				/**
 				 * Defines the component options.
 				 *
 				 * <br>
@@ -171,6 +205,20 @@ sap.ui.define([
 						to: "accessibleNameRef",
 						formatter: "_getAriaLabelledByForRendering"
 					}
+				},
+
+				/**
+				 * Defines a reference (ID or DOM element) of component's menu of options as alternative to define the select's dropdown. <br>
+				 * <br>
+				 * <b>Note:</b> Usage of <code>sap.ui.webc.main.SelectMenu</code> is recommended.
+				 */
+				menu: {
+					type: "sap.ui.core.Control",
+					multiple: false,
+					mapping: {
+						type: "property",
+						to: "menu"
+					}
 				}
 			},
 			events: {
@@ -179,6 +227,7 @@ sap.ui.define([
 				 * Fired when the selected option changes.
 				 */
 				change: {
+					allowPreventDefault: true,
 					parameters: {
 						/**
 						 * the selected option.
@@ -187,6 +236,34 @@ sap.ui.define([
 							type: "HTMLElement"
 						}
 					}
+				},
+
+				/**
+				 * Fired after the component's dropdown menu closes.
+				 */
+				close: {
+					parameters: {}
+				},
+
+				/**
+				 * Fired when the user navigates through the options, but the selection is not finalized, or when pressing the ESC key to revert the current selection.
+				 */
+				liveChange: {
+					parameters: {
+						/**
+						 * the selected option.
+						 */
+						selectedOption: {
+							type: "HTMLElement"
+						}
+					}
+				},
+
+				/**
+				 * Fired after the component's dropdown menu opens.
+				 */
+				open: {
+					parameters: {}
 				}
 			},
 			getters: ["selectedOption"]
@@ -194,7 +271,7 @@ sap.ui.define([
 	});
 
 	/**
-	 * Returns the currently selected option.
+	 * Returns the currently selected <code>ui5-option</code> element.
 	 * @public
 	 * @name sap.ui.webc.main.Select#getSelectedOption
 	 * @function

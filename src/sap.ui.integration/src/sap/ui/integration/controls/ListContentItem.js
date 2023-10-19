@@ -5,26 +5,34 @@
 sap.ui.define([
 	"sap/ui/integration/library",
 	"./ListContentItemRenderer",
+	"sap/ui/integration/controls/ObjectStatus",
+	"sap/m/library",
 	"sap/m/Avatar",
 	"sap/m/AvatarShape",
 	"sap/m/AvatarSize",
 	"sap/m/ListItemBase",
 	"sap/ui/core/Core",
-	"sap/ui/core/library"
+	"sap/ui/core/library",
+	"sap/ui/integration/util/BindingResolver"
 ], function (
 	library,
 	ListContentItemRenderer,
+	ObjectStatus,
+	mLibrary,
 	Avatar,
 	AvatarShape,
 	AvatarSize,
 	ListItemBase,
 	Core,
-	coreLibrary
+	coreLibrary,
+	BindingResolver
 ) {
 	"use strict";
 
 	var AttributesLayoutType = library.AttributesLayoutType;
 	var ValueState = coreLibrary.ValueState;
+	var EmptyIndicatorMode = mLibrary.EmptyIndicatorMode;
+	var AvatarImageFitType = mLibrary.AvatarImageFitType;
 
 	/**
 	 * Constructor for a new ListContentItem.
@@ -56,6 +64,12 @@ sap.ui.define([
 				 * Defines the additional information for the title.
 				 */
 				description: { type: "string", group: "Misc", defaultValue: null },
+
+				/**
+				 * Defines whether the description should be visible.
+				 * @since 1.116
+				 */
+				descriptionVisible: { type: "boolean", defaultValue: true },
 
 				/**
 				 * Defines the list item icon.
@@ -103,6 +117,12 @@ sap.ui.define([
 				info: { type : "string", group: "Misc", defaultValue: null },
 
 				/**
+				 * Defines whether the info should be visible.
+				 * @since 1.115
+				 */
+				infoVisible: {type: "boolean", defaultValue: true },
+
+				/**
 				 * Defines the value state of the information text.
 				 */
 				infoState: { type : "sap.ui.core.ValueState", group: "Misc", defaultValue: ValueState.None },
@@ -111,6 +131,11 @@ sap.ui.define([
 				 * Defines if info state icon should be shown.
 				 */
 				showInfoStateIcon: { type: "boolean", defaultValue: false },
+
+				/**
+				 * Defines the custom info status icon that should be shown.
+				 */
+				customInfoStatusIcon: { type : "string", group: "Misc", defaultValue: null },
 
 				/**
 				 * Defines the layout type of the attributes.
@@ -127,38 +152,80 @@ sap.ui.define([
 				/**
 				 * Defines the inner avatar control.
 				 */
-				_avatar: { type: "sap.m.Avatar", multiple: false, visibility: "hidden" }
+				_avatar: { type: "sap.m.Avatar", multiple: false, visibility: "hidden" },
+
+				/**
+				 * Defines the inner object status control.
+				 */
+				_objectStatus: { type: "sap.m.ObjectStatus", multiple: false, visibility: "hidden" }
 			}
 		},
 		renderer: ListContentItemRenderer
 	});
 
-	ListContentItem.getLinesCount = function (oConfiguration) {
-		var iLines = 1; // at least 1 line for the mandatory title
+	ListContentItem.getPlaceholderInfo  = function (oResolvedConfigItem) {
+		const aVisibleAttributes = oResolvedConfigItem?.attributes?.filter(function (oAttribute) {
+			return oAttribute.hasOwnProperty("visible") ? oAttribute.visible : true;
+		});
 
-		if (oConfiguration.description) {
+		const bVisibleIcon = oResolvedConfigItem?.icon?.hasOwnProperty("visible") ? oResolvedConfigItem?.icon.visible : !!oResolvedConfigItem?.icon;
+
+		return {
+			hasIcon: bVisibleIcon,
+			attributesLength: aVisibleAttributes ? aVisibleAttributes.length : 0,
+			hasChart: !!oResolvedConfigItem?.chart,
+			hasActionsStrip: !!(oResolvedConfigItem?.actionsStrip?.length > 0),
+			hasDescription: !!oResolvedConfigItem?.description
+		};
+	};
+
+	ListContentItem.getLinesCount = function (oConfiguration, oContent) {
+		let iLines = 1; // at least 1 line for the mandatory title
+		const oResolvedConfig = BindingResolver.resolveValue(oConfiguration, oContent);
+		const oPlaceholderInfo = ListContentItem.getPlaceholderInfo(oResolvedConfig);
+
+		const bDescriptionVisible = oResolvedConfig.description?.hasOwnProperty("visible") ? oResolvedConfig.description?.visible : true;
+		if (oResolvedConfig.description && bDescriptionVisible) {
 			iLines += 1;
 		}
 
-		if (oConfiguration.attributes) {
-			if (oConfiguration.attributesLayoutType === AttributesLayoutType.OneColumn) {
-				iLines = oConfiguration.attributes.length;
-			} else {
-				iLines += Math.ceil(oConfiguration.attributes.length / 2);
-			}
+		const aVisibleAttributesLength = oPlaceholderInfo.attributesLength;
+		if (oResolvedConfig.attributesLayoutType === AttributesLayoutType.OneColumn) {
+			iLines += aVisibleAttributesLength;
+		} else {
+			iLines += Math.ceil(aVisibleAttributesLength / 2);
 		}
 
-		if (oConfiguration.chart) {
+		const bChartVisible = oResolvedConfig.chart?.hasOwnProperty("visible") ? oResolvedConfig.chart?.visible : true;
+		if (oResolvedConfig.chart && bChartVisible) {
 			iLines += 1;
 		}
 
 		return iLines;
 	};
 
+	/**
+	 * Called on before rendering of the control.
+	 * @private
+	 */
+	ListContentItem.prototype.onBeforeRendering = function () {
+		ListItemBase.prototype.onBeforeRendering.apply(this, arguments);
+
+		if (this.isPropertyInitial("iconSize")) {
+			if (this.getLinesCount() === 1){
+				this._getAvatar().setDisplaySize(AvatarSize.XS);
+			} else {
+				this._getAvatar().setDisplaySize(AvatarSize.S);
+			}
+		} else {
+			this._getAvatar().setDisplaySize(this.getIconSize());
+		}
+	};
+
 	ListContentItem.prototype.getLinesCount = function () {
 		var iLines = 1; // at least 1 line for the mandatory title
 
-		if (this.getDescription()) {
+		if (this.getDescription() && this.getDescriptionVisible()) {
 			iLines += 1;
 		}
 
@@ -168,7 +235,7 @@ sap.ui.define([
 			iLines += Math.ceil(this._getVisibleAttributes().length / 2);
 		}
 
-		if (this.getMicrochart()) {
+		if (this.getMicrochart() && this.getMicrochart().getVisible()) {
 			iLines += 1;
 		}
 
@@ -210,7 +277,9 @@ sap.ui.define([
 		var oAvatar = this.getAggregation("_avatar");
 
 		if (!oAvatar) {
-			oAvatar = new Avatar().addStyleClass("sapFCardIcon");
+			oAvatar = new Avatar({
+				imageFitType: AvatarImageFitType.Contain
+			}).addStyleClass("sapFCardIcon");
 			this.setAggregation("_avatar", oAvatar);
 		}
 
@@ -219,11 +288,28 @@ sap.ui.define([
 			.setDisplayShape(this.getIconDisplayShape())
 			.setTooltip(this.getIconAlt())
 			.setInitials(this.getIconInitials())
-			.setDisplaySize(this.getIconSize())
 			.setBackgroundColor(this.getIconBackgroundColor())
 			.setVisible(this.getIconVisible());
 
 		return oAvatar;
+	};
+
+	ListContentItem.prototype._getObjectStatus = function () {
+		var oObjectStatus = this.getAggregation("_objectStatus");
+
+		if (!oObjectStatus) {
+			oObjectStatus = new ObjectStatus();
+			this.setAggregation("_objectStatus", oObjectStatus);
+		}
+
+		oObjectStatus
+			.setText(this.getInfo())
+			.setState(this.getInfoState())
+			.setShowStateIcon(this.getShowInfoStateIcon())
+			.setIcon(this.getCustomInfoStatusIcon())
+			.setEmptyIndicatorMode(EmptyIndicatorMode.On);
+
+		return oObjectStatus;
 	};
 
 	ListContentItem.prototype._getVisibleAttributes = function () {

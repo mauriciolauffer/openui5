@@ -25,11 +25,10 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
   _sapIllusDialogNoTasks_v = _interopRequireDefault(_sapIllusDialogNoTasks_v);
   _sapIllusSceneNoTasks_v = _interopRequireDefault(_sapIllusSceneNoTasks_v);
   _sapIllusSpotNoTasks_v = _interopRequireDefault(_sapIllusSpotNoTasks_v);
-
   function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
   const name = "NoTasks_v1";
   const set = "fiori";
+  const collection = "V4";
   const title = _i18nDefaults.IM_TITLE_NOTASKS;
   const subtitle = _i18nDefaults.IM_SUBTITLE_NOTASKS;
   (0, _Illustrations.registerIllustration)(name, {
@@ -38,6 +37,7 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
     spotSvg: _sapIllusSpotNoTasks_v.default,
     title,
     subtitle,
-    set
+    set,
+    collection
   });
 });

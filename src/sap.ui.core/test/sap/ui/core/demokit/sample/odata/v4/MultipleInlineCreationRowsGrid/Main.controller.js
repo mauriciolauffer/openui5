@@ -4,18 +4,22 @@
 sap.ui.define([
 	"sap/f/library",
 	"sap/m/MessageBox",
+	"sap/ui/core/library",
+	"sap/ui/core/Messaging",
 	"sap/ui/core/message/Message",
 	"sap/ui/core/sample/common/Controller",
 	"sap/ui/model/Sorter",
 	"sap/ui/model/json/JSONModel",
 	"sap/ui/model/odata/v4/SubmitMode",
 	"sap/ui/test/TestUtils"
-], function (library, MessageBox, Message, Controller, Sorter, JSONModel, SubmitMode, TestUtils) {
+], function (library, MessageBox, coreLibrary, Messaging, Message, Controller, Sorter, JSONModel,
+		SubmitMode, TestUtils) {
 	"use strict";
 
 	var oSearchParams = new URLSearchParams(window.location.search),
 		iEmptyRowCount = parseInt(oSearchParams.get("emptyRows") || "2"),
 		LayoutType = library.LayoutType,
+		MessageType = coreLibrary.MessageType,
 		bLegacy;
 
 	return Controller.extend("sap.ui.core.sample.odata.v4.MultipleInlineCreationRowsGrid.Main", {
@@ -114,7 +118,6 @@ sap.ui.define([
 			var oBinding = oEvent.getSource(),
 				oContext = oEvent.getParameter("context"),
 				oMessage = this.mCreateActivateMessages[oContext.getPath()],
-				oMessageManager = sap.ui.getCore().getMessageManager(),
 				that = this;
 
 			if (!oContext.getProperty("ID")) {
@@ -123,17 +126,16 @@ sap.ui.define([
 				if (!oMessage) {
 					oMessage = this.mCreateActivateMessages[oContext.getPath()] = new Message({
 						message : "ID must not be empty",
-						type : sap.ui.core.MessageType.Warning,
+						type : MessageType.Warning,
 						technical : true,
 						processor : oContext.getModel(),
 						target : oContext.getPath() + "/ID"
 					});
 				}
-				oMessageManager.addMessages(oMessage);
+				Messaging.addMessages(oMessage);
 			} else {
-				oMessageManager.removeMessages(oMessage);
+				Messaging.removeMessages(oMessage);
 				delete this.mCreateActivateMessages[oContext.getPath()];
-				this.messagePopover.navigateBack();
 
 				setTimeout(function () { // there are sporadic issues without using setTimeout
 					if (oBinding.getPath() === "/Products") {
@@ -162,10 +164,8 @@ sap.ui.define([
 
 			if (oContext.isInactive() === 1) {
 				oContext.resetChanges();
-				sap.ui.getCore().getMessageManager()
-					.removeMessages(this.mCreateActivateMessages[oContext.getPath()]);
+				Messaging.removeMessages(this.mCreateActivateMessages[oContext.getPath()]);
 				delete this.mCreateActivateMessages[oContext.getPath()];
-				this.messagePopover.navigateBack();
 			} else {
 				MessageBox.confirm(
 					"Do you really want to delete " + sEntity + " " + sObjectId + "?",
@@ -321,16 +321,14 @@ sap.ui.define([
 		},
 
 		removeCreateActivateMessages : function (sEntity) {
-			var oMessageManager = sap.ui.getCore().getMessageManager(),
-				that = this;
+			var that = this;
 
 			Object.keys(this.mCreateActivateMessages).forEach(function (sKey) {
 				if (sKey.includes(sEntity + "($uid")) {
-					oMessageManager.removeMessages(that.mCreateActivateMessages[sKey]);
+					Messaging.removeMessages(that.mCreateActivateMessages[sKey]);
 					delete that.mCreateActivateMessages[sKey];
 				}
 			});
-			this.messagePopover.navigateBack();
 		},
 
 		setPartsContext : function (oContext) {

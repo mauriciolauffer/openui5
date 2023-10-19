@@ -183,8 +183,11 @@ sap.ui.define([
 
 		var oFFL1 = new FacetFilterList();
 		assert.strictEqual(oFFL1.getActive(), true, "List active should be enabled by default");
+		/**
+		 * @deprecated As of version 1.20
+		 */
 		assert.strictEqual(oFFL1.getMultiSelect(), true, "List multi select should be enabled by default");
-		assert.strictEqual(oFFL1.getMode(), ListMode.MultiSelect, "List mode should be multi select by default");
+		assert.strictEqual(oFFL1.getMode(), ListMode.MultiSelect, "List mode should be MultiSelect by default");
 		assert.strictEqual(oFFL1.getGrowing(), true, 'Growing is enabled by default');
 		assert.strictEqual(oFFL1.getShowRemoveFacetIcon(), true, "Remove icon should be shown by default");
 		assert.strictEqual(oFFL1.getRetainListSequence(), false, "List sequence should not be retained by default when list is inactive and made active again");
@@ -194,13 +197,15 @@ sap.ui.define([
 		// Test overrides
 		var oFFL2 = new FacetFilterList({
 			active: false,
-			multiSelect: false,
 			growing: false,
 			mode: ListMode.SingleSelectMaster
 		});
 		assert.strictEqual(oFFL2.getActive(), false, "List active should be disabled");
+		/**
+		 * @deprecated As of version 1.20
+		 */
 		assert.strictEqual(oFFL2.getMultiSelect(), false, "List multi select should be disabled");
-		assert.strictEqual(oFFL2.getMode(), ListMode.SingleSelectMaster, "List mode should be single select master");
+		assert.strictEqual(oFFL2.getMode(), ListMode.SingleSelectMaster, "List mode should be SingleSelectMaster");
 		assert.strictEqual(oFFL2.getGrowing(), false, 'Growing should be disabled');
 		oFFL2.destroy();
 	});
@@ -535,7 +540,7 @@ sap.ui.define([
 
 		oFFL3.destroy();
 
-		var oFFL4 = new FacetFilterList({multiSelect: false});
+		var oFFL4 = new FacetFilterList({mode: ListMode.SingleSelectMaster});
 		assert.ok(!oFF._createSelectAllCheckboxBar(oFFL4), "Checkbox bar should not be created when the list is not multi select");
 		oFFL4.destroy();
 
@@ -996,7 +1001,7 @@ sap.ui.define([
 		assert.ok(oButton, "Popover OK button should be created and added to the popover footer");
 		assert.ok(oToolbarSpacer, "sap.m.ToolbarSpacer is added as a first element in the footer content");
 		assert.ok(oButton.getText(), "Button text should be set");
-		assert.ok(oButton.getTooltip(), "Button tooltip should be set");
+		assert.notOk(oButton.getTooltip(), "Button tooltip should not be set because is same at text of button");
 
 		oButton.firePress();
 		oPopover.attachEventOnce("afterOpen", function() {
@@ -1094,7 +1099,7 @@ sap.ui.define([
 		var oFF = new FacetFilter();
 		var oFFL = new FacetFilterList({
 			title: "List",
-			multiSelect: false // Turn off multi select otherwise the FacetFilter will expect the select all checkbox to exist
+			mode: ListMode.SingleSelectMaster // Turn off multi select otherwise the FacetFilter will expect the select all checkbox to exist
 		});
 		oFFL.addItem(new FacetFilterItem({text: sItemText1}));
 		oFFL.addItem(new FacetFilterItem({text: sItemText2}));
@@ -1108,7 +1113,7 @@ sap.ui.define([
 		oFF._setButtonText(oFFL);
 		assert.ok(oButton.getText().indexOf(sItemText1) !== -1, "Button should be updated with text for the first list item");
 
-		oFFL.setMultiSelect(true);
+		oFFL.setMode(ListMode.MultiSelect);
 		//all items are selected
 		oFFL.getItems()[0].setSelected(true);
 		oFFL.getItems()[1].setSelected(true);
@@ -1132,6 +1137,9 @@ sap.ui.define([
 	QUnit.test("FacetFilterList.init", function(assert) {
 
 		var oFFL = new FacetFilterList();
+		/**
+		 * @deprecated As of version 1.20
+		 */
 		assert.strictEqual(oFFL.getMultiSelect(), true, "List multiSelect should be enabled by default");
 		assert.strictEqual(oFFL.getMode(), ListMode.MultiSelect, "List mode should be MultiSelect by default");
 		assert.strictEqual(oFFL.getIncludeItemInSelection(), true, "List item selection should include the whole item by default");
@@ -1667,6 +1675,7 @@ sap.ui.define([
 		oPopover.attachEventOnce("afterOpen", function(oEvent) {
 			// act
 			oTargetList._handleSearchEvent(oFakeEvent);
+			oTargetList._hideBusyIndicator();
 
 			// assert
 			assert.equal(oTargetList.getBinding("items").getLength(), 3, "There three items in the list");
@@ -1681,6 +1690,7 @@ sap.ui.define([
 				}
 			};
 			oTargetList._handleSearchEvent(oFakeEvent);
+			oTargetList._hideBusyIndicator();
 
 			// assert
 			assert.equal(oTargetList.getBinding("items").getLength(), 0, "There are no items in the list");
@@ -1956,6 +1966,9 @@ sap.ui.define([
 
 	QUnit.module("Public API");
 
+	/**
+	 * @deprecated As of version 1.18 <code>setCount</code> has been replaced by <code>setCounter</code>
+	 */
 	QUnit.test("FacetFilterItem.setCount", function(assert) {
 
 		var iCount1 = 14, iCount2 = 67;
@@ -1978,10 +1991,16 @@ sap.ui.define([
 		var oItem = new FacetFilterItem();
 
 		oItem.setCounter(iCount1);
+		/**
+		 * @deprecated As of version 1.18
+		 */
 		assert.equal(oItem.getCount(), iCount1, "Item count should be set");
 		assert.equal(oItem.getCounter(), iCount1, "Item counter should be set to the same value");
 
 		oItem.setCounter(iCount2);
+		/**
+		 * @deprecated As of version 1.18
+		 */
 		assert.equal(oItem.getCount(), iCount2, "Item count should be set");
 		assert.equal(oItem.getCounter(), iCount2, "Item counter should be set to the same value");
 

@@ -15,6 +15,7 @@ sap.ui.define([
 	'sap/ui/base/ManagedObjectObserver',
 	'sap/ui/core/ResizeHandler',
 	'sap/ui/core/IconPool',
+	'sap/ui/Device',
 	'./MultiInputRenderer',
 	"sap/ui/dom/containsOrEquals",
 	"sap/m/inputUtils/completeTextSelected",
@@ -35,6 +36,7 @@ function(
 	ManagedObjectObserver,
 	ResizeHandler,
 	IconPool,
+	Device,
 	MultiInputRenderer,
 	containsOrEquals,
 	completeTextSelected,
@@ -135,6 +137,15 @@ function(
 				 * @since 1.36
 				 */
 				maxTokens: {type: "int", group: "Behavior"},
+
+				/**
+				 * If this is set to true, suggest event is fired when user types in the input.
+				 * Changing the suggestItems aggregation in suggest event listener will show suggestions within a popup.
+				 * When runs on phone, input will first open a dialog where the input and suggestions are shown.
+				 * When runs on a tablet, the suggestions are shown in a popup next to the input.
+				 * <b>Note:</b> Default value for this property is false for the {@link sap.m.Input}.
+				 */
+				showSuggestion : {type : "boolean", group : "Behavior", defaultValue : true},
 
 				/**
 				 * Changed when tokens are changed. The value for sap.ui.core.ISemanticFormContent interface.
@@ -275,6 +286,21 @@ function(
 			/* Prevent closing of n more popover when input is clicked */
 			._getPopup().setExtraContent([oTokenizer, this]);
 
+		oTokenizer.getTokensPopup().addEventDelegate({
+			onAfterRendering: function() {
+				var iInputWidth = this.getDomRef().getBoundingClientRect().width;
+				var sPopoverMaxWidth = getComputedStyle(this.getDomRef()).getPropertyValue("--sPopoverMaxWidth");
+
+				if (iInputWidth <= parseInt(sPopoverMaxWidth) && !Device.system.phone) {
+					oTokenizer.getTokensPopup().getDomRef().style.setProperty("max-width", "40rem");
+				} else {
+					oTokenizer.getTokensPopup().getDomRef().style.setProperty("max-width", iInputWidth + "px");
+				}
+
+				oTokenizer.getTokensPopup().getDomRef().style.setProperty("min-width", iInputWidth + "px");
+			}
+		}, this);
+
 		this.setAggregation("tokenizer", oTokenizer);
 
 		/* Aggregation forwarding does not invalidate outer control, but we need to have that invalidation */
@@ -341,7 +367,6 @@ function(
 		this._aTokenValidators = [];
 
 		this.setShowValueHelp(true);
-		this.setShowSuggestion(true);
 		this._getSuggestionsPopover().getPopover()
 			.attachBeforeOpen(function () {
 				if (that.isMobileDevice() !== true) {
@@ -874,7 +899,7 @@ function(
 
 		// if only one piece of text was pasted, we can assume that the user wants to alter it before it is converted into a token
 		// in this case we leave it as plain text input
-		if (this._shouldSkipTokenCreationOnPaste(aSeparatedText)) {
+		if (aSeparatedText.length <= 1) {
 			return;
 		}
 
@@ -1045,6 +1070,7 @@ function(
 			bNewFocusIsInSuggestionPopup = false,
 			bNewFocusIsInTokenizer = false,
 			bNewFocusIsInMultiInput = this.getDomRef() && containsOrEquals(this.getDomRef(), document.activeElement),
+			bFocusedOut,
 			oRelatedControlDomRef,
 			bFocusIsInSelectedItemPopup;
 
@@ -1069,11 +1095,9 @@ function(
 			return;
 		}
 
-		if (!this.isMobileDevice()							// Validation occurs if we are not on phone
-			&& !bNewFocusIsInSuggestionPopup				// AND the focus is not in the suggestion popup
-			&& oEvent.relatedControlId !== this.getId()			// AND the focus is not in the input field
-			&& !bNewFocusIsInTokenizer) {					// AND the focus is not in the tokenizer
+		bFocusedOut = !bNewFocusIsInSuggestionPopup && oEvent.relatedControlId !== this.getId() && !bNewFocusIsInTokenizer;
 
+		if (bFocusedOut && ((this.isMobileDevice() && !this.getShowSuggestion()) || !this.isMobileDevice())) {
 			this._validateCurrentText(true);
 		}
 
@@ -1355,6 +1379,17 @@ function(
 		TokensChanged: "tokensChanged"
 	};
 
+	/**
+	 *
+	 * @return {string} Indicates should token validator wait for asynchronous validation
+	 * @public
+	 * @function
+	 */
+	MultiInput.prototype.getWaitForAsyncValidation = function() {
+		return MultiInput.WaitForAsyncValidation;
+	};
+
+
 	MultiInput.WaitForAsyncValidation = "sap.m.MultiInput.WaitForAsyncValidation";
 
 	/**
@@ -1522,25 +1557,8 @@ function(
 	 * @private
 	 */
 	MultiInput.prototype._onBeforeOpenTokensPicker = function () {
-		var oTokenizer = this.getAggregation("tokenizer"),
-			oPopover = oTokenizer.getTokensPopup(),
-			oDomRef = this.getDomRef(),
-			bEditable = this.getEditable(),
-			iCurrentWidth, iCalculatedWidth;
-
 		this._setValueVisible(false);
 		this._manageListsVisibility(true);
-
-		if (oDomRef && oPopover) {
-			// Popover's width was calculated once in its onBeforeOpen method and is set in PX
-			iCurrentWidth = parseInt(oPopover.getContentWidth());
-			iCalculatedWidth = isNaN(iCurrentWidth) || oDomRef.offsetWidth > iCurrentWidth ? oDomRef.offsetWidth : iCurrentWidth;
-
-			iCalculatedWidth = ((oTokenizer.getTokens().length === 1) || !bEditable) ? "auto" :
-				(iCalculatedWidth / parseFloat(library.BaseFontSize)) + "rem";
-
-			oPopover.setContentWidth(iCalculatedWidth);
-		}
 	};
 
 	/**
@@ -1718,6 +1736,7 @@ function(
 	 *
 	 * @protected
 	 * @param {HTMLElement} oTarget The target of the event.
+	 * @deprecated As of version 1.119 the property valueHelpOnly should not be used anymore
 	 * @returns {boolean} Boolean indicating if the target is a valid opener.
 	 */
 	MultiInput.prototype.isValueHelpOnlyOpener = function (oTarget) {
@@ -1852,7 +1871,7 @@ function(
 				return null;
 			}
 
-			if (oToken === MultiInput.WaitForAsyncValidation) {
+			if (oToken === this.getWaitForAsyncValidation()) {
 				return null;
 			}
 		}
@@ -1962,7 +1981,7 @@ function(
 		if (!this.getMaxTokens() || this.getTokens().length < this.getMaxTokens()) {
 			this._bIsValidating = true;
 			this.addValidateToken({
-				text: sValue,
+				text: ManagedObject.escapeSettingsValue(sValue),
 				token: oToken,
 				suggestionObject: oItem,
 				validationCallback: this._validationCallback.bind(this, iOldLength)
@@ -2027,18 +2046,6 @@ function(
 				fValidateCallback && fValidateCallback(false);
 			}
 		};
-	};
-
-	/**
-	 * Should return true/false if token creation on paste should be skipped
-	 *
-	 * @param aSeparatedText array with pasted text parts
-	 * @returns {boolean}
-	 * @ui5-restricted sap.ui.comp.smartfilterbar.FilterProvider
-	 * @private
-	 */
-	MultiInput.prototype._shouldSkipTokenCreationOnPaste = function (aSeparatedText) {
-		return aSeparatedText.length <= 1;
 	};
 
 	/**

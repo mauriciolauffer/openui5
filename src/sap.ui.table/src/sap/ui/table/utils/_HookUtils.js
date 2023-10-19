@@ -3,7 +3,7 @@
  */
 
 // Provides helper sap.ui.table.utils._HookUtils.
-sap.ui.define(["sap/ui/base/DataType"], function(DataType) {
+sap.ui.define(["sap/ui/base/DataType", "sap/ui/model/ChangeReason"], function(DataType, ChangeReason) {
 	"use strict";
 
 	var Hooks = new window.WeakMap();
@@ -164,6 +164,41 @@ sap.ui.define(["sap/ui/base/DataType"], function(DataType) {
 			},
 			TotalRowCountChanged: {
 				arguments: []
+			},
+			/**
+			* @deprecated As of Version 1.117
+			*/
+			InvalidateColumnMenus: {
+				arguments: [
+					{type: "class:sap.ui.table.Table"}
+				]
+			}
+		},
+		TableRenderer: {
+			RenderTableStyles: {
+				arguments: [
+					{type: "object" /* RenderManager */}
+				]
+			},
+			RenderInTableBottomArea: {
+				arguments: [
+					{type: "object" /* RenderManager */}
+				]
+			},
+			RenderRowContainerStyles: {
+				arguments: [
+					{type: "object" /* RenderManager */}
+				]
+			},
+			RenderRowStyles: {
+				arguments: [
+					{type: "object" /* RenderManager */}
+				]
+			},
+			RenderCellContentStyles: {
+				arguments: [
+					{type: "object" /* RenderManager */}
+				]
 			}
 		},
 		Row: {
@@ -191,6 +226,15 @@ sap.ui.define(["sap/ui/base/DataType"], function(DataType) {
 					{type: "class:sap.ui.table.Column"}
 				],
 				returnValue: "boolean"
+			},
+			/**
+			* @deprecated As of Version 1.117
+			*/
+			SetFilterState: {
+				arguments: [
+					{type: "class:sap.ui.table.Column"},
+					{type: "string"}
+				]
 			}
 		},
 		// Can be used to send any signal.
@@ -482,8 +526,12 @@ sap.ui.define(["sap/ui/base/DataType"], function(DataType) {
 		});
 	}
 
+	function validateChangeReason(sReason) {
+		return typeof sReason === "string" && Object.values(ChangeReason).includes(sReason);
+	}
+
 	function validateRowsUpdateReason(sReason) { // sap.ui.table.utils.TableUtils.RowsUpdateReason
-		return sReason in HookUtils.TableUtils.RowsUpdateReason || DataType.getType("sap.ui.model.ChangeReason").isValid(sReason);
+		return sReason in HookUtils.TableUtils.RowsUpdateReason || validateChangeReason(sReason);
 	}
 
 	function validateCellInfo(oCellInfo) { // sap.ui.table.utils.TableUtils.CellInfo

@@ -4,7 +4,7 @@
 
 // Provides control sap.ui.webc.fiori.FlexibleColumnLayout.
 sap.ui.define([
-	"sap/ui/webc/common/WebComponent",
+	"sap/ui/core/webc/WebComponent",
 	"./library",
 	"./thirdparty/FlexibleColumnLayout"
 ], function(WebComponent, library) {
@@ -18,7 +18,7 @@ sap.ui.define([
 	 * @param {string} [sId] ID for the new control, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new control
 	 *
-	 * @extends sap.ui.webc.common.WebComponent
+	 * @extends sap.ui.core.webc.WebComponent
 	 * @class
 	 *
 	 * <h3>Overview</h3>
@@ -161,14 +161,14 @@ sap.ui.define([
 						 * The current layout
 						 */
 						layout: {
-							type: "FCLLayout"
+							type: "sap.ui.webc.fiori.FCLLayout"
 						},
 
 						/**
 						 * The effective column layout, f.e [67%, 33%, 0]
 						 */
 						columnLayout: {
-							type: "Array"
+							type: "array"
 						},
 
 						/**

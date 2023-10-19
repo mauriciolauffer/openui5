@@ -3,11 +3,10 @@
  */
 // SandboxModelHelper functions used within sap.ui.core.sample.common namespace
 sap.ui.define([
-	"sap/base/util/UriParameters",
 	"sap/ui/model/odata/v4/ODataModel",
 	"sap/ui/test/TestUtils",
 	"sap/ui/thirdparty/sinon-4"
-], function (UriParameters, ODataModel, TestUtils, sinon) {
+], function (ODataModel, TestUtils, sinon) {
 	"use strict";
 
 	var SandboxModelHelper = {
@@ -23,7 +22,7 @@ sap.ui.define([
 			 * @returns {object} The adapted model parameters as a clone
 			 */
 			adaptModelParameters : function (mParameters, sUpdateGroupId) {
-				var oUriParameters = UriParameters.fromQuery(window.location.search);
+				var oUriParameters = new URLSearchParams(window.location.search);
 
 				// clone: do not modify constructor call parameter
 				return Object.assign({}, mParameters, {
@@ -35,13 +34,13 @@ sap.ui.define([
 				});
 			},
 			/**
-			 * Adapts the given OData V4 Model parameters {@see #adaptModelParameters}, - creates
-			 * {@see #createModel} and returns the created OData V4 Model.
+			 * Adapts the given OData V4 Model parameters (see {@link #adaptModelParameters}),
+			 * creates (see {@link #createModel}) and returns the created OData V4 Model.
 			 *
 			 * @param {object} mModelParameters
 			 *   The original OData V4 model's constructor parameters
 			 * @param {object} oMockData
-			 *   The mock data used to setup a mock server, {@see #createModel}
+			 *   The mock data used to setup a mock server, see {@link #createModel}
 			 * @returns {sap.ui.model.odata.v4.ODataModel}
 			 *   The created OData V4 Model
 			 */
@@ -55,7 +54,7 @@ sap.ui.define([
 			 * model is destroyed.
 			 *
 			 * @param {object} mModelParameters
-			 *   The (already adapted) OData V4 model parameters {@see #adaptModelParameters}
+			 *   The (already adapted) OData V4 model parameters (see {@link #adaptModelParameters})
 			 * @param {object} oMockData
 			 *   The mock data used to setup a mock server
 			 * @param {string} oMockData.mFixture

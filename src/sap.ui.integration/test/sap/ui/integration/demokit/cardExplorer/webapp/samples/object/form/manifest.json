@@ -35,7 +35,10 @@
 						"status": "approved",
 						"reason": "{form>/reason/key}",
 						"reasonText": "{form>/reason/value}",
-						"comment": "{form>/comment}"
+						"comment": "{form>/comment}",
+						"name": "{form>/name}",
+						"duration": "{form>/duration}",
+						"date": "{form>/date/range/startLocalDate}"
 					}
 				}
 			}
@@ -70,7 +73,8 @@
 							"value": "15,000.00 EUR",
 							"type": "Status",
 							"state": "Information",
-							"showStateIcon": true
+							"showStateIcon": true,
+							"customStateIcon": "sap-icon://hint"
 						},
 						{
 							"value": "For Ultra Jet Super Highspeed"
@@ -103,10 +107,27 @@
 						},
 						{
 							"id": "comment",
-							"label": "Comment",
+							"label": "Do you have anything to add?",
 							"type": "TextArea",
 							"rows": 4,
-							"placeholder": "Comment"
+							"placeholder": "More information",
+							"showColon": false
+						},
+						{
+							"id": "name",
+							"label": "Name",
+							"type": "Input",
+							"placeholder": "Name"
+						},
+						{
+							"id": "duration",
+							"label": "Duration",
+							"type": "Duration"
+						},
+						{
+							"id": "date",
+							"label": "Date",
+							"type": "DateRange"
 						}
 					]
 				}

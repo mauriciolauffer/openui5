@@ -4,35 +4,49 @@
 sap.ui.define([
 	'sap/ui/base/Object',
 	'sap/ui/model/Filter',
-	"sap/ui/model/FilterOperator",
+	'sap/ui/model/FilterOperator',
 	'sap/ui/model/ParseException',
 	'sap/base/Log',
-	'sap/base/util/ObjectPath',
 	'sap/base/util/merge',
 	'sap/base/util/deepEqual',
 	'./Condition',
-	'sap/ui/mdc/enum/ConditionValidated',
-	'sap/base/strings/escapeRegExp'
+	'sap/ui/mdc/enums/ConditionValidated',
+	'sap/base/strings/escapeRegExp',
+	'sap/ui/mdc/enums/OperatorOverwrite',
+	'sap/ui/mdc/enums/OperatorValueType'
 ], function(
 		BaseObject,
 		Filter,
 		FilterOperator,
 		ParseException,
 		Log,
-		ObjectPath,
 		merge,
 		deepEqual,
 		Condition,
 		ConditionValidated,
-		escapeRegExp
+		escapeRegExp,
+		OperatorOverwrite,
+		OperatorValueType
 	) {
 		"use strict";
 
 		// translation utils
-		var oMessageBundle = sap.ui.getCore().getLibraryResourceBundle("sap.ui.mdc");
+		let oMessageBundle = sap.ui.getCore().getLibraryResourceBundle("sap.ui.mdc");
 		sap.ui.getCore().attachLocalizationChanged(function() {
 			oMessageBundle = sap.ui.getCore().getLibraryResourceBundle("sap.ui.mdc");
 		});
+
+		/**
+		 * Object type defining the structure of a <code>ValueType</code> for a {@link sap.ui.mdc.condition.Operator Operator}.
+		 *
+		 * @static
+		 * @constant
+		 * @typedef {object} sap.ui.mdc.condition.ValueType
+		 * @property {string} name name of the data type
+		 * @property {object} formatOptions <code>formatOptions</code> of the data type
+		 * @property {object} constraints <code>constraints</code> of the data type
+		 * @public
+		 */
 
 		/**
 		 * @class
@@ -54,12 +68,14 @@ sap.ui.define([
 		 *                 A placeholder that refers to the translated tokenText can be used. <code>#tokenText#</code> refers to the <code>oConfiguration.tokenText</code> property if given.
 		 * @param {string[]|object[]} oConfiguration.valueTypes Array of type to be used. The length of the array defines the number of values that
 		 *                 need to be entered with the operator.<br>
-		 *                 If set to <code>Operator.ValueType.Self</code> the <code>Type</code> of the <code>Field</code> or <code>FilterField</code> using the <code>Operator</code> is used.<br>
-		 *                 If set to <code>Operator.ValueType.SelfNoParse</code> same as <code>Operator.ValueType.Self</code>, except that the input value parsing will not be called.<br>
-		 *                 If set to <code>Operator.ValueType.Static</code> a simple string type is used to display static text.<br>
-		 *                 If set to a name of a data type an instance of this data type will be used.<br>
-		 *                 If set to an object with the properties <code>name</code>, <code>formatOptions</code> and <code>constraints</code>
-		 *                 an instance of the corresponding data type will be used. The type given via <code>name</code> must be required by the application.<br>
+		 *                 If set to {@link sap.ui.mdc.enums.OperatorValueType.Self OperatorValueType.Self}, the <code>Type</code> of the <code>Field</code> or <code>FilterField</code> using the <code>Operator</code> is used.<br>
+		 *                 If set to {@link sap.ui.mdc.enums.OperatorValueType.SelfNoParse OperatorValueType.SelfNoParse} same as {@link sap.ui.mdc.enums.OperatorValueType.Self OperatorValueType.Self}, except that the input value parsing will not be called.<br>
+		 *                 If set to {@link sap.ui.mdc.enums.OperatorValueType.Static OperatorValueType.Static}, a simple string type is used to display static text.<br>
+		 *                 If set to a name of a data type, an instance of this data type is used.<br>
+		 *                 If set to an object with structure {@link sap.ui.mdc.condition.ValueType},
+		 *                 an instance of the corresponding data type is used. The type given via <code>name</code> must be loaded by the application.<br>
+		 *                 If set to <code>null</code>, the corresponding value is interpreted as a description that holds no required data. To display this value,
+		 *                 the additional <code>Type</code> of the <code>Field</code> or <code>FilterField</code> using the <code>Operator</code> is used.<br>
 		 * @param {string[]} [oConfiguration.paramTypes] Array of type parameters regexp
 		 * @param {string} [oConfiguration.longText] String representation of the operator as a long text.<br>
 		 *                If longText is not given , it is looked up in the resource bundle of the <code>sap.ui.mdc</code> library by the key
@@ -67,13 +83,13 @@ sap.ui.define([
 		 * @param {string} [oConfiguration.tokenText] String representation of the operator as a short text.<br>
 		 *                If the token text is not given, it is looked up in the resource bundle of the <code>sap.ui.mdc</code> library by the key
 		 *                <code>operators.{oConfiguration.name}.tokenText</code>
-		 * @param {object} [oConfiguration.displayFormats] Pattern how different {@link sap.ui.mdc.enum.FieldDisplay displayFormats} are rendered
+		 * @param {object} [oConfiguration.displayFormats] Pattern how different {@link sap.ui.mdc.enums.FieldDisplay displayFormats} are rendered
 		 * @param {function} [oConfiguration.format] Function to format condition
 		 * @param {function} [oConfiguration.parse] Function to parse input into condition
 		 * @param {function} [oConfiguration.validate] Function to validate condition
 		 * @param {function} [oConfiguration.getModelFilter] Function create filter for a condition
 		 * @param {function} [oConfiguration.isEmpty] Function to check if condition is empty
-		 * @param {function} [oConfiguration.createControl] Function to create a control to be used in {@link sap.ui.mdc.field.DefineConditionPanel DefineConditionPanel}
+		 * @param {function} [oConfiguration.createControl] Function to create a control to be used in {@link sap.ui.mdc.valuehelp.content.Conditions Conditions}
 		 * @param {function} [oConfiguration.getCheckValue] Function to get the value for condition compare
 		 * @param {function} [oConfiguration.getValues] Function to get the real values without operator symbol
 		 * @param {function} [oConfiguration.checkValidated] Function to check if a condition is validated (sets the <code>validated</code> property)
@@ -83,14 +99,12 @@ sap.ui.define([
 		 * @constructor
 		 * @author SAP SE
 		 * @version ${version}
-		 * @private
-		 * @ui5-restricted sap.fe
-		 * @MDC_PUBLIC_CANDIDATE
+		 * @public
 		 * @alias sap.ui.mdc.condition.Operator
 		 * @since 1.73.0
 		 * @author SAP SE
 		 */
-		var Operator = BaseObject.extend("sap.ui.mdc.condition.Operator", /** @lends sap.ui.mdc.condition.Operator.prototype */ {
+		const Operator = BaseObject.extend("sap.ui.mdc.condition.Operator", /** @lends sap.ui.mdc.condition.Operator.prototype */ {
 			constructor: function(oConfiguration) {
 				BaseObject.apply(this, arguments);
 
@@ -104,6 +118,8 @@ sap.ui.define([
 					throw new Error("Operator configuration for " + oConfiguration.name + " needs a default filter operator from sap.ui.model.FilterOperator or the function getModelFilter");
 				}
 
+				this._enableOverwrites(oConfiguration);
+
 				// map given properties
 				// TODO: for compatibility reasons just put to this.name... but is a API getName better at the end?
 				this.name = oConfiguration.name;
@@ -115,9 +131,9 @@ sap.ui.define([
 				this.paramTypes = oConfiguration.paramTypes;
 				this.displayFormats = oConfiguration.displayFormats;
 
-				var sTextKey = "operators." + this.name;
-				var sLongTextKey = sTextKey + ".longText";
-				var sTokenTextKey = sTextKey + ".tokenText";
+				const sTextKey = "operators." + this.name;
+				const sLongTextKey = sTextKey + ".longText";
+				const sTokenTextKey = sTextKey + ".tokenText";
 				this.longText = oConfiguration.longText || _getText(sLongTextKey) || "";
 				this.tokenText = oConfiguration.tokenText || _getText(sTokenTextKey) || "";
 				if (this.longText === sLongTextKey) {
@@ -136,14 +152,14 @@ sap.ui.define([
 
 				if (this.tokenText) {
 					// create token parsing RegExp
-					var sRegExp;
-					var sTokenText;
+					let sRegExp;
+					let sTokenText;
 					if (oConfiguration.tokenParse) {
 						sTokenText = escapeRegExp(this.tokenText);
 
 						this.tokenParse = oConfiguration.tokenParse.replace(/#tokenText#/g, sTokenText);
-						for (var i = 0; i < this.valueTypes.length; i++) {
-							var sReplace = this.paramTypes ? this.paramTypes[i] : this.valueTypes[i];
+						for (let i = 0; i < this.valueTypes.length; i++) {
+							const sReplace = this.paramTypes ? this.paramTypes[i] : this.valueTypes[i];
 							// the regexp will replace placeholder like $0, 0$ and {0}
 							// the four \ are required, because the excapeRegExp will escape existing \\
 							this.tokenParse = this.tokenParse.replace(new RegExp("\\\\\\$" + i + "|" + i + "\\\\\\$" + "|" + "\\\\\\{" + i + "\\\\\\}", "g"), sReplace);
@@ -163,33 +179,6 @@ sap.ui.define([
 					}
 				}
 
-				if (oConfiguration.format) {
-					this.format = oConfiguration.format;
-				}
-				if (oConfiguration.parse) {
-					this.parse = oConfiguration.parse;
-				}
-				if (oConfiguration.validate) {
-					this.validate = oConfiguration.validate;
-				}
-				if (oConfiguration.getModelFilter) {
-					this.getModelFilter = oConfiguration.getModelFilter;
-				}
-				if (oConfiguration.isEmpty) {
-					this.isEmpty = oConfiguration.isEmpty;
-				}
-				if (oConfiguration.createControl) {
-					this.createControl = oConfiguration.createControl; // TODO move default implementation from DefineConditionPanel to here
-				}
-				if (oConfiguration.getCheckValue) {
-					this.getCheckValue = oConfiguration.getCheckValue;
-				}
-				if (oConfiguration.getValues) {
-					this.getValues = oConfiguration.getValues;
-				}
-				if (oConfiguration.checkValidated) {
-					this.checkValidated = oConfiguration.checkValidated;
-				}
 				if (oConfiguration.additionalInfo !== undefined) {
 					this.additionalInfo = oConfiguration.additionalInfo;
 				}
@@ -205,6 +194,10 @@ sap.ui.define([
 						this.group.text = oMessageBundle.getText("VALUEHELP.OPERATOR.GROUP" + this.group.id);
 					}
 				}
+			},
+			destroy: function () {
+				this._oMethodOverwrites = null;
+				BaseObject.protoype.destroy.apply(this, arguments);
 			}
 		});
 
@@ -214,6 +207,7 @@ sap.ui.define([
 		 * @enum {string}
 		 * @private
 		 * @since 1.75
+		 * @deprecated as of 1.115.0, replaced by {@link sap.ui.mdc.enums.OperatorValueType OperatorValueType}
 		 */
 		Operator.ValueType = {
 				/**
@@ -242,8 +236,8 @@ sap.ui.define([
 
 		function _getText(sKey, sType) {
 
-			var key = sKey + (sType ? "." + sType : ""),
-				sText;
+			const key = sKey + (sType ? "." + sType : "");
+			let sText;
 
 			// try to get the resource bundle text (the key might not exist)
 			sText = oMessageBundle.getText(key, undefined, true); // use bIgnoreKeyFallback=true to avoid assert messages in the console
@@ -261,41 +255,51 @@ sap.ui.define([
 
 		}
 
-		// TODO: better API to get longtext (is it really type dependent?)
 		/**
-		 * Gets the text for an operator name.
+		 * Gets the long text for an operator.
 		 *
-		 * @param {string} sKey Text key
-		 * @param {string} sType Name of type
+ 		 * This function can be overwritten see <code>overwrite("getLongText", ...)</code>
+		 *
+ 		 * @param {sap.ui.mdc.enums.BaseType} sBaseType Basic type
 		 * @returns {string} text
 		 *
 		 * @private
-		 * @ui5-restricted sap.ui.mdc.field.DefineConditionPanel
+		 * @since 1.113
+		 * @ui5-restricted sap.ui.mdc.valuehelp.base.DefineConditionPanel
 		 */
-		Operator.prototype.getTypeText = function(sKey, sType) { // for DefineConditionPanel Select items
+		Operator.prototype.getLongText = function(sBaseType) {
+			const sTxtKey = this.textKey || "operators." + this.name + ".longText";
+			let sLongText = _getText(sTxtKey, sBaseType.toLowerCase());
 
-			return _getText(sKey, sType);
+			if (sLongText === sTxtKey) {
+				// when the returned text is the key, a type dependent longText does not exist and we use the default (custom) longText for the operator
+				sLongText = this.longText;
+			}
+
+			return sLongText;
 
 		};
 
 		/**
 		 * Creates a filter object for a condition.
 		 *
+		 * This function can be overwritten see <code>overwrite("getModelFilter", ...)</code>
+		 *
 		 * @param {sap.ui.mdc.condition.ConditionObject} oCondition Condition
 		 * @param {string} sFieldPath Path of filter
 		 * @param {sap.ui.model.Type} oType Data type of the used filter field
 		 * @param {boolean} [bCaseSensitive] creates a caseSensitive filter
-		 * @param {sap.ui.mdc.enum.BaseType} [sBaseType] Basic type
+		 * @param {sap.ui.mdc.enums.BaseType} [sBaseType] Basic type
 		 * @returns {sap.ui.model.Filter} filter object
 		 * @private
 		 * @ui5-restricted sap.ui.mdc, sap.fe
 		 */
 		Operator.prototype.getModelFilter = function(oCondition, sFieldPath, oType, bCaseSensitive, sBaseType) {
 
-			var vValue = oCondition.values[0];
-			var oFilter;
-			var oFilterUnit;
-			var aFieldPaths = sFieldPath.split(",");
+			let vValue = oCondition.values[0];
+			let oFilter;
+			let oFilterUnit;
+			const aFieldPaths = sFieldPath.split(",");
 			// TODO: CompositeType (Unit/Currency) -> also filter for unit
 			if (Array.isArray(vValue) && aFieldPaths.length > 1) {
 				vValue = vValue[0];
@@ -306,14 +310,14 @@ sap.ui.define([
 				// filter only for unit
 				oFilter = oFilterUnit;
 				oFilterUnit = undefined;
-			} else if (!this.valueTypes[1]) {
+			} else if (!this.valueTypes[1]) { // in EQ case ignore description
 				if (!bCaseSensitive && oCondition.validated === ConditionValidated.Validated)  {
 					// for validated Item conditions we always set caseSensitive to true;
 					bCaseSensitive = true;
 				}
 				oFilter = new Filter({ path: sFieldPath, operator: this.filterOperator, value1: vValue, caseSensitive: bCaseSensitive === false ? false : undefined });
 			} else {
-				var vValue2 = oCondition.values[1];
+				let vValue2 = oCondition.values[1];
 				if (Array.isArray(vValue2) && aFieldPaths.length > 1) {
 					vValue2 = vValue2[0];
 					// use same unit as for value1
@@ -327,8 +331,8 @@ sap.ui.define([
 
 			// add filter for in-parameters
 			if (oCondition.inParameters) {
-				var aFilters = [oFilter];
-				for ( var sInPath in oCondition.inParameters) {
+				const aFilters = [oFilter];
+				for ( const sInPath in oCondition.inParameters) {
 					if (sInPath.startsWith("conditions/")) { // only use InParameters that are in the same ConditionModel (Parameters from outside might not be valid filters)
 						aFilters.push(new Filter({path: sInPath.slice(11), operator: FilterOperator.EQ, value1: oCondition.inParameters[sInPath]}));
 					}
@@ -342,6 +346,7 @@ sap.ui.define([
 
 		};
 
+
 		/**
 		 * Checks if a condition is empty.
 		 *
@@ -354,12 +359,12 @@ sap.ui.define([
 		 */
 		Operator.prototype.isEmpty = function(oCondition, oType) {
 
-			var isEmpty = false;
+			let isEmpty = false;
 
 			if (oCondition) {
-				for (var i = 0; i < this.valueTypes.length; i++) {
-					if (this.valueTypes[i] !== Operator.ValueType.Static) {
-						var vValue = oCondition.values[i];
+				for (let i = 0; i < this.valueTypes.length; i++) {
+					if (this.valueTypes[i] !== OperatorValueType.Static) {
+						const vValue = oCondition.values[i];
 						if (vValue === null || vValue === undefined || vValue === "") { //TODO:  empty has to use the oType information
 							isEmpty = true;
 							break;
@@ -377,30 +382,43 @@ sap.ui.define([
 		 *
 		 * @param {sap.ui.mdc.condition.ConditionObject} oCondition Condition
 		 * @param {sap.ui.model.Type} [oType] Data type
-		 * @param {sap.ui.mdc.enum.FieldDisplay} [sDisplay] Display mode
+		 * @param {sap.ui.mdc.enums.FieldDisplay} [sDisplay] Display mode
 		 * @param {boolean} [bHideOperator=false] If set, only the value output is returned without any visible operator
-		 * @param {sap.ui.model.Type[]} [aCompositeTypes] additional Types used for parts of a <code>CompositeType</code>
+		 * @param {sap.ui.model.Type[]} [aCompositeTypes] Additional types used for each part of a <code>CompositeType</code>
+		 * @param {sap.ui.model.Type} [oAdditionalType] Data type for additional value
+		 * @param {sap.ui.model.Type[]} [aAdditionalCompositeTypes] Additional types used for each part of a <code>CompositeType</code> (if <code>oAdditionalType</code> is a <code>CompositeType</code>)
 		 * @returns {string} formatted text
 		 * @throws {sap.ui.model.FormatException} if the values cannot be formatted
 		 *
 		 * @private
 		 * @ui5-restricted sap.ui.mdc
 		 */
-		Operator.prototype.format = function(oCondition, oType, sDisplay, bHideOperator, aCompositeTypes) { // sDisplay needed in EQ formatter
+		Operator.prototype.format = function(oCondition, oType, sDisplay, bHideOperator, aCompositeTypes, oAdditionalType, aAdditionalCompositeTypes) { // sDisplay, oAdditionalType and aAdditionalCompositeTypes needed in EQ formatter
 
-			var aValues = oCondition.values;
-			var iCount = this.valueTypes.length;
-			var sTokenText = bHideOperator && iCount === 1 ? "{0}" : this.tokenFormat;
-			for (var i = 0; i < iCount; i++) {
-				if (this.valueTypes[i] !== Operator.ValueType.Static) {
-					if (this.valueTypes[i] !== Operator.ValueType.Self) {
-						oType = this._createLocalType(this.valueTypes[i], oType);
+			const aValues = oCondition.values;
+			const iCount = this.valueTypes.length;
+			let sTokenText = bHideOperator && iCount === 1 ? "{0}" : this.tokenFormat;
+			for (let i = 0; i < iCount; i++) {
+				let oUseType;
+				let aUseCompositeTypes;
+				if (this.valueTypes[i] !== OperatorValueType.Static) {
+					if (this.valueTypes[i] === OperatorValueType.Self) {
+						oUseType = oType;
+						aUseCompositeTypes = aCompositeTypes;
+					} else if (this.valueTypes[i] === null) { // description
+						oUseType = oAdditionalType;
+						aUseCompositeTypes = aAdditionalCompositeTypes;
+					} else {
+						oUseType = this._createLocalType(this.valueTypes[i], oType);
 					}
-					var vValue = aValues[i];
+					let vValue = aValues[i];
 					if (vValue === undefined || vValue === null) {
-						vValue = oType ? oType.parseValue("", "string") : ""; // for empty value use initial value of type
+						vValue = oUseType ? oUseType.parseValue("", "string") : ""; // for empty value use initial value of type
 					}
-					var sReplace = this._formatValue(vValue, oType, aCompositeTypes);
+					let sReplace = this._formatValue(vValue, oUseType, aUseCompositeTypes);
+					if (typeof sReplace === "string") {
+						sReplace = sReplace.replace(/\$/g, '$$$'); // as "$$" has a special handling in replace, it will be transformed into "$"
+					}
 					// the regexp will replace placeholder like $0, 0$ and {0}
 					sTokenText = sTokenText.replace(new RegExp("\\$" + i + "|" + i + "\\$" + "|" + "\\{" + i + "\\}", "g"), sReplace);
 				}
@@ -416,7 +434,7 @@ sap.ui.define([
 		 *
 		 * @param {any} vValue value
 		 * @param {sap.ui.model.Type} [oType] Data type
-		 * @param {sap.ui.model.Type[]} [aCompositeTypes] additional Types used for parts of a <code>CompositeType</code>
+		 * @param {sap.ui.model.Type[]} [aCompositeTypes] Additional types used for each part of a <code>CompositeType</code>
 		 * @returns {string} formatted text
 		 * @throws {sap.ui.model.FormatException} if the values cannot be formatted
 		 *
@@ -425,14 +443,14 @@ sap.ui.define([
 		 */
 		Operator.prototype._formatValue = function(vValue, oType, aCompositeTypes) {
 
-			var sText;
+			let sText;
 
 			if (oType) {
 				if (oType.isA("sap.ui.model.CompositeType") && oType.getUseInternalValues() && Array.isArray(vValue) && aCompositeTypes) {
 					vValue = merge([], vValue); // use copy to not change original array
-					for (var i = 0; i < vValue.length; i++) {
+					for (let i = 0; i < vValue.length; i++) {
 						if (aCompositeTypes[i]) {
-							var oFormat = aCompositeTypes[i].getModelFormat();
+							const oFormat = aCompositeTypes[i].getModelFormat();
 							if (oFormat && typeof oFormat.parse === "function") {
 								vValue[i] = oFormat.parse(vValue[i]);
 							}
@@ -453,32 +471,42 @@ sap.ui.define([
 		 *
 		 * @param {string} sText Text
 		 * @param {sap.ui.model.Type} oType Data type
-		 * @param {sap.ui.mdc.enum.FieldDisplay} sDisplayFormat Display format
+		 * @param {sap.ui.mdc.enums.FieldDisplay} sDisplayFormat Display format
 		 * @param {boolean} bDefaultOperator If true, operator is used as default. In this case parsing without operator also works
-		 * @param {sap.ui.model.Type[]} [aCompositeTypes] additional Types used for parts of a <code>CompositeType</code>
+		 * @param {sap.ui.model.Type[]} [aCompositeTypes] Additional types used for each part of a <code>CompositeType</code>
+		 * @param {sap.ui.model.Type} [oAdditionalType] Data type for additional value
+		 * @param {sap.ui.model.Type[]} [aAdditionalCompositeTypes] Additional types used for each part of a <code>CompositeType</code> (if <code>oAdditionalType</code> is a <code>CompositeType</code>)
 		 * @returns {any[]} array of values
 		 * @throws {sap.ui.model.ParseException} if the text cannot be parsed
 		 *
 		 * @private
 		 * @ui5-restricted sap.ui.mdc
 		 */
-		Operator.prototype.parse = function(sText, oType, sDisplayFormat, bDefaultOperator, aCompositeTypes) {
+		Operator.prototype.parse = function(sText, oType, sDisplayFormat, bDefaultOperator, aCompositeTypes, oAdditionalType, aAdditionalCompositeTypes) {
 
-			var aValues = this.getValues(sText, sDisplayFormat, bDefaultOperator);
-			var aResult; // might remain undefined - if no match
+			const aValues = this.getValues(sText, sDisplayFormat, bDefaultOperator);
+			let aResult; // might remain undefined - if no match
 			if (aValues) {
 				aResult = [];
-				for (var i = 0; i < this.valueTypes.length; i++) {
-					if (this.valueTypes[i] && [Operator.ValueType.Self, Operator.ValueType.Static].indexOf(this.valueTypes[i]) === -1) {
-						oType = this._createLocalType(this.valueTypes[i], oType);
+				for (let i = 0; i < this.valueTypes.length; i++) {
+					let oUseType;
+					let aUseCompositeTypes;
+					if (this.valueTypes[i] === OperatorValueType.Self) {
+						oUseType = oType;
+						aUseCompositeTypes = aCompositeTypes;
+					} else if (this.valueTypes[i] === null) { // description
+						oUseType = oAdditionalType;
+						aUseCompositeTypes = aAdditionalCompositeTypes;
+					} else if (this.valueTypes[i] && this.valueTypes[i] !== OperatorValueType.Static) {
+						oUseType = this._createLocalType(this.valueTypes[i], oType);
 					}
 					try {
-						if (this.valueTypes[i] !== Operator.ValueType.Static) {
-							var vValue;
-							if (this.valueTypes[i]) {
-								vValue = this._parseValue(aValues[i], oType, aCompositeTypes);
+						if (this.valueTypes[i] !== OperatorValueType.Static) {
+							let vValue;
+							if (oUseType && aValues[i] !== undefined) { // a value needs to be given
+								vValue = this._parseValue(aValues[i], oUseType, aUseCompositeTypes);
 							} else {
-								vValue = aValues[i]; // Description -> just take value
+								vValue = aValues[i]; // just take value
 							}
 							aResult.push(vValue);
 						}
@@ -499,7 +527,7 @@ sap.ui.define([
 		 *
 		 * @param {string} sValue Text
 		 * @param {sap.ui.model.Type} oType Data type
-		 * @param {sap.ui.model.Type[]} [aCompositeTypes] additional Types used for parts of a <code>CompositeType</code>
+		 * @param {sap.ui.model.Type[]} [aCompositeTypes] Additional types used for each part of a <code>CompositeType</code>
 		 * @returns {string} single value
 		 * @throws {sap.ui.model.ParseException} if the text cannot be parsed
 		 *
@@ -512,23 +540,23 @@ sap.ui.define([
 				return sValue; // as some types running in errors with undefined and in this case there is nothing to parse
 			}
 
-			var aCurrentValue;
+			let aCurrentValue;
 			if (oType && oType.isA("sap.ui.model.CompositeType") && oType._aCurrentValue && oType.getParseWithValues()) {
 				aCurrentValue = oType._aCurrentValue;
 			}
 
-			var vValue = oType ? oType.parseValue(sValue, "string", aCurrentValue) : sValue;
+			const vValue = oType ? oType.parseValue(sValue, "string", aCurrentValue) : sValue;
 
 			if (oType && oType.isA("sap.ui.model.CompositeType") && Array.isArray(vValue) && (oType._aCurrentValue || (oType.getUseInternalValues() && aCompositeTypes))) {
 				// in case the user only entered a part of the CompositeType, we add the missing parts from aCurrentValue
 				// but add only the parts that have entries in array after parsing ( not set one-time parts)
-				for (var i = 0; i < vValue.length; i++) {
+				for (let i = 0; i < vValue.length; i++) {
 					if (vValue[i] === undefined && oType._aCurrentValue) {
 						vValue[i] = oType._aCurrentValue[i] === undefined ? null : oType._aCurrentValue[i]; // undefined in CompositeType means "not changed" -> if no current value it needs to be null
 						// value in aCurrentValues is already in model-format, so it need not to be formatted again
 					} else if (oType.getUseInternalValues() && aCompositeTypes && aCompositeTypes[i]) {
 						// convert result into model-format
-						var oFormat = aCompositeTypes[i].getModelFormat();
+						const oFormat = aCompositeTypes[i].getModelFormat();
 						if (oFormat && typeof oFormat.format === "function") {
 							vValue[i] = oFormat.format(vValue[i]);
 						}
@@ -545,43 +573,55 @@ sap.ui.define([
 		 *
 		 * @param {any} aValues Values
 		 * @param {sap.ui.model.Type} oType Data type
-		 * @param {sap.ui.model.Type[]} [aCompositeTypes] additional Types used for parts of a <code>CompositeType</code>
+		 * @param {sap.ui.model.Type[]} [aCompositeTypes] Additional types used for each part of a <code>CompositeType</code>
 		 * @param {int} [iCompositePart] part of the composite type that needs to be validated against it's type
+		 * @param {sap.ui.model.Type} [oAdditionalType] Data type for additional value
+		 * @param {sap.ui.model.Type[]} [aAdditionalCompositeTypes] Additional types used for each part of a <code>CompositeType</code> (if <code>oAdditionalType</code> is a <code>CompositeType</code>)
 		 * @throws {sap.ui.model.ValidateException} if the values are invalid
 		 *
 		 * @private
 		 * @ui5-restricted sap.ui.mdc
 		 */
-		Operator.prototype.validate = function(aValues, oType, aCompositeTypes, iCompositePart) {
+		Operator.prototype.validate = function(aValues, oType, aCompositeTypes, iCompositePart, oAdditionalType, aAdditionalCompositeTypes) {
 
-			var iCount = this.valueTypes.length;
+			const iCount = this.valueTypes.length;
 
-			for (var i = 0; i < iCount; i++) {
-				if (this.valueTypes[i] && this.valueTypes[i] !== Operator.ValueType.Static) { // do not validate Description in EQ case
-					if ([Operator.ValueType.Self, Operator.ValueType.Static].indexOf(this.valueTypes[i]) === -1) {
-						oType = this._createLocalType(this.valueTypes[i], oType);
+			for (let i = 0; i < iCount; i++) {
+				if ((this.valueTypes[i] || this.valueTypes[i] === null) && this.valueTypes[i] !== OperatorValueType.Static) { // do not validate Description in EQ case
+					let oUseType;
+					let aUseCompositeTypes;
+					if (this.valueTypes[i] === OperatorValueType.Self) {
+						oUseType = oType;
+						aUseCompositeTypes = aCompositeTypes;
+					} else if (this.valueTypes[i] === null) { // description
+						oUseType = oAdditionalType;
+						aUseCompositeTypes = aAdditionalCompositeTypes;
+					} else {
+						oUseType = this._createLocalType(this.valueTypes[i], oType);
 					}
-					if (aValues.length < i + 1) {
-						throw new Error("value " + i + " for operator " + this.getName() + " missing"); // no ValidateException as this error must not occur from user input
+
+
+					if (aValues.length < i + 1 && this.valueTypes[i]) {
+						throw new Error("value " + i + " for operator " + this.name + " missing"); // no ValidateException as this error must not occur from user input
 					}
-					if (oType) {
-						var vValue = aValues[i];
+					if (oUseType && aValues.length > i) { // test only if a value is given
+						let vValue = aValues[i];
 						if (vValue === undefined || vValue === null) {
-							vValue = oType ? oType.parseValue("", "string") : ""; // for empty value use initial value of type
+							vValue = oUseType ? oUseType.parseValue("", "string") : ""; // for empty value use initial value of type
 						}
 
-						if (oType.isA("sap.ui.model.CompositeType") && Array.isArray(vValue) && aCompositeTypes) {
+						if (oUseType.isA("sap.ui.model.CompositeType") && Array.isArray(vValue) && aUseCompositeTypes) {
 							// validate for basic types too
 							vValue = merge([], vValue); // use copy to not change original array
-							for (var j = 0; j < vValue.length; j++) {
-								if (aCompositeTypes[j]) {
+							for (let j = 0; j < vValue.length; j++) {
+								if (aUseCompositeTypes[j]) {
 									if (iCompositePart === undefined || j === iCompositePart) { // validate only the part that has changed. (if number has changed but not unit, no validation for units type is needed)
-										aCompositeTypes[j].validateValue(vValue[j]);
+										aUseCompositeTypes[j].validateValue(vValue[j]);
 									}
 
-									if (oType.getUseInternalValues()) {
+									if (oUseType.getUseInternalValues()) {
 										// use internal format for validation on CompositeType
-										var oFormat = aCompositeTypes[j].getModelFormat();
+										const oFormat = aUseCompositeTypes[j].getModelFormat();
 										if (oFormat && typeof oFormat.parse === "function") {
 											vValue[j] = oFormat.parse(vValue[j]);
 										}
@@ -590,7 +630,7 @@ sap.ui.define([
 							}
 						}
 
-						oType.validateValue(vValue);
+						oUseType.validateValue(vValue);
 					}
 				}
 			}
@@ -606,7 +646,7 @@ sap.ui.define([
 		 * @param {sap.ui.model.Type} oType original data type
 		 * @returns {sap.ui.model.SimpleType} data type
 		 * @private
-		 * @ui5-restricted sap.ui.mdc.field.DefineConditionPanel
+		 * @ui5-restricted sap.ui.mdc.valuehelp.base.DefineConditionPanel
 		 */
 		Operator.prototype._createLocalType = function(vType, oType) {
 
@@ -614,12 +654,12 @@ sap.ui.define([
 				this._aTypes = []; // array as for SelfNoParse type depends on FilterField
 			}
 
-			var sType;
-			var oFormatOptions;
-			var oConstraints;
-			var oUsedType;
+			let sType;
+			let oFormatOptions;
+			let oConstraints;
+			let oUsedType;
 
-			if (vType === Operator.ValueType.SelfNoParse) {
+			if (vType === OperatorValueType.SelfNoParse) {
 				// create "clone" of original type but do not change value in parse or format
 				sType = oType.getMetadata().getName(); // type is already loaded because instance is provided
 				oFormatOptions = merge({}, oType.getFormatOptions());
@@ -632,8 +672,8 @@ sap.ui.define([
 				oConstraints = vType.constraints;
 			}
 
-			for (var i = 0; i < this._aTypes.length; i++) {
-				var oMyType = this._aTypes[i];
+			for (let i = 0; i < this._aTypes.length; i++) {
+				const oMyType = this._aTypes[i];
 				if (oMyType.name === sType && deepEqual(oMyType.formatOptions, oFormatOptions) && deepEqual(oMyType.constraints, oConstraints)) {
 					oUsedType = oMyType.type;
 					break;
@@ -641,18 +681,18 @@ sap.ui.define([
 			}
 
 			if (!oUsedType) {
-				// The used type must be required from the application.
-				var TypeClass = ObjectPath.get(sType || "");
+				// The used type must be required by the application.
+				const TypeClass = sap.ui.require(sType.replace(/\./g, "/"));
 				oUsedType = new TypeClass(oFormatOptions, oConstraints);
 				oUsedType._bCreatedByOperator = true; // to distinguish in Field between original type and Operator type on Operator change
 
-				if (vType === Operator.ValueType.SelfNoParse) {
+				if (vType === OperatorValueType.SelfNoParse) {
 					oUsedType.parseValue = function(vValue, sSourceType) {
 						TypeClass.prototype.parseValue.apply(this, arguments); // to check for parse exception
 						return vValue;
 					};
 					oUsedType.validateValue = function(vValue) {
-						var sValue = TypeClass.prototype.parseValue.apply(this, [vValue, "string"]); // to check with parsed value
+						const sValue = TypeClass.prototype.parseValue.apply(this, [vValue, "string"]); // to check with parsed value
 						TypeClass.prototype.validateValue.apply(this, [sValue]);
 					};
 					oUsedType.formatValue = function(vValue, sTargetType) {
@@ -687,7 +727,7 @@ sap.ui.define([
 		 * In this function no type validation takes place.
 		 *
 		 * @param {string} sText Text
-		 * @param {sap.ui.mdc.enum.FieldDisplay} sDisplayFormat Display format
+		 * @param {sap.ui.mdc.enums.FieldDisplay} sDisplayFormat Display format
 		 * @param {boolean} bDefaultOperator If true, operator is used as default. In this case parsing without operator also works
 		 * @returns {string[]} array of value parts without operator sign
 		 *
@@ -697,12 +737,12 @@ sap.ui.define([
 		 */
 		Operator.prototype.getValues = function(sText, sDisplayFormat, bDefaultOperator) {
 
-			var aMatch = sText.match(this.tokenParseRegExp);
-			var aValues;
+			const aMatch = sText.match(this.tokenParseRegExp);
+			let aValues;
 			if (aMatch || (bDefaultOperator && sText)) {
 				aValues = [];
-				for (var i = 0; i < this.valueTypes.length; i++) {
-					var sValue;
+				for (let i = 0; i < this.valueTypes.length; i++) {
+					let sValue;
 					if (aMatch) {
 						sValue = aMatch[i + 1];
 					} else if (bDefaultOperator) {
@@ -724,22 +764,24 @@ sap.ui.define([
 		 *
 		 * @param {string} sText Text
 		 * @param {sap.ui.model.Type} oType Data type
-		 * @param {sap.ui.mdc.enum.FieldDisplay} sDisplayFormat Display format
+		 * @param {sap.ui.mdc.enums.FieldDisplay} sDisplayFormat Display format
 		 * @param {boolean} bDefaultOperator If true, operator is used as default. In this case parsing without operator also works
-		 * @param {sap.ui.model.Type[]} [aCompositeTypes] additional Types used for parts of a <code>CompositeType</code>
+		 * @param {sap.ui.model.Type[]} [aCompositeTypes] Additional types used for each part of a <code>CompositeType</code>
+		 * @param {sap.ui.model.Type} [oAdditionalType] Data type for additional value
+		 * @param {sap.ui.model.Type[]} [aAdditionalCompositeTypes] Additional types used for each part of a <code>CompositeType</code> (if <code>oAdditionalType</code> is a <code>CompositeType</code>)
 		 * @returns {sap.ui.mdc.condition.ConditionObject} The condition for the text
 		 * @throws {sap.ui.model.ParseException} if the text cannot be parsed
 		 *
 		 * @private
 		 * @ui5-restricted sap.ui.mdc
 		 */
-		Operator.prototype.getCondition = function(sText, oType, sDisplayFormat, bDefaultOperator, aCompositeTypes) {
+		Operator.prototype.getCondition = function(sText, oType, sDisplayFormat, bDefaultOperator, aCompositeTypes, oAdditionalType, aAdditionalCompositeTypes) {
 
 			if (this.test(sText) || (bDefaultOperator && sText && this.hasRequiredValues())) {
-				var aValues = this.parse(sText, oType, sDisplayFormat, bDefaultOperator, aCompositeTypes);
-				if (aValues.length == this.valueTypes.length || this.valueTypes[0] === Operator.ValueType.Static
+				const aValues = this.parse(sText, oType, sDisplayFormat, bDefaultOperator, aCompositeTypes, oAdditionalType, aAdditionalCompositeTypes);
+				if (aValues.length == this.valueTypes.length || this.valueTypes[0] === OperatorValueType.Static
 						|| (aValues.length === 1 && this.valueTypes.length === 2 && !this.valueTypes[1])) { // EQ also valid without description
-					var oCondition =  Condition.createCondition( this.name, aValues );
+					const oCondition =  Condition.createCondition( this.name, aValues );
 					this.checkValidated(oCondition);
 					return oCondition;
 				} else {
@@ -781,7 +823,7 @@ sap.ui.define([
 		 */
 		Operator.prototype.getCheckValue = function(oCondition) {
 
-			if (this.valueTypes[0] && this.valueTypes[0] === Operator.ValueType.Static) {
+			if (this.valueTypes[0] && this.valueTypes[0] === OperatorValueType.Static) {
 				return {}; // don't check value for static operators (might contain static text)
 			} else {
 				return {values: oCondition.values};
@@ -798,7 +840,7 @@ sap.ui.define([
 		 */
 		 Operator.prototype.hasRequiredValues = function() {
 
-			if (this.valueTypes[0] && this.valueTypes[0] !== Operator.ValueType.Static) {
+			if (this.valueTypes[0] && this.valueTypes[0] !== OperatorValueType.Static) {
 				return true;
 			} else {
 				return false;
@@ -822,11 +864,11 @@ sap.ui.define([
 		 */
 		Operator.prototype.compareConditions = function(oCondition1, oCondition2) {
 
-			var bEqual = false;
+			let bEqual = false;
 
 			if (oCondition1.operator === this.name && oCondition1.operator === oCondition2.operator) {
-				var oCheckValue1 = this.getCheckValue(oCondition1);
-				var oCheckValue2 = this.getCheckValue(oCondition2);
+				const oCheckValue1 = this.getCheckValue(oCondition1);
+				const oCheckValue2 = this.getCheckValue(oCondition2);
 
 
 				// In/outParameter logic still used as long as old FiledValueHelp is supported
@@ -853,11 +895,8 @@ sap.ui.define([
 					oCheckValue2.validated = oCondition2.validated;
 				}
 
-				var sCheckValue1 = JSON.stringify(oCheckValue1);
-				var sCheckValue2 = JSON.stringify(oCheckValue2);
-
-				if (sCheckValue1 === sCheckValue2) {
-					bEqual = true;
+				if (deepEqual(oCheckValue1, oCheckValue2)) { // deepEqual seems to be much faster as JSON-string comparison
+						bEqual = true;
 				}
 			}
 
@@ -879,6 +918,39 @@ sap.ui.define([
 
 			oCondition.validated = ConditionValidated.NotValidated;
 
+		};
+
+		Operator.prototype._enableOverwrites = function (oConfiguration) {
+			this._oMethodOverwrites = {};
+			["format", "parse", "validate", "getModelFilter", "isEmpty", "createControl", "getCheckValue", "getValues", "checkValidated", "getLongText"].forEach(function (sMethodName) {
+				Object.defineProperty(this, sMethodName, {
+					get: function( ) {
+						return (this._oMethodOverwrites && this._oMethodOverwrites[sMethodName]) || Object.getPrototypeOf(this)[sMethodName];
+					}
+				});
+				if (oConfiguration && oConfiguration[sMethodName]) {
+					this._oMethodOverwrites[sMethodName] = oConfiguration[sMethodName];
+				}
+			}.bind(this));
+		};
+
+		const aAllowedOverwrites = Object.values(OperatorOverwrite);
+		/**
+		 * Sets an overwrite function for some of the <code>operator</code> functions.
+		 *
+		 * @param {sap.ui.mdc.enums.OperatorOverwrite} sMethodName name of the function which will be overwritten
+		 * @param {function} fnOverwrite new callback function
+		 * @returns {function} the original function
+		 * @public
+		 * @since: 1.113.0
+		 */
+		Operator.prototype.overwrite = function (sMethodName, fnOverwrite) {
+			if (aAllowedOverwrites.indexOf(sMethodName) >= 0) {
+				const fnPrevious = this[sMethodName];
+				this._oMethodOverwrites[sMethodName] = fnOverwrite;
+				return fnPrevious.bind(this);
+			}
+			throw "Operator: Illegal overwrite detected. Please see sap.ui.mdc.enums.OperatorOverwrite";
 		};
 
 		return Operator;

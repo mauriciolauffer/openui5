@@ -1,4 +1,4 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/ui/fl/descriptorRelated/internal/Utils",
@@ -13,7 +13,7 @@ sap.ui.define([
 
 	var sandbox = sinon.createSandbox();
 	QUnit.module("Utils", {
-		beforeEach: function() {
+		beforeEach() {
 			sandbox.stub(Settings, "getInstance").resolves(
 				new Settings({
 					isKeyUser: false,
@@ -23,7 +23,7 @@ sap.ui.define([
 				})
 			);
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
@@ -64,7 +64,7 @@ sap.ui.define([
 			}), undefined);
 		});
 
-		QUnit.test("checkEntityPropertyChange failure", function (assert) {
+		QUnit.test("checkEntityPropertyChange failure", function(assert) {
 			assert.throws(function() {
 				Utils.checkEntityPropertyChange({
 					entityPropertyChange: {
@@ -148,6 +148,11 @@ sap.ui.define([
 		QUnit.test("checkPackage", function(assert) {
 			assert.equal(Utils.checkPackage("MYPACKAGE"), undefined);
 			assert.equal(Utils.checkPackage("/UI5/MYPACKAGE"), undefined);
+			assert.equal(Utils.checkPackage("MY-PACKAGE"), undefined);
+			assert.equal(Utils.checkPackage("$TMP"), undefined);
+			assert.equal(Utils.checkPackage("$LOCAL"), undefined);
+			assert.equal(Utils.checkPackage("MY1234ALLOWED"), undefined);
+			assert.equal(Utils.checkPackage("$/MY/MY_PACK-AGE"), undefined);
 		});
 
 		QUnit.test("checkPackage failure", function(assert) {
@@ -156,6 +161,15 @@ sap.ui.define([
 			});
 			assert.throws(function() {
 				Utils.checkPackage("wrongtype");
+			});
+			assert.throws(function() {
+				Utils.checkPackage("WRONGVERYLOOOOOOOOOOOOOOONGTYPE");
+			});
+			assert.throws(function() {
+				Utils.checkPackage("My_Package");
+			});
+			assert.throws(function() {
+				Utils.checkPackage("WroNgTyPe");
 			});
 		});
 
@@ -171,7 +185,7 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

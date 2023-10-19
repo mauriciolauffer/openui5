@@ -10,8 +10,9 @@ sap.ui.define([
 	"sap/ui/core/dnd/DragInfo",
 	"sap/m/Panel",
 	"sap/m/library",
-	"sap/ui/thirdparty/jquery"
-], function(qutils, createAndAppendDiv, Link, Text, KeyCodes, coreLibrary, Core, DragInfo, Panel, mobileLibrary, jQuery) {
+	"sap/ui/thirdparty/jquery",
+	"sap/ui/Device"
+], function(qutils, createAndAppendDiv, Link, Text, KeyCodes, coreLibrary, Core, DragInfo, Panel, mobileLibrary, jQuery, Device) {
 	"use strict";
 
 	// shortcut for sap.ui.core.TextDirection
@@ -76,14 +77,14 @@ sap.ui.define([
 
 	QUnit.test("Press event", function(assert) {
 		assert.expect(12); // verifies the event handler was executed
-		qutils.triggerEvent((jQuery.support.touch ? "tap" : "click"), oLink1.getId());
+		qutils.triggerEvent("click", oLink1.getId());
 		bLinkPressExpectCtrlKey = true;
-		qutils.triggerEvent((jQuery.support.touch ? "tap" : "click"), oLink1.getId(), {ctrlKey: true});
+		qutils.triggerEvent("click", oLink1.getId(), {ctrlKey: true});
 		bLinkPressExpectCtrlKey = false;
 		bLinkPressExpectMetaKey = true;
-		qutils.triggerEvent((jQuery.support.touch ? "tap" : "click"), oLink1.getId(), {metaKey: true});
+		qutils.triggerEvent("click", oLink1.getId(), {metaKey: true});
 		bLinkPressExpectCtrlKey = true;
-		qutils.triggerEvent((jQuery.support.touch ? "tap" : "click"), oLink1.getId(), {metaKey: true, ctrlKey: true});
+		qutils.triggerEvent("click", oLink1.getId(), {metaKey: true, ctrlKey: true});
 		bLinkPressExpectMetaKey = false;
 		bLinkPressExpectCtrlKey = false;
 	});
@@ -236,8 +237,7 @@ sap.ui.define([
 	});
 
 	QUnit.test("Disabled link should have empty href", function(assert) {
-		/*eslint-disable no-script-url */
-		assert.equal(oLink2.$().attr("href"), "javascript:void(0)", "oLink2 href should be empty");
+		assert.equal(oLink2.$().attr("href"), "#", "oLink2 href should be empty");
 		oLink2.setEnabled(true);
 		Core.applyChanges();
 		assert.equal(oLink2.$().attr("href"), "x.html", "oLink2 href should be 'x.html' again after enabling");
@@ -344,8 +344,7 @@ sap.ui.define([
 		oLink.setHref("");
 		Core.applyChanges();
 		assert.notOk(oLinkDomRef.getAttribute("role"), "Links without href shouldn't have a role too");
-		/*eslint-disable no-script-url */
-		assert.strictEqual(oLinkDomRef.getAttribute("href"), "javascript:void(0)", "Links without href should have an empty href attribute");
+		assert.strictEqual(oLinkDomRef.getAttribute("href"), "#", "Links without href should have an empty href attribute");
 
 		// ARIA disabled
 		oLink.setEnabled(false);
@@ -527,8 +526,7 @@ sap.ui.define([
 		oLink.placeAt("qunit-fixture");
 		Core.applyChanges();
 
-		/*eslint-disable no-script-url */
-		assert.equal(oLink.$().attr("href"), "javascript:void(0)", "Link href should be empty if an invalid URL is provided");
+		assert.equal(oLink.$().attr("href"), "#", "Link href should be empty if an invalid URL is provided");
 
 		oLink.setHref(sValidUrl);
 		Core.applyChanges();
@@ -538,7 +536,7 @@ sap.ui.define([
 		oLink.setHref(sInvalidUrl);
 		Core.applyChanges();
 
-		assert.equal(oLink.$().attr("href"), "javascript:void(0)", "Link href should be empty if an invalid URL is set");
+		assert.equal(oLink.$().attr("href"), "#", "Link href should be empty if an invalid URL is set");
 
 		oLink.destroy();
 	});
@@ -622,6 +620,66 @@ sap.ui.define([
 			"cross-origin URL");
 
 		oLink.destroy();
+	});
+
+	QUnit.test("Prevent navigation", function(assert) {
+		// Prepare
+		var oLink = new Link({text: "text"}),
+			oClickEvent = new Event("click", {bubbles: true, cancelable: true}),
+			oPressSpy = this.spy(oLink, "firePress"),
+			oPreventDefaultSpy = this.spy(oClickEvent, "preventDefault");
+
+		var oDeviceStub = this.stub(Device, "system").value({ phone: true });
+
+		oLink.placeAt("qunit-fixture");
+		Core.applyChanges();
+
+		// Act
+		oLink.getDomRef().dispatchEvent(oClickEvent);
+
+		// Assert
+		assert.ok(oPressSpy.calledOnce, "Press event still fired");
+		// The event is prevented twice due to the native event handling and siumlated event handling
+		assert.ok(oPreventDefaultSpy.calledTwice, "Default action is prevented");
+
+		// Clean
+		oPreventDefaultSpy.resetHistory();
+
+		// Act
+		oLink.setHref("www.sample.domain.com");
+		Core.applyChanges();
+
+		// Act
+		oLink.getDomRef().dispatchEvent(oClickEvent);
+
+		// Assert
+		assert.ok(oPreventDefaultSpy.notCalled, "Navigation would not be prevented");
+
+		// Clean
+		oLink.destroy();
+		oDeviceStub.restore();
+	});
+
+	QUnit.test("The press event is prevented even if the link's DOM is moved into the static area", function(assert) {
+		// Prepare
+		var oLink = new Link({text: "text"}),
+			oFakeEvent = {
+				preventDefault: function() {},
+				setMarked: function() {},
+				target: {
+					classList: {
+						contains: function() { return true; }
+					},
+					getAttribute: function() { return "#"; }
+				}
+			},
+			oPreventDefaultSpy = this.spy(oFakeEvent, "preventDefault");
+
+		// Act
+		oLink.onclick(oFakeEvent);
+
+		// Assert
+		assert.ok(oPreventDefaultSpy.calledOnce, "Default action is prevented");
 	});
 
 	QUnit.module("EmptyIndicator", {

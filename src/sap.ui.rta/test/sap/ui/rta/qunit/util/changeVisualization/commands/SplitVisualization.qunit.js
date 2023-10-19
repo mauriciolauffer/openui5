@@ -1,19 +1,19 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/ui/rta/util/changeVisualization/commands/SplitVisualization",
-	"sap/ui/core/Core"
+	"sap/ui/core/Lib"
 ], function(
 	SplitVisualization,
-	oCore
+	Lib
 ) {
 	"use strict";
-	var oResourceBundle = oCore.getLibraryResourceBundle("sap.ui.rta");
+	var oResourceBundle = Lib.getResourceBundleFor("sap.ui.rta");
 
 	QUnit.module("Base tests", {
-		beforeEach: function() {
+		beforeEach() {
 		},
-		afterEach: function() {
+		afterEach() {
 		}
 	}, function() {
 		QUnit.test("when a payload with the label is passed", function(assert) {
@@ -30,7 +30,7 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

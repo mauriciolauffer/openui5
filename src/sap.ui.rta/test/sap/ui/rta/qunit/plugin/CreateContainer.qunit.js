@@ -18,7 +18,7 @@ sap.ui.define([
 	"sap/ui/rta/plugin/CreateContainer",
 	"sap/ui/thirdparty/sinon-4",
 	"test-resources/sap/ui/rta/qunit/RtaQunitUtils",
-	"sap/ui/core/Core"
+	"sap/ui/qunit/utils/nextUIUpdate"
 ], function(
 	uid,
 	XMLView,
@@ -37,11 +37,11 @@ sap.ui.define([
 	CreateContainerPlugin,
 	sinon,
 	RtaQunitUtils,
-	oCore
+	nextUIUpdate
 ) {
 	"use strict";
 
-	var viewContent = '<mvc:View xmlns:mvc="sap.ui.core.mvc">' + '</mvc:View>';
+	var viewContent = '<mvc:View xmlns:mvc="sap.ui.core.mvc">' + "</mvc:View>";
 
 	var oMockedViewWithStableId;
 	XMLView.create({
@@ -55,7 +55,7 @@ sap.ui.define([
 	var sandbox = sinon.createSandbox();
 
 	QUnit.module("Given a designTime and createContainer plugin are instantiated for a Form", {
-		beforeEach: function(assert) {
+		async beforeEach(assert) {
 			this.oMockedAppComponent = RtaQunitUtils.createAndStubAppComponent(sandbox);
 			sandbox.stub(Utils, "getViewForControl").returns(oMockedViewWithStableId);
 			sandbox.stub(ChangesWriteAPI, "getChangeHandler").resolves();
@@ -77,7 +77,7 @@ sap.ui.define([
 				content: [this.oForm]
 			}).placeAt("qunit-fixture");
 
-			oCore.applyChanges();
+			await nextUIUpdate();
 
 			this.sNewControlID = oMockedViewWithStableId.createId(uid());
 			this.oNewFormContainerStub = new FormContainer(this.sNewControlID);
@@ -99,7 +99,7 @@ sap.ui.define([
 				done();
 			}.bind(this));
 		},
-		afterEach: function () {
+		afterEach() {
 			sandbox.restore();
 			this.oMockedAppComponent.destroy();
 			this.oVerticalLayout.destroy();
@@ -187,7 +187,7 @@ sap.ui.define([
 						actions: {
 							createContainer: {
 								changeType: "addGroup",
-								isEnabled: function (oElement) {
+								isEnabled(oElement) {
 									return oElement.getMetadata().getName() === "sap.ui.layout.form.Form";
 								}
 							}
@@ -211,17 +211,17 @@ sap.ui.define([
 				var bFirstCall = true;
 				var bIsAvailable = true;
 				sandbox.stub(this.oCreateContainer, "isAvailable").callsFake(function(aElementOverlays, bOverlayIsSibling) {
-					assert.equal(bOverlayIsSibling, bFirstCall, "the 'available' function calls isAvailable with bOverlayIsSibling = " + bFirstCall);
+					assert.equal(bOverlayIsSibling, bFirstCall, `the 'available' function calls isAvailable with bOverlayIsSibling = ${bFirstCall}`);
 					assert.deepEqual(aElementOverlays[0].getId(), this.oFormOverlay.getId(), "the 'available' function calls isAvailable with the correct overlay");
 					bFirstCall = false;
 					return bIsAvailable;
 				}.bind(this));
 				sandbox.stub(this.oCreateContainer, "handleCreate").callsFake(function(bOverlayIsSibling, oElementOverlay) {
-					assert.equal(bOverlayIsSibling, bCheckValue, "the 'handleCreate' function is called with bOverlayIsSibling = " + bCheckValue);
+					assert.equal(bOverlayIsSibling, bCheckValue, `the 'handleCreate' function is called with bOverlayIsSibling = ${bCheckValue}`);
 					assert.deepEqual(oElementOverlay.getId(), this.oFormOverlay.getId(), "the 'handleCreate' function is called with the correct overlay");
 				}.bind(this));
 				sandbox.stub(this.oCreateContainer, "isEnabled").callsFake(function(aElementOverlays, bOverlayIsSibling) {
-					assert.equal(bOverlayIsSibling, bCheckValue, "the 'enabled' function calls isEnabled with bOverlayIsSibling = " + bCheckValue);
+					assert.equal(bOverlayIsSibling, bCheckValue, `the 'enabled' function calls isEnabled with bOverlayIsSibling = ${bCheckValue}`);
 					assert.deepEqual(aElementOverlays[0].getId(), this.oFormOverlay.getId(), "the 'enabled' function calls isEnabled with the correct overlay");
 				}.bind(this));
 
@@ -297,7 +297,7 @@ sap.ui.define([
 		QUnit.test("when the designTimeMetadata has a getContainerIndex property and a function _determineIndex() is called", function(assert) {
 			var vAction = {
 				aggregationName: "formContainers",
-				getIndex: function(oForm, oFormContainer) {
+				getIndex(oForm, oFormContainer) {
 					var sAggregationName = vAction.aggregationName;
 					var oMetadata = oForm.getMetadata();
 					var oAggregation = oMetadata.getAggregation(sAggregationName);
@@ -327,7 +327,7 @@ sap.ui.define([
 
 		QUnit.test("when the designTimeMetadata has a getCreatedContainerId property and a function getCreatedContainerId() is called", function(assert) {
 			var vAction = {
-				getCreatedContainerId: function(sNewControlID) {
+				getCreatedContainerId(sNewControlID) {
 					return sNewControlID;
 				}
 			};
@@ -384,7 +384,7 @@ sap.ui.define([
 		QUnit.test("when a sibling overlay has createContainer action designTime metadata and handleCreate() is called, ", function(assert) {
 			var fnDone = assert.async();
 
-			this.oCreateContainer.attachEventOnce("elementModified", function (oEvent) {
+			this.oCreateContainer.attachEventOnce("elementModified", function(oEvent) {
 				var oCommand = oEvent.getParameter("command");
 				assert.ok(oCommand, "then command is available");
 				assert.strictEqual(oCommand.getMetadata().getName(), "sap.ui.rta.command.CreateContainer", "and command is of the correct type");
@@ -417,7 +417,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given a designTime and createContainer plugin are instantiated for a SimpleForm", {
-		beforeEach: function(assert) {
+		async beforeEach(assert) {
 			var done = assert.async();
 			this.oMockedAppComponent = RtaQunitUtils.createAndStubAppComponent(sandbox);
 			sandbox.stub(Utils, "getViewForControl").returns(oMockedViewWithStableId);
@@ -428,13 +428,14 @@ sap.ui.define([
 			});
 			this.oTitle = new Title(oMockedViewWithStableId.createId("title"), { text: "title" });
 			this.oSimpleForm = new SimpleForm(oMockedViewWithStableId.createId("form"), {
+				layout: "ResponsiveGridLayout",
 				content: [this.oTitle]
 			});
 			this.oVerticalLayout = new VerticalLayout(oMockedViewWithStableId.createId("verticalLayout"), {
 				content: [this.oSimpleForm]
 			}).placeAt("qunit-fixture");
 
-			oCore.applyChanges();
+			await nextUIUpdate();
 
 			this.oDesignTime = new DesignTime({
 				rootElements: [this.oVerticalLayout],
@@ -447,13 +448,13 @@ sap.ui.define([
 				done();
 			}.bind(this));
 		},
-		afterEach: function () {
+		afterEach() {
 			sandbox.restore();
 			this.oMockedAppComponent.destroy();
 			this.oVerticalLayout.destroy();
 			this.oDesignTime.destroy();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("when a child overlay has propagated createContainer action designTime metadata and handleCreate() is called, ", function(assert) {
 			var fnDone = assert.async();
 
@@ -487,7 +488,7 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

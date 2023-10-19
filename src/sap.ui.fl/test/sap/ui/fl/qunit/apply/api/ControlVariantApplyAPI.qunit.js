@@ -1,10 +1,10 @@
 /* global QUnit */
 
 sap.ui.define([
+	"sap/base/util/restricted/_omit",
 	"sap/base/Log",
 	"sap/ui/core/Component",
 	"sap/ui/fl/apply/_internal/controlVariants/URLHandler",
-	"sap/ui/fl/apply/_internal/flexState/controlVariants/VariantManagementState",
 	"sap/ui/fl/apply/api/ControlVariantApplyAPI",
 	"sap/ui/fl/variants/VariantManagement",
 	"sap/ui/fl/variants/VariantModel",
@@ -13,10 +13,10 @@ sap.ui.define([
 	"sap/ui/thirdparty/hasher",
 	"sap/ui/thirdparty/sinon-4"
 ], function(
+	_omit,
 	Log,
 	Component,
 	URLHandler,
-	VariantManagementState,
 	ControlVariantApplyAPI,
 	VariantManagement,
 	VariantModel,
@@ -32,11 +32,7 @@ sap.ui.define([
 	function stubTechnicalParameterValues(aUrlTechnicalParameters) {
 		sandbox.stub(this.oModel, "getLocalId").withArgs(this.oDummyControl.getId(), this.oAppComponent).returns("variantMgmtId1");
 		sandbox.spy(URLHandler, "update");
-		sandbox.stub(VariantManagementState, "getVariant").withArgs({
-			vmReference: "variantMgmtId1",
-			vReference: "variant1",
-			reference: "someComponentName"
-		}).returns(true);
+		sandbox.stub(this.oModel, "getVariant").withArgs("variant1", "variantMgmtId1").returns({simulate: "foundVariant"});
 		sandbox.stub(hasher, "replaceHash");
 		this.fnParseShellHashStub = sandbox.stub().callsFake(function() {
 			if (!this.bCalled) {
@@ -54,12 +50,12 @@ sap.ui.define([
 				case "URLParsing":
 					return {
 						parseShellHash: this.fnParseShellHashStub,
-						constructShellHash: function() {return "constructedHash";}
+						constructShellHash() {return "constructedHash";}
 					};
 				case "ShellNavigation":
-					return {registerNavigationFilter: function() {}, unregisterNavigationFilter: function() {}};
+					return {registerNavigationFilter() {}, unregisterNavigationFilter() {}};
 				case "CrossApplicationNavigation":
-					return {toExternal: function() {}};
+					return {toExternal() {}};
 				default:
 					return undefined;
 			}
@@ -85,7 +81,7 @@ sap.ui.define([
 	}
 
 	QUnit.module("Given an instance of VariantModel", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oData = {
 				variantMgmtId1: {
 					defaultVariant: "variantMgmtId1",
@@ -111,33 +107,25 @@ sap.ui.define([
 				}
 			};
 
-			var oMockFlexController = {
-				_oChangePersistence: {
-					getComponentName: function() {
-						return "someComponentName";
-					}
-				}
-			};
-
 			this.oDummyControl = new VariantManagement("dummyControl");
 
 			this.oAppComponent = new Component("AppComponent");
 			this.oModel = new VariantModel(this.oData, {
-				flexController: oMockFlexController,
+				flexController: {},
 				appComponent: this.oAppComponent
 			});
 			return this.oModel.initialize()
-				.then(function() {
-					this.oAppComponent.setModel(this.oModel, ControlVariantApplyAPI.getVariantModelName());
-					this.oComponent = new Component("EmbeddedComponent");
-					sandbox.stub(this.oModel, "waitForVMControlInit").resolves();
-					sandbox.stub(Utils, "getAppComponentForControl")
-						.callThrough()
-						.withArgs(this.oDummyControl).returns(this.oAppComponent)
-						.withArgs(this.oComponent).returns(this.oAppComponent);
-				}.bind(this));
+			.then(function() {
+				this.oAppComponent.setModel(this.oModel, ControlVariantApplyAPI.getVariantModelName());
+				this.oComponent = new Component("EmbeddedComponent");
+				sandbox.stub(this.oModel, "waitForVMControlInit").resolves();
+				sandbox.stub(Utils, "getAppComponentForControl")
+				.callThrough()
+				.withArgs(this.oDummyControl).returns(this.oAppComponent)
+				.withArgs(this.oComponent).returns(this.oAppComponent);
+			}.bind(this));
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 			this.oModel.destroy();
 			this.oAppComponent.destroy();
@@ -152,11 +140,10 @@ sap.ui.define([
 			ControlVariantApplyAPI.clearVariantParameterInURL({control: this.oDummyControl});
 
 			assert.ok(this.fnParseShellHashStub.calledTwice, "then variant parameter values were requested; once for read and write each");
-			assert.deepEqual(URLHandler.update.getCall(0).args[0], {
+			assert.deepEqual(_omit(URLHandler.update.getCall(0).args[0], "model"), {
 				parameters: [aUrlTechnicalParameters[0]],
 				updateURL: true,
 				updateHashEntry: true,
-				model: this.oModel,
 				silent: false
 			}, "then URLHandler.update called with the desired arguments");
 		});
@@ -280,36 +267,84 @@ sap.ui.define([
 			}.bind(this));
 		});
 
-		QUnit.test("when calling 'attachVariantApplied'", function(assert) {
-			var oModelAttachStub = sandbox.stub(this.oModel, "attachVariantApplied");
+		QUnit.test("when calling 'attachVariantApplied' when the model is already set on the app component", function(assert) {
+			var fnDone = assert.async();
 			var oCallbackStub = sinon.stub();
+			var oModelAttachStub = sandbox.stub(this.oModel, "attachVariantApplied").callsFake(function() {
+				var mExpectedPropertyBag = {
+					vmControlId: "vmcontrolId",
+					control: this.oAppComponent,
+					callback: oCallbackStub,
+					callAfterInitialVariant: true
+				};
+				var mPropertyBag = oModelAttachStub.lastCall.args[0];
+				assert.equal(oModelAttachStub.callCount, 1, "the model was called");
+				assert.deepEqual(mPropertyBag, mExpectedPropertyBag, "the function is called with the correct properties");
+				fnDone();
+			});
 			ControlVariantApplyAPI.attachVariantApplied({
 				selector: this.oAppComponent,
 				vmControlId: "vmcontrolId",
 				callback: oCallbackStub,
 				callAfterInitialVariant: true
 			});
-			var mExpectedPropertyBag = {
-				vmControlId: "vmcontrolId",
-				control: this.oAppComponent,
-				callback: oCallbackStub,
-				callAfterInitialVariant: true
-			};
-			var mPropertyBag = oModelAttachStub.lastCall.args[0];
-			assert.equal(oModelAttachStub.callCount, 1, "the model was called");
-			assert.deepEqual(mPropertyBag, mExpectedPropertyBag, "the function is called with the correct properties");
 		});
 
-		QUnit.test("when calling 'detachVariantApplied'", function(assert) {
-			var oModelDetachStub = sandbox.stub(this.oModel, "detachVariantApplied");
+		QUnit.test("when calling 'attachVariantApplied' when the model is still not set on the component", function(assert) {
+			var fnDone = assert.async();
+			var oCallbackStub = sinon.stub();
+			this.oAppComponent.setModel(undefined, ControlVariantApplyAPI.getVariantModelName());
+			var oModelAttachStub = sandbox.stub(this.oModel, "attachVariantApplied").callsFake(function() {
+				var mExpectedPropertyBag = {
+					vmControlId: "vmcontrolId",
+					control: this.oAppComponent,
+					callback: oCallbackStub,
+					callAfterInitialVariant: true
+				};
+				var mPropertyBag = oModelAttachStub.lastCall.args[0];
+				assert.equal(oModelAttachStub.callCount, 1, "the model was called");
+				assert.deepEqual(mPropertyBag, mExpectedPropertyBag, "the function is called with the correct properties");
+				fnDone();
+			});
+			ControlVariantApplyAPI.attachVariantApplied({
+				selector: this.oAppComponent,
+				vmControlId: "vmcontrolId",
+				callback: oCallbackStub,
+				callAfterInitialVariant: true
+			});
+			this.oAppComponent.setModel(this.oModel, ControlVariantApplyAPI.getVariantModelName());
+		});
+
+		QUnit.test("when calling 'detachVariantApplied' when the model is already set on the app component", function(assert) {
+			var fnDone = assert.async();
+			var oModelDetachStub = sandbox.stub(this.oModel, "detachVariantApplied").callsFake(function() {
+				var aArguments = oModelDetachStub.lastCall.args;
+				assert.equal(oModelDetachStub.callCount, 1, "the model was called");
+				assert.equal(aArguments[0], "vmcontrolId", "the function is called with the correct properties");
+				assert.equal(aArguments[1], this.oAppComponent.getId(), "the function is called with the correct properties");
+				fnDone();
+			});
 			ControlVariantApplyAPI.detachVariantApplied({
 				selector: this.oAppComponent,
 				vmControlId: "vmcontrolId"
 			});
-			var aArguments = oModelDetachStub.lastCall.args;
-			assert.equal(oModelDetachStub.callCount, 1, "the model was called");
-			assert.equal(aArguments[0], "vmcontrolId", "the function is called with the correct properties");
-			assert.equal(aArguments[1], this.oAppComponent.getId(), "the function is called with the correct properties");
+		});
+
+		QUnit.test("when calling 'detachVariantApplied' when the model is still not set on the app component", function(assert) {
+			var fnDone = assert.async();
+			this.oAppComponent.setModel(undefined, ControlVariantApplyAPI.getVariantModelName());
+			var oModelDetachStub = sandbox.stub(this.oModel, "detachVariantApplied").callsFake(function() {
+				var aArguments = oModelDetachStub.lastCall.args;
+				assert.equal(oModelDetachStub.callCount, 1, "the model was called");
+				assert.equal(aArguments[0], "vmcontrolId", "the function is called with the correct properties");
+				assert.equal(aArguments[1], this.oAppComponent.getId(), "the function is called with the correct properties");
+				fnDone();
+			});
+			ControlVariantApplyAPI.detachVariantApplied({
+				selector: this.oAppComponent,
+				vmControlId: "vmcontrolId"
+			});
+			this.oAppComponent.setModel(this.oModel, ControlVariantApplyAPI.getVariantModelName());
 		});
 	});
 

@@ -5,7 +5,7 @@ sap.ui.define([
 	"sap/ui/core/CustomData",
 	"sap/ui/core/mvc/XMLView",
 	"sap/ui/model/json/JSONModel"
-], function (
+], function(
 	App,
 	UIComponent,
 	SmartLinkUtil,
@@ -20,9 +20,9 @@ sap.ui.define([
 			manifest: "json"
 		},
 
-		init: function() {
+		init(...aArgs) {
 			this._bShowAdaptButton = !!this.getComponentData().showAdaptButton;
-			UIComponent.prototype.init.apply(this, arguments);
+			UIComponent.prototype.init.apply(this, aArgs);
 		},
 
 		/**
@@ -30,7 +30,7 @@ sap.ui.define([
 		 *
 		 * @returns {sap.ui.core.Control} the content
 		 */
-		createContent: function() {
+		createContent() {
 			SmartLinkUtil.mockUShellServices();
 
 			// app specific setup

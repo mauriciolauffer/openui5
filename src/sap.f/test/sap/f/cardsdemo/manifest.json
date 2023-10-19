@@ -40,13 +40,20 @@
 		"dependencies": {
 			"minUI5Version": "1.98.0",
 			"libs": {
-				"sap.ui.core": {},
 				"sap.f": {},
-				"sap.ui.layout": {},
+				"sap.m": {},
 				"sap.ui.codeeditor": {},
+				"sap.ui.core": {},
 				"sap.ui.integration": {},
-				"sap.m": {}
+				"sap.ui.layout": {}
 			}
+		},
+		"resources": {
+			"css": [
+				{
+					"uri": "css/styles.css"
+				}
+			]
 		},
 		"models": {
 			"i18n": {
@@ -96,6 +103,11 @@
 					"pattern": "calendarContent",
 					"name": "calendarContent",
 					"target": "calendarContent"
+				},
+				{
+					"pattern": "cardErrors",
+					"name": "cardErrors",
+					"target": "cardErrors"
 				},
 				{
 					"pattern": "tableContent",
@@ -306,6 +318,16 @@
 					"pattern": "requests",
 					"name": "requests",
 					"target": "requests"
+				},
+				{
+					"pattern": "modelSizeLimit",
+					"name": "modelSizeLimit",
+					"target": "modelSizeLimit"
+				},
+				{
+					"pattern": "tilesVariants",
+					"name": "tilesVariants",
+					"target": "tilesVariants"
 				}
 			],
 			"targets": {
@@ -332,6 +354,11 @@
 				"calendarContent": {
 					"id": "calendarContent",
 					"name": "calendarContent",
+					"level": 1
+				},
+				"cardErrors": {
+					"id": "cardErrors",
+					"name": "CardErrors",
 					"level": 1
 				},
 				"tableContent": {
@@ -541,6 +568,16 @@
 				"requests": {
 					"id": "requests",
 					"name": "Requests",
+					"level": 1
+				},
+				"modelSizeLimit": {
+					"id": "modelSizeLimit",
+					"name": "ModelSizeLimit",
+					"level": 1
+				},
+				"tilesVariants": {
+					"id": "tilesVariants",
+					"name": "TilesVariants",
 					"level": 1
 				}
 			}

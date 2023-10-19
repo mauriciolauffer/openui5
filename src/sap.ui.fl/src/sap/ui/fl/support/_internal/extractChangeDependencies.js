@@ -4,10 +4,12 @@
 
 sap.ui.define([
 	"sap/ui/core/util/reflection/JsControlTreeModifier",
+	"sap/ui/core/Element",
 	"sap/ui/fl/apply/_internal/flexState/ManifestUtils",
 	"sap/ui/thirdparty/jquery"
 ], function(
 	JsControlTreeModifier,
+	Element,
 	ManifestUtils,
 	jQuery
 ) {
@@ -27,8 +29,9 @@ sap.ui.define([
 	function getAppComponentInstance(sComponentName) {
 		var oCorrectAppComponent;
 		var aComponentContainers = document.querySelector(".sapUiComponentContainer");
+		aComponentContainers = Array.isArray(aComponentContainers) ? aComponentContainers : [aComponentContainers];
 		aComponentContainers.some(function(oComponentContainerDomRef) {
-			var oComponentContainer = sap.ui.getCore().byId(oComponentContainerDomRef.id);
+			var oComponentContainer = Element.getElementById(oComponentContainerDomRef.id);
 			var oAppComponent = oComponentContainer && oComponentContainer.getComponentInstance();
 
 			if (oAppComponent && ManifestUtils.getFlexReferenceForControl(oAppComponent) === sComponentName) {
@@ -45,13 +48,13 @@ sap.ui.define([
 		for (var sChangeId in oChangePersistence._mChangesEntries) {
 			var oChange = oChangePersistence._mChangesEntries[sChangeId];
 			oExport.mChangesEntries[sChangeId] = {
-				mDefinition: oChange.getDefinition(),
+				mDefinition: oChange.convertToFileContent(),
 				aControlsDependencies: [],
 				aDependencies: []
 			};
 
-			if (oChange._aDependentSelectorList) {
-				oChange._aDependentSelectorList.forEach(function (oSelector) {
+			if (oChange._aDependentSelectorList && oAppComponent) {
+				oChange._aDependentSelectorList.forEach(function(oSelector) {
 					var mControlData = {
 						bPresent: !!JsControlTreeModifier.bySelector(oSelector, oAppComponent),
 						aAppliedChanges: [],
@@ -76,8 +79,8 @@ sap.ui.define([
 		}
 	}
 
-	function enhanceExportWithVariantChangeData (oChangePersistence, oExport) {
-		jQuery.each(oChangePersistence._mVariantsChanges, function (sChangeId, oChange) {
+	function enhanceExportWithVariantChangeData(oChangePersistence, oExport) {
+		jQuery.each(oChangePersistence._mVariantsChanges, function(sChangeId, oChange) {
 			oExport.mVariantsChanges[sChangeId] = {
 				mDefinition: oChange._oDefinition
 			};
@@ -87,7 +90,7 @@ sap.ui.define([
 	function enhanceWithChangetypeSpecificData(oExport, sExportParameterName, mControlData, sControlDataParameterName, aCustomDataChanges) {
 		if (aCustomDataChanges) {
 			mControlData[sControlDataParameterName] = aCustomDataChanges;
-			mControlData[sControlDataParameterName].map(function (sChangeId) {
+			mControlData[sControlDataParameterName].map(function(sChangeId) {
 				if (!(sChangeId in oExport[sExportParameterName])) {
 					oExport[sExportParameterName].push(sChangeId);
 				}
@@ -95,10 +98,10 @@ sap.ui.define([
 		}
 	}
 
-	function getChangesForControlFromCustomData (oControl, sIdentifier) {
+	function getChangesForControlFromCustomData(oControl, sIdentifier) {
 		var aCustomData = oControl.getCustomData();
 		var aChangeIds = [];
-		aCustomData.forEach(function (oCustomData) {
+		aCustomData.forEach(function(oCustomData) {
 			var sKey = oCustomData.getKey();
 			if (sKey.startsWith(sIdentifier)) {
 				aChangeIds.push(sKey.replace(sIdentifier, ""));
@@ -107,7 +110,7 @@ sap.ui.define([
 		return aChangeIds;
 	}
 
-	function enhanceExportWithControlData (oChangePersistence, oExport) {
+	function enhanceExportWithControlData(oChangePersistence, oExport) {
 		// collect applied changes
 
 		for (var sControlId in oChangePersistence._mChanges.mChanges) {
@@ -119,7 +122,7 @@ sap.ui.define([
 				aNotApplicableChanges: []
 			};
 
-			var oControl = sap.ui.getCore().byId(sControlId);
+			var oControl = Element.getElementById(sControlId);
 
 			if (oControl) {
 				mControlData.bPresent = true;
@@ -132,7 +135,7 @@ sap.ui.define([
 		}
 	}
 
-	return function (oChangePersistence) {
+	return function(oChangePersistence) {
 		if (!oChangePersistence) {
 			return;
 		}

@@ -15,6 +15,11 @@
 		color: blue;
 		background-color: #FFFFDD;
 	}
+
+	#input1 {
+		caret-color: transparent;
+	}
+
 	</style>
 	<script src="shared-config.js"></script>
 	<script src="../../../resources/sap-ui-core.js" id="sap-ui-bootstrap"
@@ -253,11 +258,26 @@
 							content: [
 								new Button("button3", {text: "Click me"})
 							]
+						}),
+						oPanelSticky = new Panel("panelSticky", {
+							headerText: "Panel Sticky Header Text",
+							expandable: true,
+							expanded: true,
+							stickyHeader: true,
+							headerToolbar: new Toolbar({
+								content: [
+									new Title({text: "Panel Sticky Header Toolbar Title Text"})
+								]
+							}),
+							content: [
+								new Text("textSticky", {text: "I am content text of the Sticky Header panel " + lorem})
+							]
 						});
 
 					var oPage = new Page("page", {
 						title: "Panel Test Page",
 						content: [
+							oPanelSticky,
 							oPanel1,
 							oPanel2,
 							oPanel3,

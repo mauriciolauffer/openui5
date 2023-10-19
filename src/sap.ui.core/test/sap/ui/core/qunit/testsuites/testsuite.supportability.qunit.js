@@ -32,7 +32,7 @@ sap.ui.define([], function() {
 			 */
 			"util/jquery.sap.trace": {
 				title: "jQuery.sap.trace",
-				beforeBootstrap: "test-resources/sap/ui/core/qunit/util/beforeBootstrap/jQuery.sap.trace"
+				page: "test-resources/sap/ui/core/qunit/util/jquery.sap.trace.qunit.html"
 			},
 			AppCacheBuster: {
 				/**
@@ -62,6 +62,18 @@ sap.ui.define([], function() {
 			"performance/trace/InitFESR_metatag_beaconurl": {
 				page: "test-resources/sap/ui/core/qunit/performance/trace/InitFESR_metatag_beaconurl.qunit.html",
 				title: "sap.ui.performance.trace.FESR: Activation of FESR via meta-tag with beacon URL"
+			},
+			"performance/trace/InitFESR_metatag_true": {
+				page: "test-resources/sap/ui/core/qunit/performance/trace/InitFESR_metatag_true.qunit.html",
+				title: "sap.ui.performance.trace.FESR: Activation of FESR via meta-tag true"
+			},
+			"performance/trace/InitFESR_metatag_false": {
+				page: "test-resources/sap/ui/core/qunit/performance/trace/InitFESR_metatag_false.qunit.html",
+				title: "sap.ui.performance.trace.FESR: Activation of FESR via meta-tag false"
+			},
+			"performance/trace/InitFESR_metatag_emptyString": {
+				page: "test-resources/sap/ui/core/qunit/performance/trace/InitFESR_metatag_emptyString.qunit.html",
+				title: "sap.ui.performance.trace.FESR: Activation of FESR via meta-tag with empty string"
 			},
 			"performance/trace/InitFESR_notactive": {
 				title: "sap.ui.performance.trace.FESR: Inactivity of FESR"

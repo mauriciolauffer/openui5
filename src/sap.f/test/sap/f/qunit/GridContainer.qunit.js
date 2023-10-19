@@ -1102,6 +1102,34 @@ function (
 		assert.strictEqual(oItemWrapper1.getAttribute("tabindex"), "0",  "Focus should be on the first GridItem");
 	});
 
+	QUnit.test("Page Down navigating through grid container", function (assert) {
+		// Arrange
+		var oItemWrapper1 = this.oGrid.getDomRef().children[1],
+			oItemWrapper5 = this.oGrid.getDomRef().children[5];
+		oItemWrapper1.focus();
+		Core.applyChanges();
+
+		// Act
+		qutils.triggerKeydown(oItemWrapper1, KeyCodes.PAGE_DOWN, false, false, false);
+
+		// Assert
+		assert.strictEqual(oItemWrapper5.getAttribute("tabindex"), "0",  "Focus should be on the third GridItem");
+	});
+
+	QUnit.test("Page Up navigating through grid container", function (assert) {
+		// Arrange
+		var oItemWrapper2 = this.oGrid.getDomRef().children[2],
+			oItemWrapper4 = this.oGrid.getDomRef().children[4];
+			oItemWrapper4.focus();
+		Core.applyChanges();
+
+		// Act
+		qutils.triggerKeydown(oItemWrapper4, KeyCodes.PAGE_UP, false, false, false);
+
+		// Assert
+		assert.strictEqual(oItemWrapper2.getAttribute("tabindex"), "0",  "Focus should be on the first GridItem");
+	});
+
 	QUnit.test("Tabbing through a tile - focus should leave the grid container", function (assert) {
 
 		// Arrange
@@ -1791,6 +1819,27 @@ function (
 		oGrid.destroy();
 	});
 
+	QUnit.test("#focusItem should reset grid matrix position", function (assert) {
+		// Arrange
+		var oBtn1 = new Button({ text: "1" }),
+			oBtn2 = new Button({ text: "2" }),
+			oGrid = new GridContainer({
+				items: [ oBtn1, oBtn2 ]
+			});
+
+		oGrid.placeAt(DOM_RENDER_LOCATION);
+		Core.applyChanges();
+
+		// Act
+		oGrid.focusItem(1);
+
+		// Assert - check if the "before" element correctly forwarded the focus to grid element
+		assert.strictEqual(oGrid._oItemNavigation._mCurrentPosition, null, "Matrix position should be reset");
+
+		// Clean up
+		oGrid.destroy();
+	});
+
 	QUnit.module("Accessibility", {
 		beforeEach: function () {
 			this.oGrid = new GridContainer({
@@ -1880,8 +1929,6 @@ function (
 		},
 		afterEach: function () {
 			this.oGrid.destroy();
-			this.oCard.destroy();
-			this.oTile.destroy();
 		}
 	});
 

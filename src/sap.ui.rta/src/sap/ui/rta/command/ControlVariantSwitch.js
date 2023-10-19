@@ -43,8 +43,9 @@ sap.ui.define([
 			associations: {},
 			events: {}
 		},
-		constructor: function() {
-			BaseCommand.apply(this, arguments);
+		// eslint-disable-next-line object-shorthand
+		constructor: function(...aArgs) {
+			BaseCommand.apply(this, aArgs);
 			this.setRelevantForSave(false);
 		}
 	});
@@ -53,7 +54,6 @@ sap.ui.define([
 		return this.oModel.eraseDirtyChangesOnVariant(this.sVariantManagementReference, sVReference)
 		.then(function(aDirtyChanges) {
 			this._aSourceVariantDirtyChanges = aDirtyChanges;
-			this.oModel.checkUpdate(true);
 		}.bind(this));
 	}
 

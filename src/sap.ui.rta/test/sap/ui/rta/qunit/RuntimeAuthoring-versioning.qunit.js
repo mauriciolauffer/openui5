@@ -4,9 +4,10 @@ sap.ui.define([
 	"qunit/RtaQunitUtils",
 	"sap/m/MessageBox",
 	"sap/m/MessageToast",
+	"sap/ui/fl/initial/api/Version",
 	"sap/ui/fl/write/api/PersistenceWriteAPI",
-	"sap/ui/fl/write/api/Version",
 	"sap/ui/fl/write/api/VersionsAPI",
+	"sap/ui/fl/write/_internal/Versions",
 	"sap/ui/fl/Utils",
 	"sap/ui/rta/util/ReloadManager",
 	"sap/ui/rta/RuntimeAuthoring",
@@ -16,9 +17,10 @@ sap.ui.define([
 	RtaQunitUtils,
 	MessageBox,
 	MessageToast,
-	PersistenceWriteAPI,
 	Version,
+	PersistenceWriteAPI,
 	VersionsAPI,
+	Versions,
 	FlexUtils,
 	ReloadManager,
 	RuntimeAuthoring,
@@ -32,13 +34,13 @@ sap.ui.define([
 
 	function givenAnFLP(fnFLPReloadStub, mShellParams) {
 		sandbox.stub(FlexUtils, "getUshellContainer").returns({
-			getServiceAsync: function() {
+			getServiceAsync() {
 				return Promise.resolve({
-					toExternal: function() {},
-					getHash: function() {
+					toExternal() {},
+					getHash() {
 						return "Action-somestring";
 					},
-					parseShellHash: function() {
+					parseShellHash() {
 						var mHash = {
 							semanticObject: "Action",
 							action: "somestring"
@@ -49,28 +51,37 @@ sap.ui.define([
 						}
 						return mHash;
 					},
-					unregisterNavigationFilter: function() {},
-					registerNavigationFilter: function() {},
+					unregisterNavigationFilter() {},
+					registerNavigationFilter() {},
 					reloadCurrentApp: fnFLPReloadStub,
-					getUser: function() {},
-					getCurrentApplication: function() {}
+					getUser() {},
+					getCurrentApplication() {}
 				});
 			}
 		});
 	}
 
 	QUnit.module("Given that RuntimeAuthoring gets a switch version event from the toolbar in the FLP", {
-		beforeEach: function() {
+		beforeEach() {
+			Versions.clearInstances();
 			this.oRestartFlpStub = sandbox.stub();
 			givenAnFLP(this.oRestartFlpStub, {});
 			this.oRta = new RuntimeAuthoring({
 				rootControl: oComp
 			});
 			this.oEnableRestartStub = sandbox.stub(RuntimeAuthoring, "enableRestart");
-			this.oLoadVersionStub = sandbox.stub(VersionsAPI, "loadVersionForApplication");
+			this.oLoadVersionStubFinished = false;
+			this.oLoadVersionStub = sandbox.stub(VersionsAPI, "loadVersionForApplication").callsFake(function() {
+				return new Promise(function(resolve) {
+					setTimeout(function() {
+						this.oLoadVersionStubFinished = true;
+						resolve();
+					}.bind(this), 0);
+				}.bind(this));
+			}.bind(this));
 			return this.oRta.start();
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oRta.destroy();
 			sandbox.restore();
 		}
@@ -97,18 +108,25 @@ sap.ui.define([
 		});
 
 		QUnit.test("when no version is in the url and the app", function(assert) {
-			var oReloadStub = sandbox.stub(ReloadManager, "triggerReload").resolves();
+			var oReloadStub = sandbox.stub(ReloadManager, "triggerReload").callsFake(function() {
+				assert.ok(this.oLoadVersionStubFinished, "then calls are properly chained");
+				return Promise.resolve();
+			}.bind(this));
 
-			this.oRta.getToolbar().fireSwitchVersion({
-				version: "1"
-			});
-			assert.equal(this.oEnableRestartStub.callCount, 1, "then a restart is enabled");
-			assert.equal(this.oLoadVersionStub.callCount, 1, "a reload for versions as triggered");
-			var oLoadVersionArguments = this.oLoadVersionStub.getCall(0).args[0];
-			assert.equal(oLoadVersionArguments.control, oComp, "with the control");
-			assert.equal(oLoadVersionArguments.version, "1", ", the version number");
-			assert.equal(oLoadVersionArguments.layer, this.oRta.getLayer(), "and the layer");
-			assert.equal(oReloadStub.callCount, 1, "a navigation was triggered");
+			return new Promise(function(resolve) {
+				this.oRta.getToolbar().fireSwitchVersion({
+					version: "1",
+					callback: resolve
+				});
+			}.bind(this)).then(function() {
+				assert.equal(this.oEnableRestartStub.callCount, 1, "then a restart is enabled");
+				assert.equal(this.oLoadVersionStub.callCount, 1, "a reload for versions as triggered");
+				var oLoadVersionArguments = this.oLoadVersionStub.getCall(0).args[0];
+				assert.equal(oLoadVersionArguments.control, oComp, "with the control");
+				assert.equal(oLoadVersionArguments.version, "1", ", the version number");
+				assert.equal(oLoadVersionArguments.layer, this.oRta.getLayer(), "and the layer");
+				assert.equal(oReloadStub.callCount, 1, "a navigation was triggered");
+			}.bind(this));
 		});
 
 		QUnit.test("when a version is in the url and the same version should be loaded again (i.e. loaded the app with " +
@@ -120,22 +138,25 @@ sap.ui.define([
 			mParsedUrlHash.params["sap-ui-fl-version"] = [Version.Number.Original.toString()];
 			sandbox.stub(FlexUtils, "getParsedURLHash").returns(mParsedUrlHash);
 
-
-			this.oRta.getToolbar().fireSwitchVersion({
-				version: Version.Number.Original
-			});
-			assert.equal(this.oEnableRestartStub.callCount, 1, "then a restart is mentioned");
-			assert.equal(this.oLoadVersionStub.callCount, 1, "a reload for versions as triggered");
-			var oLoadVersionArguments = this.oLoadVersionStub.getCall(0).args[0];
-			assert.equal(oLoadVersionArguments.control, oComp, "with the control");
-			assert.equal(oLoadVersionArguments.version, Version.Number.Original, ", the version number");
-			assert.equal(oLoadVersionArguments.layer, this.oRta.getLayer(), "and the layer");
-			assert.equal(this.oRestartFlpStub.callCount, 1, "a app restart was triggered");
+			return new Promise(function(resolve) {
+				this.oRta.getToolbar().fireSwitchVersion({
+					version: Version.Number.Original,
+					callback: resolve
+				});
+			}.bind(this)).then(function() {
+				assert.equal(this.oEnableRestartStub.callCount, 1, "then a restart is mentioned");
+				assert.equal(this.oLoadVersionStub.callCount, 1, "a reload for versions as triggered");
+				var oLoadVersionArguments = this.oLoadVersionStub.getCall(0).args[0];
+				assert.equal(oLoadVersionArguments.control, oComp, "with the control");
+				assert.equal(oLoadVersionArguments.version, Version.Number.Original, ", the version number");
+				assert.equal(oLoadVersionArguments.layer, this.oRta.getLayer(), "and the layer");
+				assert.equal(this.oRestartFlpStub.callCount, 1, "a app restart was triggered");
+			}.bind(this));
 		});
 	});
 
 	QUnit.module("Given that RuntimeAuthoring gets a switch version event from the toolbar in the FLP, save is enabled and a dialog fires an event", {
-		beforeEach: function() {
+		beforeEach() {
 			givenAnFLP(sandbox.stub(), {});
 			this.oRta = new RuntimeAuthoring({
 				rootControl: oComp
@@ -143,11 +164,11 @@ sap.ui.define([
 			sandbox.stub(this.oRta, "canSave").returns(true);
 			this.oSerializeStub = sandbox.stub(this.oRta, "_serializeToLrep").resolves();
 			this.oEnableRestartStub = sandbox.stub(RuntimeAuthoring, "enableRestart");
-			this.oLoadVersionStub = sandbox.stub(VersionsAPI, "loadVersionForApplication");
+			this.oLoadVersionStub = sandbox.stub(VersionsAPI, "loadVersionForApplication").resolves();
 			this.nVersionParameter = 1;
 			return this.oRta.start();
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oRta.destroy();
 			sandbox.restore();
 		}
@@ -202,7 +223,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given that RuntimeAuthoring is started with a draft", {
-		beforeEach: function() {
+		beforeEach() {
 			givenAnFLP();
 			this.oRta = new RuntimeAuthoring({
 				rootControl: oComp
@@ -219,7 +240,7 @@ sap.ui.define([
 				this.oSaveStub = sandbox.stub(this.oRta._oSerializer, "saveCommands").resolves();
 			}.bind(this));
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oRta.destroy();
 			sandbox.restore();
 		}
@@ -356,63 +377,46 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.module("Given onStackModified", {
-		beforeEach: function() {
+	QUnit.module("Given onStackModified, when the stack was modified", {
+		async beforeEach() {
 			this.oRta = new RuntimeAuthoring({
 				rootControl: oComp
 			});
-			return this.oRta.start();
+			await this.oRta.start();
 		},
-		afterEach: function() {
-			if (this.oRta._oDraftDiscardWarningPromise) {
-				this.oRta._oDraftDiscardWarningPromise = undefined;
-				this.oRta._oDraftDiscardWarningDialog.destroy();
-			}
+		afterEach() {
+			VersionsAPI.clearInstances();
 			this.oRta.destroy();
 			sandbox.restore();
 		}
 	}, function() {
 		[{
-			testName: "when the stack was modified and a new draft is created, an old draft exists and the user has not yet confirmed the discarding of the old draft",
+			testName: "and a new draft is created, an old draft exists and the user has not yet confirmed the discarding of the old draft",
 			input: {
 				versionDisplayed: Version.Number.Original,
 				backendDraft: true,
-				canUndo: true,
-				userConfirmedDiscard: false
+				canUndo: true
 			},
 			expectation: {
 				dialogCreated: true
 			}
 		}, {
-			testName: "when the stack was modified and a new draft is created, an old draft exists and the user has not yet confirmed the discarding of the old draft and clicks on OK",
+			testName: "and a new draft is created, an old draft exists and clicks on OK",
 			input: {
 				versionDisplayed: Version.Number.Original,
 				backendDraft: true,
 				canUndo: true,
-				userConfirmedDiscard: false,
 				discardConfirmed: true
 			},
 			expectation: {
 				dialogCreated: true
 			}
 		}, {
-			testName: "when the stack was modified and a new draft is created, an old draft exists and the user has already confirmed the discarding of the old draft",
-			input: {
-				versionDisplayed: Version.Number.Original,
-				backendDraft: true,
-				canUndo: true,
-				userConfirmedDiscard: true
-			},
-			expectation: {
-				dialogCreated: false
-			}
-		}, {
-			testName: "when the stack was modified in the current draft",
+			testName: "in the current draft",
 			input: {
 				versionDisplayed: Version.Number.Draft,
 				backendDraft: true,
-				canUndo: true,
-				userConfirmedDiscard: false
+				canUndo: true
 			},
 			expectation: {
 				dialogCreated: false
@@ -422,19 +426,17 @@ sap.ui.define([
 			input: {
 				versionDisplayed: Version.Number.Original,
 				backendDraft: true,
-				canUndo: false,
-				userConfirmedDiscard: false
+				canUndo: false
 			},
 			expectation: {
 				dialogCreated: false
 			}
 		}, {
-			testName: "when the stack was modified and a new draft is created, an old draft does not exist",
+			testName: "and a new draft is created, an old draft does not exist",
 			input: {
 				versionDisplayed: Version.Number.Original,
 				backendDraft: false,
-				canUndo: true,
-				userConfirmedDiscard: false
+				canUndo: true
 			},
 			expectation: {
 				dialogCreated: false
@@ -442,16 +444,17 @@ sap.ui.define([
 		}].forEach(function(mSetup) {
 			QUnit.test(mSetup.testName, function(assert) {
 				var fnDone = assert.async();
-				var oUserAction = mSetup.input.discardConfirmed || mSetup.input.userConfirmedDiscard ? MessageBox.Action.OK : MessageBox.Action.CANCEL;
+				var oUserAction = mSetup.input.discardConfirmed ? MessageBox.Action.OK : MessageBox.Action.CANCEL;
 				var oShowMessageBoxStub = sandbox.stub(Utils, "showMessageBox").resolves(oUserAction);
 				this.oRta._oVersionsModel.setProperty("/versioningEnabled", true);
 				this.oRta._oVersionsModel.setProperty("/displayedVersion", mSetup.input.versionDisplayed);
 				this.oRta._oVersionsModel.setProperty("/backendDraft", mSetup.input.backendDraft);
-				this.oRta._bUserDiscardedDraft = mSetup.input.userConfirmedDiscard ? true : undefined;
 				sandbox.stub(this.oRta.getCommandStack(), "canUndo").returns(mSetup.input.canUndo);
 
 				function doAssertions() {
-					assert.equal(oShowMessageBoxStub.callCount, mSetup.expectation.dialogCreated ? 1 : 0, "the message box display was handled correct");
+					assert.equal(oShowMessageBoxStub.callCount,
+						mSetup.expectation.dialogCreated ? 1 : 0, "the message box display was handled correct"
+					);
 					fnDone();
 				}
 

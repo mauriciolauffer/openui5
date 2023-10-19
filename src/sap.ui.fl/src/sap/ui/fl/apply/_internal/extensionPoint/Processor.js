@@ -11,7 +11,7 @@ sap.ui.define([
 	"sap/ui/core/util/reflection/JsControlTreeModifier",
 	"sap/ui/base/SyncPromise",
 	"sap/base/util/merge",
-	"sap/ui/core/Configuration"
+	"sap/ui/base/DesignTime"
 ],
 function(
 	Applier,
@@ -21,7 +21,7 @@ function(
 	JsControlTreeModifier,
 	SyncPromise,
 	merge,
-	Configuration
+	DesignTime
 ) {
 	"use strict";
 
@@ -38,15 +38,15 @@ function(
 
 	function executeNestedExtensionPoint(oControl, aResolvedControls, iControlIndex, iNestedEPAdditionalContentCounter, fnNestedCallback) {
 		return fnNestedCallback(oControl, true)
-			.then(function(aNestedControls) {
-				aNestedControls.forEach(function(oNestedControl, iNestedControlIndex) {
-					aResolvedControls.splice(iControlIndex + iNestedControlIndex + iNestedEPAdditionalContentCounter, 0, oNestedControl);
-				});
-				oControl.index += iNestedEPAdditionalContentCounter;
-				// the iControlIndex counts the extensionpoint as 1 control. when the EP is replaced by content with more then one  control
-				// then we need to have an additional content counter for correct index calculations for the following extension points
-				return aNestedControls.length - 1;
+		.then(function(aNestedControls) {
+			aNestedControls.forEach(function(oNestedControl, iNestedControlIndex) {
+				aResolvedControls.splice(iControlIndex + iNestedControlIndex + iNestedEPAdditionalContentCounter, 0, oNestedControl);
 			});
+			oControl.index += iNestedEPAdditionalContentCounter;
+			// the iControlIndex counts the extensionpoint as 1 control. when the EP is replaced by content with more than one  control
+			// then we need to have an additional content counter for correct index calculations for the following extension points
+			return aNestedControls.length - 1;
+		});
 	}
 
 	function checkForExtensionPoint(oExtensionPoint, fnNestedCallback, aControls) {
@@ -55,7 +55,7 @@ function(
 		var iNestedEPAdditionalContentCounter = 0;
 		var oLastExtensionPoint;
 		// aControls is a list of controls and extension points
-		aControls.forEach(function (oControl, iControlIndex) {
+		aControls.forEach(function(oControl, iControlIndex) {
 			if (oControl._isExtensionPoint) {
 				oControl.targetControl = oExtensionPoint.targetControl;
 				oControl.aggregationName = oExtensionPoint.aggregationName;
@@ -68,14 +68,14 @@ function(
 
 				// is required to calculate the index into the changehandler
 				oControl.referencedExtensionPoint = oExtensionPoint;
-				aNestedExtensionPointPromises.push(function () {
+				aNestedExtensionPointPromises.push(function() {
 					return executeNestedExtensionPoint(
 						oControl,
 						aResolvedControls,
 						iControlIndex,
 						iNestedEPAdditionalContentCounter,
 						fnNestedCallback
-					).then(function (iNestedCounter) {
+					).then(function(iNestedCounter) {
 						iNestedEPAdditionalContentCounter += iNestedCounter;
 					});
 				}
@@ -85,12 +85,12 @@ function(
 			}
 		});
 		if (aNestedExtensionPointPromises.length > 0) {
-			return aNestedExtensionPointPromises.reduce(function (oPreviousPromise, oCurrentPromise) {
+			return aNestedExtensionPointPromises.reduce(function(oPreviousPromise, oCurrentPromise) {
 				return oPreviousPromise.then(oCurrentPromise);
 			}, SyncPromise.resolve())
-				.then(function () {
-					return aResolvedControls;
-				});
+			.then(function() {
+				return aResolvedControls;
+			});
 		}
 		return SyncPromise.resolve(aResolvedControls);
 	}
@@ -105,31 +105,31 @@ function(
 		mPropertyBag.componentId = oAppComponent.getId();
 
 		return Processor.registerExtensionPoint(mExtensionPointInfo)
-			.then(FlexState.initialize.bind(FlexState, mPropertyBag))
-			// enhance exiting extension point changes with mExtensionPointInfo
-			.then(ExtensionPointState.enhanceExtensionPointChanges.bind(ExtensionPointState, mPropertyBag, oExtensionPoint))
-			.then(Processor.createDefaultContent.bind(this, oExtensionPoint, bSkipInsertContent, applyExtensionPoint))
-			.then(Processor.addDefaultContentToExtensionPointInfo.bind(this, mExtensionPointInfo, bSkipInsertContent));
+		.then(FlexState.initialize.bind(FlexState, mPropertyBag))
+		// enhance exiting extension point changes with mExtensionPointInfo
+		.then(ExtensionPointState.enhanceExtensionPointChanges.bind(ExtensionPointState, mPropertyBag, oExtensionPoint))
+		.then(Processor.createDefaultContent.bind(this, oExtensionPoint, bSkipInsertContent, applyExtensionPoint))
+		.then(Processor.addDefaultContentToExtensionPointInfo.bind(this, mExtensionPointInfo, bSkipInsertContent));
 	}
 
 	Processor = {
 		oExtensionPointRegistry: undefined,
 		oRegistryPromise: Promise.resolve(),
 
-		registerExtensionPoint: function (mExtensionPointInfo) {
-			if (Configuration.getDesignMode()) {
+		registerExtensionPoint(mExtensionPointInfo) {
+			if (DesignTime.isDesignModeEnabled()) {
 				if (Processor.oExtensionPointRegistry) {
 					Processor.oExtensionPointRegistry.registerExtensionPoint(mExtensionPointInfo);
 					return SyncPromise.resolve();
 				}
 
-				Processor.oRegistryPromise = Processor.oRegistryPromise.then(function () {
-					return new Promise(function (resolve, reject) {
-						sap.ui.require(["sap/ui/fl/write/_internal/extensionPoint/Registry"], function (ExtensionPointRegistry) {
+				Processor.oRegistryPromise = Processor.oRegistryPromise.then(function() {
+					return new Promise(function(resolve, reject) {
+						sap.ui.require(["sap/ui/fl/write/_internal/extensionPoint/Registry"], function(ExtensionPointRegistry) {
 							Processor.oExtensionPointRegistry = ExtensionPointRegistry;
 							ExtensionPointRegistry.registerExtensionPoint(mExtensionPointInfo);
 							resolve();
-						}, function (oError) {
+						}, function(oError) {
 							reject(oError);
 						});
 					});
@@ -139,30 +139,30 @@ function(
 			return SyncPromise.resolve();
 		},
 
-		createDefaultContent: function (oExtensionPoint, bSkipInsertContent, fnNestedCallback, aChanges) {
+		createDefaultContent(oExtensionPoint, bSkipInsertContent, fnNestedCallback, aChanges) {
 			if (aChanges.length === 0) {
 				return oExtensionPoint.createDefault()
-					.then(checkForExtensionPoint.bind(undefined, oExtensionPoint, fnNestedCallback))
-					.then(function (aControls) {
-						if (!bSkipInsertContent) {
-							aControls.forEach(function(oNewControl, iIterator) {
-								JsControlTreeModifier.insertAggregation(
-									oExtensionPoint.targetControl,
-									oExtensionPoint.aggregationName,
-									oNewControl,
-									oExtensionPoint.index + iIterator,
-									oExtensionPoint.view
-								);
-							});
-							oExtensionPoint.ready(aControls);
-						}
-						return aControls;
-					});
+				.then(checkForExtensionPoint.bind(undefined, oExtensionPoint, fnNestedCallback))
+				.then(function(aControls) {
+					if (!bSkipInsertContent) {
+						aControls.forEach(function(oNewControl, iIterator) {
+							JsControlTreeModifier.insertAggregation(
+								oExtensionPoint.targetControl,
+								oExtensionPoint.aggregationName,
+								oNewControl,
+								oExtensionPoint.index + iIterator,
+								oExtensionPoint.view
+							);
+						});
+						oExtensionPoint.ready(aControls);
+					}
+					return aControls;
+				});
 			}
 			return SyncPromise.resolve([]);
 		},
 
-		addDefaultContentToExtensionPointInfo: function (mRegsteredExtensionPoint, bSkipInsertContent, aControls) {
+		addDefaultContentToExtensionPointInfo(mRegsteredExtensionPoint, bSkipInsertContent, aControls) {
 			if (!bSkipInsertContent) {
 				mRegsteredExtensionPoint.defaultContent = mRegsteredExtensionPoint.defaultContent.concat(aControls);
 			}
@@ -177,7 +177,7 @@ function(
 		 * @param {sap.ui.core.ExtensionPoint} oExtensionPoint - info object with extension point information
 		 * @returns {Promise} resolves when default content is created or related changes are prepared for application
 		 */
-		applyExtensionPoint: function(oExtensionPoint) {
+		applyExtensionPoint(oExtensionPoint) {
 			var oPromise = applyExtensionPoint(oExtensionPoint, false);
 			Applier.addPreConditionForInitialChangeApplying(oPromise);
 			return oPromise;

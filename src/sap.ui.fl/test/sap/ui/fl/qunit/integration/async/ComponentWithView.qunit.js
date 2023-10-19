@@ -1,4 +1,4 @@
-/*global QUnit*/
+/* global QUnit */
 
 QUnit.config.autostart = false;
 
@@ -33,12 +33,10 @@ sap.ui.define([
 
 	var sandbox = sinon.createSandbox();
 
-	oCore.loadLibrary("sap.ui.fl"); // preload lib for the spy
-
 	var sAddedSimpleFormGroupId = "rootView--id-1504610195259-77";
 
 	QUnit.module("Creation of the first change without a registered propagationListener", {
-		beforeEach: function() {
+		beforeEach() {
 			sandbox.stub(Storage, "loadFlexData").resolves(Object.assign(
 				StorageUtils.getEmptyFlexDataResponse(),
 				{
@@ -46,7 +44,7 @@ sap.ui.define([
 						fileName: "id_1504610195273_78_addSimpleFormGroup",
 						fileType: "change",
 						changeType: "addSimpleFormGroup",
-						reference: "sap.ui.fl.qunit.integration.async.testComponentWithView.Component",
+						reference: "sap.ui.fl.qunit.integration.async.testComponentWithView",
 						packageName: "$TMP",
 						content: {
 							group: {
@@ -77,7 +75,7 @@ sap.ui.define([
 							generator: "Change.createInitialFileContent",
 							service: "",
 							user: "",
-							sapui5Version: oCore.getConfiguration().getVersion().toString()
+							sapui5Version: "version"
 						},
 						dependentSelector: {}
 					}],
@@ -88,18 +86,18 @@ sap.ui.define([
 						isAtoEnabled: false,
 						isProductiveSystem: false
 					},
-					etag: "MYETAG"
+					cacheKey: "MYETAG"
 				})
 			);
 		},
-		afterEach: function () {
+		afterEach() {
 			sandbox.restore();
 			if (this.oComponent) {
 				this.oComponent.destroy();
 			}
 		}
-	}, function () {
-		QUnit.test("applies the change after the recreation of the changed control", function (assert) {
+	}, function() {
+		QUnit.test("applies the change after the recreation of the changed control", function(assert) {
 			var oXmlPrepossessSpy = sandbox.spy(XmlPreprocessor, "process");
 			var oAddGroupChangeHandlerSpy = sandbox.spy(AddSimpleFormGroup, "applyChange");
 			sandbox.stub(Utils, "isApplication").returns(true);
@@ -110,7 +108,7 @@ sap.ui.define([
 				manifest: true,
 				componentData: {
 					async: true,
-					cacheKey: new Date().toString() //Needs to be different each time
+					cacheKey: new Date().toString() // Needs to be different each time
 				}
 			}).then(function(oComponent) {
 				this.oComponent = oComponent;
@@ -130,8 +128,8 @@ sap.ui.define([
 		});
 
 		if (!CacheManager._isSupportedEnvironment()) {
-			QUnit.test("All further tests are skipped, as the CacheManager is not supported on the underlying environment (see assert)", function (assert) {
-				assert.ok(true, "Environment: system [" + JSON.stringify(Device.system) + "],  browser: " + JSON.stringify(Device.browser));
+			QUnit.test("All further tests are skipped, as the CacheManager is not supported on the underlying environment (see assert)", function(assert) {
+				assert.ok(true, `Environment: system [${JSON.stringify(Device.system)}],  browser: ${JSON.stringify(Device.browser)}`);
 			});
 		} else {
 			QUnit.test("working cache", function(assert) {
@@ -229,8 +227,8 @@ sap.ui.define([
 
 				var oSetCachePromise = new Promise(function(resolve) {
 					var fCacheManagerSet = CacheManager.set;
-					oCacheManagerSpy = sandbox.stub(CacheManager, "set").callsFake(function() {
-						fCacheManagerSet.call(CacheManager, arguments[0], arguments[1]).then(function() {
+					oCacheManagerSpy = sandbox.stub(CacheManager, "set").callsFake(function(...aArgs) {
+						fCacheManagerSet.call(CacheManager, aArgs[0], aArgs[1]).then(function() {
 							resolve();
 						});
 					});
@@ -251,8 +249,8 @@ sap.ui.define([
 				}.bind(this)).then(function(oView) {
 					var oCacheManagerCall = oCacheManagerSpy.getCall(0);
 					var sCachedXml = oCacheManagerCall.args[1].xml;
-					//as cached xml string will vary in different browsers (especially namespace handling), we will parse the xml again (without tabs and newlines to reduce unwanted text nodes)
-					var oCachedXmlDocument = XMLHelper.parse(sCachedXml.replace(/[\n\t]/g, '')).documentElement;
+					// as cached xml string will vary in different browsers (especially namespace handling), we will parse the xml again (without tabs and newlines to reduce unwanted text nodes)
+					var oCachedXmlDocument = XMLHelper.parse(sCachedXml.replace(/[\n\t]/g, "")).documentElement;
 					assert.equal(oCachedXmlDocument.localName, "View", "the view is included in the cache");
 					assert.equal(oCachedXmlDocument.childNodes[0].childNodes[0].localName, "SimpleForm", "the simple form is included in the cache");
 					assert.equal(oCachedXmlDocument.childNodes[0].childNodes[0].childNodes.length, 4, "the simple form content includes the new nodes from the change");
@@ -291,10 +289,10 @@ sap.ui.define([
 
 				sandbox.stub(Component.prototype, "getModel")
 				.returns({
-					getCurrentControlVariantIds: function () {
+					getCurrentControlVariantIds() {
 						return ["currentVariantReferenceInitial"];
 					},
-					getVariantManagementControlIds: function() {
+					getVariantManagementControlIds() {
 						return [];
 					}
 				});
@@ -341,18 +339,18 @@ sap.ui.define([
 
 				sandbox.stub(Component.prototype, "getModel")
 				.onFirstCall().returns({
-					getCurrentControlVariantIds: function () {
+					getCurrentControlVariantIds() {
 						return ["currentVariantReferenceInitial"];
 					},
-					getVariantManagementControlIds: function() {
+					getVariantManagementControlIds() {
 						return [];
 					}
 				})
-				.onSecondCall().returns({
-					getCurrentControlVariantIds: function () {
+				.returns({
+					getCurrentControlVariantIds() {
 						return ["currentVariantReferenceChanged"];
 					},
-					getVariantManagementControlIds: function() {
+					getVariantManagementControlIds() {
 						return [];
 					}
 				});
@@ -398,10 +396,10 @@ sap.ui.define([
 
 				sandbox.stub(Component.prototype, "getModel")
 				.returns({
-					getCurrentControlVariantIds: function () {
+					getCurrentControlVariantIds() {
 						return ["currentVariantReferenceInitial"];
 					},
-					getVariantManagementControlIds: function() {
+					getVariantManagementControlIds() {
 						return [];
 					}
 				});
@@ -431,7 +429,7 @@ sap.ui.define([
 		}
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

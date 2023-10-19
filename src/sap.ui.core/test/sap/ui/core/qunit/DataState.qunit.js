@@ -2,22 +2,20 @@ sap.ui.define([
 	"sap/base/Log",
 	"sap/base/util/deepEqual",
 	"sap/ui/core/message/Message",
-	"sap/ui/model/DataState",
-	"sap/ui/test/TestUtils"
-], function (Log, deepEqual, Message, DataState, TestUtils) {
+	"sap/ui/model/DataState"
+], function (Log, deepEqual, Message, DataState) {
 	/*global QUnit*/
 	"use strict";
 
 	//*********************************************************************************************
 	QUnit.module("sap.ui.model.DataState", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach : function () {
 			this.oLogMock = this.mock(Log);
 			this.oLogMock.expects("error").never();
 			this.oLogMock.expects("warning").never();
-		},
-
-		afterEach : function (assert) {
-			return TestUtils.awaitRendering();
 		}
 	});
 
@@ -104,8 +102,8 @@ sap.ui.define([
 	//*********************************************************************************************
 [
 	{controlMessages : ["aControlMessages"], modelMessages : ["aModelMessages"]},
-	{controlMessages : ["aControlMessages"], modelMessages : undefined},
-	{controlMessages : undefined, modelMessages : ["aModelMessages"]}
+	{controlMessages : ["aControlMessages"], modelMessages : []},
+	{controlMessages : [], modelMessages : ["aModelMessages"]}
 ].forEach(function (oFixture, i) {
 	QUnit.test("getMessagesForProperties, " + i, function(assert) {
 		var aConcatCalls,
@@ -139,8 +137,8 @@ sap.ui.define([
 	QUnit.test("getMessagesForProperties, no messages", function(assert) {
 		var oConcatSpy = this.spy(Array.prototype, "concat"),
 			mProperties = {
-				controlMessages : undefined,
-				modelMessages : undefined
+				controlMessages : [],
+				modelMessages : []
 			},
 			oSortSpy = this.spy(Array.prototype, "sort");
 

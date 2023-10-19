@@ -1,4 +1,4 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/ui/fl/write/_internal/fieldExtensibility/Utils",
@@ -103,11 +103,11 @@ sap.ui.define([
 	var sServiceUri = null;
 
 	QUnit.module("SingleTenantABAPExtensibilityVariant", {
-		before: function() {
+		before() {
 			oSandbox = sinon.createSandbox();
 		},
 
-		beforeEach: function () {
+		beforeEach() {
 			oSandbox.stub(Utils, "getText").callsFake(function(sTextKey) {
 				return sTextKey;
 			});
@@ -119,7 +119,7 @@ sap.ui.define([
 			oServer.autoRespond = true;
 		},
 
-		afterEach: function() {
+		afterEach() {
 			oSandbox.restore();
 			oServer.restore();
 		}
@@ -682,7 +682,7 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

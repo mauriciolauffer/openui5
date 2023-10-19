@@ -12,7 +12,6 @@ sap.ui.define([
 ) {
 	"use strict";
 
-
 	/**
 	 * Descriptor change merger for change type <code>appdescr_ui5_addNewModelEnhanceWith</code>.
 	 * Adds a <code>settings/enhanceWith</code> node of an existing model with a path to an i18n properties file relative to the location of the manifest.
@@ -20,8 +19,8 @@ sap.ui.define([
 	 *
 	 * Only available during build time {@link sap.ui.fl.apply._internal.changes.descriptor.RegistrationBuild}.
 	 *
-	 * @namespace sap.ui.fl.apply._internal.changes.descriptor.ui5.AddNewModelEnhanceWith
-	 * @experimental
+	 * @namespace
+	 * @alias sap.ui.fl.apply._internal.changes.descriptor.ui5.AddNewModelEnhanceWith
 	 * @version ${version}
 	 * @private
 	 * @ui5-restricted sap.ui.fl.apply._internal
@@ -30,16 +29,17 @@ sap.ui.define([
 
 		/**
 		 * Method to apply the <code>appdescr_ui5_addNewModelEnhanceWith</code> change to the manifest.
-		 * @param {object} oManifest Original manifest
-		 * @param {object} oChange Change with type <code>appdescr_ui5_addNewModelEnhanceWith</code>
-		 * @param {string} oChange.content.modelId ID of existing model, referenced model must have type <code>sap.ui.model.resource.ResourceModel</code>
-		 * @param {string} oChange.texts.i18n Path to an i18n properties path relative to the location of the change
+		 * @param {object} oManifest - Original manifest
+		 * @param {sap.ui.fl.apply._internal.flexObjects.AppDescriptorChange} oChange - Change with type <code>appdescr_ui5_addNewModelEnhanceWith</code>
+		 * @param {object} oChange.content - Details of the change
+		 * @param {string} oChange.content.modelId - ID of existing model, referenced model must have type <code>sap.ui.model.resource.ResourceModel</code>
+		 * @param {string} oChange.texts.i18n - Path to an i18n properties path relative to the location of the change
 		 * @returns {object} Updated manifest with <code>sap.ui5/models</code> entity
 		 *
 		 * @private
 		 * @ui5-restricted sap.ui.fl.apply._internal
 		 */
-		applyChange: function(oManifest, oChange) {
+		applyChange(oManifest, oChange) {
 			var sModelId = oChange.getContent().modelId;
 			var sI18N = ApplyUtil.formatBundleName(oManifest["sap.app"].id, oChange.getTexts().i18n);
 
@@ -56,7 +56,6 @@ sap.ui.define([
 			return oManifest;
 		},
 		skipPostprocessing: true
-
 
 	};
 

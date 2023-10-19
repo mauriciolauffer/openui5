@@ -8,7 +8,15 @@ sap.ui.define([
 	GroupHeaderListItem
 ) {
 	"use strict";
-
+	var aExcludeList = [{
+		category: "NS",
+		name: "LREP_HOME_CONTENT",
+		ns: "UIF/"
+	}, {
+		category: "NS",
+		name: "virtual~",
+		ns: "/"
+	}];
 	/**
 	 * Provides data utility functions for the Content Browser.
 	 *
@@ -16,19 +24,10 @@ sap.ui.define([
 	 * @alias sap.ui.fl.support.apps.contentbrowser.utils.DataUtils
 	 * @author SAP SE
 	 * @version ${version}
-	 * @experimental Since 1.45
+	 * @since 1.45
+	 * @private
 	 */
 	var DataUtils = {
-		aExcludeList: [{
-			category: "NS",
-			name: "LREP_HOME_CONTENT",
-			ns: "UIF/"
-		}, {
-			category: "NS",
-			name: "virtual~",
-			ns: "/"
-		}],
-
 		/**
 		 * Pretty printer for specific file types.
 		 *
@@ -37,7 +36,7 @@ sap.ui.define([
 		 * @returns {Object} Data after formatting
 		 * @public
 		 */
-		formatData: function (oData, sFileType) {
+		formatData(oData, sFileType) {
 			// code extension and properties files do not need formation
 			if ((sFileType === "js") || (sFileType === "properties")) {
 				return oData;
@@ -45,7 +44,7 @@ sap.ui.define([
 			// other files should be formatted to JSON
 			try {
 				oData = JSON.parse(oData);
-				return JSON.stringify(oData, null, '\t');
+				return JSON.stringify(oData, null, "\t");
 			} catch (oError) {
 				var ErrorUtils = sap.ui.require("sap/ui/fl/support/apps/contentbrowser/utils/ErrorUtils");
 				ErrorUtils.displayError("Error", oError.name, oError.message);
@@ -59,7 +58,7 @@ sap.ui.define([
 		 * @returns {sap.m.GroupHeaderListItem} New GroupHeaderListItem
 		 * @public
 		 */
-		getGroupHeader: function (oGroup) {
+		getGroupHeader(oGroup) {
 			var sTitle = "{i18n>systemData}";
 
 			if (oGroup.key === "custom") {
@@ -78,15 +77,15 @@ sap.ui.define([
 		 * @returns {boolean} <code>true</code> if the item is not excluded
 		 * @public
 		 */
-		isNotExcluded: function (oContentItem) {
+		isNotExcluded(oContentItem) {
 			var bNotExcluded = true;
-			this.aExcludeList.forEach(function (mExcludeListElement) {
+			aExcludeList.forEach(function(mExcludeListElement) {
 				var bAllPropertiesMatched = true;
 
-				Object.entries(mExcludeListElement).forEach(function (aEntry) {
+				Object.entries(mExcludeListElement).forEach(function(aEntry) {
 					var sProperty = aEntry[0];
 					var sValue = aEntry[1];
-					bAllPropertiesMatched = bAllPropertiesMatched && oContentItem[sProperty] === sValue;
+					bAllPropertiesMatched &&= oContentItem[sProperty] === sValue;
 				});
 
 				if (bAllPropertiesMatched) {
@@ -103,7 +102,7 @@ sap.ui.define([
 		 * @returns {string} String after removing leading and trailing slashes
 		 * @public
 		 */
-		cleanLeadingAndTrailingSlashes: function (sNamespace) {
+		cleanLeadingAndTrailingSlashes(sNamespace) {
 			if (!sNamespace) {
 				return "";
 			}
@@ -127,8 +126,8 @@ sap.ui.define([
 		 * @returns {string} Item title after formatting
 		 * @public
 		 */
-		formatItemTitle: function (mModelData) {
-			return mModelData.namespace + mModelData.fileName + "." + mModelData.fileType;
+		formatItemTitle(mModelData) {
+			return `${mModelData.namespace + mModelData.fileName}.${mModelData.fileType}`;
 		},
 
 		/**
@@ -139,7 +138,7 @@ sap.ui.define([
 		 * @returns {boolean} <code>true</code> if the passed suffix is the last part of the passed string
 		 * @public
 		 */
-		endsStringWith: function (sString, sSuffix) {
+		endsStringWith(sString, sSuffix) {
 			return sString.indexOf(sSuffix, sString.length - sSuffix.length) !== -1;
 		}
 	};

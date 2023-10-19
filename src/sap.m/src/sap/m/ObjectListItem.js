@@ -13,7 +13,8 @@ sap.ui.define([
 	'./ObjectMarker',
 	'./Text',
 	'./ObjectListItemRenderer',
-	'sap/ui/core/Configuration'
+	'sap/ui/core/Configuration',
+	"sap/m/ImageHelper"
 ],
 function(
 	ManagedObjectObserver,
@@ -25,7 +26,8 @@ function(
 	ObjectMarker,
 	Text,
 	ObjectListItemRenderer,
-	Configuration
+	Configuration,
+	ImageHelper
 	) {
 		"use strict";
 
@@ -33,9 +35,6 @@ function(
 
 		// shortcut for sap.m.ObjectMarkerType
 		var ObjectMarkerType = library.ObjectMarkerType;
-
-		// shortcut for sap.m.ImageHelper
-		var ImageHelper = library.ImageHelper;
 
 		// shortcut for sap.ui.core.TextAlign
 		var TextAlign = coreLibrary.TextAlign;
@@ -300,7 +299,14 @@ function(
 		 */
 		ObjectListItem.prototype._hasBottomContent = function() {
 
-			return (this._hasAttributes() || this._hasStatus() || this.getShowMarkers() || this.getMarkLocked() || this._getVisibleMarkers().length > 0);
+			/**
+			 * @deprecated as of version 1.42.0
+			*/
+			if (this.getShowMarkers() || this.getMarkLocked()){
+				return true;
+			}
+
+			return (this._hasAttributes() || this._hasStatus() || this._getVisibleMarkers().length > 0);
 		};
 
 		/**
@@ -502,6 +508,8 @@ function(
 		 * @public
 		 * @param {boolean} bMarked the new value
 		 * @returns {this} this pointer for chaining
+		 * @deprecated as of version 1.42.0, replaced by <code>markers</code> aggregation.
+		 * Add {@link sap.m.ObjectMarker} with type <code>sap.m.ObjectMarkerType.Favorite</code>.
 		 */
 		ObjectListItem.prototype.setMarkFavorite = function (bMarked) {
 			return this._setOldMarkers(ObjectMarkerType.Favorite, bMarked);
@@ -513,17 +521,21 @@ function(
 		 * @public
 		 * @param {boolean} bMarked the new value
 		 * @returns {this} this pointer for chaining
+		 * @deprecated as of version 1.42.0, replaced by <code>markers</code> aggregation.
+		 * Add {@link sap.m.ObjectMarker} with type <code>sap.m.ObjectMarkerType.Flagged</code>.
 		 */
 		ObjectListItem.prototype.setMarkFlagged = function (bMarked) {
 			return this._setOldMarkers(ObjectMarkerType.Flagged, bMarked);
 		};
 
 		/**
-		 * Sets the visibility value of the Favorite marker.
+		 * Sets the visibility value of the Locked marker.
 		 * @override
 		 * @public
 		 * @param {boolean} bMarked the new value
 		 * @returns {this} this pointer for chaining
+		 * @deprecated as of version 1.42.0, replaced by <code>markers</code> aggregation.
+		 * Add {@link sap.m.ObjectMarker} with type <code>sap.m.ObjectMarkerType.Locked</code>.
 		 */
 		ObjectListItem.prototype.setMarkLocked = function (bMarked) {
 			return this._setOldMarkers(ObjectMarkerType.Locked, bMarked);
@@ -535,6 +547,7 @@ function(
 		 * @public
 		 * @param {boolean} bMarked the new value
 		 * @returns {this} this pointer for chaining
+		 * @deprecated as of version 1.42.0, replaced by <code>markers</code> aggregation.
 		 */
 		ObjectListItem.prototype.setShowMarkers = function (bMarked) {
 			var sMarkerType;
@@ -628,6 +641,7 @@ function(
 		 * @param {string} markerType the type of the marker which should be created to updated
 		 * @param {boolean} bMarked the new value
 		 * @returns {this} this pointer for chaining
+		 * @deprecated as of version 1.42.0
 		 */
 		ObjectListItem.prototype._setOldMarkers = function (markerType, bMarked) {
 			var aAllMarkers = this.getMarkers();
@@ -663,7 +677,6 @@ function(
 
 			return this;
 		};
-
 
 		/**
 		 * @private

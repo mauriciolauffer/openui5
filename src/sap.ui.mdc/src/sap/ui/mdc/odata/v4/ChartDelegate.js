@@ -3,25 +3,31 @@
  */
 
 sap.ui.define([
-    "../../ChartDelegate"
+    "../../ChartDelegate",
+	'sap/ui/mdc/odata/v4/TypeMap'
 ], function (
-    ChartDelegate
+    ChartDelegate,
+    ODataV4TypeMap
 ) {
     "use strict";
     /**
-     * Delegate class for sap.ui.mdc.Chart and ODataV4.
-     * Enables additional analytical capabilities.
-     * <b>Note:</b> The class is experimental and the API/behavior is not finalized.
+	 * Delegate class for {@link sap.ui.mdc.Chart Chart} and ODataV4.<br>
+	 * This class provides method calls, which are called by the <code>Chart</code> at specific operations and allows to overwrite an internal behaviour.
+	 *
+	 * @namespace
+	 * @author SAP SE
+	 * @alias module:sap/ui/mdc/odata/v4/ChartDelegate
+	 * @extends module:sap/ui/mdc/ChartDelegate
+	 * @since 1.88
      *
-     * @author SAP SE
-     * @private
-     * @ui5-restricted sap.fe
-     * @MDC_PUBLIC_CANDIDATE
-     * @since 1.88
-     * @alias sap.ui.mdc.odata.v4.ChartDelegate
+	 * @public
+     *
      */
-    var Delegate = Object.assign({}, ChartDelegate);
+    const Delegate = Object.assign({}, ChartDelegate);
 
+    Delegate.getTypeMap = function (oPayload) {
+		return ODataV4TypeMap;
+	};
 
     return Delegate;
 });

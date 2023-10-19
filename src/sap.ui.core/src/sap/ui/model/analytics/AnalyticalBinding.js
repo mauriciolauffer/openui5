@@ -2,13 +2,12 @@
  * ${copyright}
  */
 
-// Disable some ESLint rules. camelcase (some "_" in names to indicate indexed variables (like in math)), valid-jsdoc (not completed yet)
-// All other warnings, errors should be resolved
-/*eslint camelcase:0, valid-jsdoc:0, no-warning-comments:0, max-len:0 */
+// Disable some ESLint rules. camelcase (some "_" in names to indicate indexed variables (like in math)),
+// valid-jsdoc (not completed yet)
+/*eslint camelcase:0, valid-jsdoc:0, max-len:0 */
 
 // Provides class sap.ui.model.odata.ODataListBinding
 sap.ui.define([
-	"./AnalyticalVersionInfo",
 	"./BatchResponseCollector",
 	"./odata4analytics",
 	"sap/base/Log",
@@ -27,9 +26,9 @@ sap.ui.define([
 	"sap/ui/model/TreeBinding",
 	"sap/ui/model/odata/CountMode",
 	"sap/ui/model/odata/ODataUtils"
-], function(AnalyticalVersionInfo, BatchResponseCollector, odata4analytics, Log, deepExtend, each,
-		extend, isEmptyObject, uid, ChangeReason, Filter, FilterOperator, FilterProcessor,
-		FilterType, Sorter, TreeAutoExpandMode, TreeBinding, CountMode, ODataUtils) {
+], function(BatchResponseCollector, odata4analytics, Log, deepExtend, each, extend, isEmptyObject, uid,
+		ChangeReason, Filter, FilterOperator, FilterProcessor, FilterType, Sorter, TreeAutoExpandMode,
+		TreeBinding, CountMode, ODataUtils) {
 	"use strict";
 
 	var sClassName = "sap.ui.model.analytics.AnalyticalBinding",
@@ -114,15 +113,23 @@ sap.ui.define([
 			}
 		}
 
+		const aAdditionalSelects = [];
 		// check additionally selected properties, no new dimensions and new measures or
 		// associated properties for new dimensions or measures are allowed
-		for (i = 0, n = aSelect.length; i < n; i++) {
+		for (i = 0; i < aSelect.length; i += 1) {
 			sPropertyName = aSelect[i];
 
 			oDimension = oBinding.oAnalyticalQueryResult.findDimensionByPropertyName(sPropertyName);
-			if (oDimension && oBinding.oDimensionDetailsSet[oDimension.getName()] === undefined) {
-				logUnsupportedPropertyInSelect(oBinding.sPath, sPropertyName, oDimension);
-				bError = true;
+			if (oDimension) {
+				const oDimensionDetails = oBinding.oDimensionDetailsSet[oDimension.getName()];
+				if (oDimensionDetails === undefined) {
+					logUnsupportedPropertyInSelect(oBinding.sPath, sPropertyName, oDimension);
+					bError = true;
+				} else {
+					// eslint-disable-next-line no-use-before-define
+					AnalyticalBinding._updateDimensionDetailsTextProperty(oDimension, sPropertyName, oDimensionDetails);
+					continue;
+				}
 			}
 
 			oMeasure = oBinding.oAnalyticalQueryResult.findMeasureByPropertyName(sPropertyName);
@@ -130,8 +137,9 @@ sap.ui.define([
 				logUnsupportedPropertyInSelect(oBinding.sPath, sPropertyName, oMeasure);
 				bError = true;
 			}
+			aAdditionalSelects.push(sPropertyName);
 		}
-		return bError ? [] : aSelect;
+		return bError ? [] : aAdditionalSelects;
 	}
 
 	/**
@@ -227,7 +235,8 @@ sap.ui.define([
 	 * @param {array} [aFilters=null]
 	 *   An array of predefined filters
 	 * @param {object} [mParameters=null]
-	 *   A map containing additional binding parameters
+	 *   A map containing additional binding parameters; for the <code>AnalyticalBinding</code> this
+	 *   parameter is mandatory
 	 * @param {sap.ui.model.TreeAutoExpandMode} [mParameters.autoExpandMode=sap.ui.model.TreeAutoExpandMode.Bundled]
 	 *   The auto expand mode; applying sorters to groups is only possible in auto expand mode
 	 *   {@link sap.ui.model.TreeAutoExpandMode.Sequential}
@@ -274,24 +283,27 @@ sap.ui.define([
 
 			this.aAdditionalSelects = [];
 			// attribute members for addressing the requested entity set
-			this.sEntitySetName = (mParameters && mParameters.entitySet) ? mParameters.entitySet : undefined;
+			this.sEntitySetName = mParameters.entitySet ? mParameters.entitySet : undefined;
 			// attribute members for maintaining aggregated OData requests
 			this.bArtificalRootContext = false;
 			// Note: aApplicationFilter is used by sap.ui.comp.smarttable.SmartTable
 			this.aApplicationFilter = this._convertDeprecatedFilterObjects(aFilters);
 			this.aControlFilter = undefined;
 			this.aSorter = aSorter ? aSorter : [];
+			if (!Array.isArray(this.aSorter)) {
+				this.aSorter = [this.aSorter];
+			}
 			this.aMaxAggregationLevel = [];
 			this.aAggregationLevel = [];
 			this.oPendingRequests = {};
 			this.oPendingRequestHandle = [];
 			this.oGroupedRequests = {};
-			this.bUseBatchRequests = (mParameters && mParameters.useBatchRequests === true) ? true : false;
-			this.bProvideTotalSize = (mParameters && mParameters.provideTotalResultSize === false) ? false : true;
-			this.bProvideGrandTotals = (mParameters && mParameters.provideGrandTotals === false) ? false : true;
-			this.bReloadSingleUnitMeasures = (mParameters && mParameters.reloadSingleUnitMeasures === false) ? false : true;
-			this.bUseAcceleratedAutoExpand = (mParameters && mParameters.useAcceleratedAutoExpand === false) ? false : true;
-			this.bNoPaging = (mParameters && mParameters.noPaging === true) ? true : false;
+			this.bUseBatchRequests = mParameters.useBatchRequests === true;
+			this.bProvideTotalSize = mParameters.provideTotalResultSize !== false;
+			this.bProvideGrandTotals = mParameters.provideGrandTotals !== false;
+			this.bReloadSingleUnitMeasures = mParameters.reloadSingleUnitMeasures !== false;
+			this.bUseAcceleratedAutoExpand = mParameters.useAcceleratedAutoExpand !== false;
+			this.bNoPaging = mParameters.noPaging === true;
 
 			iInstanceCount += 1;
 			this._iId = iInstanceCount;
@@ -332,12 +344,10 @@ sap.ui.define([
 			this.aBatchRequestQueue = [];
 
 			// considering different count mode settings
-			if (mParameters && mParameters.countMode == CountMode.None) {
+			if (mParameters.countMode == CountMode.None) {
 				oLogger.fatal("requested count mode is ignored; OData requests will include"
 					+ " $inlinecount options");
-			} else if (mParameters
-					&& (mParameters.countMode == CountMode.Request
-						|| mParameters.countMode == CountMode.Both)) {
+			} else if (mParameters.countMode == CountMode.Request || mParameters.countMode == CountMode.Both) {
 				oLogger.warning("default count mode is ignored; OData requests will include"
 					+ " $inlinecount options");
 			} else if (this.oModel.sDefaultCountMode == CountMode.Request) {
@@ -346,9 +356,9 @@ sap.ui.define([
 			}
 
 			// detect ODataModel version
-			this.iModelVersion = AnalyticalVersionInfo.getVersion(this.oModel);
+			this.iModelVersion = AnalyticalBinding._getModelVersion(this.oModel);
 			if (this.iModelVersion === null) {
-				oLogger.error("The AnalyticalBinding does not support Models other than sap.ui.model.odata.ODataModel version 1 or 2.");
+				oLogger.error("The AnalyticalBinding does not support the given model");
 				return;
 			}
 
@@ -358,7 +368,7 @@ sap.ui.define([
 			//Some setup steps have to be deferred, until the metadata was loaded by the model:
 			// - updateAnalyticalInfo, the parameters given in the constructor are kept though
 			// - fetch the oAnalyticalQueryResult
-			this.aInitialAnalyticalInfo = (mParameters == undefined ? [] : mParameters.analyticalInfo);
+			this.aInitialAnalyticalInfo = mParameters.analyticalInfo;
 
 			//this flag indicates if the analytical binding was initialized via initialize(), called either via bindAggregation or the Model
 			this.bInitial = true;
@@ -1353,10 +1363,7 @@ sap.ui.define([
 				if (oDimension.getName() == aColumns[i].name) {
 					oDimensionDetails.keyPropertyName = aColumns[i].name;
 				}
-				var oTextProperty = oDimension.getTextProperty();
-				if (oTextProperty && oTextProperty.name == aColumns[i].name) {
-					oDimensionDetails.textPropertyName = aColumns[i].name;
-				}
+				AnalyticalBinding._updateDimensionDetailsTextProperty(oDimension, aColumns[i].name, oDimensionDetails);
 				if (oDimension.findAttributeByName(aColumns[i].name)) {
 					oDimensionDetails.aAttributeName.push(aColumns[i].name);
 				}
@@ -1557,6 +1564,25 @@ sap.ui.define([
 			oFilterExpression.removeConditions(oFilter.propertyName);
 			oFilterExpression.addCondition(oFilter.propertyName, FilterOperator.EQ, oFilter.level);
 		});
+	};
+
+	/**
+	 * Returns the version of the given OData model if the model is supported.
+	 *
+	 * @param {sap.ui.model.Model} oModel The OData model
+	 * @returns {number|null}
+	 *   The version of the OData model, e.g. <code>2</code>, or <code>null</code> if the model is not supported
+	 * @private
+	 */
+	AnalyticalBinding._getModelVersion = function (oModel) {
+		const sModelName = oModel.getMetadata().getName();
+		let iVersion = sModelName === "sap.ui.model.odata.v2.ODataModel" ? 2 : null;
+
+		/** @deprecated As of version 1.48.0 */
+		if (sModelName === "sap.ui.model.odata.ODataModel") {
+			iVersion = 1;
+		}
+		return iVersion;
 	};
 
 	/**
@@ -2282,6 +2308,7 @@ sap.ui.define([
 			var aAggregationLevel = that.aMaxAggregationLevel.slice(0, iChildGroupToLevel + 1);
 			oAnalyticalQueryRequest.setAggregationLevel(aAggregationLevel);
 
+			const aGroupingSorters = [];
 			for (var l = 0; l < aAggregationLevel.length; l++) {
 				var oDimensionDetails = that.oDimensionDetailsSet[aAggregationLevel[l]];
 				var bIncludeText = (oDimensionDetails.textPropertyName != undefined);
@@ -2290,7 +2317,7 @@ sap.ui.define([
 
 				// define a default sort order in case no sort criteria have been provided externally
 				if (oDimensionDetails.grouped) {
-					oAnalyticalQueryRequest.getSortExpression().addSorter(aAggregationLevel[l], odata4analytics.SortOrder.Ascending);
+					aGroupingSorters.push(new Sorter(aAggregationLevel[l]));
 				}
 			}
 
@@ -2348,12 +2375,7 @@ sap.ui.define([
 			}
 
 			// (6) set sort order
-			var oSorter = oAnalyticalQueryRequest.getSortExpression();
-			for (var k = 0; k < that.aSorter.length; k++) {
-				if (that.aSorter[k]) {
-					oSorter.addSorter(that.aSorter[k].sPath, that.aSorter[k].bDescending ? odata4analytics.SortOrder.Descending : odata4analytics.SortOrder.Ascending);
-				}
-			}
+			that._mergeAndAddSorters(aGroupingSorters, oAnalyticalQueryRequest.getSortExpression());
 
 			// (7) set result page boundaries
 			if (iLength == 0) {
@@ -2735,10 +2757,12 @@ sap.ui.define([
 				   where the set of all operations included in the batch request becomes known and this condition can be checked. */
 				this._registerNewRequest(oRequestDetails.sRequestId);
 
-				if (this.iModelVersion === AnalyticalVersionInfo.V1) {
+				/** @deprecated As of version 1.48.0 */
+				if (this.iModelVersion === 1) {
 					//V1 - use createBatchOperation
 					aBatchQueryRequest.push(this.oModel.createBatchOperation(sPath.replace(/\ /g, "%20"), "GET"));
-				} else if (this.iModelVersion === AnalyticalVersionInfo.V2) {
+				}
+				if (this.iModelVersion === 2) {
 					var aUrlParameters = this._getQueryODataRequestOptions(oAnalyticalQueryRequest,
 							oRequestDetails.bIsLeafGroupsRequest,  {encode: true});
 					if (this.sCustomParams) {
@@ -2768,7 +2792,8 @@ sap.ui.define([
 			// fire events to indicate sending of a new request
 			this.fireDataRequested();
 
-			if (this.iModelVersion === AnalyticalVersionInfo.V1) {
+			/** @deprecated As of version 1.48.0 */
+			if (this.iModelVersion === 1) {
 				this.oModel.addBatchReadOperations(aBatchQueryRequest);
 				oBatchRequestHandle = this.oModel.submitBatch(fnSuccess, fnError, true, true);
 
@@ -2776,7 +2801,8 @@ sap.ui.define([
 					info: "",
 					infoObject : {}
 				});
-			} else {
+			}
+			if (this.iModelVersion === 2) {
 				// fake a uniform request handle, so the original code works with the v2 ODataModel
 				// the v2 model does not return an overall request handle for the batch request
 				oBatchRequestHandle = {
@@ -2858,18 +2884,15 @@ sap.ui.define([
 				}
 			}
 
-			// determine the logical success status: true iff all operations succeeded
-			var bOverallSuccess = true;
-			var aBatchErrors;
-
 			// raise event here since there is no separate fnCompleted handler for batch requests
 			that.fireDataReceived({data: oData});
 
-			//check for possible V1 errors
-			var oV1Errors = {};
-			if (that.iModelVersion === AnalyticalVersionInfo.V1) {
+			/** @deprecated As of version 1.48.0 */
+			if (that.iModelVersion === 1) {
+				let bOverallSuccess = true; // determine the logical success status: true iff all operations succeeded
+				let oV1Errors = {}; // check for possible V1 errors
 				// retrieve the errors from the model and reset the success flag
-				aBatchErrors = that.oModel._getBatchErrors(oData);
+				const aBatchErrors = that.oModel._getBatchErrors(oData);
 				if (aBatchErrors.length > 0) {
 					bOverallSuccess = false;
 					oV1Errors = that.oModel._handleError(aBatchErrors[0]);
@@ -2901,13 +2924,15 @@ sap.ui.define([
 				}
 			}
 			if (iCurrentAnalyticalInfoVersion != that.iAnalyticalInfoVersionNumber) {
-				// discard responses for outdated analytical infos
+				// discard responses for outdated analytical infos but fire dataReceived event
+				// because it is expected that dataRequested and dataReceived events are sent as pairs
+				that.fireDataReceived();
 				return;
 			}
 
-			var oV1Error = oError;
-			if (that.iModelVersion === AnalyticalVersionInfo.V1) {
-				oV1Error = that.oModel._handleError(oError);
+			/** @deprecated As of version 1.48.0 */
+			if (that.iModelVersion === 1) {
+				oError = that.oModel._handleError(oError);
 			}
 
 			// fire event to indicate completion of request
@@ -2915,13 +2940,13 @@ sap.ui.define([
 				info: "",
 				infoObject : {},
 				success: false,
-				errorobject: oV1Error});
+				errorobject: oError});
 
-			// Legacy Code: Unsure if this is need for OData V1 Model...
-			if (that.iModelVersion === AnalyticalVersionInfo.V1) {
-				that.oModel.fireRequestFailed(oV1Error);
+			/** @deprecated As of version 1.48.0 */
+			if (that.iModelVersion === 1) {
+				// Legacy Code: Unsure if this is need for OData V1 Model...
+				that.oModel.fireRequestFailed(oError);
 			}
-
 			that.fireDataReceived();
 		}
 	};
@@ -2983,10 +3008,12 @@ sap.ui.define([
 		oLogger.debug("AnalyticalBinding: executing query request");
 
 		var iRequestHandleId = this._getIdForNewRequestHandle();
-		if (this.iModelVersion === AnalyticalVersionInfo.V1) {
+		/** @deprecated As of version 1.48.0 */
+		if (this.iModelVersion === 1) {
 			//trigger data loading, the request handle is registered during the fnHandleUpdate callback, used by the V1 model
 			this.oModel._loadData(sPath, aParam, fnSuccess, fnError, false, fnUpdateHandle, fnCompleted);
-		} else {
+		}
+		if (this.iModelVersion === 2) {
 			if (this.sCustomParams) {
 				aParam.push(this.sCustomParams);
 			}
@@ -3030,7 +3057,7 @@ sap.ui.define([
 			// with ODataModel V2, the completed function is not called by the model anymore
 			// the correct moment to clean up is after the success handler
 			// the error handler takes care of this itself
-			if (that.iModelVersion === AnalyticalVersionInfo.V2) {
+			if (that.iModelVersion === 2) {
 				fnCompleted(oData);
 			}
 		}
@@ -4603,7 +4630,7 @@ sap.ui.define([
 	 * @public
 	 */
 	AnalyticalBinding.prototype.refresh = function(bForceUpdate) {
-		// apply is used here to be compatible to ODataModel v1, where the signature is like the private _refresh()
+		// use apply as refresh may be called with more parameters
 		AnalyticalBinding.prototype._refresh.apply(this, arguments);
 	};
 
@@ -4735,7 +4762,7 @@ sap.ui.define([
 					bIncludeFormattedValue, bIncludeUnitProperty);
 		}
 
-		// add the sorters
+		// add the sorters, no need to merge with grouping sorters as no grouping is used
 		var oSortExpression = oAnalyticalQueryRequest.getSortExpression();
 		oSortExpression.clear();
 		for (var i = 0; i < this.aSorter.length; i++) {
@@ -4833,24 +4860,69 @@ sap.ui.define([
 	 * @private
 	 */
 	AnalyticalBinding.prototype._addSorters = function (oSortExpression, aGroupingSorters) {
-		var bCanApplySortersToGroups = this._canApplySortersToGroups(),
-			aSorters = bCanApplySortersToGroups
-				? this.aSorter
-				: [].concat(aGroupingSorters).concat(this.aSorter);
-
-		function addSorter(bIgnoreIfAlreadySorted, oSorter) {
-			oSortExpression.addSorter(oSorter.sPath,
-				oSorter.bDescending
-					? odata4analytics.SortOrder.Descending
-					: odata4analytics.SortOrder.Ascending,
-				bIgnoreIfAlreadySorted);
+		if (this._canApplySortersToGroups()) {
+			this.aSorter.forEach((oApplicationSorter) => {
+				AnalyticalBinding._addSorter(oApplicationSorter, oSortExpression);
+			});
+			aGroupingSorters.forEach((oGroupingSorter) => {
+				AnalyticalBinding._addSorter(oGroupingSorter, oSortExpression, true);
+			});
+			return;
 		}
+		this._mergeAndAddSorters(aGroupingSorters, oSortExpression);
+	};
 
-		aSorters.forEach(addSorter.bind(null, false));
-		if (bCanApplySortersToGroups) {
-			// grouping sorters must not overwrite sort order
-			aGroupingSorters.forEach(addSorter.bind(null, true));
-		}
+	/**
+	 * Adds the given sorter to the given sort expression. If the parameter <code>bIgnoreIfAlreadySorted</code> is set
+	 * to <code>true</code> the sorter is not added to the sort expression if it is already contained in the sort
+	 * expression.
+	 *
+	 * @param {sap.ui.model.Sorter} oSorter
+	 *   The sorter to add
+	 * @param {sap.ui.model.analytics.odata4analytics.SortExpression} oSortExpression
+	 *   The sort expression to which the given sorter is added
+	 * @param {boolean} [bIgnoreIfAlreadySorted=false]
+	 *   If there is already a sorter for that property, ignore this call
+	 *
+	 * @private
+	 */
+	AnalyticalBinding._addSorter = function (oSorter, oSortExpression, bIgnoreIfAlreadySorted) {
+		oSortExpression.addSorter(oSorter.sPath,
+			oSorter.bDescending
+				? odata4analytics.SortOrder.Descending
+				: odata4analytics.SortOrder.Ascending,
+			bIgnoreIfAlreadySorted);
+	};
+
+	/**
+	 * Merges the given grouping sorters with this binding's application sorters and adds them to the given
+	 * sort expression.
+	 *
+	 * @param {sap.ui.model.Sorter[]} aGroupingSorters
+	 *   The grouping sorters to add to the given sort expression
+	 * @param {sap.ui.model.analytics.odata4analytics.SortExpression} oSortExpression
+	 *   The sort expression to which the given grouping sorters as well as this binding's application sorters are added
+	 *
+	 * @private
+	 */
+	AnalyticalBinding.prototype._mergeAndAddSorters = function (aGroupingSorters, oSortExpression) {
+		const aApplicationSorters = this.aSorter.slice();
+		aGroupingSorters.forEach((oGroupingSorter) => {
+			const sDimensionName = oGroupingSorter.sPath;
+			for (let i = 0; i < aApplicationSorters.length; i += 1) {
+				const oApplicationSorter = aApplicationSorters[i];
+				const sPath = oApplicationSorter.sPath;
+				if (sPath === sDimensionName || this.oDimensionDetailsSet[sDimensionName].textPropertyName === sPath) {
+					AnalyticalBinding._addSorter(oApplicationSorter, oSortExpression);
+					aApplicationSorters.splice(i, 1);
+					break;
+				}
+			}
+			AnalyticalBinding._addSorter(oGroupingSorter, oSortExpression, true);
+		});
+		aApplicationSorters.forEach((oApplicationSorter) => {
+			AnalyticalBinding._addSorter(oApplicationSorter, oSortExpression, true);
+		});
 	};
 
 	/**
@@ -4915,6 +4987,23 @@ sap.ui.define([
 		// property for the measure and not the measure itself has been added as column. In that
 		// case request the total for the corresponding measure.
 		return !!oAnalyticalInfo && oAnalyticalInfo.total == false;
+	};
+
+	/**
+	 * Updates the dimension details text property with the given property name in case it is the given dimension's
+	 * text property.
+	 *
+	 * @param {object} oDimension The dimension
+	 * @param {string} sPropertyName The property name
+	 * @param {object} oDimensionDetails The dimension details
+	 *
+	 * @private
+	 */
+	AnalyticalBinding._updateDimensionDetailsTextProperty = function (oDimension, sPropertyName, oDimensionDetails) {
+		const oTextProperty = oDimension.getTextProperty();
+		if (oTextProperty && oTextProperty.name === sPropertyName) {
+			oDimensionDetails.textPropertyName = sPropertyName;
+		}
 	};
 
 	AnalyticalBinding.Logger = oLogger;

@@ -6,16 +6,16 @@ sap.ui.define(['sap/ui/core/Renderer', 'sap/m/TokenizerRenderer', 'sap/m/library
 	function(Renderer, TokenizerRenderer, mLibrary, Core) {
 	"use strict";
 
-	var EmptyIndicatorMode = mLibrary.EmptyIndicatorMode;
+	const EmptyIndicatorMode = mLibrary.EmptyIndicatorMode;
 
 	// shortcut for library resource bundle
-	var oRb = Core.getLibraryResourceBundle("sap.m");
+	const oRb = Core.getLibraryResourceBundle("sap.m");
 
 	/**
 	 * TokenizerDisplay renderer.
 	 * @namespace
 	 */
-	var TokenizerDisplayRenderer = Renderer.extend(TokenizerRenderer);
+	const TokenizerDisplayRenderer = Renderer.extend(TokenizerRenderer);
 	TokenizerDisplayRenderer.apiVersion = 2;
 
 	TokenizerDisplayRenderer._renderIndicator = function(oRm, oControl){
@@ -25,10 +25,6 @@ sap.ui.define(['sap/ui/core/Renderer', 'sap/m/TokenizerRenderer', 'sap/m/library
 		if (oControl.getEmptyIndicatorMode() !== EmptyIndicatorMode.Off && oControl.getTokens().length == 0) {
 			this._renderEmptyIndicator(oRm, oControl);
 		}
-	};
-
-	TokenizerDisplayRenderer._renderTabIndex = function(oRm, oControl) {
-		oRm.attr("tabindex", "-1");
 	};
 
 	TokenizerDisplayRenderer._renderIndicatorTabIndex = function(oRm, oControl) {

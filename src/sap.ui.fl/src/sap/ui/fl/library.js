@@ -3,25 +3,26 @@
  */
 
 sap.ui.define([
+	"sap/ui/core/Lib",
 	"sap/ui/fl/apply/_internal/preprocessors/RegistrationDelegator",
+	"sap/ui/fl/initial/_internal/FlexConfiguration",
 	"sap/ui/fl/Utils",
 	"sap/ui/fl/Layer",
 	"sap/ui/fl/Scenario",
 	"sap/ui/fl/changeHandler/condenser/Classification",
-	"sap/ui/core/Configuration",
 	// library dependencies
 	"sap/ui/core/library",
 	"sap/m/library"
 ], function(
+	Lib,
 	RegistrationDelegator,
+	FlexConfiguration,
 	Utils,
 	Layer,
 	Scenario,
-	CondenserClassification,
-	Configuration
+	CondenserClassification
 ) {
 	"use strict";
-
 
 	/**
 	 * The <code>sap.ui.fl.initial</code> namespace should contain all code that is
@@ -473,7 +474,7 @@ sap.ui.define([
 	 * @public
 	 * @version ${version}
 	 */
-	var thisLib = sap.ui.getCore().initLibrary({
+	var thisLib = Lib.init({
 		name: "sap.ui.fl",
 		version: "${version}",
 		controls: [
@@ -489,7 +490,7 @@ sap.ui.define([
 				"sap.ui.fl.util.IFrame": "sap/ui/fl/util/IFrame"
 			},
 			"sap.ui.support": {
-				//Configuration used for rule loading of Support Assistant
+				// Configuration used for rule loading of Support Assistant
 				publicRules: true
 			}
 		}
@@ -518,7 +519,7 @@ sap.ui.define([
 	}
 
 	if (_isTrialSystem()) {
-		Configuration.setFlexibilityServices([{
+		FlexConfiguration.setFlexibilityServices([{
 			connector: "LrepConnector",
 			url: "/sap/bc/lrep",
 			layers: []

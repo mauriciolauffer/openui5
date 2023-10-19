@@ -1,4 +1,4 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/ui/fl/support/apps/contentbrowser/utils/ErrorUtils",
@@ -16,7 +16,7 @@ sap.ui.define([
 	var sandbox = sinon.createSandbox();
 
 	QUnit.module("ErrorUtils", {
-		afterEach: function() {
+		afterEach() {
 			ErrorUtils._masterComponent = undefined;
 			ErrorUtils._messagesModel = undefined;
 			sandbox.restore();

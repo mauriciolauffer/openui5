@@ -25,7 +25,7 @@ sap.ui.define([
 
 	var ValueHelpDelegate = Object.assign({}, MDCValueHelpDelegate);
 
-	ValueHelpDelegate.retrieveContent = function(oPayload, oContainer, sContentId) {
+	ValueHelpDelegate.retrieveContent = function(oValueHelp, oContainer, sContentId) {
 
 		var oContent = sContentId ? sap.ui.getCore().byId(sContentId) : oContainer.getContent()[0];
 		sContentId = oContent && oContent.getId();

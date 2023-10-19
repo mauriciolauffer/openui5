@@ -32,7 +32,6 @@ sap.ui.define([
 	 * @private
 	 * @since 1.34
 	 * @alias sap.ui.rta.plugin.Remove
-	 * @experimental Since 1.34. This class is experimental and provides only limited functionality. Also the API might be changed in future.
 	 */
 	var Remove = Plugin.extend("sap.ui.rta.plugin.Remove", /** @lends sap.ui.rta.plugin.Remove.prototype */{
 		metadata: {
@@ -49,11 +48,12 @@ sap.ui.define([
 	 * @param {sap.ui.dt.Overlay} oOverlay overlay object
 	 * @override
 	 */
-	Remove.prototype.registerElementOverlay = function (oOverlay) {
+	Remove.prototype.registerElementOverlay = function(...aArgs) {
+		const [oOverlay] = aArgs;
 		if (this.isEnabled([oOverlay])) {
 			oOverlay.attachBrowserEvent("keydown", this._onKeyDown, this);
 		}
-		Plugin.prototype.registerElementOverlay.apply(this, arguments);
+		Plugin.prototype.registerElementOverlay.apply(this, aArgs);
 	};
 
 	/**
@@ -61,7 +61,7 @@ sap.ui.define([
 	 * @return {Promise.<boolean>} <code>true</code> if it's editable wrapped in a promise.
 	 * @private
 	 */
-	Remove.prototype._isEditable = function (oOverlay) {
+	Remove.prototype._isEditable = function(oOverlay) {
 		return this._checkChangeHandlerAndStableId(oOverlay);
 	};
 
@@ -71,7 +71,7 @@ sap.ui.define([
 	 * @return {boolean} true if enabled
 	 * @public
 	 */
-	Remove.prototype.isEnabled = function (aElementOverlays) {
+	Remove.prototype.isEnabled = function(aElementOverlays) {
 		var aResponsibleElementOverlays = aElementOverlays.map(function(oElementOverlay) {
 			return this.getResponsibleElementOverlay(oElementOverlay);
 		}.bind(this));
@@ -107,8 +107,8 @@ sap.ui.define([
 	 * @private
 	 */
 	Remove.prototype._canBeRemovedFromAggregation = function(aElementOverlays) {
-		//Check if designtime allows removing last visible element
-		var fnCheckDesignTimeSettings = function (oOverlay) {
+		// Check if designtime allows removing last visible element
+		var fnCheckDesignTimeSettings = function(oOverlay) {
 			var oParentOverlay = oOverlay.getParentAggregationOverlay();
 			if (oParentOverlay) {
 				var oAction = this.getAction(oParentOverlay);
@@ -158,11 +158,12 @@ sap.ui.define([
 	 * @param {sap.ui.dt.Overlay} oOverlay overlay object
 	 * @override
 	 */
-	Remove.prototype.deregisterElementOverlay = function(oOverlay) {
+	Remove.prototype.deregisterElementOverlay = function(...aArgs) {
+		const [oOverlay] = aArgs;
 		if (this.isEnabled([oOverlay])) {
 			oOverlay.detachBrowserEvent("keydown", this._onKeyDown, this);
 		}
-		Plugin.prototype.deregisterElementOverlay.apply(this, arguments);
+		Plugin.prototype.deregisterElementOverlay.apply(this, aArgs);
 	};
 
 	/**
@@ -183,10 +184,10 @@ sap.ui.define([
 	 * @param {sap.ui.dt.ElementOverlay[]} aElementOverlays - Target overlays
 	 * @private
 	 */
-	Remove.prototype.removeElement = function (aElementOverlays) {
+	Remove.prototype.removeElement = function(aElementOverlays) {
 		var aTargetOverlays = aElementOverlays || this.getSelectedOverlays();
 
-		aTargetOverlays = aTargetOverlays.filter(function (oElementOverlay) {
+		aTargetOverlays = aTargetOverlays.filter(function(oElementOverlay) {
 			return this.isEnabled([oElementOverlay]);
 		}, this);
 
@@ -209,7 +210,7 @@ sap.ui.define([
 		}
 	};
 
-	Remove.prototype.handler = function (aElementOverlays) {
+	Remove.prototype.handler = function(aElementOverlays) {
 		var aPromises = [];
 		var oCompositeCommand = new CompositeCommand();
 		function fnSetFocus(oOverlay) {
@@ -291,14 +292,12 @@ sap.ui.define([
 						aSiblings.slice(0, iOverlayPosition).reverse()
 					);
 				}
-				oNextOverlaySelection = aCandidates.filter(function (oSibling) {
+				oNextOverlaySelection = aCandidates.filter(function(oSibling) {
 					return oSibling.getElement().getVisible();
 				}).shift();
 			}
 		}
-		if (!oNextOverlaySelection) {
-			oNextOverlaySelection = OverlayRegistry.getOverlay(aSelectedOverlays[0].getRelevantContainer());
-		}
+		oNextOverlaySelection ||= OverlayRegistry.getOverlay(aSelectedOverlays[0].getRelevantContainer());
 		return oNextOverlaySelection;
 	};
 
@@ -307,7 +306,7 @@ sap.ui.define([
 	 * @param {sap.ui.dt.ElementOverlay[]} aElementOverlays - Target overlays
 	 * @return {object[]} - array of the items with required data
 	 */
-	Remove.prototype.getMenuItems = function (aElementOverlays) {
+	Remove.prototype.getMenuItems = function(aElementOverlays) {
 		return this._getMenuItems(aElementOverlays, {pluginId: "CTX_REMOVE", rank: 60, icon: "sap-icon://less"});
 	};
 

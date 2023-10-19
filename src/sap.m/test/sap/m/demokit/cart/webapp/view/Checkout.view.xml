@@ -103,7 +103,7 @@
 								justifyContent="Center"
 								width="100%">
 								<SegmentedButton
-										select="setPaymentMethod"
+										selectionChange="setPaymentMethod"
 										id="paymentMethodSelection"
 										selectedKey="{/SelectedPayment}">
 										<items>
@@ -744,7 +744,9 @@
 							</List>
 						</content>
 					</Panel>
-					<form:SimpleForm ariaLabelledBy="totalPriceTitle">
+					<form:SimpleForm
+						layout="ResponsiveGridLayout"
+						ariaLabelledBy="totalPriceTitle">
 						<form:toolbar>
 							<Toolbar id="toolbarTotalPrice">
 								<ToolbarSpacer/>

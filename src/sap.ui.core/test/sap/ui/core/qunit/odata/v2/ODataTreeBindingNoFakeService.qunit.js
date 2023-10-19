@@ -6,13 +6,14 @@ sap.ui.define([
 	"sap/ui/model/ChangeReason",
 	"sap/ui/model/Context",
 	"sap/ui/model/Filter",
+	"sap/ui/model/FilterProcessor",
+	"sap/ui/model/FilterType",
 	"sap/ui/model/odata/CountMode",
 	"sap/ui/model/odata/OperationMode",
 	"sap/ui/model/odata/v2/ODataTreeBinding",
-	"sap/ui/model/Sorter",
-	"sap/ui/test/TestUtils"
-], function (Log, ChangeReason, Context, Filter, CountMode, OperationMode, ODataTreeBinding, Sorter,
-		TestUtils) {
+	"sap/ui/model/Sorter"
+], function (Log, ChangeReason, Context, Filter, FilterProcessor, FilterType, CountMode, OperationMode,
+		ODataTreeBinding, Sorter) {
 	/*global QUnit,sinon*/
 	"use strict";
 
@@ -22,10 +23,6 @@ sap.ui.define([
 			this.oLogMock = this.mock(Log);
 			this.oLogMock.expects("error").never();
 			this.oLogMock.expects("warning").never();
-		},
-
-		afterEach : function (assert) {
-			return TestUtils.awaitRendering();
 		}
 	});
 
@@ -45,6 +42,7 @@ sap.ui.define([
 				operationMode : OperationMode.Client,
 				rootLevel : 23,
 				threshold : 77,
+				transitionMessagesOnly : "truthy",
 				usePreliminaryContext : "bUsePreliminaryContext",
 				useServersideApplicationFilters : "bUseServersideApplicationFilters"
 			},
@@ -95,8 +93,8 @@ sap.ui.define([
 		assert.strictEqual(oBinding.bUseServersideApplicationFilters,
 			"bUseServersideApplicationFilters");
 		assert.strictEqual(oBinding.bUsePreliminaryContext, "bUsePreliminaryContext");
+		assert.strictEqual(oBinding.bTransitionMessagesOnly, true);
 	});
-
 
 	//*********************************************************************************************
 	QUnit.test("constructor: with single Filter object", function (assert) {
@@ -125,6 +123,23 @@ sap.ui.define([
 	});
 
 	//*********************************************************************************************
+	QUnit.test("constructor: multiple Application filters are grouped", function (assert) {
+		var oBinding,
+			aFilters = ["~filter0", "~filter1"],
+			oModel = {checkFilterOperation: function () {}};
+
+		this.mock(FilterProcessor).expects("groupFilters")
+			.withExactArgs(sinon.match.same(aFilters))
+			.returns("~groupedFilters");
+		this.mock(oModel).expects("checkFilterOperation").withExactArgs(["~groupedFilters"]);
+
+		// code under test
+		oBinding = new ODataTreeBinding(oModel, "path", /*oContext*/{}, aFilters);
+
+		assert.deepEqual(oBinding.aApplicationFilters, ["~groupedFilters"]);
+	});
+
+	//*********************************************************************************************
 	QUnit.test("constructor: parameter defaulting, logging", function (assert) {
 		var oBinding,
 			oContext = {},
@@ -136,14 +151,13 @@ sap.ui.define([
 			},
 			oModelMock = this.mock(oModel);
 
-		oModelMock.expects("checkFilterOperation").withExactArgs(undefined);
+		oModelMock.expects("checkFilterOperation").withExactArgs([]);
 
 		// code under test
 		oBinding = new ODataTreeBinding(oModel, "path", oContext);
 
 		assert.deepEqual(oBinding.aSorters, []);
-		//TODO why not [] as default for aApplicationFilters like in TreeBinding?
-		assert.strictEqual(oBinding.aApplicationFilters, undefined);
+		assert.deepEqual(oBinding.aApplicationFilters, []);
 		assert.strictEqual(oBinding.bClientOperation, false);
 
 		// parameters
@@ -155,8 +169,9 @@ sap.ui.define([
 		assert.strictEqual(oBinding.iThreshold, 0);
 		assert.strictEqual(oBinding.bUseServersideApplicationFilters, false);
 		assert.strictEqual(oBinding.bUsePreliminaryContext, "bPreliminaryContext");
+		assert.strictEqual(oBinding.bTransitionMessagesOnly, false);
 
-		oModelMock.expects("checkFilterOperation").withExactArgs(undefined);
+		oModelMock.expects("checkFilterOperation").withExactArgs([]);
 
 		// code under test
 		oBinding = new ODataTreeBinding(oModel, "path", oContext, undefined,
@@ -164,7 +179,7 @@ sap.ui.define([
 
 		assert.strictEqual(oBinding.sGroupId, "group");
 
-		oModelMock.expects("checkFilterOperation").withExactArgs(undefined);
+		oModelMock.expects("checkFilterOperation").withExactArgs([]);
 		this.oLogMock.expects("fatal").withExactArgs("To use an ODataTreeBinding at least "
 			+ "one CountMode must be supported by the service!");
 
@@ -530,10 +545,12 @@ sap.ui.define([
 		var oBinding = {
 				oModel : {read : function () {}},
 				mRequestHandles : {},
+				_getHeaders() {},
 				getResolvedPath : function () {}
 			};
 
 		this.mock(oBinding).expects("getResolvedPath").withExactArgs().returns("~resolvedPath");
+		this.mock(oBinding).expects("_getHeaders").withExactArgs().returns("~headers");
 		this.mock(oBinding.oModel).expects("read")
 			.withExactArgs("~resolvedPath", sinon.match.object.and(sinon.match.has("groupId"))
 				.and(sinon.match.has("success")).and(sinon.match.has("error")))
@@ -720,6 +737,7 @@ sap.ui.define([
 			oBinding = {
 				sGroupId : "~sGroupId",
 				oModel : oModel,
+				_getHeaders() {},
 				_getNavPath : function () {},
 				_processODataObject : function () {},
 				getPath : function () {},
@@ -732,8 +750,9 @@ sap.ui.define([
 			};
 
 		this.mock(oBinding).expects("getResolvedPath").withExactArgs().returns("~resolvedPath");
+		this.mock(oBinding).expects("_getHeaders").withExactArgs().returns("~headers");
 		oExpectation = this.mock(oModel).expects("read").withExactArgs("~resolvedPath", {
-			error : sinon.match.func, groupId : "~sGroupId", success : sinon.match.func
+			error : sinon.match.func, groupId : "~sGroupId", headers : "~headers", success : sinon.match.func
 		}).returns("~readHandle");
 
 		// code under test
@@ -770,6 +789,7 @@ sap.ui.define([
 				oModel : oModel,
 				oRootContext : "~oldRootContext",
 				mRequestHandles : {},
+				_getHeaders() {},
 				fireDataReceived : function () {},
 				getResolvedPath : function () {}
 			},
@@ -777,8 +797,9 @@ sap.ui.define([
 			oExpectation;
 
 		this.mock(oBinding).expects("getResolvedPath").withExactArgs().returns("~resolvedPath");
+		this.mock(oBinding).expects("_getHeaders").withExactArgs().returns("~headers");
 		oExpectation = this.mock(oModel).expects("read").withExactArgs("~resolvedPath", {
-			error : sinon.match.func, groupId : "~sGroupId", success : sinon.match.func
+			error : sinon.match.func, groupId : "~sGroupId", headers : "~headers", success : sinon.match.func
 		}).returns("~readHandle");
 
 		// code under test
@@ -869,8 +890,7 @@ sap.ui.define([
 				"~ilength", "~iThreshold"),
 			"~V2Context[]");
 	});
-
-	//*********************************************************************************************
+	/** @deprecated As of version 1.102.0, reason OperationMode.Auto */
 	QUnit.test("_getContextsForNodeId: with operation mode 'Auto' and without"
 			+ " iTotalCollectionCount", function (assert) {
 		var oBinding = {
@@ -1086,13 +1106,16 @@ sap.ui.define([
 				bSkipDataEvents : true,
 				aSorters : "~sorters",
 				iTotalCollectionCount : "~count",
+				_getHeaders() {},
 				getResolvedPath : function () {}
 			},
 			aUrlParams = ["~custom"];
 
 		this.mock(oBinding).expects("getResolvedPath").withExactArgs().returns("~resolvedPath");
+		this.mock(oBinding).expects("_getHeaders").withExactArgs().returns("~headers");
 		this.mock(oBinding.oModel).expects("read")
 			.withExactArgs("~resolvedPath", {
+				headers : "~headers",
 				urlParameters : sinon.match.same(aUrlParams)
 					.and(sinon.match(["~custom", "$top=~count"])),
 				success : sinon.match.func,
@@ -1118,13 +1141,16 @@ sap.ui.define([
 				bSkipDataEvents : true,
 				aSorters : "~sorters",
 				iTotalCollectionCount : vTotalCollectionCount,
+				_getHeaders() {},
 				getResolvedPath : function () {}
 			},
 			aUrlParams = ["~custom"];
 
 		this.mock(oBinding).expects("getResolvedPath").withExactArgs().returns("~resolvedPath");
+		this.mock(oBinding).expects("_getHeaders").withExactArgs().returns("~headers");
 		this.mock(oBinding.oModel).expects("read")
 			.withExactArgs("~resolvedPath", {
+				headers : "~headers",
 				urlParameters : sinon.match.same(aUrlParams)
 					.and(sinon.match(["~custom"])),
 				success : sinon.match.func,
@@ -1143,4 +1169,278 @@ sap.ui.define([
 		// code under test
 		assert.strictEqual(ODataTreeBinding.prototype._isRefreshAfterChangeAllowed(), true);
 	});
+
+	//*********************************************************************************************
+[
+	{filter: [], groupFilter: undefined, resultFilter: []},
+	{filter: ["filter0"], groupFilter: undefined, resultFilter: ["filter0"]},
+	{filter: ["filter0", "filter1"], groupFilter: "~groupedFilters", resultFilter: ["~groupedFilters"]}
+].forEach(function (oFixture, i) {
+	QUnit.test("filter: group filters of type Application #" + i, function (assert) {
+		var oBinding = {
+				aApplicationFilters: "~oldFilters",
+				oModel: {checkFilterOperation: function () {}},
+				_fireRefresh: function () {},
+				resetData: function () {}
+			};
+
+		this.mock(oBinding.oModel).expects("checkFilterOperation").withExactArgs(oFixture.filter);
+		this.mock(FilterProcessor).expects("groupFilters")
+			.withExactArgs(sinon.match.same(oFixture.filter))
+			.exactly(oFixture.groupFilter ? 1 : 0)
+			.returns(oFixture.groupFilter);
+		this.mock(oBinding).expects("resetData").withExactArgs();
+		this.mock(oBinding).expects("_fireRefresh").withExactArgs({reason: ChangeReason.Filter});
+
+		// code under test
+		ODataTreeBinding.prototype.filter.call(oBinding, oFixture.filter, FilterType.Application);
+
+		assert.deepEqual(oBinding.aApplicationFilters, oFixture.resultFilter);
+	});
+});
+
+	//*********************************************************************************************
+	QUnit.test("getFilterInfo", function (assert) {
+		var oGroupedApplicationFilter = {
+				getAST : function () {}
+			},
+			oBinding = {
+				aApplicationFilters : [oGroupedApplicationFilter]
+			};
+
+		this.mock(oGroupedApplicationFilter).expects("getAST")
+			.withExactArgs("~bIncludeOrigin")
+			.returns("~AST");
+
+		// code under test
+		assert.strictEqual(ODataTreeBinding.prototype.getFilterInfo.call(oBinding, "~bIncludeOrigin"), "~AST");
+
+		oBinding.aApplicationFilters = [];
+
+		// code under test
+		assert.strictEqual(ODataTreeBinding.prototype.getFilterInfo.call(oBinding), null);
+	});
+
+	//*********************************************************************************************
+	QUnit.test("getFilterInfo: integrative test", function (assert) {
+		var oApplicationFilter = new Filter("propertyPath", "GE", "foo"),
+			oBinding,
+			oContext = {},
+			oModel = {
+				checkFilterOperation : function () {}
+			},
+			oModelMock = this.mock(oModel);
+
+		oModelMock.expects("checkFilterOperation").withExactArgs([oApplicationFilter]);
+
+		oBinding = new ODataTreeBinding(oModel, "path", oContext, oApplicationFilter);
+
+		// code under test
+		assert.deepEqual(oBinding.getFilterInfo(), {
+			left: {path: "propertyPath", type: "Reference"},
+			op: ">=",
+			right: {type: "Literal", value: "foo"},
+			type: "Binary"
+		});
+		assert.deepEqual(oBinding.aApplicationFilters, [oApplicationFilter]);
+
+		oApplicationFilter = new Filter("propertyPath", "LE", "bar");
+		oModelMock.expects("checkFilterOperation").withExactArgs(oApplicationFilter);
+
+		oBinding.filter(oApplicationFilter, FilterType.Application);
+
+		// code under test
+		assert.deepEqual(oBinding.getFilterInfo(), {
+			left: {path: "propertyPath", type: "Reference"},
+			op: "<=",
+			right: {type: "Literal", value: "bar"},
+			type: "Binary"
+		});
+		assert.deepEqual(oBinding.aApplicationFilters, [oApplicationFilter]);
+
+		oModelMock.expects("checkFilterOperation").withExactArgs(undefined);
+
+		oBinding.filter(undefined, FilterType.Application);
+
+		// code under test
+		assert.deepEqual(oBinding.getFilterInfo(), null);
+		assert.deepEqual(oBinding.aApplicationFilters, []);
+	});
+
+	//*********************************************************************************************
+	QUnit.test("_loadSubTree: success case", function (assert) {
+		var oLoadSubTreePromise, oReadExpectation,
+			oBinding = {
+				bHasTreeAnnotations: true,
+				oModel: {
+					callAfterUpdate: function () {},
+					getKey: function () {},
+					read: function () {}
+				},
+				mRequestHandles: {},
+				bSkipDataEvents: true,
+				aSorters: "~aSorters",
+				_createKeyMap: function () {},
+				_getHeaders() {},
+				_importCompleteKeysHierarchy: function () {},
+				_updateNodeKey: function () {},
+				getResolvedPath: function () {}
+			},
+			oBindingMock = this.mock(oBinding),
+			oData = {results: ["~oData"]},
+			oModelMock = this.mock(oBinding.oModel),
+			aParams = ["~sTreeBindingParams"];
+
+		oBindingMock.expects("getResolvedPath").withExactArgs().returns("~sAbsolutePath");
+		oBindingMock.expects("_getHeaders").withExactArgs().returns("~headers");
+		oReadExpectation = oModelMock.expects("read")
+			.withExactArgs("~sAbsolutePath", {
+				error: sinon.match.func,
+				groupId: undefined,
+				headers: "~headers",
+				sorters: "~aSorters",
+				success: sinon.match.func,
+				urlParameters: sinon.match.same(aParams)
+			})
+			.returns("~oReadHandle");
+
+		// code under test
+		oLoadSubTreePromise = ODataTreeBinding.prototype._loadSubTree.call(oBinding, "~oNode", aParams);
+
+		assert.deepEqual(oBinding.mRequestHandles, {"loadSubTree-~sTreeBindingParams": "~oReadHandle"});
+
+		oModelMock.expects("getKey").withExactArgs("~oData").returns("~sParentKey");
+		oBindingMock.expects("_updateNodeKey").withExactArgs("~oNode", "~sParentKey");
+		oBindingMock.expects("_createKeyMap").withExactArgs(sinon.match.same(oData.results), true).returns("~mKeys");
+		oBindingMock.expects("_importCompleteKeysHierarchy").withExactArgs("~mKeys");
+		oModelMock.expects("callAfterUpdate").withExactArgs(sinon.match.func);
+
+		// code under test
+		oReadExpectation.args[0][1].success(oData);
+
+		assert.deepEqual(oBinding.mRequestHandles, {});
+		assert.deepEqual(oBinding.bNeedsUpdate, true);
+
+		return oLoadSubTreePromise.then(function (oData0) {
+			assert.strictEqual(oData0, oData);
+		});
+	});
+
+	//*********************************************************************************************
+	QUnit.test("_loadSubNodes: calls _getHeaders", function (assert) {
+		const oBinding = {
+			oFinalLengths: {"~sNodeId": 5},
+			oModel: {
+				read() {}
+			},
+			mRequestHandles: {},
+			bSkipDataEvents: true,
+			_getHeaders() {}
+		};
+		this.mock(oBinding).expects("_getHeaders").withExactArgs().returns("~headers");
+		this.mock(oBinding.oModel).expects("read")
+			.withExactArgs("~sNodeId", {
+				error: sinon.match.func,
+				groupId: undefined, // not relevant for this test
+				headers: "~headers",
+				sorters: undefined, // not relevant for this test
+				success: sinon.match.func,
+				urlParameters: "~aParams"
+			})
+			.returns("~oReadHandle");
+
+		// code under test - start index, length and threshold are not relevant for this use case
+		ODataTreeBinding.prototype._loadSubNodes.call(oBinding, "~sNodeId", /*iStartIndex*/undefined,
+			/*iLength*/undefined, /*iThreshold*/undefined, "~aParams");
+
+		assert.strictEqual(oBinding.bSkipDataEvents, false);
+		assert.deepEqual(oBinding.mRequestHandles, {"~sNodeId-undefined-undefined-undefined": "~oReadHandle"});
+	});
+	/** @deprecated As of version 1.120.0, reason OperationMode.Auto */
+	QUnit.test("_getCountForCollection: calls _getHeaders", function () {
+		const oBinding = {
+			sCountMode: CountMode.Inline,
+			bHasTreeAnnotations: true,
+			oModel: {
+				read() {}
+			},
+			sOperationMode: OperationMode.Auto,
+			_getHeaders() {},
+			getResolvedPath() {}
+		};
+		this.mock(oBinding).expects("getResolvedPath").withExactArgs().returns("~sAbsolutePath");
+		this.mock(oBinding).expects("_getHeaders").withExactArgs().returns("~headers");
+		this.mock(oBinding.oModel).expects("read")
+			.withExactArgs("~sAbsolutePath", {
+				error: sinon.match.func,
+				groupId: undefined, // not relevant for this test
+				headers: "~headers",
+				success: sinon.match.func,
+				urlParameters: ["$top=0", "$inlinecount=allpages"]
+			});
+
+		// code under test
+		ODataTreeBinding.prototype._getCountForCollection.call(oBinding);
+	});
+	/** @deprecated As of version 1.120.0, reason OperationMode.Auto */
+	QUnit.test("_getCountForCollection: don't call _getHeaders for $count request", function () {
+		const oBinding = {
+			sCountMode: CountMode.Request,
+			bHasTreeAnnotations: true,
+			oModel: {
+				read() {}
+			},
+			sOperationMode: OperationMode.Auto,
+			getResolvedPath() {}
+		};
+		this.mock(oBinding).expects("getResolvedPath").withExactArgs().returns("~sAbsolutePath");
+		this.mock(oBinding.oModel).expects("read")
+			.withExactArgs("~sAbsolutePath/$count", {
+				error: sinon.match.func,
+				groupId: undefined, // not relevant for this test
+				headers: undefined,
+				success: sinon.match.func,
+				urlParameters: []
+			});
+
+		// code under test
+		ODataTreeBinding.prototype._getCountForCollection.call(oBinding);
+	});
+
+	//*********************************************************************************************
+	QUnit.test("_getCountForNodeId: don't call _getHeaders for $count request", function () {
+		const oBinding = {
+			oModel: {
+				read() {}
+			},
+			getFilterParams() {}
+		};
+		this.mock(oBinding).expects("getFilterParams").withExactArgs().returns(undefined);
+		this.mock(oBinding.oModel).expects("read")
+			.withExactArgs("~sNodeId/$count", {
+				error: sinon.match.func,
+				groupId: undefined, // not relevant for this test
+				sorters: undefined, // not relevant for this test
+				success: sinon.match.func,
+				urlParameters: []
+			});
+
+		// code under test
+		ODataTreeBinding.prototype._getCountForNodeId.call(oBinding, "~sNodeId");
+	});
+
+	//*********************************************************************************************
+[
+	{bTransitionMessagesOnly: true, result: {"sap-messages": "transientOnly"}},
+	{bTransitionMessagesOnly: false, result: undefined}
+].forEach((oFixture) => {
+	QUnit.test("_getHeaders: bTransitionMessagesOnly=" + oFixture.bTransitionMessagesOnly, function (assert) {
+		const oBinding = {
+			bTransitionMessagesOnly: oFixture.bTransitionMessagesOnly
+		};
+
+		// code under test
+		assert.deepEqual(ODataTreeBinding.prototype._getHeaders.call(oBinding), oFixture.result);
+	});
+});
 });

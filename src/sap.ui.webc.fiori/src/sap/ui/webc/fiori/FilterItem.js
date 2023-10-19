@@ -4,7 +4,7 @@
 
 // Provides control sap.ui.webc.fiori.FilterItem.
 sap.ui.define([
-	"sap/ui/webc/common/WebComponent",
+	"sap/ui/core/webc/WebComponent",
 	"./library",
 	"./thirdparty/FilterItem"
 ], function(WebComponent, library) {
@@ -16,7 +16,7 @@ sap.ui.define([
 	 * @param {string} [sId] ID for the new control, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new control
 	 *
-	 * @extends sap.ui.webc.common.WebComponent
+	 * @extends sap.ui.core.webc.WebComponent
 	 * @class
 	 *
 	 * <h3>Overview</h3>
@@ -41,6 +41,14 @@ sap.ui.define([
 				"sap.ui.webc.fiori.IFilterItem"
 			],
 			properties: {
+
+				/**
+				 * Defines the additional text of the component.
+				 */
+				additionalText: {
+					type: "string",
+					defaultValue: ""
+				},
 
 				/**
 				 * Defines the text of the component.

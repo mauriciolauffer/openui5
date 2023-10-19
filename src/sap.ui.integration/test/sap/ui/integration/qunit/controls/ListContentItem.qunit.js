@@ -3,12 +3,14 @@
 sap.ui.define([
 	"sap/ui/core/Core",
 	"sap/ui/core/library",
+	"sap/ui/integration/cards/ListContent",
 	"sap/ui/integration/controls/ListContentItem",
 	"sap/ui/integration/controls/Microchart",
 	"sap/m/ObjectStatus"
 ], function (
 	Core,
 	coreLibrary,
+	ListContent,
 	ListContentItem,
 	Microchart,
 	ObjectStatus
@@ -48,15 +50,22 @@ sap.ui.define([
 		// assert
 		assert.ok(oLCI.$().hasClass("sapUiIntLCITwoLines"), "'sapUiIntLCITwoLines' class should be present.");
 
+		oLCI.setDescriptionVisible(false);
+		Core.applyChanges();
+
+		// assert
+		assert.ok(oLCI.$().hasClass("sapUiIntLCIOneLine"), "'sapUiIntLCIOneLine' class should be present.");
+
 		// clean up
 		oLCI.destroy();
 	});
 
 	QUnit.test("Content layout when there are title and chart", function (assert) {
 		// arrange
+		var oMicrochart = new Microchart();
 		var oLCI = new ListContentItem({
 			title: "This is title",
-			microchart: new Microchart()
+			microchart:oMicrochart
 		});
 
 		oLCI.placeAt(DOM_RENDER_LOCATION);
@@ -64,6 +73,13 @@ sap.ui.define([
 
 		// assert
 		assert.ok(oLCI.$().hasClass("sapUiIntLCITwoLines"), "'sapUiIntLCITwoLines' class should be present.");
+
+		oMicrochart.setVisible(false);
+		oLCI.invalidate();
+		Core.applyChanges();
+
+		// assert
+		assert.ok(oLCI.$().hasClass("sapUiIntLCIOneLine"), "'sapUiIntLCIOneLine' class should be present.");
 
 		// clean up
 		oLCI.destroy();
@@ -105,6 +121,96 @@ sap.ui.define([
 
 		// clean up
 		oLCI.destroy();
+	});
+
+	QUnit.test("Lines count for renderer - attributes", function (assert) {
+		// arrange
+		const oContent = new ListContent();
+
+		const oSample1 = {
+			title: "This is title",
+			description: {
+				value: "This is description"
+			},
+			attributes: [
+				{
+					value: "test 1"
+				},
+				{
+					value: "test 2"
+				},
+				{
+					value: "test 3"
+				},
+				{
+					value: "test 4"
+				}
+			],
+			chart: {
+
+			}
+		};
+
+		// assert
+		assert.strictEqual(ListContentItem.getLinesCount(oSample1, oContent), 5, "Lines count for sample 1 are as expected.");
+	});
+
+	QUnit.test("Lines count for renderer attributes 2", function (assert) {
+		// arrange
+		const oContent = new ListContent();
+
+		const oSample2 = {
+			title: "This is title",
+			description: {
+				value: "This is description",
+				visible: "{= !!${binding}}"
+			},
+			attributes: [
+				{
+					value: "test 1",
+					visible: true
+				},
+				{
+					value: "test 2",
+					visible: false
+				},
+				{
+					value: "test 3"
+				},
+				{
+					value: "test 4",
+					visible: "{= !!${binding}}"
+				}
+			],
+			chart: {
+				visible: "{= !!${binding}}"
+			}
+		};
+
+		// assert
+		assert.strictEqual(ListContentItem.getLinesCount(oSample2, oContent), 2, "Lines count for sample 2 are as expected.");
+	});
+
+	QUnit.test("Lines count for renderer - attributes 3", function (assert) {
+		// arrange
+		const oContent = new ListContent();
+
+		const oSample1 = {
+			title: "This is title",
+			attributes: [
+				{
+					value: "test 1",
+					visible: true
+				},
+				{
+					value: "test 2",
+					visible: false
+				}
+			]
+		};
+
+		// assert
+		assert.strictEqual(ListContentItem.getLinesCount(oSample1, oContent), 2, "Lines count for sample 1 are as expected.");
 	});
 
 	QUnit.module("Accessibility", {

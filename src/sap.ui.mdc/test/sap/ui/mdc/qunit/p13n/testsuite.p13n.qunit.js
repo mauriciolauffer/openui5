@@ -40,15 +40,6 @@ sap.ui.define(["sap/ui/Device"], function (Device) {
 			// Whether to call QUnit.start() when the test setup is done
 		},
 		tests: {
-			"PersistenceProvider": {
-				group: "Silent Persistence",
-				module: "./PersistenceProvider.qunit",
-				ui5: {
-					libs: [
-						"sap.ui.mdc"
-					]
-				}
-			},
 			/*
 			"LinkPanelController": {
 				group: "SubController (generic)",
@@ -122,36 +113,9 @@ sap.ui.define(["sap/ui/Device"], function (Device) {
 					]
 				}
 			},
-			"UIManager": {
-				group: "P13n logic",
-				module: "./UIManager.qunit",
-				ui5: {
-					libs: [
-						"sap.ui.mdc"
-					]
-				}
-			},
 			"P13nBuilder": {
 				group: "P13n logic",
 				module: "./P13nBuilder.qunit",
-				ui5: {
-					libs: [
-						"sap.ui.mdc"
-					]
-				}
-			},
-			"FlexUtil": {
-				group: "P13n logic",
-				module: "./FlexUtil.qunit",
-				ui5: {
-					libs: [
-						"sap.ui.mdc"
-					]
-				}
-			},
-			"ChangeContent": {
-				group: "P13n Logic",
-				module: "./ChangeContent.qunit",
 				ui5: {
 					libs: [
 						"sap.ui.mdc"
@@ -164,6 +128,16 @@ sap.ui.define(["sap/ui/Device"], function (Device) {
 				ui5: {
 					libs: [
 						"sap.ui.mdc", "sap.ui.fl"
+					]
+				}
+			},
+			"ResetJourney": {
+				group: "Table/FilterBar UI Tests",
+				autostart: false,
+				module: "./OpaTests/P13nOpa.qunit",
+				ui5: {
+					libs: [
+						"sap.ui.fl", "sap.ui.mdc"
 					]
 				}
 			},
@@ -300,6 +274,15 @@ sap.ui.define(["sap/ui/Device"], function (Device) {
 			"SortFlex": {
 				group: "changehandler tests",
 				module: "./flexibility/SortFlex.qunit",
+				ui5: {
+					libs: [
+						"sap.ui.fl", "sap.ui.mdc"
+					]
+				}
+			},
+			"Util": {
+				group: "changehandler tests",
+				module: "./flexibility/Util.qunit",
 				ui5: {
 					libs: [
 						"sap.ui.fl", "sap.ui.mdc"

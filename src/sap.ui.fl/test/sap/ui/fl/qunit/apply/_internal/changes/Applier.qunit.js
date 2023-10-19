@@ -1,4 +1,4 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/base/util/merge",
@@ -72,7 +72,7 @@ sap.ui.define([
 	}
 
 	QUnit.module("applyAllChangesForControl", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oSelectorComponent = new UIComponent("mockComponent");
 			this.oSelectorComponent.runAsOwner(function() {
 				this.oControl = new Control("someId");
@@ -80,12 +80,12 @@ sap.ui.define([
 			}.bind(this));
 			this.oFlexController = new FlexController("testScenarioComponent", "1.2.3");
 			this.oApplyChangeOnControlStub = sandbox.stub(Applier, "applyChangeOnControl").callsFake(function() {
-				return new FlUtils.FakePromise({success: true});
+				return Promise.resolve({success: true});
 			});
 			this.oAppComponent = new UIComponent("appComponent");
 			sandbox.stub(FlUtils, "getAppComponentForControl").callThrough().withArgs(this.oControl).returns(this.oAppComponent);
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oControl.destroy();
 			this.oAnotherControl.destroy();
 			this.oSelectorComponent.destroy();
@@ -228,14 +228,14 @@ sap.ui.define([
 			};
 			var oCopyDependenciesFromInitialChangesMap = sandbox.spy(this.oFlexController._oChangePersistence, "copyDependenciesFromInitialChangesMap");
 			sandbox.stub(FlexCustomData, "getAppliedCustomDataValue")
-				.withArgs(this.oAnotherControl)
-				.returns(true);
+			.withArgs(this.oAnotherControl)
+			.returns(true);
 			sandbox.stub(FlexCustomData, "hasChangeApplyFinishedCustomData")
-				.withArgs(this.oAnotherControl)
-				.returns(true);
+			.withArgs(this.oAnotherControl)
+			.returns(true);
 			sandbox.stub(FlexCustomData, "getParsedRevertDataFromCustomData")
-				.withArgs(this.oAnotherControl)
-				.returns(oRevertData);
+			.withArgs(this.oAnotherControl)
+			.returns(oRevertData);
 			sandbox.stub(ChangeUtils, "getControlIfTemplateAffected").returns({
 				bTemplateAffected: true,
 				control: this.oAnotherControl,
@@ -259,6 +259,30 @@ sap.ui.define([
 			}.bind(this));
 		});
 
+		QUnit.test("does not crash if control is in template and not available", function(assert) {
+			var oGetControlStub = sandbox.stub(ChangeUtils, "getControlIfTemplateAffected").returns({
+				bTemplateAffected: true,
+				control: undefined,
+				originalControl: this.oControl
+			});
+			var oHasCustomDataSpy = sandbox.spy(FlexCustomData, "hasChangeApplyFinishedCustomData");
+			var oGetCustomDataSpy = sandbox.spy(FlexCustomData, "getAppliedCustomDataValue");
+			var fnGetChangesMap = function() {
+				return getInitialChangesMap({
+					mChanges: {
+						someId: [FlexObjectFactory.createFromFileContent(getLabelChangeContent("a"))]
+					}
+				});
+			};
+			return Applier.applyAllChangesForControl(fnGetChangesMap, this.oAppComponent, this.oFlexController, this.oControl)
+
+			.then(function() {
+				assert.strictEqual(oGetControlStub.callCount, 1, "the control is evaluated");
+				assert.strictEqual(oHasCustomDataSpy.callCount, 0, "the custom data are not fetched");
+				assert.strictEqual(oGetCustomDataSpy.callCount, 0, "the custom data are not fetched");
+			});
+		});
+
 		QUnit.test("updates change status if change is not applicable (viewCache)", function(assert) {
 			var oChange = FlexObjectFactory.createFromFileContent(getLabelChangeContent("a"));
 			var fnGetChangesMap = function() {
@@ -279,13 +303,13 @@ sap.ui.define([
 				},
 				FlexCustomData.notApplicableChangesCustomDataKey
 			)
+			.then(function() {
+				return Applier.applyAllChangesForControl(fnGetChangesMap, this.oAppComponent, this.oFlexController, this.oControl)
 				.then(function() {
-					return Applier.applyAllChangesForControl(fnGetChangesMap, this.oAppComponent, this.oFlexController, this.oControl)
-						.then(function() {
-							assert.ok(oChange.hasApplyProcessFailed(), "the status is APPLY_FAILED");
-							assert.ok(oSetRevertDataSpy.notCalled, "then no revert data is set on the unapplied change");
-						});
-				}.bind(this));
+					assert.ok(oChange.hasApplyProcessFailed(), "the status is APPLY_FAILED");
+					assert.ok(oSetRevertDataSpy.notCalled, "then no revert data is set on the unapplied change");
+				});
+			}.bind(this));
 		});
 
 		QUnit.test("when applyAllChangesForControl is called with app component and a control belonging to an embedded component", function(assert) {
@@ -491,23 +515,23 @@ sap.ui.define([
 			};
 
 			return Applier.applyAllChangesForControl(fnGetChangesMap.bind(this), {}, this.oFlexController, oAppliedControl)
-				.then(function() {
-					// mock oAppliedChange applied on oAppliedControl successfully
-					sandbox.stub(FlexCustomData, "hasChangeApplyFinishedCustomData")
-						.callThrough()
-						.withArgs(oAppliedControl, oAppliedChange)
-						.returns(true);
-				})
-				.then(Applier.applyAllChangesForControl.bind(Applier, fnGetChangesMap.bind(this), {}, this.oFlexController, oProcessedControl))
-				.then(Applier.applyAllChangesForControl.bind(Applier, fnGetChangesMap.bind(this), {}, this.oFlexController, oNotProcessedControl))
-				.then(function() {
-					assert.equal(this.oApplyChangeOnControlStub.callCount, 2, "then two changes were processed");
-					assert.equal(this.oApplyChangeOnControlStub.getCall(0).args[0].getId(), "appliedChange", "then first change was processed");
-					assert.equal(this.oApplyChangeOnControlStub.getCall(1).args[0].getId(), "processedChange", "then second change was processed");
-					oAppliedControl.destroy();
-					oProcessedControl.destroy();
-					oNotProcessedControl.destroy();
-				}.bind(this));
+			.then(function() {
+				// mock oAppliedChange applied on oAppliedControl successfully
+				sandbox.stub(FlexCustomData, "hasChangeApplyFinishedCustomData")
+				.callThrough()
+				.withArgs(oAppliedControl, oAppliedChange)
+				.returns(true);
+			})
+			.then(Applier.applyAllChangesForControl.bind(Applier, fnGetChangesMap.bind(this), {}, this.oFlexController, oProcessedControl))
+			.then(Applier.applyAllChangesForControl.bind(Applier, fnGetChangesMap.bind(this), {}, this.oFlexController, oNotProcessedControl))
+			.then(function() {
+				assert.equal(this.oApplyChangeOnControlStub.callCount, 2, "then two changes were processed");
+				assert.equal(this.oApplyChangeOnControlStub.getCall(0).args[0].getId(), "appliedChange", "then first change was processed");
+				assert.equal(this.oApplyChangeOnControlStub.getCall(1).args[0].getId(), "processedChange", "then second change was processed");
+				oAppliedControl.destroy();
+				oProcessedControl.destroy();
+				oNotProcessedControl.destroy();
+			}.bind(this));
 		});
 
 		QUnit.test("applyAllChangesForControl dependency test 3", function(assert) {
@@ -573,6 +597,9 @@ sap.ui.define([
 			}.bind(this));
 		});
 
+		/**
+		 * @deprecated As of version 1.114
+		 */
 		QUnit.test("applyAllChangesForControl dependency test 3 - mixed changehandler (sync, async, sync, async, sync)", function(assert) {
 			var oControlForm1 = new Control("mainform");
 			var oControlField1 = new Control("ReversalReasonName");
@@ -609,6 +636,9 @@ sap.ui.define([
 			}.bind(this));
 		});
 
+		/**
+		 * @deprecated As of version 1.114
+		 */
 		QUnit.test("applyAllChangesForControl dependency test 3 - mixed changehandler (async, sync, async, sync, async)", function(assert) {
 			var oControlForm1 = new Control("mainform");
 			var oControlField1 = new Control("ReversalReasonName");
@@ -621,11 +651,11 @@ sap.ui.define([
 
 			this.oApplyChangeOnControlStub.restore();
 			this.oApplyChangeOnControlStub = sandbox.stub(Applier, "applyChangeOnControl")
-				.onCall(0).resolves({success: true})
-				.onCall(1).returns(new FlUtils.FakePromise({success: true}))
-				.onCall(2).resolves({success: true})
-				.onCall(3).returns(new FlUtils.FakePromise({success: true}))
-				.onCall(4).resolves({success: true});
+			.onCall(0).resolves({success: true})
+			.onCall(1).returns(new FlUtils.FakePromise({success: true}))
+			.onCall(2).resolves({success: true})
+			.onCall(3).returns(new FlUtils.FakePromise({success: true}))
+			.onCall(4).resolves({success: true});
 
 			return Applier.applyAllChangesForControl(fnGetChangesMap, this.oAppComponent, this.oFlexController, oControlField2)
 			.then(Applier.applyAllChangesForControl.bind(Applier, fnGetChangesMap, this.oAppComponent, this.oFlexController, oControlField1))
@@ -667,9 +697,9 @@ sap.ui.define([
 
 			var fnGetChangesMap = function() {
 				return getInitialChangesMap({
-					mChanges: mChanges,
-					mDependencies: mDependencies,
-					mDependentChangesOnMe: mDependentChangesOnMe
+					mChanges,
+					mDependencies,
+					mDependentChangesOnMe
 				});
 			};
 
@@ -724,8 +754,20 @@ sap.ui.define([
 			}
 
 			return Promise.resolve()
-			.then(Applier.applyAllChangesForControl.bind(Applier, fnGetChangesMap, this.oAppComponent, this.oFlexController, oControlGroup1))
-			.then(Applier.applyAllChangesForControl.bind(Applier, fnGetChangesMap, this.oAppComponent, this.oFlexController, oControlForm1))
+			.then(Applier.applyAllChangesForControl.bind(
+				Applier,
+				fnGetChangesMap,
+				this.oAppComponent,
+				this.oFlexController,
+				oControlGroup1)
+			)
+			.then(Applier.applyAllChangesForControl.bind(
+				Applier,
+				fnGetChangesMap,
+				this.oAppComponent,
+				this.oFlexController,
+				oControlForm1)
+			)
 
 			.then(function() {
 				assert.equal(this.oApplyChangeOnControlStub.callCount, 1, "only one change was processed");
@@ -747,6 +789,9 @@ sap.ui.define([
 			}.bind(this));
 		});
 
+		/**
+		 * @deprecated As of version 1.114
+		 */
 		QUnit.test("applyAllChangesForControl dependency test 6 - with broken changes", function(assert) {
 			var oControlGroup1 = new Control("group7-1");
 
@@ -780,15 +825,15 @@ sap.ui.define([
 
 			sandbox.restore();
 			this.oApplyChangeOnControlStub = sandbox.stub(Applier, "applyChangeOnControl")
-				.onFirstCall().callsFake(function() {
-					return new FlUtils.FakePromise({success: false, error: new Error("testError")});
-				})
-				.onSecondCall().callsFake(function() {
-					return new FlUtils.FakePromise({success: false, error: new Error("testError")});
-				})
-				.callsFake(function() {
-					return new FlUtils.FakePromise({success: true});
-				});
+			.onFirstCall().callsFake(function() {
+				return Promise.resolve({success: false, error: new Error("testError")});
+			})
+			.onSecondCall().callsFake(function() {
+				return Promise.resolve({success: false, error: new Error("testError")});
+			})
+			.callsFake(function() {
+				return Promise.resolve({success: true});
+			});
 
 			return Applier.applyAllChangesForControl(fnGetChangesMap, this.oAppComponent, this.oFlexController, oControlGroup1)
 
@@ -929,7 +974,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("[JS] applyChangeOnControl", {
-		beforeEach: function() {
+		beforeEach() {
 			var sLabelId = "label";
 			var oLabelChangeContent = getLabelChangeContent("a", sLabelId);
 			this.oControl = new Label(sLabelId);
@@ -940,15 +985,15 @@ sap.ui.define([
 			this.oChangeHandlerApplyChangeStub = sandbox.stub();
 			sandbox.stub(ChangeUtils, "getChangeHandler").resolves({
 				applyChange: this.oChangeHandlerApplyChangeStub,
-				revertChange: function() {},
-				completeChangeContent: function() {}
+				revertChange() {},
+				completeChangeContent() {}
 			});
 			this.mPropertyBag = {
 				modifier: JsControlTreeModifier,
 				appComponent: {}
 			};
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oControl.destroy();
 			sandbox.restore();
 		}
@@ -1070,7 +1115,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("[XML] applyChangeOnControl", {
-		beforeEach: function() {
+		beforeEach() {
 			var sLabelId = "labelId";
 			this.oChange = FlexObjectFactory.createFromFileContent(getLabelChangeContent("fileName", sLabelId));
 
@@ -1079,22 +1124,22 @@ sap.ui.define([
 			this.oChangeHandlerApplyChangeStub = sandbox.stub();
 			sandbox.stub(ChangeUtils, "getChangeHandler").resolves({
 				applyChange: this.oChangeHandlerApplyChangeStub,
-				revertChange: function() {},
-				completeChangeContent: function() {}
+				revertChange() {},
+				completeChangeContent() {}
 			});
 			this.oXmlString =
-				'<mvc:View id="testComponent---myView" xmlns:mvc="sap.ui.core.mvc" xmlns="sap.m">' +
-					'<Label id="' + sLabelId + '" />' +
-				'</mvc:View>';
+				`<mvc:View id="testComponent---myView" xmlns:mvc="sap.ui.core.mvc" xmlns="sap.m">` +
+					`<Label id="${sLabelId}" />` +
+				`</mvc:View>`;
 			var oDOMParser = new DOMParser();
 			var oView = oDOMParser.parseFromString(this.oXmlString, "application/xml").documentElement;
-			this.oControl = oView.childNodes[0];
+			[this.oControl] = oView.childNodes;
 			this.mPropertyBag = {
 				modifier: XmlTreeModifier,
 				view: oView
 			};
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
@@ -1103,7 +1148,8 @@ sap.ui.define([
 			var oSetInitialStub = sandbox.stub(this.oChange, "setInitialApplyState");
 
 			return Applier.applyChangeOnControl(this.oChange, this.oControl, this.mPropertyBag).then(function(vReturn) {
-				assert.equal(vReturn.error.message, "Change cannot be applied in XML. Retrying in JS.", "the function returns success: false and an error as parameter");
+				assert.equal(vReturn.error.message, "Change cannot be applied in XML. Retrying in JS.",
+					"the function returns success: false and an error as parameter");
 				assert.notOk(vReturn.success, "the function returns success: false and an error as parameter");
 				assert.equal(oSetInitialStub.callCount, 1, "the setInitialApplyState function was called");
 				assert.equal(this.oChangeHandlerApplyChangeStub.callCount, 0, "the changeHandler was not called");
@@ -1154,7 +1200,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("[XML] applyAllChangesForXMLView", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oControl = new Control("existingId");
 			this.oChange = FlexObjectFactory.createFromFileContent(getLabelChangeContent("fileName", "labelId"));
 			this.oExtensionPointChange = FlexObjectFactory.createFromFileContent({
@@ -1183,10 +1229,10 @@ sap.ui.define([
 					'<Label id="labelId" />' +
 					'<HBox id="hbox">' +
 						'<core:ExtensionPoint name="MyExtensionPoint" />' +
-					'</HBox>' +
-				'</mvc:View>';
+					"</HBox>" +
+				"</mvc:View>";
 			var oView = oDOMParser.parseFromString(oXmlString, "application/xml").documentElement;
-			this.oXmlLabel = oView.childNodes[0];
+			[this.oXmlLabel] = oView.childNodes;
 			this.oApplyChangeOnControlStub = sandbox.stub(Applier, "applyChangeOnControl");
 			this.oWarningStub = sandbox.stub(Log, "warning");
 			this.mPropertyBag = {
@@ -1194,12 +1240,12 @@ sap.ui.define([
 				view: oView
 			};
 			sandbox.stub(ChangeUtils, "getChangeHandler").resolves({
-				applyChange: function() {},
-				revertChange: function() {},
-				completeChangeContent: function() {}
+				applyChange() {},
+				revertChange() {},
+				completeChangeContent() {}
 			});
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 			this.oControl.destroy();
 		}
@@ -1242,13 +1288,13 @@ sap.ui.define([
 				},
 				FlexCustomData.failedChangesCustomDataKeyXml
 			)
+			.then(function() {
+				return Applier.applyAllChangesForXMLView(this.mPropertyBag, [this.oChange])
 				.then(function() {
-					return Applier.applyAllChangesForXMLView(this.mPropertyBag, [this.oChange])
-						.then(function() {
-							assert.ok(oSetRevertDataSpy.notCalled, "then no revert data is set on the unapplied change");
-							assert.ok(this.oChange.hasApplyProcessFailed(), "then the status is APPLY_FAILED");
-						}.bind(this));
+					assert.ok(oSetRevertDataSpy.notCalled, "then no revert data is set on the unapplied change");
+					assert.ok(this.oChange.hasApplyProcessFailed(), "then the status is APPLY_FAILED");
 				}.bind(this));
+			}.bind(this));
 		});
 
 		QUnit.test("when change for an extension point can be applied", function(assert) {
@@ -1382,9 +1428,9 @@ sap.ui.define([
 			var oChange33 = FlexObjectFactory.createFromFileContent(getLabelChangeContent("a3", "labelId"));
 
 			this.oApplyChangeOnControlStub
-				.onCall(0).resolves({success: true})
-				.onCall(1).rejects("error")
-				.onCall(2).resolves({success: true});
+			.onCall(0).resolves({success: true})
+			.onCall(1).rejects("error")
+			.onCall(2).resolves({success: true});
 
 			return Applier.applyAllChangesForXMLView(this.mPropertyBag, [oChange1, oChange2, oChange3]).then(function() {
 				assert.notOk(this.mPropertyBag.failedSelectors, "the failedSelectors were removed from the propertyBag");
@@ -1417,9 +1463,9 @@ sap.ui.define([
 			var oChange3 = FlexObjectFactory.createFromFileContent(getLabelChangeContent("a3", "labelId"));
 
 			this.oApplyChangeOnControlStub
-				.onCall(0).rejects("error")
-				.onCall(1).resolves({success: true})
-				.onCall(2).resolves({success: true});
+			.onCall(0).rejects("error")
+			.onCall(1).resolves({success: true})
+			.onCall(2).resolves({success: true});
 
 			return Applier.applyAllChangesForXMLView(this.mPropertyBag, [oChange1, oChange2, oChange3]).then(function() {
 				assert.notOk(this.mPropertyBag.failedSelectors, "the failedSelectors were removed from the propertyBag");
@@ -1432,7 +1478,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("onAfterXMLChangeProcessing hook", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oChange1 = FlexObjectFactory.createFromFileContent(getLabelChangeContent("c1", "label1"));
 			// Same control, same handler
 			this.oChange2 = FlexObjectFactory.createFromFileContent(getLabelChangeContent("c2", "label1"));
@@ -1450,7 +1496,7 @@ sap.ui.define([
 				'<mvc:View id="testComponent---myView" xmlns:mvc="sap.ui.core.mvc" xmlns="sap.m">' +
 					'<Label id="label1" />' +
 					'<Label id="label2" />' +
-				'</mvc:View>';
+				"</mvc:View>";
 			var oView = new DOMParser().parseFromString(oXmlString, "application/xml").documentElement;
 			this.oApplyChangeOnControlStub = sandbox.stub(Applier, "applyChangeOnControl").resolves({success: true});
 			this.mPropertyBag = {
@@ -1460,18 +1506,18 @@ sap.ui.define([
 			this.oOnAfterXMLChangeProcessingStub = sandbox.stub();
 			this.oOnAfterXMLChangeProcessingStub2 = sandbox.stub();
 			var oChangeHandler = {
-				applyChange: function() {},
-				revertChange: function() {},
-				completeChangeContent: function() {},
+				applyChange() {},
+				revertChange() {},
+				completeChangeContent() {},
 				onAfterXMLChangeProcessing: this.oOnAfterXMLChangeProcessingStub
 			};
 			var oChangeHandler2 = {
-				applyChange: function() {},
-				revertChange: function() {},
-				completeChangeContent: function() {},
+				applyChange() {},
+				revertChange() {},
+				completeChangeContent() {},
 				onAfterXMLChangeProcessing: this.oOnAfterXMLChangeProcessingStub2
 			};
-			sandbox.stub(ChangeUtils, "getChangeHandler").callsFake(function (oChange) {
+			sandbox.stub(ChangeUtils, "getChangeHandler").callsFake(function(oChange) {
 				return Promise.resolve(
 					oChange.getChangeType() === "labelChange"
 						? oChangeHandler
@@ -1479,60 +1525,60 @@ sap.ui.define([
 				);
 			});
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
 		QUnit.test("when a change is applied", function(assert) {
 			return Applier.applyAllChangesForXMLView(this.mPropertyBag, [this.oChange1])
-				.then(function() {
-					assert.ok(
-						this.oOnAfterXMLChangeProcessingStub.calledOnce,
-						"then the hook is called"
-					);
-					assert.strictEqual(
-						this.oOnAfterXMLChangeProcessingStub.firstCall.args[0].id,
-						"label1",
-						"then the affected HTMLElement is passed to the hook"
-					);
-				}.bind(this));
+			.then(function() {
+				assert.ok(
+					this.oOnAfterXMLChangeProcessingStub.calledOnce,
+					"then the hook is called"
+				);
+				assert.strictEqual(
+					this.oOnAfterXMLChangeProcessingStub.firstCall.args[0].id,
+					"label1",
+					"then the affected HTMLElement is passed to the hook"
+				);
+			}.bind(this));
 		});
 
 		QUnit.test("when multiple changes with the same handler are applied", function(assert) {
 			return Applier.applyAllChangesForXMLView(this.mPropertyBag, [this.oChange1, this.oChange2])
-				.then(function() {
-					assert.strictEqual(
-						this.oOnAfterXMLChangeProcessingStub.callCount,
-						1,
-						"then the hook is only called once"
-					);
-					assert.ok(
-						this.oApplyChangeOnControlStub.secondCall.calledBefore(
-							this.oOnAfterXMLChangeProcessingStub.firstCall
-						),
-						"then the hook is called after both changes are applied"
-					);
-				}.bind(this));
+			.then(function() {
+				assert.strictEqual(
+					this.oOnAfterXMLChangeProcessingStub.callCount,
+					1,
+					"then the hook is only called once"
+				);
+				assert.ok(
+					this.oApplyChangeOnControlStub.secondCall.calledBefore(
+						this.oOnAfterXMLChangeProcessingStub.firstCall
+					),
+					"then the hook is called after both changes are applied"
+				);
+			}.bind(this));
 		});
 
 		QUnit.test("when multiple changes with different handlers are applied", function(assert) {
 			return Applier.applyAllChangesForXMLView(this.mPropertyBag, [this.oChange1, this.oChange3])
-				.then(function() {
-					assert.ok(
-						this.oOnAfterXMLChangeProcessingStub.calledOnce,
-						"then the hook is called for the first handler"
-					);
-					assert.ok(
-						this.oOnAfterXMLChangeProcessingStub2.calledOnce,
-						"then the hook is called for the second handler"
-					);
-					assert.ok(
-						this.oApplyChangeOnControlStub.secondCall.calledBefore(
-							this.oOnAfterXMLChangeProcessingStub.firstCall
-						),
-						"then the hook is called after all changes are applied"
-					);
-				}.bind(this));
+			.then(function() {
+				assert.ok(
+					this.oOnAfterXMLChangeProcessingStub.calledOnce,
+					"then the hook is called for the first handler"
+				);
+				assert.ok(
+					this.oOnAfterXMLChangeProcessingStub2.calledOnce,
+					"then the hook is called for the second handler"
+				);
+				assert.ok(
+					this.oApplyChangeOnControlStub.secondCall.calledBefore(
+						this.oOnAfterXMLChangeProcessingStub.firstCall
+					),
+					"then the hook is called after all changes are applied"
+				);
+			}.bind(this));
 		});
 
 		QUnit.test("when changes with the same handler are applied on multiple controls", function(assert) {
@@ -1560,15 +1606,15 @@ sap.ui.define([
 			this.oOnAfterXMLChangeProcessingStub.throws("Some error");
 			var oLogSpy = sandbox.spy(Log, "error");
 			return Applier.applyAllChangesForXMLView(this.mPropertyBag, [this.oChange1])
-				.then(function() {
-					assert.ok(
-						oLogSpy.calledOnce,
-						"then the error is displayed"
-					);
-				})
-				.catch(function() {
-					assert.ok(false, "then the apply process must not fail");
-				});
+			.then(function() {
+				assert.ok(
+					oLogSpy.calledOnce,
+					"then the error is displayed"
+				);
+			})
+			.catch(function() {
+				assert.ok(false, "then the apply process must not fail");
+			});
 		});
 	});
 

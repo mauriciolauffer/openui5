@@ -17,7 +17,7 @@ sap.ui.define([
 		 * @param {object} oCondenserInfo - Condenser specific information
 		 * @returns {Promise} resolves when a create change is added to UI Reconstruction Map
 		 */
-		addToReconstructionMap: function(mUIReconstructions, oCondenserInfo) {
+		addToReconstructionMap(mUIReconstructions, oCondenserInfo) {
 			return Promise.all([
 				CondenserUtils.getContainerElementIds(
 					oCondenserInfo.sourceContainer, oCondenserInfo.sourceAggregation,
@@ -27,7 +27,7 @@ sap.ui.define([
 					oCondenserInfo.targetContainer, oCondenserInfo.targetAggregation,
 					oCondenserInfo.customAggregation, oCondenserInfo.affectedControlIdProperty
 				)
-			]).then(function (aSourceTargetElementIds) {
+			]).then(function(aSourceTargetElementIds) {
 				var aSourceContainerElementIds = aSourceTargetElementIds[0];
 				var aTargetContainerElementIds = aSourceTargetElementIds[1];
 
@@ -66,7 +66,7 @@ sap.ui.define([
 		 * @param {object} oCondenserInfo - Condenser specific information
 		 * @param {string[]} aInitialUIElementIds - Array with the Ids of the initial elements in the container
 		 */
-		simulate: function(aContainerElements, oCondenserInfo, aInitialUIElementIds) {
+		simulate(aContainerElements, oCondenserInfo, aInitialUIElementIds) {
 			var sAffectedControlId = oCondenserInfo.affectedControl;
 			var iInitialSourceIndex = aInitialUIElementIds.indexOf(sAffectedControlId);
 			// the move itself should not extend the array, just replace the placeholder
@@ -81,6 +81,12 @@ sap.ui.define([
 			} else {
 				aContainerElements.splice(iTargetIndex, 0, aContainerElements.splice(iCurrentSourceIndex, 1)[0]);
 			}
+
+			// changes with the same current source and target can be deleted, if the simulation is successful
+			oCondenserInfo.sameIndex = iCurrentSourceIndex === iTargetIndex;
+
+			// to enable a revert in the same session the previous index has to be saved during the simulation
+			oCondenserInfo.revertIndex = iCurrentSourceIndex;
 		}
 	};
 });

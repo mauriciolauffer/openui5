@@ -38,28 +38,28 @@ sap.ui.define([
 		 * @param {function} mStrategy.processTexts - Text postprocessing strategy
 		 * @returns {Promise<object>} - Processed manifest with descriptor changes
 		 */
-		applyChanges: function (oUpdatedManifest, aAppDescriptorChanges, mStrategy) {
+		applyChanges(oUpdatedManifest, aAppDescriptorChanges, mStrategy) {
 			return mStrategy.registry()
-				.then(function (Registry) {
-					var aChangeHandlerPromises = aAppDescriptorChanges.map(function (oChange) {
-						return Registry[oChange.getChangeType()] && Registry[oChange.getChangeType()]();
-					});
-					return Promise.all(aChangeHandlerPromises);
-				})
-				.then(function (aChangeHandlers) {
-					aChangeHandlers.forEach(function (oChangeHandler, iIndex) {
-						try {
-							var oChange = aAppDescriptorChanges[iIndex];
-							oUpdatedManifest = oChangeHandler.applyChange(oUpdatedManifest, oChange);
-							if (!oChangeHandler.skipPostprocessing && !isEmptyObject(oChange.getTexts())) {
-								oUpdatedManifest = mStrategy.processTexts(oUpdatedManifest, oChange.getTexts());
-							}
-						} catch (oError) {
-							mStrategy.handleError(oError);
-						}
-					});
-					return oUpdatedManifest;
+			.then(function(Registry) {
+				var aChangeHandlerPromises = aAppDescriptorChanges.map(function(oChange) {
+					return Registry[oChange.getChangeType()] && Registry[oChange.getChangeType()]();
 				});
+				return Promise.all(aChangeHandlerPromises);
+			})
+			.then(function(aChangeHandlers) {
+				aChangeHandlers.forEach(function(oChangeHandler, iIndex) {
+					try {
+						var oChange = aAppDescriptorChanges[iIndex];
+						oUpdatedManifest = oChangeHandler.applyChange(oUpdatedManifest, oChange);
+						if (!oChangeHandler.skipPostprocessing && !isEmptyObject(oChange.getTexts())) {
+							oUpdatedManifest = mStrategy.processTexts(oUpdatedManifest, oChange.getTexts());
+						}
+					} catch (oError) {
+						mStrategy.handleError(oError);
+					}
+				});
+				return oUpdatedManifest;
+			});
 		},
 
 		/**
@@ -71,7 +71,7 @@ sap.ui.define([
 		 * @param {function} mStrategy.processTexts - Text postprocessing strategy
 		 * @returns {Promise} Resolves as soon as the changes are applied
 		 */
-		applyChangesIncludedInManifest: function(oManifest, mStrategy) {
+		applyChangesIncludedInManifest(oManifest, mStrategy) {
 			var aDescriptorChanges = getDescriptorChanges(oManifest);
 			var oManifestJSON = oManifest.getJson();
 			delete oManifestJSON[CHANGES_NAMESPACE];

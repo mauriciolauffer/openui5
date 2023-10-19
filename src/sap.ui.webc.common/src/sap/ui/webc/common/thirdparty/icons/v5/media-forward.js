@@ -6,7 +6,7 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
   });
   _exports.pathData = _exports.ltr = _exports.default = _exports.accData = void 0;
   const name = "media-forward";
-  const pathData = "M500 233q12 8 12 24 0 7-3.5 14.5T500 281L318 402q-7 5-15 5t-15-2q-15-10-15-27V136q0-17 15-27 7-5 15-4.5t15 7.5zm-70 27l-97-66v130zm-202-27q12 8 12 24 0 7-3.5 14.5T228 281L46 402q-7 5-15 5t-15-2Q1 395 1 378V136q0-17 15-27 7-5 15-4.5t15 7.5zm-70 27l-97-66v130z";
+  const pathData = "M503 236q9 7 9 20 0 12-9 20L298 442q-7 6-16 6-11 0-18.5-7.5T256 422V90q0-11 7.5-18.5T282 64q9 0 16 6zm-256 0q9 7 9 20 0 12-9 20L42 442q-7 6-16 6-11 0-18.5-7.5T0 422V90q0-11 7.5-18.5T26 64q9 0 16 6zm199 20L307 143v226zm-256 0L51 143v226z";
   _exports.pathData = pathData;
   const ltr = true;
   _exports.ltr = ltr;
@@ -20,6 +20,6 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
     collection,
     packageName
   });
-  var _default = "media-forward";
+  var _default = "SAP-icons-v5/media-forward";
   _exports.default = _default;
 });

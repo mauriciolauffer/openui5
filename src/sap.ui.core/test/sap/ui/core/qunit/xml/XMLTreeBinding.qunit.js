@@ -49,6 +49,9 @@ sap.ui.define([
 
 
 	QUnit.module("sap.ui.model.xml.XMLTreeBinding", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach: function() {
 			this.oModel = new XMLModel();
 			this.oModel.setXML(testData);
@@ -129,7 +132,7 @@ sap.ui.define([
 
 	 });
 
-	QUnit.test("TreeBinding getRootContexts getNodeContexts", function(assert) {
+	QUnit.test("TreeBinding getRootContexts getNodeContexts setXML", function(assert) {
 		var treeBinding = this.createTreeBinding("/orgStructure"),
 			contexts,
 			context;

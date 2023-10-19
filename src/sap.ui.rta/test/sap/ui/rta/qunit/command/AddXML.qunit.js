@@ -16,7 +16,7 @@ sap.ui.define([
 	"sap/m/CustomListItem",
 	"test-resources/sap/ui/rta/qunit/RtaQunitUtils",
 	"sap/ui/thirdparty/sinon-4",
-	"sap/ui/core/Core"
+	"sap/ui/qunit/utils/nextUIUpdate"
 ], function(
 	CommandFactory,
 	AddXML,
@@ -33,18 +33,18 @@ sap.ui.define([
 	CustomListItem,
 	RtaQunitUtils,
 	sinon,
-	oCore
+	nextUIUpdate
 ) {
 	"use strict";
 	var sandbox = sinon.createSandbox();
 
 	QUnit.module("Given an AddXML command with a valid entry in the change registry,", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oComponent = RtaQunitUtils.createAndStubAppComponent(sandbox);
 			sandbox.stub(LayerUtils, "getCurrentLayer").returns(Layer.VENDOR);
 			this.oButton = new Button(this.oComponent.createId("myButton"));
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oComponent.destroy();
 			this.oButton.destroy();
 			sandbox.restore();
@@ -115,13 +115,13 @@ sap.ui.define([
 				assert.equal(oPreloadSpy.lastCall.args[0][sPath], sFragment, "the preload was called with the correct object");
 			})
 
-			.catch(function (oError) {
-				assert.ok(false, "catch must never be called - Error: " + oError);
+			.catch(function(oError) {
+				assert.ok(false, `catch must never be called - Error: ${oError}`);
 			});
 		});
 
 		["not-adaptable", null].forEach(function(vAction) {
-			var sTitle = "when the action is disabled in the designtime via " + vAction;
+			var sTitle = `when the action is disabled in the designtime via ${vAction}`;
 			QUnit.test(sTitle, function(assert) {
 				var oNewDesigntime = new ElementDesignTimeMetadata({
 					data: {
@@ -144,7 +144,7 @@ sap.ui.define([
 				}, oNewDesigntime)
 
 				.then(function(oAddXmlCommand) {
-					assert.ok(oAddXmlCommand, "then command is still available with " + vAction + " in the designtime");
+					assert.ok(oAddXmlCommand, `then command is still available with ${vAction} in the designtime`);
 				});
 			});
 		});
@@ -200,14 +200,14 @@ sap.ui.define([
 				assert.strictEqual(oChange.getJsOnly(), true, "then change is marked to be applied on js only");
 			})
 
-			.catch(function (oError) {
-				assert.ok(false, "catch must never be called - Error: " + oError);
+			.catch(function(oError) {
+				assert.ok(false, `catch must never be called - Error: ${oError}`);
 			});
 		});
 	});
 
 	QUnit.module("Given an AddXML command for a bound control,", {
-		beforeEach: function(assert) {
+		async beforeEach(assert) {
 			var done = assert.async();
 
 			this.oComponent = RtaQunitUtils.createAndStubAppComponent(sandbox);
@@ -228,7 +228,7 @@ sap.ui.define([
 				}
 			}).setModel(oModel);
 			this.oList.placeAt("qunit-fixture");
-			oCore.applyChanges();
+			await nextUIUpdate();
 
 			sandbox.stub(ChangesWriteAPI, "getChangeHandler").resolves();
 			this.oDesignTime = new DesignTime({
@@ -240,7 +240,7 @@ sap.ui.define([
 				done();
 			}.bind(this));
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oComponent.destroy();
 			this.oList.destroy();
 			this.oItemTemplate.destroy();
@@ -286,7 +286,7 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

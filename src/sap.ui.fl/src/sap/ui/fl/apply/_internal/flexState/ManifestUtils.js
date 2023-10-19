@@ -45,7 +45,7 @@ function(
 
 	function getAppIdFromManifest(oManifest) {
 		if (oManifest) {
-			var APP_ID_AT_DESIGN_TIME = "${pro" + "ject.art" + "ifactId}"; //avoid replaced by content of ${project.artifactId} placeholder at build steps
+			var APP_ID_AT_DESIGN_TIME = "${pro" + "ject.art" + "ifactId}"; // avoid replaced by content of ${project.artifactId} placeholder at build steps
 			var oSapApp = (oManifest.getEntry) ? oManifest.getEntry("sap.app") : oManifest["sap.app"];
 			var sAppId = oSapApp && oSapApp.id;
 			if (sAppId === APP_ID_AT_DESIGN_TIME) {
@@ -66,7 +66,6 @@ function(
 	 * Provides utility functions for handling manifests; All function work with Manifest Objects or raw manifests
 	 *
 	 * @namespace sap.ui.fl.apply._internal.flexState.ManifestUtils
-	 * @experimental
 	 * @since 1.74
 	 * @version ${version}
 	 * @private
@@ -79,19 +78,20 @@ function(
 		 * @returns {string} Version of application if it is available in the manifest, otherwise an empty string
 		 *
 		 * @private
-		 * @ui5-restricted sap.ui.fl
+		 * @ui5-restricted sap.ui.fl, sap.ui.rta
 		 */
-		getAppIdFromManifest: getAppIdFromManifest,
+		getAppIdFromManifest,
 
-		getFlexReference: getFlexReference,
+		getFlexReference,
 
-		/** Determines the flex reference for a given control by
+		/**
+		 * Determines the flex reference for a given control by
 		 * identifying the application component and analyzing the manifest of this component.
 		 *
 		 * @param {sap.ui.core.Control} oControl - Control for the application determination
-		 * @return {string} Reference of the application
+		 * @returns {string} Reference of the application
 		 */
-		getFlexReferenceForControl: function (oControl) {
+		getFlexReferenceForControl(oControl) {
 			var oAppComponent = Utils.getAppComponentForControl(oControl);
 			return oAppComponent && getFlexReference({
 				manifest: oAppComponent.getManifestObject(),
@@ -99,25 +99,40 @@ function(
 			});
 		},
 
-		getOvpEntry: function (oManifest) {
+		/**
+		 * Determines the flex reference for a given {@link sap.ui.fl.Selector} by
+		 * identifying the application component and analyzing the manifest of this component.
+		 * In case of a {@link sap.ui.fl.ComponentSelector} the appId is taken as is.
+		 *
+		 * @param {sap.ui.fl.Selector} oSelector - Selector object
+		 * @returns {string} Reference of the application
+		 */
+		getFlexReferenceForSelector(oSelector) {
+			if (oSelector.appId) {
+				return oSelector.appId;
+			}
+			return ManifestUtils.getFlexReferenceForControl(oSelector.appComponent || oSelector);
+		},
+
+		getOvpEntry(oManifest) {
 			return oManifest.getEntry ? oManifest.getEntry("sap.ovp") : oManifest["sap.ovp"];
 		},
 
-		getCacheKeyFromAsyncHints: function(sReference, oAsyncHints) {
+		getCacheKeyFromAsyncHints(sReference, oAsyncHints) {
 			var oFlAsyncHint = getFlAsyncHintRequest(oAsyncHints, sReference);
 			if (oFlAsyncHint) {
 				return oFlAsyncHint.cachebusterToken || "<NO CHANGES>";
 			}
 		},
 
-		getPreviewSectionFromAsyncHints: function(oAsyncHints) {
+		getPreviewSectionFromAsyncHints(oAsyncHints) {
 			var oFlAsyncHint = getFlAsyncHintRequest(oAsyncHints);
 			if (oFlAsyncHint) {
 				return oFlAsyncHint.preview;
 			}
 		},
 
-		getChangeManifestFromAsyncHints: function(oAsyncHints) {
+		getChangeManifestFromAsyncHints(oAsyncHints) {
 			// whenever there is a back end providing a fl async hint it is also not necessary to merge on client side
 			var oFlAsyncHint = getFlAsyncHintRequest(oAsyncHints);
 			if (oFlAsyncHint) {
@@ -126,12 +141,12 @@ function(
 			return true;
 		},
 
-		getBaseComponentNameFromManifest: function(oManifest) {
+		getBaseComponentNameFromManifest(oManifest) {
 			var oSapUi5Entry = oManifest.getEntry ? oManifest.getEntry("sap.ui5") : oManifest["sap.ui5"];
 			return oSapUi5Entry && oSapUi5Entry.componentName || getAppIdFromManifest(oManifest);
 		},
 
-		isFlexExtensionPointHandlingEnabled: function (oView) {
+		isFlexExtensionPointHandlingEnabled(oView) {
 			var oAppComponent = Utils.getAppComponentForControl(oView);
 			return !!(oAppComponent
 				&& oAppComponent.getManifestEntry("sap.ui5")

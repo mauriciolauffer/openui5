@@ -25,11 +25,10 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
   _sapIllusDialogFilterTable = _interopRequireDefault(_sapIllusDialogFilterTable);
   _sapIllusSceneFilterTable = _interopRequireDefault(_sapIllusSceneFilterTable);
   _sapIllusSpotFilterTable = _interopRequireDefault(_sapIllusSpotFilterTable);
-
   function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
   const name = "FilterTable";
   const set = "fiori";
+  const collection = "V4";
   const title = _i18nDefaults.IM_TITLE_FILTERTABLE;
   const subtitle = _i18nDefaults.IM_SUBTITLE_FILTERTABLE;
   (0, _Illustrations.registerIllustration)(name, {
@@ -38,6 +37,7 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
     spotSvg: _sapIllusSpotFilterTable.default,
     title,
     subtitle,
-    set
+    set,
+    collection
   });
 });

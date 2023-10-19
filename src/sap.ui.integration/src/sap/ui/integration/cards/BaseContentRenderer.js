@@ -2,8 +2,13 @@
  * ${copyright}
  */
 
-sap.ui.define(["sap/ui/core/Renderer"], function (Renderer) {
+sap.ui.define([
+	"sap/ui/core/Renderer",
+	"sap/ui/integration/library"
+], function (Renderer, library) {
 	"use strict";
+
+	var CardPreviewMode = library.CardPreviewMode;
 
 	/**
 	 * BaseContent renderer.
@@ -30,10 +35,11 @@ sap.ui.define(["sap/ui/core/Renderer"], function (Renderer) {
 		var sClass = "sapFCard",
 			sName = oCardContent.getMetadata().getName(),
 			sType = sName.slice(sName.lastIndexOf(".") + 1),
-			oCard = oCardContent.getParent(),
-			bIsCardValid = oCard && oCard.isA("sap.f.ICard"),
-			bLoading = sType !== "AdaptiveContent" && bIsCardValid && oCardContent.isLoading(),
-			oMessageContainer = oCardContent.getAggregation("_messageContainer");
+			oCard = oCardContent.getCardInstance(),
+			bLoading = oCardContent.isLoading(),
+			bIsAbstractPreviewMode =  oCard && oCard.getPreviewMode() === CardPreviewMode.Abstract,
+			oMessageContainer = oCardContent.getAggregation("_messageContainer"),
+			oBlockingMessage = oCardContent.getAggregation("_blockingMessage");
 
 		sClass += sType;
 
@@ -41,22 +47,22 @@ sap.ui.define(["sap/ui/core/Renderer"], function (Renderer) {
 			.class(sClass)
 			.class("sapFCardBaseContent");
 
-		if (oCardContent.hasListeners("press")) {
-			oRm.class("sapFCardClickable");
+		if (oCardContent.isInteractive()) {
+			oRm.class("sapFCardSectionClickable");
 		}
 
-		if (bIsCardValid && oCard.getHeight() === "auto") { // if there is no height specified the default value is "auto"
+		if (oCard && oCard.getHeight() === "auto") { // if there is no height specified the default value is "auto"
 			var sHeight = this.getMinHeight(oCardContent.getParsedConfiguration(), oCardContent, oCard);
 			oRm.style("min-height", sHeight);
 		}
 
-		if (bLoading) {
+		if (bLoading || bIsAbstractPreviewMode) {
 			oRm.class("sapFCardContentLoading");
 		}
 
 		oRm.openEnd();
 
-		if (bLoading) {
+		if (bLoading || bIsAbstractPreviewMode) {
 			oRm.renderControl(oCardContent.getAggregation("_loadingPlaceholder"));
 		}
 
@@ -64,7 +70,11 @@ sap.ui.define(["sap/ui/core/Renderer"], function (Renderer) {
 			oRm.renderControl(oMessageContainer);
 		}
 
-		this.renderContent(oRm, oCardContent);
+		if (oBlockingMessage) {
+			oRm.renderControl(oBlockingMessage);
+		} else {
+			this.renderContent(oRm, oCardContent);
+		}
 
 		oRm.close("div");
 	};

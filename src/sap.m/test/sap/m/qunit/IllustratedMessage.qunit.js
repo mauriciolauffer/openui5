@@ -179,6 +179,10 @@ function (
 		assert.ok(fnUpdateInternalSpy.calledWithExactly(sNewType),
 			"_updateInternalIllustrationSetAndType called with the new IllustratedMessageType.UnableToLoad illustrationType");
 
+		// Act
+		this.oIllustratedMessage.setIllustrationType(undefined);
+		assert.ok(fnUpdateInternalSpy.calledOnce, "_updateInternalIllustrationSetAndType isn't called second time if the type isn't string");
+
 		this.oIllustratedMessage.setIllustrationType("sapIllus-Connection");
 		Core.applyChanges();
 
@@ -837,12 +841,17 @@ function (
 		}
 	});
 
-	QUnit.test("Testing illustrationAriaLabelledBy association", function (assert) {
+	QUnit.test("Testing the default ariaLabelledBy association in combination with calls of the other ariaLabelledBy related methods ", function (assert) {
+
+		// Arrange
+		var $illustration = this.oIllustration.$(),
+			sTitleId = this.oIllustratedMessage._getTitle().getId();
+
+		// Assert
+		assert.equal($illustration.attr("aria-labelledby"), sTitleId);
 
 		// Arrange
 		new InvisibleText("illustration_label", {text: "My label"}).toStatic();
-
-		var $illustration = this.oIllustration.$();
 
 		// Act
 		this.oIllustratedMessage.addIllustrationAriaLabelledBy('illustration_label');
@@ -850,6 +859,42 @@ function (
 
 		// Assert
 		assert.equal($illustration.attr("aria-labelledby"), 'illustration_label');
+
+		// Act
+		this.oIllustratedMessage.removeIllustrationAriaLabelledBy('illustration_label');
+		Core.applyChanges();
+
+		// Assert
+		assert.equal($illustration.attr("aria-labelledby"), sTitleId);
+
+		// Act
+		this.oIllustratedMessage.addIllustrationAriaLabelledBy('illustration_label');
+		Core.applyChanges();
+
+		// Assert
+		assert.equal($illustration.attr("aria-labelledby"), 'illustration_label');
+
+		// Act
+		this.oIllustratedMessage.removeAllAriaLabelledBy('illustration_label');
+		Core.applyChanges();
+
+		// Assert
+		assert.equal($illustration.attr("aria-labelledby"), sTitleId);
+	});
+
+	QUnit.test("Testing illustrationAriaLabelledBy association", function (assert) {
+
+		// Arrange
+		new InvisibleText("illustration_label2", {text: "My label"}).toStatic();
+
+		var $illustration = this.oIllustration.$();
+
+		// Act
+		this.oIllustratedMessage.addIllustrationAriaLabelledBy('illustration_label2');
+		Core.applyChanges();
+
+		// Assert
+		assert.equal($illustration.attr("aria-labelledby"), 'illustration_label2');
 	});
 
 

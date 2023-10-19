@@ -33,9 +33,12 @@ sap.ui.define([
 	"sap/base/assert",
 	"sap/base/Log",
 	"sap/ui/base/SyncPromise",
-	"sap/ui/core/cache/CacheManager",
 	"sap/ui/core/Configuration",
 	"sap/ui/core/library",
+	"sap/ui/core/Messaging",
+	"sap/ui/core/Rendering",
+	"sap/ui/core/Supportability",
+	"sap/ui/core/cache/CacheManager",
 	"sap/ui/core/message/Message",
 	"sap/ui/model/BindingMode",
 	"sap/ui/model/Context",
@@ -44,8 +47,8 @@ sap.ui.define([
 	"sap/ui/thirdparty/URI"
 ], function (ODataContextBinding, ODataListBinding, ODataMetaModel, ODataPropertyBinding,
 		SubmitMode, _GroupLock, _Helper, _MetadataRequestor, _Parser, _Requestor, assert, Log,
-		SyncPromise, CacheManager, Configuration, coreLibrary, Message, BindingMode, BaseContext,
-		Model, OperationMode, URI) {
+		SyncPromise, Configuration, coreLibrary, Messaging, Rendering, Supportability,
+		CacheManager, Message, BindingMode, BaseContext, Model, OperationMode, URI) {
 	"use strict";
 
 	var sClassName = "sap.ui.model.odata.v4.ODataModel",
@@ -84,7 +87,8 @@ sap.ui.define([
 			sharedRequests : true,
 			supportReferences : true,
 			synchronizationMode : true,
-			updateGroupId : true
+			updateGroupId : true,
+			withCredentials : true
 		},
 		// system query options allowed in mParameters
 		aSystemQueryOptions = ["$apply", "$count", "$expand", "$filter", "$orderby", "$search",
@@ -171,12 +175,15 @@ sap.ui.define([
 		 *   (Controls synchronization between different bindings which refer to the same data for
 		 *   the case data changes in one binding. Must be set to 'None' which means bindings are
 		 *   not synchronized at all; all other values are not supported and lead to an error.)
-		 *   <b>deprecated:</b> As of version 1.110.0, this parameter is optional; see also
+		 *   <b>deprecated:</b> As of Version 1.110.0, this parameter is optional; see also
 		 *   {@link topic:648e360fa22d46248ca783dc6eb44531 Data Reuse}
 		 * @param {string} [mParameters.updateGroupId]
 		 *   The group ID that is used for update requests. If no update group ID is specified,
 		 *   <code>mParameters.groupId</code> is used. Valid update group IDs are
 		 *   <code>undefined</code>, '$auto', '$direct' or an application group ID.
+		 * @param {boolean} [mParameters.withCredentials]
+		 *   Whether the XMLHttpRequest is called with <code>withCredentials</code>, so that user
+		 *   credentials are included in cross-origin requests by the browser (since 1.120.0)
 		 * @throws {Error} If an unsupported synchronization mode is given, if the given service
 		 *   root URL does not end with a forward slash, if an unsupported parameter is given, if
 		 *   OData system query options or parameter aliases are specified as parameters, if an
@@ -294,7 +301,7 @@ sap.ui.define([
 		mUriParameters = this.buildQueryOptions(oUri.query(true), false, true);
 		// BEWARE: these are shared across all bindings!
 		this.mUriParameters = mUriParameters;
-		if (Configuration.getStatisticsEnabled()) {
+		if (Supportability.isStatisticsEnabled()) {
 			// Note: this way, "sap-statistics" is not sent within $batch
 			mUriParameters = Object.assign({"sap-statistics" : true}, mUriParameters);
 		}
@@ -344,13 +351,13 @@ sap.ui.define([
 		mQueryParams = Object.assign({}, mUriParameters, mParameters.metadataUrlParams);
 		this.oMetaModel = new ODataMetaModel(
 			_MetadataRequestor.create(this.mMetadataHeaders, sODataVersion,
-				mParameters.ignoreAnnotationsFromMetadata, mQueryParams),
+				mParameters.ignoreAnnotationsFromMetadata, mQueryParams,
+				mParameters.withCredentials),
 			this.sServiceUrl + "$metadata", mParameters.annotationURI, this,
 			mParameters.supportReferences, mQueryParams["sap-language"]);
 		this.oInterface = {
 			fetchEntityContainer : this.oMetaModel.fetchEntityContainer.bind(this.oMetaModel),
 			fetchMetadata : this.oMetaModel.fetchObject.bind(this.oMetaModel),
-			fireMessageChange : this.fireMessageChange.bind(this),
 			fireDataReceived : this.fireDataReceived.bind(this),
 			fireDataRequested : this.fireDataRequested.bind(this),
 			fireSessionTimeout : function () {
@@ -369,10 +376,13 @@ sap.ui.define([
 				}
 			},
 			reportStateMessages : this.reportStateMessages.bind(this),
-			reportTransitionMessages : this.reportTransitionMessages.bind(this)
+			reportTransitionMessages : this.reportTransitionMessages.bind(this),
+			updateMessages : function (aOldMessages, aNewMessages) {
+				Messaging.updateMessages(aOldMessages, aNewMessages);
+			}
 		};
 		this.oRequestor = _Requestor.create(this.sServiceUrl, this.oInterface, this.mHeaders,
-			mUriParameters, sODataVersion);
+			mUriParameters, sODataVersion, mParameters.withCredentials);
 		this.changeHttpHeaders(mParameters.httpHeaders);
 		this.bEarlyRequests = mParameters.earlyRequests;
 		if (this.bEarlyRequests) {
@@ -452,12 +462,14 @@ sap.ui.define([
 	 * the entity is also available.
 	 *
 	 * @param {sap.ui.base.Event} oEvent
-	 * @param {object} oEvent.getParameters()
-	 * @param {object} [oEvent.getParameters().data]
+	 *    The event object
+	 * @param {function():Object<any>} oEvent.getParameters
+	 *   Function which returns an object containing all event parameters
+	 * @param {object} [oEvent.getParameters.data]
 	 *   An empty data object if a back-end request succeeds
-	 * @param {Error} [oEvent.getParameters().error]
+	 * @param {Error} [oEvent.getParameters.error]
 	 *   The error object if a back-end request failed.
-	 * @param {string} [oEvent.getParameters().path]
+	 * @param {string} [oEvent.getParameters.path]
 	 *   The absolute path to the entity which caused the event. The path is only provided for
 	 *   additional property requests; for other requests it is <code>undefined</code>.
 	 *
@@ -494,8 +506,10 @@ sap.ui.define([
 	 * </ul>
 	 *
 	 * @param {sap.ui.base.Event} oEvent
-	 * @param {object} oEvent.getParameters()
-	 * @param {string} [oEvent.getParameters().path]
+	 *    The event object
+	 * @param {function():Object<any>} oEvent.getParameters
+	 *   Function which returns an object containing all event parameters
+	 * @param {string} [oEvent.getParameters.path]
 	 *   The absolute path to the entity which caused the event. The path is only provided for
 	 *   additional property requests; for other requests it is <code>undefined</code>.
 	 *
@@ -523,20 +537,22 @@ sap.ui.define([
 	 * not user input.
 	 *
 	 * @param {sap.ui.base.Event} oEvent
-	 * @param {object} oEvent.getParameters()
-	 * @param {sap.ui.model.Context} [oEvent.getParameters().context]
+	 *    The event object
+	 * @param {function():Object<any>} oEvent.getParameters
+	 *   Function which returns an object containing all event parameters
+	 * @param {sap.ui.model.Context} [oEvent.getParameters.context]
 	 *   The property binding's {@link sap.ui.model.Binding#getContext context}, if available
-	 * @param {string} oEvent.getParameters().path
+	 * @param {string} oEvent.getParameters.path
 	 *   The property binding's {@link sap.ui.model.Binding#getPath path}
-	 * @param {Promise} [oEvent.getParameters().promise]
+	 * @param {Promise<void>} [oEvent.getParameters.promise]
 	 *   A promise on the outcome of the PATCH request, much like
 	 *   {@link sap.ui.model.odata.v4.Context#setProperty} provides it for
 	 *   <code>bRetry === true</code>; missing in case there is no PATCH
-	 * @param {sap.ui.model.ChangeReason} oEvent.getParameters().reason
+	 * @param {sap.ui.model.ChangeReason} oEvent.getParameters.reason
 	 *   The reason for the property change: always <code>sap.ui.model.ChangeReason.Binding</code>
-	 * @param {string} oEvent.getParameters().resolvedPath
+	 * @param {string} oEvent.getParameters.resolvedPath
 	 *   The property binding's {@link sap.ui.model.Binding#getResolvedPath resolved path}
-	 * @param {any} oEvent.getParameters().value
+	 * @param {any} oEvent.getParameters.value
 	 *   The property binding's new
 	 *   {@link sap.ui.model.odata.v4.ODataPropertyBinding#getValue value}
 	 *
@@ -607,7 +623,7 @@ sap.ui.define([
 		if (!this.aPrerenderingTasks) {
 			this.aPrerenderingTasks = [];
 			fnRunTasks = runTasks.bind(null, this.aPrerenderingTasks);
-			sap.ui.getCore().addPrerenderingTask(fnRunTasks);
+			Rendering.addPrerenderingTask(fnRunTasks);
 			// Add a watchdog to run the tasks in case there is no rendering. Ensure that the task
 			// runs after all setTimeout(0) tasks scheduled from within the current task, even those
 			// that were scheduled afterwards. A simple setTimeout(n) with n > 0 is not sufficient
@@ -879,8 +895,9 @@ sap.ui.define([
 	 *   Whether this binding is considered for a match when {@link #getKeepAliveContext} is called;
 	 *   only the value <code>true</code> is allowed. Must not be combined with <code>$apply</code>,
 	 *   <code>$$aggregation</code>, <code>$$canonicalPath</code>, or <code>$$sharedRequest</code>.
-	 *   If the binding is relative, <code>$$ownRequest</code> must be set as well.
-	 *   Supported since 1.99.0
+	 *   If the binding is relative, <code>$$ownRequest</code> must be set as well. Supported since
+	 *   1.99.0; since 1.113.0 it can be combined with <code>$$aggregation</code> for a recursive
+	 *   hierarchy.
 	 * @param {string} [mParameters.$$groupId]
 	 *   The group ID to be used for <b>read</b> requests triggered by this binding; if not
 	 *   specified, either the parent binding's group ID (if the binding is relative) or the
@@ -904,8 +921,8 @@ sap.ui.define([
 	 *   <code>true</code> is allowed.
 	 * @param {boolean} [mParameters.$$sharedRequest]
 	 *   Whether multiple bindings for the same resource path share the data, so that it is
-	 *   requested only once; only the value <code>true</code> is allowed. This parameter can be
-	 *   inherited from the model's parameter "sharedRequests", see
+	 *   requested only once.
+	 *   This parameter can be inherited from the model's parameter "sharedRequests", see
 	 *   {@link sap.ui.model.odata.v4.ODataModel#constructor}. Supported since 1.80.0
 	 *   <b>Note:</b> These bindings are read-only, so they may be especially useful for value
 	 *   lists; state messages (since 1.108.0) and the following APIs are <b>not</b> allowed
@@ -1198,7 +1215,7 @@ sap.ui.define([
 	 *   <li> It must not contain control characters.
 	 * </ul>
 	 *
-	 * @param {object} [mHeaders]
+	 * @param {Object<string|undefined>} [mHeaders]
 	 *   Map of HTTP header names to their values
 	 * @throws {Error}
 	 *   If <code>mHeaders</code> contains unsupported headers, the same header occurs more than
@@ -1481,8 +1498,11 @@ sap.ui.define([
 	 *   <li> the key-value pairs are encoded via encodeURIComponent.
 	 * </ul>
 	 *
-	 * @param {string} sCanonicalPath
-	 *   The canonical path of the entity to delete, starting with a '/'
+	 * @param {string|sap.ui.model.odata.v4.Context} vCanonicalPath
+	 *   The canonical path of the entity to delete, starting with a '/'; since 1.115.0, a context
+	 *   instance can be given to determine both the path and ETag used for deletion on the server,
+	 *   but no bindings are affected and {@link sap.ui.model.odata.v4.Context#delete} should be
+	 *   used with a <code>null</code> group ID to clean up on the client side later
 	 * @param {string} [sGroupId]
 	 *   The group ID that is used for the DELETE request; if not specified, the model's
 	 *   {@link #getUpdateGroupId update group ID} is used; the resulting group ID must not have
@@ -1491,10 +1511,10 @@ sap.ui.define([
 	 *   If <code>true</code>, deletion fails if the entity does not exist (HTTP status code 404 or
 	 *   412 due to the <code>If-Match: *</code> header); otherwise we assume that it has already
 	 *   been deleted by someone else and report success
-	 * @returns {Promise}
-	 *   A promise resolving when the delete succeeded, and rejecting with an instance of Error
-	 *   otherwise. In the latter case the HTTP status code of the response is given in the error's
-	 *   property <code>status</code>.
+	 * @returns {Promise<void>}
+	 *   A promise which is resolved without a defined result when the delete succeeded, or rejected
+	 *   with an instance of Error otherwise. In the latter case the HTTP status code of the
+	 *   response is given in the error's property <code>status</code>.
 	 * @throws {Error} If
 	 *   <ul>
 	 *     <li> the path does not start with a '/',
@@ -1505,11 +1525,22 @@ sap.ui.define([
 	 * @public
 	 * @since 1.103.0
 	 */
-	ODataModel.prototype.delete = function (sCanonicalPath, sGroupId, bRejectIfNotFound) {
-		var that = this;
+	ODataModel.prototype.delete = function (vCanonicalPath, sGroupId, bRejectIfNotFound) {
+		var bInAllBindings,
+			oPromise,
+			that = this;
 
-		if (sCanonicalPath[0] !== "/") {
-			throw new Error("Invalid path: " + sCanonicalPath);
+		if (typeof vCanonicalPath === "string") {
+			if (vCanonicalPath[0] !== "/") {
+				throw new Error("Invalid path: " + vCanonicalPath);
+			}
+			bInAllBindings = true;
+			oPromise = Promise.resolve([vCanonicalPath, "*"]);
+		} else {
+			oPromise = Promise.all([
+				vCanonicalPath.fetchCanonicalPath(),
+				vCanonicalPath.fetchValue("@odata.etag", /*oListener*/null, /*bCached*/true)
+			]);
 		}
 		_Helper.checkGroupId(sGroupId);
 		sGroupId = sGroupId || this.getUpdateGroupId();
@@ -1517,17 +1548,23 @@ sap.ui.define([
 			throw new Error("Illegal update group ID: " + sGroupId);
 		}
 
-		return this.oRequestor.request("DELETE",
-			sCanonicalPath.slice(1) + _Helper.buildQuery(this.mUriParameters),
-			this.lockGroup(sGroupId, this, true, true),
-			{"If-Match" : "*"}
-		).catch(function (oError) {
-			if (oError.status !== 404 && oError.status !== 412 || bRejectIfNotFound) {
-				throw oError;
-			} // else: map 404/412 to 200
-		}).then(function () {
-			that.aAllBindings.forEach(function (oBinding) {
-				oBinding.onDelete(sCanonicalPath);
+		return oPromise.then(function (aResults) {
+			return that.oRequestor.request("DELETE",
+					aResults[0].slice(1) + _Helper.buildQuery(that.mUriParameters),
+					that.lockGroup(sGroupId, that, true, true),
+					{"If-Match" : aResults[1]}
+			).catch(function (oError) {
+				if (bRejectIfNotFound
+						|| !(oError.status === 404 || bInAllBindings && oError.status === 412)) {
+					that.reportError("Failed to delete " + aResults[0], sClassName, oError);
+					throw oError;
+				} // else: map 404/412 to 204
+			}).then(function () {
+				if (bInAllBindings) {
+					that.aAllBindings.forEach(function (oBinding) {
+						oBinding.onDelete(vCanonicalPath);
+					});
+				}
 			});
 		});
 	};
@@ -1781,7 +1818,7 @@ sap.ui.define([
 	 *
 	 * @param {boolean} [bIncludeContextId]
 	 *   Whether to include the "SAP-ContextId" header (@since 1.86.0)
-	 * @returns {object}
+	 * @returns {Object<string>}
 	 *   The map of HTTP headers
 	 *
 	 * @public
@@ -2145,6 +2182,41 @@ sap.ui.define([
 	};
 
 	/**
+	 * Creates a lock for the given group ID. Even an automatic {@link #submitBatch} has to wait
+	 * until all such locks are unlocked. The goal of such a lock is to wait with automatic PATCH
+	 * requests triggered by user input until an event handler is called and executes an action.
+	 *
+	 * @param {string} sGroupId
+	 *   A group ID
+	 * @returns {object}
+	 *   The group lock (with methods <code>isLocked</code> and <code>unlock</code>)
+	 * @throws {Error}
+	 *   If the given group does not have {@link sap.ui.model.odata.v4.SubmitMode.Auto}
+	 *
+	 * @private
+	 * @since 1.115.0
+	 * @ui5-restricted sap.fe
+	 */
+	ODataModel.prototype.lock = function (sGroupId) {
+		var oGroupLock;
+
+		if (!this.isAutoGroup(sGroupId)) {
+			throw new Error("Group ID does not use automatic batch requests: " + sGroupId);
+		}
+
+		oGroupLock = this.lockGroup(sGroupId, this, true);
+
+		return {
+			isLocked : function () {
+				return oGroupLock.isLocked();
+			},
+			unlock : function () {
+				oGroupLock.unlock();
+			}
+		};
+	};
+
+	/**
 	 * Creates a lock for a group. {@link sap.ui.model.odata.v4._Requestor#submitBatch} has to wait
 	 * until all locks for <code>sGroupId</code> are unlocked. Delegates to
 	 * {@link sap.ui.model.odata.v4.lib._Requestor#lockGroup}.
@@ -2346,7 +2418,7 @@ sap.ui.define([
 			});
 		});
 		if (aNewMessages.length || aOldMessages.length) {
-			this.fireMessageChange({newMessages : aNewMessages, oldMessages : aOldMessages});
+			Messaging.updateMessages(aOldMessages, aNewMessages);
 		}
 	};
 
@@ -2365,12 +2437,10 @@ sap.ui.define([
 		var that = this;
 
 		if (aMessages && aMessages.length) {
-			this.fireMessageChange({
-				newMessages : aMessages.map(function (oMessage) {
-					oMessage.transition = true;
-					return that.createUI5Message(oMessage, sResourcePath);
-				})
-			});
+			Messaging.updateMessages(undefined, aMessages.map(function (oMessage) {
+				oMessage.transition = true;
+				return that.createUI5Message(oMessage, sResourcePath);
+			}));
 		}
 	};
 
@@ -2463,7 +2533,7 @@ sap.ui.define([
 	 *
 	 * @param {sap.ui.model.odata.v4.Context} oEntityContext
 	 *   A context in this model which must point to a non-contained OData entity
-	 * @returns {Promise}
+	 * @returns {Promise<string>}
 	 *   A promise which is resolved with the canonical path (e.g. "/SalesOrderList('0500000000')")
 	 *   in case of success, or rejected with an instance of <code>Error</code> in case of failure,
 	 *   e.g. when the given context does not point to an entity
@@ -2508,8 +2578,8 @@ sap.ui.define([
 	 *   The absolute paths to request side effects for; each path must not start with the fully
 	 *   qualified container name.
 	 * @returns {sap.ui.base.SyncPromise|undefined}
-	 *   A promise resolving without a defined result, or rejecting with an error if loading of side
-	 *   effects fails, or <code>undefined</code> if there is nothing to do
+	 *   A promise which is resolved without a defined result, or rejected with an error if loading
+	 *   of side effects fails, or <code>undefined</code> if there is nothing to do
 	 *
 	 * @private
 	 */
@@ -2717,9 +2787,9 @@ sap.ui.define([
 	 * Submits the requests associated with the given group ID in one batch request. Requests from
 	 * subsequent calls to this method for the same group ID may be combined in one batch request
 	 * using separate change sets. For group IDs with {@link sap.ui.model.odata.v4.SubmitMode.Auto},
-	 * only a single change set is used; this method is useful to repeat failed updates or creates
-	 * (see {@link sap.ui.model.odata.v4.ODataListBinding#create}) together with all other requests
-	 * for the given group ID in one batch request.
+	 * this method is useful to repeat failed updates or creates (see
+	 * {@link sap.ui.model.odata.v4.ODataListBinding#create}) together with all other requests for
+	 * the given group ID in one batch request.
 	 *
 	 * {@link #resetChanges} can be used to reset all pending changes instead. After that, or when
 	 * the promise returned by this method is fulfilled, {@link #hasPendingChanges} will not report
@@ -2727,8 +2797,8 @@ sap.ui.define([
 	 *
 	 * @param {string} sGroupId
 	 *   A valid group ID as specified in {@link sap.ui.model.odata.v4.ODataModel}.
-	 * @returns {Promise<undefined>}
-	 *   A promise on the outcome of the HTTP request resolving with <code>undefined</code>; it is
+	 * @returns {Promise<void>}
+	 *   A promise which is resolved without a defined result on the outcome of the HTTP request, or
 	 *   rejected with an error if the batch request itself fails
 	 * @throws {Error}
 	 *   If the given group ID is not a valid group ID or has
@@ -2744,9 +2814,8 @@ sap.ui.define([
 		this.checkBatchGroupId(sGroupId);
 		if (this.isAutoGroup(sGroupId)) {
 			this.oRequestor.relocateAll("$parked." + sGroupId, sGroupId);
-		} else {
-			this.oRequestor.addChangeSet(sGroupId);
 		}
+		this.oRequestor.addChangeSet(sGroupId);
 
 		return new Promise(function (resolve) {
 			that.addPrerenderingTask(function () {
@@ -2796,10 +2865,12 @@ sap.ui.define([
 	/**
 	 * Cleans up the optimistic batch cache to a given point in time.
 	 *
-	 * @param {Date} [dOlderThan] The point in time from which on older cache entries are deleted.
-	 *   If not supplied, all optimistic batch entries are deleted.
-	 * @returns {Promise} A promise resolving without a defined result, or rejecting with an error
-	 *   if deletion fails.
+	 * @param {Date} [dOlderThan]
+	 *   The point in time from which on older cache entries are deleted. If not supplied, all
+	 *   optimistic batch entries are deleted.
+	 * @returns {Promise<void>}
+	 *   A promise which is resolved without a defined result, or rejected with an error if
+	 *   deletion fails.
 	 *
 	 * @experimental As of version 1.102.0
 	 * @private

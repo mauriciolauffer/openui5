@@ -1,9 +1,23 @@
-sap.ui.define(function () {
+sap.ui.define([
+	"sap/ui/thirdparty/jquery"
+	], function (jQuery) {
 	"use strict";
+
+	// check whether suite-ui-commons is available
+	var bSuiteUiCommonsAvailable = false;
+	jQuery.ajax({
+		type: "HEAD",
+		url: sap.ui.require.toUrl("sap/suite/ui/commons/library.js"),
+		async: false,
+		success: function() {
+			bSuiteUiCommonsAvailable = true;
+		}
+	});
 
 	return {
 		name: "QUnit TestSuite for sap.ui.integration",
 		defaults: {
+			skip: bSuiteUiCommonsAvailable,
 			qunit: {
 				version: "edge"
 			},
@@ -169,9 +183,13 @@ sap.ui.define(function () {
 			"cards/AdaptiveCard": {},
 			"cards/AnalyticalCard": {},
 			"cards/CalendarCard": {},
+			"cards/ComponentCard": {},
 			"cards/ListCard": {},
 			"cards/TableCard": {},
 			"cards/ObjectCard": {},
+			"cards/TimelineCard": {
+				skip: !bSuiteUiCommonsAvailable
+			},
 			"cards/WebPageCard": {},
 			"cards/AnalyticsCloudContent": {
 				coverage: {
@@ -191,6 +209,7 @@ sap.ui.define(function () {
 			"cards/actions/CardActions": {
 				module: [
 					"./cards/actions/CardActions.qunit",
+					"./cards/actions/ShowHideCardActions.qunit",
 					"./cards/actions/SubmitAction.qunit"
 				],
 				coverage: {
@@ -217,6 +236,14 @@ sap.ui.define(function () {
 			},
 			"controls/ActionsToolbar": {},
 			"controls/ActionsStrip": {},
+			"controls/BlockingMessage": {
+				coverage: {
+					only: [
+						"sap/ui/integration/controls/BlockingMessage",
+						"sap/ui/integration/util/ErrorHandler"
+					]
+				}
+			},
 			"controls/Paginator": {},
 			"controls/ListContentItem": {},
 			"controls/Microchart": {},
@@ -279,6 +306,7 @@ sap.ui.define(function () {
 			"util/ContentFactory": {},
 			"util/ManifestResolver": {},
 			"util/SkeletonCard": {},
+			"util/loadCardEditor": {},
 			"model/ContextModel": {
 				coverage: {
 					only: [
@@ -319,6 +347,11 @@ sap.ui.define(function () {
 			"util/Destinations": {
 				coverage: {
 					only: ["sap/ui/integration/util/Destinations"]
+				}
+			},
+			"util/Duration": {
+				coverage: {
+					only: ["sap/ui/integration/util/Duration"]
 				}
 			},
 			"util/CsrfTokenHandler": {
@@ -469,6 +502,9 @@ sap.ui.define(function () {
 				},
 				sinon: false
 			},
+			/**
+			 * @deprecated as of version 1.81
+			 */
 			"designtime/baseEditor/propertyEditor/enumStringEditor/EnumStringEditor": {
 				group: "Base DesignTime Editor",
 				coverage: {
@@ -736,6 +772,15 @@ sap.ui.define(function () {
 				sinon: false
 			},
 			"editor/Enhancement": {
+				group: "Runtime Editor",
+				coverage: {
+					only: [
+						"sap/ui/integration/editor"
+					]
+				},
+				sinon: false
+			},
+			"editor/Ids": {
 				group: "Runtime Editor",
 				coverage: {
 					only: [

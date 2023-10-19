@@ -1,22 +1,22 @@
 sap.ui.define([
+	"sap/base/i18n/Localization",
+	"sap/base/Log",
 	"sap/ui/core/mvc/Controller",
 	"sap/ui/fl/registry/Settings",
-	"sap/base/Log",
-	"sap/ui/core/Core",
 	"sap/ui/model/resource/ResourceModel"
 ], function(
+	Localization,
+	Log,
 	Controller,
 	FlSettings,
-	Log,
-	oCore,
 	ResourceModel
 ) {
 	"use strict";
 
 	return Controller.extend("sap.ui.fl.sample.variantmanagement.VariantManagement", {
-		onInit: function() {
+		onInit() {
 			var sResourceUrl = "i18n/i18n.properties";
-			var sLocale = oCore.getConfiguration().getLanguage();
+			var sLocale = Localization.getLanguage();
 			var oResourceModel = new ResourceModel({
 				bundleUrl: sResourceUrl,
 				bundleLocale: sLocale
@@ -28,7 +28,7 @@ sap.ui.define([
 
 			this.oVM.setShowExecuteOnSelection(true);
 
-			FlSettings.getInstance().then(function () {
+			FlSettings.getInstance().then(function() {
 				if (this.oVM) {
 					this.oVM._oVM.setSupportPublic(true);
 				}

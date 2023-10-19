@@ -2615,7 +2615,6 @@ sap.ui.define([
 
 		assert.strictEqual($selectItems[1].getAttribute('aria-posinset'), iDelta + 1 + "", "posinset is set correctly");
 		assert.strictEqual($selectItems[1].getAttribute('aria-setsize'), "29", "setsize is set correctly");
-		assert.strictEqual($selectItems[1].getAttribute('aria-level'), "1", "level is set correctly");
 	});
 
 	QUnit.test("ariaTexts", function (assert) {
@@ -2699,6 +2698,21 @@ sap.ui.define([
 
 		assert.notOk(aItems[0].getDomRef().getAttribute("aria-haspopup"), "aria-haspopup is not set");
 		assert.notOk(oIconTabHeader.getDomRef("head").getAttribute("aria-describedby"), "aria-describedby is not set");
+	});
+
+	QUnit.test("aria-labelledby of the content", function (assert) {
+		var oNestedItem = this.oIconTabBar.getItems()[0].getItems()[1];
+		this.oIconTabBar.setSelectedKey(oNestedItem.getKey());
+		Core.applyChanges();
+		var oSelectedItem = oNestedItem;
+
+		assert.strictEqual(this.oIconTabBar.getDomRef("content").getAttribute("aria-labelledby"), oSelectedItem._getRootTab().getId(), "aria-labelledby should be set to the id of the root tab");
+
+		var oAnotherNestedItem = this.oIconTabBar.getItems()[1].getItems()[1];
+		oSelectedItem = oAnotherNestedItem;
+		this.oIconTabBar.setSelectedItem(oAnotherNestedItem);
+
+		assert.strictEqual(this.oIconTabBar.getDomRef("content").getAttribute("aria-labelledby"), oSelectedItem._getRootTab().getId(), "aria-labelledby should be set to the id of the root tab");
 	});
 
 	QUnit.module("Padding");
@@ -3059,7 +3073,8 @@ sap.ui.define([
 			this.returnMockEvent = function(iKeyCode, sId) {
 				var oMockEventTest = {
 					keyCode: iKeyCode,
-					srcControl: Core.byId(sId)
+					srcControl: Core.byId(sId),
+					preventDefault: function () {}
 				};
 
 				return oMockEventTest;
@@ -3312,7 +3327,8 @@ sap.ui.define([
 			this.returnMockEvent = function(iKeyCode, sId) {
 				var oMockEventTest = {
 					keyCode: iKeyCode,
-					srcControl: Core.byId(sId)
+					srcControl: Core.byId(sId),
+					preventDefault: function () {}
 				};
 
 				return oMockEventTest;
@@ -4144,7 +4160,8 @@ sap.ui.define([
 		this.returnMockEvent = function(iKeyCode, sId) {
 			var oMockEventTest = {
 				keyCode: iKeyCode,
-				srcControl: Core.byId(sId)
+				srcControl: Core.byId(sId),
+				preventDefault: function () {}
 			};
 
 			return oMockEventTest;

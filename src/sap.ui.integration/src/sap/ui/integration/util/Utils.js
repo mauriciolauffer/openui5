@@ -3,17 +3,19 @@
  */
 
 sap.ui.define([
-	"sap/ui/core/Core",
+	"sap/ui/core/getCompatibilityVersion",
 	"sap/ui/core/Locale",
 	"sap/base/strings/formatMessage",
 	'sap/base/util/isPlainObject',
-	"sap/base/Log"
+	"sap/base/Log",
+	"sap/ui/core/date/UI5Date"
 ], function (
-	Core,
+	getCompatibilityVersion,
 	Locale,
 	formatMessage,
 	isPlainObject,
-	Log
+	Log,
+	UI5Date
 ) {
 	"use strict";
 
@@ -81,7 +83,7 @@ sap.ui.define([
 
 		if (aJSONDateParts) {
 			// 0 - complete results; 1 - ticks; 2 - sign; 3 - minutes
-			var oResult = new Date(parseInt(aJSONDateParts[JSON_DATE_TICKS]));
+			var oResult = UI5Date.getInstance(parseInt(aJSONDateParts[JSON_DATE_TICKS]));
 			if (aJSONDateParts[JSON_DATE_SIGN]) {
 				var iMins = parseInt(aJSONDateParts[JSON_DATE_MINUTES]);
 				if (aJSONDateParts[JSON_DATE_SIGN] === "-") {
@@ -209,7 +211,7 @@ sap.ui.define([
 
 	Utils.isBindingSyntaxComplex = function () {
 		if (Utils._isBindingSyntaxComplex === undefined) {
-			Utils._isBindingSyntaxComplex = Core.getConfiguration().getCompatibilityVersion("sapCoreBindingSyntax").compareTo("1.26") >= 0;
+			Utils._isBindingSyntaxComplex = getCompatibilityVersion("sapCoreBindingSyntax").compareTo("1.26") >= 0;
 		}
 
 		return Utils._isBindingSyntaxComplex;

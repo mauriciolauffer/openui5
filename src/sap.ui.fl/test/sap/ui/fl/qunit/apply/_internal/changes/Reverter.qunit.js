@@ -1,10 +1,11 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/base/Log",
 	"sap/m/Text",
 	"sap/ui/core/util/reflection/JsControlTreeModifier",
 	"sap/ui/core/Control",
+	"sap/ui/fl/apply/_internal/changes/Applier",
 	"sap/ui/fl/apply/_internal/changes/Utils",
 	"sap/ui/fl/apply/_internal/changes/FlexCustomData",
 	"sap/ui/fl/apply/_internal/changes/Reverter",
@@ -15,6 +16,7 @@ sap.ui.define([
 	Text,
 	JsControlTreeModifier,
 	Control,
+	Applier,
 	ChangeUtils,
 	FlexCustomData,
 	Reverter,
@@ -28,7 +30,7 @@ sap.ui.define([
 	var sControlId = "foo";
 
 	QUnit.module("revertChangeOnControl", {
-		beforeEach: function () {
+		beforeEach() {
 			this.oChange = new UIChange({
 				selector: {
 					id: sControlId,
@@ -54,12 +56,12 @@ sap.ui.define([
 			});
 			this.oLogStub = sandbox.stub(Log, "error");
 		},
-		afterEach: function () {
+		afterEach() {
 			sandbox.restore();
 			this.oControl.destroy();
 		}
 	}, function() {
-		QUnit.test("with an unavailable change handler", function (assert) {
+		QUnit.test("with an unavailable change handler", function(assert) {
 			this.oGetChangeHandlerStub.restore();
 			sandbox.stub(ChangeUtils, "getChangeHandler").rejects(Error("no change handler"));
 
@@ -71,7 +73,7 @@ sap.ui.define([
 			}.bind(this));
 		});
 
-		QUnit.test("with an applied change with revert data and available change handler", function (assert) {
+		QUnit.test("with an applied change with revert data and available change handler", function(assert) {
 			sandbox.stub(this.oAppliedChange, "hasRevertData").returns(true);
 			var oUpdateAggregationStub = sandbox.stub(JsControlTreeModifier, "updateAggregation");
 
@@ -82,7 +84,7 @@ sap.ui.define([
 			}.bind(this));
 		});
 
-		QUnit.test("with an applied change with revert data and available change handler returning a new control", function (assert) {
+		QUnit.test("with an applied change with revert data and available change handler returning a new control", function(assert) {
 			sandbox.stub(this.oAppliedChange, "hasRevertData").returns(true);
 			this.oRevertChangeStub.callsFake(function() {
 				this.oControl.destroy();
@@ -174,7 +176,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("revertMultipleChanges", {
-		beforeEach: function () {
+		beforeEach() {
 			this.oChange = new UIChange({
 				selector: {
 					id: sControlId,
@@ -214,12 +216,13 @@ sap.ui.define([
 			};
 			this.oLogStub = sandbox.stub(Log, "warning");
 			this.oDestroyCustomDataStub = sandbox.stub(FlexCustomData, "destroyAppliedCustomData").resolves();
+			this.oAddPreConStub = sandbox.stub(Applier, "addPreConditionForInitialChangeApplying");
 			sandbox.stub(Reverter, "revertChangeOnControl")
-				.onCall(0).resolves(false)
-				.onCall(1).resolves(true)
-				.onCall(2).resolves(this.oControl);
+			.onCall(0).resolves(false)
+			.onCall(1).resolves(true)
+			.onCall(2).resolves(this.oControl);
 		},
-		afterEach: function () {
+		afterEach() {
 			sandbox.restore();
 			this.oControl.destroy();
 		}
@@ -227,6 +230,7 @@ sap.ui.define([
 		QUnit.test("with applied changes and one unapplied and one pointing to an unavailable control", function(assert) {
 			var aChanges = [this.oChange, this.oAppliedChange0, this.oFailingChange, this.oAppliedChange1];
 			return Reverter.revertMultipleChanges(aChanges, this.mPropertyBag).then(function() {
+				assert.ok(this.oAddPreConStub.called, "the promise was set to the applier");
 				assert.equal(this.oDeleteChangeInMapStub.callCount, 2, "deleteChangeInMap was called for both applied changes");
 				assert.equal(this.oDeleteChangeInMapStub.firstCall.args[0].getId(), this.oAppliedChange0.getId(), "the first change was reverted first");
 				assert.equal(this.oDeleteChangeInMapStub.secondCall.args[0].getId(), this.oAppliedChange1.getId(), "the second change was reverted second");

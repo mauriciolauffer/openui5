@@ -20,26 +20,22 @@ sap.ui.define([
 	QUnit.dump.maxDepth = 20;
 
 	QUnit.module("Given Switcher.switchVariant()", {
-		beforeEach: function() {
-			this.oVariantsMap = {
-				type: "variantsMap"
-			};
-
+		beforeEach() {
 			this.oChangesMap = {
 				mChanges: {
 					control1: [{
-						getId: function() {
+						getId() {
 							return "change1";
 						},
 						id: "change1"
 					}],
 					control2: [{
-						getId: function() {
+						getId() {
 							return "change2";
 						},
 						id: "change2"
 					}, {
-						getId: function() {
+						getId() {
 							return "change3";
 						},
 						id: "change3"
@@ -53,9 +49,6 @@ sap.ui.define([
 					getChangesMapForComponent: function() {
 						return this.oChangesMap;
 					}.bind(this)
-				},
-				getComponentName: function() {
-					return "componentName";
 				},
 				applyVariantChanges: sandbox.stub()
 			};
@@ -71,46 +64,33 @@ sap.ui.define([
 			};
 
 			sandbox.stub(Reverter, "revertMultipleChanges").resolves();
-			sandbox.stub(VariantManagementState, "getContent").returns(this.oVariantsMap);
 			sandbox.stub(VariantManagementState, "setCurrentVariant");
 			sandbox.stub(VariantManagementState, "getControlChangesForVariant")
-				.callThrough()
-				.withArgs(Object.assign(
-					_pick(this.mPropertyBag, ["vmReference"]), {
-						variantsMap: this.oVariantsMap,
-						vReference: this.mPropertyBag.currentVReference
-					}
-				))
-				.returns(this.aSourceVariantChanges)
-				.withArgs(Object.assign(
-					_pick(this.mPropertyBag, ["vmReference"]), {
-						variantsMap: this.oVariantsMap,
-						vReference: this.mPropertyBag.newVReference
-					}
-				))
-				.returns(this.aTargetControlChangesForVariant);
+			.callThrough()
+			.withArgs(Object.assign(
+				_pick(this.mPropertyBag, ["vmReference"]), {
+					vReference: this.mPropertyBag.currentVReference
+				}
+			))
+			.returns(this.aSourceVariantChanges)
+			.withArgs(Object.assign(
+				_pick(this.mPropertyBag, ["vmReference"]), {
+					vReference: this.mPropertyBag.newVReference
+				}
+			))
+			.returns(this.aTargetControlChangesForVariant);
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
 		QUnit.test("when called", function(assert) {
 			return Switcher.switchVariant(this.mPropertyBag)
-				.then(function() {
-					assert.ok(Reverter.revertMultipleChanges.calledWith(this.aSourceVariantChanges.reverse(), this.mPropertyBag), "then revert of changes was correctly triggered");
-					assert.ok(this.oFlexController.applyVariantChanges.calledWith(this.aTargetControlChangesForVariant, this.oAppComponent), "then apply of changes was correctly triggered");
-					assert.ok(VariantManagementState.setCurrentVariant.calledWith(this.mPropertyBag), "then setting current variant was correctly triggered");
-				}.bind(this));
-		});
-
-		QUnit.test("when called and and there is an error in evaluating changes", function(assert) {
-			VariantManagementState.getContent.throws();
-			return Switcher.switchVariant(this.mPropertyBag)
-				.catch(function() {
-					assert.equal(Reverter.revertMultipleChanges.callCount, 0, "then revert of changes was not called");
-					assert.equal(this.oFlexController.applyVariantChanges.callCount, 0, "then apply of changes was not called");
-					assert.equal(VariantManagementState.setCurrentVariant.callCount, 0, "then setting current variant was not called");
-				}.bind(this));
+			.then(function() {
+				assert.ok(Reverter.revertMultipleChanges.calledWith(this.aSourceVariantChanges.reverse(), this.mPropertyBag), "then revert of changes was correctly triggered");
+				assert.ok(this.oFlexController.applyVariantChanges.calledWith(this.aTargetControlChangesForVariant, this.oAppComponent), "then apply of changes was correctly triggered");
+				assert.ok(VariantManagementState.setCurrentVariant.calledWith(this.mPropertyBag), "then setting current variant was correctly triggered");
+			}.bind(this));
 		});
 	});
 

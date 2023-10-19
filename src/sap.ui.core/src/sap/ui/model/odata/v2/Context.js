@@ -93,11 +93,21 @@ sap.ui.define([
 				this.bUpdated = false;
 				// whether the context is inactive
 				this.bInactive = !!bInactive;
+				// the function to start activation of this context (which may be prevented by apps)
+				this.fnStartActivation = undefined;
+				// the promise on activation start of this context
+				this.oStartActivationPromise = bInactive
+					? new SyncPromise(function (resolve) {
+						that.fnStartActivation = resolve;
+					})
+					: SyncPromise.resolve();
 				// the function to activate this context
 				this.fnActivate = undefined;
 				// the promise on activation of this context
 				this.oActivatedPromise = bInactive
-					? new SyncPromise(function (resolve) { that.fnActivate = resolve; })
+					? new SyncPromise(function (resolve) {
+						that.fnActivate = resolve;
+					})
 					: SyncPromise.resolve();
 				// for a transient context, maps navigation property name to (array of)
 				// sub-context(s) for deep create
@@ -105,18 +115,6 @@ sap.ui.define([
 				this.oTransientParent = oTransientParent;
 			}
 		});
-
-	/**
-	 * Activates this context.
-	 *
-	 * @private
-	 */
-	Context.prototype.activate = function () {
-		this.bInactive = false;
-		if (this.fnActivate) {
-			this.fnActivate();
-		}
-	};
 
 	/**
 	 * Adds the given transient context as sub-context to this transient context under the given
@@ -136,6 +134,19 @@ sap.ui.define([
 		} else {
 			this.mSubContexts[sNavProperty] = oSubContext;
 		}
+	};
+
+	/**
+	 * Cancels activation of this inactive context. A new activation promise is created.
+	 *
+	 * @private
+	 */
+	Context.prototype.cancelActivation = function () {
+		var that = this;
+
+		this.oStartActivationPromise = new SyncPromise(function (resolve) {
+			that.fnStartActivation = resolve;
+		});
 	};
 
 	/**
@@ -185,7 +196,11 @@ sap.ui.define([
 	};
 
 	/**
-	 * Deletes the OData entity this context points to.
+	 * Deletes the OData entity this context points to. Persisted contexts are only removed from the UI after their
+	 * successful deletion in the back end. In this case, the <code>Promise</code> returned by this method is only
+	 * resolved when the back-end request has been successful.
+	 * <b>Example:</b> A persisted entry in a table control is deleted by this method. It remains visible on the UI and
+	 * only disappears upon successful deletion in the back end.
 	 * <b>Note:</b> The context must not be used anymore after successful deletion.
 	 *
 	 * @param {object} [mParameters]
@@ -206,7 +221,8 @@ sap.ui.define([
 	 *   see {@link #setRefreshAfterChange}. If given, this overrules the model-wide
 	 *   <code>refreshAfterChange</code> flag for this operation only.
 	 * @returns {Promise<undefined>} A promise resolving with <code>undefined</code> in case of
-	 *   successful deletion or rejecting with an error in case the deletion failed
+	 *   successful deletion or rejecting with an error in case the deletion failed. If the <code>DELETE</code> request
+	 *   has been aborted, the error has an <code>aborted</code> flag set to <code>true</code>.
 	 * @throws {Error}
 	 *   If the given parameter map contains any other parameter than those documented above in case
 	 *   of a persistent context
@@ -245,7 +261,9 @@ sap.ui.define([
 					context : that,
 					error : reject,
 					groupId : oGroupInfo.groupId,
-					success : function () {resolve();}
+					success : function () {
+						resolve();
+					}
 				}, mParameters));
 		});
 	};
@@ -254,7 +272,7 @@ sap.ui.define([
 	 * Returns the promise which resolves with <code>undefined</code> on activation of this context
 	 * or if this context is already active; the promise never rejects.
 	 *
-	 * @return {sap.ui.base.SyncPromise} The promise on activation of this context
+	 * @returns {sap.ui.base.SyncPromise} The promise on activation of this context
 	 *
 	 * @private
 	 */
@@ -263,10 +281,34 @@ sap.ui.define([
 	};
 
 	/**
+	 * Returns the promise which resolves with <code>undefined</code> when activation of this context is started
+	 * or if this context is already active; the promise never rejects.
+	 *
+	 * @returns {sap.ui.base.SyncPromise} The promise on activation start of this context
+	 *
+	 * @private
+	 */
+	Context.prototype.fetchActivationStarted = function () {
+		return this.oStartActivationPromise;
+	};
+
+	/**
+	 * Finishes activation of this context.
+	 *
+	 * @private
+	 */
+	Context.prototype.finishActivation = function () {
+		this.bInactive = false;
+		if (this.fnActivate) {
+			this.fnActivate();
+		}
+	};
+
+	/**
 	 * Gets the absolute deep path including all intermediate paths of the binding hierarchy. This
 	 * path is used to compute the full target of messages.
 	 *
-	 * @return {string} The deep path
+	 * @returns {string} The deep path
 	 * @private
 	 */
 	Context.prototype.getDeepPath = function () {
@@ -348,7 +390,7 @@ sap.ui.define([
 	 * Whether this context has changed, which means it has been updated or a refresh of dependent
 	 * bindings needs to be enforced.
 	 *
-	 * @return {boolean} Whether this context has changed
+	 * @returns {boolean} Whether this context has changed
 	 * @private
 	 * @see sap.ui.model.odata.v2.Context#isUpdated
 	 * @see sap.ui.model.odata.v2.Context#isRefreshForced
@@ -360,7 +402,7 @@ sap.ui.define([
 	/**
 	 * Returns whether this context has at least one sub-context.
 	 *
-	 * @return {boolean} Whether this context has at least one sub-context
+	 * @returns {boolean} Whether this context has at least one sub-context
 	 *
 	 * @private
 	 */
@@ -371,7 +413,7 @@ sap.ui.define([
 	/**
 	 * Returns whether this context has a transient parent context.
 	 *
-	 * @return {boolean} Whether this context has a transient parent context
+	 * @returns {boolean} Whether this context has a transient parent context
 	 *
 	 * @private
 	 */
@@ -380,13 +422,12 @@ sap.ui.define([
 	};
 
 	/**
-	 * Returns whether this context is inactive. An inactive context will only be sent to the
-	 * server after the first property update. From then on it behaves like any other created
-	 * context. The result of this function can also be accessed via the
-	 * "@$ui5.context.isInactive" instance annotation at the entity, see
-	 * {@link sap.ui.model.odata.v2.ODataModel#getProperty} for details.
+	 * Returns whether this context is inactive. An inactive context will not be sent to the
+	 * server until it is activated. From then on it behaves like any other created context.
+	 * The result of this function can also be accessed via the "@$ui5.context.isInactive" instance
+	 * annotation at the entity, see {@link sap.ui.model.odata.v2.ODataModel#getProperty} for details.
 	 *
-	 * @return {boolean} Whether this context is inactive
+	 * @returns {boolean} Whether this context is inactive
 	 *
 	 * @public
 	 * @see sap.ui.model.odata.v2.ODataListBinding#create
@@ -402,7 +443,7 @@ sap.ui.define([
 	 * if no data has been loaded for the context's entity. This can be used by dependent bindings
 	 * to send their requests in parallel to the request of the context binding.
 	 *
-	 * @return {boolean} Whether this context is preliminary
+	 * @returns {boolean} Whether this context is preliminary
 	 * @private
 	 * @ui5-restricted sap.suite.ui.generic
 	 */
@@ -414,7 +455,7 @@ sap.ui.define([
 	 * Whether dependent bindings of this context need to be refreshed, when the context is
 	 * propagated.
 	 *
-	 * @return {boolean} Whether dependent bindings need to be refreshed
+	 * @returns {boolean} Whether dependent bindings need to be refreshed
 	 * @private
 	 */
 	Context.prototype.isRefreshForced = function () {
@@ -454,7 +495,7 @@ sap.ui.define([
 	 * Whether this context was updated. For example the path changed from a preliminary path to the
 	 * canonical one.
 	 *
-	 * @return {boolean} Whether the context is updated
+	 * @returns {boolean} Whether the context is updated
 	 * @private
 	 */
 	Context.prototype.isUpdated = function () {
@@ -551,6 +592,18 @@ sap.ui.define([
 	 */
 	Context.prototype.setUpdated = function (bUpdated) {
 		this.bUpdated = bUpdated;
+	};
+
+	/**
+	 * Starts activation of this inactive context. The promise returned by {@link #fetchActivationStarted}
+	 * is resolved.
+	 *
+	 * @private
+	 */
+	Context.prototype.startActivation = function () {
+		if (this.fnStartActivation) {
+			this.fnStartActivation();
+		}
 	};
 
 	return Context;

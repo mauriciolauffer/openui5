@@ -23,7 +23,6 @@ sap.ui.define([
 	 * @private
 	 * @since 1.54
 	 * @alias sap.ui.dt.DOMUtil
-	 * @experimental Since 1.54. This class is experimental and provides only limited functionality. Also the API might be changed in future.
 	 */
 
 	var Util = {};
@@ -38,7 +37,7 @@ sap.ui.define([
 	 * @param {string|Error} vError - Accepts error string or Error object
 	 * @return {Error} - An Error object with error message inside
 	 */
-	Util.wrapError = function (vError) {
+	Util.wrapError = function(vError) {
 		var oError = vError instanceof Error && vError || new Error();
 
 		if (typeof vError === "string") {
@@ -54,7 +53,7 @@ sap.ui.define([
 	 * @param {string} sLibraryName - Library name which is considered as "home" library
 	 * @return {boolean} - true if specified error doesn't belong to the library
 	 */
-	Util.isForeignError = function (oError, sLibraryName) {
+	Util.isForeignError = function(oError, sLibraryName) {
 		if (oError instanceof Error) {
 			return oError.name.indexOf(sLibraryName || S_LIBRARY_NAME) === -1;
 		}
@@ -80,10 +79,10 @@ sap.ui.define([
 	 * @param {string} sLibraryName - Library name to which created error belong
 	 * @return {Error} - An Error object
 	 */
-	Util.createError = function (sLocation, sMessage, sLibraryName) {
+	Util.createError = function(sLocation, sMessage, sLibraryName) {
 		var oError = new Error();
-		var sLocationFull = (sLibraryName || S_LIBRARY_NAME) + (sLocation ? "." + sLocation : "");
-		oError.name = "Error in " + sLocationFull;
+		var sLocationFull = (sLibraryName || S_LIBRARY_NAME) + (sLocation ? `.${sLocation}` : "");
+		oError.name = `Error in ${sLocationFull}`;
 		oError.message = sMessage;
 
 		return oError;
@@ -94,13 +93,13 @@ sap.ui.define([
 	 * @param {string|Error} vError - Can be a string OR a standard Error object
 	 * @return {string} - Printable string
 	 */
-	Util.errorToString = function (vError) {
+	Util.errorToString = function(vError) {
 		if (typeof vError === "string") {
 			return vError;
 		} else if (vError instanceof Error) {
 			var sError = vError.toString();
 			if (vError.stack) {
-				sError += "\n" + vError.stack.replace(sError, "").trim();
+				sError += `\n${vError.stack.replace(sError, "").trim()}`;
 			}
 			return sError;
 		}
@@ -116,60 +115,39 @@ sap.ui.define([
 	 * @param {string} sLibraryName - Library name to which created error belong
 	 * @return {Error} - always an Error object with adjusted error message if necessary
 	 */
-	Util.propagateError = function (vError, sLocation, sMessage, sLibraryName) {
+	Util.propagateError = function(vError, sLocation, sMessage, sLibraryName) {
 		var oError = Util.wrapError(vError);
 
 		// Adding payload only if it wasn't added before explicitly.
 		if (Util.isForeignError(oError, sLibraryName)) {
-			var sLocationFull = (sLibraryName || S_LIBRARY_NAME) + "." + sLocation;
+			var sLocationFull = `${sLibraryName || S_LIBRARY_NAME}.${sLocation}`;
 			var sOriginalMessage = [
 				oError.name,
 				oError.message
 			].join(" - ");
-			oError.name = "Error in " + sLocationFull;
-			oError.message = Util.printf("{0}. Original error: {1}", sMessage, sOriginalMessage || "¯\\_(ツ)_/¯");
+			oError.name = `Error in ${sLocationFull}`;
+			oError.message = `${sMessage}. Original error: ${sOriginalMessage || "¯\\_(ツ)_/¯"}`;
 		}
 
 		return oError;
 	};
 
 	/**
-	 * Gets object type which is useful for error reporting
+	 * Gets object type which is useful for error reporting.
+	 * If it is a ManagedObject, also includes the object id.
 	 *
 	 * Usage examples:
-	 * Util.getObjectType("foo") -> 'string'
-	 * Util.getObjectType(new sap.ui.base.ManagedObject()) -> 'sap.ui.base.ManagedObject (id = "__object1")'
+	 * Util.getObjectType("foo") -> "string"
+	 * Util.getObjectType(new sap.ui.base.ManagedObject()) -> "sap.ui.base.ManagedObject (id = '__object1')"
 	 *
 	 * @param {*} vObject - Object to get type of
-	 * @returns {string}
+	 * @returns {string} Type of the given object
 	 */
-	Util.getObjectType = function (vObject) {
-		return (
-			(
-				vObject instanceof ManagedObject
-				&& Util.printf('{0} (id = "{1}")', vObject.getMetadata().getName(), vObject.getId())
-			) // e.g. -> 'sap.ui.base.ManagedObject (id = "__object1")'
-			|| typeof vObject // e.g. -> 'string'
-		);
-	};
-
-	/**
-	 * FIXME: Replace with template literals when it's available
-	 * Replaces placeholders in the string with specified values. Usage:
-	 * Util.printf('Hello, {0}! The {1} is blue!', 'world', 'sky')
-	 * => 'Hello, world! The sky is blue!'
-	 *
-	 * @param {string} sString - Template string with placeholders {0}, {1}, ...
-	 * @param {...*} var_args - Values for placeholders
-	 * @return {string} - Concatenated string
-	 */
-	Util.printf = function(sString) {
-		var aArgs = Array.prototype.slice.call(arguments, 1);
-		return sString.replace(/{(\d+)}/g, function(sMatch, iIndex) {
-			return typeof aArgs[iIndex] !== "undefined"
-				? aArgs[iIndex]
-				: sMatch;
-		});
+	Util.getObjectType = function(vObject) {
+		if (vObject instanceof ManagedObject) {
+			return `${vObject.getMetadata().getName()} (id = '${vObject.getId()}')`;
+		}
+		return typeof vObject;
 	};
 
 	/**
@@ -177,7 +155,7 @@ sap.ui.define([
 	 * @param {*} vValue - Any value
 	 * @return {boolean} - true if specified value is an integer
 	 */
-	Util.isInteger = function (vValue) {
+	Util.isInteger = function(vValue) {
 		return isNumeric(vValue) && Math.ceil(vValue) === vValue;
 	};
 
@@ -203,18 +181,17 @@ sap.ui.define([
 	 * @param {Function} fnHandler - Function to be wrapped
 	 * @return {Function} - function which returns Promise object and call original function inside
 	 */
-	Util.wrapIntoPromise = function (fnHandler) {
+	Util.wrapIntoPromise = function(fnHandler) {
 		if (typeof fnHandler !== "function") {
 			throw Util.createError(
 				"Util#wrapIntoPromise",
-				Util.printf("Invalid argument specified. Function is expected, but '{0}' is given", typeof fnHandler),
+				`Invalid argument specified. Function is expected, but '${typeof fnHandler}' is given`,
 				"sap.ui.dt"
 			);
 		}
-		return function () {
-			var aArguments = Array.prototype.slice.call(arguments);
-			return Promise.resolve().then(function () {
-				return fnHandler.apply(null, aArguments);
+		return function(...aArgs) {
+			return Promise.resolve().then(function() {
+				return fnHandler(...aArgs); // args from the outer function scope
 			});
 		};
 	};
@@ -229,24 +206,24 @@ sap.ui.define([
 
 	/**
 	 * Checks if the passed designTime instance's status is syncing.
-	 * Returns a promise resolving to the return value of the passed function, when the passed designTime instances's status changes to synced.
+	 * Returns a promise resolving to the return value of the passed function, when the passed designTime instances's
+	 * status changes to synced.
 	 *
 	 * @param {sap.ui.dt.DesignTime} oDtInstance designTime instance
 	 * @param {function} fnOriginal function for which value needs to be returned
 	 * @returns {Promise} Returns a Promise.resolve() to the passed function's return value or a Promise.reject() when designTime fails to sync
 	 */
 	Util.waitForSynced = function(oDtInstance, fnOriginal) {
-		return function () {
-			fnOriginal = fnOriginal || function () {};
-			var aArguments = arguments;
-			return new Promise(function (fnResolve, fnReject) {
+		return function(...aArgs) {
+			fnOriginal ||= function() {};
+			return new Promise(function(fnResolve, fnReject) {
 				if (oDtInstance.getStatus() === DesignTimeStatus.SYNCING) {
-					oDtInstance.attachEventOnce("synced", function () {
-						fnResolve(fnOriginal.apply(null, aArguments));
+					oDtInstance.attachEventOnce("synced", function() {
+						fnResolve(fnOriginal(...aArgs)); // args from the outer function scope
 					});
 					oDtInstance.attachEventOnce("syncFailed", fnReject);
 				} else {
-					fnResolve(fnOriginal.apply(null, aArguments));
+					fnResolve(fnOriginal(...aArgs)); // args from the outer function scope
 				}
 			});
 		};

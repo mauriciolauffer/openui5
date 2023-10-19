@@ -12,10 +12,9 @@ sap.ui.define([
 	"sap/m/NavContainer",
 	"sap/m/Panel",
 	"./AsyncViewModuleHook",
-	"sap/ui/base/EventProvider",
 	"sap/ui/core/Component",
 	"sap/ui/core/ComponentContainer"
-], function (Log, deepExtend, UIComponent, View, ViewType, HashChanger, Router, Views, App, NavContainer, Panel, ModuleHook, EventProvider, Component, ComponentContainer) {
+], function (Log, deepExtend, UIComponent, View, ViewType, HashChanger, Router, Views, App, NavContainer, Panel, ModuleHook, Component, ComponentContainer) {
 	"use strict";
 
 	// This global namespace is used for creating custom component classes.
@@ -1617,7 +1616,6 @@ sap.ui.define([
 
 	QUnit.module("titleChanged event", {
 		beforeEach: function() {
-			this.oEventProviderStub = sinon.stub(EventProvider.prototype.oEventPool, "returnObject");
 			hasher.setHash("");
 			this.oApp = new App();
 			this.sPattern = "anything";
@@ -1637,7 +1635,6 @@ sap.ui.define([
 		},
 		afterEach: function() {
 			this.oRouter.destroy();
-			this.oEventProviderStub.restore();
 		}
 	});
 
@@ -1833,11 +1830,7 @@ sap.ui.define([
 
 	QUnit.module("titleChanged event with binding information", {
 		beforeEach: function(){
-			this.oEventProviderStub = sinon.stub(EventProvider.prototype.oEventPool, "returnObject");
 			hasher.setHash("");
-		},
-		afterEach: function(){
-			this.oEventProviderStub.restore();
 		}
 	});
 
@@ -1944,7 +1937,6 @@ sap.ui.define([
 
 	QUnit.module("targets", {
 		beforeEach: function () {
-			this.oEventProviderStub = sinon.stub(EventProvider.prototype.oEventPool, "returnObject");
 			this.oShell = new ShellSubstitute();
 			this.oChildShell = new ShellSubstitute();
 			this.oSecondShell = new ShellSubstitute();
@@ -1970,7 +1962,6 @@ sap.ui.define([
 			}.bind(this));
 		},
 		afterEach: function () {
-			this.oEventProviderStub.restore();
 			this.oRouter.destroy();
 			this.oShell.destroy();
 			this.oChildShell.destroy();
@@ -2574,7 +2565,6 @@ sap.ui.define([
 
 	QUnit.module("Router in nested component", {
 		beforeEach: function() {
-			this.oEventProviderStub = sinon.stub(EventProvider.prototype.oEventPool, "returnObject");
 			resetBrowserHash();
 
 			return Component.create({
@@ -2585,7 +2575,6 @@ sap.ui.define([
 		},
 		afterEach: function () {
 			this.oParentComponent.destroy();
-			this.oEventProviderStub.restore();
 		}
 	});
 
@@ -3149,7 +3138,6 @@ sap.ui.define([
 
 	QUnit.module("Router in IAsyncContentCreation with nested component", {
 		beforeEach: function() {
-			this.oEventProviderStub = sinon.stub(EventProvider.prototype.oEventPool, "returnObject");
 			resetBrowserHash();
 			var that = this;
 
@@ -3161,7 +3149,6 @@ sap.ui.define([
 		},
 		afterEach: function () {
 			this.oParentComponent.destroy();
-			this.oEventProviderStub.restore();
 		}
 	});
 
@@ -3189,13 +3176,11 @@ sap.ui.define([
 
 	QUnit.module("navTo with nested components", {
 		beforeEach: function() {
-			this.oEventProviderStub = sinon.stub(EventProvider.prototype.oEventPool, "returnObject");
 			hasher.setHash("");
 			HashChanger.getInstance().fireHashChanged("");
 		},
 		afterEach: function() {
 			this.oParentComponent.destroy();
-			this.oEventProviderStub.restore();
 		}
 	});
 
@@ -3281,6 +3266,63 @@ sap.ui.define([
 				return navToRoute(oRouter, "home", oNestedRouteInfo);
 			}).then(function(oParameters) {
 				assert.strictEqual(oParameters.view, oComponentContainer, "The same component container is reused");
+			});
+		}.bind(this));
+	});
+
+	QUnit.test("Call navTo multiple times with specific route and parameter for nested component", function(assert) {
+		return Component.create({
+			name: "qunit.router.component.2LevelsMultiNavTo.Parent"
+		}).then(function(oComponent) {
+			this.oParentComponent = oComponent;
+
+			var oRouter = this.oParentComponent.getRouter(),
+				sId = "productA",
+				oNestedRouteInfo = {
+					home: {
+						route: "product",
+						parameters: {
+							id: sId
+						}
+					}
+				};
+
+			var pCategoryRouteMatched = new Promise(function(resolve, reject) {
+				var fnMatched = function(oEvent) {
+					this.detachMatched(fnMatched);
+					resolve();
+				};
+				oRouter.getRoute("category").attachMatched(fnMatched);
+			});
+
+
+			HashChanger.getInstance().setHash("category");
+
+			oRouter.initialize();
+
+			return pCategoryRouteMatched.then(function() {
+				oRouter.navTo("home", {}, oNestedRouteInfo);
+
+				return new Promise(function(resolve, reject) {
+					var fnMatched = function(oEvent) {
+						this.detachMatched(fnMatched);
+
+						var oControl = oEvent.getParameter("view");
+
+						if (oControl instanceof ComponentContainer) {
+							resolve(oControl.getComponentInstance());
+						}
+					};
+
+					oRouter.getRoute("home").attachMatched(fnMatched);
+				});
+			}).then(function(oNestedComponent) {
+				assert.ok(oNestedComponent, "nested component is loaded");
+				var oNestedRouter = oNestedComponent.getRouter();
+				var oNestedHashChanger = oNestedRouter.getHashChanger();
+
+				assert.equal(oNestedHashChanger.getHash(), oNestedRouter.getURL("product", {id: sId}));
+
 			});
 		}.bind(this));
 	});
@@ -3666,7 +3708,6 @@ sap.ui.define([
 
 	QUnit.module("Routing Nested Components", {
 		beforeEach: function() {
-			this.oEventProviderStub = sinon.stub(EventProvider.prototype.oEventPool, "returnObject");
 			this.oTitleChangedSpy = sinon.spy();
 			hasher.setHash("");
 
@@ -3679,7 +3720,6 @@ sap.ui.define([
 		},
 		afterEach: function() {
 			this.oParentComponent.destroy();
-			this.oEventProviderStub.restore();
 			this.oTitleChangedSpy.resetHistory();
 		}
 	});
@@ -3906,11 +3946,7 @@ sap.ui.define([
 
 	QUnit.module("Configuration of title propagation", {
 		beforeEach: function() {
-			this.oEventProviderStub = sinon.stub(EventProvider.prototype.oEventPool, "returnObject");
 			hasher.setHash("");
-		},
-		afterEach: function() {
-			this.oEventProviderStub.restore();
 		}
 	});
 

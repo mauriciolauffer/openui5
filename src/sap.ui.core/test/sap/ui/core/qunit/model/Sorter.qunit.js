@@ -8,6 +8,9 @@ sap.ui.define([
 	var sDefaultLanguage = Configuration.getLanguage();
 
 	QUnit.module("sap.ui.model.Sorter", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach : function () {
 			Configuration.setLanguage("en-US");
 		},
@@ -19,7 +22,9 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.test("defaultComparator: localeCompare with language tag", function (assert) {
-		this.mock(Configuration).expects("getLanguageTag").withExactArgs().returns("foo");
+		var oConfigurationMock = this.mock(Configuration);
+
+		oConfigurationMock.expects("getLanguageTag").withExactArgs().returns("foo");
 		this.mock(String.prototype).expects("localeCompare")
 			.withExactArgs("~b", "foo")
 			.on("~a")
@@ -27,6 +32,9 @@ sap.ui.define([
 
 		// code under test
 		assert.strictEqual(Sorter.defaultComparator("~a", "~b"), "bar");
+
+		// Otherwise, the call in "afterEach" leads to an error.
+		oConfigurationMock.verify();
 	});
 
 	//*********************************************************************************************

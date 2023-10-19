@@ -65,7 +65,7 @@
 				</table>
 			</div>
 
-			<h4 id="objectGroupProperties">ObjectGroup Properties</h4>
+			<div id="objectGroupProperties" class="boldBlock">ObjectGroup Properties</div>
 			<div class="tableWrapper">
 				<table>
 					<tr>
@@ -150,7 +150,7 @@
 				</table>
 			</div>
 
-			<h4 id="objectGroupItemProperties">ObjectGroupItem Properties</h4>
+			<div id="objectGroupItemProperties" class="boldBlock">ObjectGroupItem Properties</div>
 			<div class="tableWrapper">
 				<table>
 					<tr>
@@ -177,7 +177,11 @@
 								<li>"IconGroup" (experimental since 1.100) - see <a href="#iconGroupProperties">Additional Properties for ObjectGroupItem of type IconGroup</a></li>
 								<li>"ComboBox" (experimental since 1.104) - see <a href="#comboBoxProperties">Additional Properties for ObjectGroupItem of type ComboBox</a></li>
 								<li>"TextArea" (experimental since 1.104) - see <a href="#textAreaProperties">Additional Properties for ObjectGroupItem of type TextArea</a></li>
+								<li>"Input" (experimental since 1.112) - see <a href="#inputProperties">Additional Properties for ObjectGroupItem of type Input</a></li>
+								<li>"Duration" (experimental since 1.114) - see <a href="#durationProperties">Additional Properties for ObjectGroupItem of type Duration</a></li>
 								<li>"RatingIndicator" (experimental since 1.111) - see <a href="#ratingIndicatorProperties">Additional Properties for ObjectGroupItem of type RatingIndicator</a></li>
+								<li>"Image" (experimental since 1.112) - see <a href="#imageProperties">Additional Properties for ObjectGroupItem of type Image</a></li>
+								<li>"DateRange" (experimental since 1.115) - see <a href="#dateRangeProperties">Additional Properties for ObjectGroupItem of type DateRange</a></li>
 							</ul>
 						</td>
 						<td>1.15.0</td>
@@ -221,10 +225,19 @@
 						<td>1.25.0</td>
 						<td>1.81</td>
 					</tr>
+					<tr>
+						<td>showColon</td>
+						<td>boolean</td>
+						<td>true</td>
+						<td>No</td>
+						<td>Determines if a colon will be shown next to the label.</td>
+						<td>1.39.0</td>
+						<td>1.115</td>
+					</tr>
 				</table>
 			</div>
 
-			<h4 id="defaultProperties">Additional Properties for ObjectGroupItem of type Default</h4>
+			<div id="defaultProperties" class="boldBlock">Additional Properties for ObjectGroupItem of type Default</div>
 			<div class="tableWrapper">
 				<table>
 					<tr>
@@ -268,7 +281,7 @@
 				</table>
 			</div>
 
-			<h4 id="numericDataProperties">Additional Properties for ObjectGroupItem of type NumericData</h4>
+			<div id="numericDataProperties" class="boldBlock">Additional Properties for ObjectGroupItem of type NumericData</div>
 			<div class="tableWrapper">
 				<table>
 					<tr>
@@ -320,7 +333,7 @@
 				</table>
 			</div>
 
-			<h4 id="statusProperties">Additional Properties for ObjectGroupItem of type Status</h4>
+			<div id="statusProperties" class="boldBlock">Additional Properties for ObjectGroupItem of type Status</div>
 			<div class="tableWrapper">
 				<table>
 					<tr>
@@ -351,14 +364,22 @@
 						<td>showStateIcon</td>
 						<td>boolean</td>
 						<td>No</td>
-						<td>Defines if a default state icon is shown</td>
+						<td>Defines if a state icon is shown.</td>
 						<td>1.50.0</td>
 						<td>1.110</td>
+					</tr>
+					<tr>
+						<td>customStateIcon</td>
+						<td>string</td>
+						<td>No</td>
+						<td>The custom state icon. If it is set, then "showStateIcon" property should be set to true.</td>
+						<td>1.53.0</td>
+						<td>1.113</td>
 					</tr>
 				</table>
 			</div>
 
-			<h4 id="iconGroupProperties">Additional Properties for ObjectGroupItem of type IconGroup</h4>
+			<div id="iconGroupProperties" class="boldBlock">Additional Properties for ObjectGroupItem of type IconGroup</div>
 			<div class="tableWrapper">
 				<table>
 					<tr>
@@ -399,7 +420,7 @@
 				</table>
 			</div>
 
-			<h4 id="iconGroupTemplate">IconGroupTemplate</h4>
+			<div id="iconGroupTemplate" class="boldBlock">IconGroupTemplate</div>
 			<div class="tableWrapper">
 				<table>
 					<tr>
@@ -429,7 +450,7 @@
 				</table>
 			</div>
 
-			<h4 id="iconGroupIconApi">IconGroupIcon</h4>
+			<div id="iconGroupIconApi" class="boldBlock">IconGroupIcon</div>
 			<div class="tableWrapper">
 				<table>
 					<tr>
@@ -470,7 +491,7 @@
 				</table>
 			</div>
 
-			<h4 id="iconApi">Icon Properties</h4>
+			<div id="iconApi" class="boldBlock">Icon Properties</div>
 			<div class="tableWrapper">
 				<table>
 					<tr>
@@ -551,7 +572,7 @@
 				</table>
 			</div>
 
-			<h4 id="mainIndicatorProperties">MainIndicator Properties</h4>
+			<div id="mainIndicatorProperties" class="boldBlock">MainIndicator Properties</div>
 			<div class="tableWrapper">
 				<table>
 					<tr>
@@ -611,9 +632,7 @@
 				</table>
 			</div>
 
-
-
-			<h4 id="comboBoxProperties">Additional Properties for ObjectGroupItem of type ComboBox (experimental since 1.104)</h4>
+			<div id="comboBoxProperties" class="boldBlock">Additional Properties for ObjectGroupItem of type ComboBox (experimental since 1.104)</div>
 			<div>
 				Check samples on how to submit a form <a href="../../../index.html#/explore/object/formWithExtension" target="_parent">with extension</a> or <a href="../../../index.html#/explore/object/formWithExtension" target="_parent">with action handlers</a>.
 			</div>
@@ -688,7 +707,7 @@
 				</table>
 			</div>
 
-			<h5 id="comboBoxItemBindingInfo">ComboBoxItemBindingInfo Properties</h5>
+			<div id="comboBoxItemBindingInfo" class="boldBlock">ComboBoxItemBindingInfo Properties</div>
 			<div class="tableWrapper">
 				<table>
 					<tr>
@@ -741,7 +760,7 @@
 				</table>
 			</div>
 
-			<h4 id="textAreaProperties">Additional Properties for ObjectGroupItem of type TextArea (experimental since 1.104)</h4>
+			<div id="textAreaProperties" class="boldBlock">Additional Properties for ObjectGroupItem of type TextArea (experimental since 1.104)</div>
 			<div class="tableWrapper">
 				<table>
 					<tr>
@@ -795,7 +814,317 @@
 				</table>
 			</div>
 
-			<h4 id="validationsProperties">ObjectGroupItemValidation Properties</h4>
+			<div id="inputProperties" class="boldBlock">Additional Properties for ObjectGroupItem of type Input (experimental since 1.112)</div>
+			<div class="tableWrapper">
+				<table>
+					<tr>
+						<th>Property</th>
+						<th>Type</th>
+						<th>Required</th>
+						<th>Description</th>
+						<th>Schema Version</th>
+						<th>Since</th>
+					</tr>
+					<tr>
+						<td>id</td>
+						<td>string</td>
+						<td>Yes</td>
+						<td>Defines the ID of the form input. Will be used in the submitted payload.</td>
+						<td>1.52</td>
+						<td>1.112</td>
+					</tr>
+					<tr>
+						<td>value</td>
+						<td>string</td>
+						<td>No</td>
+						<td>Defines the initial value for the input.</td>
+						<td>1.52</td>
+						<td>1.112</td>
+					</tr>
+					<tr>
+						<td>placeholder</td>
+						<td>string</td>
+						<td>No</td>
+						<td>Defines a short hint intended to aid the user with data entry when there is no value set.</td>
+						<td>1.52</td>
+						<td>1.112</td>
+					</tr>
+					<tr>
+						<td>validations</td>
+						<td><a href="#validationsProperties">ObjectGroupItemValidation[]</a></td>
+						<td>No</td>
+						<td>Defines the user input validations.</td>
+						<td>1.52</td>
+						<td>1.112</td>
+					</tr>
+				</table>
+			</div>
+
+			<div id="durationProperties" class="boldBlock">Additional Properties for ObjectGroupItem of type Duration (experimental since 1.114)</div>
+			<div class="tableWrapper">
+				<table>
+					<tr>
+						<th>Property</th>
+						<th>Type</th>
+						<th>Required</th>
+						<th>Description</th>
+						<th>Schema Version</th>
+						<th>Since</th>
+					</tr>
+					<tr>
+						<td>id</td>
+						<td>string</td>
+						<td>Yes</td>
+						<td>Defines the ID of the form duration input. Will be used in the submitted payload.</td>
+						<td>1.54</td>
+						<td>1.114</td>
+					</tr>
+					<tr>
+						<td>value</td>
+						<td>string</td>
+						<td>No</td>
+						<td>
+							Defines the initial value for the duration input. It should be in <a href="https://wikipedia.org/wiki/ISO_8601#Durations" target="_blank" rel="noopener noreferrer">ISO 8601 duration format</a>.
+							For example "PT10H30M" is 10 hours and 30 minutes.
+							<br>
+							The following restrictions apply:
+							<ul>
+								<li>Values that contain date part are not supported</li>
+								<li>Values that contain seconds are not supported</li>
+								<li>Values with decimal fractions are not supported</li>
+								<li>Hours can be in the range [0-24] and minutes in [0-59]</li>
+							</ul>
+						</td>
+						<td>1.54</td>
+						<td>1.114</td>
+					</tr>
+					<tr>
+						<td>placeholder</td>
+						<td>string</td>
+						<td>No</td>
+						<td>Defines a short hint intended to aid the user with data entry when there is no value set.</td>
+						<td>1.54</td>
+						<td>1.114</td>
+					</tr>
+					<tr>
+						<td>validations</td>
+						<td><a href="#validationsProperties">ObjectGroupItemValidation[]</a></td>
+						<td>No</td>
+						<td>Defines the user duration-input validations.</td>
+						<td>1.54</td>
+						<td>1.114</td>
+					</tr>
+				</table>
+			</div>
+
+			<div id="ratingIndicatorProperties" class="boldBlock">Additional Properties for ObjectGroupItem of type RatingIndicator (experimental since 1.111)</div>
+			<div class="tableWrapper">
+				<table>
+					<tr>
+						<th>Property</th>
+						<th>Type</th>
+						<th>Default Value</th>
+						<th>Required</th>
+						<th>Description</th>
+						<th>Schema Version</th>
+						<th>Since</th>
+					</tr>
+					<tr>
+						<td>maxValue</td>
+						<td>number</td>
+						<td>5</td>
+						<td>No</td>
+						<td>The number of displayed rating symbols.</td>
+						<td>1.51</td>
+						<td>1.111</td>
+					</tr>
+					<tr>
+						<td>value</td>
+						<td>number</td>
+						<td>0</td>
+						<td>No</td>
+						<td>The indicated value of the rating.</td>
+						<td>1.51</td>
+						<td>1.111</td>
+					</tr>
+					<tr>
+						<td>visualMode</td>
+						<td><a data-demokit-href="#/api/sap.m.RatingIndicatorVisualMode" target="_blank">sap.m.RatingIndicatorVisualMode</a></td>
+						<td>"Half"</td>
+						<td>No</td>
+						<td>Defines how float values are visualized: Full (values are rounded to the nearest integer value (e.g. 1.7 -> 2)) or  Half (values are rounded to the nearest half-increment value (e.g. 1.7 -> 1.5))</td>
+						<td>1.51</td>
+						<td>1.111</td>
+					</tr>
+				</table>
+			</div>
+
+			<div id="imageProperties" class="boldBlock">Additional Properties for ObjectGroupItem of type Image (experimental since 1.112)</div>
+			<div class="tableWrapper">
+				<table>
+					<tr>
+						<th>Property</th>
+						<th>Type</th>
+						<th>Default Value</th>
+						<th>Required</th>
+						<th>Description</th>
+						<th>Schema Version</th>
+						<th>Since</th>
+					</tr>
+					<tr>
+						<td>src</td>
+						<td>string</td>
+						<td></td>
+						<td>Yes</td>
+						<td>Image source URL.</td>
+						<td>1.52</td>
+						<td>1.112</td>
+					</tr>
+					<tr>
+						<td>аlt</td>
+						<td>string</td>
+						<td></td>
+						<td>Yes</td>
+						<td>Provides alternative text that is used in case the image is not available, or cannot be displayed.</td>
+						<td>1.52</td>
+						<td>1.112</td>
+					</tr>
+					<tr>
+						<td>fullWidth</td>
+						<td>boolean</td>
+						<td>false</td>
+						<td>No</td>
+						<td>Defines if the image will take the full width of the group, including the paddings. If set to false there will be a padding. For best result use together with "alignment": "Stretched" for the group.</td>
+						<td>1.52</td>
+						<td>1.112</td>
+					</tr>
+				</table>
+			</div>
+
+			<div id="dateRangeProperties" class="boldBlock">Additional Properties for ObjectGroupItem of type DateRange (experimental since 1.115)</div>
+			<div class="tableWrapper">
+				<table>
+					<tr>
+						<th>Property</th>
+						<th>Type</th>
+						<th>Default Value</th>
+						<th>Required</th>
+						<th>Description</th>
+						<th>Schema Version</th>
+						<th>Since</th>
+					</tr>
+					<tr>
+						<td>id</td>
+						<td>string</td>
+						<td>Yes</td>
+						<td>Defines the ID of the form date range input. Will be used in the submitted payload.</td>
+						<td>1.55</td>
+						<td>1.115</td>
+					</tr>
+					<tr>
+						<td>value</td>
+						<td><a href="#dateRangeValueProperties">DateRangeValue</a></td>
+						<td>No</td>
+						<td>Defines the initial value for the date range input.</td>
+						<td>1.55</td>
+						<td>1.115</td>
+					</tr>
+					<tr>
+						<td>validations</td>
+						<td><a href="#validationsProperties">ObjectGroupItemValidation[]</a></td>
+						<td>No</td>
+						<td>Defines the user input validations.</td>
+						<td>1.55</td>
+						<td>1.115</td>
+					</tr>
+				</table>
+			</div>
+
+			<div id="dateRangeValueProperties" class="boldBlock">DateRangeValue Properties</div>
+			<div class="tableWrapper">
+				<table>
+					<tr>
+						<th>Property</th>
+						<th>Type</th>
+						<th>Default Value</th>
+						<th>Required</th>
+						<th>Description</th>
+						<th>Schema Version</th>
+						<th>Since</th>
+					</tr>
+					<tr>
+						<td>option</td>
+						<td>string</td>
+						<td></td>
+						<td>Yes</td>
+						<td>The date range option. For now only "date" option is available.
+						<td>1.55</td>
+						<td>1.115</td>
+					</tr>
+					<tr>
+						<td>values</td>
+						<td>array</td>
+						<td></td>
+						<td>Yes</td>
+						<td>
+							Values to initialize the option. For the "date" option an array with a single element should be provided.
+							It can be every valid JavaScript Date format like timestamp or date string.
+						</td>
+						<td>1.55</td>
+						<td>1.155</td>
+					</tr>
+				</table>
+			</div>
+
+			<p>The following values are available in the "form" model for item of type "DateRange":</p>
+			<table>
+				<tr>
+					<th>Path</th>
+					<th>Description</th>
+				</tr>
+				<tr>
+					<td>{form>/idOfTheItem/value/option}</td>
+					<td>The current option.</td>
+				</tr>
+				<tr>
+					<td>{form>/idOfTheItem/value/values}</td>
+					<td>The current option values.</td>
+				</tr>
+				<tr>
+					<td>{form>/idOfTheItem/range/start}</td>
+					<td>The start date of the range in ISO 8601 format in UTC time zone.</td>
+				</tr>
+				<tr>
+					<td>{form>/idOfTheItem/range/end}</td>
+					<td>The end date of the range in ISO 8601 format in UTC time zone.</td>
+				</tr>
+				<tr>
+					<td>{form>/idOfTheItem/range/startLocalDate}</td>
+					<td>The start date of the range in short ISO 8601 date format in the local time zone. Use this property if you want to select a single date without reference to the time of the day.</td>
+				</tr>
+				<tr>
+					<td>{form>/idOfTheItem/range/endLocalDate}</td>
+					<td>The end date of the range in short ISO 8601 date format in the local time zone.</td>
+				</tr>
+				<tr>
+					<td>{form>/idOfTheItem/rangeOData/start}</td>
+					<td>The start date of the range in ISO 8601 format in UTC time zone. It is in the boundaries of Edm.DateTime type of the OData protocol.</td>
+				</tr>
+				<tr>
+					<td>{form>/idOfTheItem/rangeOData/end}</td>
+					<td>The end date of the range in ISO 8601 format in UTC time zone. It is in the boundaries of Edm.DateTime type of the OData protocol.</td>
+				</tr>
+				<tr>
+					<td>{form>/idOfTheItem/range/startLocalDate}</td>
+					<td>The start date of the range in short ISO 8601 date format in the local time zone. It is in the boundaries of Edm.DateTime type of the OData protocol.</td>
+				</tr>
+				<tr>
+					<td>{form>/idOfTheItem/range/endLocalDate}</td>
+					<td>The end date of the range in short ISO 8601 date format in the local time zone. It is in the boundaries of Edm.DateTime type of the OData protocol.</td>
+				</tr>
+			</table>
+
+			<div id="validationsProperties" class="boldBlock">ObjectGroupItemValidation Properties</div>
 			<div class="tableWrapper">
 				<table>
 					<tr>
@@ -892,49 +1221,6 @@
 					</tr>
 				</table>
 			</div>
-
-			<h4 id="ratingIndicatorProperties">RatingIndicator Properties</h4>
-			<div class="tableWrapper">
-				<table>
-					<tr>
-						<th>Property</th>
-						<th>Type</th>
-						<th>Default Value</th>
-						<th>Required</th>
-						<th>Description</th>
-						<th>Schema Version</th>
-						<th>Since</th>
-					</tr>
-					<tr>
-						<td>maxValue</td>
-						<td>number</td>
-						<td>5</td>
-						<td>No</td>
-						<td>The number of displayed rating symbols.</td>
-						<td>1.51</td>
-						<td>1.111</td>
-					</tr>
-					<tr>
-						<td>value</td>
-						<td>number</td>
-						<td>0</td>
-						<td>No</td>
-						<td>The indicated value of the rating.</td>
-						<td>1.51</td>
-						<td>1.111</td>
-					</tr>
-					<tr>
-						<td>visualMode</td>
-						<td><a data-demokit-href="#/api/sap.m.RatingIndicatorVisualMode" target="_blank">sap.m.RatingIndicatorVisualMode</a></td>
-						<td>"Half"</td>
-						<td>No</td>
-						<td>Defines how float values are visualized: Full (values are rounded to the nearest integer value (e.g. 1.7 -> 2)) or  Half (values are rounded to the nearest half value (e.g. 1.7 -> 1.5))</td>
-						<td>1.51</td>
-						<td>1.111</td>
-					</tr>
-				</table>
-			</div>
-
 
 			<h2 id="example">Example</h2>
 			<p>Define the type and data for the card:
@@ -1198,13 +1484,6 @@
 			<p>
 				The user input provided in the form fields can be validated. More info <a href="../../../index.html#/learn/features/inputValidation" target="_parent">here</a>.
 			</p>
-		</div>
-		<div class="navigation">
-			<h4>Table of Contents</h4>
-			<div><a href="#overview">Object Card</a></div>
-			<div><a href="#properties">Properties</a></div>
-			<div><a href="#example">Example</a></div>
-			<div><a href="#validate">Validate Input Fields</a></div>
 		</div>
 	</div>
 </body>

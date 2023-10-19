@@ -5,6 +5,7 @@ sap.ui.define([
 	"sap/ui/core/Core",
 	"sap/ui/core/Element",
 	"sap/ui/core/library",
+	"sap/ui/core/theming/Parameters",
 	"sap/ui/qunit/QUnitUtils",
 	"sap/ui/events/KeyCodes",
 	"sap/ui/thirdparty/jquery",
@@ -19,6 +20,7 @@ sap.ui.define([
 	Core,
 	Element,
 	coreLibrary,
+	Parameters,
 	QUnitUtils,
 	KeyCodes,
 	jQuery,
@@ -43,9 +45,10 @@ sap.ui.define([
 	});
 	oApp.addPage(oPage);
 
-	function getNavigationList(selectedKey) {
+	function getNavigationList(selectedKey, collapsed) {
 		return new NavigationList({
 			selectedKey: selectedKey,
+			expanded: !collapsed,
 			items: [
 				new NavigationListItem({
 					text: 'Root 1',
@@ -346,6 +349,48 @@ sap.ui.define([
 		oNL.destroy();
 	});
 
+	QUnit.test("Selection Indicator", function (assert) {
+		var deferred = new jQuery.Deferred();
+		var sExpectedDisplay = Parameters.get({
+			name: [ "_sap_tnt_NavigationList_SelectionIndicatorDisplay"],
+			callback: function (_sExpectedDisplay) {
+				sExpectedDisplay = _sExpectedDisplay;
+				deferred.resolve();
+			}
+		});
+
+		if (sExpectedDisplay !== undefined) {
+			deferred.resolve();
+		}
+
+		return deferred.then(function () {
+			// Arrange
+			var oItem = new NavigationListItem({
+					text: "item"
+				}),
+				oNL = new NavigationList({
+					items: [
+						oItem
+					]
+				});
+			oNL.placeAt("qunit-fixture");
+			Core.applyChanges();
+
+			// Assert
+			assert.strictEqual(getComputedStyle(oItem.getDomRef().querySelector(".sapTntNavLISelectionIndicator")).display, "none", "Selection indicator shouldn't be displayed on non-selected item");
+
+			// Act
+			oItem.$().trigger("tap");
+			Core.applyChanges();
+
+			// Assert
+			assert.strictEqual(getComputedStyle(oItem.getDomRef().querySelector(".sapTntNavLISelectionIndicator")).display, sExpectedDisplay, "Selection indicator should be displayed on selected item based on the theme");
+
+			// Clean up
+			oNL.destroy();
+		});
+	});
+
 	QUnit.module("Lifecycle");
 
 	QUnit.test("Popover is destroyed when NavigationList is destroyed", function (assert) {
@@ -414,6 +459,25 @@ sap.ui.define([
 		this.navigationList.$().find('li.sapTntNavLIGroupItem.sapTntNavLIItemDisabled').each(function (index, item) {
 			assert.ok(item.getAttribute('tabindex') === null, 'Disabled ' + jQuery(item).text() + ' does not have a tab index.');
 		});
+	});
+
+	QUnit.test('Focus', function (assert) {
+		var oFirstItem = this.navigationList.getItems()[0];
+		oFirstItem.getDomRef().getElementsByClassName("sapTntNavLIItem ")[0].focus();
+		this.clock.tick(500);
+		assert.strictEqual(document.activeElement.title, "Root 1", "The first item is focused");
+
+		var oDialog = new sap.m.Dialog();
+		oFirstItem.attachSelect(function(){oDialog.open();});
+		oFirstItem.fireSelect();
+		Core.applyChanges();
+		this.clock.tick(500);
+		assert.ok(document.activeElement.classList.contains("sapMDialog"), "The dialog is focused");
+
+		oDialog.close();
+		Core.applyChanges();
+		this.clock.tick(500);
+		assert.strictEqual(document.activeElement.title, "Root 1", "The first item is focused again");
 	});
 
 	QUnit.test('ARIA attributes', function (assert) {
@@ -487,8 +551,11 @@ sap.ui.define([
 	});
 
 	QUnit.test('Accessibility Text', function (assert) {
-		var invisibleText = NavigationListItem._getInvisibleText();
-		assert.equal(invisibleText.getText(), '', "accessibility text is initially empty");
+		var groupItem = this.navigationList.getItems()[0];
+		var invisibleTextIdInitial = groupItem.getDomRef().getElementsByClassName("sapTntNavLIItem ")[0].getAttribute("aria-labelledby");
+		var invisibleTextInitial = document.getElementById(invisibleTextIdInitial);
+
+		assert.notOk(invisibleTextInitial, "accessibility text is initially empty");
 
 		var groupItem = this.navigationList.getItems()[0];
 
@@ -496,7 +563,10 @@ sap.ui.define([
 			srcControl: groupItem
 		});
 
-		assert.equal(invisibleText.getText(), 'Tree Item  Root 1 1 of 5', "accessibility text is correct");
+		var invisibleTextId = groupItem.getDomRef().getElementsByClassName("sapTntNavLIItem ")[0].getAttribute("aria-labelledby");
+		var invisibleText = document.getElementById(invisibleTextId);
+
+		assert.equal(invisibleText.innerText, 'Tree Item  Root 1 1 of 5', "accessibility text is correct");
 
 		var secondLevelItem = groupItem.getItems()[2];
 
@@ -507,7 +577,7 @@ sap.ui.define([
 			srcControl: secondLevelItem
 		});
 
-		assert.equal(invisibleText.getText(), 'Tree Item Selected Child 3 3 of 3', "accessibility text is correct");
+		assert.equal(invisibleText.innerText, 'Tree Item Selected Child 3 3 of 3', "accessibility text is correct");
 
 		this.navigationList.setExpanded(false);
 		Core.applyChanges();
@@ -516,7 +586,7 @@ sap.ui.define([
 			srcControl: groupItem
 		});
 
-		assert.equal(invisibleText.getText(), '', "accessibility text is empty");
+		assert.equal(invisibleText.innerText, '', "accessibility text is empty");
 	});
 
 	QUnit.test("Focus is prevented when clicking on <a> element", function (assert) {
@@ -888,7 +958,6 @@ sap.ui.define([
 		// wait 500ms
 		this.clock.tick(500);
 
-
 		var oList = this.navigationList._popover.getContent(),
 			oInnerListItem = oList[0].getItems()[0].getItems()[0],
 			$InnerListItem = oInnerListItem.$()[0],
@@ -939,6 +1008,112 @@ sap.ui.define([
 
 		// Assert
 		assert.strictEqual(window.location.href, sCurrHref, "Default action when clicking on anchor tag is prevented.");
+	});
+
+	QUnit.module("Overflow behavior", {
+		beforeEach: function () {
+			this.navigationList = getNavigationList(undefined, true);
+			oPage.addContent(this.navigationList);
+
+			Core.applyChanges();
+		},
+		afterEach: function () {
+			this.navigationList.destroy();
+			this.navigationList = null;
+		}
+	});
+
+	QUnit.test("Resize", function (assert) {
+		var navListDomRef = this.navigationList.getDomRef(),
+			overflowItemDomRef = navListDomRef.querySelector(".sapTnTNavLIOverflow");
+
+		assert.ok(overflowItemDomRef, "Overflow item is created");
+		assert.ok(overflowItemDomRef.classList.contains("sapTnTNavLIHiddenItem"), "Overflow item is hidden");
+		assert.notOk(navListDomRef.querySelectorAll("li.sapTnTNavLIHiddenItem:not(.sapTnTNavLIOverflow)").length, "there are no hidden items");
+
+		navListDomRef.style.height = "100px";
+		this.navigationList._updateOverflowItems();
+
+		overflowItemDomRef = navListDomRef.querySelector(".sapTnTNavLIOverflow");
+
+		assert.ok(overflowItemDomRef, "Overflow item is created");
+		assert.notOk(overflowItemDomRef.classList.contains("sapTnTNavLIHiddenItem"), "Overflow item is visible");
+
+		assert.strictEqual(navListDomRef.querySelectorAll("li.sapTnTNavLIHiddenItem:not(.sapTnTNavLIOverflow)").length, 4, "4 items are hidden");
+
+		navListDomRef.style.height = "500px";
+		this.navigationList._updateOverflowItems();
+
+		overflowItemDomRef = navListDomRef.querySelector(".sapTnTNavLIOverflow");
+
+		assert.ok(overflowItemDomRef.classList.contains("sapTnTNavLIHiddenItem"), "Overflow item is hidden");
+		assert.notOk(navListDomRef.querySelectorAll("li.sapTnTNavLIHiddenItem:not(.sapTnTNavLIOverflow)").length, "there are no hidden items");
+	});
+
+	QUnit.test("Selecting items", function (assert) {
+		var navListDomRef = this.navigationList.getDomRef(),
+			items = this.navigationList.getItems();
+
+		navListDomRef.style.height = "100px";
+		this.navigationList._updateOverflowItems();
+
+		assert.notOk(items[0].getDomRef().classList.contains("sapTnTNavLIHiddenItem"), "item 0 is visible");
+		assert.ok(items[2].getDomRef().classList.contains("sapTnTNavLIHiddenItem"), "item 2 is hidden");
+
+		this.navigationList._selectItem({ item: items[2]});
+
+		assert.ok(items[0].getDomRef().classList.contains("sapTnTNavLIHiddenItem"), "item 0 is hidden");
+		assert.notOk(items[2].getDomRef().classList.contains("sapTnTNavLIHiddenItem"), "item 2 is visible");
+	});
+
+	QUnit.test("Overflow menu", function (assert) {
+		var navListDomRef = this.navigationList.getDomRef(),
+			items = this.navigationList.getItems(),
+			overflowItemDomRef = navListDomRef.querySelector(".sapTnTNavLIOverflow"),
+			menu,
+			menuDomRef;
+
+		navListDomRef.style.height = "100px";
+		this.navigationList._updateOverflowItems();
+
+		QUnitUtils.triggerEvent("tap", overflowItemDomRef);
+
+		menuDomRef = document.querySelector(".sapUiMnu");
+		menu = Element.closestTo(menuDomRef);
+
+		menu.getParent().getItems().forEach(function (item, index) {
+			assert.strictEqual(item._navItem, items[index + 1], "correct menu item is created");
+
+			item.getItems().forEach(function(subItem, subItemIndex) {
+				assert.strictEqual(subItem._navItem, item._navItem.getItems()[subItemIndex], "correct menu sub item is created");
+			});
+		});
+
+		assert.ok(menuDomRef, "overflow menu is shown");
+
+		QUnitUtils.triggerEvent("click", document.querySelector(".sapUiMnuItm:nth-child(2)"));
+
+		Core.applyChanges();
+		this.clock.tick(500);
+
+		assert.notOk(document.querySelector(".sapUiMnu"), "overflow menu is destroyed");
+
+		assert.ok(items[0].getDomRef().classList.contains("sapTnTNavLIHiddenItem"), "item 0 is hidden");
+		assert.notOk(items[2].getDomRef().classList.contains("sapTnTNavLIHiddenItem"), "item 2 is visible");
+
+		this.navigationList._selectItem({ item: items[4]});
+
+		menu = this.navigationList._createOverflowMenu();
+
+		menu.getItems().forEach(function (item, index) {
+			assert.strictEqual(item._navItem, items[index], "correct menu item is created");
+
+			item.getItems().forEach(function(subItem, subItemIndex) {
+				assert.strictEqual(subItem._navItem, item._navItem.getItems()[subItemIndex], "correct menu sub item is created");
+			});
+		});
+
+		menu.destroy();
 	});
 
 	return waitForThemeApplied();

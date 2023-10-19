@@ -26,29 +26,6 @@ sap.ui.define([
 	}
 
 	/*
-	 * Returns the formatter. Creates it lazily.
-	 *
-	 * @param {sap.ui.model.odata.type.DateTimeBase} oType
-	 *   The type instance
-	 * @returns {sap.ui.core.format.DateFormat}
-	 *   The formatter
-	 */
-	function getFormatter(oType) {
-		var oFormatOptions;
-
-		if (!oType.oFormat) {
-			oFormatOptions = extend({strictParsing : true}, oType.oFormatOptions);
-			if (isDateOnly(oType)) {
-				oFormatOptions.UTC = true;
-				oType.oFormat = DateFormat.getDateInstance(oFormatOptions);
-			} else {
-				oType.oFormat = DateFormat.getDateTimeInstance(oFormatOptions);
-			}
-		}
-		return oType.oFormat;
-	}
-
-	/*
 	 * Sets the constraints.
 	 *
 	 * @param {sap.ui.model.odata.type.DateTimeBase} oType
@@ -128,6 +105,41 @@ sap.ui.define([
 		});
 
 	/**
+	 * Returns a date object for a given model value.
+	 *
+	 * @param {Date|module:sap/ui/core/date/UI5Date|string|null} vModelValue
+	 *   The model value of this type. Can be retrieved via this type's <code>getModelValue</code> function.
+	 * @returns {Date|module:sap/ui/core/date/UI5Date|null}
+	 *   An instance of <code>Date</code> for which the local getters <code>getDate()</code>, <code>getMonth()</code>,
+	 *   <code>getFullYear()</code>, <code>getHours()</code>, <code>getMinutes()</code>, <code>getSeconds()</code>, and
+	 *   <code>getMilliseconds()</code> can be used to get the corresponding day, month, year, hours, minutes, seconds,
+	 *   and milliseconds of the given model value
+	 *
+	 * @since 1.113.0
+	 * @private
+	 * @ui5-restricted sap.fe, sap.suite.ui.generic.template, sap.ui.comp, sap.ui.generic
+	 */
+	DateTimeBase.prototype.getDateValue = function (vModelValue) {
+		var oResult;
+
+		if (!vModelValue) {
+			return null;
+		}
+
+		oResult = UI5Date.getInstance(vModelValue);
+		if (isDateOnly(this)) {
+			oResult.setFullYear(oResult.getUTCFullYear(), oResult.getUTCMonth(), oResult.getUTCDate());
+			oResult.setHours(0, 0, 0, 0);
+		} else if (this.oFormatOptions && this.oFormatOptions.UTC) {
+			oResult.setFullYear(oResult.getUTCFullYear(), oResult.getUTCMonth(), oResult.getUTCDate());
+			oResult.setHours(oResult.getUTCHours(), oResult.getUTCMinutes(),
+				oResult.getUTCSeconds(), oResult.getUTCMilliseconds());
+		}
+
+		return oResult;
+	};
+
+	/**
 	 * Formats the given value to the given target type.
 	 *
 	 * @param {Date} oValue
@@ -153,17 +165,38 @@ sap.ui.define([
 		}
 		switch (this.getPrimitiveType(sTargetType)) {
 			case "any":
+				return oValue;
 			case "object":
+				if (isDateOnly(this)) {
+					return this.getDateValue(oValue);
+				}
 				return oValue;
 			case "string":
 				if (!(oValue instanceof Date)) {
 					throw new FormatException("Illegal " + this.getName() + " value: " + oValue);
 				}
-				return getFormatter(this).format(oValue);
+				return this.getFormat().format(oValue);
 			default:
 				throw new FormatException("Don't know how to format " + this.getName() + " to "
 					+ sTargetType);
 		}
+	};
+
+	/**
+	 * @override
+	 */
+	DateTimeBase.prototype.getFormat = function () {
+		if (!this.oFormat) {
+			var oFormatOptions = extend({strictParsing : true}, this.oFormatOptions);
+			if (isDateOnly(this)) {
+				oFormatOptions.UTC = true;
+				this.oFormat = DateFormat.getDateInstance(oFormatOptions);
+			} else {
+				this.oFormat = DateFormat.getDateTimeInstance(oFormatOptions);
+			}
+		}
+
+		return this.oFormat;
 	};
 
 	/**
@@ -177,7 +210,8 @@ sap.ui.define([
 	DateTimeBase.prototype._getErrorMessage = function () {
 		var iFullYear = UI5Date.getInstance().getFullYear(),
 			oDate = isDateOnly(this)
-				? new Date(Date.UTC(iFullYear, 11, 31)) // UTC
+				// no need to use UI5Date.getInstance as only the UTC timestamp is used
+				? new Date(Date.UTC(iFullYear, 11, 31))
 				: UI5Date.getInstance(iFullYear, 11, 31, 23, 59, 58), // configured time zone
 			sText = isDateOnly(this) ? "EnterDate" : "EnterDateTime",
 			oResourceBundle = sap.ui.getCore().getLibraryResourceBundle();
@@ -213,9 +247,12 @@ sap.ui.define([
 		}
 		switch (this.getPrimitiveType(sSourceType)) {
 			case "object":
+				if (isDateOnly(this)) {
+					return this._getModelValue(vValue);
+				}
 				return vValue;
 			case "string":
-				oResult = getFormatter(this).parse(vValue);
+				oResult = this.getFormat().parse(vValue);
 				if (!oResult) {
 					throw new ParseException(this._getErrorMessage());
 				}

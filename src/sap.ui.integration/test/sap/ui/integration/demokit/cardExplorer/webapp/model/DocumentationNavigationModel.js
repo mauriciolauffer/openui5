@@ -231,7 +231,7 @@ sap.ui.define([
 			},
 			{
 				title: 'Card Actions',
-				icon: 'action',
+				icon: 'sap-icon://action',
 				target: 'learnDetail',
 				key: 'actions',
 				items: [
@@ -250,6 +250,18 @@ sap.ui.define([
 						target: 'learnDetail',
 						key: 'custom',
 						experimental: true
+					},
+					{
+						title: 'ShowCard',
+						target: 'learnDetail',
+						key: 'showCard',
+						experimental: true
+					},
+					{
+						title: 'HideCard',
+						target: 'learnDetail',
+						key: 'hideCard',
+						experimental: true
 					}
 				]
 			},
@@ -257,7 +269,14 @@ sap.ui.define([
 				title: 'Card Bundle',
 				icon: 'sap-icon://attachment-zip-file',
 				target: 'learnDetail',
-				key: 'bundle'
+				key: 'bundle',
+				items: [
+					{
+						title: 'Component Preload',
+						target: 'learnDetail',
+						key: 'componentPreload'
+					}
+				]
 			},
 			{
 				title: 'Card Formatters',

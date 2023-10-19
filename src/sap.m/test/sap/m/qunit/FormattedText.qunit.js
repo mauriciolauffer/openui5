@@ -76,6 +76,19 @@ sap.ui.define([
 		setText("<span dir=\'rtl\'><bdi>123 456</bdi></span>");
 		$span = oFT.$().find("span");
 		assert.strictEqual($span.attr("dir"), "rtl", "span::dir is rendered");
+		setText('<span style="overflow-wrap: break-word;">' + sFT + '</span>');
+		$span = oFT.$().find("span");
+		assert.strictEqual($span[0].getAttribute("style"), "overflow-wrap: break-word; position: static !important;", "styles are properly semicolon separated");
+		setText('<span style="overflow-wrap: break-word; color: red;">' + sFT + '</span>');
+		$span = oFT.$().find("span");
+		assert.strictEqual($span[0].getAttribute("style"), "overflow-wrap: break-word; color: red; position: static !important;", "styles are properly semicolon separated");
+		setText('<span style="padding-inline-start: 15px; margin-block-start: 0px">' + sFT + '</span>');
+		$span = oFT.$().find("span");
+		assert.strictEqual($span[0].getAttribute("style"), "padding-inline-start: 15px; margin-block-start: 0px; position: static !important;", "styles are properly semicolon separated");
+		setText('<a style="color:red;position:absolute;">"' + sFT + '</a>');
+		assert.strictEqual($a[0].style.position, "static", "inline style for position is set to 'static'");
+		setText('<a style="position:fixed;">"' + sFT + '</a>');
+		assert.strictEqual($a[0].style.position, "static", "inline style for position is set to 'static'");
 	});
 
 	QUnit.test("css classes", function(assert) {
@@ -91,6 +104,10 @@ sap.ui.define([
 		setText('<a id="AAA" class="abc" style="color:red;" href="' +  sFT + '" target="_top">"' + sFT + '</a>');
 		$a = oFT.$().find("a");
 		assert.strictEqual($a.attr("class"), "sapMLnk abc", "a::class is rendered correctly");
+
+		setText('<a class="abc sapThemeText-asColor" style="color:red;" href="' +  sFT + '" target="_top">"' + sFT + '</a>');
+		$a = oFT.$().find("a");
+		assert.strictEqual($a.attr("class"), "sapMLnk abc sapThemeText-asColor", "a::class is rendered correctly");
 	});
 
 	QUnit.test("textDirection and textAlign properties", function(assert) {
@@ -217,17 +234,22 @@ sap.ui.define([
 	});
 
 	QUnit.test("Successful placeholder replacement with one existing link", function (assert) {
-		var sText = "My favorite site is %%1. I like it!",
-			sLink = this.getLinkOutput(1),
-			sExpected = sText.replace("%%1", sLink),
-			sControl;
+		// Prepare
+		this.oFT.placeAt("qunit-fixture");
+		oCore.applyChanges();
+		var aLinkRefs = this.oFT.getControls().map(function(oLink) {
+			return oLink.getDomRef();
+		});
 
-		this.oFT.setHtmlText(sText);
-		sControl = this.getControlOutput();
+		// Act
+		this.oFT.setHtmlText("My favorite sites are: <ul><li>%%1</li></ul>");
+		oCore.applyChanges();
 
-		// assert outputs (real ans expected)
-		assert.equal(sControl, sExpected, "The resulting output is as expected!");
-
+		// Assert
+		assert.strictEqual(aLinkRefs[0].style.display, "none", "The first link isn't displayed");
+		assert.strictEqual(aLinkRefs[0].parentElement.id, this.oFT.getId(), "The first link is rendered directly under the root element");
+		assert.notOk(aLinkRefs[1].style.display, "The second link is displayed");
+		assert.strictEqual(aLinkRefs[1].parentElement.tagName, "LI", "The second link DOM ref is replaced with the placeholder");
 	});
 
 	QUnit.test("Successful placeholder replacement with all existing link", function (assert) {
@@ -239,6 +261,7 @@ sap.ui.define([
 
 		this.oFT.setHtmlText(sText);
 		sControl = this.getControlOutput();
+		sControl = sControl.replaceAll(" style=\"position: static !important;\"", ""); // remove CSS position sanitizing
 
 		sText = sText.replace("%%0", sLink0);
 		sText = sText.replace("%%1", sLink1);
@@ -255,8 +278,6 @@ sap.ui.define([
 			sLink1 = this.getLinkOutput(1),
 			sLink2 = this.getLinkOutput(2),
 			sLink3 = this.getLinkOutput(3),
-			oSpyOriginal = this.spy(Log, "error"),
-			oSpyArgs,
 			sControl;
 
 		this.oFT.setHtmlText(sText);
@@ -269,11 +290,6 @@ sap.ui.define([
 
 		// assert outputs (real ans expected)
 		assert.notEqual(sControl, sText, "The resulting outputs is as expected!");
-
-		oSpyArgs = oSpyOriginal.args;
-		// assert error logging
-		assert.ok((oSpyOriginal.callCount === 1 && oSpyArgs[0] && oSpyArgs[0][0].substr(0, 37) === "Missing control for placeholder '%%3'"), "There is a proper error logged!");
-
 	});
 
 	QUnit.test("Placeholder replacement with 3 existing links and one of them tried to replace twice", function (assert) {
@@ -281,8 +297,6 @@ sap.ui.define([
 			sLink0 = this.getLinkOutput(0),
 			sLink1 = this.getLinkOutput(1),
 			sLink2 = this.getLinkOutput(2),
-			oSpyOriginal = this.spy(Log, "error"),
-			oSpyArgs,
 			sControl;
 
 		this.oFT.setHtmlText(sText);
@@ -294,13 +308,30 @@ sap.ui.define([
 
 		// assert outputs (real ans expected)
 		assert.notEqual(sControl, sText, "The resulting outputs is as expected!");
-
-		oSpyArgs = oSpyOriginal.args;
-		// assert error logging
-		assert.ok((oSpyOriginal.callCount === 1 && oSpyArgs[0] && oSpyArgs[0][0].substr(0, 22) === "Control with index '0'"), "There is a proper error logged!");
-
 	});
 
+	QUnit.test("The placeholder is properly replaced from inside of a 'li' element", function(assert) {
+		// Prepare
+		var oFT = new FormattedText({
+				htmlText: "<ul><li>%%0</li></ul>",
+				controls: [
+					new Link()
+				]
+			}),
+			oLinkNode, oListItemNode;
+
+		oFT.placeAt("qunit-fixture");
+		oCore.applyChanges();
+		oLinkNode = oFT.getDomRef().querySelector("a");
+		oListItemNode = oFT.getDomRef().querySelector("li");
+
+		// Act
+		// Assert
+		assert.strictEqual(oLinkNode.parentElement.id, oListItemNode.id, "The anchor tag is properly nested");
+
+		// Clean
+		oFT.destroy();
+	});
 
 	QUnit.module("Others");
 
@@ -339,7 +370,7 @@ sap.ui.define([
 	QUnit.test("Focus is applied on the first available anchor tag", function (assert) {
 		// Arrange
 		var oFT = new FormattedText({
-			htmlText: '<a class="CustomLink" href="https://www.sap.com/">link</a>'
+			htmlText: '<a href="https://www.sap.com/">CustomLink</a>'
 		});
 
 		oFT.placeAt("qunit-fixture");
@@ -349,9 +380,39 @@ sap.ui.define([
 		oFT.focus();
 
 		// Assert
-		assert.ok(document.activeElement.classList.contains("CustomLink"), "Focus is properly applied");
+		assert.strictEqual(document.activeElement.textContent, "CustomLink", "Focus is properly applied");
 
 		// Cleanup
 		oFT.destroy();
+	});
+
+	QUnit.test("URL navigation can be cancelled", function (assert) {
+		// Arrange
+		var oFT = new FormattedText({
+			htmlText: '<a href="https://www.sap.com/">link</a>'
+		}),
+		rootElement = document.getElementById("qunit-fixture"),
+		fnPreventNavigation = function(oEvent) {
+			oEvent.preventDefault();
+		},
+		oSpy = this.spy(window, "open");
+
+		rootElement.addEventListener("click", fnPreventNavigation, true);
+		oFT.placeAt("qunit-fixture");
+		oCore.applyChanges();
+
+		// Act
+		oFT.getDomRef().querySelector("a").dispatchEvent(new MouseEvent("click", {
+			view: window,
+			bubbles: true,
+			cancelable: true
+		}));
+
+		// Assert
+		assert.ok(!oSpy.called, "No navigation");
+
+		// Cleanup
+		oFT.destroy();
+		rootElement.removeEventListener("click", fnPreventNavigation, true);
 	});
 });

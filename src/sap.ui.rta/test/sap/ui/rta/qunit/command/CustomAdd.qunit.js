@@ -19,11 +19,11 @@ sap.ui.define([
 		commandName: "customAdd",
 		designtimeActionStructure: ["add", "custom"],
 		additionalDesigntimeAttributes: {
-			getItems: function() {}
+			getItems() {}
 		}
 	}, Object.assign({}, mProperties), Object.assign({}, mProperties));
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

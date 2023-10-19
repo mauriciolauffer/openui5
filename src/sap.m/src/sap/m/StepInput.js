@@ -347,7 +347,7 @@ function(
 			this._getInput().setValueState(this.getValueState());
 			this._getOrCreateDecrementButton().setVisible(bEditable);
 			this._getOrCreateIncrementButton().setVisible(bEditable);
-
+			this._getInput().setTooltip(this.getTooltip());
 			this._disableButtons(vValue, fMax, fMin);
 			this.$().off(Device.browser.firefox ? "DOMMouseScroll" : "mousewheel", this._onmousewheel);
 			if (this._bNeedsVerification && !this._bValueStatePreset) {
@@ -506,7 +506,7 @@ function(
 					src: IconPool.getIconURI("add"),
 					id: this.getId() + "-incrementBtn",
 					noTabStop: true,
-					decorative: false,
+					decorative: !Device.support.touch || Device.system.desktop ? true : false,
 					press: this._handleButtonPress.bind(this, 1),
 					useIconTooltip: false,
 					alt: StepInput.STEP_INPUT_INCREASE_BTN_TOOLTIP
@@ -540,7 +540,7 @@ function(
 					src: IconPool.getIconURI("less"),
 					id: this.getId() + "-decrementBtn",
 					noTabStop: true,
-					decorative: false,
+					decorative: !Device.support.touch || Device.system.desktop ? true : false,
 					press: this._handleButtonPress.bind(this, -1),
 					useIconTooltip: false,
 					alt: StepInput.STEP_INPUT_DECREASE_BTN_TOOLTIP

@@ -4,16 +4,19 @@ sap.ui.define([
 	"sap/m/Button",
 	"sap/m/Label",
 	"sap/m/ScrollContainer",
-	"sap/ui/core/Core",
+	"sap/ui/core/EventBus",
+	"sap/ui/core/Lib",
 	"sap/ui/core/Title",
 	"sap/ui/dt/DesignTime",
 	"sap/ui/dt/OverlayRegistry",
+	"sap/ui/dt/DOMUtil",
 	"sap/ui/events/KeyCodes",
 	"sap/ui/fl/write/api/ChangesWriteAPI",
 	"sap/ui/layout/form/FormContainer",
 	"sap/ui/layout/form/FormLayout",
 	"sap/ui/layout/form/Form",
 	"sap/ui/layout/VerticalLayout",
+	"sap/ui/qunit/utils/nextUIUpdate",
 	"sap/ui/rta/command/CommandFactory",
 	"sap/ui/rta/plugin/Plugin",
 	"sap/ui/rta/plugin/RenameHandler",
@@ -26,16 +29,19 @@ sap.ui.define([
 	Button,
 	Label,
 	ScrollContainer,
-	oCore,
+	EventBus,
+	Lib,
 	Title,
 	DesignTime,
 	OverlayRegistry,
+	DOMUtil,
 	KeyCodes,
 	ChangesWriteAPI,
 	FormContainer,
 	FormLayout,
 	Form,
 	VerticalLayout,
+	nextUIUpdate,
 	CommandFactory,
 	Plugin,
 	RenameHandler,
@@ -49,11 +55,11 @@ sap.ui.define([
 
 	var sandbox = sinon.createSandbox();
 
-	var oResourceBundle = oCore.getLibraryResourceBundle("sap.ui.rta");
+	var oResourceBundle = Lib.getResourceBundleFor("sap.ui.rta");
 
 	function triggerAndWaitForStartEdit(oPlugin, oOverlay) {
 		return new Promise(function(resolve) {
-			oCore.getEventBus().subscribeOnce("sap.ui.rta", "plugin.Rename.startEdit", function() {
+			EventBus.getInstance().subscribeOnce("sap.ui.rta", "plugin.Rename.startEdit", function() {
 				resolve();
 			});
 			oPlugin.startEdit(oOverlay);
@@ -62,7 +68,7 @@ sap.ui.define([
 
 	function triggerAndWaitForStopEdit(oPlugin) {
 		return new Promise(function(resolve) {
-			oCore.getEventBus().subscribeOnce("sap.ui.rta", "plugin.Rename.stopEdit", function() {
+			EventBus.getInstance().subscribeOnce("sap.ui.rta", "plugin.Rename.stopEdit", function() {
 				resolve();
 			});
 			triggerEventOnEditableField(oPlugin, KeyCodes.ENTER);
@@ -70,15 +76,15 @@ sap.ui.define([
 	}
 
 	function triggerEventOnEditableField(oPlugin, sKeyCode) {
-		sKeyCode = sKeyCode || KeyCodes.ENTER;
+		sKeyCode ||= KeyCodes.ENTER;
 		var oEvent = new Event("keydown");
 		oEvent.keyCode = sKeyCode;
-		oPlugin._$editableField.get(0).dispatchEvent(oEvent);
+		oPlugin._oEditableField.dispatchEvent(oEvent);
 	}
 
 	function addResponsibleElement(oDesignTimeMetadata, oTargetElement, oResponsibleElement) {
 		Object.assign(oDesignTimeMetadata.getData().actions, {
-			getResponsibleElement: function(oElement) {
+			getResponsibleElement(oElement) {
 				if (oElement === oTargetElement) {
 					return oResponsibleElement;
 				}
@@ -94,7 +100,7 @@ sap.ui.define([
 	}
 
 	QUnit.module("Given a designTime and rename plugin are instantiated using a form", {
-		beforeEach: function(assert) {
+		async beforeEach(assert) {
 			var done = assert.async();
 
 			sandbox.stub(ChangesWriteAPI, "getChangeHandler").resolves();
@@ -116,7 +122,7 @@ sap.ui.define([
 				content: [this.oForm]
 			}).placeAt("qunit-fixture");
 
-			oCore.applyChanges();
+			await nextUIUpdate();
 
 			this.oDesignTime = new DesignTime({
 				rootElements: [this.oForm],
@@ -132,7 +138,7 @@ sap.ui.define([
 				done();
 			}, this);
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 			this.oVerticalLayout.destroy();
 			this.oDesignTime.destroy();
@@ -141,7 +147,7 @@ sap.ui.define([
 		QUnit.test("when _onDesignTimeSelectionChange is called", function(assert) {
 			var aSelection = [this.oFormContainerOverlay];
 			var oEvent = {
-				getParameter: function() {
+				getParameter() {
 					return aSelection;
 				}
 			};
@@ -157,8 +163,8 @@ sap.ui.define([
 				actions: {
 					rename: {
 						changeType: "renameGroup",
-						domRef: function(oFormContainer) {
-							return jQuery(oFormContainer.getRenderedDomRef()).find(".sapUiFormTitle")[0];
+						domRef(oFormContainer) {
+							return oFormContainer.getRenderedDomRef().querySelector(".sapUiFormTitle");
 						}
 					}
 				}
@@ -167,10 +173,10 @@ sap.ui.define([
 			this.oRenamePlugin.registerElementOverlay(this.oFormContainerOverlay);
 
 			return this.oRenamePlugin._isEditable(this.oFormContainerOverlay)
-				.then(function(bEditable) {
-					assert.strictEqual(bEditable, true, "then the overlay is editable");
-					assert.strictEqual(this.oRenamePlugin.isAvailable([this.oFormContainerOverlay]), true, "then rename is available for the overlay");
-				}.bind(this));
+			.then(function(bEditable) {
+				assert.strictEqual(bEditable, true, "then the overlay is editable");
+				assert.strictEqual(this.oRenamePlugin.isAvailable([this.oFormContainerOverlay]), true, "then rename is available for the overlay");
+			}.bind(this));
 		});
 
 		QUnit.test("when _isEditable is called, rename has changeOnRelevantContainer true and the Form does not have a stable id", function(assert) {
@@ -195,9 +201,9 @@ sap.ui.define([
 			sandbox.stub(this.oFormContainerOverlay, "getRelevantContainer").returns(this.oForm);
 
 			return this.oRenamePlugin._isEditable(this.oFormContainerOverlay)
-				.then(function(bEditable) {
-					assert.strictEqual(bEditable, false, "then the overlay is not editable");
-				});
+			.then(function(bEditable) {
+				assert.strictEqual(bEditable, false, "then the overlay is not editable");
+			});
 		});
 
 		QUnit.test("when isAvailable and isEnabled (returning function) are called", function(assert) {
@@ -206,11 +212,11 @@ sap.ui.define([
 				actions: {
 					rename: {
 						changeType: "renameGroup",
-						isEnabled: function(oFormContainer) {
+						isEnabled(oFormContainer) {
 							return !(oFormContainer.getToolbar() || !oFormContainer.getTitle());
 						},
-						domRef: function(oFormContainer) {
-							return jQuery(oFormContainer.getRenderedDomRef()).find(".sapUiFormTitle")[0];
+						domRef(oFormContainer) {
+							return oFormContainer.getRenderedDomRef().querySelector(".sapUiFormTitle");
 						}
 					}
 				}
@@ -224,10 +230,10 @@ sap.ui.define([
 				assert.strictEqual(this.oRenamePlugin.isAvailable([this.oFormContainerOverlay]), true, "then rename is available for the overlay");
 				assert.strictEqual(this.oRenamePlugin.isEnabled([this.oFormContainerOverlay]), true, "then rename is enabled for the overlay");
 				this.oRenamePlugin._isEditable(this.oFormContainerOverlay)
-					.then(function(bEditable) {
-						assert.strictEqual(bEditable, true, "then rename is editable for the overlay");
-						done();
-					});
+				.then(function(bEditable) {
+					assert.strictEqual(bEditable, true, "then rename is editable for the overlay");
+					done();
+				});
 			}.bind(this));
 
 			this.oRenamePlugin.deregisterElementOverlay(this.oFormContainerOverlay0);
@@ -240,12 +246,12 @@ sap.ui.define([
 			var done = assert.async();
 			var oDesignTimeMetadata = {
 				actions: {
-					rename: function(oFormContainer) {
+					rename(oFormContainer) {
 						return {
 							changeType: "renameGroup",
 							isEnabled: !(oFormContainer.getToolbar() || !oFormContainer.getTitle()),
-							domRef: function(oFormContainer) {
-								return jQuery(oFormContainer.getRenderedDomRef()).find(".sapUiFormTitle")[0];
+							domRef(oFormContainer) {
+								return oFormContainer.getRenderedDomRef().querySelector(".sapUiFormTitle");
 							}
 						};
 					}
@@ -260,10 +266,10 @@ sap.ui.define([
 				assert.strictEqual(this.oRenamePlugin.isAvailable([this.oFormContainerOverlay]), true, "then rename is available for the overlay");
 				assert.strictEqual(this.oRenamePlugin.isEnabled([this.oFormContainerOverlay]), true, "then rename is enabled for the overlay");
 				this.oRenamePlugin._isEditable(this.oFormContainerOverlay)
-					.then(function(bEditable) {
-						assert.strictEqual(bEditable, true, "then rename is editable for the overlay");
-						done();
-					});
+				.then(function(bEditable) {
+					assert.strictEqual(bEditable, true, "then rename is editable for the overlay");
+					done();
+				});
 			}.bind(this));
 
 			this.oRenamePlugin.deregisterElementOverlay(this.oFormContainerOverlay0);
@@ -309,10 +315,10 @@ sap.ui.define([
 			assert.strictEqual(this.oRenamePlugin.isEnabled([this.oFormContainerOverlay]), false, "then rename is not enabled for the overlay");
 
 			return Promise.resolve()
-				.then(this.oRenamePlugin._isEditable.bind(this.oRenamePlugin, this.oFormContainerOverlay))
-				.then(function(bEditable) {
-					assert.strictEqual(bEditable, false, "then rename is not editable for the overlay");
-				});
+			.then(this.oRenamePlugin._isEditable.bind(this.oRenamePlugin, this.oFormContainerOverlay))
+			.then(function(bEditable) {
+				assert.strictEqual(bEditable, false, "then rename is not editable for the overlay");
+			});
 		});
 
 		QUnit.test("when isEnabled are called with designTime with a domRef function pointing to nothing", function(assert) {
@@ -333,7 +339,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given a designTime and rename plugin are instantiated using a VerticalLayout", {
-		beforeEach: function(assert) {
+		async beforeEach(assert) {
 			var done = assert.async();
 
 			this.oRenamePlugin = new RenamePlugin({
@@ -360,7 +366,7 @@ sap.ui.define([
 				content: [this.oButton, this.oLabel, this.oScrollContainer],
 				width: "200px"
 			}).placeAt("qunit-fixture");
-			oCore.applyChanges();
+			await nextUIUpdate();
 
 			this.oDesignTime = new DesignTime({
 				rootElements: [this.oVerticalLayout],
@@ -379,7 +385,7 @@ sap.ui.define([
 				}
 			});
 
-			this.oDesignTime.attachEventOnce("synced", function() {
+			this.oDesignTime.attachEventOnce("synced", async function() {
 				this.oLayoutOverlay = OverlayRegistry.getOverlay(this.oVerticalLayout);
 				this.oButtonOverlay = OverlayRegistry.getOverlay(this.oButton);
 				this.oLabelOverlay = OverlayRegistry.getOverlay(this.oLabel);
@@ -387,12 +393,12 @@ sap.ui.define([
 				this.oScrollContainerOverlay = OverlayRegistry.getOverlay(this.oScrollContainer);
 				this.oLayoutOverlay.setSelectable(true);
 
-				oCore.applyChanges();
+				await nextUIUpdate();
 
 				done();
 			}.bind(this));
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oVerticalLayout.destroy();
 			this.oDesignTime.destroy();
 			sandbox.restore();
@@ -400,53 +406,48 @@ sap.ui.define([
 	}, function() {
 		QUnit.test("when the Label gets renamed", function(assert) {
 			return triggerAndWaitForStartEdit(this.oRenamePlugin, this.oLayoutOverlay).then(function() {
-				var oTextMutatorSpy = sinon.spy(this.oRenamePlugin._$oEditableControlDomRef, "text");
 				assert.ok(this.oLayoutOverlay.getSelected(), "then the overlay is still selected");
 				assert.deepEqual(
-					this.oRenamePlugin._$editableField.offset(),
-					this.oRenamePlugin._$oEditableControlDomRef.offset(),
+					DOMUtil.getOffset(this.oRenamePlugin._oEditableField),
+					DOMUtil.getOffset(this.oRenamePlugin._oEditableControlDomRef),
 					"then the editable field for rename is positioned correctly"
 				);
 				this.oRenamePlugin.stopEdit(this.oLayoutOverlay);
 				assert.ok(this.oLayoutOverlay.getSelected(), "then the overlay is still selected");
-				assert.ok(oTextMutatorSpy.called, "then the label is changed via jQuery");
 			}.bind(this));
 		});
 
-		QUnit.test("when the designtime provides custom text mutators", function (assert) {
+		QUnit.test("when the designtime provides custom text mutators", function(assert) {
 			sandbox.stub(CommandFactory.prototype, "getCommandFor").resolves();
 			var oDesignTimeMetadata = this.oLayoutOverlay.getDesignTimeMetadata();
 			var oGetTextStub = sinon.stub();
 			var oSetTextStub = sinon.stub();
 			sandbox.stub(oDesignTimeMetadata, "getAction")
-				.callThrough()
-				.withArgs("rename")
-				.callsFake(function () {
-					return Object.assign(
-						{},
-						oDesignTimeMetadata.getAction.wrappedMethod.apply(this, arguments),
-						{
-							getTextMutators: function () {
-								return {
-									getText: oGetTextStub,
-									setText: oSetTextStub
-								};
-							}
+			.callThrough()
+			.withArgs("rename")
+			.callsFake(function(...aArgs) {
+				return Object.assign(
+					{},
+					oDesignTimeMetadata.getAction.wrappedMethod.apply(this, aArgs),
+					{
+						getTextMutators() {
+							return {
+								getText: oGetTextStub,
+								setText: oSetTextStub
+							};
 						}
-					);
-				});
-			var oTextMutatorSpy;
+					}
+				);
+			});
 			return triggerAndWaitForStartEdit(this.oRenamePlugin, this.oLayoutOverlay)
-				.then(function() {
-					oTextMutatorSpy = sinon.spy(this.oRenamePlugin._$oEditableControlDomRef, "text");
-					this.oRenamePlugin._$editableField.text("New text");
-					return triggerAndWaitForStopEdit(this.oRenamePlugin);
-				}.bind(this))
-				.then(function () {
-					assert.ok(oTextMutatorSpy.notCalled, "then the label is not changed via jQuery");
-					assert.ok(oGetTextStub.called, "then the custom getter is called");
-					assert.ok(oSetTextStub.called, "then the custom setter is called");
-				});
+			.then(function() {
+				this.oRenamePlugin._oEditableField.textContent = "New text";
+				return triggerAndWaitForStopEdit(this.oRenamePlugin);
+			}.bind(this))
+			.then(function() {
+				assert.ok(oGetTextStub.called, "then the custom getter is called");
+				assert.ok(oSetTextStub.called, "then the custom setter is called");
+			});
 		});
 
 		QUnit.test("when the Label gets renamed with a responsible element", function(assert) {
@@ -456,8 +457,8 @@ sap.ui.define([
 			addResponsibleElement(this.oLayoutOverlay.getDesignTimeMetadata(), this.oVerticalLayout, this.oButton);
 
 			triggerAndWaitForStartEdit(this.oRenamePlugin, this.oLayoutOverlay).then(function() {
-				this.oRenamePlugin._$oEditableControlDomRef.text("New Value");
-				this.oRenamePlugin._$editableField.text(this.oRenamePlugin._$oEditableControlDomRef.text());
+				this.oRenamePlugin._oEditableControlDomRef.textContent = "New Value";
+				this.oRenamePlugin._oEditableField.textContent = this.oRenamePlugin._oEditableControlDomRef.textContent;
 				this.oRenamePlugin.attachEventOnce("elementModified", function(oEvent) {
 					var oRenameCommand = oEvent.getParameter("command");
 					assert.equal(this.oButton.getId(), oRenameCommand.getSelector().id, "then a command is created for the responsible element");
@@ -478,9 +479,9 @@ sap.ui.define([
 
 			// simulate actions on all overlays, except the responsible element
 			sandbox.stub(this.oRenamePlugin, "getAction")
-				.returns(true)
-				.withArgs(this.oButtonOverlay)
-				.returns(false);
+			.returns(true)
+			.withArgs(this.oButtonOverlay)
+			.returns(false);
 
 			var bIsEnabled = aMenuItems[0].enabled([this.oLayoutOverlay]);
 			assert.equal(bIsEnabled, false, "then the menu item was disabled");
@@ -528,8 +529,8 @@ sap.ui.define([
 		QUnit.test("when the Label gets renamed and the new value is extremely long", function(assert) {
 			sandbox.stub(CommandFactory.prototype, "getCommandFor").resolves();
 			return triggerAndWaitForStartEdit(this.oRenamePlugin, this.oLayoutOverlay).then(function() {
-				this.oRenamePlugin._$oEditableControlDomRef.text("123456789012345678901234567890123456789012345678901234567890");
-				this.oRenamePlugin._$editableField.text(this.oRenamePlugin._$oEditableControlDomRef.text());
+				this.oRenamePlugin._oEditableControlDomRef.textContent = "123456789012345678901234567890123456789012345678901234567890";
+				this.oRenamePlugin._oEditableField.textContent = this.oRenamePlugin._oEditableControlDomRef.textContent;
 				return triggerAndWaitForStopEdit(this.oRenamePlugin);
 			}.bind(this))
 			.then(function() {
@@ -540,19 +541,20 @@ sap.ui.define([
 		QUnit.test("when the title is not on the currently visible viewport and gets renamed", function(assert) {
 			var oButtonDom = this.oButton.getDomRef();
 			var oLabelDom = this.oLabel.getDomRef();
-			oButtonDom.style.marginBottom = document.documentElement.clientHeight + "px";
+			oButtonDom.style.marginBottom = `${document.documentElement.clientHeight}px`;
 			var oScrollSpy = sinon.spy(oLabelDom, "scrollIntoView");
 
 			return triggerAndWaitForStartEdit(this.oRenamePlugin, this.oLayoutOverlay).then(function() {
 				assert.equal(oScrollSpy.callCount, 1, "then the Label got scrolled");
 				oLabelDom.scrollIntoView.restore();
-			});
+				this.oRenamePlugin.stopEdit(this.oLayoutOverlay);
+			}.bind(this));
 		});
 
 		QUnit.test("when the Label gets renamed and the new value is interpreted as a binding", function(assert) {
 			return triggerAndWaitForStartEdit(this.oRenamePlugin, this.oLayoutOverlay).then(function() {
-				this.oRenamePlugin._$oEditableControlDomRef.text("{testText}");
-				this.oRenamePlugin._$editableField.text(this.oRenamePlugin._$oEditableControlDomRef.text());
+				this.oRenamePlugin._oEditableControlDomRef.textContent = "{testText}";
+				this.oRenamePlugin._oEditableField.textContent = this.oRenamePlugin._oEditableControlDomRef.textContent;
 				return triggerAndWaitForStopEdit(this.oRenamePlugin);
 			}.bind(this))
 			.then(function() {
@@ -560,13 +562,14 @@ sap.ui.define([
 				assert.equal(this.oShowMessageBoxStub.lastCall.args[1], oResourceBundle.getText("RENAME_BINDING_ERROR_TEXT"), "the correct error text was passed");
 				assert.equal(this.oShowMessageBoxStub.lastCall.args[2].titleKey, "RENAME_ERROR_TITLE", "the correct error text was passed");
 				assert.ok(this.oLayoutOverlay.hasStyleClass(RenameHandler.errorStyleClass), "the error style class is set");
+				this.oRenamePlugin.stopEdit(this.oLayoutOverlay);
 			}.bind(this));
 		});
 
 		QUnit.test("when the Label gets renamed to }{", function(assert) {
 			return triggerAndWaitForStartEdit(this.oRenamePlugin, this.oLayoutOverlay).then(function() {
-				this.oRenamePlugin._$oEditableControlDomRef.text("}{");
-				this.oRenamePlugin._$editableField.text(this.oRenamePlugin._$oEditableControlDomRef.text());
+				this.oRenamePlugin._oEditableControlDomRef.textContent = "}{";
+				this.oRenamePlugin._oEditableField.textContent = this.oRenamePlugin._oEditableControlDomRef.textContent;
 				return triggerAndWaitForStopEdit(this.oRenamePlugin);
 			}.bind(this))
 			.then(function() {
@@ -574,6 +577,7 @@ sap.ui.define([
 				assert.equal(this.oShowMessageBoxStub.lastCall.args[1], oResourceBundle.getText("RENAME_BINDING_ERROR_TEXT"), "the correct error text was passed");
 				assert.equal(this.oShowMessageBoxStub.lastCall.args[2].titleKey, "RENAME_ERROR_TITLE", "the correct error text was passed");
 				assert.ok(this.oLayoutOverlay.hasStyleClass(RenameHandler.errorStyleClass), "the error style class is set");
+				this.oRenamePlugin.stopEdit(this.oLayoutOverlay);
 			}.bind(this));
 		});
 
@@ -582,8 +586,8 @@ sap.ui.define([
 				"noEmptyText"
 			]);
 			return triggerAndWaitForStartEdit(this.oRenamePlugin, this.oLayoutOverlay).then(function() {
-				this.oRenamePlugin._$oEditableControlDomRef.text("");
-				this.oRenamePlugin._$editableField.text(this.oRenamePlugin._$oEditableControlDomRef.text());
+				this.oRenamePlugin._oEditableControlDomRef.textContent = "";
+				this.oRenamePlugin._oEditableField.textContent = this.oRenamePlugin._oEditableControlDomRef.textContent;
 				return triggerAndWaitForStopEdit(this.oRenamePlugin);
 			}.bind(this))
 			.then(function() {
@@ -591,6 +595,7 @@ sap.ui.define([
 				assert.equal(this.oShowMessageBoxStub.lastCall.args[1], oResourceBundle.getText("RENAME_EMPTY_ERROR_TEXT"), "the correct error text was passed");
 				assert.equal(this.oShowMessageBoxStub.lastCall.args[2].titleKey, "RENAME_ERROR_TITLE", "the correct error text was passed");
 				assert.ok(this.oLayoutOverlay.hasStyleClass(RenameHandler.errorStyleClass), "the error style class is set");
+				this.oRenamePlugin.stopEdit(this.oLayoutOverlay);
 			}.bind(this));
 		});
 
@@ -601,8 +606,8 @@ sap.ui.define([
 			addResponsibleElement(this.oButtonOverlay.getDesignTimeMetadata(), this.oButton, this.oVerticalLayout);
 
 			return triggerAndWaitForStartEdit(this.oRenamePlugin, this.oButtonOverlay).then(function() {
-				this.oRenamePlugin._$oEditableControlDomRef.text("");
-				this.oRenamePlugin._$editableField.text(this.oRenamePlugin._$oEditableControlDomRef.text());
+				this.oRenamePlugin._oEditableControlDomRef.textContent = "";
+				this.oRenamePlugin._oEditableField.textContent = this.oRenamePlugin._oEditableControlDomRef.textContent;
 				return triggerAndWaitForStopEdit(this.oRenamePlugin);
 			}.bind(this))
 			.then(function() {
@@ -610,13 +615,14 @@ sap.ui.define([
 				assert.equal(this.oShowMessageBoxStub.lastCall.args[1], oResourceBundle.getText("RENAME_EMPTY_ERROR_TEXT"), "the correct error text was passed");
 				assert.equal(this.oShowMessageBoxStub.lastCall.args[2].titleKey, "RENAME_ERROR_TITLE", "the correct error text was passed");
 				assert.ok(this.oButtonOverlay.hasStyleClass(RenameHandler.errorStyleClass), "the error style class is set");
+				this.oRenamePlugin.stopEdit(this.oLayoutOverlay);
 			}.bind(this));
 		});
 
 		QUnit.test("when the Label gets renamed and the new value is invalid and multiple validators are available", function(assert) {
 			addValidators(this.oLayoutOverlay.getDesignTimeMetadata(), [
 				{
-					validatorFunction: function() {
+					validatorFunction() {
 						return false;
 					},
 					errorMessage: "invalid"
@@ -624,8 +630,8 @@ sap.ui.define([
 				"noEmptyText"
 			]);
 			return triggerAndWaitForStartEdit(this.oRenamePlugin, this.oLayoutOverlay).then(function() {
-				this.oRenamePlugin._$oEditableControlDomRef.text("");
-				this.oRenamePlugin._$editableField.text(this.oRenamePlugin._$oEditableControlDomRef.text());
+				this.oRenamePlugin._oEditableControlDomRef.textContent = "";
+				this.oRenamePlugin._oEditableField.textContent = this.oRenamePlugin._oEditableControlDomRef.textContent;
 				return triggerAndWaitForStopEdit(this.oRenamePlugin);
 			}.bind(this))
 			.then(function() {
@@ -633,20 +639,32 @@ sap.ui.define([
 				assert.equal(this.oShowMessageBoxStub.lastCall.args[1], "invalid", "the correct error text was passed");
 				assert.equal(this.oShowMessageBoxStub.lastCall.args[2].titleKey, "RENAME_ERROR_TITLE", "the correct error text was passed");
 				assert.ok(this.oLayoutOverlay.hasStyleClass(RenameHandler.errorStyleClass), "the error style class is set");
+				this.oRenamePlugin.stopEdit(this.oLayoutOverlay);
 			}.bind(this));
 		});
 
 		QUnit.test("when the Label gets renamed to the same text", function(assert) {
 			var oEmitLabelChangeSpy = sandbox.spy(this.oRenamePlugin, "_emitLabelChangeEvent");
 			return triggerAndWaitForStartEdit(this.oRenamePlugin, this.oLayoutOverlay).then(function() {
-				this.oRenamePlugin._$oEditableControlDomRef.text("Label");
-				this.oRenamePlugin._$editableField.text(this.oRenamePlugin._$oEditableControlDomRef.text());
+				this.oRenamePlugin._oEditableControlDomRef.textContent = "Label";
+				this.oRenamePlugin._oEditableField.textContent = this.oRenamePlugin._oEditableControlDomRef.textContent;
 				return triggerAndWaitForStopEdit(this.oRenamePlugin);
 			}.bind(this))
 			.then(function() {
 				assert.equal(this.oShowMessageBoxStub.callCount, 0, "no error was shown");
 				assert.notOk(this.oLayoutOverlay.hasStyleClass(RenameHandler.errorStyleClass), "the error style class is not set");
 				assert.equal(oEmitLabelChangeSpy.callCount, 0, "the label change was not processed");
+			}.bind(this));
+		});
+
+		QUnit.test('when the user tries to rename a field to empty string ("")', function(assert) {
+			return triggerAndWaitForStartEdit(this.oRenamePlugin, this.oLayoutOverlay).then(function() {
+				this.oRenamePlugin._oEditableControlDomRef.textContent = "";
+				this.oRenamePlugin._oEditableField.textContent = this.oRenamePlugin._oEditableControlDomRef.textContent;
+				return triggerAndWaitForStopEdit(this.oRenamePlugin);
+			}.bind(this))
+			.then(function() {
+				assert.strictEqual(RenameHandler._getCurrentEditableFieldText.call(this.oRenamePlugin), "\xa0", "then the empty string is replaced by a non-breaking space");
 			}.bind(this));
 		});
 
@@ -674,8 +692,8 @@ sap.ui.define([
 			var oRemoveStyleClassSpy = sandbox.spy(this.oLayoutOverlay, "removeStyleClass");
 			var oStopEditSpy = sandbox.spy(this.oRenamePlugin, "stopEdit");
 			triggerAndWaitForStartEdit(this.oRenamePlugin, this.oLayoutOverlay).then(function() {
-				this.oRenamePlugin._$oEditableControlDomRef.text("foo");
-				this.oRenamePlugin._$editableField.text(this.oRenamePlugin._$oEditableControlDomRef.text());
+				this.oRenamePlugin._oEditableControlDomRef.textContent = "foo";
+				this.oRenamePlugin._oEditableField.textContent = this.oRenamePlugin._oEditableControlDomRef.textContent;
 
 				triggerEventOnEditableField(this.oRenamePlugin, KeyCodes.ESCAPE);
 				// Wait a bit if any of other listeners are being called
@@ -695,13 +713,18 @@ sap.ui.define([
 			this.oScrollContainer.getDomRef().scrollTo(100, 0);
 			triggerAndWaitForStartEdit(this.oRenamePlugin, this.oInnerButtonOverlay).then(function() {
 				this.oScrollContainerOverlay.getChildren()[0].attachEventOnce("scrollSynced", function() {
-					assert.deepEqual(
-						this.oRenamePlugin._$oEditableControlDomRef.offset(),
-						this.oRenamePlugin._$editableField.offset(),
-						"then the position of the editable control is still correct"
+					assert.equal(
+						Math.floor(DOMUtil.getOffset(this.oRenamePlugin._oEditableControlDomRef).left),
+						Math.floor(DOMUtil.getOffset(this.oRenamePlugin._oEditableField).left),
+						"then the left position of the editable control is still correct"
+					);
+					assert.equal(
+						Math.floor(DOMUtil.getOffset(this.oRenamePlugin._oEditableControlDomRef).top),
+						Math.floor(DOMUtil.getOffset(this.oRenamePlugin._oEditableField).top),
+						"then the top position of the editable control is still correct"
 					);
 					assert.deepEqual(
-						this.oRenamePlugin._$editableField.get(0),
+						this.oRenamePlugin._oEditableField,
 						document.activeElement,
 						"then the editable control has focus"
 					);
@@ -709,29 +732,10 @@ sap.ui.define([
 						this.oRenamePlugin._oEditedOverlay.getSelected(),
 						"then the overlay being edited is still selected"
 					);
+					this.oRenamePlugin.stopEdit(this.oLayoutOverlay);
 					fnDone();
 				}.bind(this));
 			}.bind(this));
-		});
-	});
-
-	QUnit.module("Given a Rename plugin...", {
-		beforeEach: function() {
-			this.oRenamePlugin = new RenamePlugin({
-				commandFactory: new CommandFactory()
-			});
-		},
-		afterEach: function() {
-			this.oRenamePlugin.destroy();
-		}
-	}, function() {
-		QUnit.test('when the user tries to rename a field to empty string ("")', function(assert) {
-			this.oRenamePlugin._$editableField = {
-				text: function() {
-					return "";
-				}
-			};
-			assert.strictEqual(RenameHandler._getCurrentEditableFieldText.call(this.oRenamePlugin), "\xa0", "then the empty string is replaced by a non-breaking space");
 		});
 	});
 

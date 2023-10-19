@@ -4,7 +4,7 @@
 
 sap.ui.define([
 	"sap/base/util/merge"
-], function (
+], function(
 	merge
 ) {
 	"use strict";
@@ -58,11 +58,11 @@ sap.ui.define([
 		 * @param {object[]} aResponses - All responses provided by the different connectors
 		 * @returns {object} Merged result
 		 */
-		mergeResults: function(aResponses) {
+		mergeResults(aResponses) {
 			var oResult = DEFAULT_FEATURES;
 
-			aResponses.forEach(function (oResponse) {
-				Object.keys(oResponse.features).forEach(function (sKey) {
+			aResponses.forEach(function(oResponse) {
+				Object.keys(oResponse.features).forEach(function(sKey) {
 					if (sKey !== "isVersioningEnabled") {
 						oResult[sKey] = oResponse.features[sKey];
 					}

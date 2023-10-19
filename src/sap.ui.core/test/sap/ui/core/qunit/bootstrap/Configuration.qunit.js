@@ -3,13 +3,19 @@ sap.ui.define([
 	'sap/ui/core/CalendarType',
 	'sap/ui/core/Configuration',
 	'sap/ui/core/Core',
+	'sap/ui/core/Lib',
+	'sap/ui/core/date/CalendarWeekNumbering',
 	'sap/ui/core/format/TimezoneUtil',
-	'sap/ui/core/Locale',
+	'sap/ui/core/Theming',
+	'sap/ui/security/Security',
+	'sap/base/config',
 	'sap/base/Log',
+	"sap/base/config/GlobalConfigurationProvider",
 	'../routing/HistoryUtils',
-	'sap/ui/base/Interface',
+	'sap/ui/base/config/URLConfigurationProvider',
 	'sap/ui/core/LocaleData' // only used indirectly via Configuration.getCalendarType
-], function(CalendarType, Configuration, Core, TimezoneUtil, Locale, Log, HistoryUtils, Interface/*, LocaleData*/) {
+], function(CalendarType, Configuration, Core, Library, CalendarWeekNumbering, TimezoneUtil, Theming, Security, BaseConfig, Log,
+		GlobalConfigurationProvider, HistoryUtils, URLConfigurationProvider/*, LocaleData*/) {
 	"use strict";
 
 	var browserUrl = {
@@ -30,20 +36,13 @@ sap.ui.define([
 	};
 
 	var AnimationMode = Configuration.AnimationMode;
+	let mConfigStubValues = {};
 
 	var sLocalTimezone = TimezoneUtil.getLocalTimezone();
 
 	function getHtmlAttribute(sAttribute) {
 		return document.documentElement.getAttribute(sAttribute);
 	}
-
-	// used to get access to the non-public core parts
-	var oRealCore;
-	var TestCorePlugin = function() {};
-	TestCorePlugin.prototype.startPlugin = function(oCore, bOnInit) {
-		oRealCore = oCore;
-	};
-	sap.ui.getCore().registerPlugin(new TestCorePlugin());
 
 	// Initialize the HistoryUtils
 	QUnit.begin(HistoryUtils.init);
@@ -54,7 +53,7 @@ sap.ui.define([
 	QUnit.module("Basic");
 
 	QUnit.test("Constructor", function(assert) {
-		var oLogSpy = sinon.spy(Log, "error");
+		var oLogSpy = sinon.stub(Log, "error");
 		var oConfiguration1 = new Configuration();
 		var oConfiguration2 = new Configuration();
 		var sExpectedErrorText = "Configuration is designed as a singleton and should not be created manually! " +
@@ -64,13 +63,14 @@ sap.ui.define([
 		assert.ok(oLogSpy.calledTwice, "There should be two errors logged for each constructor call.");
 		assert.strictEqual(oLogSpy.getCall(0).args[0], sExpectedErrorText, "Correct error logged");
 		assert.strictEqual(oLogSpy.getCall(1).args[0], sExpectedErrorText, "Correct error logged");
-
+		assert.strictEqual(oConfiguration1.getCalendarWeekNumbering(), CalendarWeekNumbering.Default,
+			"calendar week number is set to default in c'tor");
 		oLogSpy.restore();
 	});
 
 	QUnit.test("Settings", function(assert) {
-		assert.equal(Configuration.getTheme(), "SapSampleTheme2", "tag config should override global config");
-		assert.deepEqual(Configuration.getValue("modules"), ["sap.ui.core.library"], "Module List in configuration matches configured modules/libraries");
+		assert.equal(Theming.getTheme(), "SapSampleTheme2", "tag config should override global config");
+		assert.ok(Library.all()["sap.ui.core"], "Core library loaded");
 	});
 
 	QUnit.test("jQuery and $", function(assert) {
@@ -80,8 +80,7 @@ sap.ui.define([
 	});
 
 	QUnit.test("LegacyDateCalendarCustomizing", function(assert) {
-		var oCfg = new Configuration(),
-			oFormatSettings = oCfg.getFormatSettings();
+		var oFormatSettings = Configuration.getFormatSettings();
 
 		var aData = [{
 			"dateFormat": "A",
@@ -103,8 +102,9 @@ sap.ui.define([
 	});
 
 	QUnit.test("getter and setter for option 'calendar'", function(assert) {
-		var oCfg = new Configuration(),
+		var oCfg = Configuration,
 			oFormatSettings = oCfg.getFormatSettings();
+			oFormatSettings.setLegacyDateFormat();
 
 		assert.equal(oCfg.getCalendarType(), CalendarType.Islamic, "The bootstrap parameter is respected");
 
@@ -163,7 +163,20 @@ sap.ui.define([
 
 		oFormatSettings.setLegacyDateFormat("C");
 		assert.equal(oCfg.getCalendarType(), CalendarType.Persian, "The legacy date format 'C' changes the calendar type to persian");
+		//reset language
+		oCfg.setLanguage("en");
+	});
 
+	QUnit.test("getter and setter for option calendarWeekNumbering", function(assert) {
+		assert.strictEqual(Configuration.getCalendarWeekNumbering(), CalendarWeekNumbering.Default);
+
+		assert.ok(Configuration.setCalendarWeekNumbering(CalendarWeekNumbering.ISO_8601), Configuration);
+		assert.strictEqual(Configuration.getCalendarWeekNumbering(), CalendarWeekNumbering.ISO_8601);
+
+		assert.throws(function() {
+			Configuration.setCalendarWeekNumbering("invalid");
+		}, new TypeError("Unsupported Enumeration value for calendarWeekNumbering, valid values are: "
+				+ "Default, ISO_8601, MiddleEastern, WesternTraditional"));
 	});
 
 
@@ -180,12 +193,20 @@ sap.ui.define([
 					this.changes.push(changes);
 				}.bind(this)
 			};
-			window['sap-ui-config'] = {
-				language: 'en'
-			};
+			Configuration.setRTL(null);
+			Configuration.setLanguage("en");
+			Configuration.setCalendarWeekNumbering(CalendarWeekNumbering.Default);
+			Configuration.setCalendarType("Gregorian");
 			Configuration.setCore(this.oCoreMock);
 			this.oConfig = Configuration;
 		}
+	});
+
+	QUnit.test("setCalendarWeekNumbering", function(assert) {
+		this.oConfig.setCalendarWeekNumbering(CalendarWeekNumbering.Default);
+		assert.equal(this.eventsReceived, 0, "no localizationChange event if value did not change");
+		this.oConfig.setCalendarWeekNumbering(CalendarWeekNumbering.ISO_8601);
+		assert.equal(this.eventsReceived, 1, "one localizationChange event if value changed");
 	});
 
 	QUnit.test("setLanguage(en) - noop", function(assert) {
@@ -235,13 +256,14 @@ sap.ui.define([
 		assert.equal(this.eventsReceived, 0, "no localizationChange event should have been fired");
 	});
 
-	// TODO Timezone Configuration: Unskip when re-enabling Configuration#setTimezone functionality
-	QUnit.skip("setTimezone('America/New_York') - simple", function(assert) {
+	QUnit.test("setTimezone('America/New_York') - simple", function(assert) {
 		var sDifferentTimezone = sLocalTimezone === "Europe/Berlin" ? "America/New_York" : "Europe/Berlin";
 		this.oConfig.setTimezone(sDifferentTimezone);
 		assert.equal(this.oConfig.getTimezone(), sDifferentTimezone, "timezone should be '" + sDifferentTimezone + "'");
 		assert.equal(this.eventsReceived, 1, "one localizationChange event should have been fired");
 		assert.deepEqual(Object.keys(this.changes[0]), ['timezone'], "event should have reported 'timezone' as changed");
+		// reset to local timezone
+		this.oConfig.setTimezone(sLocalTimezone);
 	});
 
 	QUnit.test("setTimezone(null) - simple", function(assert) {
@@ -319,8 +341,10 @@ sap.ui.define([
 				legacyDateFormat: '1',
 				legacyTimeFormat: '1'
 			},
-			calendarType: 'Islamic'
+			calendarType: 'Islamic',
+			calendarWeekNumbering: CalendarWeekNumbering.ISO_8601
 		});
+		assert.equal(this.oConfig.getCalendarWeekNumbering(), CalendarWeekNumbering.ISO_8601, "calendar week number changed to 'ISO_8601'");
 		assert.equal(this.oConfig.getLanguage(), "he", "language should have changed to 'he'");
 		assert.equal(this.oConfig.getRTL(), true, "RTL should have changed to true");
 		assert.equal(this.oConfig.getFormatSettings().getLegacyDateFormat(), "1", "legacy date format should have changed to '1'");
@@ -329,6 +353,7 @@ sap.ui.define([
 		assert.equal(this.eventsReceived, 1, "one localizationChange event should have been fired");
 		assert.deepEqual(Object.keys(this.changes[0]).sort(), [
 			'calendarType',
+			'calendarWeekNumbering',
 			'dateFormats-medium',
 			'dateFormats-short',
 			'dayPeriods-format-abbreviated',
@@ -346,14 +371,28 @@ sap.ui.define([
 				legacyDateFormat: null,
 				legacyTimeFormat: null
 			},
-			calendarType: null
+			calendarType: null,
+			calendarWeekNumbering: CalendarWeekNumbering.Default
 		});
+		assert.equal(this.oConfig.getCalendarWeekNumbering(), CalendarWeekNumbering.Default, "calendar week number changed to 'Default'");
 		assert.equal(this.oConfig.getLanguage(), "en", "language should have been reset to 'en'");
 		assert.equal(this.oConfig.getRTL(), false, "RTL should have changed to false");
 		assert.notOk(this.oConfig.getFormatSettings().getLegacyDateFormat(), "legacy date format should have been reset");
 		assert.notOk(this.oConfig.getFormatSettings().getLegacyTimeFormat(), "legacy time format should have been reset");
 		assert.equal(this.oConfig.getCalendarType(), CalendarType.Gregorian, "calendar type should be 'Gregorian' again");
 		assert.notOk(/-x-(.*-)?sapufmt/.test(this.oConfig.getFormatSettings().getFormatLocale().toString()), "format locale should no longer contain private extension 'sapufmt'");
+	});
+
+	QUnit.test("FormatSettings#getFormatLocale - return custom locale if calendar week numbering is set", function (assert) {
+		assert.equal(this.oConfig.getCalendarWeekNumbering(), CalendarWeekNumbering.Default);
+		assert.notOk(/-x-(.*-)?sapufmt/.test(this.oConfig.getFormatSettings().getFormatLocale().toString()),
+			"format locale must not contain private extension 'sapufmt' if calendar week numbering is set to 'Default'");
+
+		this.oConfig.setCalendarWeekNumbering(CalendarWeekNumbering.ISO_8601);
+
+		//code under test
+		assert.ok(/-x-(.*-)?sapufmt/.test(this.oConfig.getFormatSettings().getFormatLocale().toString()),
+			"format locale must contain private extension 'sapufmt' is something other than 'Default'");
 	});
 
 	QUnit.module("SAP Logon Language");
@@ -406,15 +445,23 @@ sap.ui.define([
 
 		oConfig.setLanguage("sr-Latn");
 		assert.equal(oConfig.getSAPLogonLanguage(), "SH", "SAP Logon language should be 'SH'");
-		assert.equal(oConfig.getLanguageTag(), "sh", "Language Tag should be 'sr-Latn'");
+		assert.equal(oConfig.getLanguageTag(), "sh", "Language Tag should be 'sh'");
 
 		oConfig.setLanguage("sh");
 		assert.equal(oConfig.getSAPLogonLanguage(), "SH", "SAP Logon language should be 'SH'");
-		assert.equal(oConfig.getLanguageTag(), "sh", "Language Tag should be 'sr-Latn'");
+		assert.equal(oConfig.getLanguageTag(), "sh", "Language Tag should be 'sh'");
 
 		oConfig.setLanguage("sr");
 		assert.equal(oConfig.getSAPLogonLanguage(), "SR", "SAP Logon language should be 'SR'");
 		assert.equal(oConfig.getLanguageTag(), "sr", "Language Tag should be 'sr'");
+
+		oConfig.setLanguage("iw");
+		assert.equal(oConfig.getSAPLogonLanguage(), "HE", "SAP Logon language should be 'HE'");
+		assert.equal(oConfig.getLanguageTag(), "he", "Language Tag should be 'he'");
+
+		oConfig.setLanguage("ji");
+		assert.equal(oConfig.getSAPLogonLanguage(), "YI", "SAP Logon language should be 'YI'");
+		assert.equal(oConfig.getLanguageTag(), "yi", "Language Tag should be 'yi'");
 	});
 
 	QUnit.test("configured via API", function(assert) {
@@ -430,157 +477,6 @@ sap.ui.define([
 		assert.equal(oConfig.getSAPLogonLanguage(), "6N", "setting only BCP47 language again must reset the knowledge about SAP Language");
 	});
 
-	QUnit.module("SAP Logon Language (via url)", {
-		beforeEach: function(assert) {
-			this.setupConfig = function(sLanguage, sUrl) {
-				var oCoreMock = {
-					fireLocalizationChanged: function() {}
-				};
-				window["sap-ui-config"] = window["sap-ui-config"] || {};
-				window["sap-ui-config"].language = sLanguage;
-				browserUrl.change(sUrl);
-				// reset sapLogonLanguage
-				Configuration.setLanguage("xx", undefined);
-				Configuration.setCore(oCoreMock);
-				return Configuration;
-			};
-		},
-		afterEach: function() {
-			browserUrl.reset();
-		}
-	});
-
-	[
-		/* URL parameter							language			languageTag 		SAP-L	Caption */
-		[ "?sap-language=en",						"en",				"en",				"EN",	"sap-language is the valid ISO language EN"],
-		[ "?sap-language=EN",						"EN",				"en",				"EN",	"sap-language is the valid ISO language EN"],
-		[ "?sap-language=ZH",						"zh-Hans",			"zh-Hans",			"ZH",	"sap-language is the known SAP language ZN"],
-		[ "?sap-language=ZF",						"zh-Hant",			"zh-Hant",			"ZF",	"sap-language is the known SAP language ZF"],
-		[ "?sap-language=1Q",						"en-US-x-saptrc",	"en-US-x-saptrc",	"1Q",	"sap-language is the known SAP language 1Q"],
-		[ "?sap-language=2Q",						"en-US-x-sappsd",	"en-US-x-sappsd",	"2Q",	"sap-language is the known SAP language 2Q"],
-		[ "?sap-language=3Q",						"en-US-x-saprigi",	"en-US-x-saprigi",	"3Q",	"sap-language is the known SAP language 3Q"],
-		[ "?sap-language=6N",						"en-GB",			"en-GB",			"6N",	"sap-language is the unknown SAP language 6N"],
-		[ "?sap-language=SH",						"sr-Latn",			"sh",		    	"SH",	"sap-language is the unknown SAP language 6N"],
-		[ "?sap-locale=fr_CH",						"fr_CH",			"fr-CH",			"FR",	"sap-locale is the accepted BCP47 tag fr_CH"],
-		[ "?sap-locale=En_gb&sap-language=6N",		"En_gb",			"en-GB",			"6N",	"valid combination of sap-locale and sap-language (En_gb, 6N)"],
-		[ "?sap-ui-language=en_GB&sap-language=6N",	"en_GB",			"en-GB",			"6N",	"valid combination of sap-ui-language and sap-language (en_GB, 6N)"],
-		[ "?sap-language=EN&sap-locale=en_GB",		"en_GB",			"en-GB",			"EN",	"valid combination of sap-language and sap-locale, both as BCP47 tag (EN, en_GB)"]
-	].forEach(function( data ) {
-
-		QUnit.test(data[4], function(assert) {
-
-			var oConfig = this.setupConfig("de", data[0]);
-			assert.equal(oConfig.getLanguage(), data[1], "the effective language should be '" + data[1] + "'");
-			assert.equal(oConfig.getLanguageTag(), data[2], "the effective language tag should be '" + data[2] + "'");
-			assert.equal(oConfig.getSAPLogonLanguage(), data[3], "the SAP Logon language should be '" + data[3] + "'");
-
-		});
-
-	});
-
-	QUnit.test("language via url, locale+language via API", function(assert) {
-
-		var oConfig = this.setupConfig("de", "?sap-language=6N");
-		assert.equal(oConfig.getLanguage(), "en-GB", "the effective language still should be 'en-GB'");
-		assert.equal(oConfig.getLanguageTag(), "en-GB", "the effective language tag still should be 'en-GB'");
-		assert.equal(oConfig.getSAPLogonLanguage(), "6N", "the SAP Logon language should be '6N' already");
-
-		oConfig = this.setupConfig("de", "?sap-language=1E");
-		assert.equal(oConfig.getLanguage(), "de", "the effective language still should be 'de'");
-		assert.equal(oConfig.getLanguageTag(), "de", "the effective language tag still should be 'de'");
-		assert.equal(oConfig.getSAPLogonLanguage(), "1E", "the SAP Logon language should be '6N' already");
-
-		// without the second parameter, the sap language now would be 'EN' only
-		oConfig.setLanguage("en-GB");
-		assert.equal(oConfig.getLanguage(), "en-GB", "the effective language should be 'en-GB'");
-		assert.equal(oConfig.getLanguageTag(), "en-GB", "the effective language tag should be 'en-GB'");
-		assert.equal(oConfig.getSAPLogonLanguage(), "6N", "the SAP Logon language should be 'EN'");
-
-		// but with the second parameter, everything should be fine
-		oConfig.setLanguage("en-GB", "6N");
-		assert.equal(oConfig.getLanguage(), "en-GB", "the effective language should be 'en-GB'");
-		assert.equal(oConfig.getLanguageTag(), "en-GB", "the effective language tag should be 'en-GB'");
-		assert.equal(oConfig.getSAPLogonLanguage(), "6N", "the SAP Logon language should be '6N'");
-
-		oConfig.setLanguage("en-GB", "1E");
-		assert.equal(oConfig.getLanguage(), "en-GB", "the effective language should be 'en-GB'");
-		assert.equal(oConfig.getLanguageTag(), "en-GB", "the effective language tag should be 'en-GB'");
-		assert.equal(oConfig.getSAPLogonLanguage(), "1E", "the SAP Logon language should be '1E'");
-
-	});
-
-	QUnit.test("error reporting", function(assert) {
-		this.stub(Log, 'warning');
-		this.setupConfig("de", "?sap-language=1E&sap-locale=en-GB");
-		assert.strictEqual(Log.warning.called, false, "no warning should be written if accompanied by sap-locale");
-		this.setupConfig("de", "?sap-language=1E&sap-ui-language=en-GB");
-		assert.strictEqual(Log.warning.called, false, "no warning should be written if accompanied by sap-ui-language");
-		this.setupConfig("de", "?sap-language=1E");
-		assert.ok(Log.warning.calledWith(sinon.match(/1E/).and(sinon.match(/BCP-?47/i))), "warning must have been written");
-		assert.throws(function() {
-			this.setupConfig("de", "?sap-locale=1E&sap-language=1E");
-		}, "setting an invalid (non-BCP-47) sap-locale should cause an error");
-		assert.throws(function() {
-			this.setupConfig("de", "?sap-ui-language=1E&sap-language=1E");
-		}, "setting an invalid (non-BCP-47) sap-ui-language should cause an error");
-	});
-
-	QUnit.test("Format Locale", function(assert) {
-		var checkPublicMethods = function (oObject, fnClass) {
-			var aMethodNames = fnClass.getMetadata().getAllPublicMethods(), i;
-
-			for ( i = 0; i < aMethodNames.length; i++ ) {
-				assert.ok(oObject[aMethodNames[i]] !== undefined, "expected interface method should actually exist: " + aMethodNames[i]);
-			}
-
-			for ( i in oObject ) {
-				assert.ok(aMethodNames.indexOf(i) >= 0, "actual method should be part of expected interface: " + i);
-			}
-		};
-		var oConfig;
-
-		window['sap-ui-config'].formatlocale = 'fr-CH'; // Note: Configuration expects sap-ui-config names converted to lowercase (done by bootstrap)
-		oConfig = this.setupConfig("fr-FR", "");
-		assert.equal(oConfig.getLanguageTag(), "fr-FR", "language should be fr-FR");
-		assert.equal(oConfig.getFormatLocale(), "fr-CH", "format locale string should be fr-CH");
-		assert.ok(oConfig.getFormatSettings().getFormatLocale() instanceof Interface, "format locale should exist");
-		assert.equal(oConfig.getFormatSettings().getFormatLocale().toString(), "fr-CH", "format locale should be fr-CH");
-
-		window['sap-ui-config'].formatlocale = null;
-		oConfig = this.setupConfig("fr-FR", "");
-		assert.equal(oConfig.getLanguageTag(), "fr-FR", "language should be fr-FR");
-		assert.equal(oConfig.getFormatLocale(), "fr-FR", "format locale string should be fr-CH");
-		assert.ok(oConfig.getFormatSettings().getFormatLocale() instanceof Interface, "format locale should exist");
-		checkPublicMethods(Configuration.getFormatSettings().getFormatLocale(), Locale);
-		assert.equal(oConfig.getFormatSettings().getFormatLocale().toString(), "fr-FR", "format locale should be fr-CH");
-		delete window['sap-ui-config'].formatlocale;
-
-		oConfig = this.setupConfig("de", "?sap-language=EN&sap-ui-formatLocale=en-AU");
-		assert.equal(oConfig.getLanguageTag(), "en", "language should be en");
-		assert.equal(oConfig.getFormatLocale(), "en-AU", "format locale string should be en-AU");
-		assert.ok(oConfig.getFormatSettings().getFormatLocale() instanceof Interface, "format locale should exist");
-		assert.equal(oConfig.getFormatSettings().getFormatLocale().toString(), "en-AU", "format locale should be en-AU");
-
-		oConfig.setFormatLocale("en-CA");
-		assert.equal(oConfig.getFormatLocale(), "en-CA", "format locale string should be en-CA");
-		assert.ok(oConfig.getFormatSettings().getFormatLocale() instanceof Interface, "format locale should exist");
-		assert.equal(oConfig.getFormatSettings().getFormatLocale().toString(), "en-CA", "format locale should be en-CA");
-
-		oConfig.setFormatLocale();
-		assert.equal(oConfig.getFormatLocale(), "en", "format locale string should be en");
-		assert.ok(oConfig.getFormatSettings().getFormatLocale() instanceof Interface, "format locale should exist");
-		assert.equal(oConfig.getFormatSettings().getFormatLocale().toString(), "en", "format locale should be en");
-
-		assert.throws(function() {
-			oConfig.setFormatLocale('6N');
-		}, "setting an invalid (non-BCP-47) format locale should cause an error");
-		assert.throws(function() {
-			oConfig.setFormatLocale(new Date());
-		}, "setting a non-string value as format locale should cause an error");
-	});
-
-
-
 	QUnit.module("Format settings", {
 		afterEach: function() {
 			browserUrl.reset();
@@ -588,9 +484,7 @@ sap.ui.define([
 	});
 
 	QUnit.test("Read 'sap-ui-legacy-number-format' from URL", function(assert) {
-
-		var oSpySetLegacyNumberFormat = this.spy(Configuration.FormatSettings.prototype, "setLegacyNumberFormat");
-
+		var oStub;
 		[
 			{ param: '', expected: undefined },
 			{ param: ' ', expected: ' ' },
@@ -599,24 +493,26 @@ sap.ui.define([
 			{ param: 'Y', expected: 'Y' },
 			{ param: 'y', expected: 'Y' }
 		].forEach(function (data) {
-
 			// setup
-			browserUrl.change('?sap-ui-legacy-number-format=' + encodeURIComponent(data.param));
-			oSpySetLegacyNumberFormat.resetHistory();
-
-			// call method under test
-			Configuration.setCore();
+			BaseConfig._.invalidate();
+			oStub?.restore();
+			oStub = sinon.stub(URLConfigurationProvider, "get");
+			oStub.callsFake(function(sKey) {
+				if (sKey === "sapUiLegacyNumberFormat") {
+					return data.param;
+				} else {
+					return oStub.wrappedMethod.call(this, sKey);
+				}
+			}.bind(this));
 
 			// verify results
-			assert.equal(oSpySetLegacyNumberFormat.callCount, 1, "setLegacyNumberFormat with value: '" + data.param + "' must be called");
 			assert.equal(Configuration.getFormatSettings().getLegacyNumberFormat(), data.expected, "Value of number format must be '" + data.expected + "'.");
-		});
+		}.bind(this));
+		oStub.restore();
 	});
 
 	QUnit.test("Read 'sap-ui-legacy-date-format' from URL", function(assert) {
-
-		var oSpySetLegacyDateFormat = this.spy(Configuration.FormatSettings.prototype, "setLegacyDateFormat");
-
+		var oStub, oBaseStub;
 		[
 			{ param: '', expected: undefined },
 			{ param: '1', expected: '1' },
@@ -635,19 +531,33 @@ sap.ui.define([
 			{ param: 'b', expected: 'B' },
 			{ param: 'c', expected: 'C' }
 		].forEach(function (data) {
+			// setup
+			BaseConfig._.invalidate();
+			oStub?.restore();
+			oStub = sinon.stub(URLConfigurationProvider, "get");
+			oStub.callsFake(function(sKey) {
+				if (sKey === "sapUiLegacyDateFormat") {
+					return data.param;
+				} else {
+					return oStub.wrappedMethod.call(this, sKey);
+				}
+			}.bind(this));
+			//reset memory Provider
+			oBaseStub?.restore();
+			oBaseStub = sinon.stub(BaseConfig, "get");
+			oBaseStub.callsFake(function(mParameters) {
+				mParameters.provider = undefined;
+				return oBaseStub.wrappedMethod.call(this, mParameters);
+			}.bind(this));
 
-			browserUrl.change('?sap-ui-legacy-date-format=' + encodeURIComponent(data.param));
-			oSpySetLegacyDateFormat.resetHistory();
-
-			Configuration.setCore();
-
-			assert.equal(oSpySetLegacyDateFormat.callCount, 1, "setLegacyDateFormat must have been called one time");
 			assert.equal(Configuration.getFormatSettings().getLegacyDateFormat(), data.expected, "Value of date format must be '" + data.expected + "'.");
 		});
+		oStub.restore();
+		oBaseStub.restore();
 	});
 
 	QUnit.test("Read 'sap-ui-legacy-time-format' from URL", function(assert) {
-		var oSpySetLegacyTimeFormat = this.spy(Configuration.FormatSettings.prototype, "setLegacyTimeFormat");
+		var oStub, oBaseStub;
 
 		[
 			{ param: '', expected: undefined },
@@ -657,155 +567,143 @@ sap.ui.define([
 			{ param: '3', expected: '3' },
 			{ param: '4', expected: '4' }
 		].forEach(function (data) {
+			// setup
+			BaseConfig._.invalidate();
+			oStub?.restore();
+			oStub = sinon.stub(URLConfigurationProvider, "get");
+			oStub.callsFake(function(key) {
+				if (key === "sapUiLegacyTimeFormat") {
+					return data.param;
+				} else {
+					return oStub.wrappedMethod.call(this, key);
+				}
+			}.bind(this));
+			//reset memory Provider
+			oBaseStub?.restore();
+			oBaseStub = sinon.stub(BaseConfig, "get");
+			oBaseStub.callsFake(function(mParameters) {
+				mParameters.provider = undefined;
+				return oBaseStub.wrappedMethod.call(this, mParameters);
+			}.bind(this));
 
-			browserUrl.change('?sap-ui-legacy-time-format=' + encodeURIComponent(data.param));
-			oSpySetLegacyTimeFormat.resetHistory();
-
-			Configuration.setCore();
-
-			assert.equal(oSpySetLegacyTimeFormat.callCount, 1, "setLegacyTimeFormat must be called one time");
 			assert.equal(Configuration.getFormatSettings().getLegacyTimeFormat(), data.expected, "Value of time format must be '" + data.expected + "'.");
 		});
+		oStub.restore();
+		oBaseStub.restore();
+	});
+
+	QUnit.module("CalendarWeekNumbering");
+
+	QUnit.test("Read calendarWeekNumbering from URL", function(assert) {
+		// setup
+		BaseConfig._.invalidate();
+		var	oStub = sinon.stub(URLConfigurationProvider, "get");
+		oStub.callsFake(function(key) {
+			if (key === "sapUiCalendarWeekNumbering") {
+				return "ISO_8601";
+			} else {
+				return oStub.wrappedMethod.call(this, key);
+			}
+		}.bind(this));
+		//reset memory Provider
+		var oBaseStub = sinon.stub(BaseConfig, "get");
+		oBaseStub.callsFake(function(mParameters) {
+			mParameters.provider = undefined;
+			return oBaseStub.wrappedMethod.call(this, mParameters);
+		}.bind(this));
+
+		// verify results
+		assert.equal(Configuration.getCalendarWeekNumbering(), CalendarWeekNumbering.ISO_8601,
+			'calendarWeekNumbering set via URL');
+		oStub.restore();
+		oBaseStub.restore();
+	});
+
+	QUnit.test("Read calendarWeekNumbering from URL - empty string leads to default value", function(assert) {
+		// setup
+		BaseConfig._.invalidate();
+		var	oStub = sinon.stub(URLConfigurationProvider, "get");
+		oStub.callsFake(function(key) {
+			if (key === "sapUiCalendarWeekNumbering") {
+				return "";
+			} else {
+				return oStub.wrappedMethod.call(this, key);
+			}
+		}.bind(this));
+		//reset memory Provider
+		var oBaseStub = sinon.stub(BaseConfig, "get");
+		oBaseStub.callsFake(function(mParameters) {
+			mParameters.provider = undefined;
+			return oBaseStub.wrappedMethod.call(this, mParameters);
+		}.bind(this));
+
+		// verify results
+		assert.equal(Configuration.getCalendarWeekNumbering(), CalendarWeekNumbering.Default,
+			'no value in URL leads to default value');
+		oStub.restore();
+		oBaseStub.restore();
+	});
+
+	QUnit.test("Read calendarWeekNumbering from URL - invalid value", function(assert) {
+		assert.throws(function() {
+			Configuration.setCalendarWeekNumbering("invalid");
+		}, new TypeError("Unsupported Enumeration value for calendarWeekNumbering, valid values are: "
+				+ "Default, ISO_8601, MiddleEastern, WesternTraditional"));
 	});
 
 	QUnit.module("Timezone", {
 		beforeEach: function(assert) {
-			window["sap-ui-config"].language = "en";
-		},
-		afterEach: function() {
-			browserUrl.reset();
+			Configuration.setLanguage("en");
+			BaseConfig._.invalidate();
 		}
 	});
 
 	QUnit.test("Read timezone from URL", function(assert) {
 		// setup
-		browserUrl.change('?sap-ui-timezone=America/Los_Angeles');
-
-		// call method under test
-		Configuration.setCore();
-
-		// verify results
-		// TODO Timezone Configuration: expected test when re-enabling Configuration#setTimezone functionality
-		// assert.equal(Configuration.getTimezone(), 'America/Los_Angeles', 'America/Los_Angeles is set');
-		assert.equal(Configuration.getTimezone(), sLocalTimezone, 'sap-ui-timezone is not supported');
-	});
-
-	QUnit.test("Read timezone from URL sap-timezone", function(assert) {
-		// setup
-		browserUrl.change('?sap-timezone=America/Los_Angeles');
-
-		// call method under test
-		Configuration.setCore();
+		var oStub = sinon.stub(BaseConfig, "get");
+		oStub.callsFake(function(mParameters) {
+			if (mParameters.name === "sapUiTimezone") {
+				return "America/Los_Angeles";
+			} else {
+				return oStub.wrappedMethod.call(this, mParameters);
+			}
+		});
 
 		// verify results
 		assert.equal(Configuration.getTimezone(), 'America/Los_Angeles', 'America/Los_Angeles is set');
+		oStub.restore();
+	});
 
-		// repeat the test with an invalid timezone to reset _experimentalTimezone flag before executing other tests
+	QUnit.test("Read timezone from URL sap-timezone", function(assert) {
+		var oStub = sinon.stub(BaseConfig, "get");
+		oStub.callsFake(function(mParameters) {
+			if (mParameters.name === "sapTimezone") {
+				return "America/Los_Angeles";
+			} else {
+				return oStub.wrappedMethod.call(this, mParameters);
+			}
+		});
+
+		// verify results
+		assert.equal(Configuration.getTimezone(), 'America/Los_Angeles', 'America/Los_Angeles is set');
+		oStub.restore();
+	});
+
+	QUnit.test("Read timezone from URL: invalid", function(assert) {
 		// setup
-		browserUrl.change('?sap-timezone=invalid');
-
-		// call method under test
-		Configuration.setCore();
+		var oStub = sinon.stub(BaseConfig, "get");
+		oStub.callsFake(function(mParameters) {
+			if (mParameters.name === "sapUiTimezone") {
+				return "invalid";
+			} else {
+				return oStub.wrappedMethod.call(this, mParameters);
+			}
+		});
 
 		// verify results
 		assert.equal(Configuration.getTimezone(), sLocalTimezone, "fallback to '" + sLocalTimezone + "'");
+		oStub.restore();
 	});
-
-	QUnit.module("SAP parameters", {
-		beforeEach: function(assert) {
-			window["sap-ui-config"].language = "en";
-		},
-		afterEach: function() {
-			browserUrl.reset();
-		}
-	});
-
-	QUnit.test("Read SAP parameters from URL", function(assert) {
-
-		// setup
-		browserUrl.change('?sap-client=foo&sap-server=bar&sap-system=abc&sap-language=en');
-
-		// call method under test
-		Configuration.setCore();
-
-		// verify results
-		assert.equal(Configuration.getSAPParam('sap-client'), 'foo', 'SAP parameter sap-client=foo');
-		assert.equal(Configuration.getSAPParam('sap-server'), 'bar', 'SAP parameter sap-server=bar');
-		assert.equal(Configuration.getSAPParam('sap-system'), 'abc', 'SAP parameter sap-system=abc');
-		assert.equal(Configuration.getSAPParam('sap-language'), 'EN', 'SAP parameter sap-language=en');
-
-
-	});
-
-	QUnit.test("Read SAP parameters from URL (ignoreUrlParams)", function(assert) {
-
-		// setup
-		browserUrl.change('?sap-client=foo&sap-server=bar&sap-system=abc&sap-language=de');
-		window["sap-ui-config"].ignoreurlparams = true;
-
-		// call method under test
-		Configuration.setCore();
-
-		// verify results
-		assert.equal(Configuration.getSAPParam('sap-client'), undefined, 'SAP parameter sap-client=foo');
-		assert.equal(Configuration.getSAPParam('sap-server'), undefined, 'SAP parameter sap-server=bar');
-		assert.equal(Configuration.getSAPParam('sap-system'), undefined, 'SAP parameter sap-system=abc');
-		assert.equal(Configuration.getSAPParam('sap-language'), 'EN', 'SAP parameter sap-language=en');
-
-		delete window["sap-ui-config"].ignoreurlparams;
-
-	});
-
-	QUnit.test("Set SAPLogonLanguage and SAP parameter is updated", function(assert) {
-
-		// setup
-		browserUrl.change('?sap-language=EN');
-
-		// call method under test
-		Configuration.setCore();
-
-		// verify results
-		assert.equal(Configuration.getSAPParam('sap-language'), 'EN', 'SAP parameter sap-language=EN');
-		Configuration.setLanguage("es");
-		assert.equal(Configuration.getSAPParam('sap-language'), 'ES', 'SAP parameter sap-language=ES');
-
-
-	});
-
-	QUnit.test("Read SAP parameters from <meta> tag", function(assert) {
-
-		// setup
-		var metaTagClient = document.createElement("meta");
-		metaTagClient.setAttribute("name", "sap-client");
-		metaTagClient.setAttribute("content", "foo");
-		document.head.appendChild(metaTagClient);
-
-		var metaTagServer = document.createElement("meta");
-		metaTagServer.setAttribute("name", "sap-server");
-		metaTagServer.setAttribute("content", "bar");
-		document.head.appendChild(metaTagServer);
-
-		var metaTagSystem = document.createElement("meta");
-		metaTagSystem.setAttribute("name", "sap-system");
-		metaTagSystem.setAttribute("content", "abc");
-		document.head.appendChild(metaTagSystem);
-
-		// call method under test
-		Configuration.setCore();
-
-		// verify results
-		assert.equal(Configuration.getSAPParam('sap-client'), 'foo', 'SAP parameter sap-client=foo');
-		assert.equal(Configuration.getSAPParam('sap-server'), 'bar', 'SAP parameter sap-system=bar');
-		assert.equal(Configuration.getSAPParam('sap-system'), 'abc', 'SAP parameter sap-client=abc');
-
-		document.head.removeChild(metaTagClient);
-		document.head.removeChild(metaTagServer);
-		document.head.removeChild(metaTagSystem);
-
-	});
-
-	// "animationmode" is the normalized value, the application still needs to use "animationMode".
-	var sAnimationModeConfigurationName = 'animationmode';
 
 	/**
 	 * Tests the interaction between the legacy "animation" and the modern "animationMode" settings.
@@ -815,29 +713,43 @@ sap.ui.define([
 	 */
 	QUnit.module("[Legacy] Animation & AnimationMode interaction", {
 		beforeEach: function() {
-			window['sap-ui-config'] = window["sap-ui-config"] || {};
-			delete window["sap-ui-config"]['animation'];
-			delete window["sap-ui-config"][sAnimationModeConfigurationName];
+			this.mParams = {};
+			BaseConfig._.invalidate();
+			this.oGlobalConfigStub = sinon.stub(GlobalConfigurationProvider, "get");
+			this.oGlobalConfigStub.callsFake(function(sKey) {
+				if (this.mParams[sKey] !== undefined) {
+					return this.mParams[sKey];
+				} else {
+					return this.oGlobalConfigStub.wrappedMethod.call(this, sKey);
+				}
+			}.bind(this));
+			this.oBaseStub = sinon.stub(BaseConfig, "get");
+			this.oBaseStub.callsFake(function(mParameters) {
+				mParameters.provider = undefined;
+				return this.oBaseStub.wrappedMethod.call(this, mParameters);
+			}.bind(this));
+		},
+		afterEach: function() {
+			this.oGlobalConfigStub.restore();
+			this.oBaseStub.restore();
 		}
 	});
 
 	QUnit.test("Default animation and animation mode", function(assert) {
-		Configuration.setCore();
 		assert.ok(Configuration.getAnimation(), "Default animation.");
 		assert.equal(Configuration.getAnimationMode(), AnimationMode.full, "Default animation mode.");
 	});
 
 	QUnit.test("Animation is off, default animation mode", function(assert) {
-		window['sap-ui-config'] = { animation: false };
-		Configuration.setCore();
+		this.mParams.sapUiAnimation = false;
+		this.mParams.sapUiAnimationMode = undefined;
 		assert.ok(!Configuration.getAnimation(), "Animation should be off.");
 		assert.equal(Configuration.getAnimationMode(), AnimationMode.minimal, "Animation mode should switch to " + AnimationMode.minimal + ".");
 	});
 
 	QUnit.test("Animation is off, valid but not possible mode is set and sanitized", function(assert) {
-		window['sap-ui-config']['animation'] = false;
-		window['sap-ui-config'][sAnimationModeConfigurationName] = AnimationMode.basic;
-		Configuration.setCore();
+		this.mParams.sapUiAnimation = false;
+		this.mParams.sapUiAnimationMode = AnimationMode.basic;
 		assert.ok(Configuration.getAnimation(), "Animation should be on because animation mode overwrites animation.");
 		assert.equal(Configuration.getAnimationMode(), AnimationMode.basic, "Animation mode should switch to " + AnimationMode.basic + ".");
 	});
@@ -845,9 +757,10 @@ sap.ui.define([
 	QUnit.test("Valid animation modes from enumeration & side-effect on 'animation' setting", function(assert) {
 		for (var sAnimationModeKey in AnimationMode) {
 			if (AnimationMode.hasOwnProperty(sAnimationModeKey)) {
+				BaseConfig._.invalidate();
 				var sAnimationMode = AnimationMode[sAnimationModeKey];
-				window['sap-ui-config'][sAnimationModeConfigurationName] = sAnimationMode;
-				Configuration.setCore();
+				this.mParams.sapUiAnimation = false;
+				this.mParams.sapUiAnimationMode = sAnimationMode;
 				if (sAnimationMode === AnimationMode.none || sAnimationMode === AnimationMode.minimal) {
 					assert.ok(!Configuration.getAnimation(), "Animation is switched to off because of animation mode.");
 				} else {
@@ -858,13 +771,39 @@ sap.ui.define([
 		}
 	});
 
-	QUnit.module("AnimationMode initial setting evaluation");
+	QUnit.module("AnimationMode initial setting evaluation", {
+		beforeEach: function() {
+			this.mParams = {};
+			BaseConfig._.invalidate();
+			this.oGlobalConfigStub = sinon.stub(GlobalConfigurationProvider, "get");
+			this.oGlobalConfigStub.callsFake(function(sKey) {
+				if (this.mParams[sKey] !== undefined) {
+					return this.mParams[sKey];
+				} else {
+					return this.oGlobalConfigStub.wrappedMethod.call(this, sKey);
+				}
+			}.bind(this));
+			this.oBaseStub = sinon.stub(BaseConfig, "get");
+			this.oBaseStub.callsFake(function(mParameters) {
+				mParameters.provider = undefined;
+				return this.oBaseStub.wrappedMethod.call(this, mParameters);
+			}.bind(this));
+		},
+		afterEach: function() {
+			this.oGlobalConfigStub.restore();
+			this.oBaseStub.restore();
+		}
+	});
 
 	QUnit.test("Invalid animation mode", function(assert) {
-		window['sap-ui-config'][sAnimationModeConfigurationName] = "someuUnsupportedStringValue";
+		/**
+		 * @deprecated As of version 1.50.0, replaced by {@link sap.ui.core.Configuration#getAnimationMode}
+		 */
+		this.mParams.sapUiAnimation = false;
+		this.mParams.sapUiAnimationMode = "someuUnsupportedStringValue";
 		assert.throws(
-			function() { Configuration.setCore(); },
-			new Error("Unsupported Enumeration value for animationMode, valid values are: full, basic, minimal, none"),
+			function() { Configuration.getAnimationMode(); },
+			new TypeError("Unsupported Enumeration value for sapUiAnimationMode, valid values are: full, basic, minimal, none"),
 			"Unsupported value for animation mode should throw an error."
 		);
 	});
@@ -872,9 +811,13 @@ sap.ui.define([
 	QUnit.test("Valid animation modes from enumeration", function(assert) {
 		for (var sAnimationModeKey in AnimationMode) {
 			if (AnimationMode.hasOwnProperty(sAnimationModeKey)) {
+				BaseConfig._.invalidate();
 				var sAnimationMode = AnimationMode[sAnimationModeKey];
-				window['sap-ui-config'][sAnimationModeConfigurationName] = sAnimationMode;
-				Configuration.setCore();
+				/**
+				 * @deprecated As of version 1.50.0, replaced by {@link sap.ui.core.Configuration#getAnimationMode}
+				 */
+				this.mParams.sapUiAnimation = false;
+				this.mParams.sapUiAnimationMode = sAnimationMode;
 				assert.equal(Configuration.getAnimationMode(), sAnimationMode, "Test for animation mode: " + sAnimationMode);
 			}
 		}
@@ -882,15 +825,16 @@ sap.ui.define([
 
 	QUnit.module("AnimationMode changes at runtime", {
 		before: function () {
-			window["sap-ui-config"] = {};
-			Configuration.setCore(oRealCore);
 			this.getConfiguration = function () {
 				return Configuration;
 			};
 		},
-		afterEach: function() {
+		beforeEach: function() {
 			// Restore default animation mode
 			Configuration.setAnimationMode(AnimationMode.full);
+		},
+		afterEach: function() {
+			Configuration.setAnimationMode(AnimationMode.minimal);
 		}
 	});
 
@@ -911,12 +855,18 @@ sap.ui.define([
 		// Check if default values are set
 		assert.equal(oConfiguration.getAnimationMode(), AnimationMode.full, "Default animation mode is " + AnimationMode.full + ".");
 		assert.equal(getHtmlAttribute("data-sap-ui-animation-mode"), AnimationMode.full, "Default animation mode should be injected as attribute.");
+		/**
+		 * @deprecated As of version 1.50.0, replaced by {@link sap.ui.core.Configuration#getAnimationMode}
+		 */
 		assert.equal(getHtmlAttribute("data-sap-ui-animation"), "on", "Default animation should be injected as attribute.");
 
 		// Change animation mode
 		oConfiguration.setAnimationMode(AnimationMode.none);
 		assert.equal(oConfiguration.getAnimationMode(), AnimationMode.none, "Animation mode should switch to " + AnimationMode.none + ".");
 		assert.equal(getHtmlAttribute("data-sap-ui-animation-mode"), AnimationMode.none, "Animation mode should be injected as attribute.");
+		/**
+		 * @deprecated As of version 1.50.0, replaced by {@link sap.ui.core.Configuration#getAnimationMode}
+		 */
 		assert.equal(getHtmlAttribute("data-sap-ui-animation"), "off", "Animation should be turned off.");
 	});
 
@@ -925,449 +875,353 @@ sap.ui.define([
 
 		assert.throws(
 			function() { oConfiguration.setAnimationMode("someUnsupportedStringValue"); },
-			new Error("Unsupported Enumeration value for animationMode, valid values are: full, basic, minimal, none"),
+			new TypeError("Unsupported Enumeration value for animationMode, valid values are: full, basic, minimal, none"),
 			"Unsupported value for animation mode should throw an error."
 		);
 
 		assert.equal(getHtmlAttribute("data-sap-ui-animation-mode"), AnimationMode.full, "Default animation mode should stay the same.");
 	});
 
-	QUnit.module("Flexibility Services & Connectors", {
-		afterEach: function () {
-			delete window["sap-ui-config"]["flexibilityservices"];
-		}
-	});
+	QUnit.module("Flexibility Services & Connectors");
 
 	QUnit.test("Get the Flexibility Services", function(assert) {
-		Configuration.setCore();
 		var sFlexibilityService = Configuration.getFlexibilityServices();
-		assert.deepEqual(sFlexibilityService, [{layers: ["ALL"], connector: "LrepConnector", url: "/sap/bc/lrep"}]);
+		assert.deepEqual(sFlexibilityService, [{connector: "LrepConnector", url: "/sap/bc/lrep"}]);
 	});
 
 	QUnit.test("Get the Flexibility Services - set to an empty string", function(assert) {
-		window["sap-ui-config"]["flexibilityservices"] = "";
-
-		Configuration.setCore();
+		BaseConfig._.invalidate();
+		var oStub = sinon.stub(GlobalConfigurationProvider, "get");
+		oStub.callsFake(function(sKey) {
+			if (sKey === "sapUiFlexibilityServices") {
+				return "";
+			} else {
+				return oStub.wrappedMethod.call(this, sKey);
+			}
+		}.bind(this));
 		var sFlexibilityService = Configuration.getFlexibilityServices();
 		assert.deepEqual(sFlexibilityService, []);
+		oStub.restore();
 	});
 
 	QUnit.test("Get the Flexibility Services - set to an empty array", function(assert) {
-		window["sap-ui-config"]["flexibilityservices"] = "[]";
-
-		Configuration.setCore();
+		BaseConfig._.invalidate();
+		var oStub = sinon.stub(GlobalConfigurationProvider, "get");
+		oStub.callsFake(function(sKey) {
+			if (sKey === "sapUiFlexibilityServices") {
+				return "[]";
+			} else {
+				return oStub.wrappedMethod.call(this, sKey);
+			}
+		}.bind(this));
 		var sFlexibilityService = Configuration.getFlexibilityServices();
 		assert.deepEqual(sFlexibilityService, []);
+		oStub.restore();
 	});
 
 	QUnit.test("Get the Flexibility Services - set to multiple objects", function(assert) {
+		BaseConfig._.invalidate();
 		var oFirstConfigObject = {'layers': ['CUSTOMER'], 'connector': 'KeyUserConnector', 'url': '/flex/keyUser'};
 		var oSecondConfigObject = {'layers': ['USER'], 'connector': 'PersonalizationConnector', 'url': '/sap/bc/lrep'};
 		var aConfig = [oFirstConfigObject, oSecondConfigObject];
 		var sConfigString = JSON.stringify(aConfig);
 
-		window["sap-ui-config"]["flexibilityservices"] = sConfigString;
+		var oStub = sinon.stub(GlobalConfigurationProvider, "get");
+		oStub.callsFake(function(sKey) {
+			if (sKey === "sapUiFlexibilityServices") {
+				return sConfigString;
+			} else {
+				return oStub.wrappedMethod.call(this, sKey);
+			}
+		}.bind(this));
 
-		Configuration.setCore();
 		var sFlexibilityService = Configuration.getFlexibilityServices();
 		assert.deepEqual(sFlexibilityService, aConfig);
+		oStub.restore();
 	});
 
-	function _getNumberOfFlModules(oCfg) {
-		return oCfg.getValue("modules").filter(function(sModule) {
-			return sModule === "sap.ui.fl.library";
-		}).length;
-	}
+	QUnit.module("ThemeRoot Validation");
 
-	QUnit.test("Set flexibilityServices enforces the loading of sap.ui.fl", function(assert) {
-		window["sap-ui-config"]["flexibilityservices"] = '[{"connector": "KeyUser", "url": "/some/url", laverFilters: []}]';
-
-		Configuration.setCore();
-		assert.equal(_getNumberOfFlModules(Configuration), 1);
-	});
-
-	QUnit.test("Set flexibilityServices URL enforces the loading of sap.ui.fl", function(assert) {
-		var sEncodedConfig = encodeURI('[{"connector":"KeyUser","url": "/some/url","laverFilters":[]}]');
-		browserUrl.change(location.origin + "?sap-ui-flexibilityServices="  + sEncodedConfig);
-
-		try {
-			Configuration.setCore();
-			assert.equal(_getNumberOfFlModules(Configuration), 1);
-		} finally {
-			browserUrl.reset();
-		}
-	});
-
-	QUnit.test("Set flexibilityServices URL but setting the loading to async does NOT enforces the loading of sap.ui.fl", function(assert) {
-		var sEncodedConfig = encodeURI('[{"connector":"KeyUser","url": "/some/url","laverFilters":[]}]');
-		browserUrl.change(location.origin + "?sap-ui-xx-skipAutomaticFlLibLoading=true&sap-ui-flexibilityServices=" + sEncodedConfig);
-
-		try {
-			Configuration.setCore();
-			assert.equal(_getNumberOfFlModules(Configuration), 0);
-		} finally {
-			browserUrl.reset();
-		}
-	});
-
-	QUnit.test("Default flexibilityServices does NOT enforces the loading of sap.ui.fl", function(assert) {
-		Configuration.setCore();
-		assert.equal(_getNumberOfFlModules(Configuration), 0);
-	});
-
-	QUnit.test("Cleared flexibilityServices does NOT enforces the loading of sap.ui.fl", function(assert) {
-		Configuration.setCore();
-		assert.equal(_getNumberOfFlModules(Configuration), 0);
-	});
-
-	QUnit.test("Set flexibilityServices does NOT add the loading of sap.ui.fl an additional time if it is already set", function(assert) {
-		window["sap-ui-config"]["flexibilityservices"] = "";
-		window["sap-ui-config"]["libs"] = 'sap.ui.fl';
-		Configuration.setCore();
-		assert.equal(_getNumberOfFlModules(Configuration), 1);
-	});
-
-	QUnit.test("Cleared flexibilityServices does NOT remove the loading of sap.ui.fl if it is set", function(assert) {
-		window["sap-ui-config"]["flexibilityservices"] = "";
-		window["sap-ui-config"]["libs"] = 'sap.ui.fl';
-		Configuration.setCore();
-		assert.equal(_getNumberOfFlModules(Configuration), 1);
-	});
-
-	QUnit.module("ThemeRoot Validation", {
-		before: HistoryUtils.check
-	});
+	// determine the default port depending on the protocol of the current page
+	const defaultPort = window.location.protocol === "https" ? 443 : 80;
+	const origin = window.location.origin;
+	const originWithoutProtocol = origin.replace(window.location.protocol, "");
 
 	[
 		{
 			caption: "Relative URL, All Origins",
-			url: location.origin + "?sap-theme=custom@custom-theme/",
+			theme: "custom@custom-theme/",
 			allowedOrigins: "*",
-			expectedThemeRoot: location.origin + "/custom-theme/UI5/"
+			expectedThemeRoot: "custom-theme/UI5/"
 		},
 		{
 			caption: "Relative URL, no valid origins",
-			url: location.origin + "?sap-theme=custom@custom-theme/",
+			theme: "custom@custom-theme/",
 			allowedOrigins: null,
-			expectedThemeRoot: location.origin + "/custom-theme/UI5/"
+			expectedThemeRoot: "custom-theme/UI5/"
 		},
 		{
 			caption: "Relative URL, baseURI on different domain, no valid origins",
-			url: location.origin + "?sap-theme=custom@custom-theme/",
+			theme: "custom@custom-theme/",
 			allowedOrigins: null,
-			expectedThemeRoot: location.origin + "/custom-theme/UI5/",
-			baseURI: "http://example.org"
+			expectedThemeRoot: "custom-theme/UI5/",
+			baseURI: "http://example.org" //Check why needed
 		},
 		{
 			caption: "Relative URL, baseURI on different domain, All origins",
-			url: location.origin + "?sap-theme=custom@custom-theme/",
+			theme: "custom@custom-theme/",
 			allowedOrigins: "*",
-			expectedThemeRoot: location.origin + "/custom-theme/UI5/",
-			baseURI: "http://example.org"
+			expectedThemeRoot: "custom-theme/UI5/",
+			baseURI: "http://example.org" //Check why needed
 		},
 		{
 			caption: "Relative URL, relative baseURI",
-			url: location.origin + "/foo/bar/?sap-theme=custom@../custom-theme",
+			theme: "custom@../custom-theme",
 			allowedOrigins: null,
-			expectedThemeRoot: location.origin + "/foo/custom-theme/UI5/",
-			baseURI: "/some/other/path/"
+			expectedThemeRoot: "../custom-theme/UI5/",
+			baseURI: "/some/other/path/" //Check why needed
 		},
 		{
 			caption: "Absolute URL, All Origins",
-			url: location.origin + "?sap-theme=custom@ftp://example.org/theming/custom-theme/",
+			theme: "custom@ftp://example.org/theming/custom-theme/",
 			allowedOrigins: "*",
 			expectedThemeRoot: "ftp://example.org/theming/custom-theme/UI5/"
 		},
 		{
 			caption: "Absolute URL, Same Domain",
-			url: location.origin + "?sap-theme=custom@" + location.origin + "/theming/custom-theme/",
-			allowedOrigins: location.origin,
-			expectedThemeRoot: location.origin + "/theming/custom-theme/UI5/"
+			theme: `custom@${origin}/theming/custom-theme/`,
+			allowedOrigins: origin,
+			expectedThemeRoot: "/theming/custom-theme/UI5/"
 		},
 		{
 			caption: "Absolute URL, Valid, but Different Domain",
-			url: location.origin + "?sap-theme=custom@https://example.com/theming/custom-theme/",
+			theme: "custom@https://example.com/theming/custom-theme/",
 			allowedOrigins: "https://example.com",
 			expectedThemeRoot: "https://example.com/theming/custom-theme/UI5/"
 		},
 		{
 			caption: "Absolute URL, no valid origins",
-			url: location.origin + "?sap-theme=custom@https://example.com/theming/custom-theme/",
+			theme: "custom@https://example.com/theming/custom-theme/",
 			allowedOrigins: null,
-			expectedThemeRoot: location.origin + "/theming/custom-theme/UI5/"
+			expectedThemeRoot: "/theming/custom-theme/UI5/"
 		},
 		{
 			caption: "Absolute URL, empty valid origins",
-			url: location.origin + "?sap-theme=custom@https://example.com/theming/custom-theme/",
+			theme: "custom@https://example.com/theming/custom-theme/",
 			allowedOrigins: "",
-			expectedThemeRoot: location.origin + "/theming/custom-theme/UI5/"
+			expectedThemeRoot: "/theming/custom-theme/UI5/"
 		},
 		{
 			caption: "Absolute URL with same protocol, Valid",
-			url: location.origin + "?sap-theme=custom@//example.com/theming/custom-theme/",
+			theme: "custom@//example.com/theming/custom-theme/",
 			allowedOrigins: "example.com",
-			expectedThemeRoot: "//example.com/theming/custom-theme/UI5/"
+			expectedThemeRoot: "//example.com/theming/custom-theme/UI5/",
+			noProtocol: true
+		},
+		{
+			caption: "Absolute URL with same protocol and themeRoot has default port, Valid",
+			theme: `custom@//example.com:${defaultPort}/theming/custom-theme/`,
+			allowedOrigins: "example.com",
+			expectedThemeRoot: "//example.com/theming/custom-theme/UI5/",
+			noProtocol: true
+		},
+		{
+			caption: "Absolute URL with same protocol and allowedThemeOrigin has default port, Valid",
+			theme: "custom@//example.com/theming/custom-theme/",
+			allowedOrigins: `example.com:${defaultPort}`,
+			expectedThemeRoot: "//example.com/theming/custom-theme/UI5/",
+			noProtocol: true
+		},
+		{
+			caption: "Absolute URL with same protocol and custom port, Valid",
+			theme: "custom@//example.com:8080/theming/custom-theme/",
+			allowedOrigins: "example.com:8080",
+			expectedThemeRoot: "//example.com:8080/theming/custom-theme/UI5/",
+			noProtocol: true
+		},
+		{
+			caption: "Absolute URL with same protocol and themeRoot has custom port, not valid",
+			theme: "custom@//example.com:8080/theming/custom-theme/",
+			allowedOrigins: "example.com",
+			expectedThemeRoot: `${originWithoutProtocol}/theming/custom-theme/UI5/`,
+			noProtocol: true
+		},
+		{
+			caption: "Absolute URL with same protocol and allowedThemeOrigin has custom port, not valid",
+			theme: "custom@//example.com/theming/custom-theme/",
+			allowedOrigins: "example.com:8080",
+			expectedThemeRoot: `${originWithoutProtocol}/theming/custom-theme/UI5/`,
+			noProtocol: true
 		}
 	].forEach(function(oSetup) {
-
 		QUnit.test(oSetup.caption, function(assert) {
-			var oMeta = null, oBase = null, sExistingBaseHref;
-			browserUrl.change(oSetup.url);
-			if ( oSetup.allowedOrigins != null ) {
-				oMeta = document.createElement("meta");
-				oMeta.setAttribute("name", "sap-allowedThemeOrigins");
-				oMeta.setAttribute("content", oSetup.allowedOrigins);
-				document.head.appendChild(oMeta);
-			}
-			if ( oSetup.baseURI != null ) {
-				oBase = document.querySelector("base");
-				if (oBase) {
-					sExistingBaseHref = oBase.getAttribute("href");
-				} else {
-					oBase = document.createElement("base");
-					document.head.appendChild(oBase);
+			BaseConfig._.invalidate();
+			var oStub = sinon.stub(BaseConfig, "get");
+			oStub.callsFake(function(mParameters) {
+				switch (mParameters.name) {
+					case "sapAllowedThemeOrigins":
+						return oSetup.allowedOrigins;
+					case "sapUiTheme":
+						return oSetup.theme;
+					default:
+						return oStub.wrappedMethod.call(this, mParameters);
 				}
-				oBase.setAttribute("href", oSetup.baseURI);
-			}
-			try {
-				Configuration.setCore(oRealCore);
-				assert.equal(Configuration.getTheme(), "custom", "Configuration 'theme'");
-				assert.equal(Configuration.getThemeRoot(), oSetup.expectedThemeRoot, "Configuration 'themeRoot'");
-			} finally {
-				browserUrl.reset();
-				if ( oMeta ) {
-					document.head.removeChild(oMeta);
-				}
-				if ( oBase ) {
-					if ( sExistingBaseHref ) {
-						oBase.setAttribute("href", sExistingBaseHref);
-					} else {
-						document.head.removeChild(oBase);
-					}
-				}
-			}
+			});
+			assert.equal(Theming.getTheme(), "custom", "Configuration 'getTheme' returns expected 'theme' " + Theming.getTheme());
+			assert.equal(Theming.getThemeRoot(), oSetup.noProtocol ? oSetup.expectedThemeRoot : new URL(oSetup.expectedThemeRoot, location.href).toString(),
+				"Theming 'getThemeRoot' returns expected 'themeRoot' " + Theming.getThemeRoot());
+			oStub.restore();
 		});
-
 	});
 
-	/*
-	 * SAP strives to replace insensitive terms with inclusive language.
-	 * Since APIs cannot be renamed or immediately removed for compatibility reasons, this API has been deprecated.
-	*/
-	QUnit.module("Deprecated / legacy configuration options", {
+	QUnit.module("Allowlist configuration options", {
 		beforeEach: function() {
-			delete window["sap-ui-config"]["whitelistservice"];
-			delete window["sap-ui-config"]["allowlistservice"];
-			delete window["sap-ui-config"]["frameoptionsconfig"];
+			BaseConfig._.invalidate();
+			this.oStub = sinon.stub(BaseConfig, "get");
+			this.oStub.callsFake((oParams) =>
+				(mConfigStubValues.hasOwnProperty(oParams.name) ? mConfigStubValues[oParams.name] : this.oStub.wrappedMethod.call(this, oParams))
+			);
 		},
 		afterEach: function() {
-			delete window["sap-ui-config"]["whitelistservice"];
-			delete window["sap-ui-config"]["allowlistservice"];
-			delete window["sap-ui-config"]["frameoptionsconfig"];
-			if (this.oMetaWhiteList) {
-				if (this.oMetaWhiteList.parentNode) {
-					this.oMetaWhiteList.parentNode.removeChild(this.oMetaWhiteList);
-				}
-				this.oMetaWhiteList = null;
-			}
-			if (this.oMetaAllowList) {
-				if (this.oMetaAllowList.parentNode) {
-					this.oMetaAllowList.parentNode.removeChild(this.oMetaAllowList);
-				}
-				this.oMetaAllowList = null;
-			}
+			mConfigStubValues = {};
+			this.oStub.restore();
 		}
 	});
 
 	// Whitelist service only
+	// SAP strives to replace insensitive terms with inclusive language.
+	// Since APIs cannot be renamed or immediately removed for compatibility reasons, this API has been deprecated.
+	/**
+	 * @deprecated Since 1.85.0.
+	 */
 	QUnit.test("whitelistService", function(assert) {
 		var SERVICE_URL = "/service/url/from/config";
-		window["sap-ui-config"]["whitelistservice"] = SERVICE_URL;
-		Configuration.setCore();
+		mConfigStubValues["sapUiWhitelistService"] = SERVICE_URL;
 		assert.equal(Configuration.getWhitelistService(), SERVICE_URL, "Deprecated getWhitelistService should return service url");
 		assert.equal(Configuration.getAllowlistService(), SERVICE_URL, "Successor getAllowlistService should return service url");
-	});
-
-	QUnit.test("sap.whitelistService meta tag", function(assert) {
-		var SERVICE_URL = "/service/url/from/meta";
-		this.oMetaWhiteList = document.createElement('meta');
-		this.oMetaWhiteList.setAttribute('name', 'sap.whitelistService');
-		this.oMetaWhiteList.setAttribute('content', SERVICE_URL);
-		document.head.appendChild(this.oMetaWhiteList);
-
-		Configuration.setCore();
-		assert.equal(Configuration.getWhitelistService(), SERVICE_URL, "Deprecated getWhitelistService should return service url");
-		assert.equal(Configuration.getAllowlistService(), SERVICE_URL, "Successor getAllowlistService should return service url");
-	});
-
-	QUnit.test("frameOptionsConfig.whitelist", function(assert) {
-		var LIST = "example.com";
-		window["sap-ui-config"]["frameoptionsconfig"] = {
-			whitelist: LIST
-		};
-		Configuration.setCore();
-		assert.equal(Configuration.getValue("frameOptionsConfig").whitelist, LIST, "Deprecated frameOptionsConfig.whitelist should be set");
-		assert.equal(Configuration.getValue("frameOptionsConfig").allowlist, LIST, "Successor frameOptionsConfig.allowlist should be set");
 	});
 
 	// AllowList Service only
 	QUnit.test("allowlistService", function(assert) {
 		var SERVICE_URL = "/service/url/from/config";
-		window["sap-ui-config"]["allowlistservice"] = SERVICE_URL;
-		Configuration.setCore();
+		mConfigStubValues["sapUiAllowlistService"] = SERVICE_URL;
+
+		assert.equal(Security.getAllowlistService(), SERVICE_URL, "Successor getAllowlistService should return service url");
+		/**
+		 * @deprecated Since 1.85.0.
+		 */
 		assert.equal(Configuration.getWhitelistService(), SERVICE_URL, "Deprecated getWhitelistService should return service url");
-		assert.equal(Configuration.getAllowlistService(), SERVICE_URL, "Successor getAllowlistService should return service url");
-	});
-
-	QUnit.test("sap.allowlistService meta tag", function(assert) {
-		var SERVICE_URL = "/service/url/from/meta";
-		this.oMetaWhiteList = document.createElement('meta');
-		this.oMetaWhiteList.setAttribute('name', 'sap.allowlistService');
-		this.oMetaWhiteList.setAttribute('content', SERVICE_URL);
-		document.head.appendChild(this.oMetaWhiteList);
-
-		Configuration.setCore();
-		assert.equal(Configuration.getWhitelistService(), SERVICE_URL, "Deprecated getWhitelistService should return service url");
-		assert.equal(Configuration.getAllowlistService(), SERVICE_URL, "Successor getAllowlistService should return service url");
-	});
-
-	QUnit.test("frameOptionsConfig.allowlist", function(assert) {
-		var LIST = "example.com";
-		window["sap-ui-config"]["frameoptionsconfig"] = {
-			allowlist: LIST
-		};
-		Configuration.setCore();
-		assert.equal(Configuration.getValue("frameOptionsConfig").whitelist, undefined, "Deprecated frameOptionsConfig.whitelist should not be set");
-		assert.equal(Configuration.getValue("frameOptionsConfig").allowlist, LIST, "Successor frameOptionsConfig.allowlist should be set");
 	});
 
 	// AllowList mixed with WhiteList Service (AllowList should be preferred)
+	// SAP strives to replace insensitive terms with inclusive language.
+	// Since APIs cannot be renamed or immediately removed for compatibility reasons, this API has been deprecated.
+	/**
+	 * @deprecated Since 1.85.0.
+	 */
 	QUnit.test("whitelistService mixed with allowlistService", function(assert) {
 		var SERVICE_URL = "/service/url/from/config";
-		window["sap-ui-config"]["whitelistservice"] = SERVICE_URL;
-		window["sap-ui-config"]["allowlistservice"] = SERVICE_URL;
-		Configuration.setCore();
+		mConfigStubValues["sapUiWhitelistService"] = SERVICE_URL;
+		mConfigStubValues["sapUiAllowlistService"] = SERVICE_URL;
+
 		assert.equal(Configuration.getWhitelistService(), SERVICE_URL, "Deprecated getWhitelistService should return service url");
 		assert.equal(Configuration.getAllowlistService(), SERVICE_URL, "Successor getAllowlistService should return service url");
 	});
 
-	QUnit.test("sap.whitelistService mixed with sap.allowlistService meta tag", function(assert) {
-		var SERVICE_URL = "/service/url/from/meta";
-		this.oMetaWhiteList = document.createElement('meta');
-		this.oMetaWhiteList.setAttribute('name', 'sap.whitelistService');
-		this.oMetaWhiteList.setAttribute('content', SERVICE_URL);
-		document.head.appendChild(this.oMetaWhiteList);
-
-		this.oMetaAllowList = document.createElement('meta');
-		this.oMetaAllowList.setAttribute('name', 'sap.allowlistService');
-		this.oMetaAllowList.setAttribute('content', SERVICE_URL);
-		document.head.appendChild(this.oMetaAllowList);
-
-		Configuration.setCore();
-		assert.equal(Configuration.getWhitelistService(), SERVICE_URL, "Deprecated getWhitelistService should return service url");
-		assert.equal(Configuration.getAllowlistService(), SERVICE_URL, "Successor getAllowlistService should return service url");
+	QUnit.module("OData V4", {
+		beforeEach: function() {
+			BaseConfig._.invalidate();
+			this.oStub = sinon.stub(GlobalConfigurationProvider, "get");
+			this.oStub.callsFake((sKey) =>
+				(mConfigStubValues.hasOwnProperty(sKey) ? mConfigStubValues[sKey] : this.oStub.wrappedMethod.call(this, sKey))
+			);
+		},
+		afterEach: function() {
+			mConfigStubValues = {};
+			this.oStub.restore();
+		}
 	});
-
-	QUnit.test("frameOptionsConfig.whitelist mixed with frameoptions.allowlist", function(assert) {
-		var LIST = "example.com";
-		window["sap-ui-config"]["frameoptionsconfig"] = {
-			allowlist: LIST,
-			whitelist: LIST
-		};
-		Configuration.setCore();
-		assert.equal(Configuration.getValue("frameOptionsConfig").whitelist, LIST, "Deprecated frameOptionsConfig.whitelist should be set");
-		assert.equal(Configuration.getValue("frameOptionsConfig").allowlist, LIST, "Successor frameOptionsConfig.allowlist should be set");
-	});
-
-	QUnit.module("OData V4");
 
 	QUnit.test("securityTokenHandlers", function(assert) {
-		var oCfg = Configuration,
-			fnSecurityTokenHandler1 = function () {},
-			fnSecurityTokenHandler2 = function () {},
-			aSecurityTokenHandlers = [fnSecurityTokenHandler1];
+		var fnSecurityTokenHandler1 = function () {},
+			fnSecurityTokenHandler2 = function () {};
+		BaseConfig._.invalidate();
 
 		// code under test
-		Configuration.setCore();
-
-		assert.deepEqual(oCfg.getSecurityTokenHandlers(), []);
+		assert.deepEqual(Security.getSecurityTokenHandlers(), []);
 
 		// bootstrap does some magic and converts to lower case, test does not :-(
-		window["sap-ui-config"].securitytokenhandlers = [];
+		mConfigStubValues["sapUiSecurityTokenHandlers"] = [];
+		BaseConfig._.invalidate();
 
 		// code under test
-		Configuration.setCore();
+		assert.strictEqual(Security.getSecurityTokenHandlers().length, 0, "check length");
 
-		assert.strictEqual(oCfg.getSecurityTokenHandlers().length, 0, "check length");
-
-		window["sap-ui-config"].securitytokenhandlers = aSecurityTokenHandlers;
+		mConfigStubValues["sapUiSecurityTokenHandlers"] = [fnSecurityTokenHandler1];
+		BaseConfig._.invalidate();
 
 		// code under test
-		Configuration.setCore();
+		assert.strictEqual(Security.getSecurityTokenHandlers()[0], fnSecurityTokenHandler1, "check Fn");
+		assert.strictEqual(Security.getSecurityTokenHandlers().length, 1, "check length");
 
-		assert.notStrictEqual(aSecurityTokenHandlers, oCfg.securityTokenHandlers);
-		assert.strictEqual(oCfg.getSecurityTokenHandlers().length, 1, "check length");
-		assert.strictEqual(oCfg.getSecurityTokenHandlers()[0], fnSecurityTokenHandler1, "check Fn");
-
-		window["sap-ui-config"].securitytokenhandlers
+		mConfigStubValues["sapUiSecurityTokenHandlers"]
 			= [fnSecurityTokenHandler1, fnSecurityTokenHandler2];
+		BaseConfig._.invalidate();
 
 		// code under test
-		Configuration.setCore();
+		assert.strictEqual(Security.getSecurityTokenHandlers().length, 2, "check length");
+		assert.strictEqual(Security.getSecurityTokenHandlers()[0], fnSecurityTokenHandler1, "check Fn");
+		assert.strictEqual(Security.getSecurityTokenHandlers()[1], fnSecurityTokenHandler2, "check Fn");
 
-		assert.strictEqual(oCfg.getSecurityTokenHandlers().length, 2, "check length");
-		assert.strictEqual(oCfg.getSecurityTokenHandlers()[0], fnSecurityTokenHandler1, "check Fn");
-		assert.strictEqual(oCfg.getSecurityTokenHandlers()[1], fnSecurityTokenHandler2, "check Fn");
-
-		window["sap-ui-config"].securitytokenhandlers = fnSecurityTokenHandler1;
+		mConfigStubValues["sapUiSecurityTokenHandlers"] = fnSecurityTokenHandler1;
+		BaseConfig._.invalidate();
 
 		assert.throws(function () {
 			// code under test
-			Configuration.setCore();
+			Security.getSecurityTokenHandlers();
 		}); // aSecurityTokenHandlers.forEach is not a function
 
-		window["sap-ui-config"].securitytokenhandlers = [fnSecurityTokenHandler1, "foo"];
+		mConfigStubValues["sapUiSecurityTokenHandlers"] = [fnSecurityTokenHandler1, "foo"];
+		BaseConfig._.invalidate();
 
 		assert.throws(function () {
 			// code under test
-			Configuration.setCore();
+			Security.getSecurityTokenHandlers();
 		}, "Not a function: foo");
 
 		// code under test
-		oCfg.setSecurityTokenHandlers(aSecurityTokenHandlers);
+		Security.setSecurityTokenHandlers([fnSecurityTokenHandler1]);
 
-		assert.notStrictEqual(aSecurityTokenHandlers, oCfg.securityTokenHandlers);
-		assert.notStrictEqual(oCfg.getSecurityTokenHandlers(), oCfg.securityTokenHandlers);
-		assert.strictEqual(oCfg.getSecurityTokenHandlers().length, 1);
-		assert.strictEqual(oCfg.getSecurityTokenHandlers()[0], fnSecurityTokenHandler1);
+		assert.notStrictEqual([fnSecurityTokenHandler1], Security.securityTokenHandlers);
+		assert.notStrictEqual(Security.getSecurityTokenHandlers(), Security.securityTokenHandlers);
+		assert.strictEqual(Security.getSecurityTokenHandlers().length, 1);
+		assert.strictEqual(Security.getSecurityTokenHandlers()[0], fnSecurityTokenHandler1);
 
 		assert.throws(function () {
 			// code under test
-			oCfg.setSecurityTokenHandlers([fnSecurityTokenHandler1, "foo"]);
+			Security.setSecurityTokenHandlers([fnSecurityTokenHandler1, "foo"]);
 		}, "Not a function: foo");
 
 		assert.throws(function () {
 			// code under test
-			oCfg.setSecurityTokenHandlers([undefined]);
+			Security.setSecurityTokenHandlers([undefined]);
 		}, "Not a function: undefined");
 
 		assert.throws(function () {
 			// code under test
-			oCfg.setSecurityTokenHandlers("foo");
+			Security.setSecurityTokenHandlers("foo");
 		}); // aSecurityTokenHandlers.forEach is not a function
 
 		// code under test
-		oCfg.setSecurityTokenHandlers([fnSecurityTokenHandler1, fnSecurityTokenHandler2]);
+		Security.setSecurityTokenHandlers([fnSecurityTokenHandler1, fnSecurityTokenHandler2]);
 
-		assert.strictEqual(oCfg.getSecurityTokenHandlers().length, 2);
-		assert.strictEqual(oCfg.getSecurityTokenHandlers()[0], fnSecurityTokenHandler1);
-		assert.strictEqual(oCfg.getSecurityTokenHandlers()[1], fnSecurityTokenHandler2);
+		assert.strictEqual(Security.getSecurityTokenHandlers().length, 2);
+		assert.strictEqual(Security.getSecurityTokenHandlers()[0], fnSecurityTokenHandler1);
+		assert.strictEqual(Security.getSecurityTokenHandlers()[1], fnSecurityTokenHandler2);
 
 		// code under test
-		oCfg.setSecurityTokenHandlers([]);
+		Security.setSecurityTokenHandlers([]);
 
-		assert.deepEqual(oCfg.getSecurityTokenHandlers(), []);
-
-		delete window["sap-ui-config"].securitytokenhandlers;
+		assert.deepEqual(Security.getSecurityTokenHandlers(), []);
 	});
 });

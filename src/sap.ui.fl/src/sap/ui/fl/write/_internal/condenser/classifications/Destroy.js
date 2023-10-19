@@ -17,12 +17,12 @@ sap.ui.define([
 		 * @param {object} oCondenserInfo - Condenser specific information
  		 * @returns {Promise} resolves when a destroy change is added to UI Reconstruction Map
 		 */
-		addToReconstructionMap: function(mUIReconstructions, oCondenserInfo) {
+		addToReconstructionMap(mUIReconstructions, oCondenserInfo) {
 			return CondenserUtils.getContainerElementIds(
 				oCondenserInfo.targetContainer, oCondenserInfo.targetAggregation,
 				oCondenserInfo.customAggregation, oCondenserInfo.affectedControlIdProperty
 			)
-			.then(function (aTargetContainerElementIds) {
+			.then(function(aTargetContainerElementIds) {
 				var aContainerElementIds = CondenserUtils.getInitialUIContainerElementIds(
 					mUIReconstructions, oCondenserInfo.targetContainer,
 					oCondenserInfo.targetAggregation, aTargetContainerElementIds
@@ -46,15 +46,18 @@ sap.ui.define([
 		 * @param {object} oCondenserInfo - Condenser specific information
 		 * @param {string[]} aInitialUIElementIds - Array with the Ids of the initial elements in the container
 		 */
-		simulate: function(aContainerElements, oCondenserInfo, aInitialUIElementIds) {
-			var iIndex = aContainerElements.indexOf(oCondenserInfo.affectedControl);
-			if (iIndex === -1) {
+		simulate(aContainerElements, oCondenserInfo, aInitialUIElementIds) {
+			var iCurrentSourceIndex = aContainerElements.indexOf(oCondenserInfo.affectedControl);
+			if (iCurrentSourceIndex === -1) {
 				var sUnknown = CondenserUtils.PLACEHOLDER + aInitialUIElementIds.indexOf(oCondenserInfo.affectedControl);
-				iIndex = aContainerElements.indexOf(sUnknown);
+				iCurrentSourceIndex = aContainerElements.indexOf(sUnknown);
 			}
 
-			if (iIndex > -1) {
-				aContainerElements.splice(iIndex, 1);
+			// to enable a revert in the same session the previous index has to be saved during the simulation
+			oCondenserInfo.revertIndex = iCurrentSourceIndex;
+
+			if (iCurrentSourceIndex > -1) {
+				aContainerElements.splice(iCurrentSourceIndex, 1);
 			}
 		}
 	};

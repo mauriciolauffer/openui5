@@ -29,17 +29,17 @@
 				<m:Label text="{/#Product/Category/@sap:label}"/>
 				<mdc:Field id="F-Category" value="{Category}" editMode="ReadOnly"/>
 				<m:Label text="{/#Product/Date/@sap:label}"/>
-				<mdc:Field id="F-Date" value="{path:'Date', type:'sap.ui.model.odata.type.DateTime', formatOptions: {style: 'medium'}, constraints: {displayFormat: 'Date'}, targetType: 'string'}"/>
+				<mdc:Field id="F-Date" value="{path:'Date', type:'sap.ui.model.odata.type.DateTime', formatOptions: {style: 'medium'}, constraints: {displayFormat: 'Date'}, targetType: 'string'}" delegate='\{"name": "sap/ui/mdc/sample/field/FieldBaseODataV2.delegate"\}'/>
 
 				<c:Title text="Parameters" level="H3"/>
 				<m:Label text="{/#Product/Status/@sap:label}"/>
-				<mdc:Field id="F-Status" value="{path: 'Status', type:'sap.ui.model.odata.type.String', constraints: {maxLength: 2}}" display="DescriptionValue" fieldHelp="VH-Status">
+				<mdc:Field id="F-Status" value="{path: 'Status', type:'sap.ui.model.odata.type.String', constraints: {maxLength: 2}}" delegate='\{"name": "sap/ui/mdc/sample/field/FieldBaseODataV2.delegate"\}' display="DescriptionValue" valueHelp="VH-Status">
 					<mdc:dependents>
 						<mdc:ValueHelp id="VH-Status">
 							<mdc:typeahead>
 								<mdcValueHelp:Popover id="VH-Status-Pop">
 									<mdcValueHelpContent:FixedList id="VH-Status-FL" useFirstMatch="false" items="{path: '/StatusCollection'}">
-										<mdcField:ListFieldHelpItem key="{StatusId}" text="{Name}" additionalText="{StatusId}" />
+										<mdcValueHelpContent:FixedListItem key="{StatusId}" text="{Name}" additionalText="{StatusId}" />
 									</mdcValueHelpContent:FixedList>
 								</mdcValueHelp:Popover>
 							</mdc:typeahead>
@@ -51,8 +51,9 @@
 				<mdc:Field
 					id="F-Material"
 					value="{path: 'MatrId', type:'sap.ui.model.odata.type.String', constraints: {maxLength: 1, nullable: false}, formatOptions:{'parseKeepsEmptyString': true}}"
+					delegate='\{"name": "sap/ui/mdc/sample/field/FieldBaseODataV2.delegate"\}'
 					display="ValueDescription"
-					fieldHelp="VH-Material">
+					valueHelp="VH-Material">
 					<mdc:dependents>
 						<mdc:ValueHelp id="VH-Material"
 							delegate='\{"name": "sap/ui/mdc/sample/field/ValueHelp.delegate", "payload": \{"out": [\{"path": "defaultUnit", "target": "MatrUnit", "mode": "WhenEmpty"\}]\}\}'>
@@ -129,7 +130,7 @@
 					value="{parts: ['MatrQuantity', 'MatrUnit', 'view>/ODataUnitCodeList'], type: 'sap.ui.model.type.Unit'}"
 					placeholder="{/#Product/MatrQuantity/@sap:label}"
 					display="Value"
-					fieldHelp="VH-Quantity">
+					valueHelp="VH-Quantity">
 					<mdc:dependents>
 						<mdc:ValueHelp id="VH-Quantity"
 							delegate='\{"name": "sap/ui/mdc/sample/field/ValueHelp.delegate", "payload": \{"in": [\{"path": "MatrId", "source": "MatrId"}], "out": [\{"path": "MatrId", "target": "MatrId"\}]\}\}'>

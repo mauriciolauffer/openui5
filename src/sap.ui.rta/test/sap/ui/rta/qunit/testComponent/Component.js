@@ -13,16 +13,16 @@ sap.ui.define([
 ) {
 	"use strict";
 	return UIComponent.extend("testComponent.Component", {
-		init: function() {
-			UIComponent.prototype.init.apply(this, arguments);
+		init(...aArgs) {
+			UIComponent.prototype.init.apply(this, aArgs);
 		},
 
-		createContent: function() {
+		createContent() {
 			var view = new View({
 				id: this.createId("myView"),
 				viewName: "testComponent.View",
 				type: ViewType.XML,
-				async: false // test timing
+				async: true
 			});
 
 			return view;

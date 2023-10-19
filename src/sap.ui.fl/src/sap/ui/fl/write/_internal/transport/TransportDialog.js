@@ -12,6 +12,7 @@ sap.ui.define([
 	"sap/m/Input",
 	"sap/m/MessageToast",
 	"sap/ui/core/ListItem",
+	"sap/ui/core/Lib",
 	"sap/ui/fl/write/_internal/transport/Transports",
 	"sap/ui/core/library"
 ], function(
@@ -23,13 +24,14 @@ sap.ui.define([
 	Input,
 	MessageToast,
 	ListItem,
+	Lib,
 	Transports,
 	coreLibrary
 ) {
 	"use strict";
 
 	// shortcut for sap.ui.core.ValueState
-	var ValueState = coreLibrary.ValueState;
+	var {ValueState} = coreLibrary;
 
 	/**
 	 * Constructor for a new transport/TransportDialog.
@@ -93,7 +95,6 @@ sap.ui.define([
 		}
 	});
 
-
 	/**
 	 * Initializes the control.
 	 *
@@ -103,7 +104,7 @@ sap.ui.define([
 		Dialog.prototype.init.apply(this);
 
 		// initialize dialog and create member variables.
-		this._oResources = sap.ui.getCore().getLibraryResourceBundle("sap.ui.fl");
+		this._oResources = Lib.getResourceBundleFor("sap.ui.fl");
 		this.setTitle(this._oResources.getText("TRANSPORT_DIALOG_TITLE"));
 
 		// add the content.
@@ -154,7 +155,7 @@ sap.ui.define([
 		this._oLocalObjectButton = new Button({
 			text: this._oResources.getText("TRANSPORT_DIALOG_LOCAL_OBJECT"),
 			tooltip: this._oResources.getText("TRANSPORT_DIALOG_LOCAL_OBJECT"),
-			press: function() {
+			press() {
 				that._onLocal();
 			}
 		});
@@ -163,14 +164,14 @@ sap.ui.define([
 			text: this._oResources.getText("TRANSPORT_DIALOG_OK"),
 			tooltip: this._oResources.getText("TRANSPORT_DIALOG_OK"),
 			enabled: false,
-			press: function() {
+			press() {
 				that._onOkay();
 			}
 		}));
 		this.addButton(new Button({
 			text: this._oResources.getText("TRANSPORT_DIALOG_CANCEL"),
 			tooltip: this._oResources.getText("TRANSPORT_DIALOG_CANCEL"),
-			press: function() {
+			press() {
 				that.fireCancel();
 				that.close();
 				that.destroy();
@@ -246,8 +247,8 @@ sap.ui.define([
 			enabled: false,
 			tooltip: this._oResources.getText("TRANSPORT_DIALOG_TRANSPORT_TT"),
 			width: "100%",
-			selectionChange: function() {
-				//if package field is visible but has no value, the OK button is disable
+			selectionChange() {
+				// if package field is visible but has no value, the OK button is disable
 				if (that._oPackageListItem.getVisible() && !that._oPackage.getValue()) {
 					return;
 				}
@@ -255,7 +256,7 @@ sap.ui.define([
 				that.getButtons()[1].setEnabled(true);
 				that._oTransport.setValueState(ValueState.None);
 			},
-			change: function(oEvent) {
+			change(oEvent) {
 				var fCheck = function(oItem) {
 					if ((oItem && oEvent.mParameters.newValue !== oItem.getText()) || !oItem) {
 						return true;
@@ -287,7 +288,7 @@ sap.ui.define([
 		return new Input({
 			tooltip: this._oResources.getText("TRANSPORT_DIALOG_PACKAGE_TT"),
 			width: "100%",
-			change: function() {
+			change() {
 				var oPromise;
 				var oObject;
 
@@ -299,7 +300,7 @@ sap.ui.define([
 					that._onPackageChangeError(oResult);
 				});
 			},
-			liveChange: function(oEvent) {
+			liveChange(oEvent) {
 				if (oEvent.mParameters.liveValue && oEvent.mParameters.liveValue.length > 3) {
 					that._oTransport.setEnabled(true);
 				}
@@ -355,7 +356,7 @@ sap.ui.define([
 			} else if (oTransports.errorCode) {
 				this.getButtons()[1].setEnabled(false);
 				this._oPackage.setValueState(ValueState.Error);
-				this._oPackage.setValueStateText(this._oResources.getText("TRANSPORT_DIALOG_" + oTransports.errorCode));
+				this._oPackage.setValueStateText(this._oResources.getText(`TRANSPORT_DIALOG_${oTransports.errorCode}`));
 				this._setTransports(oTransports);
 			} else {
 				MessageToast.show(this._oResources.getText("TRANSPORT_DIALOG_NO_TRANSPORTS"));
@@ -373,7 +374,7 @@ sap.ui.define([
 		var oLock;
 		var aTransports;
 
-		//get the transports into an array.
+		// get the transports into an array.
 		oLock = this._hasLock(oTransports.transports);
 
 		if (oLock) {
@@ -382,16 +383,16 @@ sap.ui.define([
 			aTransports = oTransports.transports;
 		}
 
-		//set the transports.
+		// set the transports.
 		this.setTransports(aTransports);
 
-		//pre-select one, if necessary.
+		// pre-select one, if necessary.
 		if (aTransports && aTransports.length === 1) {
 			this._oTransport.setValue(aTransports[0].description, true);
 			this.getButtons()[1].setEnabled(true);
 		}
 
-		//clear the transport combo-box, if necessary.
+		// clear the transport combo-box, if necessary.
 		if (!aTransports || aTransports.length === 0) {
 			this._oTransport.setSelectedKey(null);
 			this._oTransport.setValueState(ValueState.None);
@@ -432,7 +433,7 @@ sap.ui.define([
 		return null;
 	};
 
-	TransportDialog.prototype.setLocalObjectVisible = function (bLocalObjectVisible) {
+	TransportDialog.prototype.setLocalObjectVisible = function(bLocalObjectVisible) {
 		this._oLocalObjectButton.setVisible(bLocalObjectVisible);
 		this.setProperty("localObjectVisible", bLocalObjectVisible);
 	};
@@ -460,7 +461,7 @@ sap.ui.define([
 			// correct the title.
 			this.setTitle(this._oResources.getText("TRANSPORT_DIALOG_TITLE_SIMPLE"));
 
-			//disable local object button, as package has been set from outside and therefore should not be changed.
+			// disable local object button, as package has been set from outside and therefore should not be changed.
 			this.getButtons()[0].setVisible(false);
 		}
 
@@ -531,18 +532,18 @@ sap.ui.define([
 	 * @public
 	 */
 	TransportDialog.prototype.setHidePackage = function(bHide) {
-		//set the property itself.
+		// set the property itself.
 		this.setProperty("hidePackage", bHide);
 
-		//toggle package visibility.
+		// toggle package visibility.
 		this._oPackageListItem.setVisible(!bHide);
 
 		if (bHide) {
-			//set the local object button to enabled,
-			//as the end-user might want to "just" save the object without selecting a transport.
+			// set the local object button to enabled,
+			// as the end-user might want to "just" save the object without selecting a transport.
 			this.getButtons()[0].setEnabled(bHide);
 
-			//correct the title.
+			// correct the title.
 			this.setTitle(this._oResources.getText("TRANSPORT_DIALOG_TITLE_SIMPLE"));
 		}
 

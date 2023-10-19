@@ -6,7 +6,7 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
   });
   _exports.pathData = _exports.ltr = _exports.default = _exports.accData = void 0;
   const name = "screen-split-one";
-  const pathData = "M435 21q32 0 54.5 22.5T512 98v307q0 32-22.5 54T435 481H77q-32 0-54-22T1 405V98q0-32 22-54.5T77 21h358zM52 405q0 25 25 25h51V73H77q-25 0-25 25v307zM460 98q0-25-25-25H179v357h256q25 0 25-25V98z";
+  const pathData = "M422 32q38 0 64 26t26 64v268q0 38-26 64t-64 26H90q-38 0-64-26T0 390V122q0-38 26-64t64-26h332zM51 390q0 17 11 28t28 11h38V83H90q-17 0-28 11t-11 28v268zm410-268q0-17-11-28t-28-11H179v346h243q17 0 28-11t11-28V122z";
   _exports.pathData = pathData;
   const ltr = false;
   _exports.ltr = ltr;
@@ -20,6 +20,6 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
     collection,
     packageName
   });
-  var _default = "screen-split-one";
+  var _default = "SAP-icons-v5/screen-split-one";
   _exports.default = _default;
 });

@@ -7,9 +7,10 @@
 sap.ui.define([
 	"sap/ui/mdc/ValueHelpDelegate",
 	"sap/ui/mdc/valuehelp/content/Bool",
-	"sap/ui/mdc/field/ListFieldHelpItem",
+	"sap/ui/mdc/valuehelp/content/FixedListItem",
 	"sap/ui/mdc/condition/Condition",
-	"sap/ui/mdc/enum/SelectType",
+	"sap/ui/mdc/enums/OperatorName",
+	"sap/ui/mdc/enums/ValueHelpSelectionType",
 	"sap/ui/model/ParseException",
 	"sap/ui/model/FormatException",
 	"sap/ui/model/odata/type/Boolean", // use odata type because of language dependent text
@@ -18,9 +19,10 @@ sap.ui.define([
 ], function (
 		ValueHelpDelegate,
 		Bool,
-		ListFieldHelpItem,
+		FixedListItem,
 		Condition,
-		SelectType,
+		OperatorName,
+		ValueHelpSelectionType,
 		ParseException,
 		FormatException,
 		BooleanType,
@@ -29,11 +31,11 @@ sap.ui.define([
 	) {
 	"use strict";
 
-	var oBool;
-	var oType;
-	var bIsOpen = true;
+	let oBool;
+	let oType;
+	let bIsOpen = true;
 
-	var oContainer = { //to fake Container
+	const oContainer = { //to fake Container
 		getScrollDelegate: function() {
 			return null;
 		},
@@ -44,7 +46,7 @@ sap.ui.define([
 		getValueHelpDelegate: function () {}
 	};
 
-	var _teardown = function() {
+	const _teardown = function() {
 		oBool.destroy();
 		oBool = null;
 		oType.destroy();
@@ -54,13 +56,13 @@ sap.ui.define([
 
 	QUnit.module("basic features", {
 		beforeEach: function() {
-			var aConditions = [Condition.createItemCondition(true, "True")];
+			const aConditions = [Condition.createItemCondition(true, "True")];
 			oType = new BooleanType();
 			oBool = new Bool("B1", {
 				conditions: aConditions, // don't need to test the binding of Container here
 				config: { // don't need to test the binding of Container here
 					maxConditions: 1,
-					operators: ["EQ"],
+					operators: [OperatorName.EQ],
 					dataType: oType
 				}
 			});
@@ -81,23 +83,23 @@ sap.ui.define([
 
 	QUnit.test("getContent", function(assert) {
 
-		var iSelect = 0;
-		var aConditions;
-		var sType;
+		let iSelect = 0;
+		let aConditions;
+		let sType;
 		oBool.attachEvent("select", function(oEvent) {
 			iSelect++;
 			aConditions = oEvent.getParameter("conditions");
 			sType = oEvent.getParameter("type");
 		});
-		var iConfirm = 0;
+		let iConfirm = 0;
 		oBool.attachEvent("confirm", function(oEvent) {
 			iConfirm++;
 		});
 
-		var oContent = oBool.getContent();
+		const oContent = oBool.getContent();
 
 		if (oContent) {
-			var fnDone = assert.async();
+			const fnDone = assert.async();
 			oContent.then(function(oContent) {
 				oBool.onShow(); // to update selection and scroll
 				assert.ok(oContent, "Content returned");
@@ -112,12 +114,12 @@ sap.ui.define([
 
 				// internal items
 				assert.equal(oBool.getItems().length, 2, "Number of items");
-				var oItem = oBool.getItems()[0];
-				assert.ok(oItem.isA("sap.ui.mdc.field.ListFieldHelpItem"), "Item0 is ListFieldHelpItem");
+				let oItem = oBool.getItems()[0];
+				assert.ok(oItem.isA("sap.ui.mdc.valuehelp.content.FixedListItem"), "Item0 is FixedListItem");
 				assert.equal(oItem.getKey(), "true", "Item0 key");
 				assert.equal(oItem.getText(), oType.formatValue(true, "string"), "Item0 text"); // as text of type is language dependednt
 				oItem = oBool.getItems()[1];
-				assert.ok(oItem.isA("sap.ui.mdc.field.ListFieldHelpItem"), "Item1 is ListFieldHelpItem");
+				assert.ok(oItem.isA("sap.ui.mdc.valuehelp.content.FixedListItem"), "Item1 is FixedListItem");
 				assert.equal(oItem.getKey(), "false", "Item1 key");
 				assert.equal(oItem.getText(), oType.formatValue(false, "string"), "Item1 text"); // as text of type is language dependednt
 
@@ -140,14 +142,14 @@ sap.ui.define([
 				assert.notOk(oItem.getSelected(), "Item1 not selected");
 				assert.ok(oItem.hasStyleClass("sapMComboBoxNonInteractiveItem"), "Item1 has style class sapMComboBoxNonInteractiveItem");
 
-				var aNewConditions = [
+				const aNewConditions = [
 					Condition.createItemCondition(false, oType.formatValue(false, "string"))
 				];
 				oItem.setSelected(true);
 				oContent.fireItemPress({listItem: oItem});
 				assert.equal(iSelect, 1, "select event fired");
 				assert.deepEqual(aConditions, aNewConditions, "select event conditions");
-				assert.equal(sType, SelectType.Set, "select event type");
+				assert.equal(sType, ValueHelpSelectionType.Set, "select event type");
 				assert.equal(iConfirm, 1, "confirm event fired");
 				assert.deepEqual(oBool.getConditions(), aNewConditions, "FixedList conditions");
 
@@ -168,9 +170,9 @@ sap.ui.define([
 
 	function _checkForKey(assert, bKey) {
 
-		var bExpectException = bKey !== true && bKey !== false;
+		const bExpectException = bKey !== true && bKey !== false;
 
-		var oConfig = {
+		const oConfig = {
 			parsedValue: bKey,
 			value: bKey,
 			inParameters: undefined,
@@ -181,11 +183,11 @@ sap.ui.define([
 			exception: ParseException
 		};
 
-		var oPromise = oBool.getItemForValue(oConfig);
+		const oPromise = oBool.getItemForValue(oConfig);
 		assert.ok(oPromise instanceof Promise, "getItemForValue returns promise");
 
 		if (oPromise) {
-			var fnDone = assert.async();
+			const fnDone = assert.async();
 			oPromise.then(function(oItem) {
 				assert.ok(!bExpectException, "Promise Then called");
 				assert.deepEqual(oItem, {key: bKey, description: oType.formatValue(bKey, "string")}, "Item returned");
@@ -217,8 +219,8 @@ sap.ui.define([
 
 	function _checkForDescription(assert, bKey) {
 
-		var bExpectException = bKey !== true && bKey !== false;
-		var sDescription;
+		const bExpectException = bKey !== true && bKey !== false;
+		let sDescription;
 
 		if (bExpectException) {
 			sDescription = bKey;
@@ -226,7 +228,7 @@ sap.ui.define([
 			sDescription = oType.formatValue(bKey, "string").slice(0, 2); // just use first 2 characters
 		}
 
-		var oConfig = {
+		const oConfig = {
 			parsedValue: undefined,
 			value: sDescription,
 			inParameters: undefined,
@@ -237,11 +239,11 @@ sap.ui.define([
 			exception: ParseException
 		};
 
-		var oPromise = oBool.getItemForValue(oConfig);
+		const oPromise = oBool.getItemForValue(oConfig);
 		assert.ok(oPromise instanceof Promise, "getItemForValue returns promise");
 
 		if (oPromise) {
-			var fnDone = assert.async();
+			const fnDone = assert.async();
 			oPromise.then(function(oItem) {
 				assert.ok(!bExpectException, "Promise Then called");
 				assert.deepEqual(oItem, {key: bKey, description: oType.formatValue(bKey, "string")}, "Item returned");

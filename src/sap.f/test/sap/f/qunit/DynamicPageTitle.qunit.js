@@ -141,6 +141,23 @@ function (
 		oTitle.destroy();
 	  });
 
+	  QUnit.test("DynamicPageTitle - AriaLabelledBy is not undefined, when no heading is presented, as default heading text is available", function (assert) {
+		// Arrange
+		var oTitle = oFactory.getDynamicPageTitle();
+
+		//Act
+		oTitle.destroyAggregation("heading");
+
+		oUtil.renderObject(oTitle);
+		Core.applyChanges();
+
+		//Assert
+		assert.ok(oTitle._getFocusSpan()[0].getAttribute("aria-labelledby") != "undefined", "AriaLabelledBy is not undefined, when no heading is presented");
+
+		//Cleanup
+		oTitle.destroy();
+	  });
+
 	QUnit.module("DynamicPage - Rendering - Title with Breadcrumbs", {
 		beforeEach: function () {
 			this.oDynamicPage = oFactory.getDynamicPageWithBreadCrumbs();
@@ -408,6 +425,27 @@ function (
 		assert.equal($TitleTopArea.hasClass("sapUiHidden"), true, "Top area should not be visible when all aggregations are removed");
 	});
 
+	QUnit.test("sapFDynamicPageTitleTopBreadCrumbsOnly upon navigation actions visibility change", function (assert) {
+		var oTitle = this.oDynamicPageTitle,
+			$TitleTopArea = oTitle.$("top");
+
+		// Act (1) - hide all navigation actions
+		oTitle.getNavigationActions().forEach(function(oAction) {
+			oAction.setVisible(false);
+		});
+
+		// Assert
+		assert.equal($TitleTopArea.hasClass("sapFDynamicPageTitleTopBreadCrumbsOnly"), true,
+			"breadcrumbs take the whole top area when there are no visible navigation actions");
+
+		// Act (2) - show random navigation action
+		oTitle.getNavigationActions()[0].setVisible(true);
+
+		// Assert
+		assert.equal($TitleTopArea.hasClass("sapFDynamicPageTitleTopBreadCrumbsOnly"), false,
+			"breadcrumbs do not take the whole top area when when there is at least one visible navigation action");
+	});
+
 	QUnit.module("DynamicPage - Rendering - Title with navigationActions and actions", {
 		beforeEach: function () {
 			this.oDynamicPageStandardAndNavigationActions = oFactory.getDynamicPageWithStandardAndNavigationActions();
@@ -539,6 +577,75 @@ function (
 
 		// Clean up
 		oStub.restore();
+		oDynamicPage.destroy();
+	});
+
+	QUnit.module("DynamicPageTitle - focus of snapped/expanded content", {
+		before: function() {
+			var oStyleTag = document.createElement("style");
+			oStyleTag.innerText = ".active { visibility: visible; }";
+			document.head.appendChild(oStyleTag);
+			this.styleTag = oStyleTag;
+
+		},
+		after: function() {
+			this.styleTag.remove();
+			this.styleTag = null;
+		}
+	});
+
+	QUnit.test("Prevents focus on hidden snappedContent", function (assert) {
+		// Arrange
+		var oDynamicPage = oFactory.getDynamicPage(),
+			oDynamicPageTitle = oDynamicPage.getTitle(),
+			oBtn = new sap.m.Button({
+				text: "snapped content"
+			});
+
+		oDynamicPageTitle.addSnappedContent(oBtn);
+
+		oUtil.renderObject(oDynamicPage);
+		Core.applyChanges();
+
+		var oActiveElement = document.activeElement,
+			oBtnElement = oBtn.getDomRef();
+
+		// Act
+		oBtnElement.classList.add("active");
+		oBtnElement.focus();
+
+		// Assert
+		assert.strictEqual(document.activeElement, oActiveElement, "focus is unchanged");
+
+		// Clean up
+		oDynamicPage.destroy();
+	});
+
+	QUnit.test("Prevents focus on hidden expandedContent", function (assert) {
+		// Arrange
+		var oDynamicPage = oFactory.getDynamicPage(),
+			oDynamicPageTitle = oDynamicPage.getTitle(),
+			oBtn = new sap.m.Button({
+				text: "expanded content"
+			});
+
+		oDynamicPage.setHeaderExpanded(false);
+		oDynamicPageTitle.addExpandedContent(oBtn);
+
+		oUtil.renderObject(oDynamicPage);
+		Core.applyChanges();
+
+		var oActiveElement = document.activeElement,
+			oBtnElement = oBtn.getDomRef();
+
+		// Act
+		oBtnElement.classList.add("active");
+		oBtnElement.focus();
+
+		// Assert
+		assert.strictEqual(document.activeElement, oActiveElement, "focus is unchanged");
+
+		// Clean up
 		oDynamicPage.destroy();
 	});
 
@@ -1315,6 +1422,8 @@ function (
 			bIsExpandButtonVisible = this.oDynamicPageTitle._getShowExpandButton(),
 			$STOMWrapper = this.oDynamicPageTitle.$snappedTitleOnMobileWrapper,
 			oSnappedWrapper = this.oDynamicPageTitle.$snappedWrapper.context,
+			oSnappedHeadingWrapper,
+			oTitle,
 			$titleWrapper = this.oDynamicPage.$("header");
 
 		// Assert
@@ -1348,9 +1457,30 @@ function (
 		assert.notOk(oSnappedWrapper, "SnappedTitleOnMobile does not exist.");
 
 		// Cleanup
-		oUtil.toDesktopMode();
 		Device.orientation.landscape = false;
 		Device.orientation.portrait = true;
+
+		//Arrange
+		oTitle = this.oDynamicPageTitle.getHeading();
+		this.oDynamicPageTitle.setHeading(null);
+		this.oDynamicPageTitle.setAggregation("snappedHeading", new Title({text: "Test"}));
+
+		this.oDynamicPage.setHeaderExpanded(false);
+
+		this.oDynamicPage.invalidate();
+		Core.applyChanges();
+
+		this.oDynamicPage.setHeaderExpanded(true);
+		oSnappedHeadingWrapper = this.oDynamicPageTitle.$snappedHeadingWrapper;
+
+		assert.ok(oSnappedHeadingWrapper.hasClass("sapUiHidden"), "Snapped content is hidden on mobile when SnappedTitleOnMobile " +
+		"is set");
+
+		// Cleanup
+		oUtil.toDesktopMode();
+		this.oDynamicPageTitle.setHeading(oTitle);
+		this.oDynamicPage.setHeaderExpanded(false);
+
 	});
 
 	QUnit.test("No SnappedTitleOnMobile on Phone", function (assert) {

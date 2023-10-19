@@ -10,19 +10,20 @@ sap.ui.define([
 	"sap/ui/fl/apply/_internal/flexState/FlexState",
 	"sap/ui/fl/apply/_internal/flexState/ManifestUtils",
 	"sap/ui/fl/apply/_internal/flexObjects/FlexObjectFactory",
-	"sap/ui/fl/apply/_internal/ChangesController",
 	"sap/ui/fl/registry/Settings",
 	"sap/ui/fl/write/_internal/condenser/Condenser",
 	"sap/ui/fl/write/_internal/flexState/FlexObjectState",
 	"sap/ui/fl/write/_internal/Storage",
 	"sap/ui/fl/write/api/FeaturesAPI",
 	"sap/ui/fl/write/api/PersistenceWriteAPI",
+	"sap/ui/fl/initial/_internal/FlexInfoSession",
 	"sap/ui/fl/ChangePersistenceFactory",
 	"sap/ui/fl/ChangePersistence",
+	"sap/ui/fl/FlexControllerFactory",
+	"sap/ui/fl/initial/_internal/FlexConfiguration",
 	"sap/ui/fl/Layer",
 	"sap/ui/fl/Utils",
 	"sap/ui/thirdparty/sinon-4",
-	"sap/ui/core/Core",
 	"sap/ui/fl/write/_internal/connectors/KeyUserConnector"
 ], function(
 	_omit,
@@ -34,19 +35,20 @@ sap.ui.define([
 	FlexState,
 	ManifestUtils,
 	FlexObjectFactory,
-	ChangesController,
 	Settings,
 	Condenser,
 	FlexObjectState,
 	Storage,
 	FeaturesAPI,
 	PersistenceWriteAPI,
+	FlexInfoSession,
 	ChangePersistenceFactory,
 	ChangePersistence,
+	FlexControllerFactory,
+	FlexConfiguration,
 	Layer,
 	Utils,
 	sinon,
-	Core,
 	KeyUserConnector
 ) {
 	"use strict";
@@ -56,10 +58,10 @@ sap.ui.define([
 	var sReturnValue = "returnValue";
 
 	function mockFlexController(oControl, oReturn) {
-		sandbox.stub(ChangesController, "getFlexControllerInstance")
-			.throws("invalid parameters for flex persistence function")
-			.withArgs(oControl)
-			.returns(oReturn);
+		sandbox.stub(FlexControllerFactory, "createForSelector")
+		.throws("invalid parameters for flex persistence function")
+		.withArgs(oControl)
+		.returns(oReturn);
 	}
 
 	function mockChangePersistence(oReturn) {
@@ -70,16 +72,16 @@ sap.ui.define([
 	function getMethodStub(aArguments, vReturnValue) {
 		var fnPersistenceStub = sandbox.stub();
 		fnPersistenceStub
-			.throws("invalid parameters for flex persistence function")
-			.withArgs.apply(fnPersistenceStub, aArguments)
-			.returns(vReturnValue);
+		.throws("invalid parameters for flex persistence function")
+		.withArgs.apply(fnPersistenceStub, aArguments)
+		.returns(vReturnValue);
 		return fnPersistenceStub;
 	}
 
 	QUnit.module("Given PersistenceWriteAPI", {
-		beforeEach: function () {
+		beforeEach() {
 			this.oAppComponent = {
-				getId: function() {return "appComponent";}
+				getId() {return "appComponent";}
 			};
 			this.vSelector = {
 				elementId: "selector",
@@ -94,7 +96,7 @@ sap.ui.define([
 				fileName: "id_1445501120486_26",
 				fileType: "change",
 				changeType: "hideControl",
-				reference: "reference.app.Component",
+				reference: "reference.app",
 				packageName: "$TMP",
 				content: {},
 				selector: {
@@ -102,7 +104,7 @@ sap.ui.define([
 				},
 				layer: Layer.CUSTOMER,
 				texts: {},
-				namespace: "reference.app.Component",
+				namespace: "reference.app",
 				creation: "2018-10-16T08:00:02",
 				originalLanguage: "EN",
 				conditions: {},
@@ -115,9 +117,9 @@ sap.ui.define([
 
 			this.oUIChange = FlexObjectFactory.createFromFileContent(this.oUIChangeSpecificData);
 
-			window.sessionStorage.removeItem("sap.ui.fl.info." + this.oAppComponent.getId());
+			window.sessionStorage.removeItem(`sap.ui.fl.info.${this.oAppComponent.getId()}`);
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 			delete this.vSelector;
 		}
@@ -130,7 +132,7 @@ sap.ui.define([
 		}, {
 			testName: "when hasHigherLayerChanges is called and the ChangePersistency has changes present, but not in a higher layer",
 			persistencyChanges: [{
-				getLayer: function () {
+				getLayer() {
 					return Layer.CUSTOMER;
 				}
 			}],
@@ -143,7 +145,7 @@ sap.ui.define([
 				persistencyKey: {
 					byId: {
 						changeId: {
-							getLayer: function () {
+							getLayer() {
 								return Layer.CUSTOMER;
 							}
 						}
@@ -154,7 +156,7 @@ sap.ui.define([
 		}, {
 			testName: "when hasHigherLayerChanges is called and the ChangePersistence AND CompVariantState have changes present, but none in a higher layer",
 			persistencyChanges: [{
-				getLayer: function () {
+				getLayer() {
 					return Layer.CUSTOMER;
 				}
 			}],
@@ -162,7 +164,7 @@ sap.ui.define([
 				persistencyKey: {
 					byId: {
 						changeId: {
-							getLayer: function () {
+							getLayer() {
 								return Layer.CUSTOMER_BASE;
 							}
 						}
@@ -173,7 +175,7 @@ sap.ui.define([
 		}, {
 			testName: "when hasHigherLayerChanges is called and the ChangePersistency has changes present in a higher layer",
 			persistencyChanges: [{
-				getLayer: function () {
+				getLayer() {
 					return Layer.USER;
 				}
 			}],
@@ -186,7 +188,7 @@ sap.ui.define([
 				persistencyKey: {
 					byId: {
 						changeId: {
-							getLayer: function () {
+							getLayer() {
 								return Layer.USER;
 							}
 						}
@@ -197,7 +199,7 @@ sap.ui.define([
 		}, {
 			testName: "when hasHigherLayerChanges is called and the ChangePersistence AND CompVariantState have changes present, one in higher layer",
 			persistencyChanges: [{
-				getLayer: function () {
+				getLayer() {
 					return Layer.CUSTOMER;
 				}
 			}],
@@ -205,7 +207,7 @@ sap.ui.define([
 				persistencyKey: {
 					byId: {
 						changeId: {
-							getLayer: function () {
+							getLayer() {
 								return Layer.USER;
 							}
 						}
@@ -216,7 +218,7 @@ sap.ui.define([
 		}, {
 			testName: "when hasHigherLayerChanges is called and the ChangePersistence AND CompVariantState have changes present, all in higher layer",
 			persistencyChanges: [{
-				getLayer: function () {
+				getLayer() {
 					return Layer.USER;
 				}
 			}],
@@ -224,7 +226,7 @@ sap.ui.define([
 				persistencyKey: {
 					byId: {
 						changeId: {
-							getLayer: function () {
+							getLayer() {
 								return Layer.USER;
 							}
 						}
@@ -232,7 +234,7 @@ sap.ui.define([
 				}
 			},
 			expectedResult: true
-		}].forEach(function (testSetup) {
+		}].forEach(function(testSetup) {
 			QUnit.test(testSetup.testName, function(assert) {
 				var mPropertyBag = {
 					layer: Layer.CUSTOMER,
@@ -247,20 +249,55 @@ sap.ui.define([
 				sandbox.stub(ManifestUtils, "getFlexReferenceForControl").returns(this.oAppComponent.getId());
 
 				return PersistenceWriteAPI.hasHigherLayerChanges(mPropertyBag)
-					.then(function(bHasHigherLayerChanges) {
-						assert.strictEqual(bHasHigherLayerChanges, testSetup.expectedResult, "it resolves with " + testSetup.expectedResult);
-					});
+				.then(function(bHasHigherLayerChanges) {
+					assert.strictEqual(bHasHigherLayerChanges, testSetup.expectedResult, `it resolves with ${testSetup.expectedResult}`);
+				});
 			});
 		});
 
 		QUnit.test("when save is called", function(assert) {
-			var oFlexObjectStateSaveStub = sandbox.stub(FlexObjectState, "saveFlexObjects").returns("foo");
+			var oFlexObjectStateSaveStub = sandbox.stub(FlexObjectState, "saveFlexObjects").resolves();
 			var mPropertyBag = { foo: "bar" };
-			var sReturn = PersistenceWriteAPI.save(mPropertyBag);
+			PersistenceWriteAPI.save(mPropertyBag);
 
 			assert.equal(oFlexObjectStateSaveStub.callCount, 1, "the FlexObjectState save method was called");
 			assert.deepEqual(oFlexObjectStateSaveStub.firstCall.args[0], mPropertyBag, "the FlexObjectState was called with the same arguments");
-			assert.equal("foo", sReturn, "the function returns whatever the FlexObjectState returns");
+		});
+
+		QUnit.test("when save dirty change and update flex info session", function(assert) {
+			var oExpectedFlexInfo = {
+				isResetEnabled: true,
+				adaptationId: "adaptation1",
+				isEndUserAdaptation: true,
+				initialAllContexts: true
+			};
+			FlexInfoSession.set({
+				isResetEnabled: false,
+				adaptationId: "adaptation1",
+				isEndUserAdaptation: true,
+				initialAllContexts: true
+			});
+			var oFlexObjectStateSaveStub = sandbox.stub(FlexObjectState, "saveFlexObjects").resolves({change: "test"});
+			var oFlexInfo = {
+				isResetEnabled: true
+			};
+			var oPersistenceWriteGetFlexInfoStub = sandbox.stub(PersistenceWriteAPI, "getResetAndPublishInfo").callsFake(function() {
+				return new Promise(function(resolve) {
+					// Delay resolution to simulate a slow call
+					setTimeout(function() {
+						resolve(oFlexInfo);
+					}, 0);
+				});
+			});
+			var mPropertyBag = { foo: "bar" };
+			return PersistenceWriteAPI.save(mPropertyBag).then(function(oFlexObject) {
+				assert.equal(oFlexObjectStateSaveStub.callCount, 1, "the FlexObjectState save method was called");
+				assert.deepEqual(oFlexObject, {change: "test"}, "Flex objects returned from saveFlexObjects are returned");
+				assert.deepEqual(oFlexObjectStateSaveStub.firstCall.args[0], mPropertyBag, "the FlexObjectState was called with the same arguments");
+				assert.equal(oPersistenceWriteGetFlexInfoStub.callCount, 1, "the PersistenceWriteAPI getResetAndPublishInfo method was called");
+				assert.deepEqual(oPersistenceWriteGetFlexInfoStub.firstCall.args[0], mPropertyBag, "the PersistenceWriteAPI was called with the same arguments");
+				assert.deepEqual(oExpectedFlexInfo, FlexInfoSession.getByReference(), "session flex info is updated with isResetEnabled but adaptationId and isEndUserAdaptation and initialAllContexts are kept");
+			});
 		});
 
 		QUnit.test("when save is called with removeOtherLayerChanges", function(assert) {
@@ -294,10 +331,7 @@ sap.ui.define([
 				removeOtherLayerChanges: true
 			};
 			return PersistenceWriteAPI.save(mPropertyBag).then(function() {
-				assert.strictEqual(
-					oChangePersistence.getDirtyChanges().length,
-					1,
-					"then dirty changes on other layers are removed"
+				assert.strictEqual(oChangePersistence.getDirtyChanges().length, 1, "then dirty changes on other layers are removed"
 				);
 			});
 		});
@@ -313,9 +347,9 @@ sap.ui.define([
 
 			var oAppComponent = {id: "appComponent"};
 
-			sandbox.stub(ChangesController, "getAppComponentForSelector")
-				.withArgs(mPropertyBag.selector)
-				.returns(oAppComponent);
+			sandbox.stub(Utils, "getAppComponentForSelector")
+			.withArgs(mPropertyBag.selector)
+			.returns(oAppComponent);
 
 			var aArguments = [mPropertyBag.layer, mPropertyBag.generator, oAppComponent, mPropertyBag.selectorIds, mPropertyBag.changeTypes];
 			var fnPersistenceStub = getMethodStub(aArguments, Promise.resolve(sReturnValue));
@@ -323,9 +357,9 @@ sap.ui.define([
 			mockFlexController(oAppComponent, { resetChanges: fnPersistenceStub });
 
 			return PersistenceWriteAPI.reset(mPropertyBag)
-				.then(function (sValue) {
-					assert.strictEqual(sValue, sReturnValue, "then the flex persistence was called with correct parameters");
-				});
+			.then(function(sValue) {
+				assert.strictEqual(sValue, sReturnValue, "then the flex persistence was called with correct parameters");
+			});
 		});
 
 		QUnit.test("when publish is called", function(assert) {
@@ -336,12 +370,6 @@ sap.ui.define([
 				selector: this.vSelector
 			};
 
-			var oAppComponent = { id: "appComponent" };
-
-			sandbox.stub(ChangesController, "getAppComponentForSelector")
-				.withArgs(mPropertyBag.selector)
-				.returns(oAppComponent);
-
 			var fnPersistenceStub = getMethodStub([
 				{},
 				mPropertyBag.styleClass,
@@ -349,12 +377,13 @@ sap.ui.define([
 				mPropertyBag.appVariantDescriptors
 			], Promise.resolve(sReturnValue));
 
-			mockFlexController(oAppComponent, { _oChangePersistence: { transportAllUIChanges: fnPersistenceStub } });
+			sandbox.stub(ChangePersistenceFactory, "getChangePersistenceForControl")
+			.withArgs(this.oAppComponent)
+			.returns({transportAllUIChanges: fnPersistenceStub});
 
-			return PersistenceWriteAPI.publish(mPropertyBag)
-				.then(function(sValue) {
-					assert.strictEqual(sValue, sReturnValue, "then the flex persistence was called with correct parameters");
-				});
+			return PersistenceWriteAPI.publish(mPropertyBag).then((sValue) => {
+				assert.strictEqual(sValue, sReturnValue, "then the flex persistence was called with correct parameters");
+			});
 		});
 
 		QUnit.test("when publish is called without style class", function(assert) {
@@ -364,12 +393,6 @@ sap.ui.define([
 				selector: this.vSelector
 			};
 
-			var oAppComponent = { id: "appComponent" };
-
-			sandbox.stub(ChangesController, "getAppComponentForSelector")
-				.withArgs(mPropertyBag.selector)
-				.returns(oAppComponent);
-
 			var fnPersistenceStub = getMethodStub([
 				{},
 				"",
@@ -377,12 +400,13 @@ sap.ui.define([
 				mPropertyBag.appVariantDescriptors
 			], Promise.resolve(sReturnValue));
 
-			mockFlexController(oAppComponent, { _oChangePersistence: { transportAllUIChanges: fnPersistenceStub } });
+			sandbox.stub(ChangePersistenceFactory, "getChangePersistenceForControl")
+			.withArgs(this.oAppComponent)
+			.returns({transportAllUIChanges: fnPersistenceStub});
 
-			return PersistenceWriteAPI.publish(mPropertyBag)
-				.then(function(sValue) {
-					assert.strictEqual(sValue, sReturnValue, "then the flex persistence was called with correct parameters");
-				});
+			return PersistenceWriteAPI.publish(mPropertyBag).then((sValue) => {
+				assert.strictEqual(sValue, sReturnValue, "then the flex persistence was called with correct parameters");
+			});
 		});
 
 		QUnit.test("when _getUIChanges is called", function(assert) {
@@ -393,43 +417,62 @@ sap.ui.define([
 			var aObjects = [];
 			var fnGetFlexObjectsStub = sandbox.stub(FlexObjectState, "getFlexObjects").resolves(aObjects);
 			return PersistenceWriteAPI._getUIChanges(mPropertyBag)
-				.then(function(aGetResponse) {
-					assert.equal(fnGetFlexObjectsStub.callCount, 1, "the getFlexObjects was called once");
-					assert.equal(fnGetFlexObjectsStub.getCall(0).args[0], mPropertyBag, "with the passed propertyBag");
-					assert.strictEqual(aGetResponse, aObjects, "and the function resolves with the State response");
-				});
+			.then(function(aGetResponse) {
+				assert.equal(fnGetFlexObjectsStub.callCount, 1, "the getFlexObjects was called once");
+				assert.equal(fnGetFlexObjectsStub.getCall(0).args[0], mPropertyBag, "with the passed propertyBag");
+				assert.strictEqual(aGetResponse, aObjects, "and the function resolves with the State response");
+			});
 		});
 
 		QUnit.test("when add is called with a flex change", function(assert) {
 			var mPropertyBag = {
 				change: {
-					getChangeType: function() { return "flexChange"; }
+					getChangeType() { return "flexChange"; }
 				},
 				selector: this.vSelector
 			};
-			var oAppComponent = {id: "appComponent"};
+			sandbox.stub(ManifestUtils, "getFlexReferenceForControl").returns("appComponentId");
+			sandbox.stub(ChangePersistence.prototype, "addChange").returns(sReturnValue);
 
-			sandbox.stub(ChangesController, "getAppComponentForSelector")
-				.withArgs(mPropertyBag.selector)
-				.returns(oAppComponent);
+			assert.strictEqual(
+				PersistenceWriteAPI.add(mPropertyBag),
+				sReturnValue,
+				"then the flex persistence was called with correct parameters"
+			);
+		});
 
-			var fnPersistenceStub = getMethodStub([mPropertyBag.change, oAppComponent], sReturnValue);
+		QUnit.test("when add is called with multiple flex objects", function(assert) {
+			var mPropertyBag = {
+				flexObjects: [
+					{getChangeType() { return "flexChange"; }},
+					{getChangeType() { return "flexChange"; }}
+				],
+				selector: this.vSelector
+			};
+			sandbox.stub(ManifestUtils, "getFlexReferenceForControl").returns("appComponentId");
+			sandbox.stub(ChangePersistence.prototype, "addChanges")
+			.withArgs(mPropertyBag.flexObjects)
+			.returns(sReturnValue);
 
-			mockFlexController(oAppComponent, { addPreparedChange: fnPersistenceStub });
-
-			assert.strictEqual(PersistenceWriteAPI.add(mPropertyBag), sReturnValue, "then the flex persistence was called with correct parameters");
+			assert.strictEqual(
+				PersistenceWriteAPI.add(mPropertyBag),
+				sReturnValue,
+				"then the flex persistence was called"
+			);
 		});
 
 		QUnit.test("when add is called with a descriptor change", function(assert) {
 			var done = assert.async();
 			var sDescriptorChangeType = DescriptorChangeTypes.getChangeTypes()[0];
+			sandbox.stub(ManifestUtils, "getFlexReferenceForControl").returns("appComponentId");
+
 			var oChange = {
-				_getMap: function() {
+				_getMap() {
 					return {
 						changeType: sDescriptorChangeType
 					};
 				},
-				store: function() {
+				store() {
 					assert.ok(true, "then changes's store() was called");
 					done();
 				}
@@ -437,37 +480,77 @@ sap.ui.define([
 			PersistenceWriteAPI.add({change: oChange, selector: this.vSelector});
 		});
 
-		QUnit.test("when add is called but an error is thrown", function(assert) {
-			var sError = "mock error";
-			var mPropertyBag = {
-				change: {
-					_getMap: function () {
-						return {
-							changeType: "whatever"
-						};
-					},
-					getVariantReference: function () {
-						throw new Error(sError);
-					}
+		QUnit.test("when add is called with multiple descriptor changes", function(assert) {
+			var i = 0;
+			var sDescriptorChangeType = DescriptorChangeTypes.getChangeTypes()[0];
+			sandbox.stub(ManifestUtils, "getFlexReferenceForControl").returns("appComponentId");
+
+			var oChange = {
+				_getMap() {
+					return {
+						changeType: sDescriptorChangeType
+					};
 				},
+				store() {
+					return `storeWasCalled${i++}`;
+				}
+			};
+			var aChanges = [oChange, oChange];
+			var aAddResult = PersistenceWriteAPI.add({flexObjects: aChanges, selector: this.vSelector});
+			assert.strictEqual(aAddResult[0], "storeWasCalled0", "then store was called on the first change");
+			assert.strictEqual(aAddResult[1], "storeWasCalled1", "then store was called on the second change");
+		});
+
+		QUnit.test("when add is called with descriptor changes and flexObjects", function(assert) {
+			var sDescriptorChangeType = DescriptorChangeTypes.getChangeTypes()[0];
+			var mPropertyBag = {
+				flexObjects: [
+					{getChangeType() { return "flexChange"; }},
+					{
+						_getMap() {
+							return {
+								changeType: sDescriptorChangeType
+							};
+						},
+						store() {
+							return "storeWasCalled";
+						}
+					}
+				],
 				selector: this.vSelector
 			};
+			sandbox.stub(ManifestUtils, "getFlexReferenceForControl").returns("appComponentId");
+			sandbox.stub(ChangePersistence.prototype, "addChange")
+			.withArgs(mPropertyBag.flexObjects[0])
+			.returns(sReturnValue);
+
+			var aAddResult = PersistenceWriteAPI.add(mPropertyBag);
+			assert.strictEqual(aAddResult[0], sReturnValue, "then addChange was called first");
+			assert.strictEqual(aAddResult[1], "storeWasCalled", "then store was called second");
+		});
+
+		QUnit.test("when add is called with change and flexObjects parameters", function(assert) {
+			sandbox.stub(ManifestUtils, "getFlexReferenceForControl").returns("appComponentId");
+			var mPropertyBag = {
+				change: {},
+				flexObjects: [],
+				selector: this.vSelector
+			};
+
 			assert.throws(
-				function() {
-					PersistenceWriteAPI.add(mPropertyBag);
-				},
-				new Error(sError),
-				"then an error is caught during the process"
+				function() {PersistenceWriteAPI.add(mPropertyBag);},
+				Error("Using 'flexObjects' and 'change' properties together not supported. Please use the 'flexObjects' property."),
+				"then an error with the correct message is thrown"
 			);
 		});
 
-		QUnit.test("when remove is called for a flex change", function(assert) {
+		QUnit.test("when remove is called for a flex object", function(assert) {
 			var mPropertyBag = {
 				change: {
-					getSelector: function () {
-						return this.selector;
+					getSelector: function() {
+						return this.vSelector;
 					}.bind(this),
-					getChangeType: function () {
+					getChangeType() {
 						return "";
 					}
 				},
@@ -476,78 +559,130 @@ sap.ui.define([
 			var oElement = { type: "element" };
 			var oAppComponent = {id: "appComponent"};
 
-			sandbox.stub(ChangesController, "getAppComponentForSelector")
-				.withArgs(mPropertyBag.selector)
-				.returns(oAppComponent);
+			sandbox.stub(ManifestUtils, "getFlexReferenceForControl").returns("appComponentId");
+			sandbox.stub(Utils, "getAppComponentForSelector")
+			.withArgs(mPropertyBag.selector)
+			.returns(oAppComponent);
 
 			sandbox.stub(JsControlTreeModifier, "bySelector")
-				.withArgs(mPropertyBag.change.getSelector(), oAppComponent)
-				.returns(oElement);
+			.withArgs(mPropertyBag.change.getSelector(), oAppComponent)
+			.returns(oElement);
 
-			var fnRemoveChangeStub = sandbox.stub(FlexCustomData, "destroyAppliedCustomData");
-			var fnDeleteChangeStub = sandbox.stub();
-
-			mockFlexController(oAppComponent, { deleteChange: fnDeleteChangeStub });
+			var oDestroyAppliedCustomDataStub = sandbox.stub(FlexCustomData, "destroyAppliedCustomData");
+			var oDeleteChangeStub = sandbox.stub(ChangePersistence.prototype, "deleteChange");
 
 			return PersistenceWriteAPI.remove(mPropertyBag)
-				.then(function () {
-					assert.ok(fnRemoveChangeStub.calledWith(oElement, mPropertyBag.change, JsControlTreeModifier), "then the flex persistence was called with correct parameters");
-					assert.ok(fnDeleteChangeStub.calledWith(mPropertyBag.change, oAppComponent), "then the flex persistence was called with correct parameters");
-				});
+			.then(function() {
+				assert.ok(
+					oDestroyAppliedCustomDataStub.calledWith(oElement, mPropertyBag.change, JsControlTreeModifier),
+					"then DestroyAppliedCustomData was called with correct parameters"
+				);
+				assert.ok(
+					oDeleteChangeStub.calledWith(mPropertyBag.change),
+					"then the flex persistence was called with correct parameters"
+				);
+			});
 		});
 
-		QUnit.test("when remove is called for a flex change with an invalid selector", function(assert) {
+		QUnit.test("when remove is called for multiple flex objects", function(assert) {
+			var mPropertyBag = {
+				flexObjects: [{
+					getSelector() {
+						return "selector1";
+					},
+					getChangeType() {
+						return "flexChange";
+					}
+				}, {
+					getSelector() {
+						return "selector2";
+					},
+					getChangeType() {
+						return "flexChange";
+					}
+				}],
+				selector: this.vSelector
+			};
+			var oElement = { type: "element" };
+			var oAppComponent = {id: "appComponent"};
+
+			sandbox.stub(ManifestUtils, "getFlexReferenceForControl").returns("appComponentId");
+			sandbox.stub(Utils, "getAppComponentForSelector")
+			.withArgs(mPropertyBag.selector)
+			.returns(oAppComponent);
+
+			sandbox.stub(JsControlTreeModifier, "bySelector")
+			.withArgs(mPropertyBag.flexObjects[0].getSelector(), oAppComponent).returns(oElement)
+			.withArgs(mPropertyBag.flexObjects[1].getSelector(), oAppComponent).returns(oElement);
+
+			var oDestroyAppliedCustomDataStub = sandbox.stub(FlexCustomData, "destroyAppliedCustomData");
+			var oDeleteChangesStub = sandbox.stub(ChangePersistence.prototype, "deleteChanges");
+
+			return PersistenceWriteAPI.remove(mPropertyBag)
+			.then(function() {
+				assert.ok(
+					oDestroyAppliedCustomDataStub.calledWith(oElement, mPropertyBag.flexObjects[0], JsControlTreeModifier),
+					"then DestroyAppliedCustomData was called with correct parameters for first flex object"
+				);
+				assert.ok(
+					oDestroyAppliedCustomDataStub.calledWith(oElement, mPropertyBag.flexObjects[1], JsControlTreeModifier),
+					"then DestroyAppliedCustomData was called with correct parameters for second flex object"
+				);
+				assert.ok(
+					oDeleteChangesStub.calledWith(mPropertyBag.flexObjects),
+					"then the flex persistence was called with correct parameters"
+				);
+			});
+		});
+
+		QUnit.test("when remove is called for a flex object with an invalid selector", function(assert) {
 			var mPropertyBag = {
 				change: {
-					getSelector: function () {
+					getSelector: function() {
 						return this.selector;
 					}.bind(this)
 				},
 				selector: this.vSelector
 			};
 
-			sandbox.stub(ChangesController, "getAppComponentForSelector");
-
 			var fnRemoveChangeStub = sandbox.stub(FlexCustomData, "destroyAppliedCustomData");
 			var fnDeleteChangeStub = sandbox.stub();
 
 			mockFlexController(undefined, { deleteChange: fnDeleteChangeStub });
 			return PersistenceWriteAPI.remove(mPropertyBag)
-				.catch(function (oError) {
-					assert.ok(oError instanceof Error, "then an error was thrown");
-					assert.ok(fnRemoveChangeStub.notCalled, "then the flex persistence was not called to delete change from control");
-					assert.ok(fnDeleteChangeStub.notCalled, "then the flex persistence was not called to remove change from persistence");
-				});
+			.catch(function(oError) {
+				assert.ok(oError instanceof Error, "then an error was thrown");
+				assert.ok(fnRemoveChangeStub.notCalled, "then the flex persistence was not called to delete change from control");
+				assert.ok(fnDeleteChangeStub.notCalled, "then the flex persistence was not called to remove change from persistence");
+			});
 		});
 
-		QUnit.test("when remove is called for a flex change with an invalid app component", function(assert) {
+		QUnit.test("when remove is called for a flex object with an invalid app component", function(assert) {
 			var mPropertyBag = {
 				change: {
-					getSelector: function () {
+					getSelector: function() {
 						return this.selector;
 					}.bind(this)
 				}
 			};
 
-			sandbox.stub(ChangesController, "getAppComponentForSelector");
-
 			var fnRemoveChangeStub = sandbox.stub(FlexCustomData, "destroyAppliedCustomData");
 			var fnDeleteChangeStub = sandbox.stub();
 
 			mockFlexController(undefined, { deleteChange: fnDeleteChangeStub });
 			return PersistenceWriteAPI.remove(mPropertyBag)
-				.catch(function (oError) {
-					assert.ok(oError instanceof Error, "then an error was thrown");
-					assert.ok(fnRemoveChangeStub.notCalled, "then the flex persistence was not called to remove change from control");
-					assert.ok(fnDeleteChangeStub.notCalled, "then the flex persistence was not called to delete change from persistence");
-				});
+			.catch(function(oError) {
+				assert.ok(oError instanceof Error, "then an error was thrown");
+				assert.ok(fnRemoveChangeStub.notCalled, "then the flex persistence was not called to remove change from control");
+				assert.ok(fnDeleteChangeStub.notCalled, "then the flex persistence was not called to delete change from persistence");
+			});
 		});
 
 		QUnit.test("when remove is called for a descriptor change", function(assert) {
 			var sDescriptorChangeType = DescriptorChangeTypes.getChangeTypes()[0];
 			var mPropertyBag = {
 				change: {
-					_getMap: function () {
+					_getMap() {
 						return {
 							changeType: sDescriptorChangeType
 						};
@@ -556,27 +691,123 @@ sap.ui.define([
 				selector: this.vSelector
 			};
 
-			var oAppComponent = {id: "appComponent"};
-
-			sandbox.stub(ChangesController, "getAppComponentForSelector")
-				.withArgs(mPropertyBag.selector)
-				.returns(oAppComponent);
-
-			var fnDeleteChangeStub = sandbox.stub();
-
-			mockFlexController(oAppComponent, { deleteChange: fnDeleteChangeStub });
+			sandbox.stub(ManifestUtils, "getFlexReferenceForControl").returns("appComponentId");
+			var oDeleteChangeStub = sandbox.stub(ChangePersistence.prototype, "deleteChange");
 
 			return PersistenceWriteAPI.remove(mPropertyBag)
-				.then(function () {
-					assert.ok(fnDeleteChangeStub.calledWith(mPropertyBag.change, oAppComponent), "then the flex persistence was called with correct parameters");
-				});
+			.then(function() {
+				assert.ok(
+					oDeleteChangeStub.calledWith(mPropertyBag.change),
+					"then the flex persistence was called with correct parameters"
+				);
+			});
 		});
 
-		QUnit.test("Given KeyUserConnector has implementation of getFlexInfo", function (assert) {
+		QUnit.test("when remove is called for multiple descriptor changes", function(assert) {
+			var sDescriptorChangeType = DescriptorChangeTypes.getChangeTypes()[0];
+			var mPropertyBag = {
+				flexObjects: [{
+					_getMap() {
+						return {
+							changeType: sDescriptorChangeType
+						};
+					}
+				}, {
+					_getMap() {
+						return {
+							changeType: sDescriptorChangeType
+						};
+					}
+				}],
+				selector: this.vSelector
+			};
+
+			sandbox.stub(ManifestUtils, "getFlexReferenceForControl").returns("appComponentId");
+			var oDeleteChangesStub = sandbox.stub(ChangePersistence.prototype, "deleteChanges");
+			var oDestroyAppliedCustomDataSpy = sandbox.spy(FlexCustomData, "destroyAppliedCustomData");
+
+			return PersistenceWriteAPI.remove(mPropertyBag)
+			.then(function() {
+				assert.ok(
+					oDeleteChangesStub.calledWith(mPropertyBag.flexObjects),
+					"then the flex persistence was called with correct parameters"
+				);
+				assert.ok(
+					oDestroyAppliedCustomDataSpy.notCalled,
+					"then destroyAppliedCustomData was not called"
+				);
+			});
+		});
+
+		QUnit.test("when remove is called for flex objects and descriptor changes together", function(assert) {
+			var sDescriptorChangeType = DescriptorChangeTypes.getChangeTypes()[0];
+			var mPropertyBag = {
+				flexObjects: [{
+					getSelector() {
+						return "selector1";
+					},
+					getChangeType() {
+						return "flexChange";
+					}
+				}, {
+					_getMap() {
+						return {
+							changeType: sDescriptorChangeType
+						};
+					}
+				}],
+				selector: this.vSelector
+			};
+			var oElement = { type: "element" };
+			var oAppComponent = {id: "appComponent"};
+
+			sandbox.stub(ManifestUtils, "getFlexReferenceForControl").returns("appComponentId");
+			sandbox.stub(Utils, "getAppComponentForSelector")
+			.withArgs(mPropertyBag.selector)
+			.returns(oAppComponent);
+
+			sandbox.stub(JsControlTreeModifier, "bySelector")
+			.withArgs(mPropertyBag.flexObjects[0].getSelector(), oAppComponent).returns(oElement);
+
+			var oDestroyAppliedCustomDataStub = sandbox.stub(FlexCustomData, "destroyAppliedCustomData");
+			var oDeleteChangesStub = sandbox.stub(ChangePersistence.prototype, "deleteChanges");
+
+			return PersistenceWriteAPI.remove(mPropertyBag)
+			.then(function() {
+				assert.ok(
+					oDestroyAppliedCustomDataStub.calledWith(oElement, mPropertyBag.flexObjects[0], JsControlTreeModifier),
+					"then DestroyAppliedCustomData was called with correct parameters for first flex object"
+				);
+				assert.ok(
+					oDestroyAppliedCustomDataStub.calledOnce,
+					"then DestroyAppliedCustomData was only called for the first flex object"
+				);
+				assert.ok(
+					oDeleteChangesStub.calledWith(mPropertyBag.flexObjects),
+					"then the flex persistence was called with correct parameters"
+				);
+			});
+		});
+
+		QUnit.test("when remove is called with change and flexObjects parameters", function(assert) {
+			sandbox.stub(ManifestUtils, "getFlexReferenceForControl").returns("appComponentId");
+			var mPropertyBag = {
+				change: {},
+				flexObjects: [],
+				selector: this.vSelector
+			};
+
+			return PersistenceWriteAPI.remove(mPropertyBag)
+			.catch(function(oError) {
+				assert.ok(oError instanceof Error, "then an error is thrown");
+			});
+		});
+
+		QUnit.test("Given KeyUserConnector has implementation of getFlexInfo", function(assert) {
 			var sDescriptorChangeType = DescriptorChangeTypes.getChangeTypes()[0];
 			var mPropertyBag = {
 				change: {
-					_getMap: function () {
+					_getMap() {
 						return {
 							changeType: sDescriptorChangeType
 						};
@@ -585,14 +816,14 @@ sap.ui.define([
 				selector: this.vSelector,
 				layer: Layer.CUSTOMER
 			};
-			sandbox.stub(Core.getConfiguration(), "getFlexibilityServices").returns([
+			sandbox.stub(FlexConfiguration, "getFlexibilityServices").returns([
 				{connector: "KeyUserConnector", layers: [Layer.CUSTOMER], url: "sap.com"}
 			]);
 
 			var oKeyUserConnectorStub = sandbox.stub(KeyUserConnector, "getFlexInfo");
 			sandbox.stub(PersistenceWriteAPI, "_getUIChanges").withArgs(mPropertyBag).resolves([{}]);
 
-			return PersistenceWriteAPI.getResetAndPublishInfo(mPropertyBag).then(function () {
+			return PersistenceWriteAPI.getResetAndPublishInfo(mPropertyBag).then(function() {
 				assert.equal(oKeyUserConnectorStub.callCount, 1, "KeyUserConnector getFlexInfo should be called");
 			});
 		});
@@ -607,7 +838,7 @@ sap.ui.define([
 			sandbox.stub(PersistenceWriteAPI, "_getUIChanges").withArgs(mPropertyBag).resolves([{}]);
 			sandbox.stub(FeaturesAPI, "isPublishAvailable").withArgs().resolves(true);
 
-			return PersistenceWriteAPI.getResetAndPublishInfo(mPropertyBag).then(function (oResetAndPublishInfo) {
+			return PersistenceWriteAPI.getResetAndPublishInfo(mPropertyBag).then(function(oResetAndPublishInfo) {
 				assert.equal(oGetInfoStub.callCount, 0, "flex/info never called");
 				assert.equal(oResetAndPublishInfo.isResetEnabled, true, "isResetEnabled is true");
 				assert.equal(oResetAndPublishInfo.isPublishEnabled, false, "isPublishEnabled is false");
@@ -625,7 +856,7 @@ sap.ui.define([
 			sandbox.stub(PersistenceWriteAPI, "_getUIChanges").withArgs(mPropertyBag).resolves([{}]);
 			sandbox.stub(FeaturesAPI, "isPublishAvailable").withArgs().resolves(false);
 
-			return PersistenceWriteAPI.getResetAndPublishInfo(mPropertyBag).then(function (oResetAndPublishInfo) {
+			return PersistenceWriteAPI.getResetAndPublishInfo(mPropertyBag).then(function(oResetAndPublishInfo) {
 				assert.ok(oBaseLogStub.calledOnce, "an error was logged");
 				assert.equal(oResetAndPublishInfo.isResetEnabled, true, "isResetEnabled is true");
 				assert.equal(oResetAndPublishInfo.isPublishEnabled, false, "isPublishEnabled is false");
@@ -643,7 +874,7 @@ sap.ui.define([
 			sandbox.stub(PersistenceWriteAPI, "_getUIChanges").withArgs(mPropertyBag).resolves([]);
 			sandbox.stub(FeaturesAPI, "isPublishAvailable").withArgs().resolves(true);
 
-			return PersistenceWriteAPI.getResetAndPublishInfo(mPropertyBag).then(function (oResetAndPublishInfo) {
+			return PersistenceWriteAPI.getResetAndPublishInfo(mPropertyBag).then(function(oResetAndPublishInfo) {
 				assert.equal(oGetInfoStub.callCount, 1, "flex/info is called once");
 				assert.equal(oResetAndPublishInfo.isResetEnabled, false, "isResetEnabled is false");
 				assert.equal(oResetAndPublishInfo.isPublishEnabled, false, "isPublishEnabled is false");
@@ -660,7 +891,7 @@ sap.ui.define([
 			sandbox.stub(PersistenceWriteAPI, "_getUIChanges").withArgs(mPropertyBag).resolves([]);
 			sandbox.stub(FeaturesAPI, "isPublishAvailable").withArgs().resolves(false);
 
-			return PersistenceWriteAPI.getResetAndPublishInfo(mPropertyBag).then(function (oResetAndPublishInfo) {
+			return PersistenceWriteAPI.getResetAndPublishInfo(mPropertyBag).then(function(oResetAndPublishInfo) {
 				assert.equal(oGetInfoStub.calledOnce, true, "flex/info called once");
 				assert.equal(oResetAndPublishInfo.isResetEnabled, false, "isResetEnabled is false");
 				assert.equal(oResetAndPublishInfo.isPublishEnabled, false, "isPublishEnabled is false");
@@ -678,7 +909,7 @@ sap.ui.define([
 			sandbox.stub(PersistenceWriteAPI, "_getUIChanges").withArgs(mPropertyBag).resolves([]);
 			sandbox.stub(FeaturesAPI, "isPublishAvailable").withArgs().resolves(true);
 
-			return PersistenceWriteAPI.getResetAndPublishInfo(mPropertyBag).then(function (oResetAndPublishInfo) {
+			return PersistenceWriteAPI.getResetAndPublishInfo(mPropertyBag).then(function(oResetAndPublishInfo) {
 				assert.equal(oGetInfoStub.callCount, 1, "flex/info is called once");
 				assert.equal(oResetAndPublishInfo.isResetEnabled, false, "isResetEnabled is false");
 				assert.equal(oResetAndPublishInfo.isPublishEnabled, true, "isPublishEnabled is true");
@@ -695,7 +926,7 @@ sap.ui.define([
 			sandbox.stub(PersistenceWriteAPI, "_getUIChanges").withArgs(mPropertyBag).resolves([{}]);
 			sandbox.stub(FeaturesAPI, "isPublishAvailable").withArgs().resolves(false);
 
-			return PersistenceWriteAPI.getResetAndPublishInfo(mPropertyBag).then(function (oResetAndPublishInfo) {
+			return PersistenceWriteAPI.getResetAndPublishInfo(mPropertyBag).then(function(oResetAndPublishInfo) {
 				assert.equal(oGetInfoStub.calledOnce, true, "flex/info called once");
 				assert.equal(oResetAndPublishInfo.isResetEnabled, false, "isResetEnabled is false");
 				assert.equal(oResetAndPublishInfo.isPublishEnabled, false, "isPublishEnabled is false");
@@ -713,7 +944,7 @@ sap.ui.define([
 			sandbox.stub(PersistenceWriteAPI, "_getUIChanges").withArgs(mPropertyBag).resolves([{}]);
 			sandbox.stub(FeaturesAPI, "isPublishAvailable").withArgs().resolves(true);
 
-			return PersistenceWriteAPI.getResetAndPublishInfo(mPropertyBag).then(function (oResetAndPublishInfo) {
+			return PersistenceWriteAPI.getResetAndPublishInfo(mPropertyBag).then(function(oResetAndPublishInfo) {
 				assert.equal(oGetInfoStub.calledOnce, true, "flex/info called once");
 				assert.equal(oResetAndPublishInfo.isResetEnabled, true, "isResetEnabled is true");
 				assert.equal(oResetAndPublishInfo.isPublishEnabled, true, "isPublishEnabled is true");
@@ -733,7 +964,7 @@ sap.ui.define([
 				isResetEnabled: true,
 				isPublishEnabled: false
 			};
-			window.sessionStorage.setItem("sap.ui.fl.info." + sReference, JSON.stringify(oFlexInfoResponse));
+			window.sessionStorage.setItem(`sap.ui.fl.info.${sReference}`, JSON.stringify(oFlexInfoResponse));
 			sandbox.stub(ManifestUtils, "getFlexReferenceForControl").returns(sReference);
 
 			var oFlexInfo = PersistenceWriteAPI.getResetAndPublishInfoFromSession(this.vSelector);
@@ -802,7 +1033,7 @@ sap.ui.define([
 			});
 		});
 
-		QUnit.test("when getChangesWarning is called without mixed changes", function (assert) {
+		QUnit.test("when getChangesWarning is called without mixed changes", function(assert) {
 			var aChanges = [
 				FlexObjectFactory.createFromFileContent({})
 			];
@@ -811,35 +1042,35 @@ sap.ui.define([
 			sandbox.stub(PersistenceWriteAPI, "_getUIChanges").resolves(aChanges);
 
 			return PersistenceWriteAPI.getChangesWarning(mPropertyBag)
-				.then(function (oMessage) {
-					assert.notOk(oMessage.showWarning, "then no Warning should not be shown");
-				});
+			.then(function(oMessage) {
+				assert.notOk(oMessage.showWarning, "then no Warning should not be shown");
+			});
 		});
 
-		QUnit.test("when getChangesWarning is called in a P System with no changes", function (assert) {
+		QUnit.test("when getChangesWarning is called in a P System with no changes", function(assert) {
 			var aChanges = [];
 			var mPropertyBag = {};
 			sandbox.stub(PersistenceWriteAPI, "_getUIChanges").resolves(aChanges);
-			sandbox.stub(Settings, "getInstanceOrUndef").returns({isProductiveSystemWithTransports: function() {return true;}});
+			sandbox.stub(Settings, "getInstanceOrUndef").returns({isProductiveSystemWithTransports() {return true;}});
 			return PersistenceWriteAPI.getChangesWarning(mPropertyBag)
-				.then(function (oMessage) {
-					assert.ok(oMessage.showWarning, "then the warning is shown");
-					assert.strictEqual(oMessage.warningType, "noChangesAndPSystemWarning", "then the no changes and p system warning type is returned");
-				});
+			.then(function(oMessage) {
+				assert.ok(oMessage.showWarning, "then the warning is shown");
+				assert.strictEqual(oMessage.warningType, "noChangesAndPSystemWarning", "then the no changes and p system warning type is returned");
+			});
 		});
 
-		QUnit.test("when getChangesWarning is called in a not P System with no changes", function (assert) {
+		QUnit.test("when getChangesWarning is called in a not P System with no changes", function(assert) {
 			var aChanges = [];
 			var mPropertyBag = {};
 			sandbox.stub(PersistenceWriteAPI, "_getUIChanges").resolves(aChanges);
-			sandbox.stub(Settings, "getInstanceOrUndef").returns({isProductiveSystemWithTransports: function() {return false;}});
+			sandbox.stub(Settings, "getInstanceOrUndef").returns({isProductiveSystemWithTransports() {return false;}});
 			return PersistenceWriteAPI.getChangesWarning(mPropertyBag)
-				.then(function (oMessage) {
-					assert.equal(oMessage.showWarning, false);
-				});
+			.then(function(oMessage) {
+				assert.equal(oMessage.showWarning, false);
+			});
 		});
 
-		QUnit.test("when getChangesWarning is called with changes from other system", function (assert) {
+		QUnit.test("when getChangesWarning is called with changes from other system", function(assert) {
 			var aChanges = [
 				FlexObjectFactory.createFromFileContent({sourceSystem: "qSystem", sourceClient: "test"}),
 				FlexObjectFactory.createFromFileContent({}),
@@ -849,19 +1080,19 @@ sap.ui.define([
 
 			sandbox.stub(PersistenceWriteAPI, "_getUIChanges").resolves(aChanges);
 			sandbox.stub(Settings, "getInstanceOrUndef").returns({
-				isProductiveSystem: function() {return true;},
-				isProductiveSystemWithTransports: function() {return true;},
-				getSystem: function() {return "pSystem";},
-				getClient: function() {return "bar";}
+				isProductiveSystem() {return true;},
+				isProductiveSystemWithTransports() {return true;},
+				getSystem() {return "pSystem";},
+				getClient() {return "bar";}
 			});
 			return	PersistenceWriteAPI.getChangesWarning(mPropertyBag)
-				.then(function (oMessage) {
-					assert.ok(oMessage.showWarning, "then the warning is shown");
-					assert.strictEqual(oMessage.warningType, "mixedChangesWarning", "then the show mixed change warning type is returned");
-				});
+			.then(function(oMessage) {
+				assert.ok(oMessage.showWarning, "then the warning is shown");
+				assert.strictEqual(oMessage.warningType, "mixedChangesWarning", "then the show mixed change warning type is returned");
+			});
 		});
 
-		QUnit.test("when hasDirtyChanges is called", function (assert) {
+		QUnit.test("when hasDirtyChanges is called", function(assert) {
 			var oStubFlexObjectStateHasDirtyObjects = sandbox.stub(FlexObjectState, "hasDirtyFlexObjects").returns(true);
 			assert.equal(PersistenceWriteAPI.hasDirtyChanges({selector: this.appComponent}), true, "hasDirtyChanges return true");
 			assert.equal(oStubFlexObjectStateHasDirtyObjects.calledOnce, true, "FlexObjectState.hasDirtyFlexObjects called one");

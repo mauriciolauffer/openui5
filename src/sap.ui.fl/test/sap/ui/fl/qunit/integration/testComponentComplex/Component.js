@@ -15,10 +15,10 @@ sap.ui.define([
 			interfaces: ["sap.ui.core.IAsyncContentCreation"],
 			manifest: "json"
 		},
-		init: function() {
-			UIComponent.prototype.init.apply(this, arguments);
+		init(...aArgs) {
+			UIComponent.prototype.init.apply(this, aArgs);
 		},
-		createContent: function () {
+		createContent() {
 			return this.createComponent({
 				usage: "myUsage",
 				id: this.createId("sap.ui.fl.qunit.integration.testComponentReuse"),
@@ -26,7 +26,7 @@ sap.ui.define([
 					manifest: "json"
 				},
 				async: true
-			}).then(function (oEmbedded) {
+			}).then(function(oEmbedded) {
 				var oComponentContainer = new ComponentContainer(this.createId("myContainer"), {
 					propagateModel: true,
 					component: oEmbedded

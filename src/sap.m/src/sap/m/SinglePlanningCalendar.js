@@ -43,13 +43,14 @@ function(
 	DateTypeRange,
 	unifiedLibrary,
 	ManagedObjectObserver,
-    UI5Date,
+	UI5Date,
 	jQuery,
 	CalendarWeekNumbering
 ) {
 	"use strict";
 
 	var PlanningCalendarStickyMode = library.PlanningCalendarStickyMode;
+	var SinglePlanningCalendarSelectionMode = library.SinglePlanningCalendarSelectionMode;
 	var HEADER_RESIZE_HANDLER_ID = "_sHeaderResizeHandlerId";
 	var MAX_NUMBER_OF_VIEWS_IN_SEGMENTED_BUTTON = 4;
 	var SEGMENTEDBUTTONITEM__SUFFIX = "--item";
@@ -125,7 +126,7 @@ function(
 				title: { type : "string", group : "Appearance", defaultValue : "" },
 
 				/**
-				 * Determines the start date of the grid, as a JavaScript date object. It is considered as a local date.
+				 * Determines the start date of the grid, as a UI5Date or JavaScript Date object. It is considered as a local date.
 				 * The time part will be ignored. The current date is used as default.
 				 */
 				startDate: { type : "object", group : "Data" },
@@ -191,7 +192,7 @@ function(
 				 *
 				 * The appointment snaps on every interval
 				 * of 30 minutes. After the resize is finished, the {@link #event:appointmentResize appointmentResize} event is fired, containing
-				 * the new start and end JavaScript date objects.
+				 * the new start and end UI5Date or JavaScript Date objects.
 				 *
 				 * @since 1.65
 				 */
@@ -224,7 +225,13 @@ function(
 				 * Note: This property should not be used with firstDayOfWeek property.
 				 * @since 1.110.0
 				 */
-				calendarWeekNumbering : { type : "sap.ui.core.date.CalendarWeekNumbering", group : "Appearance", defaultValue: null}
+				calendarWeekNumbering : { type : "sap.ui.core.date.CalendarWeekNumbering", group : "Appearance", defaultValue: null},
+
+				/**
+				 * Determines whether more than one day will be selectable.
+				 * <b>Note:</b> selecting more than one day is possible with a combination of <code>Ctrl + mouse click</code>
+				 */
+				 dateSelectionMode: { type: "sap.m.SinglePlanningCalendarSelectionMode", group: "Behavior", defaultValue: SinglePlanningCalendarSelectionMode.SingleSelect }
 			},
 
 			aggregations : {
@@ -301,7 +308,23 @@ function(
 				 *
 				 * @private
 				 */
-				_mvgrid: { type: "sap.ui.core.Control", multiple: false, visibility: "hidden" }
+				_mvgrid: { type: "sap.ui.core.Control", multiple: false, visibility: "hidden" },
+
+				/**
+				 * Dates or date ranges for selected dates.
+				 *
+				 * To set a single date (instead of a range), set only the <code>startDate</code> property
+				 * of the {@link sap.ui.unified.DateRange} class.
+				 */
+				selectedDates : {
+					type : "sap.ui.unified.DateRange",
+					multiple : true,
+					singularName : "selectedDate",
+					forwarding: {
+						getter: "_getCurrentGrid",
+						aggregation: "selectedDates"
+					}
+				}
 
 			},
 
@@ -355,12 +378,12 @@ function(
 						appointment : {type : "sap.ui.unified.CalendarAppointment"},
 
 						/**
-						 * Start date of the dropped appointment, as a JavaScript date object.
+						 * Start date of the dropped appointment, as a UI5Date or JavaScript Date object.
 						 */
 						startDate : {type : "object"},
 
 						/**
-						 * Dropped appointment end date as a JavaScript date object.
+						 * Dropped appointment end date as a UI5Date or JavaScript Date object.
 						 */
 						endDate : {type : "object"},
 
@@ -383,12 +406,12 @@ function(
 						appointment: { type: "sap.ui.unified.CalendarAppointment" },
 
 						/**
-						 * Start date of the resized appointment, as a JavaScript date object.
+						 * Start date of the resized appointment, as a UI5Date or JavaScript Date object.
 						 */
 						startDate: { type: "object" },
 
 						/**
-						 * End date of the resized appointment, as a JavaScript date object.
+						 * End date of the resized appointment, as a UI5Date or JavaScript Date object.
 						 */
 						endDate: { type: "object" }
 					}
@@ -401,12 +424,12 @@ function(
 				appointmentCreate: {
 					parameters: {
 						/**
-						 * Start date of the created appointment, as a JavaScript date object.
+						 * Start date of the created appointment, as a UI5Date or JavaScript Date object.
 						 */
 						startDate: {type: "object"},
 
 						/**
-						 * End date of the created appointment, as a JavaScript date object.
+						 * End date of the created appointment, as a UI5Date or JavaScript Date object.
 						 */
 						endDate: {type: "object"}
 					}
@@ -419,7 +442,7 @@ function(
 					parameters: {
 
 						/**
-						 * Date of the selected header, as a JavaScript date object. It is considered as a local date.
+						 * Date of the selected header, as a UI5Date or JavaScript Date object. It is considered as a local date.
 						 */
 						date: {type: "object"}
 
@@ -433,7 +456,7 @@ function(
 					parameters: {
 
 						/**
-						 * The new start date, as a JavaScript date object. It is considered as a local date.
+						 * The new start date, as a UI5Date or JavaScript Date object. It is considered as a local date.
 						 */
 						date: {type: "object"}
 
@@ -447,11 +470,11 @@ function(
 				cellPress: {
 					parameters: {
 						/**
-						 * The start date as a JavaScript date object of the focused grid cell.
+						 * The start date as a UI5Date or JavaScript Date object of the focused grid cell.
 						 */
 						startDate: {type: "object"},
 						/**
-						 * The end date as a JavaScript date object of the focused grid cell.
+						 * The end date as a UI5Date or JavaScript Date object of the focused grid cell.
 						 */
 						endDate: {type: "object"}
 					}
@@ -466,7 +489,7 @@ function(
 				moreLinkPress: {
 					parameters: {
 						/**
-						 * The date as a JavaScript date object of the cell with the
+						 * The date as a UI5Date or JavaScript Date object of the cell with the
 						 * pressed more link.
 						 */
 						date: { type: "object" }
@@ -599,7 +622,7 @@ function(
 
 	/**
 	 * Sets the start date of the grid.
-	 * @param {Date} oDate A JavaScript Date
+	 * @param {Date|module:sap/ui/core/date/UI5Date} oDate A date instance
 	 * @returns {this} Reference to <code>this</code> for method chaining
 	 * @public
 	 */
@@ -650,6 +673,13 @@ function(
 		return this.setProperty("enableAppointmentsCreate", bEnabled, true);
 	};
 
+	SinglePlanningCalendar.prototype.setDateSelectionMode = function (sDateSelectionMode) {
+		this.getAggregation("_mvgrid").setDateSelectionMode(sDateSelectionMode);
+		this.getAggregation("_grid").setDateSelectionMode(sDateSelectionMode);
+
+		return this.setProperty("dateSelectionMode", sDateSelectionMode);
+	};
+
 	/**
 	 * Applies or removes sticky classes based on <code>stickyMode</code>'s value.
 	 *
@@ -662,6 +692,35 @@ function(
 		this.toggleStyleClass("sapMSinglePCStickyAll", sStickyMode === PlanningCalendarStickyMode.All);
 		this.toggleStyleClass("sapMSinglePCStickyNavBarAndColHeaders", sStickyMode === PlanningCalendarStickyMode.NavBarAndColHeaders);
 
+		return this;
+	};
+
+	/**
+	 * Removes the selected dates of the grid.
+	 * @returns {object} An array of the removed DateRange objects
+	 * @public
+	 */
+	SinglePlanningCalendar.prototype.removeAllSelectedDates = function () {
+		return this._getCurrentGrid().removeAllSelectedDates();
+	};
+
+	/**
+	 * Gets the selected dates of the grid.
+	 * @returns {object} An array of DateRange objects
+	 * @public
+	 */
+	SinglePlanningCalendar.prototype.getSelectedDates = function () {
+		return this._getCurrentGrid().getAggregation("selectedDates");
+	};
+
+	/**
+	 * Adds a selected date to the grid.
+	 * @param {object} oSelectedDate A DateRange object
+	 * @returns {this} Reference to <code>this</code> for method chaining
+	 * @public
+	 */
+	SinglePlanningCalendar.prototype.addSelectedDate = function (oSelectedDate) {
+		this._getCurrentGrid().addAggregation("selectedDates", oSelectedDate);
 		return this;
 	};
 
@@ -1319,6 +1378,7 @@ function(
 		var oNextGrid = this._getCurrentGrid(),
 			aApps,
 			aSpecialDates,
+			aSelectedDates,
 			i;
 
 		if (oPreviousGrid.getId() !== oNextGrid.getId()) {
@@ -1332,6 +1392,12 @@ function(
 
 			for (i = 0; i < aSpecialDates.length; i++) {
 				oNextGrid.addAggregation("specialDates", aSpecialDates[i], true);
+			}
+
+			aSelectedDates = oPreviousGrid.removeAllAggregation("selectedDates", true);
+
+			for (i = 0; i < aSelectedDates.length; i++) {
+				oNextGrid.addAggregation("selectedDates", aSelectedDates[i], true);
 			}
 		}
 	};

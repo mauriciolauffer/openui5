@@ -63,12 +63,13 @@
 											delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}'
 											dataType= "Edm.String"
 											conditions= "{$filters>/conditions/$search}"
+											propertyKey="$search"
 											width="50%"
 											maxConditions="1"
 											placeholder="Search" />
 									</vhfb:basicSearchField>
 									<vhfb:filterItems>
-										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Name" conditions="{$filters>/conditions/name}" />
+										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Name" conditions="{$filters>/conditions/name}" propertyKey="name"/>
 									</vhfb:filterItems>
 								</vhfb:FilterBar>
 							</mdcvc:filterBar>
@@ -109,12 +110,13 @@
 											delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}'
 											dataType= "Edm.String"
 											conditions= "{$filters>/conditions/$search}"
+											propertyKey="$search"
 											width="50%"
 											maxConditions="1"
 											placeholder="Search" />
 									</vhfb:basicSearchField>
 									<vhfb:filterItems>
-										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Country of Origin" conditions="{$filters>/conditions/countryOfOrigin_code}" />
+										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Country of Origin" conditions="{$filters>/conditions/countryOfOrigin_code}" propertyKey="countryOfOrigin_code"/>
 									</vhfb:filterItems>
 								</vhfb:FilterBar>
 							</mdcvc:filterBar>
@@ -235,12 +237,13 @@
 											delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}'
 											dataType= "Edm.String"
 											conditions= "{$filters>/conditions/$search}"
+											propertyKey="$search"
 											width="50%"
 											maxConditions="1"
 											placeholder="Search" />
 									</vhfb:basicSearchField>
 									<vhfb:filterItems>
-										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Name" conditions="{$filters>/conditions/name}" />
+										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Name" conditions="{$filters>/conditions/name}" propertyKey="name"/>
 									</vhfb:filterItems>
 								</vhfb:FilterBar>
 							</mdcvc:filterBar>
@@ -249,7 +252,6 @@
 							<mdc:Table autoBindOnInit="false"
 								id="mdcTable1"
 								width="100%"
-								height="100%"
 								headerVisible="true"
 								selectionMode="{= ${settings>/maxConditions} === -1 ? 'Multi' : 'SingleMaster'}"
 								p13nMode="Column,Sort"
@@ -259,13 +261,13 @@
 									<mdc:table.GridTableType rowCountMode="Auto"/>
 								</mdc:type>
 								<mdc:columns>
-									<mdc:table.Column id="mdcTable1_col_ID" header="ID" dataProperty="ID">
+									<mdc:table.Column id="mdcTable1_col_ID" header="ID" propertyKey="ID">
 										<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{ID}" editMode="Display"/>
 									</mdc:table.Column>
-									<mdc:table.Column id="mdcTable1_col_name" header="Name" dataProperty="name">
+									<mdc:table.Column id="mdcTable1_col_name" header="Name" propertyKey="name">
 										<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{name}" editMode="Display"/>
 									</mdc:table.Column>
-									<mdc:table.Column id="mdcTable1_col_dateOfBirth" header="Date of birth" dataProperty="dateOfBirth">
+									<mdc:table.Column id="mdcTable1_col_dateOfBirth" header="Date of birth" propertyKey="dateOfBirth">
 										<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{dateOfBirth}" editMode="Display"/>
 									</mdc:table.Column>
 								</mdc:columns>
@@ -279,12 +281,13 @@
 											delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}'
 											dataType= "Edm.String"
 											conditions= "{$filters>/conditions/$search}"
+											propertyKey="$search"
 											width="50%"
 											maxConditions="1"
 											placeholder="Search" />
 									</vhfb:basicSearchField>
 									<vhfb:filterItems>
-										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Country of Origin" conditions="{$filters>/conditions/countryOfOrigin_code}" />
+										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Country of Origin" conditions="{$filters>/conditions/countryOfOrigin_code}" propertyKey="countryOfOrigin_code"/>
 									</vhfb:filterItems>
 								</vhfb:FilterBar>
 							</mdcvc:filterBar>
@@ -293,7 +296,6 @@
 							<mdc:Table autoBindOnInit="false"
 								id="mdcTable2"
 								width="100%"
-								height="100%"
 								headerVisible="true"
 								selectionMode="{= ${settings>/maxConditions} === -1 ? 'Multi' : 'SingleMaster'}"
 								p13nMode="Column,Sort"
@@ -303,19 +305,19 @@
 									<mdc:table.GridTableType rowCountMode="Auto"/>
 								</mdc:type>
 								<mdc:columns>
-									<mdc:table.Column id="mdcTable2_col_ID" header="ID" dataProperty="ID">
+									<mdc:table.Column id="mdcTable2_col_ID" header="ID" propertyKey="ID">
 										<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{ID}" editMode="Display"/>
 									</mdc:table.Column>
-									<mdc:table.Column id="mdcTable2_col_name" header="Name" dataProperty="name">
+									<mdc:table.Column id="mdcTable2_col_name" header="Name" propertyKey="name">
 										<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{name}" editMode="Display"/>
 									</mdc:table.Column>
-									<mdc:table.Column id="mdcTable2_col_country" header="Country" dataProperty="countryOfOrigin_code">
+									<mdc:table.Column id="mdcTable2_col_country" header="Country" propertyKey="countryOfOrigin_code">
 										<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{countryOfOrigin_code}" additionalValue="{countryOfOrigin/descr}" display="Description" editMode="Display"/>
 									</mdc:table.Column>
-									<mdc:table.Column id="mdcTable2_col_region" header="Region" dataProperty="regionOfOrigin_code">
+									<mdc:table.Column id="mdcTable2_col_region" header="Region" propertyKey="regionOfOrigin_code">
 										<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{regionOfOrigin_code}" additionalValue="{regionOfOrigin/text}" display="Description" editMode="Display"/>
 									</mdc:table.Column>
-									<mdc:table.Column id="mdcTable2_col_city" header="City" dataProperty="cityOfOrigin_city">
+									<mdc:table.Column id="mdcTable2_col_city" header="City" propertyKey="cityOfOrigin_city">
 										<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{cityOfOrigin_city}" additionalValue="{cityOfOrigin/text}" display="Description" editMode="Display"/>
 									</mdc:table.Column>
 								</mdc:columns>
@@ -366,12 +368,13 @@
 												delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}'
 												dataType= "Edm.String"
 												conditions= "{$filters>/conditions/$search}"
+												propertyKey="$search"
 												width="50%"
 												maxConditions="1"
 												placeholder="Search" />
 										</vhfb:basicSearchField>
 										<vhfb:filterItems>
-											<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Name" conditions="{$filters>/conditions/name}" />
+											<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Name" conditions="{$filters>/conditions/name}" propertyKey="name"/>
 										</vhfb:filterItems>
 									</vhfb:FilterBar>
 								</mdcvc:filterBar>
@@ -379,7 +382,6 @@
 								<mdc:Table autoBindOnInit="false"
 									id="mdcTable-listcollection-1"
 									width="100%"
-									height="100%"
 									headerVisible="true"
 									selectionMode="{= ${settings>/maxConditions} === -1 ? 'Multi' : 'SingleMaster'}"
 									p13nMode="Column,Sort"
@@ -389,10 +391,10 @@
 										<mdc:table.ResponsiveTableType growingMode="Scroll" />
 									</mdc:type>
 									<mdc:columns>
-										<mdc:table.Column id="mdcTable-listcollection-1_col_ID" header="ID" dataProperty="ID">
+										<mdc:table.Column id="mdcTable-listcollection-1_col_ID" header="ID" propertyKey="ID">
 											<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{ID}" editMode="Display"/>
 										</mdc:table.Column>
-										<mdc:table.Column id="mdcTable-listcollection-1_col_name" header="Name" dataProperty="name">
+										<mdc:table.Column id="mdcTable-listcollection-1_col_name" header="Name" propertyKey="name">
 											<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{name}" editMode="Display"/>
 										</mdc:table.Column>
 									</mdc:columns>
@@ -407,12 +409,13 @@
 												delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}'
 												dataType= "Edm.String"
 												conditions= "{$filters>/conditions/$search}"
+												propertyKey="$search"
 												width="50%"
 												maxConditions="1"
 												placeholder="Search" />
 										</vhfb:basicSearchField>
 										<vhfb:filterItems>
-											<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Country of origin" conditions="{$filters>/conditions/countryOfOrigin_code}" />
+											<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Country of origin" conditions="{$filters>/conditions/countryOfOrigin_code}" propertyKey="countryOfOrigin_code"/>
 										</vhfb:filterItems>
 									</vhfb:FilterBar>
 								</mdcvc:filterBar>
@@ -420,7 +423,6 @@
 								<mdc:Table autoBindOnInit="false"
 									id="mdcTable-listcollection-2"
 									width="100%"
-									height="100%"
 									headerVisible="true"
 									selectionMode="{= ${settings>/maxConditions} === -1 ? 'Multi' : 'SingleMaster'}"
 									p13nMode="Column,Sort"
@@ -430,13 +432,13 @@
 										<mdc:table.ResponsiveTableType growingMode="Scroll" />
 									</mdc:type>
 									<mdc:columns>
-										<mdc:table.Column id="mdcTable-listcollection-2_col_ID" header="ID" dataProperty="ID">
+										<mdc:table.Column id="mdcTable-listcollection-2_col_ID" header="ID" propertyKey="ID">
 											<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{ID}" editMode="Display"/>
 										</mdc:table.Column>
-										<mdc:table.Column id="mdcTable-listcollection-2_col_name" header="Name" dataProperty="name">
+										<mdc:table.Column id="mdcTable-listcollection-2_col_name" header="Name" propertyKey="name">
 											<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' additionalValue="{countryOfOrigin_code}" display="ValueDescription" value="{name}" editMode="Display"/>
 										</mdc:table.Column>
-                                        <mdc:table.Column id="mdcTable-listcollection-2_col_countryOfOrigin" header="Country of origin" dataProperty="countryOfOrigin_code">
+                                        <mdc:table.Column id="mdcTable-listcollection-2_col_countryOfOrigin" header="Country of origin" propertyKey="countryOfOrigin_code">
 											<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{countryOfOrigin_code}" editMode="Display"/>
 										</mdc:table.Column>
 									</mdc:columns>
@@ -451,12 +453,13 @@
 												delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}'
 												dataType= "Edm.String"
 												conditions= "{$filters>/conditions/$search}"
+												propertyKey="$search"
 												width="50%"
 												maxConditions="1"
 												placeholder="Search" />
 										</vhfb:basicSearchField>
 										<vhfb:filterItems>
-											<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Date of Birth" conditions="{$filters>/conditions/dateOfBirth}" />
+											<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Date of Birth" conditions="{$filters>/conditions/dateOfBirth}" propertyKey="dateOfBirth"/>
 										</vhfb:filterItems>
 									</vhfb:FilterBar>
 								</mdcvc:filterBar>
@@ -464,7 +467,6 @@
 								<mdc:Table autoBindOnInit="false"
 									id="mdcTable-listcollection-3"
 									width="100%"
-									height="100%"
 									headerVisible="true"
 									selectionMode="{= ${settings>/maxConditions} === -1 ? 'Multi' : 'SingleMaster'}"
 									p13nMode="Column,Sort"
@@ -474,13 +476,13 @@
 										<mdc:table.ResponsiveTableType growingMode="Scroll" />
 									</mdc:type>
 									<mdc:columns>
-										<mdc:table.Column id="mdcTable-listcollection-3_col_ID" header="ID" dataProperty="ID">
+										<mdc:table.Column id="mdcTable-listcollection-3_col_ID" header="ID" propertyKey="ID">
 											<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{ID}" editMode="Display"/>
 										</mdc:table.Column>
-										<mdc:table.Column id="mdcTable-listcollection-3_col_name" header="Name" dataProperty="name">
+										<mdc:table.Column id="mdcTable-listcollection-3_col_name" header="Name" propertyKey="name">
 											<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' additionalValue="{dateOfBirth}" display="ValueDescription" value="{name}" editMode="Display"/>
 										</mdc:table.Column>
-                                        <mdc:table.Column id="mdcTable-listcollection-3_col_dateOfBirth" header="Date of Birth" dataProperty="dateOfBirth">
+                                        <mdc:table.Column id="mdcTable-listcollection-3_col_dateOfBirth" header="Date of Birth" propertyKey="dateOfBirth">
 											<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{dateOfBirth}" editMode="Display"/>
 										</mdc:table.Column>
 									</mdc:columns>
@@ -512,7 +514,7 @@
 							useFirstMatch="true"
 							items='{path : "/Currencies"}'
 						>
-							<mdcf:ListFieldHelpItem
+							<mdcvc:FixedListItem
 								key="{code}"
 								text="{name}"/>
 						</mdcvc:FixedList>
@@ -530,7 +532,7 @@
 							useAsValueHelp="false"
 							items='{path : "/Currencies"}'
 						>
-							<mdcf:ListFieldHelpItem
+							<mdcvc:FixedListItem
 								key="{code}"
 								text="{name}"/>
 						</mdcvc:FixedList>
@@ -635,12 +637,13 @@
 											delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}'
 											dataType= "Edm.String"
 											conditions= "{$filters>/conditions/$search}"
+											propertyKey="$search"
 											width="50%"
 											maxConditions="1"
 											placeholder="Search" />
 									</vhfb:basicSearchField>
 									<vhfb:filterItems>
-										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Country" display="DescriptionValue" conditions="{$filters>/conditions/country_code}" />
+										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Country" display="DescriptionValue" conditions="{$filters>/conditions/country_code}" propertyKey="country_code"/>
 									</vhfb:filterItems>
 								</vhfb:FilterBar>
 							</mdcvc:filterBar>
@@ -704,22 +707,22 @@
 											delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}'
 											dataType= "Edm.String"
 											conditions= "{$filters>/conditions/$search}"
+											propertyKey="$search"
 											width="50%"
 											maxConditions="1"
 											placeholder="Search" />
 									</vhfb:basicSearchField>
 									<vhfb:filterItems>
-										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Country" conditions="{$filters>/conditions/country_code}"/>
+										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Country" conditions="{$filters>/conditions/country_code}" propertyKey="country_code"/>
 									</vhfb:filterItems>
 									<vhfb:filterItems>
-										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Region" conditions="{$filters>/conditions/region_code}"/>
+										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Region" conditions="{$filters>/conditions/region_code}" propertyKey="region_code"/>
 									</vhfb:filterItems>
 								</vhfb:FilterBar>
 							</mdcvc:filterBar>
 							<mdc:Table autoBindOnInit="false"
 								id="mdcTable-city"
 								width="100%"
-								height="100%"
 								headerVisible="true"
 								selectionMode="{= ${settings>/maxConditions} === -1 ? 'Multi' : 'SingleMaster'}"
 								p13nMode="Column,Sort"
@@ -729,16 +732,16 @@
 									<mdc:table.GridTableType rowCountMode="Auto"/>
 								</mdc:type>
 								<mdc:columns>
-									<mdc:table.Column header="City" dataProperty="city">
+									<mdc:table.Column header="City" propertyKey="city">
 										<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{city}" editMode="Display"/>
 									</mdc:table.Column>
-									<mdc:table.Column header="Name" dataProperty="text">
+									<mdc:table.Column header="Name" propertyKey="text">
 										<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{text}" editMode="Display"/>
 									</mdc:table.Column>
-									<mdc:table.Column header="Country" dataProperty="country_code">
+									<mdc:table.Column header="Country" propertyKey="country_code">
 										<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{country_code}" editMode="Display"/>
 									</mdc:table.Column>
-									<mdc:table.Column header="Region" dataProperty="region_code">
+									<mdc:table.Column header="Region" propertyKey="region_code">
 										<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{region_code}" editMode="Display"/>
 									</mdc:table.Column>
 								</mdc:columns>
@@ -785,34 +788,33 @@
 							<mdcvc:filterBar>
 								<vhfb:FilterBar id="FH_Books1-MDCTable-FB" liveMode="false" delegate='\{"name": "delegates/GenericVhFilterBarDelegate", "payload": \{\}\}'>
 									<vhfb:filterItems>
-										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="ID" conditions="{$filters>/conditions/ID}" dataType="Edm.Int32" dataTypeFormatOptions='\{"groupingEnabled": false\}'/>
+										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="ID" conditions="{$filters>/conditions/ID}" propertyKey="ID" dataType="Edm.Int32" dataTypeFormatOptions='\{"groupingEnabled": false\}'/>
 									</vhfb:filterItems>
 									<vhfb:filterItems>
-										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Title" conditions="{$filters>/conditions/title}" />
+										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Title" conditions="{$filters>/conditions/title}" propertyKey="title"/>
 									</vhfb:filterItems>
 									<vhfb:filterItems>
-										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Description" conditions="{$filters>/conditions/descr}" />
+										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Description" conditions="{$filters>/conditions/descr}" propertyKey="descr"/>
 									</vhfb:filterItems>
 								</vhfb:FilterBar>
 							</mdcvc:filterBar>
 							<mdc:Table id="FH_Books1-MDCTable-table"
 								autoBindOnInit="false"
 								width="100%"
-								height="100%"
 								selectionMode="{= ${settings>/maxConditions} === -1 ? 'Multi' : 'SingleMaster'}"
 								p13nMode="Column,Sort"
 								delegate='\{"name": "sap/ui/v4demo/delegate/GridTable.delegate", "payload": \{"collectionName": "Books"\}\}' threshold="50">
 								<mdc:columns>
-									<mdc:table.Column header="ID" dataProperty="ID" width="5rem">
+									<mdc:table.Column header="ID" propertyKey="ID" width="5rem">
 										<Text text="{path: 'ID', type:'sap.ui.model.odata.type.Int32', formatOptions: {groupingEnabled: false}}"/>
 									</mdc:table.Column>
-									<mdc:table.Column header="Title" dataProperty="title">
+									<mdc:table.Column header="Title" propertyKey="title">
 										<Text text="{title}"/>
 									</mdc:table.Column>
-									<mdc:table.Column header="Description" dataProperty="descr">
+									<mdc:table.Column header="Description" propertyKey="descr">
 										<Text text="{descr}"/>
 									</mdc:table.Column>
-									<mdc:table.Column header="Published" dataProperty="published" width="8rem">
+									<mdc:table.Column header="Published" propertyKey="published" width="8rem">
 										<Text text="{published}"/>
 									</mdc:table.Column>
 								</mdc:columns>
@@ -825,13 +827,13 @@
 							<mdcvc:filterBar>
 								<vhfb:FilterBar id="FH_Books1-MTable-FB" liveMode="false" delegate='\{"name": "delegates/GenericVhFilterBarDelegate", "payload": \{\}\}'>
 									<vhfb:filterItems>
-										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="ID" conditions="{$filters>/conditions/ID}" dataType="Edm.Int32" dataTypeFormatOptions='\{"groupingEnabled": false\}'/>
+										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="ID" conditions="{$filters>/conditions/ID}" propertyKey="ID" dataType="Edm.Int32" dataTypeFormatOptions='\{"groupingEnabled": false\}'/>
 									</vhfb:filterItems>
 									<vhfb:filterItems>
-										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Title" conditions="{$filters>/conditions/title}" />
+										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Title" conditions="{$filters>/conditions/title}" propertyKey="title"/>
 									</vhfb:filterItems>
 									<vhfb:filterItems>
-										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Description" conditions="{$filters>/conditions/descr}" />
+										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Description" conditions="{$filters>/conditions/descr}" propertyKey="descr"/>
 									</vhfb:filterItems>
 								</vhfb:FilterBar>
 							</mdcvc:filterBar>
@@ -904,34 +906,33 @@
 							<mdcvc:filterBar>
 								<vhfb:FilterBar id="FH_Books2-MDCTable-FB" liveMode="false" delegate='\{"name": "delegates/GenericVhFilterBarDelegate", "payload": \{\}\}'>
 									<vhfb:filterItems>
-										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="ID" conditions="{$filters>/conditions/ID}" dataType="Edm.Int32" dataTypeFormatOptions='\{"groupingEnabled": false\}'/>
+										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="ID" conditions="{$filters>/conditions/ID}" propertyKey="ID" dataType="Edm.Int32" dataTypeFormatOptions='\{"groupingEnabled": false\}'/>
 									</vhfb:filterItems>
 									<vhfb:filterItems>
-										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Title" conditions="{$filters>/conditions/title}" />
+										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Title" conditions="{$filters>/conditions/title}" propertyKey="title"/>
 									</vhfb:filterItems>
 									<vhfb:filterItems>
-										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Description" conditions="{$filters>/conditions/descr}" />
+										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Description" conditions="{$filters>/conditions/descr}" propertyKey="descr"/>
 									</vhfb:filterItems>
 								</vhfb:FilterBar>
 							</mdcvc:filterBar>
 							<mdc:Table id="FH_Books2-MDCTable-table"
 								autoBindOnInit="false"
 								width="100%"
-								height="100%"
 								selectionMode="{= ${settings>/maxConditions} === -1 ? 'Multi' : 'SingleMaster'}"
 								p13nMode="Column,Sort"
 								delegate='\{"name": "sap/ui/v4demo/delegate/GridTable.delegate", "payload": \{"collectionName": "Books"\}\}' threshold="50">
 								<mdc:columns>
-									<mdc:table.Column header="ID" dataProperty="ID" width="5rem">
+									<mdc:table.Column header="ID" propertyKey="ID" width="5rem">
 										<Text text="{path: 'ID', type:'sap.ui.model.odata.type.Int32', formatOptions: {groupingEnabled: false}}"/>
 									</mdc:table.Column>
-									<mdc:table.Column header="Title" dataProperty="title">
+									<mdc:table.Column header="Title" propertyKey="title">
 										<Text text="{title}"/>
 									</mdc:table.Column>
-									<mdc:table.Column header="Description" dataProperty="descr">
+									<mdc:table.Column header="Description" propertyKey="descr">
 										<Text text="{descr}"/>
 									</mdc:table.Column>
-									<mdc:table.Column header="Published" dataProperty="published" width="8rem">
+									<mdc:table.Column header="Published" propertyKey="published" width="8rem">
 										<Text text="{published}"/>
 									</mdc:table.Column>
 								</mdc:columns>
@@ -944,13 +945,13 @@
 							<mdcvc:filterBar>
 								<vhfb:FilterBar id="FH_Books2-MTable-FB" liveMode="false" delegate='\{"name": "delegates/GenericVhFilterBarDelegate", "payload": \{\}\}'>
 									<vhfb:filterItems>
-										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="ID" conditions="{$filters>/conditions/ID}" dataType="Edm.Int32" dataTypeFormatOptions='\{"groupingEnabled": false\}'/>
+										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="ID" conditions="{$filters>/conditions/ID}" propertyKey="ID" dataType="Edm.Int32" dataTypeFormatOptions='\{"groupingEnabled": false\}'/>
 									</vhfb:filterItems>
 									<vhfb:filterItems>
-										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Title" conditions="{$filters>/conditions/title}" />
+										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Title" conditions="{$filters>/conditions/title}" propertyKey="title"/>
 									</vhfb:filterItems>
 									<vhfb:filterItems>
-										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Description" conditions="{$filters>/conditions/descr}" />
+										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Description" conditions="{$filters>/conditions/descr}" propertyKey="descr"/>
 									</vhfb:filterItems>
 								</vhfb:FilterBar>
 							</mdcvc:filterBar>
@@ -1023,34 +1024,33 @@
 							<mdcvc:filterBar>
 								<vhfb:FilterBar id="FH_Books3-MDCTable-FB" liveMode="false" delegate='\{"name": "delegates/GenericVhFilterBarDelegate", "payload": \{\}\}'>
 									<vhfb:filterItems>
-										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="ID" conditions="{$filters>/conditions/ID}" dataType="Edm.Int32" dataTypeFormatOptions='\{"groupingEnabled": false\}'/>
+										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="ID" conditions="{$filters>/conditions/ID}" propertyKey="ID" dataType="Edm.Int32" dataTypeFormatOptions='\{"groupingEnabled": false\}'/>
 									</vhfb:filterItems>
 									<vhfb:filterItems>
-										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Title" conditions="{$filters>/conditions/title}" />
+										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Title" conditions="{$filters>/conditions/title}" propertyKey="title"/>
 									</vhfb:filterItems>
 									<vhfb:filterItems>
-										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Description" conditions="{$filters>/conditions/descr}" />
+										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Description" conditions="{$filters>/conditions/descr}" propertyKey="descr"/>
 									</vhfb:filterItems>
 								</vhfb:FilterBar>
 							</mdcvc:filterBar>
 							<mdc:Table id="FH_Books3-MDCTable-table"
 								autoBindOnInit="false"
 								width="100%"
-								height="100%"
 								selectionMode="{= ${settings>/maxConditions} === -1 ? 'Multi' : 'SingleMaster'}"
 								p13nMode="Column,Sort"
 								delegate='\{"name": "sap/ui/v4demo/delegate/GridTable.delegate", "payload": \{"collectionName": "Books"\}\}' threshold="50">
 								<mdc:columns>
-									<mdc:table.Column header="ID" dataProperty="ID" width="5rem">
+									<mdc:table.Column header="ID" propertyKey="ID" width="5rem">
 										<Text text="{path: 'ID', type:'sap.ui.model.odata.type.Int32', formatOptions: {groupingEnabled: false}}"/>
 									</mdc:table.Column>
-									<mdc:table.Column header="Title" dataProperty="title">
+									<mdc:table.Column header="Title" propertyKey="title">
 										<Text text="{title}"/>
 									</mdc:table.Column>
-									<mdc:table.Column header="Description" dataProperty="descr">
+									<mdc:table.Column header="Description" propertyKey="descr">
 										<Text text="{descr}"/>
 									</mdc:table.Column>
-									<mdc:table.Column header="Published" dataProperty="published" width="8rem">
+									<mdc:table.Column header="Published" propertyKey="published" width="8rem">
 										<Text text="{published}"/>
 									</mdc:table.Column>
 								</mdc:columns>
@@ -1063,13 +1063,13 @@
 							<mdcvc:filterBar>
 								<vhfb:FilterBar id="FH_Books3-MTable-FB" liveMode="false" delegate='\{"name": "delegates/GenericVhFilterBarDelegate", "payload": \{\}\}'>
 									<vhfb:filterItems>
-										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="ID" conditions="{$filters>/conditions/ID}" dataType="Edm.Int32" dataTypeFormatOptions='\{"groupingEnabled": false\}'/>
+										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="ID" conditions="{$filters>/conditions/ID}" propertyKey="ID" dataType="Edm.Int32" dataTypeFormatOptions='\{"groupingEnabled": false\}'/>
 									</vhfb:filterItems>
 									<vhfb:filterItems>
-										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Title" conditions="{$filters>/conditions/title}" />
+										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Title" conditions="{$filters>/conditions/title}" propertyKey="title"/>
 									</vhfb:filterItems>
 									<vhfb:filterItems>
-										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Description" conditions="{$filters>/conditions/descr}" />
+										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Description" conditions="{$filters>/conditions/descr}" propertyKey="descr"/>
 									</vhfb:filterItems>
 								</vhfb:FilterBar>
 							</mdcvc:filterBar>
@@ -1113,131 +1113,146 @@
 				id="FB0-FF1"
 				label="M.Table (multiple tabs)"
 				conditions="{$filters>/conditions/author_ID}"
+				propertyKey="author_ID"
 				dataType="Edm.Int32"
 				required="false"
-				fieldHelp="FB0-FH1"
+				valueHelp="FB0-FH1"
 				display="DescriptionValue"
 				maxConditions="{settings>/maxConditions}" />
 			<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}'
 				id="FB0-FF1-1-multicombo"
 				label="M.Table (useAsValueHelp)"
 				conditions="{$filters>/conditions/author_ID}"
+				propertyKey="author_ID"
 				dataType="Edm.Int32"
 				required="false"
-				fieldHelp="FB0-FH1-1-multicombo"
+				valueHelp="FB0-FH1-1-multicombo"
 				display="DescriptionValue"
 				maxConditions="-1" />
 			<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}'
 				id="FB0-FF1-2"
 				label="define Conditions"
 				conditions="{$filters>/conditions/author_ID}"
+				propertyKey="author_ID"
 				dataType="Edm.Int32"
 				required="false"
-				fieldHelp="FB0-FH1-2"
+				valueHelp="FB0-FH1-2"
 				display="DescriptionValue"
 				maxConditions="{settings>/maxConditions}" />
 			<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}'
 				id="FB0-FF1-10"
 				label="M.Table / MDC.uiTable"
 				conditions="{$filters>/conditions/author_ID}"
+				propertyKey="author_ID"
 				dataType="Edm.Int32"
 				required="false"
-				fieldHelp="FB0-FH1-10"
+				valueHelp="FB0-FH1-10"
 				display="DescriptionValue"
 				maxConditions="{settings>/maxConditions}" />
 			<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}'
 				id="FB0-FF1-11"
 				label="M.Table / MDC.mTable"
 				conditions="{$filters>/conditions/author_ID}"
+				propertyKey="author_ID"
 				dataType="Edm.Int32"
 				required="false"
-				fieldHelp="FB0-FH1-11"
+				valueHelp="FB0-FH1-11"
 				display="DescriptionValue"
 				maxConditions="{settings>/maxConditions}" />
 			<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}'
 				id="FB0-FF2"
 				label="Conditions"
 				conditions="{$filters>/conditions/name}"
+				propertyKey="name"
 				dataType="sap.ui.model.odata.type.String"
 				required="false"
-				fieldHelp="FB0-FH2"
+				valueHelp="FB0-FH2"
 				display="Value"
 				maxConditions="{settings>/maxConditions}" />
 			<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}'
 				id="FB0-FF3"
 				label="FixedList"
 				conditions="{$filters>/conditions/currency_code}"
+				propertyKey="currency_code"
 				dataType="sap.ui.model.odata.type.String"
-				required="false" fieldHelp="FB0-FH3"
+				required="false" valueHelp="FB0-FH3"
 				display="DescriptionValue"
 				maxConditions="{settings>/maxConditions}" />
 			<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}'
 				id="FB0-FF4"
 				label="FixedList only typeahead"
 				conditions="{$filters>/conditions/currency_code}"
+				propertyKey="currency_code"
 				dataType="sap.ui.model.odata.type.String"
-				required="false" fieldHelp="FB0-FH4"
+				required="false" valueHelp="FB0-FH4"
 				display="ValueDescription"
 				maxConditions="{settings>/maxConditions}" />
 			<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}'
 				id="FB0-FF5"
 				label="Boolean (maxConditions=1)"
 				conditions="{$filters>/conditions/bool}"
+				propertyKey="bool"
 				dataType="sap.ui.model.odata.type.Boolean"
 				dataTypeConstraints='\{"nullable": false\}'
 				required="false"
-				fieldHelp="FB0-FH5"
+				valueHelp="FB0-FH5"
 				display="Value"
 				maxConditions="1" />
 			<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}'
 				id="FB0-FF6"
 				label="Country of origin"
 				conditions="{$filters>/conditions/countryOfOrigin_code}"
+				propertyKey="countryOfOrigin_code"
 				dataType="sap.ui.model.odata.type.String"
-				fieldHelp="FB0-FH-Country"
+				valueHelp="FB0-FH-Country"
 				display="ValueDescription"
 				maxConditions="{settings>/maxConditions}"/>
 			<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}'
 				id="FB0-FF7"
 				label="Region of origin"
 				conditions="{$filters>/conditions/regionOfOrigin_code}"
+				propertyKey="regionOfOrigin_code"
 				dataType="sap.ui.model.odata.type.String"
-				fieldHelp="FB0-FH-Region"
+				valueHelp="FB0-FH-Region"
 				display="ValueDescription"
 				maxConditions="{settings>/maxConditions}"/>
 			<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}'
 				id="FB0-FF8"
 				label="City of origin"
 				conditions="{$filters>/conditions/cityOfOrigin_code}"
+				propertyKey="cityOfOrigin_code"
 				dataType="sap.ui.model.odata.type.String"
-				fieldHelp="FB0-FH-City"
+				valueHelp="FB0-FH-City"
 				display="ValueDescription"
 				maxConditions="{settings>/maxConditions}"/>
 			<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}'
 				id="FB0-FF9"
 				label="Book ($search)"
 				conditions="{$filters>/conditions/ID}"
+				propertyKey="ID"
 				dataType="sap.ui.model.odata.type.Int32"
 				dataTypeFormatOptions='\{"groupingEnabled": false\}'
-				fieldHelp="FH-Books1"
+				valueHelp="FH-Books1"
 				display="Description"
 				maxConditions="{settings>/maxConditions}"/>
 			<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}'
 				id="FB0-FF10"
 				label="Book (FilterFields)"
 				conditions="{$filters>/conditions/ID}"
+				propertyKey="ID"
 				dataType="sap.ui.model.odata.type.Int32"
 				dataTypeFormatOptions='\{"groupingEnabled": false\}'
-				fieldHelp="FH-Books2"
+				valueHelp="FH-Books2"
 				display="Description"
 				maxConditions="{settings>/maxConditions}"/>
 			<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}'
 				id="FB0-FF11"
 				label="Book (no search)"
 				conditions="{$filters>/conditions/ID}"
+				propertyKey="ID"
 				dataType="sap.ui.model.odata.type.Int32"
 				dataTypeFormatOptions='\{"groupingEnabled": false\}'
-				fieldHelp="FH-Books3"
+				valueHelp="FH-Books3"
 				display="Description"
 				maxConditions="{settings>/maxConditions}"/>
 		</mdc:filterItems>

@@ -8,14 +8,12 @@ sap.ui.define([
 	"sap/ui/test/Opa5",
 	"sap/ui/test/opaQunit",
     "sap/ui/test/actions/Press",
-	"sap/ui/fl/FakeLrepConnectorSessionStorage",
 	"test-resources/sap/ui/rta/internal/integration/pages/Adaptation",
 	"test-resources/sap/ui/fl/testutils/opa/TestLibrary"
 ], function(
 	Opa5,
 	opaTest,
 	Press,
-	FakeLrepConnectorSessionStorage,
 	Adaptation,
 	TestLibrary
 ) {
@@ -23,7 +21,7 @@ sap.ui.define([
 
 	Opa5.extendConfig({
 
-		// TODO: increase the timeout timer from 15 (default) to 45 seconds
+		// TODO: increase the timeout timer from 15 (default) to 50 seconds
 		// to see whether it influences the success rate of the first test on
 		// the build infrastructure.
 		// As currently, the underlying service takes some time for the
@@ -31,37 +29,14 @@ sap.ui.define([
 		// You might want to remove this timeout timer after the underlying
 		// service has been optimized or if the timeout timer increase does
 		// not have any effect on the success rate of the tests.
-		timeout: 45,
+		timeout: 50,
+		autoWait: true,
 		appParams: {
 			"sap-ui-rta-skip-flex-validation": true
 		},
 
 		arrangements: {
-			iStartMyUIComponentInViewMode: function() {
-
-				// In some cases when a test fails in a success function,
-				// the UI component is not properly teardown.
-				// As a side effect, all the following tests in the stack
-				// fails when the UI component is started, as only one UI
-				// component can be started at a time.
-				// Teardown the UI component to ensure it is not started
-				// twice without a teardown, which results in less false
-				// positives and more reliable reporting.
-				if (this.hasUIComponentStarted()) {
-					this.iTeardownMyUIComponent();
-				}
-
-				return this.iStartMyUIComponent({
-					componentConfig: {
-						name: "sap.ui.v4demo",
-						async: true
-					},
-					hash: "",
-					autoWait: true
-				});
-			},
 			iClearTheSessionLRep: function () {
-				FakeLrepConnectorSessionStorage.forTesting.synchronous.clearAll();
 				window.sessionStorage.removeItem("sap.ui.rta.restart.CUSTOMER");
 				window.sessionStorage.removeItem("sap.ui.rta.restart.USER");
 				localStorage.clear();
@@ -78,15 +53,14 @@ sap.ui.define([
 		})
 	});
 
-	var sFLVM_ID = "__component0---books--IDVariantManagementOfTable";
+	const sFLVM_ID = "container-v4demo---books--IDVariantManagementOfTable";
 
 
 	QUnit.module("ListReport Fl VM - Books Page Table");
 
 	opaTest("1. start the app in RTA", function(Given, When, Then) {
 		// Arrange
-		FakeLrepConnectorSessionStorage.enableFakeConnector();
-		Given.iStartMyUIComponentInViewMode();
+		Given.iStartMyAppInAFrame("test-resources/sap/ui/mdc/internal/TableWithFilterBar/index.html");
 		Given.iClearTheSessionLRep();
 
 		// Act
@@ -157,7 +131,7 @@ sap.ui.define([
 	opaTest("1. start the app and check the initial 'My View' content", function(Given, When, Then) {
 		// Arrange
 		Given.iClearTheSessionLRep();
-		//Given.iStartMyUIComponentInViewMode();
+		//Given.iStartMyAppInAFrame("test-resources/sap/ui/mdc/internal/TableWithFilterBar/index.html");
 
 		Then.onFlVariantManagement.theVariantShouldBeDisplayed(sFLVM_ID, "KURenameVariant1");
 
@@ -204,18 +178,18 @@ sap.ui.define([
 	opaTest("4. unfavoure the KURenameVariant1, rename OpaVariant1 variant, change apply auto and save changes", function(Given, When, Then) {
 		// Act
 		When.onFlVariantManagement.iSetFavoriteVariant("KURenameVariant1", false);
-		When.onFlVariantManagement.iRenameVariant("OpaVariant1", "OpaRenameVariant1");
-		When.onFlVariantManagement.iApplyAutomaticallyVariant("OpaRenameVariant1", false);
+		When.onFlVariantManagement.iRenameVariant("OpaVariant1", "AOpaRenameVariant1");
+		When.onFlVariantManagement.iApplyAutomaticallyVariant("AOpaRenameVariant1", false);
 
 		// Assertion
-		Then.onFlVariantManagement.theOpenManageViewsDialogTitleShouldContain(["Standard", "KURenameVariant1", "OpaRenameVariant1"]);
+		Then.onFlVariantManagement.theOpenManageViewsDialogTitleShouldContain(["Standard", "KURenameVariant1", "AOpaRenameVariant1"]);
 
 		Then.onFlVariantManagement.theOpenManageViewsDialogFavoritesShouldContain([true, false, true]);
 		Then.onFlVariantManagement.theOpenManageViewsDialogApplyAutomaticallyShouldContain([false, false, false]);
 
 		When.onFlVariantManagement.iPressTheManageViewsSave(sFLVM_ID);
 
-		Then.onFlVariantManagement.theVariantShouldBeDisplayed(sFLVM_ID, "OpaRenameVariant1");
+		Then.onFlVariantManagement.theVariantShouldBeDisplayed(sFLVM_ID, "AOpaRenameVariant1");
 	});
 
 	opaTest("5. check the 'My Views'", function(Given, When, Then) {
@@ -224,7 +198,7 @@ sap.ui.define([
 		When.onFlVariantManagement.iOpenMyView(sFLVM_ID);
 
 		// Assertion
-		Then.onFlVariantManagement.theMyViewShouldContain(sFLVM_ID, ["Standard", "OpaRenameVariant1"]);
+		Then.onFlVariantManagement.theMyViewShouldContain(sFLVM_ID, ["Standard", "AOpaRenameVariant1"]);
 
 		When.onFlVariantManagement.iOpenMyView(sFLVM_ID); // closes
 	});
@@ -237,16 +211,16 @@ sap.ui.define([
 
 		// Assertion
 		Then.onFlVariantManagement.theOpenManageViewsDialog(sFLVM_ID);
-		Then.onFlVariantManagement.theOpenManageViewsDialogTitleShouldContain(["Standard", "KURenameVariant1", "OpaRenameVariant1"]);
-		Then.onFlVariantManagement.theOpenManageViewsDialogFavoritesShouldContain([true, false, true]);
+		Then.onFlVariantManagement.theOpenManageViewsDialogTitleShouldContain(["Standard", "AOpaRenameVariant1", "KURenameVariant1"]);
+		Then.onFlVariantManagement.theOpenManageViewsDialogFavoritesShouldContain([true, true, false]);
 		Then.onFlVariantManagement.theOpenManageViewsDialogApplyAutomaticallyShouldContain([false, false, false]);
-		Then.onFlVariantManagement.theOpenManageViewsDialogDefaultShouldBe("OpaRenameVariant1");
+		Then.onFlVariantManagement.theOpenManageViewsDialogDefaultShouldBe("AOpaRenameVariant1");
 	});
 
-	opaTest("7. remove OpaRenameVariant1 variant and save change", function(Given, When, Then) {
+	opaTest("7. remove AOpaRenameVariant1 variant and save change", function(Given, When, Then) {
 
 		// Act
-		When.onFlVariantManagement.iRemoveVariant("OpaRenameVariant1");
+		When.onFlVariantManagement.iRemoveVariant("AOpaRenameVariant1");
 
 		// Assertion
 		Then.onFlVariantManagement.theOpenManageViewsDialogTitleShouldContain(["Standard", "KURenameVariant1"]);

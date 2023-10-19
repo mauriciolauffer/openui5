@@ -226,7 +226,7 @@ sap.ui.define([
 						sIcon = sIcon !== "sap-icon://error" ? "sap-icon://alert" : sIcon;
 						break;
 					case "Success":
-						sIcon = "sap-icon://error" && sIcon !== "sap-icon://alert" ? "sap-icon://sys-enter-2" : sIcon;
+						sIcon = sIcon !== "sap-icon://error" && sIcon !== "sap-icon://alert" ? "sap-icon://sys-enter-2" : sIcon;
 						break;
 					default:
 						sIcon = !sIcon ? "sap-icon://information" : sIcon;
@@ -237,7 +237,7 @@ sap.ui.define([
 			return sIcon;
 		},
 
-		_generateInvalidUserInput: function () {
+		generateInvalidUserInput: function () {
 			var oButton = this.getView().byId("messagePopoverBtn"),
 				oRequiredNameInput = this.oView.byId("formContainer").getItems()[4].getContent()[2],
 				oNumericZipInput = this.oView.byId("formContainer").getItems()[5].getContent()[7],

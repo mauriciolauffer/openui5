@@ -33,8 +33,6 @@ sap.ui.define([
 	 * @private
 	 * @since 1.34
 	 * @alias sap.ui.dt.plugin.ElementMover
-	 * @experimental Since 1.34. This class is experimental and provides only limited functionality. Also the API might be
-	 *               changed in future.
 	 */
 	var ElementMover = ManagedObject.extend("sap.ui.dt.plugin.ElementMover", /** @lends sap.ui.dt.plugin.ElementMover.prototype */ {
 		metadata: {
@@ -70,7 +68,7 @@ sap.ui.define([
 		var aMovableTypes = this._getMovableTypes();
 
 		return aMovableTypes.some(function(sType) {
-			return BaseObject.isA(oElement, sType);
+			return BaseObject.isObjectA(oElement, sType);
 		});
 	};
 
@@ -117,9 +115,9 @@ sap.ui.define([
 	 */
 	ElementMover.prototype.activateAllValidTargetZones = function(oDesignTime, sAdditionalStyleClass) {
 		return this._iterateAllAggregations(oDesignTime, this._activateValidTargetZone.bind(this), sAdditionalStyleClass, true)
-			.then(function() {
-				this.fireValidTargetZonesActivated();
-			}.bind(this));
+		.then(function() {
+			this.fireValidTargetZonesActivated();
+		}.bind(this));
 	};
 
 	/**
@@ -127,20 +125,20 @@ sap.ui.define([
 	 */
 	ElementMover.prototype._activateValidTargetZone = function(oAggregationOverlay, sAdditionalStyleClass) {
 		return this.checkTargetZone(oAggregationOverlay)
-			.then(function(bValidTargetZone) {
-				if (bValidTargetZone) {
-					oAggregationOverlay.setTargetZone(true);
-					if (sAdditionalStyleClass) {
-						oAggregationOverlay.addStyleClass(sAdditionalStyleClass);
-					}
+		.then(function(bValidTargetZone) {
+			if (bValidTargetZone) {
+				oAggregationOverlay.setTargetZone(true);
+				if (sAdditionalStyleClass) {
+					oAggregationOverlay.addStyleClass(sAdditionalStyleClass);
 				}
-			})
-			.catch(function(oError) {
-				throw DtUtil.createError(
-					"ElementMover#_activateValidTargetZone",
-					"An error occurred during activation of valid target zones: " + oError
-				);
-			});
+			}
+		})
+		.catch(function(oError) {
+			throw DtUtil.createError(
+				"ElementMover#_activateValidTargetZone",
+				`An error occurred during activation of valid target zones: ${oError}`
+			);
+		});
 	};
 
 	/**
@@ -170,9 +168,9 @@ sap.ui.define([
 	 */
 	ElementMover.prototype.activateTargetZonesFor = function(oOverlay, sAdditionalStyleClass) {
 		return this._iterateOverlayAggregations(oOverlay, this._activateValidTargetZone.bind(this), sAdditionalStyleClass, true)
-			.then(function() {
-				this.fireValidTargetZonesActivated();
-			}.bind(this));
+		.then(function() {
+			this.fireValidTargetZonesActivated();
+		}.bind(this));
 	};
 
 	/**
@@ -307,7 +305,7 @@ sap.ui.define([
 		var vProperty;
 		for (vProperty in oSource) {
 			switch (typeof (oSource[vProperty])) {
-				case 'object':
+				case "object":
 					if (oSource[vProperty].getId() !== oTarget[vProperty].getId()) {return false;}
 					break;
 				default:

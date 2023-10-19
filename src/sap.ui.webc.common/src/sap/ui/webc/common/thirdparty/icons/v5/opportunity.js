@@ -6,7 +6,7 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
   });
   _exports.pathData = _exports.ltr = _exports.default = _exports.accData = void 0;
   const name = "opportunity";
-  const pathData = "M470 160q-11 0-19-8t-8-19V80q0-11-8-19t-19-8h-53q-11 0-19-7.5T336 27t8-19 19-8h53q33 0 56.5 23.5T496 80v53q0 11-7.5 19t-18.5 8zm-54 320h-53q-11 0-19-8t-8-19 8-18.5 19-7.5h53q11 0 19-8t8-19v-53q0-11 8-19t19-8 18.5 8 7.5 19v53q0 33-23.5 56.5T416 480zm-266 0H96q-33 0-56.5-23.5T16 400v-53q0-11 8-19t19-8 19 8 8 19v53q0 11 7.5 19t18.5 8h54q11 0 18.5 7.5T176 453t-7.5 19-18.5 8zM43 160q-11 0-19-8t-8-19V80q0-33 23.5-56.5T96 0h54q11 0 18.5 8t7.5 19-7.5 18.5T150 53H96q-11 0-18.5 8T70 80v53q0 11-8 19t-19 8zm279 213q-7 0-13-3l-53-29-53 29q-15 8-28-2-14-9-11-26l10-63-44-45q-11-12-6-28 5-15 21-17l60-10 27-57q7-15 24-15t24 15l27 57 60 10q16 2 21 17 5 16-6 28l-44 44 10 64q2 8-1 15t-9 11q-6 5-16 5z";
+  const pathData = "M25 160q-11 0-18-7.5T0 134V64q0-27 19-45.5T64 0h166q11 0 18.5 7t7.5 18-7.5 18.5T230 51H64q-13 0-13 13v71q0 11-7.5 18T25 160zm300-74q-5-4-5-11 0-14 14-16l48-7 19-43q5-9 15-9 11 0 15 9l19 43 48 7q14 2 14 16 0 7-4 11l-35 37 8 55q0 6-5 10t-11 4q-2 0-8-2l-41-24-41 24q-6 2-8 2-6 0-11-4t-5-10l8-55zm139 138q20 0 34 14t14 34-14 34-34 14q-15 0-26-8l-98 55q0 20-14 34.5T292 416t-34-14-14-34q0-11 3-18l-75-94h-7q-8 0-16-3l-53 46v5q2 20-13 34t-35 14-34-14-14-34 14-34 34-14q9 0 16 3l54-46-1-5q-1-20 13.5-34t34.5-14 34 14 14 34q0 10-2 14l78 98h3q11 0 19 4l106-59q2-17 15.5-29t31.5-12zm22 160q11 0 18.5 7.5T512 410v37q0 27-19 46t-45 19H65q-26 0-45.5-18.5T0 448v-38q0-11 7-18.5t18-7.5 18.5 7 7.5 18v39q0 13 14 13h383q5 0 9-4.5t4-9.5v-37q0-11 7-18.5t18-7.5z";
   _exports.pathData = pathData;
   const ltr = false;
   _exports.ltr = ltr;
@@ -20,6 +20,6 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
     collection,
     packageName
   });
-  var _default = "opportunity";
+  var _default = "SAP-icons-v5/opportunity";
   _exports.default = _default;
 });

@@ -26,7 +26,6 @@ sap.ui.define([
 	 * @private
 	 * @since 1.38
 	 * @alias sap.ui.dt.test.Test
-	 * @experimental Since 1.38. This class is experimental and provides only limited functionality. Also the API might be changed in future.
 	 */
 	var Test = ManagedObject.extend("sap.ui.dt.test.Test", /** @lends sap.ui.dt.test.Test.prototype */ {
 		metadata: {
@@ -77,7 +76,6 @@ sap.ui.define([
 		SUITE: "Suite"
 	};
 
-
 	/**
 	 * Creates a new suite and returns it.
 	 *
@@ -98,7 +96,6 @@ sap.ui.define([
 		);
 	};
 
-
 	/**
 	 * Adds a new group to an array.
 	 *
@@ -113,13 +110,12 @@ sap.ui.define([
 	Test.prototype.addGroup = function(aParentChildren, sName, sMessage, sNamePostfix) {
 		return this.add(aParentChildren,
 			true,
-			sName + (sNamePostfix ? (" (" + sNamePostfix + ")") : ""),
+			sName + (sNamePostfix ? (` (${sNamePostfix})`) : ""),
 			sMessage,
 			null,
 			Test.TYPE.GROUP
 		);
 	};
-
 
 	/**
 	 * Adds a new test to an array.
@@ -142,7 +138,6 @@ sap.ui.define([
 			Test.TYPE.TEST
 		);
 	};
-
 
 	/**
 	 * Adds a new entry to an array.
@@ -183,7 +178,6 @@ sap.ui.define([
 		return mEntry;
 	};
 
-
 	/**
 	 * Runs the tests.
 	 *
@@ -192,7 +186,6 @@ sap.ui.define([
 	Test.prototype.run = function() {
 		throw new Error("Abstract method");
 	};
-
 
 	/**
 	 * Aggregates the tests results.
@@ -225,7 +218,6 @@ sap.ui.define([
 				};
 			}.bind(this));
 
-
 			mResult.result = mReducedResult.result;
 			mResult.status = mReducedResult.status;
 			mResult.statistic = mReducedResult.statistic;
@@ -234,14 +226,12 @@ sap.ui.define([
 		return mResult;
 	};
 
-
 	/**
 	 * @private
 	 */
 	Test.prototype._getResult = function(mPreviousValue, mCurrentValue) {
 		return !mPreviousValue.result ? false : mCurrentValue.result;
 	};
-
 
 	/**
 	 * @private
@@ -260,7 +250,6 @@ sap.ui.define([
 		}
 		return mStatistic;
 	};
-
 
 	/**
 	 * @private

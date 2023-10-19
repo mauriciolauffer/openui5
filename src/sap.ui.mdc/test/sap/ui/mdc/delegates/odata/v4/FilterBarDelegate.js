@@ -8,22 +8,44 @@
 // ---------------------------------------------------------------------------------------
 sap.ui.define([
 	'delegates/odata/v4/ODataMetaModelUtil',
-	'sap/ui/mdc/enum/FieldDisplay',
+	'sap/ui/mdc/enums/FieldDisplay',
+	'sap/ui/mdc/enums/OperatorName',
 	"sap/ui/fl/Utils",
 	"sap/ui/mdc/FilterBarDelegate",
-	'sap/base/util/ObjectPath',
 	'sap/base/util/merge',
-	'delegates/odata/v4/TypeUtil',
 	'sap/ui/mdc/condition/FilterOperatorUtil',
 	"sap/ui/model/FilterOperator",
 	"sap/ui/model/Filter",
 	'sap/ui/mdc/util/IdentifierUtil',
 	'sap/ui/core/util/reflection/JsControlTreeModifier',
-	'sap/base/Log'
-	], function (ODataMetaModelUtil, FieldDisplay, FlUtils, FilterBarDelegate, ObjectPath, merge, TypeUtil, FilterOperatorUtil, ModelOperator, Filter, IdentifierUtil, JsControlTreeModifier, Log) {
+	'sap/base/Log',
+	'sap/ui/mdc/odata/v4/TypeMap',
+	'delegates/util/DelegateCache'
+	], function (ODataMetaModelUtil, FieldDisplay, OperatorName, FlUtils, FilterBarDelegate, merge, FilterOperatorUtil, ModelOperator, Filter, IdentifierUtil, JsControlTreeModifier, Log, ODataV4TypeMap, DelegateCache) {
 	"use strict";
 
 	var ODataFilterBarDelegate = Object.assign({}, FilterBarDelegate);
+
+	var storeTemplatingSettings = function (oControl, aProperties) {
+		let oSettings;
+		aProperties.forEach(function (oProp) {
+			["display", "fieldHelp", "valueHelp"].forEach((sKey) => {
+				if (oProp[sKey]) {
+					oSettings = oSettings || {};
+					oSettings[oProp.name] = {[sKey === "fieldHelp" ? "valueHelp" : sKey]: oProp[sKey]};
+					delete oProp[sKey];
+				}
+			});
+		});
+
+		if (oSettings) {
+			DelegateCache.add(oControl, oSettings);
+		}
+	};
+
+	ODataFilterBarDelegate.getTypeMap = function (oPayload) {
+		return ODataV4TypeMap;
+	};
 
 	// TO DO
 	var mDefaultTypeForEdmType = {
@@ -90,14 +112,18 @@ sap.ui.define([
 						}
 				};
 
-				return mPropertyBag ? this.fetchProperties(oObj) : Promise.resolve(oControl.getPropertyHelper().getProperties());
+				return mPropertyBag && !oControl.getId ? this.fetchProperties(oObj) : oControl.finalizePropertyHelper().then(function(oHelper){
+					var aProperties = oHelper.getProperties();
+					storeTemplatingSettings(oControl, aProperties);
+					return aProperties;
+				});
 			}.bind(this));
 	};
 
 	ODataFilterBarDelegate._ensureSingleRangeEQOperators = function() {
 		var oOperator;
 		if (!FilterOperatorUtil.getOperator("SINGLE_RANGE_EQ")) {
-			oOperator = merge({}, FilterOperatorUtil.getOperator("EQ"));
+			oOperator = merge({}, FilterOperatorUtil.getOperator(OperatorName.EQ));
 			oOperator.name = "SINGLE_RANGE_EQ";
 			oOperator.getModelFilter = function(oCondition, sFieldPath) {
 				return new Filter({ filters: [new Filter(sFieldPath, ModelOperator.GE, oCondition.values[0]),
@@ -109,7 +135,7 @@ sap.ui.define([
 		}
 
 		if (!FilterOperatorUtil.getOperator("SINGLE_RANGE_EQ")) {
-			oOperator = merge({}, FilterOperatorUtil.getOperator("EQ"));
+			oOperator = merge({}, FilterOperatorUtil.getOperator(OperatorName.EQ));
 			oOperator.name = "SINGLE_RANGE_EQ";
 			oOperator.getModelFilter = function(oCondition, sFieldPath) {
 				return new Filter({ filters: [new Filter(sFieldPath, ModelOperator.GE, oCondition.values[0]),
@@ -123,7 +149,7 @@ sap.ui.define([
 
 	ODataFilterBarDelegate._ensureMultiRangeBTEXOperator = function() {
 		if (!FilterOperatorUtil.getOperator("MULTI_RANGE_BTEX")) {
-			var oOperator = merge({}, FilterOperatorUtil.getOperator("BT"));
+			var oOperator = merge({}, FilterOperatorUtil.getOperator(OperatorName.BT));
 			oOperator.name = "MULTI_RANGE_BTEX";
 			oOperator.getModelFilter = function(oCondition, sFieldPath) {
 				return new Filter({ filters:[new Filter(sFieldPath, ModelOperator.GT, oCondition.values[0]),
@@ -162,7 +188,7 @@ sap.ui.define([
 		var oAppComponent = mPropertyBag ? mPropertyBag.appComponent : FlUtils.getAppComponentForControl(oFilterBar);
 		var oView = (mPropertyBag && mPropertyBag.view ) ? mPropertyBag.view : FlUtils.getViewForControl(oFilterBar);
 		var sViewId = mPropertyBag ? mPropertyBag.viewId : null;
-		var sName = oProperty.path || oProperty.name;
+		var sName = oProperty.name;
 		var oSelector = {};
 
 		if (oFilterBar.getId) {
@@ -182,14 +208,15 @@ sap.ui.define([
 		}
 
 		return Promise.resolve()
-			.then(oModifier.createControl.bind(oModifier, "sap.ui.mdc.FilterField", oAppComponent, oView, sId, {
-				dataType: oProperty.typeConfig.className,
+			.then(oModifier.createControl.bind(oModifier, "sap.ui.mdc.FilterField", oAppComponent, oView, sId, DelegateCache.merge({
+				dataType: oProperty.dataType,
 				conditions: "{$filters>/conditions/" + sName + '}',
+				propertyKey: sName,
 				required: oProperty.required,
 				label: oProperty.label || oProperty.name,
 				maxConditions: oProperty.maxConditions,
 				delegate: {name: "delegates/odata/v4/FieldBaseDelegate", payload: {}}
-			})).then(function(oFilterField) {
+			}, DelegateCache.get(oFilterBar, oProperty.name, "$Filters")))).then(function(oFilterField) {
 				if (oProperty.fieldHelp) {
 
 					var sFieldHelp = oProperty.fieldHelp;
@@ -198,7 +225,7 @@ sap.ui.define([
 					} else {
 						sFieldHelp = sViewId + "--" + oProperty.fieldHelp;
 					}
-					oModifier.setAssociation(oFilterField, "fieldHelp", sFieldHelp);
+					oModifier.setAssociation(oFilterField, "valueHelp", sFieldHelp);
 				}
 
 				if (oProperty.filterOperators) {
@@ -221,9 +248,6 @@ sap.ui.define([
 					oModifier.setProperty(oFilterField, "dataTypeFormatOptions", oProperty.formatOptions);
 				}
 
-				if (oProperty.display) {
-					oModifier.setProperty(oFilterField, "display", oProperty.display);
-				}
 				return oFilterField;
 			});
 	};
@@ -240,7 +264,7 @@ sap.ui.define([
 		}.bind(this));
 	};
 
-	ODataFilterBarDelegate.addItem = function(sPropertyName, oFilterBar, mPropertyBag) {
+	ODataFilterBarDelegate.addItem = function(oFilterBar, sPropertyName, mPropertyBag) {
 		return Promise.resolve(this._createFilter(sPropertyName, oFilterBar, mPropertyBag));
 	};
 
@@ -267,7 +291,7 @@ sap.ui.define([
 			if (nIdx >= 0) {
 				aPropertyInfo.push({
 					name: sPropertyName,
-					dataType: aFetchedProperties[nIdx].typeConfig.className,
+					dataType: aFetchedProperties[nIdx].dataType,
 					maxConditions: aFetchedProperties[nIdx].maxConditions,
 					constraints: aFetchedProperties[nIdx].constraints,
 					formatOption: aFetchedProperties[nIdx].formatOptions,
@@ -324,12 +348,12 @@ sap.ui.define([
 	 * This methods is called during the appliance of the add condition change.
 	 * This intention is to update the propertyInfo property.
 	 *
-	 * @param {string} sPropertyName The name of a property.
 	 * @param {sap.ui.mdc.FilterBar} oFilterBar - the instance of filter bar
+	 * @param {string} sPropertyName The name of a property.
 	 * @param {Object} mPropertyBag Instance of property bag from Flex change API
 	 * @returns {Promise} Promise that resolves once the properyInfo property was updated
 	 */
-	ODataFilterBarDelegate.addCondition = function(sPropertyName, oFilterBar, mPropertyBag) {
+	ODataFilterBarDelegate.addCondition = function(oFilterBar, sPropertyName, mPropertyBag) {
 		return ODataFilterBarDelegate._updatePropertyInfo(sPropertyName, oFilterBar, mPropertyBag);
 	};
 
@@ -337,12 +361,12 @@ sap.ui.define([
 	 * This methods is called during the appliance of the remove condition change.
 	 * This intention is to update the propertyInfo property.
 	 *
-	 * @param {string} sPropertyName The name of a property.
 	 * @param {sap.ui.mdc.FilterBar} oFilterBar - the instance of filter bar
+	 * @param {string} sPropertyName The name of a property.
 	 * @param {Object} mPropertyBag Instance of property bag from Flex change API
 	 * @returns {Promise} Promise that resolves once the properyInfo property was updated
 	 */
-	ODataFilterBarDelegate.removeCondition = function(sPropertyName, oFilterBar, mPropertyBag) {
+	ODataFilterBarDelegate.removeCondition = function(oFilterBar, sPropertyName, mPropertyBag) {
 		return ODataFilterBarDelegate._updatePropertyInfo(sPropertyName, oFilterBar, mPropertyBag);
 	};
 
@@ -351,12 +375,12 @@ sap.ui.define([
 	 * Can be used to trigger any necessary follow-up steps on removal of filter items. The returned boolean value inside the Promise can be used to
 	 * prevent default follow-up behaviour of Flex.
 	 *
-	 * @param {sap.ui.mdc.FilterField} oFilterField The mdc.FilterField that was removed
 	 * @param {sap.ui.mdc.FilterBar} oFilterBar - the instance of filter bar
+	 * @param {sap.ui.mdc.FilterField} oFilterField The mdc.FilterField that was removed
 	 * @param {Object} mPropertyBag Instance of property bag from Flex change API
 	 * @returns {Promise} Promise that resolves with true/false to allow/prevent default behavour of the change
 	 */
-	ODataFilterBarDelegate.removeItem =  function(oFilterField, oFilterBar, mPropertyBag) {
+	ODataFilterBarDelegate.removeItem =  function(oFilterBar, oFilterField, mPropertyBag) {
 		// return true within the Promise for default behaviour
 		return Promise.resolve(true);
 	};
@@ -469,7 +493,7 @@ sap.ui.define([
 		}
 
 		if (oFilterDefaultValue) {
-			oProperty.defaultFilterConditions = [{ fieldPath: sKey, operator: "EQ", values: [oFilterDefaultValue] }];
+			oProperty.defaultFilterConditions = [{ fieldPath: sKey, operator: OperatorName.EQ, values: [oFilterDefaultValue] }];
 		}
 
 		//Currently the FilterBar will use 'name' as key for the identification between existing
@@ -477,7 +501,7 @@ sap.ui.define([
 		//and PropertyInfo, the usage of a complex 'name' (e.g. containing '/') might be reconsidered.
 		oProperty.name = sNavigationPropertyName ? sNavigationPropertyName + "/" + sKey : sKey;
 
-		oProperty.typeConfig = TypeUtil.getTypeConfig(oObj.$Type, oProperty.formatOptions, oProperty.constraints);
+		oProperty.dataType = oObj.$Type;
 
 		return oProperty;
 	};
@@ -592,7 +616,7 @@ sap.ui.define([
 							if (mAllowedExpressions[sKey]) {
 								var aOperators =  ODataFilterBarDelegate._getFilterOperators(mAllowedExpressions[sKey]);
 								if (aOperators) {
-									oPropertyInfo.filterOperators = aOperators;
+									//oPropertyInfo.filterOperators = aOperators;
 								}
 							}
 							oPropertyInfo.maxConditions = ODataMetaModelUtil.isMultiValueFilterExpression(mAllowedExpressions[sKey]) ? -1 : 1;
@@ -655,7 +679,6 @@ sap.ui.define([
 		});
 	};
 
-
 	/**
 	 * Fetches the relevant metadata for a given payload and returns property info array.
 	 * @param {object} oFilterBar - the instance of filter bar
@@ -676,6 +699,7 @@ sap.ui.define([
 
 				var oCachedEntitySet = ODataFilterBarDelegate._getInstanceCacheEntry(oFilterBar, "fetchedProperties");
 				if (oCachedEntitySet) {
+					storeTemplatingSettings(oFilterBar, oCachedEntitySet);
 					resolve(oCachedEntitySet);
 					return;
 				}
@@ -728,6 +752,7 @@ sap.ui.define([
 							});
 
 							ODataFilterBarDelegate._setInstanceCacheEntry(oFilterBar, "fetchedProperties", aProperties);
+							storeTemplatingSettings(oFilterBar, aProperties);
 							resolve(aProperties);
 						});
 					}
@@ -740,10 +765,6 @@ sap.ui.define([
 
 	ODataFilterBarDelegate.cleanup = function (oFilterBar) {
 		InstanceCache.delete(oFilterBar.getId());
-	};
-
-	ODataFilterBarDelegate.getTypeUtil = function (oPayload) {
-		return TypeUtil;
 	};
 
 	return ODataFilterBarDelegate;

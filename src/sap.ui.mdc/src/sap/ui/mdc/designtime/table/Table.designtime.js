@@ -9,7 +9,7 @@ sap.ui.define([
 	"use strict";
 
 	// initial structure of designTime object
-	var oDesignTime = {
+	const oDesignTime = {
 		name: "{name}",
 		description: "{description}",
 		actions: {
@@ -28,6 +28,7 @@ sap.ui.define([
 		aggregations: {
 			_content: {
 				propagateMetadata: function(oElement) {
+
 					if (oElement.isA("sap.ui.fl.variants.VariantManagement") ||
 						oElement.isA("sap.ui.mdc.ActionToolbar") ||
 						oElement.isA("sap.ui.mdc.actiontoolbar.ActionToolbarAction") ||
@@ -46,9 +47,9 @@ sap.ui.define([
 		}
 	};
 	// array containing all allowed control properties. Update the aAllowedProperties to enable a property for DTA
-	var aAllowedProperties = ["width", "height", "headerLevel",
+	const aAllowedProperties = ["width", "headerLevel",
 			"header", "headerVisible", "showRowCount", "threshold",
-			"noDataText", "enableExport", "busyIndicatorDelay","enableColumnResize",
+			"enableExport", "busyIndicatorDelay","enableColumnResize",
 			"showPasteButton", "multiSelectMode"],
 		// array containing all allowed control aggregations. Update the aAllowedAggregations to enable an aggregation for DTA
 		aAllowedAggregations = [

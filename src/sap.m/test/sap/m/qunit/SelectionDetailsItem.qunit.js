@@ -153,6 +153,10 @@ sap.ui.define([
 		assert.equal($ListItem.find(".sapMSDItemLineBold").length, 1, "The correct number of bold values has been rendered.");
 		assert.equal($ListItem.find(".sapMSDItemLineUnit").length, 1, "The correct number of units has been rendered.");
 	});
+	QUnit.test("White Space checking", function(assert) {
+		var $ListItem = this.oListItem.$();
+		assert.equal($ListItem.css("white-space"), "normal", "The white-space property is set correctly to resolve truncation of label");
+	});
 
 	QUnit.test("Action rendering", function(assert) {
 		//Arrange
@@ -167,27 +171,27 @@ sap.ui.define([
 	QUnit.test("Internal SelectionDetailsListItem has correct type property for enabled navigation", function(assert) {
 		//Arrange
 		this.oItem.setEnableNav(true);
-		var oSetPropertySpy = sinon.spy(this.oListItem, "setProperty");
+		var oSetPropertySpy = sinon.spy(this.oListItem, "setType");
 		this.oListItem.invalidate();
 
 		//Act
 		oCore.applyChanges();
 
 		//Assert
-		assert.equal(oSetPropertySpy.withArgs("type", ListType.Navigation, true).callCount, 1, "ListItem's type property has been correctly updated.");
+		assert.equal(oSetPropertySpy.withArgs(ListType.Navigation).callCount, 1, "ListItem's type property has been correctly updated.");
 	});
 
 	QUnit.test("Internal SelectionDetailsListItem has correct type property for disabled navigation", function(assert) {
 		//Arrange
 		this.oItem.setEnableNav(false);
-		var oSetPropertySpy = sinon.spy(this.oListItem, "setProperty");
+		var oSetPropertySpy = sinon.spy(this.oListItem, "setType");
 		this.oListItem.invalidate();
 
 		//Act
 		oCore.applyChanges();
 
 		//Assert
-		assert.equal(oSetPropertySpy.withArgs("type", ListType.Inactive, true).callCount, 1, "ListItem's type property has been correctly updated.");
+		assert.equal(oSetPropertySpy.withArgs(ListType.Inactive).callCount, 1, "ListItem's type property has been correctly updated.");
 	});
 
 	QUnit.module("Item interaction", {

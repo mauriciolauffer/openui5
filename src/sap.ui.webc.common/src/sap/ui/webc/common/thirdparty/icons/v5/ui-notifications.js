@@ -6,7 +6,7 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
   });
   _exports.pathData = _exports.ltr = _exports.default = _exports.accData = void 0;
   const name = "ui-notifications";
-  const pathData = "M426.5 82q37 0 61 24.5t24 60.5v228q0 36-24 60.5t-61 24.5h-340q-37 0-61.5-24.5T.5 395V167q0-36 24.5-60.5T86.5 82h340zm29 85q0-13-8-20.5t-21-7.5h-340q-13 0-21 7.5t-8 20.5v228q0 13 8 20.5t21 7.5h340q13 0 21-7.5t8-20.5V167zm-199 142q13 0 20.5 8t7.5 21q0 28-28 28h-114q-28 0-28-28 0-13 7.5-21t20.5-8h114zm114-113q28 0 28 28 0 13-7.5 21t-20.5 8h-228q-13 0-20.5-8t-7.5-21q0-28 28-28h228z";
+  const pathData = "M422 64q38 0 64 26t26 64v204q0 38-26 64t-64 26H90q-38 0-64-26T0 358V154q0-38 26-64t64-26h332zm39 90q0-17-11-28t-28-11H90q-17 0-28 11t-11 28v204q0 17 11 28t28 11h332q17 0 28-11t11-28V154zm-103 19q11 0 18.5 7t7.5 18-7.5 18.5T358 224H154q-11 0-18.5-7.5T128 198t7.5-18 18.5-7h204zm-96 115q11 0 18.5 7.5T288 314t-7.5 18-18.5 7H154q-11 0-18.5-7t-7.5-18 7.5-18.5T154 288h108z";
   _exports.pathData = pathData;
   const ltr = false;
   _exports.ltr = ltr;
@@ -20,6 +20,6 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
     collection,
     packageName
   });
-  var _default = "ui-notifications";
+  var _default = "SAP-icons-v5/ui-notifications";
   _exports.default = _default;
 });

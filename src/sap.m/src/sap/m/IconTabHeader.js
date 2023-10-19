@@ -579,7 +579,7 @@ sap.ui.define([
 			} else {
 				//change the content aria-labelled by the newly selected tab;
 				if (bIsParentIconTabBar) {
-					oParent.$("content").attr('aria-labelledby', oItem.sId);
+					oParent.$("content").attr('aria-labelledby', oItem._getRootTab().getId());
 				}
 
 				// set new item
@@ -1400,19 +1400,26 @@ sap.ui.define([
 	};
 
 	/**
-	 * Checks if a IconTabFilter is unable to be selected.
-	 * This instance of the IconTabHeader must be within an IconTabBar and the IconTabBar must have no content aggregation set.
+	 * Checks if an IconTabFilter is not selectable.
+	 * This instance of the IconTabHeader must be within an IconTabBar (with no content aggregation set) or must be within ToolHeader.
 	 * The passed IconTabFilter instance must not be nested, has to have its items aggregation set and not have content aggregation set.
 	 * @private
 	 * @param {sap.m.IconTabFilter} oIconTabFilter The instance to check
 	 * @returns {boolean}
 	 */
 	IconTabHeader.prototype._isUnselectable = function (oIconTabFilter) {
-		var oFilter = oIconTabFilter._getRealTab();
+		const oFilter = oIconTabFilter._getRealTab();
+		if (!oFilter.getEnabled() || oFilter._isOverflow()) {
+			return true;
+		}
 
-		return !oFilter.getEnabled() || (this._isInsideIconTabBar() && !this.getParent().getContent().length &&
-			oFilter._getNestedLevel() === 1 && oFilter.getItems().length && !oFilter.getContent().length) ||
-			oFilter._isOverflow();
+		const hasParentContext = this._isInsideIconTabBar() && !this.getParent().getContent().length || this._isInsideToolHeader();
+
+		if (hasParentContext) {
+			return oFilter._getNestedLevel() === 1 && oFilter.getItems().length && !oFilter.getContent().length;
+		}
+
+		return false;
 	};
 
 	/**
@@ -1762,6 +1769,8 @@ sap.ui.define([
 
 		var oTab = oEvent.srcControl,
 			iTabStripEnd = this.indexOfItem(this._getItemsInStrip().pop());
+
+		oEvent.preventDefault();
 
 		this._moveTab(oTab, oEvent.keyCode, iTabStripEnd);
 		oTab.$().trigger("focus");

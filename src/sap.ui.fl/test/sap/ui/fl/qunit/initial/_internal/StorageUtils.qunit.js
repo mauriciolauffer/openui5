@@ -1,16 +1,18 @@
 /* global QUnit */
 
 sap.ui.define([
+	"sap/base/util/merge",
 	"sap/ui/thirdparty/sinon-4",
+	"sap/ui/fl/initial/_internal/FlexConfiguration",
 	"sap/ui/fl/Layer",
 	"sap/ui/fl/initial/_internal/StorageUtils",
-	"sap/ui/core/Core",
 	"test-resources/sap/ui/fl/qunit/FlQUnitUtils"
 ], function(
+	merge,
 	sinon,
+	FlexConfiguration,
 	Layer,
 	Utils,
-	oCore,
 	FlQUnitUtils
 ) {
 	"use strict";
@@ -18,13 +20,13 @@ sap.ui.define([
 	var sandbox = sinon.createSandbox();
 	var TEST_CONNECTORS = ["apply/someConnector", "write/someConnector"];
 
-	function sortConnectors (mConnectors) {
+	function sortConnectors(mConnectors) {
 		return mConnectors.sort(function(oConnectorA, oConnectorB) {
 			return oConnectorA.connector > oConnectorB.connector ? -1 : 1;
 		});
 	}
 
-	function getEmptyFlexDataWithIndex (iIndex) {
+	function getEmptyFlexDataWithIndex(iIndex) {
 		return {
 			appDescriptorChanges: [],
 			index: iIndex,
@@ -53,7 +55,7 @@ sap.ui.define([
 	}
 
 	QUnit.module("getGroupedFlexObjects (including getEmptyFlexDataResponse)", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oEmptyResponse = {
 				USER: getEmptyFlexDataWithIndex(6),
 				PUBLIC: getEmptyFlexDataWithIndex(5),
@@ -147,11 +149,11 @@ sap.ui.define([
 				fileType: "other"
 			};
 		},
-		afterEach: function () {
+		afterEach() {
 			sandbox.restore();
 		}
-	}, function () {
-		QUnit.test("with all kinds of changes", function (assert) {
+	}, function() {
+		QUnit.test("with all kinds of changes", function(assert) {
 			var aTestData = [
 				this.oCtrlVariantUser, this.oCtrlVariantCustomer, this.oCtrlVariantUserWithVMR, this.oCtrlVariantCustomerWithVMR,
 				// oVariantChangeUser2 & oVariantChangeUser1 are set in this order to check the sort functionality
@@ -183,17 +185,36 @@ sap.ui.define([
 		QUnit.test("with an empty array", function(assert) {
 			assert.deepEqual(Utils.getGroupedFlexObjects([]), this.oEmptyResponse, "the return is correct");
 		});
+
+		QUnit.test("filterAndSortResponses", function(assert) {
+			var oEmptyResponse1 = merge({}, this.oEmptyResponse);
+			oEmptyResponse1.USER.changes = [this.oChangeUser];
+			oEmptyResponse1.PUBLIC.appDescriptorChanges = [this.oAppDescriptorCustomer];
+			oEmptyResponse1.CUSTOMER.variants = [this.oAppDescriptorCustomer];
+			oEmptyResponse1.CUSTOMER_BASE.variantChanges = [this.oAppDescriptorCustomer];
+			oEmptyResponse1.VENDOR.variantManagementChanges = [this.oAppDescriptorCustomer];
+			oEmptyResponse1.BASE.variantDependentControlChanges = [this.oAppDescriptorCustomer];
+			assert.strictEqual(Utils.filterAndSortResponses(oEmptyResponse1).length, 6, "no response was filtered out");
+
+			var oEmptyResponse2 = merge({}, this.oEmptyResponse);
+			oEmptyResponse2.USER.comp.variants = [this.oChangeUser];
+			oEmptyResponse2.PUBLIC.comp.changes = [this.oAppDescriptorCustomer];
+			oEmptyResponse2.CUSTOMER.comp.defaultVariants = [this.oAppDescriptorCustomer];
+			oEmptyResponse2.CUSTOMER_BASE.comp.standardVariants = [this.oAppDescriptorCustomer];
+
+			assert.strictEqual(Utils.filterAndSortResponses(oEmptyResponse2).length, 4, "two responses were filtered out");
+		});
 	});
 
 	QUnit.module("Given the default configuration", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oGetConnectorsSpy = sandbox.spy(Utils, "getConnectors");
-			this.oConfigurationSpy = sandbox.spy(oCore.getConfiguration(), "getFlexibilityServices");
+			this.oConfigurationSpy = sandbox.spy(FlexConfiguration, "getFlexibilityServices");
 		},
-		afterEach: function () {
+		afterEach() {
 			sandbox.restore();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("when getStaticFileConnector is called", function(assert) {
 			return Utils.getStaticFileConnector().then(function(mConnectors) {
 				assert.equal(this.oGetConnectorsSpy.callCount, 0, "the getConnector is NOT called");
@@ -216,17 +237,17 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given a KeyUserConnector and PersonalizationConnector is configured", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oGetConnectorsSpy = sandbox.spy(Utils, "getConnectors");
-			this.oConfigurationStub = sandbox.stub(oCore.getConfiguration(), "getFlexibilityServices").returns([
+			this.oConfigurationStub = sandbox.stub(FlexConfiguration, "getFlexibilityServices").returns([
 				{connector: "KeyUserConnector"},
 				{connector: "PersonalizationConnector", layers: [Layer.USER]}
 			]);
 		},
-		afterEach: function () {
+		afterEach() {
 			sandbox.restore();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("when getStaticFileConnector is called", function(assert) {
 			return Utils.getStaticFileConnector().then(function(mConnectors) {
 				assert.equal(this.oGetConnectorsSpy.callCount, 0, "the getConnector is NOT called");
@@ -255,16 +276,16 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given a NeoLrepConnector is configured", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oGetConnectorsSpy = sandbox.spy(Utils, "getConnectors");
-			this.oConfigurationStub = sandbox.stub(oCore.getConfiguration(), "getFlexibilityServices").returns([
+			this.oConfigurationStub = sandbox.stub(FlexConfiguration, "getFlexibilityServices").returns([
 				{connector: "NeoLrepConnector", layers: [Layer.ALL]}
 			]);
 		},
-		afterEach: function () {
+		afterEach() {
 			sandbox.restore();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("when getLoadConnectors is called", function(assert) {
 			return Utils.getLoadConnectors().then(function(mConnectors) {
 				var mConnectorsSorted = sortConnectors(mConnectors);
@@ -278,17 +299,17 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given a custom connector (legacy with applyConnector) is configured", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oGetConnectorsSpy = sandbox.spy(Utils, "getConnectors");
-			this.oConfigurationStub = sandbox.stub(oCore.getConfiguration(), "getFlexibilityServices").returns([
+			this.oConfigurationStub = sandbox.stub(FlexConfiguration, "getFlexibilityServices").returns([
 				{applyConnector: "apply/someConnector", writeConnector: "write/someConnector", layers: [Layer.ALL]}
 			]);
 			this.oRequireStub = FlQUnitUtils.stubSapUiRequireDynamically(sandbox, checkModuleName);
 		},
-		afterEach: function () {
+		afterEach() {
 			sandbox.restore();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("when getLoadConnectors is called", function(assert) {
 			return Utils.getLoadConnectors().then(function(mConnectors) {
 				assert.equal(this.oGetConnectorsSpy.callCount, 1, "the getConnector is called once");
@@ -314,17 +335,17 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given a custom connector (with loadConnector) is configured", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oGetConnectorsSpy = sandbox.spy(Utils, "getConnectors");
-			this.oConfigurationStub = sandbox.stub(oCore.getConfiguration(), "getFlexibilityServices").returns([
+			this.oConfigurationStub = sandbox.stub(FlexConfiguration, "getFlexibilityServices").returns([
 				{loadConnector: "apply/someConnector", writeConnector: "write/someConnector", layers: [Layer.ALL]}
 			]);
 			this.oRequireStub = FlQUnitUtils.stubSapUiRequireDynamically(sandbox, checkModuleName);
 		},
-		afterEach: function () {
+		afterEach() {
 			sandbox.restore();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("when getLoadConnectors is called", function(assert) {
 			return Utils.getLoadConnectors().then(function(mConnectors) {
 				assert.equal(this.oGetConnectorsSpy.callCount, 1, "the getConnector is called once");
@@ -350,17 +371,17 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given a custom connector (without a writeConnector) is configured", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oGetConnectorsSpy = sandbox.spy(Utils, "getConnectors");
-			this.oConfigurationStub = sandbox.stub(oCore.getConfiguration(), "getFlexibilityServices").returns([
+			this.oConfigurationStub = sandbox.stub(FlexConfiguration, "getFlexibilityServices").returns([
 				{loadConnector: "apply/someConnector", layers: [Layer.ALL]}
 			]);
 			this.oRequireStub = FlQUnitUtils.stubSapUiRequireDynamically(sandbox, checkModuleName);
 		},
-		afterEach: function () {
+		afterEach() {
 			sandbox.restore();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("when getLoadConnectors is called", function(assert) {
 			return Utils.getConnectors().then(function(mConnectors) {
 				assert.equal(this.oGetConnectorsSpy.callCount, 1, "the getConnector is called once");
@@ -373,7 +394,7 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

@@ -11,12 +11,13 @@ sap.ui.define([
 	"sap/ui/core/mvc/XMLView",
 	"sap/ui/model/base/ManagedObjectModel",
 	"sap/ui/model/json/JSONModel",
+	"sap/ui/model/type/Boolean",
 	"sap/ui/model/type/Date",
 	"sap/ui/model/Context",
 	"sap/ui/model/Filter",
 	"sap/ui/model/FilterOperator"
 ], function (CustomListItem, DatePicker, Input, List, Select, Text, VBox, Element, Item, XMLView,
-			 ManagedObjectModel, JSONModel, DateType, Context, Filter, FilterOperator) {
+			 ManagedObjectModel, JSONModel, BooleanType, DateType, Context, Filter, FilterOperator) {
 	/*global QUnit */
 	/*eslint no-warning-comments: 0 */
 	"use strict";
@@ -534,9 +535,14 @@ sap.ui.define([
 		oControl.setModel(oModel);
 		assert.equal(oModel.getProperty("/stringValue/@bound"), true, "stringValue property is bound");
 
+		this.spy(oPropertyBinding, "checkUpdate");
+		var oPropertyBinding2 = oModel.bindProperty("/intValue");
+		this.spy(oPropertyBinding2, "checkUpdate");
 		sExpectedValue = "value";
 		oControl.setValue("value");
 		assert.equal(oControl.getStringValue(), "value", "stringValue property is updated");
+		assert.ok(oPropertyBinding.checkUpdate.called, "checkUpdate on value-binding called");
+		assert.notOk(oPropertyBinding2.checkUpdate.called, "checkUpdate on intValue-binding not called");
 
 		sExpectedValue = "fromStringValue";
 		oControl.setStringValue("fromStringValue"); // causes binding change
@@ -997,16 +1003,54 @@ sap.ui.define([
 		this.spy(oBinding3, "checkUpdate");
 		var fnDone = assert.async();
 		oModel.checkUpdate(true, true, fnFilter);
-		oModel.checkUpdate(false, true, fnFilter); // to test foceUpdate wins
+		oModel.checkUpdate(false, true, fnFilter); // to test forceUpdate wins
 		setTimeout(function() { // wait for Model update
 			assert.equal(aTrueBindings.length, 1, "The test is called an delivers true for one binding");
 			assert.deepEqual(aTrueBindings[0], oBinding1, "And this is exactly the first binding");
-			assert.ok(oBinding1.checkUpdate.calledWith(true), "chechUpdate called as forced");
-			assert.ok(oBinding1.checkUpdate.calledOnce, "chechUpdate called only once");
-			assert.notOk(oBinding2.checkUpdate.called, "chechUpdate not called on other Binding");
-			assert.notOk(oBinding3.checkUpdate.called, "chechUpdate not called on other Binding");
+			assert.ok(oBinding1.checkUpdate.calledWith(true), "checkUpdate called as forced");
+			assert.ok(oBinding1.checkUpdate.calledOnce, "checkUpdate called only once");
+			assert.notOk(oBinding2.checkUpdate.called, "checkUpdate not called on other Binding");
+			assert.notOk(oBinding3.checkUpdate.called, "checkUpdate not called on other Binding");
 			fnDone();
 		}, 0);
+	});
+
+	QUnit.test("Check Update with different binding test function async", function (assert) {
+		var aTrueBindings = [];
+		var oModel = this.oManagedObjectModel;
+		var oBinding1 = oModel.bindProperty("/value");
+		var oBinding2 = oModel.bindProperty("/stringValue");
+		var oBinding3 = oModel.bindProperty("/floatValue");
+		oModel.addBinding(oBinding1);
+		oModel.addBinding(oBinding2);
+		oModel.addBinding(oBinding3);
+
+		assert.equal(oModel.getBindings().length, 3, "There are three bindings");
+
+		var fnFilter1 = function (oBinding) {
+			if (oBinding == oBinding1) {
+				aTrueBindings.push(oBinding);
+				return true;
+			}
+			return false;
+		};
+		var fnFilter2 = function (oBinding) {
+			if (oBinding == oBinding2) {
+				aTrueBindings.push(oBinding);
+				return true;
+			}
+			return false;
+		};
+
+		this.spy(oBinding1, "checkUpdate");
+		this.spy(oBinding2, "checkUpdate");
+		this.spy(oBinding3, "checkUpdate");
+		oModel.checkUpdate(true, true, fnFilter1);
+		oModel.checkUpdate(true, true, fnFilter2);
+		oModel.checkUpdate(false, false, fnFilter2);
+		assert.ok(oBinding1.checkUpdate.calledOnce, "checkUpdate called only once");
+		assert.ok(oBinding2.checkUpdate.calledOnce, "checkUpdate called only once");
+		assert.ok(oBinding3.checkUpdate.calledOnce, "checkUpdate called only once");
 	});
 
 	QUnit.test("ManagedObject Model - handle object properties", function(assert) {
@@ -1044,6 +1088,7 @@ sap.ui.define([
 
 		this.obj.setModel(oModel);
 		this.obj.bindProperty("objectArray", "/data");
+		this.spy(this.oManagedObjectModel, "checkUpdate");
 
 		var iChange = 0;
 		var fnHandleChange = function (oEvent) {
@@ -1072,6 +1117,11 @@ sap.ui.define([
 		});
 		oInput.setModel(this.oManagedObjectModel, "$obj");
 
+		// if array is updated with same content no update should be triggered on bindings
+		aData = aData.slice(0);
+		this.oManagedObjectModel.setProperty("/objectArray", aData);
+		assert.notOk(this.oManagedObjectModel.checkUpdate.called, "ManagedObjectModel checkUpdate not called");
+
 		assert.deepEqual(this.obj.getObjectArray(), aData, "The data is in the original element");
 		assert.equal(oText1.getText(), "EQ: 1, 2", "Text bound to model");
 		assert.equal(oText2.getText(), "EQ: 1, 2", "Text bound to ManagedObjectModel");
@@ -1083,6 +1133,7 @@ sap.ui.define([
 
 		setTimeout(function () {
 			var aNewData = [{operator: "EQ", values: ["3", 2]}];
+			assert.ok(this.oManagedObjectModel.checkUpdate.called, "ManagedObjectModel checkUpdate called");
 			assert.deepEqual(this.obj.getObjectArray(), aNewData, "The new data is in the original element");
 			assert.deepEqual(oModel.getProperty("/data"), aNewData, "The new data is also in the model");
 			assert.equal(oText1.getText(), "EQ: 3, 2", "Text bound to model");

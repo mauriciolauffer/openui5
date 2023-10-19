@@ -2,7 +2,7 @@
 
 sap.ui.define([
 	"rta/test/qunit/command/basicCommandTest"
-], function (
+], function(
 	basicCommandTest
 ) {
 	"use strict";
@@ -13,7 +13,9 @@ sap.ui.define([
 		index: 4,
 		url: "https://www.sap.com",
 		width: "myFancyWidth",
-		height: "myFancyHeight"
+		height: "myFancyHeight",
+		useLegacyNavigation: false,
+		title: "Potato"
 	};
 
 	basicCommandTest({
@@ -26,7 +28,7 @@ sap.ui.define([
 		content: Object.assign({}, mProperties)
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

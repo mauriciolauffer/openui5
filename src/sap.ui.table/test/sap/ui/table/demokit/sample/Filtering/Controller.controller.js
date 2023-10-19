@@ -6,8 +6,11 @@ sap.ui.define([
 	"sap/ui/model/FilterOperator",
 	"sap/ui/core/format/DateFormat",
 	"sap/m/ToolbarSpacer",
-	"sap/ui/thirdparty/jquery"
-], function(Log, Controller, JSONModel, Filter, FilterOperator, DateFormat, ToolbarSpacer, jQuery) {
+	"sap/ui/thirdparty/jquery",
+	"sap/ui/core/date/UI5Date",
+	"sap/ui/model/type/Boolean",
+	"sap/ui/model/type/Integer"
+], function(Log, Controller, JSONModel, Filter, FilterOperator, DateFormat, ToolbarSpacer, jQuery, UI5Date) {
 	"use strict";
 
 	return Controller.extend("sap.ui.table.sample.Filtering.Controller", {
@@ -57,8 +60,8 @@ sap.ui.define([
 							aTemp2.push(oProduct.Category);
 							aCategoryData.push({Name: oProduct.Category});
 						}
-						oProduct.DeliveryDate = (new Date()).getTime() - (i % 10 * 4 * 24 * 60 * 60 * 1000);
-						oProduct.DeliveryDateStr = oDateFormat.format(new Date(oProduct.DeliveryDate));
+						oProduct.DeliveryDate = Date.now() - (i % 10 * 4 * 24 * 60 * 60 * 1000);
+						oProduct.DeliveryDateStr = oDateFormat.format(UI5Date.getInstance(oProduct.DeliveryDate));
 						oProduct.Heavy = oProduct.WeightMeasure > 1000 ? "true" : "false";
 						oProduct.Available = oProduct.Status == "Available" ? true : false;
 					}

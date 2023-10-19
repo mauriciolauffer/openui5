@@ -86,8 +86,8 @@ function(
 					 *	<li><code>ol</code></li>
 					 *	<li><code>li</code></li>
 					 * </ul>
-					 * <p><code>class, style, dir,</code> and <code>target</code> attributes are allowed.
-					 * If <code>target</code> is not set, links open in a new window by default.
+					 * <p><code>style, dir</code> and <code>target</code> attributes are allowed.
+					 * <p>If <code>target</code> is not set, links open in a new window by default.
 					 * <p>Only safe <code>href</code> attributes can be used. See {@link module:sap/base/security/URLListValidator URLListValidator}.
 					 *
 					 * <b>Note:</b> Keep in mind that not supported HTML tags and
@@ -267,6 +267,7 @@ function(
 						addTarget = false;
 					}
 				}
+
 				if (attr == "target") { // a::target already exists
 					addTarget = false;
 				}
@@ -322,9 +323,12 @@ function(
 
 		// open links href using safe API
 		function openLink (oEvent) {
+			if (oEvent.originalEvent.defaultPrevented) {
+				return;
+			}
 			oEvent.preventDefault();
 			var oLink = Core.byId(oEvent.currentTarget.id);
-			if (oLink && oLink.isA('sap.m.Link') && oLink.getAccessibleRole() === library.LinkAccessibleRole.Button) {
+			if (oLink && oLink.isA('sap.m.Link') && (oLink.getAccessibleRole() === library.LinkAccessibleRole.Button || !oLink.getHref())) {
 				return;
 			}
 			openWindow(oEvent.currentTarget.href, oEvent.currentTarget.target);
@@ -332,12 +336,58 @@ function(
 
 		FormattedText.prototype.onAfterRendering = function () {
 			this.$().find('a').on("click", openLink);
+			var aLinks = this.getControls(),
+				oTemplate;
+
+			aLinks.forEach(function(oLink, iCurrentIndex) {
+				oTemplate = this.getDomRef("$" + iCurrentIndex);
+				if (oTemplate) {
+					oTemplate.replaceWith(oLink.getDomRef());
+				} else {
+					oLink.getDomRef().style.display = "none";
+				}
+			}.bind(this));
+
+			this._sanitizeCSSPosition(this.getDomRef());
 		};
 
 		FormattedText.prototype.onBeforeRendering = function () {
 			this.$().find('a').off("click", openLink);
 		};
 
+		/**
+		 * Adds CSS static position to provided DOM reference internal HTML nodes.
+		 *
+		 * @param {Element} oDomRef DOM reference that should be sanitized
+		 * @private
+		 */
+		FormattedText.prototype._sanitizeCSSPosition = function(oDomRef) {
+
+			if (!oDomRef) {
+				return;
+			}
+
+			var oWalker = document.createTreeWalker(
+					oDomRef,
+					NodeFilter.SHOW_ELEMENT
+				),
+				oCurrentNode = oWalker.nextNode();
+
+			while (oCurrentNode) {
+				oCurrentNode.style.setProperty("position", "static", "important");
+				oCurrentNode = oWalker.nextNode();
+			}
+		};
+
+		/**
+		 * Returns the HTML that should be displayed.
+		 *
+		 * IMPORTANT NOTE: When a HTML returned by this method is being placed in the page DOM, ALWAYS call _sanitizeCSSPosition
+		 * after it is rendered on the page DOM in order to sanitize the CSS position!
+		 *
+		 * @return {string} HTML that should be rendered
+		 * @private
+		 */
 		FormattedText.prototype._getDisplayHtml = function (){
 			var sText = this.getHtmlText(),
 				sAutoGenerateLinkTags = this.getConvertLinksToAnchorTags();

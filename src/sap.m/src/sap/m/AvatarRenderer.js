@@ -2,7 +2,7 @@
  * ${copyright}
  */
 
-// Provides default renderer for controlsap.m.Avatar
+// Provides default renderer for control sap.m.Avatar
 sap.ui.define(["sap/m/library", "sap/base/security/encodeCSS"],
 	function (library, encodeCSS) {
 		"use strict";
@@ -19,8 +19,9 @@ sap.ui.define(["sap/m/library", "sap/base/security/encodeCSS"],
 		 * @namespace
 		 */
 		var AvatarRenderer = {
-			apiVersion: 4
+			apiVersion: 2
 		};
+
 
 		/**
 		 * Renders the HTML for the given control, using the provided {@link sap.ui.core.RenderManager}.
@@ -29,7 +30,9 @@ sap.ui.define(["sap/m/library", "sap/base/security/encodeCSS"],
 		 * @param {sap.m.Avatar} oAvatar an object representation of the control that should be rendered
 		 */
 		AvatarRenderer.render = function (oRm, oAvatar) {
-			var sInitials = oAvatar.getInitials(),
+
+			var bEnabled = oAvatar.getEnabled(),
+				sInitials = oAvatar.getInitials(),
 				sActualDisplayType = oAvatar._getActualDisplayType(),
 				sImageFallbackType = oAvatar._getImageFallbackType(),
 				sDisplaySize = oAvatar.getDisplaySize(),
@@ -37,15 +40,17 @@ sap.ui.define(["sap/m/library", "sap/base/security/encodeCSS"],
 				sImageFitType = oAvatar.getImageFitType(),
 				sCustomDisplaySize = oAvatar.getCustomDisplaySize(),
 				sCustomFontSize = oAvatar.getCustomFontSize(),
-				sSrc = oAvatar.getSrc(),
+				sSrc = oAvatar._getAvatarSrc(),
 				sAvatarClass = "sapFAvatar",
 				sTooltip = oAvatar.getTooltip_AsString(),
-				aLabelledBy = oAvatar.getAriaLabelledBy(),
+				aLabelledBy = oAvatar._getAriaLabelledBy(),
 				aDescribedBy = oAvatar.getAriaDescribedBy(),
 				aHasPopup = oAvatar.getAriaHasPopup(),
-				oBadge = oAvatar.hasListeners("press") ?  oAvatar._getBadge() : null,
+				bHasListener = oAvatar.hasListeners("press"),
+				oBadge = bHasListener ?  oAvatar._getBadge() : null,
 				sDefaultTooltip = oAvatar._getDefaultTooltip(),
-				sInitialsLength = sInitials.length;
+				sInitialsLength = sInitials.length,
+				bActive = oAvatar.getActive() && bHasListener;
 
 			oRm.openStart("span", oAvatar);
 			oRm.class(sAvatarClass);
@@ -53,16 +58,26 @@ sap.ui.define(["sap/m/library", "sap/base/security/encodeCSS"],
 			oRm.class(sAvatarClass + sDisplaySize);
 			oRm.class(sAvatarClass + sActualDisplayType);
 			oRm.class(sAvatarClass + sDisplayShape);
-			if (oAvatar.hasListeners("press")) {
-				oRm.class("sapMPointer");
-				oRm.class(sAvatarClass + "Focusable");
-				oRm.attr("role", "button");
-				oRm.attr("tabindex", 0);
-			} else if (oAvatar.getDecorative()) {
-				oRm.attr("role", "presentation");
-				oRm.attr("aria-hidden", "true");
+
+			if (bActive) {
+				oRm.class("sapMAvatarPressed");
+			}
+
+			if (bEnabled) {
+				if (bHasListener) {
+					oRm.class("sapMPointer");
+					oRm.class(sAvatarClass + "Focusable");
+					oRm.attr("role", "button");
+					oRm.attr("tabindex", 0);
+				} else if (oAvatar.getDecorative()) {
+					oRm.attr("role", "presentation");
+					oRm.attr("aria-hidden", "true");
+				} else {
+					oRm.attr("role", "img");
+				}
 			} else {
-				oRm.attr("role", "img");
+				oRm.attr("disabled", "disabled");
+				oRm.class("sapMAvatarDisabled");
 			}
 			if (oAvatar.getShowBorder()) {
 				oRm.class("sapFAvatarBorder");

@@ -54,23 +54,23 @@
 								</vhfb:filterItems>
 							</vhfb:FilterBar>
 						</mdcvc:filterBar>
-						<mdc:Table id="VH2-Dia-Table" autoBindOnInit="true" width="100%" height="100%"
+						<mdc:Table id="VH2-Dia-Table" autoBindOnInit="true" width="100%"
 							selectionMode="Multi"
 							delegate='\{"name": "sap/ui/mdc/sample/FilterBar/GridTable.delegate", "payload": \{"collectionName": "Books"\}\}' threshold="50">
 							<mdc:columns>
-								<mdc:table.Column id="VH2-Dia-Table-ColId" header="ID" dataProperty="ID" initialIndex="1">
+								<mdc:table.Column id="VH2-Dia-Table-ColId" header="ID" propertyKey="ID">
 									<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{ID}" editMode="Display"/>
 								</mdc:table.Column>
-								<mdc:table.Column id="VH2-Dia-Table-ColIitle" header="Title" dataProperty="title" initialIndex="2">
+								<mdc:table.Column id="VH2-Dia-Table-ColIitle" header="Title" propertyKey="title">
 									<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{title}" editMode="Display"/>
 								</mdc:table.Column>
-								<mdc:table.Column id="VH2-Dia-Table-ColDescr" header="Description" dataProperty="descr" initialIndex="3">
+								<mdc:table.Column id="VH2-Dia-Table-ColDescr" header="Description" propertyKey="descr">
 									<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{descr}" editMode="Display"/>
 								</mdc:table.Column>
-								<mdc:table.Column id="VH2-Dia-Table-ColPub" header="Published" dataProperty="published" initialIndex="4">
+								<mdc:table.Column id="VH2-Dia-Table-ColPub" header="Published" propertyKey="published">
 									<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{published}" editMode="Display"/>
 								</mdc:table.Column>
-								<mdc:table.Column id="VH2-Dia-Table-ColGenre" header="Genre Code" dataProperty="genre_code" initialIndex="5">
+								<mdc:table.Column id="VH2-Dia-Table-ColGenre" header="Genre Code" propertyKey="genre_code">
 									<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{genre_code}" additionalValue="{genre/label}" editMode="Display" display="Description"/>
 								</mdc:table.Column>
 							</mdc:columns>
@@ -140,17 +140,17 @@
 								</vhfb:filterItems>
 							</vhfb:FilterBar>
 						</mdcvc:filterBar>
-						<mdc:Table id="VH1-Dia-Table" autoBindOnInit="true" width="100%" height="100%"
+						<mdc:Table id="VH1-Dia-Table" autoBindOnInit="true" width="100%"
 							selectionMode="Multi"
 							delegate='\{"name": "sap/ui/mdc/sample/FilterBar/GridTable.delegate", "payload": \{"collectionName": "Authors"\}\}' threshold="50">
 							<mdc:columns>
-								<mdc:table.Column id="VH1-Dia-Table-ColId" header="ID" dataProperty="ID" initialIndex="1">
+								<mdc:table.Column id="VH1-Dia-Table-ColId" header="ID" propertyKey="ID">
 									<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{ID}" editMode="Display"/>
 								</mdc:table.Column>
-								<mdc:table.Column id="VH1-Dia-Table-ColName" header="Name" dataProperty="name" initialIndex="2">
+								<mdc:table.Column id="VH1-Dia-Table-ColName" header="Name" propertyKey="name">
 									<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{name}" editMode="Display"/>
 								</mdc:table.Column>
-								<mdc:table.Column id="VH1-Dia-Table-ColDateOfBirth" header="Date of Birth" dataProperty="dateOfBirth" initialIndex="2">
+								<mdc:table.Column id="VH1-Dia-Table-ColDateOfBirth" header="Date of Birth" propertyKey="dateOfBirth">
 									<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{dateOfBirth}" editMode="Display"/>
 								</mdc:table.Column>
 							</mdc:columns>
@@ -183,7 +183,7 @@
 			conditions="{$filters>/conditions/author_ID}"
 			dataType="Edm.Int32"
 			required="false"
-			fieldHelp="VH1"
+			valueHelp="VH1"
 			display="DescriptionValue"
 			width="100%"/>
 
@@ -192,7 +192,7 @@
 			id="ff2"
 			label="Title"
 			conditions="{$filters>/conditions/title}"
-			fieldHelp="VH2"
+			valueHelp="VH2"
 			width="100%"/>
 
 	</mdc:filterItems>
@@ -206,25 +206,24 @@
 			delegate='\{ "name": "sap/ui/mdc/sample/TableWithFilterBar/Books.Table.delegate", "payload": \{"collectionName": "Books"\}\}'
 			type="ResponsiveTable"
 			p13nMode="Column,Sort,Filter"
-			selectionMode="Multi"
-			height="100%">
+			selectionMode="Multi">
 		<mdc:noData>
 			<IllustratedMessage />
 		</mdc:noData>
 		<mdc:columns>
-			<mdcTable:Column id="_ID" header="ID" dataProperty="ID">
+			<mdcTable:Column id="_ID" header="ID" propertyKey="ID">
 				<Text text="{ID}"/>
 			</mdcTable:Column>
-			<mdcTable:Column id="_title" header="Title" dataProperty="title">
+			<mdcTable:Column id="_title" header="Title" propertyKey="title">
 				<Text text="{title}"/>
 			</mdcTable:Column>
-			<mdcTable:Column id="_descr" header="Description" dataProperty="descr">
+			<mdcTable:Column id="_descr" header="Description" propertyKey="descr">
 				<Text text="{descr}"/>
 			</mdcTable:Column>
-			<mdcTable:Column id="_author" header="Author" dataProperty="author_ID">
+			<mdcTable:Column id="_author" header="Author" propertyKey="author_ID">
 				<Text text="{author_ID}"/>
 			</mdcTable:Column>
-			<mdcTable:Column id="_price" header="Price" dataProperty="price">
+			<mdcTable:Column id="_price" header="Price" propertyKey="price">
 				<Text text="{price}"/>
 			</mdcTable:Column>
 		</mdc:columns>

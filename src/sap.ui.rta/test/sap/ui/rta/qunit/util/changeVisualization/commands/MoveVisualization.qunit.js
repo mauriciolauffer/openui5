@@ -1,20 +1,20 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/ui/rta/util/changeVisualization/commands/MoveVisualization",
-	"sap/ui/core/Core"
+	"sap/ui/core/Lib"
 ], function(
 	MoveVisualization,
-	oCore
+	Lib
 ) {
 	"use strict";
-	var oResourceBundle = oCore.getLibraryResourceBundle("sap.ui.rta");
+	var oResourceBundle = Lib.getResourceBundleFor("sap.ui.rta");
 
 	QUnit.module("Base tests", {
-		beforeEach: function() {
+		beforeEach() {
 			this.mPropertyBag = { appComponent: null };
 		},
-		afterEach: function() {
+		afterEach() {
 		}
 	}, function() {
 		QUnit.test("when no payload and property bag are set", function(assert) {
@@ -56,7 +56,7 @@ sap.ui.define([
 				"then the button text is returned"
 			);
 		});
-		QUnit.test("when an element was moved outside its parent that has no source id", function (assert) {
+		QUnit.test("when an element was moved outside its parent that has no source id", function(assert) {
 			var oPayloadOutsideGroup = {
 				sourceContainer: { id: null },
 				targetContainer: { id: "Group2" }

@@ -3,10 +3,12 @@
  */
 
 sap.ui.define([
-	"sap/ui/core/Core",
+	"sap/ui/core/Element",
+	"sap/ui/core/StaticArea",
 	"sap/ui/fl/Utils"
 ], function(
-	Core,
+	Element,
+	StaticArea,
 	Utils
 ) {
 	"use strict";
@@ -30,9 +32,9 @@ sap.ui.define([
 			aVMControls = Array.from(oRootControl.getDomRef().querySelectorAll(".sapUiFlVarMngmt"));
 		}
 		if (bUseStaticArea || aVMControls.length === 0) {
-			aVMControls = Array.from(Core.getStaticAreaRef().querySelectorAll(".sapUiFlVarMngmt"));
+			aVMControls = Array.from(StaticArea.getDomRef().querySelectorAll(".sapUiFlVarMngmt"));
 		}
-		return aVMControls.map(function (oVariantManagementNode) {
+		return aVMControls.map(function(oVariantManagementNode) {
 			return oVariantManagementNode.id;
 		});
 	}
@@ -42,7 +44,7 @@ sap.ui.define([
 
 		VARIANT_TECHNICAL_PARAMETER: "sap-ui-fl-control-variant-id",
 
-		compareVariants: function(oVariant1, oVariant2) {
+		compareVariants(oVariant1, oVariant2) {
 			if (oVariant1.getName().toLowerCase() < oVariant2.getName().toLowerCase()) {
 				return -1;
 			} else if (oVariant1.getName().toLowerCase() > oVariant2.getName().toLowerCase()) {
@@ -51,9 +53,9 @@ sap.ui.define([
 			return 0;
 		},
 
-		getIndexToSortVariant: function (aVariants, oVariantEntry) {
+		getIndexToSortVariant(aVariants, oVariantEntry) {
 			var iSortedIndex = aVariants.length;
-			aVariants.some(function (oExistingVariant, index) {
+			aVariants.some(function(oExistingVariant, index) {
 				if (VariantsApplyUtil.compareVariants(oVariantEntry.instance, oExistingVariant.instance) < 0) {
 					iSortedIndex = index;
 					return true;
@@ -71,13 +73,13 @@ sap.ui.define([
 		 * @param {boolean} [bUseStaticArea=false] - If flag is set to true then the static area is used to determine the variant management control
 		 * @returns {string} The ID of the responsible variant management control
 		 */
-		getRelevantVariantManagementControlId: function(oControl, aVMControlIds, bUseStaticArea) {
+		getRelevantVariantManagementControlId(oControl, aVMControlIds, bUseStaticArea) {
 			var oAssociatedControls = {};
 			if (!aVMControlIds || !aVMControlIds.length) {
 				aVMControlIds = getVariantManagementControlIds(oControl, bUseStaticArea);
 			}
 			var aAssociatedControlIds = aVMControlIds.reduce(function(aCurrentControlIds, sVMControlId) {
-				var oVMControl = Core.byId(sVMControlId);
+				var oVMControl = Element.getElementById(sVMControlId);
 				// there could be additional VMControl Ids that are not yet available
 				if (oVMControl) {
 					var aForControls = oVMControl.getFor();
@@ -93,12 +95,12 @@ sap.ui.define([
 			return oAssociatedControls[sAssociatedVMControlId];
 		},
 
-		belongsToVariantManagement: function(oElement) {
+		belongsToVariantManagement(oElement) {
 			var aVMControlIds = getVariantManagementControlIds(oElement);
 			return !!VariantsApplyUtil.getRelevantVariantManagementControlId(oElement, aVMControlIds);
 		},
 
-		getAllVariantManagementControlIds: function(oElement) {
+		getAllVariantManagementControlIds(oElement) {
 			return getVariantManagementControlIds(oElement);
 		}
 	};

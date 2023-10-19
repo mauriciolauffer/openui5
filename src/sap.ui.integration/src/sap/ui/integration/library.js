@@ -6,6 +6,7 @@
  */
 sap.ui.define([
 	"sap/ui/base/DataType",
+	"sap/ui/core/Core",
 	"sap/ui/Global",
 	// library dependency
 	"sap/ui/core/library",
@@ -13,7 +14,7 @@ sap.ui.define([
 	"sap/f/library",
 	"sap/ui/unified/library",
 	"sap/ui/layout/library"
-], function (DataType) {
+], function (DataType, oCore) {
 	"use strict";
 
 	/**
@@ -26,7 +27,7 @@ sap.ui.define([
 	 * @since 1.62
 	 * @public
 	 */
-	var thisLib = sap.ui.getCore().initLibrary({
+	var thisLib = oCore.initLibrary({
 		name: "sap.ui.integration",
 		version: "${version}",
 		dependencies: [
@@ -40,23 +41,30 @@ sap.ui.define([
 			"sap.ui.integration.CardActionType",
 			"sap.ui.integration.CardDataMode",
 			"sap.ui.integration.CardMenuAction",
-			"sap.ui.integration.CardDesign"
+			"sap.ui.integration.CardDesign",
+			"sap.ui.integration.CardDisplayVariant",
+			"sap.ui.integration.CardBlockingMessageType"
 		],
 		controls: [
 			"sap.ui.integration.widgets.Card",
 			"sap.ui.integration.cards.filters.FilterBar",
 			"sap.ui.integration.cards.Header",
 			"sap.ui.integration.cards.NumericHeader",
-			"sap.ui.integration.controls.ListContentItem"
+			"sap.ui.integration.controls.ListContentItem",
+			"sap.ui.integration.controls.BlockingMessage"
 		],
 		elements: [
 			"sap.ui.integration.ActionDefinition",
 			"sap.ui.integration.Host",
 			"sap.ui.integration.Extension"
 		],
-		// define the custom elements that can be used in this library
-		customElements: {
-			"card": "sap/ui/integration/customElements/CustomElementCard"
+		extensions: {
+			"sap.ui.integration": {
+				// define the custom elements that can be used in this library
+				customElements: {
+					"card": "sap/ui/integration/customElements/CustomElementCard"
+				}
+			}
 		}
 	});
 
@@ -165,6 +173,42 @@ sap.ui.define([
 	};
 
 	/**
+	 * Possible variants for <code>{@link sap.ui.integration.widgets.Card}</code> rendering and behavior.
+	 *
+	 * @enum {string}
+	 * @public
+	 * @experimental Since 1.118. For usage only by Work Zone.
+	 * @since 1.118
+	 */
+	thisLib.CardDisplayVariant = {
+		/**
+		 * The standard card variant.
+		 * @public
+		 */
+		Standard: "Standard",
+		/**
+		 * Card renders and behaves like a tile of size 2x2.
+		 * @public
+		 */
+		TileStandard: "TileStandard",
+		/**
+		 * Card renders and behaves like a tile of size 4x2.
+		 * @public
+		 */
+		TileStandardWide: "TileStandardWide",
+		/**
+		 * Card renders and behaves like a tile of size 2x1.
+		 * @public
+		 */
+		TileFlat: "TileFlat",
+		/**
+		 * Card renders and behaves like a tile of size 4x1.
+		 * @public
+		 */
+		TileFlatWide: "TileFlatWide"
+	};
+
+	/**
 	 * Specifies different areas of a card where actions can be attached.
 	 *
 	 * @private
@@ -176,6 +220,33 @@ sap.ui.define([
 		ActionsStrip: "ActionsStrip",
 		ContentItemDetail: "ContentItemDetail",
 		Header: "Header"
+	};
+
+	/**
+	 * Card blocking message types.
+	 *
+	 * @enum {string}
+	 * @public
+	 * @experimental since 1.114
+	 */
+	thisLib.CardBlockingMessageType = {
+		/**
+		 * An error ocurred in the card.
+		 * @public
+		 */
+		Error: "Error",
+
+		/**
+		 * There is no data to be displayed.
+		 * @public
+		 */
+		NoData: "NoData",
+
+		/**
+		 * Information message.
+		 * @public
+		 */
+		Information: "Information"
 	};
 
 	/**
@@ -200,6 +271,35 @@ sap.ui.define([
 		 * @public
 		 */
 		Content: "Content"
+	};
+
+	/**
+	 * Preview modes for <code>{@link sap.ui.integration.widgets.Card}</code>.
+	 * Helpful in scenarios when the end user is choosing or configuring a card.
+	 *
+	 * @enum {string}
+	 * @public
+	 * @experimental since 1.112
+	 * @since 1.112
+	 */
+	thisLib.CardPreviewMode = {
+		/**
+		 * Card displays real data.
+		 * @public
+		 */
+		Off: "Off",
+
+		/**
+		 * Card displays mocked data, loaded using a data request as configured in the manifest.
+		 * @public
+		 */
+		MockData: "MockData",
+
+		/**
+		 * Card displays abstract preview. No data requests are made.
+		 * @public
+		 */
+		Abstract: "Abstract"
 	};
 
 	/**

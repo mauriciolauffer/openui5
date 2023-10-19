@@ -4,7 +4,7 @@
 
 // Provides control sap.ui.webc.main.SplitButton.
 sap.ui.define([
-	"sap/ui/webc/common/WebComponent",
+	"sap/ui/core/webc/WebComponent",
 	"./library",
 	"sap/ui/core/EnabledPropagator",
 	"./thirdparty/SplitButton"
@@ -19,7 +19,7 @@ sap.ui.define([
 	 * @param {string} [sId] ID for the new control, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new control
 	 *
-	 * @extends sap.ui.webc.common.WebComponent
+	 * @extends sap.ui.core.webc.WebComponent
 	 * @class
 	 *
 	 * <h3>Overview</h3>
@@ -40,11 +40,11 @@ sap.ui.define([
 	 * <ul>
 	 *     <li><code>Space</code> or <code>Enter</code> - triggers the default action</li>
 	 *     <li><code>Shift</code> or <code>Escape</code> - if <code>Space</code> is pressed, releases the default action button without triggering the click event.</li>
-	 *     <li><code>Arrow Down</code>, <code>Arrow Up</code>, <code>Alt</code>+<code>Arrow Down</code>, <code>Alt</code>+<code>Arrow Up</code>, or <code>F4</code> - triggers the arrow action There are separate events that are fired on activating of <code>sap.ui.webc.main.SplitButton</code> parts:
-	 *         <ul>
-	 *             <li><code>click</code> for the first button (default action)</li>
-	 *             <li><code>arrow-click</code> for the second button (arrow action)</li>
-	 *         </ul>
+	 *     <li><code>Arrow Down</code>, <code>Arrow Up</code>, <code>Alt</code>+<code>Arrow Down</code>, <code>Alt</code>+<code>Arrow Up</code>, or <code>F4</code> - triggers the arrow action</li> There are separate events that are fired on activating of <code>sap.ui.webc.main.SplitButton</code> parts:
+	 *     <ul>
+	 *         <li><code>click</code> for the first button (default action)</li>
+	 *         <li><code>arrow-click</code> for the second button (arrow action)</li>
+	 *     </ul>
 	 * </ul>
 	 *
 	 * @author SAP SE
@@ -63,7 +63,7 @@ sap.ui.define([
 			properties: {
 
 				/**
-				 * Defines the accessible aria name of the component.
+				 * Defines the accessible ARIA name of the component.
 				 */
 				accessibleName: {
 					type: "string"
@@ -79,20 +79,6 @@ sap.ui.define([
 
 				/**
 				 * Defines the component design.
-				 *
-				 * <br>
-				 * <br>
-				 * <b>The available values are:</b>
-				 *
-				 *
-				 * <ul>
-				 *     <li><code>Default</code></li>
-				 *     <li><code>Emphasized</code></li>
-				 *     <li><code>Positive</code></li>
-				 *     <li><code>Negative</code></li>
-				 *     <li><code>Transparent</code></li>
-				 *     <li><code>Attention</code></li>
-				 * </ul>
 				 */
 				design: {
 					type: "sap.ui.webc.main.ButtonDesign",
@@ -106,7 +92,7 @@ sap.ui.define([
 					type: "boolean",
 					defaultValue: true,
 					mapping: {
-						type: "attribute",
+						type: "property",
 						to: "disabled",
 						formatter: "_mapEnabled"
 					}

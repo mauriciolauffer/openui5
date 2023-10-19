@@ -6,7 +6,7 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
   });
   _exports.pathData = _exports.ltr = _exports.default = _exports.accData = void 0;
   const name = "zoom-in";
-  const pathData = "M313.5 199q13 0 20.5 8t7.5 21q0 28-28 28h-57v57q0 28-29 28-28 0-28-28v-57h-57q-28 0-28-28 0-13 7.5-21t20.5-8h57v-56q0-13 7.5-21t20.5-8q14 0 21.5 8t7.5 21v56h57zm190 264q8 9 8 20.5t-8 19.5q-8 9-20 9t-20-9l-96-96q-62 48-140 48-46 0-87.5-18t-72.5-48.5-49-72T.5 228t18-88.5 49-72T140 19t87.5-18q47 0 88.5 18t72.5 48.5 49 72 18 88.5q0 78-49 139zm-446-235q0 35 13.5 66t36.5 54 54 36.5 66 13.5 66.5-13.5 54.5-36.5 36.5-54 13.5-66-13.5-66.5-36.5-54.5T294 70.5 227.5 57t-66 13.5-54 36.5T71 161.5 57.5 228z";
+  const pathData = "M473 436q7 7 7 18t-7.5 18.5T454 480q-10 0-18-8l-95-95q-51 39-117 39-40 0-75-15t-61-41-41-61-15-75 15-75 41-61 61-41 75-15 75 15 61 41 41 61 15 75q0 64-39 117zM83 224q0 30 11 55.5t30 44.5 44.5 30 55.5 11 55.5-11 44.5-30 30-44.5 11-55.5-11-55.5-30-44.5-44.5-30T224 83t-55.5 11-44.5 30-30 44.5T83 224zm253 0q0 11-7.5 18.5T310 250h-60v60q0 11-7.5 18.5T224 336t-18.5-7.5T198 310v-60h-60q-11 0-18.5-7.5T112 224t7.5-18.5T138 198h60v-60q0-11 7.5-18.5T224 112t18.5 7.5T250 138v60h60q11 0 18.5 7.5T336 224z";
   _exports.pathData = pathData;
   const ltr = false;
   _exports.ltr = ltr;
@@ -21,6 +21,6 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
     collection,
     packageName
   });
-  var _default = "zoom-in";
+  var _default = "SAP-icons-v5/zoom-in";
   _exports.default = _default;
 });

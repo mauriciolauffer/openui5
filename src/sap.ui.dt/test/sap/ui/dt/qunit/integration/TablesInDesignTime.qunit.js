@@ -5,27 +5,29 @@ sap.ui.define([
 	"sap/ui/dt/OverlayRegistry",
 	"sap/ui/table/Table",
 	"sap/ui/table/Column",
+	"sap/ui/table/rowmodes/Fixed",
 	"sap/ui/table/AnalyticalTable",
 	"sap/ui/table/AnalyticalColumn",
 	"sap/m/Label",
+	"sap/m/Title",
 	"sap/m/Button",
 	"sap/ui/model/json/JSONModel",
-	"sap/base/Log",
 	"sap/ui/thirdparty/sinon-4",
-	"sap/ui/core/Core"
+	"sap/ui/qunit/utils/nextUIUpdate"
 ], function(
 	DesignTime,
 	OverlayRegistry,
 	Table,
 	Column,
+	FixedRowMode,
 	AnalyticalTable,
 	AnalyticalColumn,
 	Label,
+	Title,
 	Button,
 	JSONModel,
-	Log,
 	sinon,
-	oCore
+	nextUIUpdate
 ) {
 	"use strict";
 
@@ -38,10 +40,14 @@ sap.ui.define([
 		]);
 	}
 
-	function _createTable(oModel) {
+	async function createTable(oModel) {
 		var oTable = new Table({
-			title: "Table Example",
-			visibleRowCount: 5,
+			extension: [
+				new Title({text: "Example Table"})
+			],
+			rowMode: new FixedRowMode({
+				rowCount: 5
+			}),
 			width: "200px",
 			rows: "{/}"
 		});
@@ -50,7 +56,7 @@ sap.ui.define([
 		}
 
 		oTable.placeAt("qunit-fixture");
-		oCore.applyChanges();
+		await nextUIUpdate();
 
 		oTable.addColumn(new Column({
 			label: new Label({text: "Last Name"}),
@@ -74,24 +80,23 @@ sap.ui.define([
 		oTable.addColumn(new Column({
 			label: new Label({text: "Image"}),
 			width: "75px",
-			template: "dummy"
+			template: new Label({text: "{dummy}"})
 		}));
 		return oTable;
 	}
 
 	QUnit.module("Given the sap.ui.table.Table is created", {
-		beforeEach: function () {
+		async beforeEach() {
 			this.oModel = _createJSONModel();
-			this.oTable = _createTable(this.oModel);
+			this.oTable = await createTable(this.oModel);
 		},
-		afterEach: function () {
+		afterEach() {
 			this.oTable.destroy();
 			sandbox.restore();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("when design time is started with sap.ui.table.Table as root element", function(assert) {
 			var done = assert.async();
-			var oOnErrorSpy = sandbox.spy(Log, "error");
 			var oDesignTime = new DesignTime({
 				rootElements: [this.oTable]
 			});
@@ -102,20 +107,20 @@ sap.ui.define([
 				assert.ok(true, "then sync event should be thrown");
 				var oTableOverlay = OverlayRegistry.getOverlay(this.oTable);
 				var oColumnsOverlay = oTableOverlay.getAggregationOverlay("columns");
-				assert.strictEqual(oColumnsOverlay.getChildren().length, 5, "then there should be 5 children overlays for column available");
-				assert.notOk(oOnErrorSpy.called, "then design time should not throw errors in console on start");
+				assert.strictEqual(oColumnsOverlay.getChildren().length, 5,
+					"then there should be 5 children overlays for column available");
 				done();
 			}.bind(this));
 		});
 	});
 
 	QUnit.module("Given that design time is created for a sap.ui.table.Table", {
-		beforeEach: function(assert) {
+		async beforeEach(assert) {
 			var done = assert.async();
 
-			this.oTable = _createTable();
-			this.oColumn = this.oTable.getColumns()[0];
-			oCore.applyChanges();
+			this.oTable = await createTable();
+			[this.oColumn] = this.oTable.getColumns();
+			await nextUIUpdate();
 
 			this.oDesignTime = new DesignTime({
 				rootElements: [this.oTable]
@@ -125,11 +130,11 @@ sap.ui.define([
 				done();
 			});
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oTable.destroy();
 			this.oDesignTime.destroy();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("when Table is scrolled horizontally via aggregationOverlay hScroll...", function(assert) {
 			var done = assert.async();
 
@@ -142,7 +147,8 @@ sap.ui.define([
 
 			var fnCallback = function() {
 				assert.strictEqual(this.oColumn.$().offset().left + 20, oInitialColumnOffset.left, "then columns are also scrolled");
-				assert.strictEqual(this.oColumn.$().offset().left + 20, oInitialColumnOffset.left, "if this test fails, check Table.designtime.js : hScroll and vScroll domRefs!");
+				assert.strictEqual(this.oColumn.$().offset().left + 20, oInitialColumnOffset.left,
+					"if this test fails, check Table.designtime.js : hScroll and vScroll domRefs!");
 
 				oColumnsOverlay.$().off("scroll", fnCallback);
 				done();
@@ -154,62 +160,64 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given that design time is created for a sap.ui.table.AnalyticalTable", {
-		beforeEach: function(assert) {
+		async beforeEach(assert) {
 			var done = assert.async();
 
 			this.oTable = new AnalyticalTable({
-				title: "Table Example",
-				visibleRowCount: 5,
+				extension: [
+					new Title({text: "Example Table"})
+				],
+				rowMode: new FixedRowMode({
+					rowCount: 5
+				}),
 				width: "200px"
 			});
 
 			this.oTable.placeAt("qunit-fixture");
 
-			oCore.applyChanges();
+			await nextUIUpdate();
 
 			this.oColumn = new AnalyticalColumn({
 				label: new Label({text: "Last Name"}),
 				width: "200px",
-				template: "dummy"
+				template: new Label({text: "{dummy}"})
 			});
 
 			this.oTable.addColumn(this.oColumn);
 			this.oTable.addColumn(new AnalyticalColumn({
 				label: new Label({text: "First Name"}),
 				width: "100px",
-				template: "dummy"
+				template: new Label({text: "{dummy}"})
 			}));
 			this.oTable.addColumn(new AnalyticalColumn({
 				label: new Label({text: "Checked"}),
 				width: "75px",
-				template: "dummy"
+				template: new Label({text: "{dummy}"})
 			}));
 			this.oTable.addColumn(new AnalyticalColumn({
 				label: new Label({text: "Web Site"}),
-				template: "dummy"
+				template: new Label({text: "{dummy}"})
 			}));
 			this.oTable.addColumn(new AnalyticalColumn({
 				label: new Label({text: "Image"}),
 				width: "75px",
-				template: "dummy"
+				template: new Label({text: "{dummy}"})
 			}));
 
 			this.oDesignTime = new DesignTime({
 				rootElements: [this.oTable]
 			});
 
-			this.oDesignTime.attachEventOnce("synced", function () {
-				oCore.applyChanges();
-
-				// TODO: Temporal solution. Remove when the synced event in DesignTime waits for all async processes to be completed.
-				setTimeout(done, 16);
+			this.oDesignTime.attachEventOnce("synced", async function() {
+				await nextUIUpdate();
+				done();
 			});
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oTable.destroy();
 			this.oDesignTime.destroy();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("when AnalyticalTable is scrolled horizontally via aggregationOverlay hScroll...", function(assert) {
 			var done = assert.async();
 
@@ -222,7 +230,8 @@ sap.ui.define([
 
 			var fnCallback = function() {
 				assert.strictEqual(this.oColumn.$().offset().left + 20, oInitialColumnOffset.left, "then columns are also scrolled");
-				assert.strictEqual(this.oColumn.$().offset().left + 20, oInitialColumnOffset.left, "if this test fails, check AnalyticalTable.designtime.js : hScroll and vScroll domRefs!");
+				assert.strictEqual(this.oColumn.$().offset().left + 20, oInitialColumnOffset.left,
+					"if this test fails, check AnalyticalTable.designtime.js : hScroll and vScroll domRefs!");
 
 				oColumnsOverlay.$().off("scroll", fnCallback);
 				done();

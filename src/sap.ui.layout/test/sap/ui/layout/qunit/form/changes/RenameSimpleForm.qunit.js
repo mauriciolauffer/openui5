@@ -1,5 +1,6 @@
 /*global QUnit*/
 sap.ui.define([
+	"sap/ui/layout/library",
 	"sap/ui/layout/changeHandler/RenameSimpleForm",
 	"sap/ui/layout/form/SimpleForm",
 	"sap/ui/core/util/reflection/JsControlTreeModifier",
@@ -7,9 +8,11 @@ sap.ui.define([
 	"sap/ui/core/Title",
 	"sap/m/Label",
 	"sap/m/Input",
+	"sap/ui/model/json/JSONModel",
 	"sap/ui/core/Core",
 	"test-resources/sap/ui/fl/api/FlexTestAPI"
 ], function(
+	layoutLibrary,
 	RenameSimpleForm,
 	SimpleForm,
 	JsControlTreeModifier,
@@ -17,10 +20,13 @@ sap.ui.define([
 	Title,
 	Label,
 	Input,
+	JSONModel,
 	oCore,
 	FlexTestAPI
 ) {
 	"use strict";
+
+	var SimpleFormLayout = layoutLibrary.form.SimpleFormLayout;
 
 	QUnit.module("using sap.ui.layout.changeHandler.RenameSimpleForm with a new change format", {
 		beforeEach: function () {
@@ -29,19 +35,33 @@ sap.ui.define([
 			this.oTitle0 = new Title({id : "component---Title0",  text : "Title 0"});
 			this.oLabel0 = new Label({id : "component---Label0",  text : "Label 0"});
 			this.oLabel1 = new Label({id : "component---Label1",  text : "Label 1"});
+			this.oLabel2 = new Label({id : "component---Label2",  text : "{/BindingPath}"});
 			this.oInput0 = new Input({id : "component---Input0"});
 			this.oInput1 = new Input({id : "component---Input1"});
+			this.oInput2 = new Input({id : "component---Input2"});
+
+			this.oModel = new JSONModel({
+				BindingPath: "Binding Value"
+			});
 
 			this.oSimpleForm = new SimpleForm({
 				id : "component---SimpleForm", title : "Simple Form",
-				content : [this.oTitle0, this.oLabel0, this.oInput0, this.oLabel1, this.oInput1]
+				layout: SimpleFormLayout.ColumnLayout,
+				content : [
+					this.oTitle0,
+					this.oLabel0, this.oInput0,
+					this.oLabel1, this.oInput1,
+					this.oLabel2, this.oInput2
+				]
 			});
 			this.oSimpleForm.placeAt("qunit-fixture");
+			this.oSimpleForm.setModel(this.oModel);
 
 			oCore.applyChanges();
 
 			this.oFormContainer = this.oSimpleForm.getAggregation("form").getAggregation("formContainers")[0];
 			this.oFormElement = this.oFormContainer.getAggregation("formElements")[0];
+			this.oFormElementBinding = this.oFormContainer.getAggregation("formElements")[2];
 
 			this.oMockedComponent = {
 				createId: function (sString) {return "component---" + sString;},
@@ -82,7 +102,7 @@ sap.ui.define([
 	QUnit.test("when calling applyChange with XmlTreeModifier", function (assert) {
 		var oXmlString =
 		"<mvc:View xmlns:mvc='sap.ui.core.mvc' xmlns:layout='sap.ui.layout' xmlns='sap.m'>" +
-		"<layout:SimpleForm id='SimpleForm' editable='true' title='Simple Form' class='editableForm'>" +
+		"<layout:SimpleForm id='SimpleForm' editable='true' title='Simple Form' class='editableForm' layout='ColumnLayout'>" +
 		"<layout:content>" +
 		"<Title id='component---Title0' text='oldTitle' />" +
 		"<Label id='component---Label0' text='oldLabel0' />" +
@@ -160,6 +180,30 @@ sap.ui.define([
 			return this.oChangeHandler.applyChange(oChange, this.oSimpleForm, this.mPropertyBag)
 			.then(function() {
 				assert.equal(this.oFormElement.getLabel().getText(), "", "the label has changed");
+			}.bind(this));
+		}.bind(this));
+	});
+
+	QUnit.test('when calling applyChange and revertChange with a binding', function (assert) {
+		return FlexTestAPI.createFlexObject({
+			changeSpecificData: {
+				value: "New Value",
+				changeType: "renameLabel",
+				renamedElement: {id: this.oFormElementBinding.getId()}
+			},
+			selector: this.oSimpleForm,
+			appComponent: this.oMockedComponent
+		}).then(function(oChange) {
+			return this.oChangeHandler.applyChange(oChange, this.oSimpleForm, this.mPropertyBag)
+			.then(function() {
+				assert.equal(
+					oChange.getRevertData().parts[0].path,
+					"/BindingPath",
+					"the revert data is properly saved on the change"
+				);
+				assert.equal(this.oFormElementBinding.getLabel().getText(), "New Value", "the label has changed");
+				this.oChangeHandler.revertChange(oChange, this.oSimpleForm, this.mPropertyBag);
+				assert.equal(this.oFormElementBinding.getLabel().getText(), "Binding Value", "the change was reverted");
 			}.bind(this));
 		}.bind(this));
 	});

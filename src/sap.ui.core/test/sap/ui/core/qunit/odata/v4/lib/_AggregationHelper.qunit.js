@@ -35,11 +35,15 @@ sap.ui.define([
 			},
 			oPlaceholder = _AggregationHelper.createPlaceholder(9, 42, oCache);
 
+		this.mock(_AggregationHelper).expects("checkNodeProperty").never();
 		if (bAsLeaf) { // must not make a difference
 			oElement["@$ui5.node.isExpanded"] = undefined;
 			oPlaceholder["@$ui5.node.isExpanded"] = undefined;
 		}
-		this.mock(_Helper).expects("copyPrivateAnnotation")
+		const oHelperMock = this.mock(_Helper);
+		oHelperMock.expects("copyPrivateAnnotation")
+			.withExactArgs(sinon.match.same(oPlaceholder), "cache", sinon.match.same(oElement));
+		oHelperMock.expects("copyPrivateAnnotation")
 			.withExactArgs(sinon.match.same(oPlaceholder), "spliced", sinon.match.same(oElement));
 
 		// code under test
@@ -62,7 +66,11 @@ sap.ui.define([
 			// expandTo > 1
 			oPlaceholder = _AggregationHelper.createPlaceholder(0, 42, oCache);
 
-		this.mock(_Helper).expects("copyPrivateAnnotation")
+		this.mock(_AggregationHelper).expects("checkNodeProperty").never();
+		const oHelperMock = this.mock(_Helper);
+		oHelperMock.expects("copyPrivateAnnotation")
+			.withExactArgs(sinon.match.same(oPlaceholder), "cache", sinon.match.same(oElement));
+		oHelperMock.expects("copyPrivateAnnotation")
 			.withExactArgs(sinon.match.same(oPlaceholder), "spliced", sinon.match.same(oElement));
 
 		// code under test
@@ -78,8 +86,12 @@ sap.ui.define([
 			},
 			oPlaceholder = _AggregationHelper.createPlaceholder(9, 42, oCache);
 
+		this.mock(_AggregationHelper).expects("checkNodeProperty").never();
 		assert.notOk("@$ui5.node.isExpanded" in oPlaceholder);
-		this.mock(_Helper).expects("copyPrivateAnnotation").twice()
+		const oHelperMock = this.mock(_Helper);
+		oHelperMock.expects("copyPrivateAnnotation").thrice()
+			.withExactArgs(sinon.match.same(oPlaceholder), "cache", sinon.match.same(oElement));
+		oHelperMock.expects("copyPrivateAnnotation").thrice()
 			.withExactArgs(sinon.match.same(oPlaceholder), "spliced", sinon.match.same(oElement));
 
 		// code under test
@@ -87,12 +99,22 @@ sap.ui.define([
 
 		assert.strictEqual(oElement["@$ui5.node.isExpanded"], "~new~", "unchanged");
 
+		// Note: an initial placeholder cannot know "@$ui5.node.isExpanded"!
+		_Helper.setPrivateAnnotation(oPlaceholder, "placeholder", 1);
 		oPlaceholder["@$ui5.node.isExpanded"] = "~old~";
 
 		// code under test
 		_AggregationHelper.beforeOverwritePlaceholder(oPlaceholder, oElement, oCache, 42);
 
 		assert.strictEqual(oElement["@$ui5.node.isExpanded"], "~old~");
+
+		delete oElement["@$ui5.node.isExpanded"];
+		delete oPlaceholder["@$ui5.node.isExpanded"];
+
+		// code under test
+		_AggregationHelper.beforeOverwritePlaceholder(oPlaceholder, oElement, oCache, 42);
+
+		assert.notOk("@$ui5.node.isExpanded" in oElement, "undefined not explicitly stored");
 	});
 
 	//*********************************************************************************************
@@ -109,6 +131,9 @@ sap.ui.define([
 			},
 			oPlaceholder = _AggregationHelper.createPlaceholder(9, 42, oCache);
 
+		this.mock(_AggregationHelper).expects("checkNodeProperty").never();
+		// Note: an initial placeholder cannot know "@$ui5.node.isExpanded"!
+		_Helper.setPrivateAnnotation(oPlaceholder, "placeholder", 1);
 		oPlaceholder["@$ui5.node.isExpanded"] = aIsExpandedValues[1];
 
 		assert.throws(function () {
@@ -122,6 +147,8 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.test("beforeOverwritePlaceholder: unexpected element", function (assert) {
+		this.mock(_AggregationHelper).expects("checkNodeProperty").never();
+
 		assert.throws(function () {
 			// code under test
 			_AggregationHelper.beforeOverwritePlaceholder({}); // other args do not matter here
@@ -132,6 +159,8 @@ sap.ui.define([
 	QUnit.test("beforeOverwritePlaceholder: wrong placeholder", function (assert) {
 		var oCache = {},
 			oPlaceholder = _AggregationHelper.createPlaceholder(9, 42, oCache);
+
+		this.mock(_AggregationHelper).expects("checkNodeProperty").never();
 
 		assert.throws(function () {
 			// code under test
@@ -151,7 +180,7 @@ sap.ui.define([
 	});
 
 	//*********************************************************************************************
-["descendants", "filter", "predicate"].forEach(function (sAnnotation) {
+["descendants", "predicate"].forEach(function (sAnnotation) {
 	var sTitle = "beforeOverwritePlaceholder: Unexpected structural change: " + sAnnotation;
 
 	QUnit.test(sTitle, function (assert) {
@@ -159,6 +188,7 @@ sap.ui.define([
 			oElement = {"@$ui5.node.level" : 9},
 			oPlaceholder = _AggregationHelper.createPlaceholder(9, 42, oCache);
 
+		this.mock(_AggregationHelper).expects("checkNodeProperty").never();
 		_Helper.setPrivateAnnotation(oElement, sAnnotation, 0);
 		_Helper.setPrivateAnnotation(oPlaceholder, sAnnotation, false);
 
@@ -172,20 +202,59 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("beforeOverwritePlaceholder: $NodeProperty", function (assert) {
 		var oCache = {},
-			oElement = {"@$ui5.node.level" : 9, SomeNodeID : [23]},
+			oElement = {"@$ui5.node.level" : 9},
+			oError = new Error("Unexpected structural change: Some/NodeID from ... to ..."),
 			oPlaceholder = _AggregationHelper.createPlaceholder(9, 42, oCache);
 
-		// code under test (no ID known yet)
-		_AggregationHelper
-			.beforeOverwritePlaceholder(oPlaceholder, oElement, oCache, 42, "SomeNodeID");
-
-		oPlaceholder.SomeNodeID = "42";
+		this.mock(_AggregationHelper).expects("checkNodeProperty")
+			.withExactArgs(sinon.match.same(oPlaceholder), sinon.match.same(oElement),
+				"Some/NodeID")
+			.throws(oError);
 
 		assert.throws(function () {
 			// code under test
 			_AggregationHelper
-				.beforeOverwritePlaceholder(oPlaceholder, oElement, oCache, 42, "SomeNodeID");
-		}, new Error('Unexpected structural change: SomeNodeID from "42" to [23]'));
+				.beforeOverwritePlaceholder(oPlaceholder, oElement, oCache, 42, "Some/NodeID");
+		}, oError);
+	});
+
+	//*********************************************************************************************
+	QUnit.test("checkNodeProperty", function (assert) {
+		var oHelperMock = this.mock(_Helper);
+
+		oHelperMock.expects("drillDown").withExactArgs("~oOld~", "Some/NodeID").returns(undefined);
+		oHelperMock.expects("drillDown").withExactArgs("~oNew~", "Some/NodeID").returns("42");
+
+		// code under test
+		_AggregationHelper.checkNodeProperty("~oOld~", "~oNew~", "Some/NodeID");
+
+		oHelperMock.expects("drillDown").withExactArgs("~oOld~", "Some/NodeID").returns(undefined);
+		oHelperMock.expects("drillDown").withExactArgs("~oNew~", "Some/NodeID").returns("42");
+
+		assert.throws(function () {
+			// code under test
+			_AggregationHelper.checkNodeProperty("~oOld~", "~oNew~", "Some/NodeID", true);
+		}, new Error('Unexpected structural change: Some/NodeID from undefined to "42"'));
+
+		oHelperMock.expects("drillDown").withExactArgs("~oOld~", "Some/NodeID").returns("42");
+		oHelperMock.expects("drillDown").withExactArgs("~oNew~", "Some/NodeID").returns("42");
+
+		// code under test
+		_AggregationHelper.checkNodeProperty("~oOld~", "~oNew~", "Some/NodeID");
+
+		oHelperMock.expects("drillDown").withExactArgs("~oOld~", "Some/NodeID").returns("42");
+		oHelperMock.expects("drillDown").withExactArgs("~oNew~", "Some/NodeID").returns([23]);
+
+		assert.throws(function () {
+			// code under test
+			_AggregationHelper.checkNodeProperty("~oOld~", "~oNew~", "Some/NodeID");
+		}, new Error('Unexpected structural change: Some/NodeID from "42" to [23]'));
+
+		oHelperMock.expects("drillDown").withExactArgs("~oOld~", "Some/NodeID").returns("42");
+		oHelperMock.expects("drillDown").withExactArgs("~oNew~", "Some/NodeID").returns(undefined);
+
+		// code under test (BCP: 2380047659)
+		_AggregationHelper.checkNodeProperty("~oOld~", "~oNew~", "Some/NodeID");
 	});
 
 	//*********************************************************************************************
@@ -1027,9 +1096,12 @@ sap.ui.define([
 			}, mFixture.mQueryOptions),
 			sQueryOptionsJSON = JSON.stringify(mQueryOptions);
 
-		this.mock(oAggregation).expects("$fetchMetadata").withExactArgs(
-				"/meta/@Org.OData.Aggregation.V1.RecursiveHierarchy#X/NodeProperty/$PropertyPath")
-			.returns(SyncPromise.resolve("aNodeID"));
+		this.mock(oAggregation).expects("$fetchMetadata")
+			.withExactArgs("/meta/@Org.OData.Aggregation.V1.RecursiveHierarchy#X")
+			.returns(SyncPromise.resolve({
+				NodeProperty : {$PropertyPath : "aNodeID"},
+				ParentNavigationProperty : {$NavigationPropertyPath : "aParentNavigation"}
+			}));
 
 		// code under test
 		assert.deepEqual(_AggregationHelper.buildApply4Hierarchy(oAggregation, mQueryOptions), {
@@ -1040,6 +1112,7 @@ sap.ui.define([
 
 		assert.strictEqual(JSON.stringify(mQueryOptions), sQueryOptionsJSON, "unchanged");
 		assert.strictEqual(oAggregation.$NodeProperty, "aNodeID");
+		assert.strictEqual(oAggregation.$ParentNavigationProperty, "aParentNavigation");
 	});
 });
 
@@ -1075,7 +1148,7 @@ sap.ui.define([
 			oSyncPromise = new SyncPromise(function () {});
 
 		this.mock(oAggregation).expects("$fetchMetadata").withExactArgs("/meta/path"
-				+ "/@Org.OData.Aggregation.V1.RecursiveHierarchy#X/NodeProperty/$PropertyPath")
+				+ "/@Org.OData.Aggregation.V1.RecursiveHierarchy#X")
 			.returns(oSyncPromise);
 		this.mock(oSyncPromise).expects("isFulfilled").returns(false);
 		this.mock(oSyncPromise).expects("getResult").never();
@@ -1093,12 +1166,16 @@ sap.ui.define([
 	});
 
 	//*********************************************************************************************
-[undefined, 1, 2, 3].forEach(function (iExpandTo) {
+[undefined, 1, 2, 3, Number.MAX_SAFE_INTEGER, Infinity].forEach(function (iExpandTo) {
 	[false, true].forEach(function (bStored) {
 		[false, true].forEach(function (bAllLevels) {
 			var sTitle = "buildApply4Hierarchy: top levels of nodes, $select, expandTo : "
 				+ iExpandTo + ", property paths already stored: " + bStored
 				+ ", all levels: " + bAllLevels;
+
+			if (iExpandTo >= Number.MAX_SAFE_INTEGER && bAllLevels) {
+				return;
+			}
 
 	QUnit.test(sTitle, function (assert) {
 		var oAggregation = {
@@ -1127,27 +1204,28 @@ sap.ui.define([
 			sQueryOptionsJSON = JSON.stringify(mQueryOptions);
 
 		if (bStored) {
+			oAggregation.$DrillStateProperty = "myDrillState";
 			oAggregation.$NodeProperty = "SomeNodeID";
+			oAggregation.$ParentNavigationProperty = "SomeParentNavigation";
 		}
 		if (bAllLevels) {
-			iExpectedLevels = 9;
-			aExpectedSelect = ["ID", "SomeNodeID", "DistFromRoot"];
+			aExpectedSelect = ["ID", "SomeNodeID", "DistFromRoot", "myDrillState"];
 			oExpectedAggregation = {
 				$DistanceFromRootProperty : "DistFromRoot"
 			};
 			if (bStored) {
 				oAggregation.$DistanceFromRootProperty = "DistFromRoot";
 			}
-		} else if (bStored) {
-			oAggregation.$DrillStateProperty = "myDrillState";
-			if (iExpandTo > 1) {
-				oAggregation.$DistanceFromRootProperty = "DistFromRoot";
-				oAggregation.$LimitedDescendantCountProperty = "LtdDescendant_Count";
-			}
+		} else if (bStored && iExpandTo > 1) {
+			oAggregation.$DistanceFromRootProperty = "DistFromRoot";
+			oAggregation.$LimitedDescendantCountProperty = "LtdDescendant_Count";
 		}
-		oAggregationMock.expects("$fetchMetadata").exactly(bStored ? 0 : 1).withExactArgs(
-				"/meta/@Org.OData.Aggregation.V1.RecursiveHierarchy#X/NodeProperty/$PropertyPath")
-			.returns(SyncPromise.resolve("SomeNodeID"));
+		oAggregationMock.expects("$fetchMetadata").exactly(bStored ? 0 : 1)
+			.withExactArgs("/meta/@Org.OData.Aggregation.V1.RecursiveHierarchy#X")
+			.returns(SyncPromise.resolve({
+				NodeProperty : {$PropertyPath : "SomeNodeID"},
+				ParentNavigationProperty : {$NavigationPropertyPath : "SomeParentNavigation"}
+			}));
 		oAggregationMock.expects("$fetchMetadata").exactly(bStored ? 0 : 1)
 			.withExactArgs("/meta/@com.sap.vocabularies.Hierarchy.v1.RecursiveHierarchy#X")
 			.returns(SyncPromise.resolve({
@@ -1161,14 +1239,19 @@ sap.ui.define([
 			$fetchMetadata : oAggregation.$fetchMetadata, // remember the mock(!)
 			$metaPath : "/meta",
 			$path : "/Foo",
-			$NodeProperty : "SomeNodeID"
+			$DrillStateProperty : "myDrillState",
+			$NodeProperty : "SomeNodeID",
+			$ParentNavigationProperty : "SomeParentNavigation"
 		}, oExpectedAggregation);
 
 		assert.deepEqual(
 			// code under test
 			_AggregationHelper.buildApply4Hierarchy(oAggregation, mQueryOptions, bAllLevels),
 			{
-				$apply : "com.sap.vocabularies.Hierarchy.v1.TopLevels(HierarchyNodes=$root/Foo"
+				$apply : bAllLevels || iExpandTo >= Number.MAX_SAFE_INTEGER
+					? "com.sap.vocabularies.Hierarchy.v1.TopLevels(HierarchyNodes=$root/Foo"
+					+ ",HierarchyQualifier='X',NodeProperty='SomeNodeID')"
+					: "com.sap.vocabularies.Hierarchy.v1.TopLevels(HierarchyNodes=$root/Foo"
 					+ ",HierarchyQualifier='X',NodeProperty='SomeNodeID',Levels=" + iExpectedLevels
 					+ ")",
 				$select : aExpectedSelect,
@@ -1221,9 +1304,12 @@ sap.ui.define([
 			}, mFixture.mQueryOptions),
 			sQueryOptionsJSON = JSON.stringify(mQueryOptions);
 
-		oAggregationMock.expects("$fetchMetadata").withExactArgs("/meta/path"
-				+ "/@Org.OData.Aggregation.V1.RecursiveHierarchy#XYZ/NodeProperty/$PropertyPath")
-			.returns(SyncPromise.resolve("myID"));
+		oAggregationMock.expects("$fetchMetadata")
+			.withExactArgs("/meta/path/@Org.OData.Aggregation.V1.RecursiveHierarchy#XYZ")
+			.returns(SyncPromise.resolve({
+				NodeProperty : {$PropertyPath : "myID"},
+				ParentNavigationProperty : {$NavigationPropertyPath : "myParentNavigation"}
+			}));
 		oAggregationMock.expects("$fetchMetadata")
 			.withExactArgs("/meta/path/@com.sap.vocabularies.Hierarchy.v1.RecursiveHierarchy#XYZ")
 			.returns(SyncPromise.resolve({
@@ -1240,6 +1326,7 @@ sap.ui.define([
 
 		assert.strictEqual(JSON.stringify(mQueryOptions), sQueryOptionsJSON, "unchanged");
 		assert.strictEqual(oAggregation.$NodeProperty, "myID");
+		assert.strictEqual(oAggregation.$ParentNavigationProperty, "myParentNavigation");
 	});
 });
 

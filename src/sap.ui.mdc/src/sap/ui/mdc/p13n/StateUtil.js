@@ -14,14 +14,11 @@ sap.ui.define([
 	 *  This way, <code>Stateutil</code> can create the required changes and retrieve the relevant state of each control.
 	 *
 	 * @author SAP SE
-	 * @private
-	 * @ui5-restricted sap.fe
-	 * @MDC_PUBLIC_CANDIDATE
-	 * @experimental As of version 1.77.0
+	 * @public
 	 * @since 1.77.0
 	 * @alias sap.ui.mdc.p13n.StateUtil
 	 */
-	var StateUtil = {
+	const StateUtil = {
 
 
 		/**
@@ -47,9 +44,7 @@ sap.ui.define([
 		*	To do this, the <code>propertyInfo</code> property of the relevant control can be enriched with the properties used in the provided state.
 		*
 		*
-		* @private
-		* @ui5-restricted sap.fe
-		* @MDC_PUBLIC_CANDIDATE
+		* @public
 		*
 		* @param {sap.ui.mdc.Control} oControl The control that is used to create changes and to which changes are made
 		* @param {object} oState The state in which the control is represented
@@ -106,7 +101,7 @@ sap.ui.define([
 		* @returns {Promise} <code>Promise</code> that resolves after all changes have been applied
 		*/
 		applyExternalState: function(oControl, oState){
-			var oInternalState = Engine.getInstance().internalizeKeys(oControl, oState);
+			const oInternalState = Engine.getInstance().internalizeKeys(oControl, oState);
 			return Engine.getInstance().applyState(oControl, oInternalState, false);
 		},
 
@@ -117,9 +112,7 @@ sap.ui.define([
 		 *  After the returned <code>Promise</code> has been resolved, the returned state is in sync with the according
 		 *  state object of the MDC control (for example, <code>filterConditions</code> for the <code>FilterBar</code> control).
 		 *
-		 * @private
-		 * @ui5-restricted sap.fe
-		 * @MDC_PUBLIC_CANDIDATE
+		 * @public
 		 * @param {sap.ui.mdc.Control} oControl The control instance implementing IxState to retrieve the externalized state
 		 *
 		 * @returns {Promise} <code>Promise</code> that resolves after the current state has been retrieved
@@ -140,17 +133,15 @@ sap.ui.define([
 		 * @returns {Promise} <code>Promise</code> that resolves after the state has been reset
 		 */
 		resetState: function(oControl) {
-			var aInternalKeys = Engine.getInstance().getRegisteredControllers(oControl);
+			const aInternalKeys = Engine.getInstance().getRegisteredControllers(oControl);
 			return Engine.getInstance().reset(oControl, aInternalKeys);
 		},
 
 		/**
 		 * Creates a delta between two states.
 		 *
-		 * @private
-		 * @ui5-restricted sap.fe
 		 *
-		 * @MDC_PUBLIC_CANDIDATE
+		 * @public
 		 * @param {sap.ui.mdc.Control} oControl The control instance implementing IxState
 		 * @param {object} oOldState The prior state
 		 * @param {object} oNewState The new state
@@ -168,9 +159,7 @@ sap.ui.define([
 		 * Attaches an event handler to the <code>StateUtil</code>.
 		 * The event handler may be fired every time a user triggers a personalization change for a control instance during runtime.
 		 *
-		 * @private
-		 * @ui5-restricted sap.fe
-		 * @MDC_PUBLIC_CANDIDATE
+		 * @public
 		 * @param {function} fnListener fnFunction The handler function to call when the event occurs
 		 */
 		attachStateChange: function(fnListener) {
@@ -181,9 +170,7 @@ sap.ui.define([
 		 * Removes a previously attached state change event handler from the <code>StateUtil</code> class.
 		 * The passed parameters must match those used for registration with {@link StateUtil#attachChange} beforehand.
 		 *
-		 * @private
-		 * @ui5-restricted sap.fe
-		 * @MDC_PUBLIC_CANDIDATE
+		 * @public
 		 * @param {function} fnListener fnFunction The handler function to detach from the event
 		 */
 		detachStateChange: function(fnListener) {

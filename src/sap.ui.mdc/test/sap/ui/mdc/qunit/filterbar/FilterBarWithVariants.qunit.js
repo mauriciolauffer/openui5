@@ -14,7 +14,8 @@ sap.ui.define([
 	"sap/ui/fl/apply/_internal/controlVariants/URLHandler",
 	"sap/ui/fl/apply/_internal/flexState/FlexState",
 	"sap/ui/fl/FlexControllerFactory",
-	"sap/ui/mdc/util/TypeUtil"
+	"sap/ui/mdc/DefaultTypeMap",
+	"sap/ui/model/type/String"
 ], function (
 	FilterBar,
 	Manifest,
@@ -27,9 +28,11 @@ sap.ui.define([
 	URLHandler,
 	FlexState,
 	FlexControllerFactory,
-	TypeUtil
+	DefaultTypeMap,
+	StringType
 ) {
 	"use strict";
+
 
 	/*
 	var oVariantMap = {
@@ -567,8 +570,8 @@ sap.ui.define([
 		sinon.stub(ControlVariantApplyAPI, "attachVariantApplied");
 		sinon.stub(ControlVariantApplyAPI, "detachVariantApplied");
 
-		var oVM = new VariantManagement();
-		var oFB = new FilterBar({
+		const oVM = new VariantManagement();
+		const oFB = new FilterBar({
 			variantBackreference: oVM.getId()
 		});
 
@@ -589,11 +592,11 @@ sap.ui.define([
 		sinon.stub(ControlVariantApplyAPI, "attachVariantApplied");
 		sinon.stub(ControlVariantApplyAPI, "detachVariantApplied");
 
-		var oFB = new FilterBar();
+		const oFB = new FilterBar();
 
 		assert.ok(!oFB._hasAssignedVariantManagement());
 
-		var oVM = new VariantManagement();
+		const oVM = new VariantManagement();
 		oFB.setVariantBackreference(oVM);
 
 		assert.ok(oFB._hasAssignedVariantManagement());
@@ -613,14 +616,14 @@ sap.ui.define([
 		sinon.stub(ControlVariantApplyAPI, "attachVariantApplied");
 		sinon.stub(ControlVariantApplyAPI, "detachVariantApplied");
 
-		var oVM = new VariantManagement();
-		var oFB = new FilterBar({
+		const oVM = new VariantManagement();
+		const oFB = new FilterBar({
 			variantBackreference: oVM.getId()
 		});
 
 		assert.ok(oFB._hasAssignedVariantManagement());
 
-		var oVM2 = new VariantManagement();
+		const oVM2 = new VariantManagement();
 
 		sinon.stub(Log, "error");
 
@@ -647,8 +650,8 @@ sap.ui.define([
 	// this test uses internal flexibility variables / modules. To enable this test is has to be adapted to use APIs
 	QUnit.skip("check variant switch without waitForChanges on the FB", function (assert) {
 
-		var oFB, oModel, nCalledOnStandard = 0;
-		var oManifestObj = {
+		let oFB, nCalledOnStandard = 0;
+		const oManifestObj = {
 				"sap.app": {
 					id: "Component",
 					applicationVersion: {
@@ -656,9 +659,14 @@ sap.ui.define([
 					}
 				}
 			};
-		var oManifest = new Manifest(oManifestObj);
+		const oManifest = new Manifest(oManifestObj);
 
-		var oComponent = {
+		const oModel = new VariantModel({}, {
+			flexController: oFlexController,
+			appComponent: oComponent
+		});
+
+		const oComponent = {
 				name: "Component",
 				appVersion: "1.2.3",
 				getId: function() {
@@ -680,21 +688,17 @@ sap.ui.define([
 
 		sinon.stub(ControlVariantApplyAPI, "detachVariantApplied");
 
-		var oFlexController = FlexControllerFactory.createForControl(oComponent, oManifest);
+		const oFlexController = FlexControllerFactory.createForControl(oComponent, oManifest);
 		sinon.stub(oFlexController, "applyVariantChanges").returns(Promise.resolve());
 
-		oModel = new VariantModel({}, {
-			flexController: oFlexController,
-			appComponent: oComponent
-		});
-
-		var fResolveWaitForSwitch, oWaitForSwitchPromise = new Promise(function(resolve) {
+		let fResolveWaitForSwitch;
+		const oWaitForSwitchPromise = new Promise(function(resolve) {
 			fResolveWaitForSwitch = resolve;
 		});
 
 		sinon.stub(FilterBar.prototype, "triggerSearch");
 
-		var fOrigVariantSwitch = FilterBar.prototype._handleVariantSwitch;
+		const fOrigVariantSwitch = FilterBar.prototype._handleVariantSwitch;
 		FilterBar.prototype._handleVariantSwitch = function(oVariant) {
 			fOrigVariantSwitch.apply(oFB, arguments);
 
@@ -707,19 +711,19 @@ sap.ui.define([
 		sinon.stub(oModel, "_initializeManageVariantsEvents");
 		oModel.fnManageClick = function() {};
 
-		var oVM = new VariantManagement("VMId", {});
+		const oVM = new VariantManagement("VMId", {});
 
-		var done = assert.async();
+		const done = assert.async();
 
-		var aProperties = [{
+		const aProperties = [{
 				name: "Category",
 				type: "Edm.String",
-				typeConfig: TypeUtil.getTypeConfig("sap.ui.model.type.String"),
+				typeConfig: DefaultTypeMap.getTypeConfig("sap.ui.model.type.String"),
 				visible: true
 			},{
 			name: "Name",
 			type: "Edm.String",
-			typeConfig: TypeUtil.getTypeConfig("sap.ui.model.type.String"),
+			typeConfig: DefaultTypeMap.getTypeConfig("sap.ui.model.type.String"),
 			visible: true
 		}];
 		return oModel.initialize()
@@ -760,7 +764,7 @@ sap.ui.define([
 						assert.ok(!FilterBar.prototype.triggerSearch.called);
 						assert.equal(nCalledOnStandard, 0);
 
-						var fCallBack = function() { nCalledOnStandard++; return false; };
+						const fCallBack = function() { nCalledOnStandard++; return false; };
 						oVM.registerApplyAutomaticallyOnStandardVariant(fCallBack);
 						oVM.setDisplayTextForExecuteOnSelectionForStandardVariant("TEST");
 

@@ -2,14 +2,7 @@
 <html>
 <head>
 	<meta name="viewport" content="width=device-width,initial-scale=1">
-	<title></title>
-
-	<style>
-		html,
-		body {
-			height: 100%;
-		}
-	</style>
+	<title>ToolPage test page</title>
 	<script src="shared-config.js"></script>
 	<script
 			src="../../../resources/sap-ui-core.js"
@@ -26,7 +19,7 @@
 				key: 'rootpage1',
 				href: '#/rootpage1',
 				items: [{
-					title: 'Child Item 1',
+					title: 'Child Item 1 Child Item 1 Child Item 1 Child Item 1',
 					key: 'page1',
 					href: '#/page1'
 				}, {
@@ -46,11 +39,13 @@
 				icon: 'sap-icon://building',
 				enabled: false
 			}, {
-				title: 'Root Item',
+				title: 'Unselectable Root Item 3',
 				icon: 'sap-icon://card',
 				expanded: false,
+				selectable: false,
 				items: [{
-					title: 'Child Item'
+					title: 'Unselectable Child Item',
+					selectable: false
 				}, {
 					title: 'Child Item'
 				}, {
@@ -256,6 +251,7 @@
 				href: '#/fixeditem'
 			}, {
 				title: 'www.sap.com',
+				selectable: false,
 				icon: 'sap-icon://building',
 				key: 'fixeditem1',
 				href: 'https://www.sap.com',
@@ -268,6 +264,7 @@
 		model.setData(data);
 
 		var sideNavigation = new sap.tnt.SideNavigation("SNav", {
+			width: "30rem",
 			expanded: false,
 			itemSelect: function (event) {
 				navContainer.to(event.getParameter('item').getKey())
@@ -279,10 +276,12 @@
 						icon: '{icon}',
 						enabled: '{enabled}',
 						expanded: '{expanded}',
+						selectable: '{selectable}',
 						key: '{key}',
 						href: '{href}',
 						items: {
 							template: new sap.tnt.NavigationListItem({
+								selectable: '{selectable}',
 								text: '{title}',
 								key: '{key}',
 								href: '{href}',
@@ -300,6 +299,7 @@
 				items: {
 					template: new sap.tnt.NavigationListItem({
 						text: '{title}',
+						selectable: '{selectable}',
 						icon: '{icon}',
 						key: '{key}',
 						href: '{href}',
@@ -317,8 +317,12 @@
 					height: "100%",
 					horizontal: false,
 					content: [
-						new sap.m.Text({
-							text: 'This is the first page'
+						new sap.m.CheckBox("compactMode", {
+							text: "Compact Mode",
+							selected: false,
+							select: function () {
+								jQuery("body").toggleClass("sapUiSizeCompact");
+							}
 						})
 					]
 				}),
@@ -351,6 +355,7 @@
 			content: [
 				new sap.m.Button('menuToggleButton', {
 					icon: 'sap-icon://menu2',
+					tooltip: 'Menu',
 					type: sap.m.ButtonType.Transparent,
 					press: function() {
 						var sideExpanded = toolPage.getSideExpanded();
@@ -365,126 +370,96 @@
 					},
 					layoutData: new sap.m.OverflowToolbarLayoutData({
 						priority: sap.m.OverflowToolbarPriority.NeverOverflow
-					}),
-					tooltip: 'Small Size Navigation'
+					})
+				}),
+				new sap.m.Image({
+					src: "./images/SAP_Logo.png",
+					tooltip: "SAP logo",
+					press: function () {},
+					decorative: false,
+					layoutData: new sap.m.OverflowToolbarLayoutData({
+						priority: sap.m.OverflowToolbarPriority.NeverOverflow
+					})
+				}),
+				new sap.m.Title({
+					id: "productName",
+					text: "Product name",
+					wrapping: false
+				}),
+				new sap.m.Text({
+					id: "secondTitle",
+					text: "Second title",
+					wrapping: false
+				}),
+				new sap.m.ToolbarSpacer(),
+				new sap.m.SearchField({
+					id: "searchField",
+					width: "16rem",
+					layoutData: new sap.m.OverflowToolbarLayoutData({
+						priority: sap.m.OverflowToolbarPriority.Low,
+						group: 1
+					})
 				}),
 				new sap.m.ToolbarSpacer({
-					width: '20px'
-				}),
-				new sap.m.Button({
-					type: sap.m.ButtonType.Transparent,
-					text: "File",
-					press: function() {
-
-					},
+					id: "spacer",
 					layoutData: new sap.m.OverflowToolbarLayoutData({
-						priority: sap.m.OverflowToolbarPriority.Low
+						priority: sap.m.OverflowToolbarPriority.Low,
+						group: 1
 					})
 				}),
 				new sap.m.Button({
+					id: "searchButton",
+					tooltip: "Search",
 					type: sap.m.ButtonType.Transparent,
-					text: "Edit",
-					press: function() {
-
-					},
+					icon: "sap-icon://search",
+					visible: false
+				}),
+				new sap.m.OverflowToolbarButton({
+					tooltip: "Action 1",
+					text: "Action 1",
+					type: sap.m.ButtonType.Transparent,
+					icon: "sap-icon://source-code",
 					layoutData: new sap.m.OverflowToolbarLayoutData({
-						priority: sap.m.OverflowToolbarPriority.Low
+						group: 2
 					})
+				}),
+				new sap.m.OverflowToolbarButton({
+					tooltip: "Action 2",
+					text: "Action 2",
+					type: sap.m.ButtonType.Transparent,
+					icon: "sap-icon://card",
+					layoutData: new sap.m.OverflowToolbarLayoutData({
+						group: 2
+					})
+				}),
+				new sap.m.ToolbarSeparator({
+					layoutData: new sap.m.OverflowToolbarLayoutData({
+						group: 2
+					})
+				}),
+				new sap.m.OverflowToolbarButton({
+					text: "Settings",
+					type: sap.m.ButtonType.Transparent,
+					icon: "sap-icon://action-settings"
 				}),
 				new sap.m.Button({
+					tooltip: "Notifications",
 					type: sap.m.ButtonType.Transparent,
-					text: "Edit",
-					press: function() {
-
-					},
+					icon: "sap-icon://bell",
 					layoutData: new sap.m.OverflowToolbarLayoutData({
-						priority: sap.m.OverflowToolbarPriority.Low
+						priority: sap.m.OverflowToolbarPriority.NeverOverflow
 					})
 				}),
-				new sap.m.Button({
-					type: sap.m.ButtonType.Transparent,
-					text: "Edit",
-					press: function() {
-
-					},
-					layoutData: new sap.m.OverflowToolbarLayoutData({
-						priority: sap.m.OverflowToolbarPriority.Low
-					})
-				}),
-				new sap.m.Button({
-					type: sap.m.ButtonType.Transparent,
-					text: "Edit",
-					press: function() {
-
-					},
-					layoutData: new sap.m.OverflowToolbarLayoutData({
-						priority: sap.m.OverflowToolbarPriority.Low
-					})
-				}),
-				new sap.m.Button({
-					type: sap.m.ButtonType.Transparent,
-					text: "Edit",
-					press: function() {
-
-					},
-					layoutData: new sap.m.OverflowToolbarLayoutData({
-						priority: sap.m.OverflowToolbarPriority.Low
-					})
-				}),
-				new sap.m.Button({
-					type: sap.m.ButtonType.Transparent,
-					text: "Edit",
-					press: function() {
-
-					},
-					layoutData: new sap.m.OverflowToolbarLayoutData({
-						priority: sap.m.OverflowToolbarPriority.Low
-					})
-				}),
-				new sap.m.Button({
-					type: sap.m.ButtonType.Transparent,
-					text: "View",
-					press: function() {
-
-					},
-					layoutData: new sap.m.OverflowToolbarLayoutData({
-						priority: sap.m.OverflowToolbarPriority.Low
-					})
-				}),
-				new sap.m.Button({
-					type: sap.m.ButtonType.Transparent,
-					text: "Navigate",
-					press: function() {
-
-					},
-					layoutData: new sap.m.OverflowToolbarLayoutData({
-						priority: sap.m.OverflowToolbarPriority.Low
-					})
-				}),
-				new sap.m.Button({
-					type: sap.m.ButtonType.Transparent,
-					text: "Code",
-					press: function() {
-
-					},
-					layoutData: new sap.m.OverflowToolbarLayoutData({
-						priority: sap.m.OverflowToolbarPriority.Low
-					})
-				}),
-				new sap.tnt.ToolHeaderUtilitySeparator({
-				}),
+				new sap.tnt.ToolHeaderUtilitySeparator(),
 				new sap.m.ToolbarSpacer({
-					layoutData : new sap.m.OverflowToolbarLayoutData({
-						priority: sap.m.OverflowToolbarPriority.NeverOverflow,
-						minWidth: "20px"
-					})
+					width: "1.125rem"
 				}),
-				new sap.m.Button({
-					type: sap.m.ButtonType.Transparent,
-					text: "User Name",
-					press: function() {
-
-					},
+				new sap.m.Avatar({
+					tooltip: "Profile",
+					src: "images/Woman_avatar_01.png",
+					initials: "UI",
+					displaySize: "XS",
+					press: function () {},
 					layoutData: new sap.m.OverflowToolbarLayoutData({
 						priority: sap.m.OverflowToolbarPriority.NeverOverflow
 					})

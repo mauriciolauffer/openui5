@@ -3,38 +3,43 @@
  */
 
 sap.ui.define([
-	"sap/ui/fl/write/api/FieldExtensibility",
-	"sap/ui/fl/Utils",
-	"sap/ui/fl/Layer",
-	"sap/ui/fl/LayerUtils",
-	"sap/ui/dt/OverlayUtil",
+	"sap/base/util/restricted/_omit",
+	"sap/m/MessageBox",
+	"sap/ui/core/Element",
+	"sap/ui/core/EventBus",
+	"sap/ui/core/Fragment",
+	"sap/ui/core/Lib",
 	"sap/ui/dt/DOMUtil",
 	"sap/ui/dt/ElementUtil",
 	"sap/ui/dt/MetadataPropagationUtil",
-	"sap/ui/rta/util/hasStableId",
-	"sap/m/MessageBox",
-	"sap/ui/rta/util/BindingsExtractor",
-	"sap/base/util/restricted/_omit",
+	"sap/ui/dt/OverlayUtil",
+	"sap/ui/fl/initial/api/Version",
+	"sap/ui/fl/write/api/FieldExtensibility",
+	"sap/ui/fl/Layer",
+	"sap/ui/fl/LayerUtils",
+	"sap/ui/fl/Utils",
 	"sap/ui/model/json/JSONModel",
-	"sap/ui/core/Fragment",
-	"sap/ui/core/Core"
-],
-function(
-	FieldExtensibility,
-	FlexUtils,
-	Layer,
-	FlexLayerUtils,
-	OverlayUtil,
+	"sap/ui/rta/util/BindingsExtractor",
+	"sap/ui/rta/util/hasStableId"
+], function(
+	_omit,
+	MessageBox,
+	Element,
+	EventBus,
+	Fragment,
+	Lib,
 	DOMUtil,
 	ElementUtil,
 	MetadataPropagationUtil,
-	hasStableId,
-	MessageBox,
-	BindingsExtractor,
-	_omit,
+	OverlayUtil,
+	Version,
+	FieldExtensibility,
+	Layer,
+	FlexLayerUtils,
+	FlexUtils,
 	JSONModel,
-	Fragment,
-	Core
+	BindingsExtractor,
+	hasStableId
 ) {
 	"use strict";
 
@@ -48,8 +53,6 @@ function(
 	 * @private
 	 * @since 1.30
 	 * @alias sap.ui.rta.Utils
-	 * @experimental Since 1.30. This class is experimental and provides only limited functionality.
-	 * API of this class might be changed in the future.
 	 */
 
 	var Utils = {};
@@ -58,7 +61,7 @@ function(
 
 	Utils._sFocusableOverlayClass = ".sapUiDtOverlaySelectable";
 
-	Utils._sRtaStyleClassName = '';
+	Utils._sRtaStyleClassName = "";
 
 	/**
 	 * Returns the rta specific Style Class
@@ -96,8 +99,8 @@ function(
 					return FieldExtensibility.isServiceOutdated(oModel.sServiceUrl).then(function(bServiceOutdated) {
 						if (bServiceOutdated) {
 							FieldExtensibility.setServiceValid(oModel.sServiceUrl);
-							//needs FLP to trigger UI restart popup
-							Core.getEventBus().publish("sap.ui.core.UnrecoverableClientStateCorruption", "RequestReload", {});
+							// needs FLP to trigger UI restart popup
+							EventBus.getInstance().publish("sap.ui.core.UnrecoverableClientStateCorruption", "RequestReload", {});
 						}
 					});
 				}
@@ -114,7 +117,7 @@ function(
 	 * @returns{Promise} The Promise which resolves when popup is closed (via Remove OR Cancel actions)
 	 */
 	Utils.openRemoveConfirmationDialog = function(oElement, sText) {
-		var oTextResources = Core.getLibraryResourceBundle("sap.ui.rta");
+		var oTextResources = Lib.getResourceBundleFor("sap.ui.rta");
 		var sTitle;
 		return new Promise(
 			function(resolve) {
@@ -142,11 +145,11 @@ function(
 
 				// create a controller for the action in the Dialog
 				var oFragmentController = {
-					removeField: function() {
+					removeField() {
 						fnCleanUp();
 						resolve(true);
 					},
-					closeDialog: function() {
+					closeDialog() {
 						fnCleanUp();
 						resolve(false);
 					}
@@ -207,7 +210,7 @@ function(
 	Utils.getOverlayInstanceForDom = function(oDomRef) {
 		var sId = oDomRef.getAttribute("id");
 		if (sId) {
-			return Core.byId(sId);
+			return Element.getElementById(sId);
 		}
 		return undefined;
 	};
@@ -220,7 +223,7 @@ function(
 	 */
 	Utils.getFocusedOverlay = function() {
 		if (document.activeElement) {
-			var oElement = Core.byId(document.activeElement.id);
+			var oElement = Element.getElementById(document.activeElement.id);
 			if (oElement && oElement.isA("sap.ui.dt.ElementOverlay")) {
 				return oElement;
 			}
@@ -283,9 +286,7 @@ function(
 		while (oNextFocusableSiblingOverlay && !this.isOverlaySelectable(oNextFocusableSiblingOverlay)) {
 			oNextFocusableSiblingOverlay = OverlayUtil.getNextSiblingOverlay(oNextFocusableSiblingOverlay);
 		}
-		if (!oNextFocusableSiblingOverlay) {
-			oNextFocusableSiblingOverlay = this._findSiblingOverlay(oOverlay, NEXT);
-		}
+		oNextFocusableSiblingOverlay ||= this._findSiblingOverlay(oOverlay, NEXT);
 		return oNextFocusableSiblingOverlay;
 	};
 
@@ -302,11 +303,9 @@ function(
 
 		while (oPreviousFocusableSiblingOverlay && !this.isOverlaySelectable(oPreviousFocusableSiblingOverlay)) {
 			oPreviousFocusableSiblingOverlay = OverlayUtil
-					.getPreviousSiblingOverlay(oPreviousFocusableSiblingOverlay);
+			.getPreviousSiblingOverlay(oPreviousFocusableSiblingOverlay);
 		}
-		if (!oPreviousFocusableSiblingOverlay) {
-			oPreviousFocusableSiblingOverlay = this._findSiblingOverlay(oOverlay, PREVIOUS);
-		}
+		oPreviousFocusableSiblingOverlay ||= this._findSiblingOverlay(oOverlay, PREVIOUS);
 		return oPreviousFocusableSiblingOverlay;
 	};
 
@@ -375,7 +374,7 @@ function(
 	 * @private
 	 */
 	Utils.createFieldLabelId = function(oParentControl, sEntityType, sBindingPath) {
-		return (oParentControl.getId() + "_" + sEntityType + "_" + sBindingPath).replace("/", "_");
+		return (`${oParentControl.getId()}_${sEntityType}_${sBindingPath}`).replace("/", "_");
 	};
 
 	/**
@@ -401,11 +400,11 @@ function(
 		return aPaths;
 	};
 
-	Utils.isOriginalFioriToolbarAccessible = function () {
+	Utils.isOriginalFioriToolbarAccessible = function() {
 		var oRenderer = Utils.getFiori2Renderer();
 		return oRenderer
 			&& oRenderer.getRootControl
-			&& oRenderer.getRootControl().getOUnifiedShell().getHeader();
+			&& oRenderer.getRootControl().getShellHeader();
 	};
 
 	/**
@@ -427,9 +426,9 @@ function(
 	 * @param {Function} fnCustomizer - The customizer is invoked with five arguments:
 	 *                                  (vDestinationValue, vSourceValue, sProperty, mDestination, mSource).
 	 */
-	Utils.extendWith = function (mDestination, mSource, fnCustomizer) {
+	Utils.extendWith = function(mDestination, mSource, fnCustomizer) {
 		if (!(typeof fnCustomizer === "function")) {
-			throw new Error('In order to use extendWith() utility function fnCustomizer should be provided!');
+			throw new Error("In order to use extendWith() utility function fnCustomizer should be provided!");
 		}
 
 		for (var sSourceProperty in mSource) {
@@ -454,7 +453,7 @@ function(
 	 * @returns{boolean} - Returns if <code>oDomElement</code> is currently visible on the screen.
 	 */
 	Utils.isElementInViewport = function(oDomElement) {
-		//TODO: remove when all calls are replaced
+		// TODO: remove when all calls are replaced
 		oDomElement = oDomElement.jquery ? oDomElement.get(0) : oDomElement;
 
 		var mRect = oDomElement.getBoundingClientRect();
@@ -485,30 +484,28 @@ function(
 	 * @returns{Promise} Promise displaying the message box; resolves when it is closed with the pressed button
 	 */
 	Utils.showMessageBox = function(sMessageType, sMessageKey, mPropertyBag) {
-		return Core.getLibraryResourceBundle("sap.ui.rta", true)
-		.then(function(oResourceBundle) {
-			mPropertyBag = mPropertyBag || {};
-			var sMessage = oResourceBundle.getText(sMessageKey, mPropertyBag.error ? [mPropertyBag.error.userMessage || mPropertyBag.error.message || mPropertyBag.error] : undefined);
-			var sTitle = mPropertyBag.titleKey && oResourceBundle.getText(mPropertyBag.titleKey);
-			var vActionTexts =
-				mPropertyBag.actionKeys &&
-				mPropertyBag.actionKeys.map(function(sActionKey) {
-					return oResourceBundle.getText(sActionKey);
-				});
-			var sEmphasizedAction = mPropertyBag.emphasizedActionKey ? oResourceBundle.getText(mPropertyBag.emphasizedActionKey) : undefined;
+		var oResourceBundle = Lib.getResourceBundleFor("sap.ui.rta");
+		mPropertyBag ||= {};
+		var sMessage = oResourceBundle.getText(sMessageKey, mPropertyBag.error ? [mPropertyBag.error.userMessage || mPropertyBag.error.message || mPropertyBag.error] : undefined);
+		var sTitle = mPropertyBag.titleKey && oResourceBundle.getText(mPropertyBag.titleKey);
+		var vActionTexts =
+			mPropertyBag.actionKeys &&
+			mPropertyBag.actionKeys.map(function(sActionKey) {
+				return oResourceBundle.getText(sActionKey);
+			});
+		var sEmphasizedAction = mPropertyBag.emphasizedActionKey ? oResourceBundle.getText(mPropertyBag.emphasizedActionKey) : undefined;
 
-			var bShowCancel = mPropertyBag.showCancel;
-			var mOptions = _omit(mPropertyBag, ["titleKey", "error", "actionKeys", "emphasizedAction", "emphasizedActionKey", "showCancel"]);
-			mOptions.title = sTitle;
-			mOptions.styleClass = Utils.getRtaStyleClassName();
-			mOptions.actions = mOptions.actions || vActionTexts;
-			mOptions.emphasizedAction = sEmphasizedAction || mPropertyBag.emphasizedAction;
-			if (bShowCancel) {
-				mOptions.actions.push(MessageBox.Action.CANCEL);
-			}
+		var bShowCancel = mPropertyBag.showCancel;
+		var mOptions = _omit(mPropertyBag, ["titleKey", "error", "actionKeys", "emphasizedAction", "emphasizedActionKey", "showCancel"]);
+		mOptions.title = sTitle;
+		mOptions.styleClass = Utils.getRtaStyleClassName();
+		mOptions.actions ||= vActionTexts;
+		mOptions.emphasizedAction = sEmphasizedAction || mPropertyBag.emphasizedAction;
+		if (bShowCancel) {
+			mOptions.actions.push(MessageBox.Action.CANCEL);
+		}
 
-			return messageBoxPromise(sMessageType, sMessage, mOptions);
-		});
+		return messageBoxPromise(sMessageType, sMessage, mOptions);
 	};
 
 	function messageBoxPromise(sMessageType, sMessage, mOptions) {
@@ -527,7 +524,7 @@ function(
 	 * @returns{boolean} <code>true</code> when the controls have compatible bindings.
 	 */
 	Utils.checkSourceTargetBindingCompatibility = function(oSource, oTarget, oModel) {
-		oModel = oModel || oSource.getModel();
+		oModel ||= oSource.getModel();
 		var mSourceBindings = BindingsExtractor.collectBindingPaths(oSource, oModel);
 		var sSourceContextBindingPath;
 		var sTargetContextBindingPath;
@@ -569,8 +566,8 @@ function(
 	 * @param {string} sValueFieldName - Field name to use as value
 	 * @returns {object} Hashmap
 	 */
-	Utils.buildHashMapFromArray = function (aArray, sKeyFieldName, sValueFieldName) {
-		return aArray.reduce(function (mMap, oItem) {
+	Utils.buildHashMapFromArray = function(aArray, sKeyFieldName, sValueFieldName) {
+		return aArray.reduce(function(mMap, oItem) {
 			mMap[oItem[sKeyFieldName]] = oItem[sValueFieldName];
 			return mMap;
 		}, {});
@@ -597,49 +594,82 @@ function(
 		}
 
 		return ElementUtil.checkTargetZone(oAggregationOverlay, oMovedOverlay, bOverlayNotInDom)
-			.then(function(bTargetZone) {
-				if (!bTargetZone) {
-					return false;
-				}
+		.then(function(bTargetZone) {
+			if (!bTargetZone) {
+				return false;
+			}
 
-				var oMovedElement = oMovedOverlay.getElement();
-				var oTargetOverlay = oAggregationOverlay.getParent();
-				var oMovedRelevantContainer = oMovedOverlay.getRelevantContainer();
+			var oMovedElement = oMovedOverlay.getElement();
+			var oTargetOverlay = oAggregationOverlay.getParent();
+			var oMovedRelevantContainer = oMovedOverlay.getRelevantContainer();
 
-				// the element or the parent overlay might be destroyed or not available
-				if (!oMovedElement || !oTargetOverlay) {
-					return false;
-				}
+			// the element or the parent overlay might be destroyed or not available
+			if (!oMovedElement || !oTargetOverlay) {
+				return false;
+			}
 
-				var oTargetElement = oTargetOverlay.getElement();
-				var oAggregationDtMetadata = oAggregationOverlay.getDesignTimeMetadata();
+			var oTargetElement = oTargetOverlay.getElement();
+			var oAggregationDtMetadata = oAggregationOverlay.getDesignTimeMetadata();
 
-				// determine target relevantContainer
-				var vTargetRelevantContainerAfterMove = MetadataPropagationUtil.getRelevantContainerForPropagation(oAggregationDtMetadata.getData(), oMovedElement);
-				vTargetRelevantContainerAfterMove = vTargetRelevantContainerAfterMove || oTargetElement;
+			// determine target relevantContainer
+			var vTargetRelevantContainerAfterMove = MetadataPropagationUtil.getRelevantContainerForPropagation(oAggregationDtMetadata.getData(), oMovedElement);
+			vTargetRelevantContainerAfterMove ||= oTargetElement;
 
-				// check for same relevantContainer
-				if (
-					!oMovedRelevantContainer
+			// check for same relevantContainer
+			if (
+				!oMovedRelevantContainer
 					|| !vTargetRelevantContainerAfterMove
 					|| !hasStableId(oTargetOverlay)
 					|| oMovedRelevantContainer !== vTargetRelevantContainerAfterMove
-				) {
-					return false;
-				}
+			) {
+				return false;
+			}
 
-				// check if binding context is the same
-				if (
-					// binding context is not relevant if the element is being moved inside its parent
-					oMovedOverlay.getParent().getElement() !== oTargetElement
+			// check if binding context is the same
+			if (
+			// binding context is not relevant if the element is being moved inside its parent
+				oMovedOverlay.getParent().getElement() !== oTargetElement
 					&& !Utils.checkSourceTargetBindingCompatibility(oMovedElement, oTargetElement)
-				) {
-					return false;
-				}
+			) {
+				return false;
+			}
 
-				// check if movedOverlay is movable into the target aggregation
-				return fnHasMoveAction(oAggregationOverlay, oMovedElement, vTargetRelevantContainerAfterMove, oPlugin);
-			});
+			// check if movedOverlay is movable into the target aggregation
+			return fnHasMoveAction(oAggregationOverlay, oMovedElement, vTargetRelevantContainerAfterMove, oPlugin);
+		});
+	};
+
+	/**
+	 * Check if an existing draft would be overwritten if a change is done on the currently shown version
+	 * If so it opens a confirmation dialog.
+	 * @param {object} oVersionsModel The versions model
+	 * @return {Promise.<boolean>} It either resolves with an indicator whether a confirmation
+	 * was shown or rejects with "cancel" if cancel was pressed
+	 */
+	Utils.checkDraftOverwrite = function(oVersionsModel, bOnlySwitch) {
+		var bBackEndDraftExists = oVersionsModel.getProperty("/backendDraft");
+		var bDraftDisplayed = oVersionsModel.getProperty("/displayedVersion") === Version.Number.Draft;
+
+		if (
+			bDraftDisplayed ||
+			!bBackEndDraftExists ||
+			bOnlySwitch
+		) {
+			return Promise.resolve(false);
+		}
+
+		// warn the user: the existing draft would be discarded in case the user saves
+		return Utils.showMessageBox("warning", "MSG_DRAFT_DISCARD_AND_CREATE_NEW_DIALOG", {
+			titleKey: "TIT_DRAFT_DISCARD_DIALOG",
+			actions: [MessageBox.Action.OK, MessageBox.Action.CANCEL],
+			emphasizedAction: MessageBox.Action.OK
+		})
+		.then(function(sAction) {
+			if (sAction !== MessageBox.Action.OK) {
+				throw "cancel";
+			}
+			return true;
+		});
 	};
 
 	return Utils;

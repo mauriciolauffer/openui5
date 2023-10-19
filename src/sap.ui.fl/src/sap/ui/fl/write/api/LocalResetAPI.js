@@ -25,7 +25,6 @@ sap.ui.define([
 	 * Provides an API to reset containers.
 	 *
 	 * @namespace sap.ui.fl.write.api.LocalResetAPI
-	 * @experimental Since 1.90
 	 * @since 1.90
 	 * @private
 	 * @ui5-restricted sap.ui.rta
@@ -39,12 +38,12 @@ sap.ui.define([
 		};
 		var oChangePersistence = ChangePersistenceFactory.getChangePersistenceForControl(oControl);
 		return oChangePersistence.getAllUIChanges(mPropertyBag)
-			.filter(function(oChange) {
-				return (
-					oChange.getState() !== States.LifecycleState.DELETED
+		.filter(function(oChange) {
+			return (
+				oChange.getState() !== States.LifecycleState.DELETED
 					&& oChange.getVariantReference() === (sCurrentVariant || undefined)
-				);
-			});
+			);
+		});
 	}
 
 	function getNestedChangesForControlCheck(oTargetControl) {
@@ -68,50 +67,46 @@ sap.ui.define([
 
 		function checkChange(oChange) {
 			return oChange.getDependentSelectorList()
-				.map(function (sSelector) {
-					return JsControlTreeModifier.bySelector(sSelector, oComponent);
-				})
-				.filter(Boolean)
-				.some(function (oDependent) {
-					return isPartOfTargetControlTree(oDependent);
-				});
+			.map(function(sSelector) {
+				return JsControlTreeModifier.bySelector(sSelector, oComponent);
+			})
+			.filter(Boolean)
+			.some(function(oDependent) {
+				return isPartOfTargetControlTree(oDependent);
+			});
 		}
 
 		return checkChange;
 	}
 
-	LocalResetAPI.resetChanges = function (aChanges, oAppComponent) {
+	LocalResetAPI.resetChanges = function(aChanges, oAppComponent) {
 		// Reset in reverse order, make sure not to mutate the original order as it is used to restore
 		var aReverseChanges = aChanges.slice().reverse();
 
-		var aRevertQueue = aReverseChanges.map(function (oChange) {
+		var aRevertQueue = aReverseChanges.map(function(oChange) {
 			var oControl = JsControlTreeModifier.bySelector(oChange.getSelector(), oAppComponent);
-			return function () {
-				return PersistenceWriteAPI.remove({
+			// execPromiseQueueSequentially expects promises wrapped inside a function
+			return function() {
+				oChange.setQueuedForRevert();
+				return ChangesWriteAPI.revert({
 					change: oChange,
-					selector: oControl
-				})
-				.then(function () {
-					oChange.setQueuedForRevert();
-					return ChangesWriteAPI.revert({
-						change: oChange,
-						element: oControl
-					});
+					element: oControl
 				});
 			};
 		});
-		return Utils.execPromiseQueueSequentially(aRevertQueue);
+
+		return PersistenceWriteAPI.remove({
+			flexObjects: aReverseChanges,
+			selector: oAppComponent
+		})
+		.then(Utils.execPromiseQueueSequentially.bind(Utils, aRevertQueue));
 	};
 
-	LocalResetAPI.restoreChanges = function (aChanges, oAppComponent) {
-		var aApplyQueue = aChanges.map(function (oChange) {
-			return function () {
+	LocalResetAPI.restoreChanges = function(aChanges, oAppComponent) {
+		var aApplyQueue = aChanges.map(function(oChange) {
+			return function() {
 				oChange.restorePreviousState();
 				var oControl = JsControlTreeModifier.bySelector(oChange.getSelector(), oAppComponent);
-				PersistenceWriteAPI.add({
-					change: oChange,
-					selector: oControl
-				});
 				if (oChange.getState() === States.LifecycleState.PERSISTED) {
 					var oChangePersistence = ChangePersistenceFactory.getChangePersistenceForControl(oAppComponent);
 					var aDirtyChanges = oChangePersistence.getDirtyChanges();
@@ -120,13 +115,16 @@ sap.ui.define([
 						aDirtyChanges.splice(iIndex, 1);
 					}
 				}
-
 				return ChangesWriteAPI.apply({
 					change: oChange,
 					element: oControl,
 					modifier: JsControlTreeModifier
 				});
 			};
+		});
+		PersistenceWriteAPI.add({
+			flexObjects: aChanges,
+			selector: oAppComponent
 		});
 		return Utils.execPromiseQueueSequentially(aApplyQueue);
 	};

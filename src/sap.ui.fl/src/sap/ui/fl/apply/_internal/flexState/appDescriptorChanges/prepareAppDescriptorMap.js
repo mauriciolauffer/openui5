@@ -17,7 +17,6 @@ sap.ui.define([
 	 *
 	 * @returns {object} The prepared map of App Descriptors
 	 *
-	 * @experimental since 1.74
 	 * @function
 	 * @since 1.74
 	 * @private
@@ -26,7 +25,7 @@ sap.ui.define([
 	 */
 	return function(mPropertyBag) {
 		var aChangeDefinitions = mPropertyBag.storageResponse.changes.appDescriptorChanges || [];
-		//TODO: add filtering for condensable changeTypes once necessary
+		// TODO: add filtering for condensable changeTypes once necessary
 
 		var aChanges = aChangeDefinitions.map(function(oChangeDefinition) {
 			return FlexObjectFactory.createFromFileContent(oChangeDefinition);

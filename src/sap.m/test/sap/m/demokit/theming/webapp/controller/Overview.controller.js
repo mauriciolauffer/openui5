@@ -63,27 +63,59 @@ sap.ui.define([
 				"items": [
 					{
 						"key": "1",
-						"text": "Fiori 3"
+						"text": "Morning Horizon"
 					},
 					{
 						"key": "2",
-						"text": "Belize"
+						"text": "Evening Horizon"
 					},
 					{
 						"key": "3",
-						"text": "Belize Plus"
+						"text": "Horizon High Contrast Black"
 					},
 					{
 						"key": "4",
-						"text": "High Contrast White"
+						"text": "Horizon High Contrast White"
 					},
 					{
 						"key": "5",
-						"text": "High Contrast Black"
+						"text": "Quartz Light"
 					},
 					{
 						"key": "6",
+						"text": "Quartz Dark"
+					},
+					{
+						"key": "7",
+						"text": "Quartz High Contrast Black"
+					},
+					{
+						"key": "8",
+						"text": "Quartz High Contrast White"
+					},
+					{
+						"key": "9",
+						"text": "Belize"
+					},
+					{
+						"key": "10",
+						"text": "Belize Deep"
+					},
+					{
+						"key": "11",
+						"text": "Belize High Contrast Black"
+					},
+					{
+						"key": "12",
+						"text": "Belize High Contrast White"
+					},
+					{
+						"key": "13",
 						"text": "Blue Crystal"
+					},
+					{
+						"key": "14",
+						"text": "High Contrast Black"
 					}
 				]
 			};
@@ -112,15 +144,15 @@ sap.ui.define([
 			}, this);
 		},
 		getParameterMetadata: function (fnCallback) {
-			jQuery.ajax("../../../../../../resources/sap/ui/core/themes/sap_belize/base.less", {
+			jQuery.ajax("../../../../../../resources/sap/ui/core/themes/base/base.less", {
 				success: function (data) {
-					jQuery.ajax("../../../../../../resources/sap/ui/core/themes/sap_belize/global.less", {
+					jQuery.ajax("../../../../../../resources/sap/ui/core/themes/base/global.less", {
 						success: function (namedata) {
 							var oFileThemeParameters = data.replace("\\", ""),
-								oFileBelize = namedata.replace("\\", ""),
-								aBelizeMapping = [],
+								oFileBase = namedata.replace("\\", ""),
+								aBaseMapping = [],
 								aThemeParameters = [];
-							var aBelize, oThemeParameter, sElement, aProperties, oThemeParameter, aAllThemes, oBelize;
+							var aBase, oThemeParameter, sElement, aProperties, oThemeParameter, aAllThemes, oBase;
 							var pattern = /[^[\]]+(?=])/gmi,
 								patternAnf = /"(.*?)"/gmi,
 								patternTheme = /[^\@]+(?=:)/gmi,
@@ -155,25 +187,25 @@ sap.ui.define([
 								oThemeParameter.themeName = sElement.match(patternTheme)[0];
 								aThemeParameters.push(oThemeParameter);
 							});
-							aBelize = oFileBelize.match(patternWithAt);
-							aBelize.forEach(function (element, index) {
-								oBelize = {};
+							aBase = oFileBase.match(patternWithAt);
+							aBase.forEach(function (element, index) {
+								oBase = {};
 								if (element.indexOf(",") > -1) {
-									oBelize.themeNameUI = element.substring(0, element.indexOf(",") + 1).match(patternThemeNormalKomma)[0];
+									oBase.themeNameUI = element.substring(0, element.indexOf(",") + 1).match(patternThemeNormalKomma)[0];
 								} else if (element.indexOf(":", element.indexOf(":") + 1)) {
 									if ((element.match(/@/g) || []).length == 2) {
-										oBelize.themeNameUI = element.match(patternThemeUi)[0];
+										oBase.themeNameUI = element.match(patternThemeUi)[0];
 									}
 								} else {
-									oBelize.themeNameUI = element.match(patternThemeNormal)[0];
+									oBase.themeNameUI = element.match(patternThemeNormal)[0];
 								}
-								oBelize.themeName = element.match(patternThemeNormal)[0];
-								aBelizeMapping.push(oBelize);
+								oBase.themeName = element.match(patternThemeNormal)[0];
+								aBaseMapping.push(oBase);
 							});
 							for (var i = 0; i < aThemeParameters.length; i++) {
-								for (var j = 0; j < aBelizeMapping.length; j++) {
-									if (aBelizeMapping[j].themeName === aThemeParameters[i].themeName) {
-										aThemeParameters[i].themeNameUI = aBelizeMapping[j].themeNameUI;
+								for (var j = 0; j < aBaseMapping.length; j++) {
+									if (aBaseMapping[j].themeName === aThemeParameters[i].themeName) {
+										aThemeParameters[i].themeNameUI = aBaseMapping[j].themeNameUI;
 										break;
 									}
 								}
@@ -191,6 +223,7 @@ sap.ui.define([
 
 			var oData = {Data: []};
 			for (var sName in oParams) {
+				var sNameCheck  = sName;
 				theming = "";
 				characteristic = "";
 				controlgroup = "";
@@ -205,10 +238,12 @@ sap.ui.define([
 					if (oParameterMetadata[i].themeNameUI === sName) {
 						description = oParameterMetadata[i].desc;
 						tags = oParameterMetadata[i].tags;
-						theming = "";
-						characteristic = "";
-						controlgroup = "";
-						text = "";
+						if (sNameCheck != sName) {
+							theming = "";
+							characteristic = "";
+							controlgroup = "";
+							text = "";
+						}
 						if (tags) {
 							if (tags.indexOf('"Color"') > -1) {
 								characteristic = "Color";
@@ -648,29 +683,61 @@ sap.ui.define([
 			var value = oEvent.getParameter("value");
 			this.onAction();
 			switch (value) {
+				case "Morning Horizon":
+					oCore.applyTheme("sap_horizon");
+					this.byId("title").setText("Details for ''Morning Horizon''");
+					break;
+				case "Evening Horizon":
+					oCore.applyTheme("sap_horizon_dark");
+					this.byId("title").setText("Details for ''Evening Horizon''");
+					break;
+				case "Horizon High Contrast Black":
+					oCore.applyTheme("sap_horizon_hcb");
+					this.byId("title").setText("Details for ''Horizon High Contrast Black''");
+					break;
+				case "Horizon High Contrast White":
+					oCore.applyTheme("sap_horizon_hcw");
+					this.byId("title").setText("Details for ''Horizon High Contrast White''");
+					break;
+				case "Quartz Light":
+					oCore.applyTheme("sap_fiori_3");
+					this.byId("title").setText("Details for ''Quartz Light''");
+					break;
+				case "Quartz Dark":
+					oCore.applyTheme("sap_fiori_3_dark");
+					this.byId("title").setText("Details for ''Quartz Dark''");
+					break;
+				case "Quartz High Contrast Black":
+					oCore.applyTheme("sap_fiori_3_hcb");
+					this.byId("title").setText("Details for ''Quartz High Contrast Black''");
+					break;
+				case "Quartz High Contrast White":
+					oCore.applyTheme("sap_fiori_3_hcw");
+					this.byId("title").setText("Details for ''Quartz High Contrast White''");
+					break;
 				case "Belize":
 					oCore.applyTheme("sap_belize");
 					this.byId("title").setText("Details for ''Belize''");
+					break;
+				case "Belize Deep":
+					oCore.applyTheme("sap_belize_plus");
+					this.byId("title").setText("Details for ''Belize Deep''");
+					break;
+				case "Belize High Contrast Black":
+					oCore.applyTheme("sap_belize_hcb");
+					this.byId("title").setText("Details for ''Belize High Contrast Black''");
+					break;
+				case "Belize High Contrast White":
+					oCore.applyTheme("sap_belize_hcw");
+					this.byId("title").setText("Details for ''Belize High Contrast White''");
 					break;
 				case "Blue Crystal":
 					oCore.applyTheme("sap_bluecrystal");
 					this.byId("title").setText("Details for ''Blue Crystal''");
 					break;
-				case "High Contrast White":
-					oCore.applyTheme("sap_belize_hcw");
-					this.byId("title").setText("Details for ''High Contrast White''");
-					break;
-				case "Belize Plus":
-					oCore.applyTheme("sap_belize_plus");
-					this.byId("title").setText("Details for ''Belize Plus''");
-					break;
 				case "High Contrast Black":
-					oCore.applyTheme("sap_belize_hcb");
+					oCore.applyTheme("sap_hcb");
 					this.byId("title").setText("Details for ''High Contrast Black''");
-					break;
-				case "Fiori 3":
-					oCore.applyTheme("sap_fiori_3");
-					this.byId("title").setText("Details for ''Fiori 3''");
 					break;
 			}
 		},

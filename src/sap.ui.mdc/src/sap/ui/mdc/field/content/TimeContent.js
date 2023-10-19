@@ -2,14 +2,16 @@
  * ${copyright}
  */
 sap.ui.define([
-	"sap/ui/mdc/field/content/DefaultContent",
-	"sap/ui/mdc/field/content/DateContent"
-], function(DefaultContent, DateContent) {
+	'sap/ui/mdc/field/content/DefaultContent',
+	'sap/ui/mdc/field/content/DateContent',
+	'sap/ui/mdc/enums/OperatorName'
+], function(DefaultContent, DateContent, OperatorName) {
 	"use strict";
 
 	/**
 	 * Object-based definition of the time content type that is used in the {@link sap.ui.mdc.field.content.ContentFactory}.
-	 * This defines which controls to load and create for a given {@link sap.ui.mdc.enum.ContentMode}.
+	 * This defines which controls to load and create for a given {@link sap.ui.mdc.enums.ContentMode}.
+	 * @namespace
 	 * @author SAP SE
 	 * @private
 	 * @ui5-restricted sap.ui.mdc
@@ -17,12 +19,11 @@ sap.ui.define([
 	 * @since 1.87
 	 * @alias sap.ui.mdc.field.content.TimeContent
 	 * @extends sap.ui.mdc.field.content.DateContent
-	 * @MDC_PUBLIC_CANDIDATE
 	 */
-	var TimeContent = Object.assign({}, DateContent, {
+	const TimeContent = Object.assign({}, DateContent, {
 		getEditOperator: function() {
 			return {
-				"EQ": { name: "sap/m/TimePicker", create: this._createDatePickerControl }  // as same API as DatePicker
+				[OperatorName.EQ]: { name: "sap/m/TimePicker", create: this._createDatePickerControl }  // as same API as DatePicker
 			};
 		},
 		getEdit: function() {

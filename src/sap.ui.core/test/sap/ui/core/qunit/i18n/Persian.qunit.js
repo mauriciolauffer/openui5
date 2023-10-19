@@ -1,7 +1,9 @@
 /*global QUnit, sinon */
 sap.ui.define([
-	"sap/ui/core/date/Persian"
-], function(Persian) {
+	"sap/base/Log",
+	"sap/ui/core/date/Persian",
+	"sap/ui/core/date/UI5Date"
+], function(Log, Persian, UI5Date) {
 	"use strict";
 
 	// Test data
@@ -21,12 +23,21 @@ sap.ui.define([
 	];
 
 	//1. Instance related
-	QUnit.module("sap.ui.core.date.Persian");
+	QUnit.module("sap.ui.core.date.Persian", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
+		beforeEach: function () {
+			this.oLogMock = this.mock(Log);
+			this.oLogMock.expects("error").never();
+			this.oLogMock.expects("warning").never();
+		}
+	});
 
 	QUnit.test("with no arguments", function (assert) {
 		var clock = sinon.useFakeTimers(); // 1, January 1970 = 11 Dey 1348 (11.10.1348)
 		var oPersianDate = new Persian(); //11 Dey 1348 (11.10.1348)
-		var now = new Date();// 1, January 1970
+		var now = UI5Date.getInstance();// 1, January 1970
 		verifyDate(assert, "Constructor with no parameters must always return the Persian date corresponding to the current " +
 		"Gregorian one.", oPersianDate, 1348, 9, 11, now.getDay(), now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
 		clock.restore();
@@ -42,18 +53,18 @@ sap.ui.define([
 		assert.ok(isInvalid(oPersianDate), "Constructor with object as parameter must return an invalid date");
 
 		oPersianDate = new Persian(0); //1, January 1970 = 11 Dey 1348 (11.10.1348)
-		var now = new Date(0);
+		var now = UI5Date.getInstance(0);
 
 		verifyDate(assert, "Constructor with value(timestamp)=0 must represents PersianDate corresponding to the date of 1st January 1970 Gregorian/(11.10.1348 Persian)",
 				oPersianDate, 1348, 9, 11, now.getDay(), now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
 
 		var iOneDay = 24 * 60 * 60 * 1000;
 		oPersianDate = new Persian(iOneDay); //2, January 1970 = 12 Dey 1348 (11.10.1348)
-		var oGregorianDate = new Date(iOneDay);
+		var oGregorianDate = UI5Date.getInstance(iOneDay);
 		verifyDate(assert, "Constructor with value(timestamp)= 'one day after 01.01.1970' must represents PersianDate corresponding to the date of 2nd January 1970 Gregorian/(10.10.1348 Persian)",
 				oPersianDate, 1348, 9, 12, oGregorianDate.getDay(), oGregorianDate.getHours(), oGregorianDate.getMinutes(), oGregorianDate.getSeconds(), oGregorianDate.getMilliseconds());
 
-		oGregorianDate = new Date(-iOneDay);
+		oGregorianDate = UI5Date.getInstance(-iOneDay);
 		oPersianDate = new Persian(-iOneDay); //31, December 1969 = 10 Dey 1348 (11.10.1348)
 		verifyDate(assert, "Constructor with value(timestamp)= 'one day before 01.01.1970' must represents PersianDate corresponding to the date of 31st December 1969 Gregorian/(12.10.1348 Persian)",
 				oPersianDate, 1348, 9, 10, oGregorianDate.getDay(), oGregorianDate.getHours(), oGregorianDate.getMinutes(), oGregorianDate.getSeconds(), oGregorianDate.getMilliseconds());
@@ -235,7 +246,7 @@ sap.ui.define([
 	QUnit.test("Convert Gregorian to Persian dates", function (assert) {
 		var oGregorianDate, oExpectedPersianDate, oCalculatedPersianDate;
 		for (var i = 0; i < aTestData.length; i++) {
-			oGregorianDate = createGregorianDateFromTestEntry(aTestData[i], true);
+			oGregorianDate = createGregorianDateFromTestEntry(aTestData[i]);
 			oExpectedPersianDate = createPersianDateFromTestEntry(aTestData[i], true);
 			oCalculatedPersianDate = new Persian(oGregorianDate.getTime());
 			compareTwoDates(assert, "Gregorian2Persian " + i, oCalculatedPersianDate, oExpectedPersianDate);
@@ -246,7 +257,7 @@ sap.ui.define([
 		var oPersianDate, oExpectedGregorianDate, oCalculatedGregorianDate;
 		for (var i = 0; i < aTestData.length; i++) {
 			oPersianDate = createPersianDateFromTestEntry(aTestData[i], true);
-			oExpectedGregorianDate = createGregorianDateFromTestEntry(aTestData[i], true);
+			oExpectedGregorianDate = createGregorianDateFromTestEntry(aTestData[i]);
 			oCalculatedGregorianDate = oPersianDate.getJSDate();
 			compareTwoDates(assert, "Persian2Gregorian " + i, oCalculatedGregorianDate, oExpectedGregorianDate);
 		}
@@ -277,19 +288,18 @@ sap.ui.define([
 	}
 
 	function createPersianDateFromTestEntry(oEntry, bUTC) {
-		return createDateFromTestEntry(oEntry.Persian, Persian, bUTC);
-	}
-
-	function createGregorianDateFromTestEntry(oEntry, bUTC) {
-		return createDateFromTestEntry(oEntry.Gregorian, Date, bUTC);
-	}
-
-	function createDateFromTestEntry(oDateEntry, type, bUTC) {
+		var oDateEntry = oEntry.Persian;
 		if (bUTC) {
-			return new type(type.UTC(oDateEntry.year, oDateEntry.month, oDateEntry.day));
+			// eslint-disable-next-line new-cap
+			return new Persian(Persian.UTC(oDateEntry.year, oDateEntry.month, oDateEntry.day));
 		} else {
-			return new type(oDateEntry.year, oDateEntry.month, oDateEntry.day);
+			return new Persian(oDateEntry.year, oDateEntry.month, oDateEntry.day);
 		}
+	}
+
+	function createGregorianDateFromTestEntry(oEntry) {
+		var oDateEntry = oEntry.Gregorian;
+		return UI5Date.getInstance(Date.UTC(oDateEntry.year, oDateEntry.month, oDateEntry.day));
 	}
 
 	function isInvalid(oDate) {

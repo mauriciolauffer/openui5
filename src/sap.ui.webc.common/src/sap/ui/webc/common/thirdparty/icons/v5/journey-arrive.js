@@ -6,7 +6,7 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
   });
   _exports.pathData = _exports.ltr = _exports.default = _exports.accData = void 0;
   const name = "journey-arrive";
-  const pathData = "M435.5 20q32 0 54 22t22 54v307q0 33-22 55t-54 22h-307q-32 0-54.5-22t-22.5-55v-51q0-11 7.5-18.5t18.5-7.5 18.5 7.5 7.5 18.5v51q0 11 7 18.5t18 7.5h307q11 0 18-7.5t7-18.5V96q0-25-25-25h-307q-25 0-25 25v52q0 11-7.5 18t-18.5 7-18.5-7-7.5-18V96q0-32 22.5-54t54.5-22h307zm-138 255h-271q-11 0-18.5-7T.5 250q0-12 7.5-19t18.5-7h271l-33-33q-8-7-8-18t8-18q7-7 17-7 11 0 18 7l77 77q8 8 8 18t-8 18l-77 76q-8 8-18 8-9 0-17-8-8-7-8-18 0-10 8-17z";
+  const pathData = "M422 32q38 0 64 26t26 64v268q0 38-26 64t-64 26H154q-38 0-64-26t-26-64v-44q0-11 7.5-18t18.5-7 18 7 7 18v44q0 17 11.5 28t27.5 11h268q17 0 28-11t11-28V122q0-17-11-28t-28-11H154q-16 0-27.5 11T115 122v15q0 11-7 18.5T90 163t-18.5-7.5T64 137v-15q0-38 26-64t64-26h268zM303 275H26q-11 0-18.5-7T0 250t7.5-18.5T26 224h264l-26-27q-8-8-8-18 0-11 7.5-18t18.5-7 18 7l77 77q7 9 7 18t-7 18l-77 77q-7 7-18 7t-18.5-7-7.5-18q0-10 8-18z";
   _exports.pathData = pathData;
   const ltr = false;
   _exports.ltr = ltr;
@@ -20,6 +20,6 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
     collection,
     packageName
   });
-  var _default = "journey-arrive";
+  var _default = "SAP-icons-v5/journey-arrive";
   _exports.default = _default;
 });

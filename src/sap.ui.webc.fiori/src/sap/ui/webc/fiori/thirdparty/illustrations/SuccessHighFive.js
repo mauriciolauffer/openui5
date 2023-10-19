@@ -25,11 +25,10 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
   _sapIllusDialogSuccessHighFive = _interopRequireDefault(_sapIllusDialogSuccessHighFive);
   _sapIllusSceneSuccessHighFive = _interopRequireDefault(_sapIllusSceneSuccessHighFive);
   _sapIllusSpotSuccessHighFive = _interopRequireDefault(_sapIllusSpotSuccessHighFive);
-
   function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
   const name = "SuccessHighFive";
   const set = "fiori";
+  const collection = "V4";
   const title = _i18nDefaults.IM_TITLE_BALLOONSKY;
   const subtitle = _i18nDefaults.IM_SUBTITLE_BALLOONSKY;
   (0, _Illustrations.registerIllustration)(name, {
@@ -38,6 +37,7 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
     spotSvg: _sapIllusSpotSuccessHighFive.default,
     title,
     subtitle,
-    set
+    set,
+    collection
   });
 });

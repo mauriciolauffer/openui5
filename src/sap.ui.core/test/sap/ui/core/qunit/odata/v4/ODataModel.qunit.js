@@ -5,8 +5,11 @@ sap.ui.define([
 	"sap/base/Log",
 	"sap/ui/base/SyncPromise",
 	"sap/ui/core/Configuration",
+	"sap/ui/core/Rendering",
+	"sap/ui/core/Supportability",
 	"sap/ui/core/cache/CacheManager",
 	"sap/ui/core/message/Message",
+	"sap/ui/core/Messaging",
 	"sap/ui/model/Binding",
 	"sap/ui/model/BindingMode",
 	"sap/ui/model/Context",
@@ -22,9 +25,10 @@ sap.ui.define([
 	"sap/ui/model/odata/v4/lib/_Requestor",
 	"sap/ui/core/library",
 	"sap/ui/test/TestUtils"
-], function (Log, SyncPromise, Configuration, CacheManager, Message, Binding, BindingMode,
-		BaseContext, Model, OperationMode, Context, ODataMetaModel, ODataModel, SubmitMode, _Helper,
-		_MetadataRequestor, _Parser, _Requestor, library, TestUtils) {
+], function (Log, SyncPromise, Configuration, Rendering, Supportability, CacheManager, Message,
+		Messaging, Binding, BindingMode, BaseContext, Model, OperationMode, Context,
+		ODataMetaModel, ODataModel, SubmitMode, _Helper, _MetadataRequestor, _Parser, _Requestor,
+		library, TestUtils) {
 	"use strict";
 
 	var sClassName = "sap.ui.model.odata.v4.ODataModel",
@@ -83,8 +87,8 @@ sap.ui.define([
 			return new ODataModel({useBatch : true});
 		}, new Error("Unsupported parameter: useBatch"));
 		assert.throws(function () {
-			return new ODataModel({operationMode : OperationMode.Auto, serviceUrl : "/foo/"});
-		}, new Error("Unsupported operation mode: Auto"), "Unsupported OperationMode");
+			return new ODataModel({operationMode : OperationMode.Client, serviceUrl : "/foo/"});
+		}, new Error("Unsupported operation mode: Client"), "Unsupported OperationMode");
 
 		this.mock(ODataModel.prototype).expects("initializeSecurityToken").never();
 		this.mock(_Requestor.prototype).expects("sendOptimisticBatch").never();
@@ -109,12 +113,12 @@ sap.ui.define([
 
 		this.mock(ODataModel.prototype).expects("buildQueryOptions")
 			.withExactArgs({}, false, true).returns({"sap-client" : "279"});
-		this.mock(Configuration).expects("getStatisticsEnabled")
+		this.mock(Supportability).expects("isStatisticsEnabled")
 			.withExactArgs().returns(bStatistics);
 		this.mock(_MetadataRequestor).expects("create")
 			.withExactArgs({"Accept-Language" : "ab-CD"}, "4.0", undefined, bStatistics
 				? {"sap-client" : "279", "sap-statistics" : true}
-				: {"sap-client" : "279"})
+				: {"sap-client" : "279"}, undefined)
 			.returns(oMetadataRequestor);
 		this.mock(ODataMetaModel.prototype).expects("fetchEntityContainer").withExactArgs(true);
 		this.mock(ODataModel.prototype).expects("initializeSecurityToken").withExactArgs();
@@ -161,10 +165,10 @@ sap.ui.define([
 				"sap-client" : "279",
 				"sap-context-token" : "20200716120000",
 				"sap-language" : "EN"
-			});
+			}, undefined);
 		this.mock(_Requestor).expects("create")
 			.withExactArgs(sServiceUrl, sinon.match.object, {"Accept-Language" : "ab-CD"},
-				{"sap-client" : "279", "sap-context-token" : "n/a"}, "4.0")
+				{"sap-client" : "279", "sap-context-token" : "n/a"}, "4.0", undefined)
 			.callThrough();
 
 		// code under test
@@ -224,28 +228,29 @@ sap.ui.define([
 	//*********************************************************************************************
 	["2.0", "4.0"].forEach(function (sODataVersion) {
 		QUnit.test("create requestors for odataVersion: " + sODataVersion, function (assert) {
-			var fnMetadataRequestorCreateSpy, oModel, fnRequestorCreateSpy;
+			var oMetadataRequestorCreateExpectation, oModel, oRequestorCreateExpectation;
 
-			fnRequestorCreateSpy = this.mock(_Requestor).expects("create")
+			oRequestorCreateExpectation = this.mock(_Requestor).expects("create")
 				.withExactArgs(sServiceUrl, sinon.match.object, {"Accept-Language" : "ab-CD"},
-					sinon.match.object, sODataVersion)
+					sinon.match.object, sODataVersion, undefined)
 				.returns({
 					checkForOpenRequests : function () {},
 					checkHeaderNames : function () {}
 				});
-			fnMetadataRequestorCreateSpy = this.mock(_MetadataRequestor).expects("create")
+			oMetadataRequestorCreateExpectation = this.mock(_MetadataRequestor).expects("create")
 				.withExactArgs({"Accept-Language" : "ab-CD"}, sODataVersion, undefined,
-					sinon.match.object)
+					sinon.match.object, undefined)
 				.returns({});
 
 			// code under test
 			oModel = this.createModel("", {odataVersion : sODataVersion});
 
 			assert.strictEqual(oModel.getODataVersion(), sODataVersion);
-			assert.notStrictEqual(fnRequestorCreateSpy.args[0][2],
-				fnMetadataRequestorCreateSpy.args[0][0]);
-			assert.strictEqual(fnRequestorCreateSpy.args[0][2], oModel.mHeaders);
-			assert.strictEqual(fnMetadataRequestorCreateSpy.args[0][0], oModel.mMetadataHeaders);
+			assert.notStrictEqual(oRequestorCreateExpectation.args[0][2],
+				oMetadataRequestorCreateExpectation.args[0][0]);
+			assert.strictEqual(oRequestorCreateExpectation.args[0][2], oModel.mHeaders);
+			assert.strictEqual(oMetadataRequestorCreateExpectation.args[0][0],
+				oModel.mMetadataHeaders);
 		});
 	});
 
@@ -423,6 +428,43 @@ sap.ui.define([
 	});
 
 	//*********************************************************************************************
+[false, true].forEach(function (bWithCredentials) {
+	QUnit.test("Model creates _Requestor, withCredentials=" + bWithCredentials, function () {
+		this.mock(_MetadataRequestor).expects("create")
+			.withExactArgs({"Accept-Language" : "ab-CD"}, "4.0",
+				/*bIngnoreAnnotationsFromMetadata*/undefined, /*mQueryParams*/{},
+				/*bWithCredentials*/bWithCredentials);
+		this.mock(_Requestor).expects("create")
+			.withExactArgs(sServiceUrl, {
+					fetchEntityContainer : sinon.match.func,
+					fetchMetadata : sinon.match.func,
+					fireDataReceived : sinon.match.func,
+					fireDataRequested : sinon.match.func,
+					fireSessionTimeout : sinon.match.func,
+					getGroupProperty : sinon.match.func,
+					getMessagesByPath : sinon.match.func,
+					getOptimisticBatchEnabler : sinon.match.func,
+					getReporter : sinon.match.func,
+					isIgnoreETag : sinon.match.func,
+					onCreateGroup : sinon.match.func,
+					reportStateMessages : sinon.match.func,
+					reportTransitionMessages : sinon.match.func,
+					updateMessages : sinon.match.func
+				},
+				{"Accept-Language" : "ab-CD"},
+				{},
+				"4.0",
+				bWithCredentials)
+			.returns({
+				checkForOpenRequests : function () {},
+				checkHeaderNames : function () {}
+			});
+
+		this.createModel(undefined, {withCredentials : bWithCredentials});
+	});
+});
+
+	//*********************************************************************************************
 [false, true].forEach(function (bStatistics) {
 	QUnit.test("Model creates _Requestor, sap-statistics=" + bStatistics, function (assert) {
 		var oExpectedBind0,
@@ -435,7 +477,6 @@ sap.ui.define([
 			oExpectedBind7,
 			oExpectedBind8,
 			oExpectedBind9,
-			oExpectedBind10,
 			oExpectedCreate = this.mock(_Requestor).expects("create"),
 			oModel,
 			oModelInterface,
@@ -445,13 +486,12 @@ sap.ui.define([
 			},
 			fnSubmitAuto = function () {};
 
-		this.mock(Configuration).expects("getStatisticsEnabled")
+		this.mock(Supportability).expects("isStatisticsEnabled")
 			.withExactArgs().returns(bStatistics);
 		oExpectedCreate
 			.withExactArgs(sServiceUrl, {
 					fetchEntityContainer : "~fnFetchEntityContainer~",
 					fetchMetadata : "~fnFetchMetadata~",
-					fireMessageChange : "~fnFireMessageChange~",
 					fireDataReceived : "~fnFireDataReceived~",
 					fireDataRequested : "~fnFireDataRequested~",
 					fireSessionTimeout : sinon.match.func,
@@ -462,35 +502,34 @@ sap.ui.define([
 					isIgnoreETag : sinon.match.func,
 					onCreateGroup : sinon.match.func,
 					reportStateMessages : "~fnReportStateMessages~",
-					reportTransitionMessages : "~fnReportTransitionMessages~"
+					reportTransitionMessages : "~fnReportTransitionMessages~",
+					updateMessages : sinon.match.func
 				},
 				{"Accept-Language" : "ab-CD"},
 				bStatistics
 					? {"sap-client" : "123", "sap-statistics" : true}
 					: {"sap-client" : "123"},
-				"4.0")
+				"4.0", undefined)
 			.returns(oRequestor);
 		oExpectedBind0 = this.mock(ODataMetaModel.prototype.fetchEntityContainer).expects("bind")
 			.returns("~fnFetchEntityContainer~");
 		oExpectedBind1 = this.mock(ODataMetaModel.prototype.fetchObject).expects("bind")
 			.returns("~fnFetchMetadata~");
-		oExpectedBind2 = this.mock(ODataMetaModel.prototype.fireMessageChange).expects("bind")
-			.returns("~fnFireMessageChange~");
-		oExpectedBind3 = this.mock(ODataModel.prototype.fireDataReceived).expects("bind")
+		oExpectedBind2 = this.mock(ODataModel.prototype.fireDataReceived).expects("bind")
 			.returns("~fnFireDataReceived~");
-		oExpectedBind4 = this.mock(ODataModel.prototype.fireDataRequested).expects("bind")
+		oExpectedBind3 = this.mock(ODataModel.prototype.fireDataRequested).expects("bind")
 			.returns("~fnFireDataRequested~");
-		oExpectedBind5 = this.mock(ODataModel.prototype.getGroupProperty).expects("bind")
+		oExpectedBind4 = this.mock(ODataModel.prototype.getGroupProperty).expects("bind")
 			.returns("~fnGetGroupProperty~");
-		oExpectedBind6 = this.mock(ODataModel.prototype.getMessagesByPath).expects("bind")
+		oExpectedBind5 = this.mock(ODataModel.prototype.getMessagesByPath).expects("bind")
 			.returns("~fnGetMessagesByPath~");
-		oExpectedBind7 = this.mock(ODataModel.prototype.getOptimisticBatchEnabler).expects("bind")
+		oExpectedBind6 = this.mock(ODataModel.prototype.getOptimisticBatchEnabler).expects("bind")
 			.returns("~fnGetOptimisticBatchEnabler~");
-		oExpectedBind8 = this.mock(ODataModel.prototype.getReporter).expects("bind")
+		oExpectedBind7 = this.mock(ODataModel.prototype.getReporter).expects("bind")
 			.returns("~fnGetReporter~");
-		oExpectedBind9 = this.mock(ODataModel.prototype.reportTransitionMessages).expects("bind")
+		oExpectedBind8 = this.mock(ODataModel.prototype.reportTransitionMessages).expects("bind")
 			.returns("~fnReportTransitionMessages~");
-		oExpectedBind10 = this.mock(ODataModel.prototype.reportStateMessages).expects("bind")
+		oExpectedBind9 = this.mock(ODataModel.prototype.reportStateMessages).expects("bind")
 			.returns("~fnReportStateMessages~");
 
 		// code under test
@@ -508,7 +547,6 @@ sap.ui.define([
 		assert.strictEqual(oExpectedBind7.firstCall.args[0], oModel);
 		assert.strictEqual(oExpectedBind8.firstCall.args[0], oModel);
 		assert.strictEqual(oExpectedBind9.firstCall.args[0], oModel);
-		assert.strictEqual(oExpectedBind10.firstCall.args[0], oModel);
 		oModelInterface = oExpectedCreate.firstCall.args[1];
 		assert.strictEqual(oModelInterface, oModel.oInterface);
 
@@ -532,11 +570,20 @@ sap.ui.define([
 		// code under test
 		oModel.setIgnoreETag("~bIgnoreETag~");
 
+		this.mock(Messaging).expects("updateMessages")
+			.withExactArgs("~oldMessages~", "~newMessages~");
+
+		// code under test
+		oModelInterface.updateMessages("~oldMessages~", "~newMessages~");
+
 		assert.strictEqual(oModelInterface.isIgnoreETag(), "~bIgnoreETag~");
 	});
 });
 
 	//*********************************************************************************************
+	/**
+	 * @deprecated since 1.39.0
+	 */
 	QUnit.test("requestCanonicalPath", function (assert) {
 		var oModel = this.createModel(),
 			oEntityContext = Context.create(oModel, null, "/EMPLOYEES/42");
@@ -741,7 +788,7 @@ sap.ui.define([
 		oModelMock.expects("isAutoGroup").withExactArgs("groupId").returns(true);
 		this.mock(oModel.oRequestor).expects("relocateAll")
 			.withExactArgs("$parked.groupId", "groupId");
-		this.mock(oModel.oRequestor).expects("addChangeSet").never();
+		this.mock(oModel.oRequestor).expects("addChangeSet").withExactArgs("groupId");
 		oModelMock.expects("_submitBatch").never(); // not yet
 		oModelMock.expects("addPrerenderingTask").callsFake(function (fnCallback) {
 			setTimeout(function () {
@@ -860,6 +907,14 @@ sap.ui.define([
 		assert.throws(function () { //TODO implement
 			oModel.isList();
 		}, new Error("Unsupported operation: v4.ODataModel#isList"));
+	});
+
+	//*********************************************************************************************
+	/**
+	 * @deprecated since 1.88.0
+	 */
+	QUnit.test("forbidden & deprecated", function (assert) {
+		var oModel = this.createModel();
 
 		assert.throws(function () {
 			oModel.setLegacySyntax();
@@ -1067,7 +1122,7 @@ sap.ui.define([
 				.twice();
 			oModelMock.expects("reportStateMessages").never();
 			oModelMock.expects("reportTransitionMessages")
-				.once()// add each error only once to the MessageManager
+				.once()// add each error only once to the Messaging
 				.withExactArgs("~extractedMessages~", "resource/path");
 
 			// code under test
@@ -1743,8 +1798,8 @@ sap.ui.define([
 				return oMessage === aMessages[1] && oMessage.transition === true;
 			}), sResourcePath)
 			.returns("~UI5msg1~");
-		oModelMock.expects("fireMessageChange")
-			.withExactArgs(sinon.match({newMessages : ["~UI5msg0~", "~UI5msg1~"]}));
+		this.mock(Messaging).expects("updateMessages")
+			.withExactArgs(undefined, sinon.match(["~UI5msg0~", "~UI5msg1~"]));
 
 		// code under test
 		oModel.reportTransitionMessages(aMessages, sResourcePath);
@@ -1760,6 +1815,7 @@ sap.ui.define([
 	QUnit.test("reportStateMessages", function () {
 		var aBarMessages = ["~rawMessage0~", "~rawMessage1~"],
 			aBazMessages = ["~rawMessage2~"],
+			oMessagingMock = this.mock(Messaging),
 			oModel = this.createModel(),
 			oModelMock = this.mock(oModel);
 
@@ -1769,15 +1825,14 @@ sap.ui.define([
 			.withExactArgs(aBarMessages[1], "Team('42')", "foo/bar").returns("~UI5msg1~");
 		oModelMock.expects("createUI5Message")
 			.withExactArgs(aBazMessages[0], "Team('42')", "foo/baz").returns("~UI5msg2~");
-		oModelMock.expects("fireMessageChange")
-			.withExactArgs(sinon.match(
-				{newMessages : ["~UI5msg0~", "~UI5msg1~", "~UI5msg2~"], oldMessages : []}));
+		oMessagingMock.expects("updateMessages")
+			.withExactArgs([], ["~UI5msg0~", "~UI5msg1~", "~UI5msg2~"]);
 
 		// code under test
 		oModel.reportStateMessages("Team('42')",
 			{"foo/bar" : aBarMessages, "foo/baz" : aBazMessages});
 
-		oModelMock.expects("fireMessageChange").never();
+		oMessagingMock.expects("updateMessages").never();
 
 		// code under test
 		oModel.reportStateMessages("Team('42')", {});
@@ -1794,17 +1849,14 @@ sap.ui.define([
 				"/FOO('3')/NavSingle/Name" : [{}, {}],
 				"/FOO('3')/NavSingleBar/Name" : [{}]
 			},
-			oModel = this.createModel(),
-			oModelMock = this.mock(oModel);
+			oMessagingMock = this.mock(Messaging),
+			oModel = this.createModel();
 
 		oModel.mMessages = mMessages;
 
-		oModelMock.expects("fireMessageChange")
-			.withExactArgs(sinon.match.object)
-			.callsFake(function (mArguments) {
-				var aNewMessages = mArguments.newMessages,
-					aOldMessages = mArguments.oldMessages;
-
+		oMessagingMock.expects("updateMessages")
+			.withExactArgs(sinon.match.array, sinon.match.array)
+			.callsFake(function (aOldMessages, aNewMessages) {
 				assert.ok(aOldMessages.indexOf(mMessages["/FOO('1')"][0]) >= 0);
 				assert.ok(aOldMessages.indexOf(mMessages["/FOO('1')"][1]) >= 0);
 				assert.ok(aOldMessages.indexOf(mMessages["/FOO('1')/bar"][0]) < 0);
@@ -1818,12 +1870,9 @@ sap.ui.define([
 		// code under test
 		oModel.reportStateMessages("FOO('1')", {});
 
-		oModelMock.expects("fireMessageChange")
-			.withExactArgs(sinon.match.object)
-			.callsFake(function (mArguments) {
-				var aNewMessages = mArguments.newMessages,
-					aOldMessages = mArguments.oldMessages;
-
+		oMessagingMock.expects("updateMessages")
+			.withExactArgs(sinon.match.array, sinon.match.array)
+			.callsFake(function (aOldMessages, aNewMessages) {
 				assert.ok(aOldMessages.indexOf(mMessages["/FOO('3')/NavSingle"][0]) >= 0);
 				assert.ok(aOldMessages.indexOf(mMessages["/FOO('3')/NavSingle/Name"][0]) >= 0);
 				assert.ok(aOldMessages.indexOf(mMessages["/FOO('3')/NavSingle/Name"][1]) >= 0);
@@ -1847,18 +1896,14 @@ sap.ui.define([
 				"/FOO('3')/NavSingle/Name" : [{}, {}],
 				"/FOO('3')/NavSingleBar/Name" : [{}]
 			},
-			oModel = this.createModel(),
-			oModelMock = this.mock(oModel);
+			oModel = this.createModel();
 
 		oModel.mMessages = mMessages;
 		oHelperMock.expects("buildPath").withExactArgs("/FOO", "('1')").returns("/FOO('1')");
 		oHelperMock.expects("buildPath").withExactArgs("/FOO", "('2')").returns("/FOO('2')");
-		oModelMock.expects("fireMessageChange")
-			.withExactArgs(sinon.match.object)
-			.callsFake(function (mArguments) {
-				var aNewMessages = mArguments.newMessages,
-					aOldMessages = mArguments.oldMessages;
-
+		this.mock(Messaging).expects("updateMessages")
+			.withExactArgs(sinon.match.array, sinon.match.array)
+			.callsFake(function (aOldMessages, aNewMessages) {
 				assert.ok(aOldMessages.indexOf(mMessages["/FOO('1')"][0]) >= 0);
 				assert.ok(aOldMessages.indexOf(mMessages["/FOO('1')"][1]) >= 0);
 				assert.ok(aOldMessages.indexOf(mMessages["/FOO('1')/bar"][0]) >= 0);
@@ -1885,16 +1930,12 @@ sap.ui.define([
 				"/FOO('3')/NavSingle/Name" : [{}, {}],
 				"/FOO('3')/NavSingleBar/Name" : [{}]
 			},
-			oModel = this.createModel(),
-			oModelMock = this.mock(oModel);
+			oModel = this.createModel();
 
 		oModel.mMessages = mMessages;
-		oModelMock.expects("fireMessageChange")
-			.withExactArgs(sinon.match.object)
-			.callsFake(function (mArguments) {
-				var aNewMessages = mArguments.newMessages,
-					aOldMessages = mArguments.oldMessages;
-
+		this.mock(Messaging).expects("updateMessages")
+			.withExactArgs(sinon.match.array, sinon.match.array)
+			.callsFake(function (aOldMessages, aNewMessages) {
 				assert.ok(aOldMessages.indexOf(mMessages["/FOO('1')"][0]) >= 0);
 				assert.ok(aOldMessages.indexOf(mMessages["/FOO('1')"][1]) >= 0);
 				assert.ok(aOldMessages.indexOf(mMessages["/FOO('1')/bar"][0]) >= 0);
@@ -2015,6 +2056,47 @@ sap.ui.define([
 		// code under test
 		assert.strictEqual(oModel.lockGroup(sGroupId, oOwner, bLocked, bModifying, fnCancel),
 			oGroupLock);
+	});
+
+	//*********************************************************************************************
+	QUnit.test("lock", function (assert) {
+		var oGroupLock = {
+				isLocked : function () {},
+				unlock : function () {}
+			},
+			oLock,
+			oModel = this.createModel();
+
+		this.mock(oModel).expects("isAutoGroup").withExactArgs("group").returns(true);
+		this.mock(oModel).expects("lockGroup")
+			.withExactArgs("group", sinon.match.same(oModel), true)
+			.returns(oGroupLock);
+
+		// code under test
+		oLock = oModel.lock("group");
+
+		this.mock(oGroupLock).expects("isLocked").withExactArgs().returns("~isLocked~");
+
+		// code under test
+		assert.strictEqual(oLock.isLocked("foo"), "~isLocked~", "arguments ignored");
+
+		this.mock(oGroupLock).expects("unlock").withExactArgs().returns("n/a");
+
+		// code under test
+		assert.strictEqual(oLock.unlock("bar"), undefined, "no return");
+	});
+
+	//*********************************************************************************************
+	QUnit.test("lock: not an auto group", function (assert) {
+		var oModel = this.createModel();
+
+		this.mock(oModel).expects("isAutoGroup").withExactArgs("~sGroupId~").returns(false);
+		this.mock(oModel).expects("lockGroup").never();
+
+		assert.throws(function () {
+			// code under test
+			oModel.lock("~sGroupId~");
+		}, new Error("Group ID does not use automatic batch requests: ~sGroupId~"));
 	});
 
 	//*********************************************************************************************
@@ -2202,7 +2284,7 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.test("addPrerenderingTask: queue", function (assert) {
-		var oExpectation = this.mock(sap.ui.getCore()).expects("addPrerenderingTask")
+		var oExpectation = this.mock(Rendering).expects("addPrerenderingTask")
 				.withExactArgs(sinon.match.func),
 			fnFirstPrerenderingTask = "first",
 			fnPrerenderingTask0 = "0",
@@ -2244,7 +2326,7 @@ sap.ui.define([
 				oModel.addPrerenderingTask(fnLastTask);
 			});
 
-		oAddTaskMock = this.mock(sap.ui.getCore()).expects("addPrerenderingTask")
+		oAddTaskMock = this.mock(Rendering).expects("addPrerenderingTask")
 			.withExactArgs(sinon.match.func);
 		this.mock(window).expects("setTimeout").withExactArgs(sinon.match.func, 0).returns(42);
 		oModel.addPrerenderingTask(fnPrerenderingTask0);
@@ -2284,7 +2366,7 @@ sap.ui.define([
 			fnTask = this.spy(),
 			oWindowMock = this.mock(window);
 
-		oAddTaskExpectation = this.mock(sap.ui.getCore()).expects("addPrerenderingTask")
+		oAddTaskExpectation = this.mock(Rendering).expects("addPrerenderingTask")
 			.withExactArgs(sinon.match.func);
 		oSetTimeoutExpectation = oWindowMock.expects("setTimeout")
 			.withExactArgs(sinon.match.func, 0);
@@ -2316,7 +2398,7 @@ sap.ui.define([
 			fnTask1 = this.spy(),
 			fnTask2 = "~task~2~";
 
-		oAddTaskExpectation = this.mock(sap.ui.getCore()).expects("addPrerenderingTask").twice()
+		oAddTaskExpectation = this.mock(Rendering).expects("addPrerenderingTask").twice()
 			.withExactArgs(sinon.match.func);
 		oSetTimeoutExpectation = this.mock(window).expects("setTimeout").thrice()
 			.withExactArgs(sinon.match.func, 0);
@@ -2470,7 +2552,7 @@ sap.ui.define([
 		assert.strictEqual(oUI5Message.getTechnical(), "technical");
 		assert.strictEqual(oUI5Message.processor, oModel);
 		assert.strictEqual(oUI5Message.getPersistent(), true);
-		assert.strictEqual(oUI5Message.getTarget(), "");
+		assert.strictEqual(oUI5Message.getTargets()[0], "");
 		assert.strictEqual(oUI5Message.getTechnicalDetails(), "~technicalDetails~");
 	});
 
@@ -2518,7 +2600,7 @@ sap.ui.define([
 		oUI5Message = oModel.createUI5Message(oRawMessage, "~path~");
 
 		assert.strictEqual(oUI5Message.getDescriptionUrl(), "~absoluteLongtextUrl~");
-		assert.strictEqual(oUI5Message.getTarget(), oRawMessage.target
+		assert.strictEqual(oUI5Message.getTargets()[0], oRawMessage.target
 			? "/~path~/~normalizedTarget~"
 			: "");
 	});
@@ -3156,17 +3238,43 @@ sap.ui.define([
 	});
 
 	//*********************************************************************************************
-[undefined, "group"].forEach(function (sGroupId) {
-	QUnit.test("delete: groupId=" + sGroupId, function (assert) {
+[
+	{iStatus : 204, bSuccess : true},
+	{iStatus : 404, bSuccess : true},
+	{iStatus : 412, bSuccess : true},
+	{iStatus : 500, bSuccess : false},
+	{bRejectIfNotFound : true, iStatus : 404, bSuccess : false},
+	{bRejectIfNotFound : true, iStatus : 412, bSuccess : false}
+].forEach(function (oFixture) {
+	[undefined, "group"].forEach(function (sGroupId) {
+		[false, true].forEach(function (bServerOnly) {
+			var sTitle = "delete: " + JSON.stringify(oFixture) + "; groupId=" + sGroupId
+					+ "; server only: " + bServerOnly;
+
+	QUnit.test(sTitle, function (assert) {
 		var aAllBindings = [{
 				onDelete : function () {}
 			}, {
 				onDelete : function () {}
 			}],
+			sCanonicalPath = "/Entity('key')",
+			oContext,
+			oError = new Error(),
+			bInAllBindings = oFixture.bSuccess && !bServerOnly,
 			oModel = this.createModel("?sap-client=123"),
-			oPromise;
+			oPromise,
+			// w/o If-Match:*, 412 must not be ignored!
+			bSuccess = oFixture.bSuccess && !(bServerOnly && oFixture.iStatus === 412);
 
+		oError.status = oFixture.iStatus;
 		oModel.aAllBindings = aAllBindings;
+		if (bServerOnly) {
+			oContext = Context.create(oModel, /*oBinding*/null, sCanonicalPath);
+			this.mock(oContext).expects("fetchCanonicalPath").withExactArgs()
+				.returns(SyncPromise.resolve(Promise.resolve(sCanonicalPath)));
+			this.mock(oContext).expects("fetchValue").withExactArgs("@odata.etag", null, true)
+				.returns(SyncPromise.resolve(Promise.resolve("ETag")));
+		}
 		this.mock(_Helper).expects("checkGroupId").withExactArgs(sGroupId);
 		this.mock(oModel).expects("getUpdateGroupId").exactly(sGroupId ? 0 : 1)
 			.withExactArgs().returns("group");
@@ -3178,55 +3286,33 @@ sap.ui.define([
 			.withExactArgs("group", sinon.match.same(oModel), true, true)
 			.returns("~groupLock~");
 		this.mock(oModel.oRequestor).expects("request")
-			.withExactArgs("DELETE", "Entity('key')?~", "~groupLock~", {"If-Match" : "*"})
-			.resolves();
-		this.mock(aAllBindings[0]).expects("onDelete").withExactArgs("/Entity('key')");
-		this.mock(aAllBindings[1]).expects("onDelete").withExactArgs("/Entity('key')");
+			.withExactArgs("DELETE", "Entity('key')?~", "~groupLock~",
+				{"If-Match" : bServerOnly ? "ETag" : "*"})
+			.returns(oFixture.iStatus === 204
+				? Promise.resolve()
+				: Promise.reject(oError));
+		this.mock(oModel).expects("reportError").exactly(bSuccess ? 0 : 1)
+			.withExactArgs("Failed to delete " + sCanonicalPath, sClassName,
+				sinon.match.same(oError));
+		this.mock(aAllBindings[0]).expects("onDelete").exactly(bInAllBindings ? 1 : 0)
+			.withExactArgs(sCanonicalPath);
+		this.mock(aAllBindings[1]).expects("onDelete").exactly(bInAllBindings ? 1 : 0)
+			.withExactArgs(sCanonicalPath);
 
 		// code under test
-		oPromise = oModel.delete("/Entity('key')", sGroupId);
+		oPromise = oModel.delete(bServerOnly ? oContext : sCanonicalPath, sGroupId,
+			oFixture.bRejectIfNotFound);
 
 		assert.ok(oPromise instanceof Promise);
 
-		return oPromise;
-	});
-});
-
-	//*********************************************************************************************
-[
-	{iStatus : 404, bSuccess : true},
-	{iStatus : 412, bSuccess : true},
-	{iStatus : 500, bSuccess : false},
-	{bRejectIfNotFound : true, iStatus : 404, bSuccess : false},
-	{bRejectIfNotFound : true, iStatus : 412, bSuccess : false}
-].forEach(function (oFixture) {
-	QUnit.test("delete: failed request " + JSON.stringify(oFixture), function (assert) {
-		var aAllBindings = [{
-				onDelete : function () {}
-			}],
-			oError = new Error(),
-			oModel = this.createModel();
-
-		oError.status = oFixture.iStatus;
-		oModel.aAllBindings = aAllBindings;
-		this.mock(oModel).expects("isApiGroup").withExactArgs("group").returns(false);
-		this.mock(oModel).expects("lockGroup")
-			.withExactArgs("group", sinon.match.same(oModel), true, true)
-			.returns("~groupLock~");
-		this.mock(oModel.oRequestor).expects("request")
-			.withExactArgs("DELETE", "Entity('key')", "~groupLock~", {"If-Match" : "*"})
-			.rejects(oError);
-		this.mock(aAllBindings[0]).expects("onDelete").exactly(oFixture.bSuccess ? 1 : 0)
-			.withExactArgs("/Entity('key')");
-
-		// code under test
-		return oModel.delete("/Entity('key')", "group", oFixture.bRejectIfNotFound)
-			.then(function () {
-				assert.ok(oFixture.bSuccess);
+		return oPromise.then(function () {
+				assert.ok(bSuccess);
 			}, function (oResult) {
-				assert.notOk(oFixture.bSuccess);
+				assert.notOk(bSuccess);
 				assert.strictEqual(oResult, oError);
 			});
+	});
+		});
 	});
 });
 

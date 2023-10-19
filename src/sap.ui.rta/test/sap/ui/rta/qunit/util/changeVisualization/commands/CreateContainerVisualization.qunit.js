@@ -1,21 +1,21 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/ui/thirdparty/sinon-4",
 	"sap/ui/rta/util/changeVisualization/commands/CreateContainerVisualization",
-	"sap/ui/core/Core"
+	"sap/ui/core/Lib"
 ], function(
 	sinon,
 	CreateContainerVisualization,
-	oCore
+	Lib
 ) {
 	"use strict";
 
 	var sandbox = sinon.createSandbox();
-	var oResourceBundle = oCore.getLibraryResourceBundle("sap.ui.rta");
+	var oResourceBundle = Lib.getResourceBundleFor("sap.ui.rta");
 
 	QUnit.module("Base tests", {
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
@@ -62,7 +62,7 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

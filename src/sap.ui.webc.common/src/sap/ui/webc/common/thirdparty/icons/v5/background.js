@@ -6,7 +6,7 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
   });
   _exports.pathData = _exports.ltr = _exports.default = _exports.accData = void 0;
   const name = "background";
-  const pathData = "M416 1q34 0 57 22.5T496 81v319q0 34-23 57t-57 23H97q-34 0-57-23t-23-57V81q0-35 23-57.5T97 1h319zM97 54q-12 0-20 7.5T67 81v308l115-114q11-8 20-8 6 0 12 3l34 18 94-93q10-8 20-8 6 0 12 3l69 34V81q0-12-7.5-19.5T416 54H97zm66 53q17 0 28.5 11.5T203 147t-11.5 28.5T163 187t-28.5-11.5T123 147t11.5-28.5T163 107zm253 320q11 0 17.5-6t7.5-14v-1l-1-120-74-38-67 67 21 11q6 2 9.5 8.5T333 349q0 5-2 11-6 13-21 13-9 0-14-2l-87-45-102 101h309z";
+  const pathData = "M480 390q0 38-26 64t-64 26H122q-38 0-64-26t-26-64V122q0-38 26-64t64-26h268q38 0 64 26t26 64v268zm-397 2l90-96q8-8 19-8 7 0 14 4l41 26 87-87q9-7 18-7 7 0 11 3l66 32V122q0-17-11-28t-28-11H122q-17 0-28 11t-11 28v270zm85-184q-17 0-28.5-11.5T128 168t11.5-28.5T168 128t28.5 11.5T208 168t-11.5 28.5T168 208zm222 221q17 0 28-11t11-28v-73l-72-36-65 65 16 10q12 7 12 22 0 10-7.5 17.5T294 403q-8 0-13-4l-85-53-77 83h271z";
   _exports.pathData = pathData;
   const ltr = false;
   _exports.ltr = ltr;
@@ -20,6 +20,6 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
     collection,
     packageName
   });
-  var _default = "background";
+  var _default = "SAP-icons-v5/background";
   _exports.default = _default;
 });

@@ -48,7 +48,7 @@
 					hAlign="Left">
 					<Text text="{i18n>CLM_HEADER_ADAPTATIONS_TITLE}" />
 				</Column>
-				<Column width="8rem"
+				<Column width="6rem"
 					minScreenWidth="tablet"
 					demandPopin="true"
 					popinDisplay="Inline"
@@ -67,6 +67,7 @@
 					hAlign="Left">
 					<Text text="{i18n>CLM_HEADER_ADAPTATIONS_CHANGED_ON}" />
 				</Column>
+				<!--
 				<Column width="7rem"
 					minScreenWidth="tablet"
 					demandPopin="true"
@@ -74,6 +75,7 @@
 					hAlign="Left">
 					<Text text="{i18n>CLM_HEADER_ADAPTATIONS_ACTIONS}" />
 				</Column>
+				-->
 			</columns>
 			<dragDropConfig>
 				<dnd:DragDropInfo sourceAggregation="items"
@@ -85,24 +87,12 @@
 				<ColumnListItem>
 					<cells>
 						<Text text="{contextBased>rank}"/>
-						<CustomListItem>
-							<HBox>
-								<VBox class="sapUiSmallMarginTopBottom">
 									<Text wrapping="false" maxLines="1" text="{contextBased>title}"
 									tooltip="{contextBased>title}"/>
-								</VBox>
-							</HBox>
-						</CustomListItem>
 						<Text text="{ parts: ['contextBased>contexts/role'], formatter: '.formatContextColumnCell'}"
 							tooltip="{ parts: ['contextBased>contexts/role'], formatter: '.formatContextColumnTooltip'}" />
 						<Text text="{ parts: ['contextBased>createdBy', 'contextBased>createdAt'], formatter: '.formatCreatedChangedOnColumnCell'}"/>
-						<Text text="{ parts: ['contextBased>changedBy', 'contextBased>changedAt'], formatter: '.formatCreatedChangedOnColumnCell'}"/>		
-						<MenuButton text="{i18n>CLM_HEADER_ADAPTATIONS_ACTIONS}">
-							<menu>
-								<Menu itemSelected="onMenuAction">
-								</Menu>
-							</menu>
-						</MenuButton>
+						<Text text="{ parts: ['contextBased>changedBy', 'contextBased>changedAt'], formatter: '.formatCreatedChangedOnColumnCell'}"/>
 					</cells>
 				</ColumnListItem>
 			</items>
@@ -126,12 +116,6 @@
 					popinDisplay="Inline"
 					hAlign="Left">
 				</Column>
-				<Column width="7rem"
-					minScreenWidth="tablet"
-					demandPopin="true"
-					popinDisplay="Inline"
-					hAlign="Left">
-				</Column>
 			</columns>
 			<items>
 				<ColumnListItem highlight="Information">
@@ -146,8 +130,6 @@
 							</HBox>
 						</CustomListItem>
 						<Text text="" />
-						<MenuButton text="{i18n>CLM_HEADER_ADAPTATIONS_ACTIONS}">
-						</MenuButton>
 					</cells>
 				</ColumnListItem>
 			</items>
@@ -163,7 +145,7 @@
 		<endButton>
 			<Button id="manageAdaptations-closeButton"
 				text="{i18n>APP_CTX_DIALOG_CANCEL}"
-				press=".onClose"/>
+				press=".onCancel"/>
 		</endButton>
 	</Dialog>
 </core:FragmentDefinition>

@@ -2,8 +2,9 @@
  * ${copyright}
  */
 sap.ui.define([
-	"sap/ui/layout/Grid", "./BasePanel", "sap/ui/core/ListItem", "sap/m/CustomListItem", "sap/m/ComboBox", "sap/m/List", "sap/m/HBox", "sap/m/library", "sap/m/Button", "sap/base/util/merge", 'sap/ui/core/library'
-], function (Grid, BasePanel, Item, CustomListItem, ComboBox, List, HBox, mLibrary, Button, merge, coreLibrary) {
+	"sap/ui/layout/Grid", "./BasePanel", "sap/ui/core/ListItem", "sap/m/CustomListItem", "sap/m/ComboBox", "sap/m/List", "sap/m/HBox", "sap/m/library", "sap/m/Button", "sap/base/util/merge", "sap/ui/core/library", "sap/ui/core/InvisibleMessage"
+
+], function (Grid, BasePanel, Item, CustomListItem, ComboBox, List, HBox, mLibrary, Button, merge, coreLibrary, InvisibleMessage) {
 	"use strict";
 
 
@@ -49,6 +50,9 @@ sap.ui.define([
 
 	// shortcut for sap.m.FlexJustifyContent
 	var FlexJustifyContent = mLibrary.FlexJustifyContent;
+
+	// shortcut for sap.m.ListKeyboardMode
+	var ListKeyboardMode = mLibrary.ListKeyboardMode;
 
 	// shortcut for sap.m.ButtonType
 	var ButtonType = mLibrary.ButtonType;
@@ -142,10 +146,12 @@ sap.ui.define([
 	};
 
 	QueryPanel.prototype._createInnerListControl = function () {
-		return new List(this.getId() + "-innerP13nList", {
+		var oList = new List(this.getId() + "-innerP13nList", {
 			itemPress: [this._onItemPressed, this],
 			dragDropConfig: this._getDragDropConfig()
 		});
+		oList.setKeyboardMode(ListKeyboardMode.Edit);
+		return oList;
 	};
 
 	QueryPanel.prototype._getModelEntry = function(oRow) {
@@ -259,6 +265,16 @@ sap.ui.define([
 		return "";
 	};
 
+	QueryPanel.prototype._getRemoveButtonAnnouncementText = function () {
+		return "";
+	};
+
+	QueryPanel.prototype._announce = function (sMessage) {
+		var InvisibleMessageMode = coreLibrary.InvisibleMessageMode;
+		var oInvisibleMessage = InvisibleMessage.getInstance();
+		oInvisibleMessage.announce(sMessage, InvisibleMessageMode.Assertive);
+	};
+
 	QueryPanel.prototype._createKeySelect = function (sKey) {
 		var that = this;
 		var oKeySelect = new ComboBox({
@@ -349,10 +365,19 @@ sap.ui.define([
 						if (bNewRowRequired) {
 							this._addQueryRow();
 						}
+
+						this._announce(this._getRemoveButtonAnnouncementText());
+
 						//In case an item has been removed, focus the Select control of the new 'none' row
-						this.getInitialFocusedControl().focus();
+						//Needs timeout because the new queryRow and control might not be rendered
+						setTimeout(function() {
+							if (!this.bIsDestroyed) {
+								this.getInitialFocusedControl().focus();
+							}
+						}.bind(this), 0);
 
 						this._getP13nModel().checkUpdate(true);
+
 					}.bind(this)
 				})
 			]

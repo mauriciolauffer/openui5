@@ -4,7 +4,7 @@
 
 // Provides control sap.ui.webc.main.MenuItem.
 sap.ui.define([
-	"sap/ui/webc/common/WebComponent",
+	"sap/ui/core/webc/WebComponent",
 	"./library",
 	"sap/ui/core/EnabledPropagator",
 	"./thirdparty/MenuItem"
@@ -17,7 +17,7 @@ sap.ui.define([
 	 * @param {string} [sId] ID for the new control, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new control
 	 *
-	 * @extends sap.ui.webc.common.WebComponent
+	 * @extends sap.ui.core.webc.WebComponent
 	 * @class
 	 *
 	 * <h3>Overview</h3>
@@ -48,13 +48,46 @@ sap.ui.define([
 			properties: {
 
 				/**
+				 * Defines the accessible ARIA name of the component.
+				 */
+				accessibleName: {
+					type: "string",
+					defaultValue: ""
+				},
+
+				/**
+				 * Defines the <code>additionalText</code>, displayed in the end of the menu item. <b>Note:</b> The additional text would not be displayed if the item has a submenu.
+				 */
+				additionalText: {
+					type: "string"
+				},
+
+				/**
+				 * Defines the delay in milliseconds, after which the busy indicator will be displayed inside the corresponding ui5-menu popover.
+				 *
+				 * Note: If set to <code>true</code> a <code>sap.ui.webc.main.BusyIndicator</code> component will be displayed into the related one to the current <code>sap.ui.webc.main.MenuItem</code> sub-menu popover.
+				 */
+				busy: {
+					type: "boolean",
+					defaultValue: false
+				},
+
+				/**
+				 * Defines the delay in milliseconds, after which the busy indicator will be displayed inside the corresponding ui5-menu popover.
+				 */
+				busyDelay: {
+					type: "int",
+					defaultValue: 1000
+				},
+
+				/**
 				 * Defines whether the control is enabled. A disabled control can't be interacted with, and it is not in the tab chain.
 				 */
 				enabled: {
 					type: "boolean",
 					defaultValue: true,
 					mapping: {
-						type: "attribute",
+						type: "property",
 						to: "disabled",
 						formatter: "_mapEnabled"
 					}

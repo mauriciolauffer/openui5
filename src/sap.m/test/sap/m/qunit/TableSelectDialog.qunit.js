@@ -48,6 +48,9 @@ sap.ui.define([
 	// shortcut for sap.m.TitleAlignment
 	var TitleAlignment = mobileLibrary.TitleAlignment;
 
+	// shortcut for sap.m.SelectDialogInitialFocus
+	var SelectDialogInitialFocus = mobileLibrary.SelectDialogInitialFocus;
+
 	var aSearchEvents = [];
 	var aLiveChangeEvents = [];
 
@@ -827,7 +830,7 @@ sap.ui.define([
 		assert.equal(aItems[2].getSelected(), true, "SingleSelection: Item 2 should be selected");
 		assert.equal(aItems[3].getSelected(), false, "SingleSelection: Item 3 should not be selected");
 		assert.equal(aItems[4].getSelected(), false, "SingleSelection: Item 4 should not be selected");
-		oTable.fireSelect({ listItem : aItems[2] });
+		oTable.fireSelectionChange({ listItem : aItems[2] });
 	});
 
 	QUnit.test("TableSelectDialog1 Single Select Check Cancel", function(assert){
@@ -960,7 +963,7 @@ sap.ui.define([
 		assert.strictEqual(this.oTableSelectDialog._oTable.getItemsContainerDomRef().firstChild, document.activeElement, 'The table should be focused even if there are no items in the table');
 	});
 
-	QUnit.test("InitialFocus when there are rows in the TableSelectDialog's table", function (assert){
+	QUnit.test("InitialFocus when there are rows in the TableSelectDialog's table", function (assert) {
 		// Arrange
 		var oSystem = {
 			desktop: true,
@@ -995,11 +998,36 @@ sap.ui.define([
 		this.clock.tick(500);
 		this.oTableSelectDialog.setModel(oModel);
 		this.oTableSelectDialog.bindAggregation("items", "/navigation", template);
+		this.oTableSelectDialog._oDialog.getContent()[1].attachEventOnce("updateFinished", function() {
+			this.clock.tick(1);
+			// Assert
+			assert.strictEqual(this.oTableSelectDialog._oDialog.getContent()[1].getItems()[0].getFocusDomRef(), document.activeElement, 'First row should be focused when items appear later');
+
+		}.bind(this));
+		this.clock.tick(500);
+	});
+
+	QUnit.test("Custom initial focus", function (assert) {
+		// Arrange
+		var oSystem = {
+			desktop: true,
+			phone: false,
+			tablet: false
+		};
+
+		this.stub(Device, "system", oSystem);
+		this.oTableSelectDialog.setModel(oModel);
+		this.oTableSelectDialog.bindAggregation("items", "/navigation", template);
+		this.oTableSelectDialog.setInitialFocus(SelectDialogInitialFocus.SearchField);
+
+		// Act
+		this.oTableSelectDialog.open();
 		this.clock.tick(500);
 
 		// Assert
-		assert.strictEqual(this.oTableSelectDialog._oDialog.getContent()[1].getItems()[0].getFocusDomRef(), document.activeElement, 'First row should be focused when items appear later');
+		assert.strictEqual(this.oTableSelectDialog._oSearchField.getFocusDomRef(), document.activeElement, 'Search field is focused');
 
+		this.oTableSelectDialog.setInitialFocus(SelectDialogInitialFocus.List);
 	});
 
 	/********************************************************************************/

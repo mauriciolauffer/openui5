@@ -6,8 +6,10 @@ sap.ui.define([
 	"sap/ui/base/Event",
 	"sap/m/MessageStrip",
 	"sap/ui/core/Core",
-	"sap/m/VBox"
-], function (BasePanel, StandardListItem, sinon, Event, MessageStrip, oCore, VBox) {
+	"sap/m/VBox",
+	"sap/ui/events/KeyCodes",
+	"sap/ui/qunit/QUnitUtils"
+], function (BasePanel, StandardListItem, sinon, Event, MessageStrip, oCore, VBox, KeyCodes, qutils) {
 	"use strict";
 
 	QUnit.module("BasePanel API tests", {
@@ -166,7 +168,7 @@ sap.ui.define([
 		this.oBasePanel.setMessageStrip(oMessageStrip);
 		this.oBasePanel.setMessageStrip();
 
-		assert.equal(this.oBasePanel.getAggregation("_content").getItems().length, 1, "Only table in content area of the BasePanel");
+		assert.equal(this.oBasePanel.getAggregation("_content").getItems().length, 2, "Only table and InvisibleText in content area of the BasePanel");
 
 	});
 
@@ -178,7 +180,7 @@ sap.ui.define([
 		var oMessageStrip2 = new MessageStrip();
 		this.oBasePanel.setMessageStrip(oMessageStrip2);
 
-		assert.equal(this.oBasePanel.getAggregation("_content").getItems().length, 2, "Only one strip has been added to the BasePanel");
+		assert.equal(this.oBasePanel.getAggregation("_content").getItems().length, 3, "Only one strip has been added to the BasePanel");
 
 	});
 
@@ -259,6 +261,30 @@ sap.ui.define([
 		});
 	});
 
+
+	QUnit.test("trigger button up/down/top/bottom via shortcuts", function(assert){
+		var oPanel = this.oBasePanel;
+		oPanel.setEnableReorder(true);
+
+		oPanel._oListControl.fireItemPress({
+			listItem: oPanel._oListControl.getItems()[1]
+		});
+
+		oCore.applyChanges();
+
+		qutils.triggerKeydown(oPanel._oListControl.getItems()[1].getDomRef(), KeyCodes.ARROW_DOWN, false, false, true);
+		assert.equal(oPanel.getP13nData()[2].name, "test2", "2. item is at position 3");
+
+		qutils.triggerKeydown(oPanel._oListControl.getItems()[1].getDomRef(), KeyCodes.ARROW_UP, false, false, true);
+		assert.equal(oPanel.getP13nData()[1].name, "test2", "2. item is at position 2");
+
+		qutils.triggerKeydown(oPanel._oListControl.getItems()[1].getDomRef(), KeyCodes.HOME, false, false, true);
+		assert.equal(oPanel.getP13nData()[0].name, "test2", "2. item is at first position");
+
+		qutils.triggerKeydown(oPanel._oListControl.getItems()[1].getDomRef(), KeyCodes.END, false, false, true);
+		assert.equal(oPanel.getP13nData()[3].name, "test2", "2. item is at last position");
+	});
+
 	QUnit.module("BasePanel API change special reasoning", {
 		beforeEach: function() {
 			this.oBasePanel = new BasePanel();
@@ -309,18 +335,21 @@ sap.ui.define([
 		});
 
 		oVBox.placeAt("qunit-fixture");
-
-		assert.notOk(oPanel._getMoveBottomButton().getVisible(), "Button is invisible on small screens");
-		assert.notOk(oPanel._getMoveTopButton().getVisible(), "Button is invisible on small screens");
-
-		oVBox.setWidth("420px");
 		oCore.applyChanges();
 
 		setTimeout(function(){
-			assert.ok(oPanel._getMoveBottomButton().getVisible(), "Button is invisible on small screens");
-			assert.ok(oPanel._getMoveTopButton().getVisible(), "Button is invisible on small screens");
-			done();
-		});
+			assert.notOk(oPanel._getMoveBottomButton().getVisible(), "Button is invisible on larger screens");
+			assert.notOk(oPanel._getMoveTopButton().getVisible(), "Button is invisible on larger screens");
+
+			oVBox.setWidth("420px");
+			oCore.applyChanges();
+
+			setTimeout(function(){
+				assert.ok(oPanel._getMoveBottomButton().getVisible(), "Button is invisible on small screens");
+				assert.ok(oPanel._getMoveTopButton().getVisible(), "Button is invisible on small screens");
+				done();
+			}, 10);
+		}, 10);
 
 	});
 

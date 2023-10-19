@@ -4,12 +4,12 @@ QUnit.config.autostart = false;
 sap.ui.require([
 	"sap/ui/test/Opa5",
 	"sap/ui/test/opaQunit",
-	"sap/ui/fl/FakeLrepConnectorSessionStorage",
+	"test-resources/sap/ui/fl/api/FlexTestAPI",
 	"test-resources/sap/ui/fl/testutils/opa/TestLibrary"
-], function (
+], function(
 	Opa5,
 	opaTest,
-	FakeLrepConnectorSessionStorage
+	FlexTestAPI
 ) {
 	"use strict";
 
@@ -22,15 +22,15 @@ sap.ui.require([
 		async: false,
 		timeout: 15,
 		arrangements: new Opa5({
-			iStartMyApp: function () {
+			iStartMyApp() {
 				return this.iStartMyAppInAFrame(
 					sap.ui.require.toUrl(
-						"sap/ui/fl/qunit/variants/variantmanagement/index.html"
+						"test-resources/sap/ui/fl/qunit/variants/variantmanagement/index.html"
 					)
 				);
 			},
-			iClearTheSessionLRep: function () {
-				FakeLrepConnectorSessionStorage.forTesting.synchronous.clearAll();
+			iClearTheSessionLRep() {
+				FlexTestAPI.clearStorage("SessionStorage");
 				window.sessionStorage.removeItem("sap.ui.rta.restart.CUSTOMER");
 				window.sessionStorage.removeItem("sap.ui.rta.restart.USER");
 				localStorage.clear();
@@ -41,7 +41,6 @@ sap.ui.require([
 		assertions: new Opa5({
 		})
 	});
-
 
 	QUnit.module("EndUserTesting");
 
@@ -151,7 +150,6 @@ sap.ui.require([
 		// Shutdown
 		Given.iTeardownMyAppFrame();
 	});
-
 
 	QUnit.start();
 });

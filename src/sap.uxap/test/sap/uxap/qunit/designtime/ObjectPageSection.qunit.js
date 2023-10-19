@@ -172,7 +172,16 @@ sap.ui.define([
 		layer : "VENDOR",
 		afterAction : fnConfirmSection1IsOn2ndPosition,
 		afterUndo : fnConfirmSection1IsOn1stPosition,
-		afterRedo : fnConfirmSection1IsOn2ndPosition
+		afterRedo : fnConfirmSection1IsOn2ndPosition,
+		changeVisualization: function(oView) {
+			return {
+				displayElementId: "section1",
+				info: {
+					affectedControls: ["section1"],
+					displayControls: ["section1", oView.byId("op").getAggregation("_anchorBar").getContent()[2].getId()]
+				}
+			};
+		}
 	});
 
 	function fnConfirmIFrameSectionIsOn2ndPosition(oAppComponent, oViewAfterAction, assert) {
@@ -247,14 +256,30 @@ sap.ui.define([
 		layer : "VENDOR",
 		afterAction : fnConfirmIFrameSectionIsOn2ndPosition,
 		afterUndo : fnConfirmIFrameWasRemoved,
-		afterRedo : fnConfirmIFrameSectionIsOn2ndPosition
+		afterRedo : fnConfirmIFrameSectionIsOn2ndPosition,
+		changeVisualization: function(oView) {
+			return {
+				displayElementId: oView.byId("iFrameSection").getId(),
+				info: {
+					affectedControls: [oView.byId("iFrameSection").getId()],
+					displayControls: [oView.byId("iFrameSection").getId(), oView.byId("op").getAggregation("_anchorBar").getContent()[1].getId()]
+				}
+			};
+		}
 	});
 
 	// Update IFrame
 	function fnConfirmIFrameWasUpdated(oAppComponent, oViewAfterAction, assert) {
-		assert.strictEqual( oViewAfterAction.byId("iFrameSection-iframe").get_settings().url,
+		const oIFrame = oViewAfterAction.byId("iFrameSection-iframe");
+		assert.strictEqual(
+			oIFrame.get_settings().url,
 			"someNewUrl",
-			"then the iFrame is updated" );
+			"then the iframe url is updated"
+		);
+		assert.ok(
+			oIFrame.getUseLegacyNavigation(),
+			"then the legacy navigation flag is properly updated"
+		);
 	}
 
 	// Use elementActionTest to check if a new iFrame as Object Page Section is updated properly
@@ -289,7 +314,8 @@ sap.ui.define([
 					content: {
 						height: "100%",
 						url: "someNewUrl",
-						width: "100%"
+						width: "100%",
+						useLegacyNavigation: true
 					}
 				};
 			}
@@ -333,7 +359,7 @@ sap.ui.define([
 	elementActionTest("Checking the rename action for a Section", {
 		xmlView:'<mvc:View xmlns:mvc="sap.ui.core.mvc" ' +
 		'xmlns:m="sap.m" xmlns:uxap="sap.uxap" >' +
-			'<uxap:ObjectPageLayout>' +
+			'<uxap:ObjectPageLayout id="op">' +
 				'<uxap:sections>' +
 					'<uxap:ObjectPageSection id="section" title="Title 1">' +
 						'<uxap:subSections>' +
@@ -420,7 +446,16 @@ sap.ui.define([
 		},
 		afterAction: fnConfirmSectionRenamedWithNewValue,
 		afterUndo: fnConfirmSectionIsRenamedWithOldValue,
-		afterRedo: fnConfirmSectionRenamedWithNewValue
+		afterRedo: fnConfirmSectionRenamedWithNewValue,
+		changeVisualization: function(oView) {
+			return {
+				displayElementId: "section",
+				info: {
+					affectedControls: ["section"],
+					displayControls: ["section", oView.byId("layout").getAggregation("_anchorBar").getContent()[0].getId()]
+				}
+			};
+		}
 	});
 
 	// Rename action of section with one subsection with NO title
@@ -484,6 +519,8 @@ sap.ui.define([
 			'</uxap:ObjectPageLayout>' +
 		'</mvc:View>'
 		,
+		// If the Section only has one SubSection, the Section takes the SubSection title
+		label: "SubSectionTitle 1",
 		action: {
 			name: "rename",
 			controlId: "section",
@@ -671,6 +708,60 @@ sap.ui.define([
 		afterAction: fnConfirmSectionIsVisible,
 		afterUndo: fnConfirmSectionIsNotVisible,
 		afterRedo: fnConfirmSectionIsVisible
+	});
+
+	elementActionTest("Checking the unstash action for a Section with only one subsection from the corresponding anchor bar button", {
+		xmlView:'<mvc:View xmlns:mvc="sap.ui.core.mvc" ' +
+			'xmlns:m="sap.m" xmlns:uxap="sap.uxap" >' +
+				'<uxap:ObjectPageLayout id="layout">' +
+					'<uxap:sections>' +
+						'<uxap:ObjectPageSection id="section" visible="false" title="Title 1">' +
+							'<uxap:subSections>' +
+								'<uxap:ObjectPageSubSection id="subSection1" title="SubSection Title 1">' +
+									'<m:Button text="Subsection UI adaptation1" />' +
+								'</uxap:ObjectPageSubSection>' +
+							'</uxap:subSections>' +
+						'</uxap:ObjectPageSection>' +
+						'<uxap:ObjectPageSection id="section2">' +
+							'<uxap:subSections>' +
+								'<uxap:ObjectPageSubSection id="subSection3" title="Subsection3 with button">' +
+									'<m:Button text="Button1" />' +
+								'</uxap:ObjectPageSubSection>' +
+							'</uxap:subSections>' +
+						'</uxap:ObjectPageSection>' +
+						'<uxap:ObjectPageSection id="section3">' +
+							'<uxap:subSections>' +
+								'<uxap:ObjectPageSubSection id="subSection4" title="Subsection4 with button">' +
+									'<m:Button text="Button2" />' +
+								'</uxap:ObjectPageSubSection>' +
+							'</uxap:subSections>' +
+						'</uxap:ObjectPageSection>' +
+					'</uxap:sections>' +
+				'</uxap:ObjectPageLayout>' +
+			'</mvc:View>'
+		,
+		action: {
+			revealedElement: function(oView) {
+				return oView.byId("section");
+			},
+			name: "reveal",
+			control : function(oView) {
+				return oView.byId("layout").getAggregation("_anchorBar").getContent()[0];
+			},
+			label: "SubSection Title 1"
+		},
+		afterAction: fnConfirmSectionIsVisible,
+		afterUndo: fnConfirmSectionIsNotVisible,
+		afterRedo: fnConfirmSectionIsVisible,
+		changeVisualization: function(oView) {
+			return {
+				displayElementId: "section",
+				info: {
+					affectedControls: ["section"],
+					displayControls: ["section", oView.byId("layout").getAggregation("_anchorBar").getContent()[0].getId()]
+				}
+			};
+		}
 	});
 
 	elementActionTest("Checking the rename action for a Section with one SubSection with title, when subSectionLayout='TitleOnLeft' ", {

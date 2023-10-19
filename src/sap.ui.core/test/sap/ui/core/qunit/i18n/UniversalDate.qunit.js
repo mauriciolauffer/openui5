@@ -1,6 +1,5 @@
 /*global QUnit, sinon */
 sap.ui.define([
-	"sap/ui/core/Core",
 	"sap/ui/core/Locale",
 	"sap/ui/core/date/UniversalDate",
 	"sap/ui/core/date/Gregorian",
@@ -10,10 +9,11 @@ sap.ui.define([
 	"sap/ui/core/CalendarType",
 	"sap/ui/core/Configuration",
 	"sap/ui/core/date/CalendarWeekNumbering"
-], function(Core, Locale, UniversalDate, Gregorian, Islamic, Japanese, UI5Date, CalendarType,
+], function(Locale, UniversalDate, Gregorian, Islamic, Japanese, UI5Date, CalendarType,
 		Configuration, CalendarWeekNumbering) {
 	"use strict";
 
+	const sLanguage = Configuration.getLanguage();
 	//next values must not overlap each other!
 	var year = 1400,
 		month = 3,
@@ -32,24 +32,30 @@ sap.ui.define([
 	testParameter2[milliseconds] = "milliseconds";
 
 	QUnit.module("sap.ui.core.date.UniversalDate", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach: function () {
-			this.sandbox = sinon.sandbox.create();
-			this.oStubCalendarType = this.sandbox.stub(Configuration, "getCalendarType");
+			Configuration.setLanguage("en-US");
+			this.oStubCalendarType = this.stub(Configuration, "getCalendarType");
 			this.oStubCalendarType.returns(CalendarType.Gregorian);
-			this.dateSpy = this.sandbox.spy(window, 'Date');
+			this.dateSpy = this.spy(window, 'Date');
 		},
 		afterEach: function () {
-			this.sandbox.restore();
+			this.dateSpy.restore();
+			Configuration.setLanguage(sLanguage);
 		}
 	});
 
 	QUnit.test("with no arguments", function (assert) {
+		// eslint-disable-next-line no-new
 		new UniversalDate();
 		assert.ok(this.dateSpy.calledOnce, "InnerDate must be instantiated just ones");
 		assert.equal(this.dateSpy.firstCall.args.length, 0, "InnerDate must be instantiated with no arguments");
 	});
 
 	QUnit.test("with value parameter (timestamp)", function (assert) {
+		// eslint-disable-next-line no-new
 		new UniversalDate(1000);
 		assert.ok(this.dateSpy.calledOnce, "InnerDate must be instantiated just ones");
 		assert.equal(this.dateSpy.firstCall.args.length, 1, "Wrapped date must be instantiated with just one argument");
@@ -57,31 +63,37 @@ sap.ui.define([
 	});
 
 	QUnit.test("with all 7 parameters", function (assert) {
+		// eslint-disable-next-line no-new
 		new UniversalDate(year, month, date, hours, minutes, seconds, milliseconds);
 		check.call(this, assert, 7);
 	});
 
 	QUnit.test("with 6 parameters", function (assert) {
+		// eslint-disable-next-line no-new
 		new UniversalDate(year, month, date, hours, minutes, seconds);
 		check.call(this, assert, 6);
 	});
 
 	QUnit.test("with 5 parameters", function (assert) {
+		// eslint-disable-next-line no-new
 		new UniversalDate(year, month, date, hours, minutes);
 		check.call(this, assert, 5);
 	});
 
 	QUnit.test("with 4 parameters", function (assert) {
+		// eslint-disable-next-line no-new
 		new UniversalDate(year, month, date, hours);
 		check.call(this, assert, 4);
 	});
 
 	QUnit.test("with 3 parameters", function (assert) {
+		// eslint-disable-next-line no-new
 		new UniversalDate(year, month, date);
 		check.call(this, assert, 3);
 	});
 
 	QUnit.test("with 2 parameters", function (assert) {
+		// eslint-disable-next-line no-new
 		new UniversalDate(year, month);
 		check.call(this, assert, 2);
 	});
@@ -101,6 +113,7 @@ sap.ui.define([
 
 	QUnit.test("getInstance creates UI5Date", function(assert) {
 		var oInnerDate = UI5Date.getInstance(),
+			// no need to use UI5Date.getInstance as native Date is tested
 			oNativeDate = new Date(),
 			oUI5DateMock = this.mock(UI5Date),
 			oUniversalDate = UniversalDate.getInstance();
@@ -161,8 +174,8 @@ sap.ui.define([
 
 	QUnit.test("determineType with Gregorian calendar", function (assert) {
 		this.oStubCalendarType.returns(CalendarType.Gregorian);
-		var spy = this.sandbox.spy(sap.ui.core.date, 'Gregorian');
-		var oUniversalDate = new UniversalDate();
+		const spy = this.spy(sap.ui.core.date, 'Gregorian');
+		const oUniversalDate = new UniversalDate();
 		assert.ok(1, spy.callCount, "sap.ui.core.date.Gregorian must be instantiated just ones");
 		assert.ok(oUniversalDate instanceof Gregorian, "Date object must be instance of Gregorian");
 		assert.equal(oUniversalDate.getCalendarType(), CalendarType.Gregorian, "Universal date must report correct calendarType");
@@ -170,8 +183,8 @@ sap.ui.define([
 
 	QUnit.test("determineType with Islamic calendar", function (assert) {
 		this.oStubCalendarType.returns(CalendarType.Islamic);
-		var spy = this.sandbox.spy(sap.ui.core.date, 'Islamic');
-		var oUniversalDate = new UniversalDate();
+		const spy = this.spy(sap.ui.core.date, 'Islamic');
+		const oUniversalDate = new UniversalDate();
 		assert.ok(1, spy.callCount, "sap.ui.core.date.Islamic must be instantiated just ones");
 		assert.ok(oUniversalDate instanceof Islamic, "Date object must be instance of Islamic");
 		assert.equal(oUniversalDate.getCalendarType(), CalendarType.Islamic, "Universal date must report correct calendarType");
@@ -179,8 +192,8 @@ sap.ui.define([
 
 	QUnit.test("determineType with Japanese calendar", function (assert) {
 		this.oStubCalendarType.returns(CalendarType.Japanese);
-		var spy = this.sandbox.spy(sap.ui.core.date, 'Japanese');
-		var oUniversalDate = new UniversalDate();
+		const spy = this.spy(sap.ui.core.date, 'Japanese');
+		const oUniversalDate = new UniversalDate();
 		assert.ok(1, spy.callCount, "sap.ui.core.date.Japanese must be instantiated just ones");
 		assert.ok(oUniversalDate instanceof Japanese, "Date object must be instance of Japanese");
 		assert.equal(oUniversalDate.getCalendarType(), CalendarType.Japanese, "Universal date must report correct calendarType");
@@ -196,47 +209,38 @@ sap.ui.define([
 	"setUTCMilliseconds", "getTime", "getTimezoneOffset", "valueOf", "toString", "toDateString"
 ].forEach(function (sMethodName) {
 	QUnit.test("Method calls are forwarded to inner instance: " + sMethodName, function (assert) {
-		var oUniversalDate = UniversalDate.getInstance(),
-			oStub = sinon.stub(oUniversalDate.oDate, sMethodName);
+		const oUniversalDate = UniversalDate.getInstance();
+		const oStub = this.stub(oUniversalDate.oDate, sMethodName);
 
 		oStub.withArgs("~foo", "~bar").returns("~result");
 
 		// code under test
 		assert.strictEqual(oUniversalDate[sMethodName]("~foo", "~bar"), "~result");
-
-		oStub.restore();
 	});
 });
 
 	QUnit.test("Static methods call is forwarded to inner instance", function (assert) {
 		this.dateSpy.restore();
-		var aStaticMethods = [
-					{name: "UTC", hasArgs: true},
-					{name: "now"}],
-				returnValue = 111,
-				sMethodName,
-				oDateConstructorStub,
-				oMethodStub,
-				bMethodHasArgs,
-				result,
-				aMethodCallArg = [10, 11];
+		const aStaticMethods = [
+			{name: "UTC", hasArgs: true},
+			{name: "now"}
+		];
+		const aMethodCallArg = [10, 11];
 
-		for (var i = 0; i < aStaticMethods.length; i++) {
-			sMethodName = aStaticMethods[i].name;
-			bMethodHasArgs = aStaticMethods[i].hasArgs;
-			var MockDateClass = function () {
-			};
+		for (let i = 0; i < aStaticMethods.length; i += 1) {
+			const sMethodName = aStaticMethods[i].name;
+			const bMethodHasArgs = aStaticMethods[i].hasArgs;
+			const MockDateClass = function () {};
 			MockDateClass.prototype = Date.prototype;
-			MockDateClass.prototype[sMethodName] = function () {
-			};
-			MockDateClass[sMethodName] = function () {
-			};
+			MockDateClass.prototype[sMethodName] = () => {};
+			MockDateClass[sMethodName] = () => {};
 
-			var d = new MockDateClass();
-			oDateConstructorStub = this.sandbox.stub(window, 'Date').returns(d);
-			oMethodStub = this.sandbox.stub(d, sMethodName).returns(returnValue);
+			const d = new MockDateClass();
+			const oDateConstructorStub = this.stub(window, 'Date').returns(d);
+			const oMethodStub = this.stub(d, sMethodName).returns(111);
 			Date[sMethodName] = d[sMethodName]; //eslint-disable-line no-extend-native
 
+			let result;
 			if (bMethodHasArgs) {
 				result = UniversalDate[sMethodName](aMethodCallArg[0], aMethodCallArg[1]);
 			} else {
@@ -248,7 +252,7 @@ sap.ui.define([
 				assert.deepEqual(oMethodStub.firstCall.args, aMethodCallArg, "Method [" + sMethodName + "] call has to be called with certain arguments");
 			}
 
-			assert.equal(result, returnValue, "Method [" + sMethodName + "] call has to return a certain value");
+			assert.strictEqual(result, 111, "Method [" + sMethodName + "] call has to return a certain value");
 
 			oMethodStub.restore();
 			oDateConstructorStub.restore();
@@ -283,105 +287,105 @@ sap.ui.define([
 	QUnit.test("getDayPeriod", function (assert) {
 		this.dateSpy.restore();
 
-		var aExpected = [];
-		for (var i = 0; i < 12; i++) {
+		const aExpected = [];
+		for (let i = 0; i < 12; i += 1) {
 			aExpected.push(0);
 		}
-		for (var i = 0; i < 12; i++) {
+		for (let i = 0; i < 12; i += 1) {
 			aExpected.push(1);
 		}
 
-		var ud;
-		for (var i = 0; i < 24; i++) {
-			ud =  new UniversalDate(2017, 1, 1, i);
+		for (let i = 0; i < 24; i += 1) {
+			const ud =  new UniversalDate(2017, 1, 1, i);
 			assert.equal(ud.getDayPeriod(), aExpected[i], "The correct DayPeriod is returned");
 		}
 
 		// Wed, 01 Mar 2017 11:30:00 GMT
 		// getUTCDayPeriod should return 0, getDayPeriod may return 1 depends on the running time zone
-		var oDate = new UniversalDate(1488367800000);
+		const oDate = new UniversalDate(1488367800000);
 		assert.equal(oDate.getUTCDayPeriod(), 0, "getUTCDayPeriod");
 	});
 
 	QUnit.test("setWeek/setUTCWeek", function (assert) {
 		this.dateSpy.restore();
 
-		var oFormatLocaleObject = Core.getConfiguration().getFormatSettings().getFormatLocale();
-
-		var oGetLanguageStub = this.stub(oFormatLocaleObject, "getLanguage").returns("de");
-		var oGetRegionStub = this.stub(oFormatLocaleObject, "getRegion").returns("DE");
-
-		var oWeekObject = new UniversalDate(0);
-
+		Configuration.setLanguage("de-DE");
+		var oWeekObject = new UniversalDate(2023,0,1);
 		// ISO 8601 (de)
 		oWeekObject.setWeek({week: 0, year: 2021});
-		assert.equal(oWeekObject.toDateString(), new UniversalDate(2021, 0, 4).toDateString(), "Date is the same");
-		oWeekObject.setUTCWeek({week: 0, year: 2021});
-		assert.equal(oWeekObject.toDateString(), new UniversalDate(2021, 0, 4).toDateString(), "Date is the same");
-
+		assert.strictEqual(oWeekObject.toString(), new UniversalDate(2021, 0, 4).toString());
 		// Western Traditional (en)
 		oWeekObject.setWeek({week: 0, year: 2021}, new Locale("en"));
-		assert.equal(oWeekObject.toDateString(), new UniversalDate(2020, 11, 27).toDateString(), "Date is the same");
-		oWeekObject.setUTCWeek({week: 0, year: 2021}, new Locale("en"));
-		assert.equal(oWeekObject.toDateString(), new UniversalDate(2020, 11, 27).toDateString(), "Date is the same");
-
+		assert.strictEqual(oWeekObject.toString(), new UniversalDate(2020, 11, 27).toString());
 		// Western Traditional (no locale)
 		oWeekObject.setWeek({week: 0, year: 2021}, undefined, CalendarWeekNumbering.WesternTraditional);
-		assert.equal(oWeekObject.toDateString(), new UniversalDate(2020, 11, 27).toDateString(), "Date is the same");
-		oWeekObject.setUTCWeek({week: 0, year: 2021}, undefined, CalendarWeekNumbering.WesternTraditional);
-		assert.equal(oWeekObject.toDateString(), new UniversalDate(2020, 11, 27).toDateString(), "Date is the same");
-
+		assert.strictEqual(oWeekObject.toString(), new UniversalDate(2020, 11, 27).toString());
 		// Western Traditional > locale de
 		oWeekObject.setWeek({week: 0, year: 2021}, new Locale("de"), CalendarWeekNumbering.WesternTraditional);
-		assert.equal(oWeekObject.toDateString(), new UniversalDate(2020, 11, 27).toDateString(), "Date is the same");
-		oWeekObject.setUTCWeek({week: 0, year: 2021}, new Locale("de"), CalendarWeekNumbering.WesternTraditional);
-		assert.equal(oWeekObject.toDateString(), new UniversalDate(2020, 11, 27).toDateString(), "Date is the same");
+		assert.strictEqual(oWeekObject.toString(), new UniversalDate(2020, 11, 27).toString());
 
-		oGetLanguageStub.restore();
-		oGetRegionStub.restore();
+		oWeekObject = new UniversalDate(Date.UTC(2023,0,1));
+		// ISO 8601 (de)
+		oWeekObject.setUTCWeek({week: 0, year: 2021});
+		assert.strictEqual(oWeekObject.getJSDate().toUTCString(),
+			new UniversalDate(Date.UTC(2021, 0, 4)).getJSDate().toUTCString());
+		// Western Traditional (en)
+		oWeekObject.setUTCWeek({week: 0, year: 2021}, new Locale("en"));
+		assert.strictEqual(oWeekObject.getJSDate().toUTCString(),
+			new UniversalDate(Date.UTC(2020, 11, 27)).getJSDate().toUTCString());
+		// Western Traditional (no locale)
+		oWeekObject.setUTCWeek({week: 0, year: 2021}, undefined, CalendarWeekNumbering.WesternTraditional);
+		assert.strictEqual(oWeekObject.getJSDate().toUTCString(),
+			new UniversalDate(Date.UTC(2020, 11, 27)).getJSDate().toUTCString());
+		// Western Traditional > locale de
+		oWeekObject.setUTCWeek({week: 0, year: 2021}, new Locale("de"), CalendarWeekNumbering.WesternTraditional);
+		assert.strictEqual(oWeekObject.getJSDate().toUTCString(),
+			new UniversalDate(Date.UTC(2020, 11, 27)).getJSDate().toUTCString());
 	});
 
 	QUnit.test("getWeek/getUTCWeek with locale en_US (split week)", function (assert) {
 		this.dateSpy.restore();
 
-		var oWeekObject;
-		var oGetLanguageStub;
-		var oGetRegionStub;
-		var oFormatLocaleObject = Core.getConfiguration().getFormatSettings().getFormatLocale();
-
-		var aFixtures = [
+		const aFixtures = [
 			{
-				oInputDate: new UniversalDate(2020, 11, 20, 6),
+				oInputDate: new UniversalDate(2020, 11, 20),
+				oInputDateUTC: new UniversalDate(Date.UTC(2020, 11, 20)),
 				iExpectedYear: 2020,
 				iExpectedWeek: 51
 			},
 			{
-				oInputDate: new UniversalDate(2020, 11, 26, 6),
+				oInputDate: new UniversalDate(2020, 11, 26),
+				oInputDateUTC: new UniversalDate(Date.UTC(2020, 11, 26)),
 				iExpectedYear: 2020,
 				iExpectedWeek: 51
 			},
 			{
-				oInputDate: new UniversalDate(2020, 11, 27, 6),
+				oInputDate: new UniversalDate(2020, 11, 27),
+				oInputDateUTC: new UniversalDate(Date.UTC(2020, 11, 27)),
 				iExpectedYear: 2020,
 				iExpectedWeek: 52
 			},
 			{
-				oInputDate: new UniversalDate(2020, 11, 31, 6),
+				oInputDate: new UniversalDate(2020, 11, 31),
+				oInputDateUTC: new UniversalDate(Date.UTC(2020, 11, 31)),
 				iExpectedYear: 2020,
 				iExpectedWeek: 52
 			},
 			{
-				oInputDate: new UniversalDate(2021, 0, 1, 6),
+				oInputDate: new UniversalDate(2021, 0, 1),
+				oInputDateUTC: new UniversalDate(Date.UTC(2021, 0, 1)),
 				iExpectedYear: 2021,
 				iExpectedWeek: 0
 			},
 			{
-				oInputDate: new UniversalDate(2021, 0, 2, 6),
+				oInputDate: new UniversalDate(2021, 0, 2),
+				oInputDateUTC: new UniversalDate(Date.UTC(2021, 0, 2)),
 				iExpectedYear: 2021,
 				iExpectedWeek: 0
 			},
 			{
-				oInputDate: new UniversalDate(2021, 0, 3, 6),
+				oInputDate: new UniversalDate(2021, 0, 3),
+				oInputDateUTC: new UniversalDate(Date.UTC(2021, 0, 3)),
 				iExpectedYear: 2021,
 				iExpectedWeek: 1
 			}
@@ -393,15 +397,17 @@ sap.ui.define([
 		// CW53: 2020-12-27 - 2020-12-31 ({year:2020, week:52})
 		// CW01: 2021-01-01 - 2021-01-02 ({year:2021, week: 0})
 		// Note: function getWeek returns the calendar week index which starts at 0
-		oGetLanguageStub = this.stub(oFormatLocaleObject, "getLanguage").returns("en");
-		oGetRegionStub = this.stub(oFormatLocaleObject, "getRegion").returns("US");
-
 		aFixtures.forEach(function(oFixture) {
-			oWeekObject = oFixture.oInputDate.getUTCWeek();
+			let oWeekObject = oFixture.oInputDateUTC.getUTCWeek();
 			assert.equal(oWeekObject.year, oFixture.iExpectedYear, "Calendar 'week year' should be " + oFixture.iExpectedYear + ".");
 			assert.equal(oWeekObject.week, oFixture.iExpectedWeek, "Calendar 'week' index should be " + oFixture.iExpectedWeek + ".");
 
-			oWeekObject = oFixture.oInputDate.getUTCWeek(oFormatLocaleObject, CalendarWeekNumbering.Default);
+			const oLocale = new Locale("en-US");
+			oWeekObject = oFixture.oInputDateUTC.getUTCWeek(oLocale, CalendarWeekNumbering.Default);
+			assert.equal(oWeekObject.year, oFixture.iExpectedYear, "Calendar 'week year' should be " + oFixture.iExpectedYear + ".");
+			assert.equal(oWeekObject.week, oFixture.iExpectedWeek, "Calendar 'week' index should be " + oFixture.iExpectedWeek + ".");
+
+			oWeekObject = oFixture.oInputDateUTC.getUTCWeek(oLocale, CalendarWeekNumbering.WesternTraditional);
 			assert.equal(oWeekObject.year, oFixture.iExpectedYear, "Calendar 'week year' should be " + oFixture.iExpectedYear + ".");
 			assert.equal(oWeekObject.week, oFixture.iExpectedWeek, "Calendar 'week' index should be " + oFixture.iExpectedWeek + ".");
 
@@ -409,54 +415,55 @@ sap.ui.define([
 			assert.equal(oWeekObject.year, oFixture.iExpectedYear, "Calendar 'week year' should be " + oFixture.iExpectedYear + ".");
 			assert.equal(oWeekObject.week, oFixture.iExpectedWeek, "Calendar 'week' index should be " + oFixture.iExpectedWeek + ".");
 
-			oWeekObject = oFixture.oInputDate.getWeek(oFormatLocaleObject, CalendarWeekNumbering.Default);
+			oWeekObject = oFixture.oInputDate.getWeek(oLocale, CalendarWeekNumbering.Default);
+			assert.equal(oWeekObject.year, oFixture.iExpectedYear, "Calendar 'week year' should be " + oFixture.iExpectedYear + ".");
+			assert.equal(oWeekObject.week, oFixture.iExpectedWeek, "Calendar 'week' index should be " + oFixture.iExpectedWeek + ".");
+
+			oWeekObject = oFixture.oInputDate.getWeek(oLocale, CalendarWeekNumbering.WesternTraditional);
 			assert.equal(oWeekObject.year, oFixture.iExpectedYear, "Calendar 'week year' should be " + oFixture.iExpectedYear + ".");
 			assert.equal(oWeekObject.week, oFixture.iExpectedWeek, "Calendar 'week' index should be " + oFixture.iExpectedWeek + ".");
 		});
-
-		oGetLanguageStub.restore();
-		oGetRegionStub.restore();
 	});
 
 	QUnit.test("getWeek/getUTCWeek with locale en (Western Traditional)", function (assert) {
 		this.dateSpy.restore();
 
-		var oWeekObject;
-		var oGetLanguageStub;
-		var oGetRegionStub;
-		var oFormatLocaleObject = Core.getConfiguration().getFormatSettings().getFormatLocale();
-		var aLocales = [
-			{ language: "en", region: null }
-		];
-
-		var aFixtures = [
+		let oWeekObject;
+		const oFormatSettings = Configuration.getFormatSettings();
+		const aFixtures = [
 			{
-				oInputDate: new UniversalDate(2020, 11, 21, 6),
+				oInputDate: new UniversalDate(2020, 11, 21),
+				oInputDateUTC: new UniversalDate(Date.UTC(2020, 11, 21)),
 				iExpectedYear: 2020,
 				iExpectedWeek: 51
 			},
 			{
-				oInputDate: new UniversalDate(2020, 11, 27, 6),
+				oInputDate: new UniversalDate(2020, 11, 27),
+				oInputDateUTC: new UniversalDate(Date.UTC(2020, 11, 27)),
 				iExpectedYear: 2021,
 				iExpectedWeek: 0
 			},
 			{
-				oInputDate: new UniversalDate(2020, 11, 28, 6),
+				oInputDate: new UniversalDate(2020, 11, 28),
+				oInputDateUTC: new UniversalDate(Date.UTC(2020, 11, 28)),
 				iExpectedYear: 2021,
 				iExpectedWeek: 0
 			},
 			{
-				oInputDate: new UniversalDate(2021, 0, 3, 6),
+				oInputDate: new UniversalDate(2021, 0, 3),
+				oInputDateUTC: new UniversalDate(Date.UTC(2021, 0, 3)),
 				iExpectedYear: 2021,
 				iExpectedWeek: 1
 			},
 			{
-				oInputDate: new UniversalDate(2021, 0, 4, 6),
+				oInputDate: new UniversalDate(2021, 0, 4),
+				oInputDateUTC: new UniversalDate(Date.UTC(2021, 0, 4)),
 				iExpectedYear: 2021,
 				iExpectedWeek: 1
 			},
 			{
-				oInputDate: new UniversalDate(2021, 0, 10, 6),
+				oInputDate: new UniversalDate(2021, 0, 10),
+				oInputDateUTC: new UniversalDate(Date.UTC(2021, 0, 10)),
 				iExpectedYear: 2021,
 				iExpectedWeek: 2
 			}
@@ -469,29 +476,22 @@ sap.ui.define([
 		// CW01 2020-12-27 - 2021-01-02 ({year:2021, week: 0})
 		// CW02 2021-01-03 - 2021-01-09 ({year:2021, week: 1})
 		// Note: function getWeek returns the calendar week index which starts at 0
-		aLocales.forEach(function(oLocale) {
-			oGetLanguageStub = this.stub(oFormatLocaleObject, "getLanguage").returns(oLocale.language);
-			oGetRegionStub = this.stub(oFormatLocaleObject, "getRegion").returns(oLocale.region);
-			assert.equal(oFormatLocaleObject.getLanguage(), oLocale.language, "Language should be: " + oLocale.language);
-			assert.equal(oFormatLocaleObject.getRegion(), oLocale.region, "Region should be: " + oLocale.region);
+		const oGetFormatLocaleStub = this.stub(oFormatSettings, "getFormatLocale").returns(new Locale("en"));
+		aFixtures.forEach(function(oFixture) {
+			oWeekObject = oFixture.oInputDateUTC.getUTCWeek();
+			assert.equal(oWeekObject.year, oFixture.iExpectedYear, "Calendar 'week year' should be " + oFixture.iExpectedYear + ".");
+			assert.equal(oWeekObject.week, oFixture.iExpectedWeek, "Calendar 'week' index should be " + oFixture.iExpectedWeek + ".");
 
-			aFixtures.forEach(function(oFixture) {
-				oWeekObject = oFixture.oInputDate.getUTCWeek();
-				assert.equal(oWeekObject.year, oFixture.iExpectedYear, "Calendar 'week year' should be " + oFixture.iExpectedYear + ".");
-				assert.equal(oWeekObject.week, oFixture.iExpectedWeek, "Calendar 'week' index should be " + oFixture.iExpectedWeek + ".");
+			oWeekObject = oFixture.oInputDate.getWeek();
+			assert.equal(oWeekObject.year, oFixture.iExpectedYear, "Calendar 'week year' should be " + oFixture.iExpectedYear + ".");
+			assert.equal(oWeekObject.week, oFixture.iExpectedWeek, "Calendar 'week' index should be " + oFixture.iExpectedWeek + ".");
+		});
 
-				oWeekObject = oFixture.oInputDate.getWeek();
-				assert.equal(oWeekObject.year, oFixture.iExpectedYear, "Calendar 'week year' should be " + oFixture.iExpectedYear + ".");
-				assert.equal(oWeekObject.week, oFixture.iExpectedWeek, "Calendar 'week' index should be " + oFixture.iExpectedWeek + ".");
-			});
-
-			oGetLanguageStub.restore();
-			oGetRegionStub.restore();
-		}.bind(this));
+		oGetFormatLocaleStub.restore();
 
 		// Locale "en"
 		aFixtures.forEach(function(oFixture) {
-			oWeekObject = oFixture.oInputDate.getUTCWeek(new Locale("en"));
+			oWeekObject = oFixture.oInputDateUTC.getUTCWeek(new Locale("en"));
 			assert.equal(oWeekObject.year, oFixture.iExpectedYear, "Calendar 'week year' should be " + oFixture.iExpectedYear + ".");
 			assert.equal(oWeekObject.week, oFixture.iExpectedWeek, "Calendar 'week' index should be " + oFixture.iExpectedWeek + ".");
 
@@ -502,18 +502,18 @@ sap.ui.define([
 
 		// CalendarWeekNumbering.WesternTraditional
 		aFixtures.forEach(function(oFixture) {
-			oWeekObject = oFixture.oInputDate.getUTCWeek(undefined, CalendarWeekNumbering.WesternTraditional);
+			oWeekObject = oFixture.oInputDateUTC.getUTCWeek(new Locale("en"), CalendarWeekNumbering.WesternTraditional);
 			assert.equal(oWeekObject.year, oFixture.iExpectedYear, "Calendar 'week year' should be " + oFixture.iExpectedYear + ".");
 			assert.equal(oWeekObject.week, oFixture.iExpectedWeek, "Calendar 'week' index should be " + oFixture.iExpectedWeek + ".");
 
-			oWeekObject = oFixture.oInputDate.getWeek(undefined, CalendarWeekNumbering.WesternTraditional);
+			oWeekObject = oFixture.oInputDate.getWeek(new Locale("en"), CalendarWeekNumbering.WesternTraditional);
 			assert.equal(oWeekObject.year, oFixture.iExpectedYear, "Calendar 'week year' should be " + oFixture.iExpectedYear + ".");
 			assert.equal(oWeekObject.week, oFixture.iExpectedWeek, "Calendar 'week' index should be " + oFixture.iExpectedWeek + ".");
 		});
 
 		// CalendarWeekNumbering.WesternTraditional > Locale
 		aFixtures.forEach(function(oFixture) {
-			oWeekObject = oFixture.oInputDate.getUTCWeek(new Locale("de"), CalendarWeekNumbering.WesternTraditional);
+			oWeekObject = oFixture.oInputDateUTC.getUTCWeek(new Locale("de"), CalendarWeekNumbering.WesternTraditional);
 			assert.equal(oWeekObject.year, oFixture.iExpectedYear, "Calendar 'week year' should be " + oFixture.iExpectedYear + ".");
 			assert.equal(oWeekObject.week, oFixture.iExpectedWeek, "Calendar 'week' index should be " + oFixture.iExpectedWeek + ".");
 
@@ -521,49 +521,51 @@ sap.ui.define([
 			assert.equal(oWeekObject.year, oFixture.iExpectedYear, "Calendar 'week year' should be " + oFixture.iExpectedYear + ".");
 			assert.equal(oWeekObject.week, oFixture.iExpectedWeek, "Calendar 'week' index should be " + oFixture.iExpectedWeek + ".");
 		});
-
 	});
 
 	QUnit.test("getWeek/getUTCWeek with locale de and en_GB (ISO 8601)", function (assert) {
 		this.dateSpy.restore();
 
-		var oWeekObject;
-		var oGetLanguageStub;
-		var oGetRegionStub;
-		var oFormatLocaleObject = Core.getConfiguration().getFormatSettings().getFormatLocale();
-		var aLocales = [
+		let oWeekObject;
+		const oFormatSettings = Configuration.getFormatSettings();
+		const aLocales = [
 			{ language: "de", region: null },
 			{ language: "en", region: "GB" }
 		];
-
-		var aFixtures = [
+		const aFixtures = [
 			{
-				oInputDate: new UniversalDate(2020, 11, 21, 6),
+				oInputDate: new UniversalDate(2020, 11, 21),
+				oInputDateUTC: new UniversalDate(Date.UTC(2020, 11, 21)),
 				iExpectedYear: 2020,
 				iExpectedWeek: 51
 			},
 			{
-				oInputDate: new UniversalDate(2020, 11, 27, 6),
+				oInputDate: new UniversalDate(2020, 11, 27),
+				oInputDateUTC: new UniversalDate(Date.UTC(2020, 11, 27)),
 				iExpectedYear: 2020,
 				iExpectedWeek: 51
 			},
 			{
-				oInputDate: new UniversalDate(2020, 11, 28, 6),
+				oInputDate: new UniversalDate(2020, 11, 28),
+				oInputDateUTC: new UniversalDate(Date.UTC(2020, 11, 28)),
 				iExpectedYear: 2020,
 				iExpectedWeek: 52
 			},
 			{
-				oInputDate: new UniversalDate(2021, 0, 3, 6),
+				oInputDate: new UniversalDate(2021, 0, 3),
+				oInputDateUTC: new UniversalDate(Date.UTC(2021, 0, 3)),
 				iExpectedYear: 2020,
 				iExpectedWeek: 52
 			},
 			{
-				oInputDate: new UniversalDate(2021, 0, 4, 6),
+				oInputDate: new UniversalDate(2021, 0, 4),
+				oInputDateUTC: new UniversalDate(Date.UTC(2021, 0, 4)),
 				iExpectedYear: 2021,
 				iExpectedWeek: 0
 			},
 			{
-				oInputDate: new UniversalDate(2021, 0, 10, 6),
+				oInputDate: new UniversalDate(2021, 0, 10),
+				oInputDateUTC: new UniversalDate(Date.UTC(2021, 0, 10)),
 				iExpectedYear: 2021,
 				iExpectedWeek: 0
 			}
@@ -577,14 +579,12 @@ sap.ui.define([
 		// CW01 2021-01-04 - 2021-01-10 ({year:2020, week: 0})
 		// Note: function getWeek returns the calendar week index which starts at 0
 		aLocales.forEach(function(oLocale) {
-			oGetLanguageStub = this.stub(oFormatLocaleObject, "getLanguage").returns(oLocale.language);
-			oGetRegionStub = this.stub(oFormatLocaleObject, "getRegion").returns(oLocale.region);
-			assert.equal(oFormatLocaleObject.getLanguage(), oLocale.language, "Language should be: " + oLocale.language);
-			assert.equal(oFormatLocaleObject.getRegion(), oLocale.region, "Region should be: " + oLocale.region);
+			const sLocaleId = oLocale.region ? oLocale.language + "-" + oLocale.region : oLocale.language;
+			const oGetFormatLocaleStub = this.stub(oFormatSettings, "getFormatLocale").returns(new Locale(sLocaleId));
 
 
 			aFixtures.forEach(function(oFixture) {
-				oWeekObject = oFixture.oInputDate.getUTCWeek();
+				oWeekObject = oFixture.oInputDateUTC.getUTCWeek();
 				assert.equal(oWeekObject.year, oFixture.iExpectedYear, "Calendar 'week year' should be " + oFixture.iExpectedYear + ".");
 				assert.equal(oWeekObject.week, oFixture.iExpectedWeek, "Calendar 'week' index should be " + oFixture.iExpectedWeek + ".");
 
@@ -593,13 +593,12 @@ sap.ui.define([
 				assert.equal(oWeekObject.week, oFixture.iExpectedWeek, "Calendar 'week' index should be " + oFixture.iExpectedWeek + ".");
 			});
 
-			oGetLanguageStub.restore();
-			oGetRegionStub.restore();
+			oGetFormatLocaleStub.restore();
 		}.bind(this));
 
 		// Locale "en"
 		aFixtures.forEach(function(oFixture) {
-			oWeekObject = oFixture.oInputDate.getUTCWeek(new Locale("en-GB"));
+			oWeekObject = oFixture.oInputDateUTC.getUTCWeek(new Locale("en-GB"));
 			assert.equal(oWeekObject.year, oFixture.iExpectedYear, "Calendar 'week year' should be " + oFixture.iExpectedYear + ".");
 			assert.equal(oWeekObject.week, oFixture.iExpectedWeek, "Calendar 'week' index should be " + oFixture.iExpectedWeek + ".");
 
@@ -610,7 +609,7 @@ sap.ui.define([
 
 		// CalendarWeekNumbering.WesternTraditional
 		aFixtures.forEach(function(oFixture) {
-			oWeekObject = oFixture.oInputDate.getUTCWeek(undefined, CalendarWeekNumbering.ISO_8601);
+			oWeekObject = oFixture.oInputDateUTC.getUTCWeek(undefined, CalendarWeekNumbering.ISO_8601);
 			assert.equal(oWeekObject.year, oFixture.iExpectedYear, "Calendar 'week year' should be " + oFixture.iExpectedYear + ".");
 			assert.equal(oWeekObject.week, oFixture.iExpectedWeek, "Calendar 'week' index should be " + oFixture.iExpectedWeek + ".");
 
@@ -621,7 +620,7 @@ sap.ui.define([
 
 		// CalendarWeekNumbering.WesternTraditional > Locale
 		aFixtures.forEach(function(oFixture) {
-			oWeekObject = oFixture.oInputDate.getUTCWeek(new Locale("en"), CalendarWeekNumbering.ISO_8601);
+			oWeekObject = oFixture.oInputDateUTC.getUTCWeek(new Locale("en"), CalendarWeekNumbering.ISO_8601);
 			assert.equal(oWeekObject.year, oFixture.iExpectedYear, "Calendar 'week year' should be " + oFixture.iExpectedYear + ".");
 			assert.equal(oWeekObject.week, oFixture.iExpectedWeek, "Calendar 'week' index should be " + oFixture.iExpectedWeek + ".");
 
@@ -631,108 +630,63 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.test("getWeek/getUTCWeek with invalid weekData", function (assert) {
+[{
+	vCalendarWeekNumbering: "invalidEnumValue",
+	sExpectedError: "Illegal format option calendarWeekNumbering: 'invalidEnumValue'"
+}, {
+	vCalendarWeekNumbering: {},
+	sExpectedError: "Week config requires firstDayOfWeek and minimalDaysInFirstWeek to be set"
+}, {
+	vCalendarWeekNumbering: {firstDayOfWeek: 0},
+	sExpectedError: "Week config requires firstDayOfWeek and minimalDaysInFirstWeek to be set"
+}, {
+	vCalendarWeekNumbering: {minimalDaysInFirstWeek: 1},
+	sExpectedError: "Week config requires firstDayOfWeek and minimalDaysInFirstWeek to be set"
+}].forEach(function (oFixture, i) {
+	QUnit.test("invalid calendar week numbering #" + i, function (assert) {
 		this.dateSpy.restore();
 		var oUniversalDateInstance = new UniversalDate();
 
-		var aFixtures = [
-			{
-				sMethodName: "getWeek",
-				oParam1: {firstDayOfWeek: 0}
-			},
-			{
-				sMethodName: "getWeek",
-				oParam1: {minimalDaysInFirstWeek: 1}
-			},
-			{
-				sMethodName: "getWeek",
-				oParam1: {}
-			},
-			{
-				sMethodName: "getUTCWeek",
-				oParam1: {firstDayOfWeek: 0}
-			},
-			{
-				sMethodName: "getUTCWeek",
-				oParam1: {minimalDaysInFirstWeek: 1}
-			},
-			{
-				sMethodName: "getUTCWeek",
-				oParam1: {}
-			},
-			{
-				sMethodName: "setWeek",
-				oParam2: {firstDayOfWeek: 0}
-			},
-			{
-				sMethodName: "setWeek",
-				oParam2: {minimalDaysInFirstWeek: 1}
-			},
-			{
-				sMethodName: "setWeek",
-				oParam2: {}
-			},
-			{
-				sMethodName: "setUTCWeek",
-				oParam2: {firstDayOfWeek: 0}
-			},
-			{
-				sMethodName: "setUTCWeek",
-				oParam2: {minimalDaysInFirstWeek: 1}
-			},
-			{
-				sMethodName: "setUTCWeek",
-				oParam2: {}
-			}
-		];
-
-		aFixtures.forEach(function (oFixture) {
-			assert.throws(function() {
-					oUniversalDateInstance[oFixture.sMethodName](undefined, oFixture.oParam1, oFixture.oParam2);
-				}, new TypeError("Week config requires firstDayOfWeek and minimalDaysInFirstWeek to be set"),
-				"error is thrown for " + oFixture.sMethodName);
-		});
-
-		aFixtures.forEach(function (oFixture) {
-			assert.throws(function() {
-					oUniversalDateInstance[oFixture.sMethodName](undefined, oFixture.oParam1 ? "invalidEnumValue" : undefined, oFixture.oParam2 ? "invalidEnumValue" : undefined);
-				}, new TypeError("Illegal format option calendarWeekNumbering: 'invalidEnumValue'"),
-				"error is thrown for " + oFixture.sMethodName);
-		});
-	});
-
-	QUnit.test("getWeekByDate/getFirstDateOfWeek with invalid weekData", function (assert) {
-		this.dateSpy.restore();
-
-		var aFixtures = [{firstDayOfWeek: 0}, {minimalDaysInFirstWeek: 1}, {}];
-
-		aFixtures.forEach(function (oFixture) {
-			assert.throws(function() {
-					UniversalDate.getWeekByDate(undefined, undefined, undefined, undefined, undefined, oFixture);
-				}, new TypeError("Week config requires firstDayOfWeek and minimalDaysInFirstWeek to be set"),
-				"error is thrown for getWeekByDate");
-		});
-
-		aFixtures.forEach(function (oFixture) {
-			assert.throws(function() {
-					UniversalDate.getFirstDateOfWeek(undefined, undefined, undefined, undefined, oFixture);
-				}, new TypeError("Week config requires firstDayOfWeek and minimalDaysInFirstWeek to be set"),
-				"error is thrown for getFirstDateOfWeek");
-		});
-
 		assert.throws(function() {
-				UniversalDate.getWeekByDate(undefined, undefined, undefined, undefined, undefined, "invalidEnumValue");
-			}, new TypeError("Illegal format option calendarWeekNumbering: 'invalidEnumValue'"),
-			"error is thrown for getWeekByDate");
-
+			oUniversalDateInstance.getWeek(undefined, oFixture.vCalendarWeekNumbering);
+		}, new TypeError(oFixture.sExpectedError));
 		assert.throws(function() {
-				UniversalDate.getFirstDateOfWeek(undefined, undefined, undefined, undefined, "invalidEnumValue");
-			}, new TypeError("Illegal format option calendarWeekNumbering: 'invalidEnumValue'"),
-			"error is thrown for getFirstDateOfWeek");
+			oUniversalDateInstance.getUTCWeek(undefined, oFixture.vCalendarWeekNumbering);
+		}, new TypeError(oFixture.sExpectedError));
+		assert.throws(function() {
+			oUniversalDateInstance.setWeek({}, undefined, oFixture.vCalendarWeekNumbering);
+		}, new TypeError(oFixture.sExpectedError));
+		assert.throws(function() {
+			oUniversalDateInstance.setUTCWeek({}, undefined, oFixture.vCalendarWeekNumbering);
+		}, new TypeError(oFixture.sExpectedError));
+		assert.throws(function() {
+			UniversalDate.getFirstDateOfWeek(undefined, undefined, undefined, undefined,
+				oFixture.vCalendarWeekNumbering);
+		}, new TypeError(oFixture.sExpectedError));
+		assert.throws(function() {
+			UniversalDate.getWeekByDate(undefined, undefined, undefined, undefined, undefined,
+				oFixture.vCalendarWeekNumbering);
+		}, new TypeError(oFixture.sExpectedError));
 	});
+});
 
 	QUnit.test("getWeekByDate/getFirstDateOfWeek", function (assert) {
+		var oConfigurationMock = this.mock(Configuration);
+
 		this.dateSpy.restore();
+
+		// de (ISO 8601 from Configuration)
+		oConfigurationMock.expects("getCalendarWeekNumbering").withExactArgs().returns(CalendarWeekNumbering.ISO_8601);
+		assert.deepEqual(UniversalDate.getWeekByDate("Gregorian", 2021, 11, 27, new Locale("de")), {
+			"week": 51,
+			"year": 2021
+		});
+		oConfigurationMock.expects("getCalendarWeekNumbering").withExactArgs().returns(CalendarWeekNumbering.ISO_8601);
+		assert.deepEqual(UniversalDate.getFirstDateOfWeek("Gregorian", 2021, 51, new Locale("de")), {
+			"day": 27,
+			"month": 11,
+			"year": 2021
+		});
 
 		// ISO 8601 > en
 		assert.deepEqual(UniversalDate.getWeekByDate("Gregorian", 2021, 11, 27, new Locale("en"), CalendarWeekNumbering.ISO_8601), {
@@ -740,17 +694,6 @@ sap.ui.define([
 			"year": 2021
 		});
 		assert.deepEqual(UniversalDate.getFirstDateOfWeek("Gregorian", 2021, 51, new Locale("en"), CalendarWeekNumbering.ISO_8601), {
-			"day": 27,
-			"month": 11,
-			"year": 2021
-		});
-
-		// de (ISO 8601)
-		assert.deepEqual(UniversalDate.getWeekByDate("Gregorian", 2021, 11, 27, new Locale("de")), {
-			"week": 51,
-			"year": 2021
-		});
-		assert.deepEqual(UniversalDate.getFirstDateOfWeek("Gregorian", 2021, 51, new Locale("de")), {
 			"day": 27,
 			"month": 11,
 			"year": 2021
@@ -771,7 +714,7 @@ sap.ui.define([
 	QUnit.test("invalid date object", function (assert) {
 		this.dateSpy.restore();
 
-		var oInvalidDate = new Date("");
+		var oInvalidDate = UI5Date.getInstance("");
 
 		// call #getUTCWeek
 		var oUniversalDateInstance = new UniversalDate(oInvalidDate);

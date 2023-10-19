@@ -3,12 +3,12 @@
  */
 
 sap.ui.define([
-], function (
+], function(
 ) {
 	"use strict";
 
 	return {
-		getChangeTypes: function() {
+		getChangeTypes() {
 			return [
 				"appdescr_ovp_addNewCard",
 				"appdescr_ovp_removeCard",
@@ -55,10 +55,11 @@ sap.ui.define([
 				"appdescr_fiori_setRegistrationIds",
 				"appdescr_card",
 				"appdescr_card_designtime",
-				"appdescr_fiori_setAbstract"
+				"appdescr_fiori_setAbstract",
+				"appdescr_fe_changePageConfiguration"
 			];
 		},
-		getCondensableChangeTypes: function() {
+		getCondensableChangeTypes() {
 			return [
 				"appdescr_app_setTitle",
 				"appdescr_app_setInfo",

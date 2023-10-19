@@ -554,14 +554,13 @@
 				oDoc.modifiedStr = oDoc.modified + "";
 				var sModified = oDoc.modifiedStr.substring(0,4) + "/" + oDoc.modifiedStr.substring(4,6) + "/" + oDoc.modifiedStr.substring(6,8) + ", " + oDoc.modifiedStr.substring(8,10) + ":" + oDoc.modifiedStr.substring(10),
 					sTitle = oDoc.title,
-					sSummary = oDoc.summary,
+					sSummary = oDoc.summary ? oDoc.summary.trim() : "",
 					sNavURL = oDoc.path,
 					bShouldAddToSearchResults = false,
 					sCategory,
 					oObject,
 					sDeprecatedMarker;
 				if (oDoc.category === DOC_CATEGORY.documentation) {
-					sNavURL = sNavURL.substring(0, sNavURL.lastIndexOf(".html"));
 					bShouldAddToSearchResults = true;
 					sCategory = "Documentation";
 					oObject = {
@@ -570,7 +569,8 @@
 						summary: sSummary || "",
 						score: oDoc.score,
 						modified: sModified,
-						category: sCategory
+						category: sCategory,
+						external: oDoc.external
 					};
 					aDataDoc.push(oObject);
 					iDocLength++;
@@ -587,7 +587,8 @@
 						summary: sSummary || "",
 						score: oDoc.score,
 						modified: sModified,
-						category: sCategory
+						category: sCategory,
+						external: oDoc.external
 					};
 					aDataExplored.push(oObject);
 					iExploredLength++;

@@ -1,4 +1,4 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/m/Button",
@@ -7,7 +7,7 @@ sap.ui.define([
 	"sap/ui/rta/toolbar/Base",
 	"sap/ui/rta/util/Animation",
 	"sap/ui/thirdparty/sinon-4",
-	"sap/ui/core/Core"
+	"sap/ui/qunit/utils/nextUIUpdate"
 ], function(
 	Button,
 	ManagedObject,
@@ -15,7 +15,7 @@ sap.ui.define([
 	BaseToolbar,
 	Animation,
 	sinon,
-	oCore
+	nextUIUpdate
 ) {
 	"use strict";
 
@@ -23,7 +23,7 @@ sap.ui.define([
 	 * BASIC FUNCTIONALITY
 	 ********************************************************************************************************/
 
-	//RTA Toolbar needs RTA Mode settings
+	// RTA Toolbar needs RTA Mode settings
 	document.body.classList.add("sapUiRtaMode");
 
 	var sandbox = sinon.createSandbox();
@@ -32,28 +32,26 @@ sap.ui.define([
 	}
 
 	QUnit.module("Basic functionality", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oToolbar = new BaseToolbar();
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oToolbar.destroy();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("initialization", function(assert) {
 			assert.ok(this.oToolbar, "Toolbar instance is created");
 			assert.strictEqual(this.oToolbar.getDomRef(), null, "Toolbar is not rendered");
 		});
 
-		QUnit.test("show() method", function(assert) {
+		QUnit.test("show() method", async function(assert) {
 			var oPromise = this.oToolbar.show();
 
 			assert.ok(oPromise instanceof Promise, "show() method returns Promise");
 
-			return oPromise.then(function () {
-				oCore.applyChanges();
-				assert.ok(this.oToolbar.getDomRef() instanceof HTMLElement, "Toolbar is rendered");
-				assert.ok(isVisible(this.oToolbar.getDomRef()), true, "Toolbar is visible");
-			}.bind(this));
+			await nextUIUpdate();
+			assert.ok(this.oToolbar.getDomRef() instanceof HTMLElement, "Toolbar is rendered");
+			assert.ok(isVisible(this.oToolbar.getDomRef()), true, "Toolbar is visible");
 		});
 
 		QUnit.test("hide() method", function(assert) {
@@ -61,8 +59,8 @@ sap.ui.define([
 
 			assert.ok(oPromise instanceof Promise, "hide() method returns Promise");
 
-			return oPromise.then(function () {
-				oCore.applyChanges();
+			return oPromise.then(async function() {
+				await nextUIUpdate();
 				assert.strictEqual(this.oToolbar.getDomRef(), null, "Toolbar is not rendered");
 			}.bind(this));
 		});
@@ -72,39 +70,64 @@ sap.ui.define([
 
 			assert.ok(oPromise instanceof Promise, "hide() method returns Promise");
 
-			return oPromise.then(function () {
-				oCore.applyChanges();
+			return oPromise.then(async function() {
+				await nextUIUpdate();
 				assert.strictEqual(this.oToolbar.getDomRef(), null, "Toolbar is not rendered");
 			}.bind(this));
 		});
 
 		QUnit.test("show()/hide() combination", function(assert) {
-			return this.oToolbar.show().then(function () {
-				oCore.applyChanges();
+			return this.oToolbar.show().then(async function() {
+				await nextUIUpdate();
 				assert.ok(this.oToolbar.getDomRef() instanceof HTMLElement, "Toolbar is rendered");
 				assert.ok(isVisible(this.oToolbar.getDomRef()), true, "Toolbar is visible");
 
-				return this.oToolbar.hide().then(function () {
-					oCore.applyChanges();
+				return this.oToolbar.hide().then(async function() {
+					await nextUIUpdate();
 					assert.strictEqual(this.oToolbar.getDomRef(), null, "Toolbar is not rendered");
 				}.bind(this));
 			}.bind(this));
 		});
 
+		QUnit.test("when the page is scrolled", function(assert) {
+			var fnDone = assert.async();
+			var oPromise = this.oToolbar.show();
+			return oPromise.then(async function() {
+				await nextUIUpdate();
+				document.body.style.height = "1400px";
+				var sClassname = "sapUiRtaToolbar_scrolling";
+				var oObserver = new MutationObserver(function(aMutations) {
+					aMutations.forEach(function(oMutation) {
+						if (oMutation.target.classList.contains(sClassname)) {
+							assert.ok(true, "then the Toolbar gets the correct classname");
+							document.body.style.height = "";
+							fnDone();
+						}
+					});
+				});
+
+				oObserver.observe(this.oToolbar.getDomRef(), {
+					attributes: true,
+					attributeFilter: ["class"]
+				});
+				window.scrollTo(0, 1000);
+			}.bind(this));
+		});
+
 		QUnit.test("setZIndex() method", function(assert) {
-			return this.oToolbar.show().then(function () {
+			return this.oToolbar.show().then(async function() {
 				var iInitialZIndex = parseInt(getComputedStyle(this.oToolbar.getDomRef())["z-index"]);
 				assert.strictEqual(this.oToolbar.getZIndex(), iInitialZIndex, "z-index is rendered properly");
 
 				var iZIndex = iInitialZIndex + 1;
 				this.oToolbar.setZIndex(iZIndex);
-				oCore.applyChanges();
+				await nextUIUpdate();
 				assert.strictEqual(parseInt(getComputedStyle(this.oToolbar.getDomRef())["z-index"]), iZIndex, "z-index is updated properly");
 			}.bind(this));
 		});
 
 		QUnit.test("bringToFront() method", function(assert) {
-			return this.oToolbar.show().then(function () {
+			return this.oToolbar.show().then(function() {
 				var iInitialZIndex = this.oToolbar.getZIndex();
 				this.oToolbar.bringToFront();
 				assert.ok(this.oToolbar.getZIndex() > iInitialZIndex, "current z-index is bigger than initial");
@@ -113,8 +136,8 @@ sap.ui.define([
 
 		QUnit.test("bringToFront() method with BusyIndicator", function(assert) {
 			var fnDone = assert.async();
-			var fnOpen = function () {
-				this.oToolbar.show().then(function () {
+			var fnOpen = function() {
+				this.oToolbar.show().then(function() {
 					this.oToolbar.bringToFront(); // explicit call regardless it"s being called in show() method already
 					assert.ok(this.oToolbar.getZIndex() + 2 < BusyIndicator.oPopup._iZIndex, "current z-index should be at least on 2 units lower");
 
@@ -181,13 +204,12 @@ sap.ui.define([
 		});
 	});
 
-
 	/*********************************************************************************************************
 	 * INHERITANCE FUNCTIONALITY
 	 ********************************************************************************************************/
 
 	QUnit.module("Inheritance functionality", {
-		beforeEach: function() {
+		beforeEach() {
 			var CustomToolbar = BaseToolbar.extend("CustomToolbar", {
 				renderer: "sap.ui.rta.toolbar.BaseRenderer",
 				metadata: {
@@ -199,7 +221,7 @@ sap.ui.define([
 
 			var that = this;
 
-			CustomToolbar.prototype.buildControls = function () {
+			CustomToolbar.prototype.buildControls = function() {
 				// expose button to the context of the unit test
 				that.oButton = new Button("sapUiRta_action", {
 					type: "Transparent",
@@ -214,12 +236,12 @@ sap.ui.define([
 
 			this.oToolbar = new CustomToolbar();
 		},
-		afterEach: function() {
+		afterEach() {
 			// by default RuntimeAuthoring takes care of destroying the controls
 			this.oButton.destroy();
 			this.oToolbar.destroy();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("getControl() method", function(assert) {
 			assert.strictEqual(this.oToolbar.getControl("action"), this.oButton, "returns referentially the same control");
 		});
@@ -227,7 +249,7 @@ sap.ui.define([
 		QUnit.test("eventHandler() method", function(assert) {
 			var fnDone = assert.async();
 
-			this.oToolbar.attachEventOnce("action", function (oEvent) {
+			this.oToolbar.attachEventOnce("action", function(oEvent) {
 				assert.ok(true, "event is properly fired by the Toolbar");
 				assert.strictEqual(oEvent.getId(), "action", "eventId is correct");
 				assert.strictEqual(oEvent.getParameter("id"), this.oButton.getId(), "parameter are passed properly");
@@ -243,7 +265,7 @@ sap.ui.define([
 	 ********************************************************************************************************/
 
 	QUnit.module("Animation functionality", {
-		beforeEach: function() {
+		beforeEach() {
 			var CustomToolbar = BaseToolbar.extend("CustomToolbar", {
 				renderer: "sap.ui.rta.toolbar.BaseRenderer",
 				animation: true,
@@ -252,13 +274,13 @@ sap.ui.define([
 
 			this.oToolbar = new CustomToolbar();
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oToolbar.destroy();
 			sandbox.restore();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("show() with animation", function(assert) {
-			return this.oToolbar.show().then(function () {
+			return this.oToolbar.show().then(function() {
 				assert.ok(true, "animation is completed");
 				assert.ok(this.oToolbar.hasStyleClass("is_visible"), "Toolbar has proper animation class");
 			}.bind(this));
@@ -267,11 +289,11 @@ sap.ui.define([
 		QUnit.test("show()/hide() combination with animation", function(assert) {
 			var oWaitTransitionSpy = sandbox.spy(Animation, "waitTransition");
 
-			return this.oToolbar.show().then(function () {
+			return this.oToolbar.show().then(function() {
 				assert.ok(true, "animation is completed");
 				assert.ok(this.oToolbar.hasStyleClass("is_visible"), "Toolbar has proper animation class");
 
-				return this.oToolbar.hide().then(function () {
+				return this.oToolbar.hide().then(function() {
 					assert.ok(true, "animation is completed");
 					assert.ok(oWaitTransitionSpy.calledTwice, "waitTransition called for showing and hiding");
 					assert.ok(!this.oToolbar.hasStyleClass("is_visible"), "Toolbar has no animation class");
@@ -282,11 +304,11 @@ sap.ui.define([
 		QUnit.test("show()/hide() combination with animation, but transition skipped when hiding", function(assert) {
 			var oWaitTransitionSpy = sandbox.spy(Animation, "waitTransition");
 
-			return this.oToolbar.show().then(function () {
+			return this.oToolbar.show().then(function() {
 				assert.ok(true, "animation is completed");
 				assert.ok(this.oToolbar.hasStyleClass("is_visible"), "Toolbar has proper animation class");
 
-				return this.oToolbar.hide(true).then(function () {
+				return this.oToolbar.hide(true).then(function() {
 					assert.ok(true, "animation is completed");
 					assert.ok(oWaitTransitionSpy.calledOnce, "waitTransition called only for showing");
 					assert.ok(!this.oToolbar.hasStyleClass("is_visible"), "Toolbar has no animation class");
@@ -295,7 +317,7 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.body.classList.remove("sapUiRtaMode");
 		document.getElementById("qunit-fixture").style.display = "none";
 	});

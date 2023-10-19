@@ -3,7 +3,6 @@
 sap.ui.define([
 	"sap/ui/fl/apply/_internal/flexState/UI2Personalization/UI2PersonalizationState",
 	"sap/ui/fl/apply/api/UI2PersonalizationApplyAPI",
-	"sap/ui/fl/apply/_internal/ChangesController",
 	"sap/ui/core/Manifest",
 	"sap/ui/fl/Utils",
 	"sap/ui/fl/apply/_internal/flexState/FlexState",
@@ -12,7 +11,6 @@ sap.ui.define([
 ], function(
 	UI2PersonalizationState,
 	UI2PersonalizationApplyAPI,
-	ChangesController,
 	Manifest,
 	FlexUtils,
 	FlexState,
@@ -37,18 +35,18 @@ sap.ui.define([
 		var oManifest = new Manifest(oDescriptor);
 		return {
 			name: "testComponent",
-			getManifest: function() {
+			getManifest() {
 				return oManifest;
 			},
-			getId: function() {
+			getId() {
 				return "Control---demo--test";
 			},
-			getLocalId: function() {}
+			getLocalId() {}
 		};
 	}
 
 	QUnit.module("load personalization", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oAppComponent = createAppComponent();
 			this.oGetPersonalizationStub = sandbox.stub(UI2PersonalizationState, "getPersonalization");
 
@@ -56,7 +54,7 @@ sap.ui.define([
 			sandbox.stub(FlexUtils, "getAppComponentForControl").returns(this.oAppComponent);
 			sandbox.stub(FlexState, "initialize").resolves();
 		},
-		afterEach: function () {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
@@ -65,27 +63,21 @@ sap.ui.define([
 				selector: this.oAppComponent
 			}).then(function() {
 				assert.notOk("Should never succeed!");
-			}).catch(function () {
+			}).catch(function() {
 				assert.ok(true, "a rejection took place");
 				assert.ok(this.oGetPersonalizationStub.notCalled, "then UI2PersonalizationState.getPersonalization is not called");
 			}.bind(this));
 		});
 
 		QUnit.test("load is called and complains about missing component name", function(assert) {
-			var fnMockedFlexController = {
-				getComponentName: function() {
-					return;
-				}
-			};
-
-			sandbox.stub(ChangesController, "getFlexControllerInstance").returns(fnMockedFlexController);
+			sandbox.stub(ManifestUtils, "getFlexReferenceForSelector");
 
 			return UI2PersonalizationApplyAPI.load({
 				selector: this.oAppComponent,
 				containerKey: "someContainerKey"
 			}).then(function() {
 				assert.notOk("Should never succeed!");
-			}).catch(function () {
+			}).catch(function() {
 				assert.ok(true, "a rejection took place");
 				assert.ok(this.oGetPersonalizationStub.notCalled, "then UI2PersonalizationState.getPersonalization is not called");
 			}.bind(this));
@@ -95,7 +87,7 @@ sap.ui.define([
 			return UI2PersonalizationApplyAPI.load({
 				selector: this.oAppComponent,
 				containerKey: "someContainerKey"
-			}).then(function () {
+			}).then(function() {
 				assert.ok(this.oGetPersonalizationStub.calledWithExactly("testComponent", "someContainerKey", undefined), "then UI2PersonalizationState.getPersonalization is called with correct parameters and default appVersion is taken");
 			}.bind(this));
 		});

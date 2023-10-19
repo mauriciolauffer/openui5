@@ -8,8 +8,8 @@ sap.ui.define([
 	'sap/ui/base/ManagedObjectObserver',
 	'sap/ui/mdc/condition/Condition',
 	'sap/ui/mdc/condition/FilterOperatorUtil',
-	'sap/ui/mdc/condition/Operator',
-	'sap/ui/mdc/enum/ConditionValidated',
+	'sap/ui/mdc/enums/ConditionValidated',
+	'sap/ui/mdc/enums/OperatorValueType',
 	'sap/base/strings/formatMessage'
 ], function(
 	Element,
@@ -17,14 +17,16 @@ sap.ui.define([
 	ManagedObjectObserver,
 	Condition,
 	FilterOperatorUtil,
-	Operator,
 	ConditionValidated,
+	OperatorValueType,
 	formatMessage
 ) {
 	"use strict";
 
 	/**
 	 * Constructor for a new <code>Content</code>.
+	 *
+	 * This is the basis for various types of value help content. It cannot be used directly.
 	 *
 	 * @param {string} [sId] ID for the new element, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new element
@@ -33,19 +35,17 @@ sap.ui.define([
 	 * @version ${version}
 	 * @constructor
 	 * @abstract
-	 * @private
-	 * @ui5-restricted sap.ui.mdc
+	 * @public
 	 * @since 1.95.0
-	 * @experimental As of version 1.95
 	 * @alias sap.ui.mdc.valuehelp.base.Content
 	 */
-	var Content = Element.extend("sap.ui.mdc.valuehelp.base.Content", /** @lends sap.ui.mdc.valuehelp.base.Content.prototype */
+	const Content = Element.extend("sap.ui.mdc.valuehelp.base.Content", /** @lends sap.ui.mdc.valuehelp.base.Content.prototype */
 	{
 		metadata: {
 			library: "sap.ui.mdc",
 			properties: {
 				/**
-				 * Title text that appears tab header.
+				 * Title text that appears in the tab header.
 				 */
 				title: {
 					type: "string",
@@ -61,7 +61,7 @@ sap.ui.define([
 					defaultValue: ""
 				},
 				/**
-				 * Title text that appears in the dialog tokenizer panel, when ony one content exist.
+				 * Title text that appears in the dialog tokenizer panel if only one content exists.
 				 */
 				tokenizerTitle: {
 					type: "string",
@@ -69,10 +69,12 @@ sap.ui.define([
 					defaultValue: ""
 				},
 				/**
-				 * Conditions of the value help
+				 * Conditions of the value help.
 				 *
-				 * <b>Note:</b> This property must not be set from outside, it is only to be used by the corresponding container
+				 * <b>Note:</b> This property must not be set from outside, it must only be used by the corresponding container.
+				 * @private
 				 * @ui5-restricted sap.ui.mdc.valuehelp.base.Container
+				 * @experimental: Do not use - this property is only for internal usage
 				 */
 				conditions: { // TODO: only internal? make restricted?
 					type: "object[]",
@@ -80,10 +82,12 @@ sap.ui.define([
 					byValue: true
 				},
 				/**
-				 * Value for filtering ($search)
+				 * Value for filtering ($search).
 				 *
-				 * <b>Note:</b> This property must not be set from outside, it is only to be used by the corresponding container
+				 * <b>Note:</b> This property must not be set from outside, it must only be used by the corresponding container.
+				 * @private
 				 * @ui5-restricted sap.ui.mdc.valuehelp.base.Container
+				 * @experimental: Do not use - this property is only for internal usage
 				 */
 				filterValue: { // TODO: how to hide? Or how to access from ValueHelp?
 					type: "string",
@@ -91,10 +95,12 @@ sap.ui.define([
 					//visibility: "hidden"
 				},
 				/**
-				 * internal configuration
+				 * Internal configuration.
 				 *
-				 * <b>Note:</b> This property must not be set from outside, it is only to be used by the corresponding container
+				 * <b>Note:</b> This property must not be set from outside, it must only be used by the corresponding container.
+				 * @private
 				 * @ui5-restricted sap.ui.mdc.valuehelp.base.Container
+				 * @experimental: Do not use - this property is only for internal usage
 				 */
 				config: {
 					type: "object",
@@ -115,8 +121,10 @@ sap.ui.define([
 				/**
 				 * Content control that is put inside the parent container
 				 *
-				 * <b>Note:</b> This aggregation must not be set from outside, it is only to be used by the corresponding container
+				 * <b>Note:</b> This aggregation must not be set from outside, it must only be used by the corresponding container.
+				 * @private
 				 * @ui5-restricted sap.ui.mdc.valuehelp.base.Container
+				 * @experimental: Do not use - this aggregation is only for internal usage
 				 */
 				displayContent: {
 					type: "sap.ui.core.Control",
@@ -126,14 +134,14 @@ sap.ui.define([
 			},
 			events: {
 				/**
-				 * Fired if the selected condition changed.
+				 * This event is fired if the selected condition has changed.
 				 */
 				select: {
 					parameters: {
 						/**
 						 * Type of the selection change (add, remove)
 						 */
-						type: { type: "sap.ui.mdc.enum.SelectType" },
+						type: { type: "sap.ui.mdc.enums.ValueHelpSelectionType" },
 						/**
 						 * Changed conditions
 						 *
@@ -143,32 +151,32 @@ sap.ui.define([
 					}
 				},
 				/**
-				 * Fired if a change on the content is confirmed
+				 * This event is fired if a change of the content is confirmed.
 				 */
 				confirm: {
 					parameters: {
 						/**
-						 * True if the value help need to be closed
+						 * <code>true</code> if the value help needs to be closed
 						 */
 						close: { type: "boolean" }
 					}
 				},
 				/**
-				 * Fired if the change is cancelled.
+				 * This event is fired if the change is cancelled.
 				 */
 				cancel: {},
 
 				/**
-				 * Fired if the value help should switch to dialog mode.
+				 * This event is fired if the value help should switch to dialog mode.
 				 */
 				requestSwitchToDialog: {},
 				/**
-				 * Fired if a navigation was executed in the content
+				 * This event is fired if a navigation has been executed in the content.
 				 */
 				navigated: {
 					parameters: {
 						/**
-						 * True if the focus should be set back to the field.
+						 * <code>true</code> if the focus should be set back to the field.
 						 */
 						leaveFocus: { type: "boolean" },
 						/**
@@ -182,6 +190,29 @@ sap.ui.define([
 						 */
 						itemId: { type: "string" }
 					}
+				},
+				/**
+				 * This event is fired after a suggested item has been found for a type-ahead.
+				 * @since 1.120.0
+				 */
+				typeaheadSuggested: {
+					parameters: {
+						/**
+						 * Suggested condition
+						 *
+						 * <b>Note:</b> A condition must have the structure of {@link sap.ui.mdc.condition.ConditionObject ConditionObject}.
+						 */
+						condition: { type: "object" },
+						/**
+						 * Used filter value
+						 * (as the event might fire asynchronously, and the current user input might have changed.)
+						 */
+						filterValue: { type: "string" },
+						/**
+						 * ID of the suggested item (This is needed to set the corresponding ARIA attribute)
+						 */
+						itemId: { type: "string" }
+					}
 				}
 			}
 		}
@@ -189,7 +220,7 @@ sap.ui.define([
 
 	Content.prototype.init = function() {
 
-		this._oObserver = new ManagedObjectObserver(this._observeChanges.bind(this));
+		this._oObserver = new ManagedObjectObserver(this.observeChanges.bind(this));
 
 		this._oObserver.observe(this, {
 			properties: ["filterValue", "conditions", "config"]
@@ -220,7 +251,7 @@ sap.ui.define([
 
 
 	/**
-	 * Gets the content controls
+	 * Gets the content controls.
 	 *
 	 * @returns {Promise<sap.ui.core.Control>} This promise resolves after the content is created
 	 *
@@ -232,7 +263,7 @@ sap.ui.define([
 	};
 
 	/**
-	 * Provides a configuration map for supported containers
+	 * Provides a configuration map for supported containers.
 	 *
 	 * @example
 	 * 	// Example configuration:
@@ -242,7 +273,6 @@ sap.ui.define([
 	 *			showHeader: true,
  				getFooter: function () { Promise.resolve(oFooter); },
 	 *			getContentWidth: function () { return "500px"; },
-	 			getContentHeight: function () { ... },
 	 *		}
 	 *	}
 	 * @returns {object|undefined} if available, a container configuration object is returned.
@@ -254,7 +284,7 @@ sap.ui.define([
 	};
 
 	/**
-	 * Finalize content before it is shown
+	 * Finalize content before it is shown.
 	 * @param {boolean} bInitial Indicates, if the content is to be shown for the first time since it's container opened.
 	 * @private
 	 * @ui5-restricted sap.ui.mdc.valuehelp.base.Container
@@ -267,13 +297,14 @@ sap.ui.define([
 	 * Called if the content will be shown.
 	 *
 	 * @param {boolean} bInitial Indicates, if the content is shown for the first time since it's container opened.
+	 * @returns {string} Item ID. ID of the initial selected item if it belongs to the value of the field.
 	 * @private
 	 * @ui5-restricted sap.ui.mdc.valuehelp.base.Container
 	 */
 	Content.prototype.onShow = function (bInitial) {
 		this._bVisible = true;
-		this._handleConditionsUpdate();
-		//this._handleFilterValueUpdate();
+		this.handleConditionsUpdate();
+		//this.handleFilterValueUpdate();
 	};
 
 	/**
@@ -305,18 +336,7 @@ sap.ui.define([
 	 *
 	 * <b>Note:</b> This function must only be called by the <code>Container</code> element.
 	 *
-	 * @param {object} oConfig Configuration
-	 * @param {any} oConfig.value Value as entered by user
-	 * @param {any} [oConfig.parsedValue] Value parsed by type to fit the data type of the key
-	 * @param {object} [oConfig.context] Contextual information provided by condition payload or in parameters/out parameters. This is only filled if the description needs to be determined for an existing condition.
-	 * @param {object} [oConfig.context.inParameter] In parameters of the current condition
-	 * @param {object} [oConfig.context.outParameter] Out parameters of the current condition
-	 * @param {object} [oConfig.context.payload] Payload of the current condition
-	 * @param {sap.ui.model.Context} [oConfig.bindingContext] <code>BindingContext</code> of the checked field. Inside a table the <code>ValueHelp</code> element might be connected to a different row.
-	 * @param {boolean} oConfig.checkKey If set, the value help checks only if there is an item with the given key. This is set to <code>false</code> if the value cannot be a valid key because of type validation.
-	 * @param {boolean} oConfig.checkDescription If set, the value help checks only if there is an item with the given description. This is set to <code>false</code> if only the key is used in the field.
-	 * @param {boolean} [oConfig.caseSensitive] If set, the check is done case sensitive
-	 * @param {sap.ui.core.Control} oConfig.control Instance of the calling control
+	 * @param {sap.ui.mdc.valuehelp.base.ItemForValueConfiguration} oConfig Configuration
 	 * @returns {Promise<sap.ui.mdc.valuehelp.ValueHelpItem>} Promise returning object containing description, key and payload.
 	 * @throws {sap.ui.model.FormatException|sap.ui.model.ParseException} if entry is not found or not unique
 	 *
@@ -339,18 +359,28 @@ sap.ui.define([
 		return false;
 	};
 
+	/**
+	 * Returns the sap.ui.core.delegate.ScrollEnablement delegate which is used with this control.
+	 * @returns {sap.ui.core.delegate.ScrollEnablement} The scroll enablement delegate
+	 * @private
+	 */
 	Content.prototype.getScrollDelegate = function() {
-		var oContainer = this.getParent();
+		const oContainer = this.getParent();
 		return oContainer && oContainer.getScrollDelegate();
 	};
 
-	Content.prototype._observeChanges = function(oChanges) {
+	/**
+	 * Observes property and aggregation changes.
+	 * @param {object} oChanges Change
+	 * @protected
+	 */
+	Content.prototype.observeChanges = function(oChanges) {
 		if (oChanges.name === "conditions") {
-			this._handleConditionsUpdate(oChanges);
+			this.handleConditionsUpdate(oChanges);
 		}
 
 		if (oChanges.name === "filterValue") {
-			this._handleFilterValueUpdate(oChanges);
+			this.handleFilterValueUpdate(oChanges);
 		}
 
 		if (oChanges.name === "config") {
@@ -358,14 +388,19 @@ sap.ui.define([
 		}
 	};
 
-	Content.prototype._handleFilterValueUpdate = function(oChanges) {
+	/**
+	 * Called if the <code>filterValue</code> property changed.
+	 * @param {object} oChanges Change
+	 * @protected
+	 */
+	Content.prototype.handleFilterValueUpdate = function(oChanges) {
 		if (this.isContainerOpen() && this.isTypeahead()) {
-			var oDelegate = this._getValueHelpDelegate();
-			var oDelegatePayload = this._getValueHelpDelegatePayload();
+			const oDelegate = this.getValueHelpDelegate();
+			const oValueHelp = this.getValueHelpInstance();
 
 			// Everytime the filterValue changes, we consult the delegate again to decide if the typeahead should still be shown or hidden via a cancel event
 			// Please also see the default implementation of sap.ui.mdc.ValueHelpDelegate.showTypeahead
-			Promise.resolve(!!oDelegate && oDelegate.showTypeahead(oDelegatePayload, this)).then(function (bShowTypeahead) {
+			Promise.resolve(!!oDelegate && oDelegate.showTypeahead(oValueHelp, this)).then(function (bShowTypeahead) {
 				if (!bShowTypeahead) {
 					this.fireCancel();
 				}
@@ -373,26 +408,30 @@ sap.ui.define([
 		}
 	};
 
-	Content.prototype._handleConditionsUpdate = function(oChanges) {
+	/**
+	 * Called if the <code>conditions</code> property changed.
+	 * @param {object} oChanges Change
+	 * @protected
+	 */
+	Content.prototype.handleConditionsUpdate = function(oChanges) {
 
 	};
 
 	/**
 	 * Creates a condition based on the used operator.
 	 *
-	 * @param {any} vValue Value of the condition. For item conditions this must be the key.
+	 * @param {any} vValue Value of the condition. For item conditions, this must be the key.
 	 * @param {string} [sDescription] Description of the operator
-	 * @param {object} [oPayload] payload
+	 * @param {object} [oPayload] Payload
 	 * @returns {sap.ui.mdc.condition.ConditionObject} The new condition object with the maintained operator along with <code>sKey</code> and <code>sDescription</code> as <code>aValues</code>
-	 * @private
-	 * @ui5-restricted ValueHelp subclasses
+	 * @protected
 	 */
-	Content.prototype._createCondition = function(vValue, sDescription, oPayload) {
+	Content.prototype.createCondition = function(vValue, sDescription, oPayload) {
 
-		var oOperator = _getOperator.call(this);
+		const oOperator = _getOperator.call(this);
 
-		var aValues = [vValue];
-		if (oOperator.valueTypes.length > 1 && oOperator.valueTypes[1] !== Operator.ValueType.Static && sDescription !== null && sDescription !== undefined) {
+		const aValues = [vValue];
+		if (oOperator.valueTypes.length > 1 && oOperator.valueTypes[1] !== OperatorValueType.Static && sDescription !== null && sDescription !== undefined) {
 			// description is supported
 			aValues.push(sDescription);
 		}
@@ -430,30 +469,29 @@ sap.ui.define([
 
 	Content.prototype.getUIArea = function() {
 		// Table, List or other content might be rerendered. In this case the corresponding UIArea is the one of the Popover or Dialog, not the one of the parents.
-		var oContainer = this.getParent();
-		if (oContainer && oContainer._getUIAreaForContent) {
-			return oContainer._getUIAreaForContent();
+		const oContainer = this.getParent();
+		if (oContainer && oContainer.getUIAreaForContent) {
+			return oContainer.getUIAreaForContent();
 		}
 
 		return Element.prototype.getUIArea.apply(this, arguments);
 	};
 
 	/**
-	 * Determines if the container of the content is used as typeAhead inside the value help
+	 * Determines if the container of the content is used as <code>typeAhead</code> inside the value help.
 	 *
-	 * <b>Note:</b> This function is used by the content and must not be used from outside
+	 * <b>Note:</b> This function is used by the content and must not be used from outside.
 	 *
-	 * @returns {boolean} True if used as typeahead
-	 *
-	 * @private
+	 * @returns {boolean} <code>true</code> if used as <code>typeahead</code>
+	 * @protected
 	 */
 	Content.prototype.isTypeahead = function () {
-		var oContainer = this.getParent();
+		const oContainer = this.getParent();
 		return oContainer && oContainer.isTypeahead();
 	};
 
 	/**
-	 * Determines if the content supports search
+	 * Determines if the content supports search.
 	 *
 	 * <b>Note:</b> This function is used by the container and content and must not be used from outside
 	 *
@@ -468,54 +506,95 @@ sap.ui.define([
 
 	/**
 	 * Determines if the the content needs to provide a scrolling mechanism like a
-	 * {@link sap.m.ScrollContainer ScrollContainer}
+	 * {@link sap.m.ScrollContainer ScrollContainer}.
 	 *
-	 * <b>Note:</b> This function is used by the content and must not be used from outside
+	 * <b>Note:</b> This function is used by the content and must not be used from outside.
 	 *
-	 * @returns {boolean} True a scrolling mechanism is needed
-	 *
-	 * @private
+	 * @returns {boolean} <code>true</code> if a scrolling mechanism is needed
+	 * @protected
 	 */
 	Content.prototype.provideScrolling = function () {
-		var oContainer = this.getParent();
+		const oContainer = this.getParent();
 		return !oContainer || !oContainer.providesScrolling();
 	};
 
+	/**
+	 * Checks if the parent container is open.
+	 * @returns {boolean} <code>true</code> if open
+	 * @protected
+	 */
 	Content.prototype.isContainerOpen = function () {
-		var oContainer = this.getParent();
+		const oContainer = this.getParent();
 		return oContainer && oContainer.isOpen();
 	};
 
+	/**
+	 * Checks if the parent container is opening.
+	 * @returns {boolean} <code>true</code> if opening
+	 * @protected
+	 */
 	Content.prototype.isContainerOpening = function () {
-		var oContainer = this.getParent();
+		const oContainer = this.getParent();
 		return oContainer && oContainer.isOpening();
 	};
 
-	Content.prototype._getValueHelpDelegate = function () {
-		var oContainer = this.getParent();
+	/**
+	 * Returns the used <code>ValueHelpDelegate</code>.
+	 * @returns {module:sap/ui/mdc/BaseDelegate} <code>Delegate</code> module
+	 * @throws Throws an error if the delegate module is not available
+	 * @protected
+	 */
+	Content.prototype.getValueHelpDelegate = function () {
+		const oContainer = this.getParent();
 		return oContainer && oContainer.getValueHelpDelegate();
 	};
 
-	Content.prototype._getValueHelpDelegatePayload = function () {
-		var oContainer = this.getParent();
-		return oContainer && oContainer.getValueHelpDelegatePayload();
+	/**
+	 * Determines the <code>ValueHelp</code> instance.
+	 * @returns {sap.ui.mdc.ValueHelp} The <code>ValueHelp</code> instance
+	 * @protected
+	 */
+	Content.prototype.getValueHelpInstance = function () {
+		const oContainer = this.getParent();
+		return oContainer && oContainer.getValueHelp && oContainer.getValueHelp();
 	};
 
-	Content.prototype._awaitValueHelpDelegate = function () {
-		var oContainer = this.getParent();
+	/**
+	 * Provides access to the delegate initialization <code>Promise</code> of the value help.
+	 * @returns {Promise} <code>Promise</code> reflecting the delegate initialization
+	 * @throws Throws an error if the delegate module is not available
+	 * @protected
+	 */
+	Content.prototype.awaitValueHelpDelegate = function () {
+		const oContainer = this.getParent();
 		return oContainer && oContainer.awaitValueHelpDelegate();
 	};
 
-	Content.prototype._isValueHelpDelegateInitialized = function () {
-		var oContainer = this.getParent();
+	/**
+	 * Determines if delegate of the value help has been  initialized.
+	 * @returns {boolean} <code>true</code> if delegate has been initialized
+	 * @protected
+	 */
+	Content.prototype.isValueHelpDelegateInitialized = function () {
+		const oContainer = this.getParent();
 		return oContainer && oContainer.isValueHelpDelegateInitialized();
 	};
 
+	/**
+	 * Returns control connected to value help.
+	 * @returns {sap.ui.core.Control} Connected control
+	 * @protected
+	 */
 	Content.prototype.getControl = function () {
-		var oContainer = this.getParent();
+		const oContainer = this.getParent();
 		return oContainer && oContainer.getControl();
 	};
 
+	/**
+	 * Gets the number of conditions relevant for the current content.
+	 * @param {sap.ui.mdc.condition.ConditionObject[]} aConditions Array of conditions
+	 * @returns {int} count
+	 */
 	Content.prototype.getCount = function (aConditions) {
 		return 0;
 	};
@@ -536,13 +615,13 @@ sap.ui.define([
 
 	//TODO: define aria attribute object
 	/**
-	 * Returns the aria attributes the field needs from the value help
+	 * Returns the aria attributes the field needs from the value help.
 	 *
 	 * <b>Note</b> This function needs only to be implemented for <code>Content</code>
 	 * implementing the <code>sap.ui.mdc.valuehelp.Popover</code> container.
 	 * On dialogs the <code>Dialog</code> container defines the attributes, as it could have multiple contents.
 	 *
-	 * @param {int} iMaxConditions maximal conditions allowed (as FieldHelp might not be connected to a field)
+	 * @param {int} iMaxConditions maximal conditions allowed (as ValueHelp might not be connected to a field)
 	 * @returns {object} object with the aria-attibutes
 	 * @private
 	 * @ui5-restricted sap.ui.mdc.valuehelp.base.Container
@@ -552,13 +631,20 @@ sap.ui.define([
 		return { // return default values, but needs to be implemented by specific content
 			contentId: null,
 			ariaHasPopup: "listbox",
-			roleDescription: null
+			roleDescription: null,
+			valueHelpEnabled: false,
+			autocomplete: "none"
 		};
 
 	};
 
-	Content.prototype._isSingleSelect = function (oEvent) {
-		return this._getMaxConditions() === 1;
+	/**
+	 * Returns if the value help is used for single selection.
+	 * @returns {boolean} <code>true</code> if single selection
+	 * @protected
+	 */
+	Content.prototype.isSingleSelect = function () {
+		return this.getMaxConditions() === 1;
 	};
 
 	/**
@@ -581,7 +667,7 @@ sap.ui.define([
 	 * @ui5-restricted sap.ui.mdc.valuehelp.base.Container
 	 */
 	Content.prototype.shouldOpenOnNavigate = function() {
-		return !this._isSingleSelect();
+		return !this.isSingleSelect();
 	};
 
 	/**
@@ -590,7 +676,7 @@ sap.ui.define([
 	 * In ComboBox-like case keyboard-navigation should be anabled if closed and if open.
 	 * If only typeahead is used (and maybe an value help dialog) keyboard-navigation schould be enabled only if typeahed is open.
 	 *
-	 * As not all rowas might be loaded navigation with home, end, page up or dowm might be disabled, depending of the used content.
+	 * As not all rows might be loaded, navigation with home, end, page up or dowm might be disabled, depending on the used content.
 	 *
 	 * @param {int} iStep Number of steps for navigation (e.g. 1 means next item, -1 means previous item)
 	 *
@@ -626,7 +712,7 @@ sap.ui.define([
 	 */
 	Content.prototype.isMultiSelect = function() {
 
-		return !this._isSingleSelect();
+		return !this.isSingleSelect();
 
 	};
 
@@ -654,6 +740,11 @@ sap.ui.define([
 		return true;
 	};
 
+	/**
+	 * This function is called if the <code>config</code> property changed.
+	 * @param {object} oConfig Configuration
+	 * @protected
+	 */
 	function _configChanged(oConfig) {
 
 		_determineOperator.call(this, oConfig.operators);
@@ -680,7 +771,7 @@ sap.ui.define([
 	 * @ui5-restricted sap.ui.mdc.valuehelp.base.Container
 	 */
 	Content.prototype.getFormattedTitle = function(iCount) {
-		var sTitle = this.getTitle();
+		let sTitle = this.getTitle();
 		if (sTitle) {
 			sTitle = formatMessage(sTitle, iCount ? iCount : "");
 		}
@@ -713,30 +804,44 @@ sap.ui.define([
 	 * @ui5-restricted sap.ui.mdc.valuehelp.base.Container
 	 */
 	Content.prototype.getFormattedTokenizerTitle = function(iCount) {
-		var sTitle = this.getTokenizerTitle();
+		let sTitle = this.getTokenizerTitle();
 		if (sTitle) {
 			sTitle = formatMessage(sTitle, iCount ? iCount : "");
 		}
 		return sTitle;
 	};
 
-	Content.prototype._getMaxConditions = function() {
+	/**
+	 * Returns the maximum allowed number of conditions, -1 if no limit is set.
+	 * @returns {int} maximum allowed number of conditions
+	 * @protected
+	 */
+	Content.prototype.getMaxConditions = function() {
 
-		var oConfig = this.getConfig();
+		const oConfig = this.getConfig();
 		return oConfig && oConfig.maxConditions;
 
 	};
 
+	/**
+	 * Performs logic needed if the container closes.
+	 * @protected
+	 */
 	Content.prototype.onContainerClose = function() {
 
 	};
 
+	/**
+	 * Performs logic needed if the container opens.
+	 * @protected
+	 */
 	Content.prototype.onContainerOpen = function() {
 
 	};
 
 	/**
-	 * called if ValueHelp connection to Field changed
+	 * Called if <code>ValueHelp</code> connection to a control changed.
+	 * @protected
 	 */
 	Content.prototype.onConnectionChange = function () {
 	};

@@ -5,13 +5,11 @@
 sap.ui.define([
 	"sap/ui/base/ManagedObject",
 	"sap/ui/fl/apply/_internal/flexState/ManifestUtils",
-	"sap/ui/fl/initial/_internal/Storage",
-	"sap/ui/fl/Utils"
+	"sap/ui/fl/initial/_internal/Storage"
 ], function(
 	ManagedObject,
 	ManifestUtils,
-	ApplyStorage,
-	Utils
+	ApplyStorage
 ) {
 	"use strict";
 
@@ -31,13 +29,13 @@ sap.ui.define([
 				mFlexData.variantChanges,
 				mFlexData.variantDependentControlChanges,
 				mFlexData.variantManagementChanges
-			].forEach(function (aFlexItems) {
-				aFlexItems.forEach(function (oFlexItem) {
+			].forEach(function(aFlexItems) {
+				aFlexItems.forEach(function(oFlexItem) {
 					if (!oFlexItem.selector.idIsLocal) {
 						oFlexItem.selector = getIdIsLocalTrueObject(oFlexItem.selector);
 
 						if (oFlexItem.dependentSelector) {
-							Object.keys(oFlexItem.dependentSelector).forEach(function (sCategory) {
+							Object.keys(oFlexItem.dependentSelector).forEach(function(sCategory) {
 								if (Array.isArray(oFlexItem.dependentSelector[sCategory])) {
 									oFlexItem.dependentSelector[sCategory] =
 										oFlexItem.dependentSelector[sCategory].map(getIdIsLocalTrueObject);
@@ -87,11 +85,18 @@ sap.ui.define([
 		};
 	}
 
+	function getSideId(oComponentData) {
+		if (oComponentData
+			&& oComponentData.startupParameters
+			&& Array.isArray(oComponentData.startupParameters.hcpApplicationId)) {
+			return oComponentData.startupParameters.hcpApplicationId[0];
+		}
+	}
+
 	/**
 	 * Class for loading Flex Data from the backend via the Connectors.
 	 *
 	 * @namespace sap.ui.fl.apply._internal.flexState.Loader
-	 * @experimental
 	 * @since 1.74
 	 * @version ${version}
 	 * @private
@@ -112,11 +117,12 @@ sap.ui.define([
 		 * @param {object} [mPropertyBag.reInitialize] - Flag if the application is reinitialized even if it was loaded before
 		 * @param {object} [mPropertyBag.asyncHints] - Async hints passed from the app index to the component processing
 		 * @param {number} [mPropertyBag.version] - Number of the version in which the state should be initialized
+		 * @param {string} [mPropertyBag.adaptationId] - Context-based adaptation for which the state should be initialized
 		 * @param {object} [mPropertyBag.partialFlexData] - Contains current flexstate for this reference, indicator to reload bundles from storage
 		 * @param {boolean} [mPropertyBag.allContexts] - Includes also restricted context
 		 * @returns {Promise<object>} resolves with the change file for the given component from the Storage
 		 */
-		loadFlexData: function (mPropertyBag) {
+		loadFlexData(mPropertyBag) {
 			var sComponentName = ManifestUtils.getBaseComponentNameFromManifest(mPropertyBag.manifest);
 
 			if (mPropertyBag.partialFlexData) {
@@ -135,10 +141,11 @@ sap.ui.define([
 				reference: mPropertyBag.reference,
 				componentName: sComponentName,
 				cacheKey: sCacheKey,
-				siteId: Utils.getSiteIdByComponentData(mPropertyBag.componentData),
+				siteId: getSideId(mPropertyBag.componentData),
 				appDescriptor: mPropertyBag.manifest.getRawJson ? mPropertyBag.manifest.getRawJson() : mPropertyBag.manifest,
 				version: mPropertyBag.version,
-				allContexts: mPropertyBag.allContexts
+				allContexts: mPropertyBag.allContexts,
+				adaptationId: mPropertyBag.adaptationId
 			})
 			.then(filterInvalidFileNames.bind())
 			.then(migrateSelectorFlags.bind(undefined, isMigrationNeeded(mPropertyBag.manifest)))

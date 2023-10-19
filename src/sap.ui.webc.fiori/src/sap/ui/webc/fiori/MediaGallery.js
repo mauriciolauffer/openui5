@@ -4,7 +4,7 @@
 
 // Provides control sap.ui.webc.fiori.MediaGallery.
 sap.ui.define([
-	"sap/ui/webc/common/WebComponent",
+	"sap/ui/core/webc/WebComponent",
 	"./library",
 	"./thirdparty/MediaGallery"
 ], function(WebComponent, library) {
@@ -20,7 +20,7 @@ sap.ui.define([
 	 * @param {string} [sId] ID for the new control, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new control
 	 *
-	 * @extends sap.ui.webc.common.WebComponent
+	 * @extends sap.ui.core.webc.WebComponent
 	 * @class
 	 *
 	 * <h3>Overview</h3>
@@ -39,7 +39,7 @@ sap.ui.define([
 	 *     <li>[UP/DOWN] - Navigates up and down the items</li>
 	 *     <li>[HOME] - Navigates to first item</li>
 	 *     <li>[END] - Navigates to the last item</li>
-	 *     <li>[SPACE/ENTER] - Select an item
+	 *     <li>[SPACE/ENTER] - Select an item</li>
 	 * </ul> <br>
 	 *
 	 * @author SAP SE

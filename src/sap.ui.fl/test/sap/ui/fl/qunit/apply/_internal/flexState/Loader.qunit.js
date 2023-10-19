@@ -2,20 +2,18 @@
 
 sap.ui.define([
 	"sap/ui/core/Manifest",
+	"sap/ui/fl/write/_internal/connectors/JsObjectConnector",
 	"sap/ui/fl/apply/_internal/flexState/Loader",
 	"sap/ui/fl/apply/_internal/flexState/ManifestUtils",
-	"sap/ui/fl/write/_internal/connectors/JsObjectConnector",
 	"sap/ui/fl/initial/_internal/Storage",
-	"sap/ui/fl/Utils",
-	"sap/ui/fl/write/api/Version",
+	"sap/ui/fl/initial/api/Version",
 	"sap/ui/thirdparty/sinon-4"
 ], function(
 	Manifest,
+	JsObjectConnector,
 	Loader,
 	ManifestUtils,
-	JsObjectConnector,
 	ApplyStorage,
-	Utils,
 	Version,
 	sinon
 ) {
@@ -23,8 +21,14 @@ sap.ui.define([
 
 	var sandbox = sinon.createSandbox();
 
+	var oComponentData = {
+		startupParameters: {
+			hcpApplicationId: ["siteId"]
+		}
+	};
+
 	QUnit.module("Loader", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oRawManifest = {
 				property: "value"
 			};
@@ -93,22 +97,22 @@ sap.ui.define([
 			};
 			this.oLoadFlexDataStub = sandbox.stub(ApplyStorage, "loadFlexData").resolves(this.oFlexDataResponse);
 			this.oCompleteFlexDataStub = sandbox.stub(ApplyStorage, "completeFlexData").resolves("complete");
-			this.oGetSiteIdStub = sandbox.stub(Utils, "getSiteIdByComponentData").returns("siteId");
 			this.oGetBaseCompNameStub = sandbox.stub(ManifestUtils, "getBaseComponentNameFromManifest").returns("baseName");
 			this.oGetCacheKeyStub = sandbox.stub(ManifestUtils, "getCacheKeyFromAsyncHints").returns("cacheKey");
 		},
-		afterEach: function () {
+		afterEach() {
 			sandbox.restore();
 		}
-	}, function () {
-		QUnit.test("when loadFlexData is called with all information", function (assert) {
+	}, function() {
+		QUnit.test("when loadFlexData is called with all information", function(assert) {
 			var mPropertyBag = {
 				manifest: this.oManifest,
 				otherValue: "a",
 				reference: "reference",
-				componentData: {},
+				componentData: oComponentData,
 				version: Version.Number.Draft,
-				allContexts: true
+				allContexts: true,
+				adaptationId: "id_1234"
 			};
 
 			var oExpectedProperties = {
@@ -119,14 +123,15 @@ sap.ui.define([
 				preview: undefined,
 				appDescriptor: this.oRawManifest,
 				version: Version.Number.Draft,
-				allContexts: true
+				allContexts: true,
+				adaptationId: "id_1234"
 			};
 
 			return Loader.loadFlexData(mPropertyBag).then(function(oResult) {
 				assert.equal(oResult.changes, this.oFlexDataResponse, "the Loader loads data");
 				assert.equal(this.oLoadFlexDataStub.callCount, 1, "the Storage.loadFlexData was called");
 				assert.equal(this.oCompleteFlexDataStub.callCount, 0, "the Storage.completeFlexData was not called");
-				assert.equal(this.oGetSiteIdStub.callCount, 1, "the siteId was retrieved from the Utils");
+				assert.equal(this.oLoadFlexDataStub.getCall(0).args[0].siteId, "siteId", "the siteId was retrieved from the Utils");
 				assert.equal(this.oGetBaseCompNameStub.callCount, 1, "the name was retrieved from the Utils");
 				assert.equal(this.oGetCacheKeyStub.callCount, 1, "the cache key was retrieved from the Utils");
 				var mPassedPropertyBag = this.oLoadFlexDataStub.firstCall.args[0];
@@ -134,12 +139,12 @@ sap.ui.define([
 			}.bind(this));
 		});
 
-		QUnit.test("when loadFlexData is called without app version and all contexts", function (assert) {
+		QUnit.test("when loadFlexData is called without app version and all contexts", function(assert) {
 			var mPropertyBag = {
 				manifest: this.oManifest,
 				otherValue: "a",
 				reference: "reference",
-				componentData: {}
+				componentData: oComponentData
 			};
 
 			var oExpectedProperties = {
@@ -150,14 +155,15 @@ sap.ui.define([
 				appDescriptor: this.oRawManifest,
 				componentName: "baseName",
 				version: undefined,
-				allContexts: undefined
+				allContexts: undefined,
+				adaptationId: undefined
 			};
 
 			return Loader.loadFlexData(mPropertyBag).then(function(oResult) {
 				assert.equal(oResult.changes, this.oFlexDataResponse, "the Loader tries to load data");
 				assert.equal(this.oLoadFlexDataStub.callCount, 1, "the Storage.loadFlexData was called");
 				assert.equal(this.oCompleteFlexDataStub.callCount, 0, "the Storage.completeFlexData was not called");
-				assert.equal(this.oGetSiteIdStub.callCount, 1, "the siteId was retrieved from the Utils");
+				assert.equal(this.oLoadFlexDataStub.getCall(0).args[0].siteId, "siteId", "the siteId was retrieved from the Utils");
 				assert.equal(this.oGetBaseCompNameStub.callCount, 1, "the name was retrieved from the Utils");
 				assert.equal(this.oGetCacheKeyStub.callCount, 1, "the cache key was retrieved from the Utils");
 				assert.deepEqual(this.oLoadFlexDataStub.firstCall.args[0], oExpectedProperties, "the first argument are the properties");
@@ -170,13 +176,13 @@ sap.ui.define([
 		}, {
 			details: "with a manifest JSON",
 			manifest: {"sap.ovp": {}}
-		}].forEach(function (oTestData) {
-			QUnit.test("when loadFlexData is called with a ovp app and " + oTestData.details, function (assert) {
+		}].forEach(function(oTestData) {
+			QUnit.test(`when loadFlexData is called with a ovp app and ${oTestData.details}`, function(assert) {
 				var mPropertyBag = {
 					manifest: oTestData.manifest,
 					otherValue: "a",
 					reference: "reference",
-					componentData: {}
+					componentData: oComponentData
 				};
 
 				return Loader.loadFlexData(mPropertyBag).then(function(oResult) {
@@ -226,12 +232,12 @@ sap.ui.define([
 			});
 		});
 
-		QUnit.test("when loadFlexData is called with a non-ovp app", function (assert) {
+		QUnit.test("when loadFlexData is called with a non-ovp app", function(assert) {
 			var mPropertyBag = {
 				manifest: Object.assign({}, this.oManifest),
 				otherValue: "a",
 				reference: "reference",
-				componentData: {}
+				componentData: oComponentData
 			};
 
 			return Loader.loadFlexData(mPropertyBag).then(function(oResult) {
@@ -276,7 +282,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("partialFlexState", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oStorageCompleteFlexDataStub = sandbox.spy(ApplyStorage, "completeFlexData");
 			this.oStorageLoadFlexDataStub = sandbox.spy(ApplyStorage, "loadFlexData");
 			this.oRawManifest = {
@@ -284,19 +290,19 @@ sap.ui.define([
 			};
 			this.oManifest = new Manifest(this.oRawManifest);
 		},
-		afterEach: function () {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
-		QUnit.test("when 'loadChanges' is called to with partialFlexData", function (assert) {
+		QUnit.test("when 'loadChanges' is called to with partialFlexData", function(assert) {
 			var mPropertyBag = {
 				manifest: this.oManifest,
 				reference: "test.app",
-				componentData: {},
+				componentData: oComponentData,
 				partialFlexData: {changes: [{partial: "something"}]}
 			};
 
-			return Loader.loadFlexData(mPropertyBag).then(function (oResult) {
+			return Loader.loadFlexData(mPropertyBag).then(function(oResult) {
 				assert.equal(oResult.changes.changes.length, 1, "one change was loaded");
 				var oChange = oResult.changes.changes[0];
 				assert.equal(oChange.partial, "something", "one dummy partial state change was loaded correctly");
@@ -305,16 +311,16 @@ sap.ui.define([
 			}.bind(this));
 		});
 
-		QUnit.test("when 'loadChanges' is called without partialFlexData", function (assert) {
+		QUnit.test("when 'loadChanges' is called without partialFlexData", function(assert) {
 			var sCacheKey = "abc";
 			var oPreview = {
 				maxLayer: "PARTNER",
-				reference: "SeleniumListReportAdaptation.Component"
+				reference: "SeleniumListReportAdaptation"
 			};
 			var mPropertyBag = {
 				manifest: this.oManifest,
 				reference: "test.app",
-				componentData: {},
+				componentData: oComponentData,
 				asyncHints: {
 					requests: [{
 						name: "sap.ui.fl.changes",
@@ -325,7 +331,7 @@ sap.ui.define([
 				}
 			};
 
-			return Loader.loadFlexData(mPropertyBag).then(function (oResult) {
+			return Loader.loadFlexData(mPropertyBag).then(function(oResult) {
 				assert.equal(oResult.changes.changes.length, 0, "no changes were loaded");
 				assert.equal(this.oStorageCompleteFlexDataStub.callCount, 0, "and Storage.completeFlexData was NOT called");
 				assert.equal(this.oStorageLoadFlexDataStub.callCount, 1, "and Storage.loadFlexData was called");
@@ -334,13 +340,13 @@ sap.ui.define([
 			}.bind(this));
 		});
 
-		QUnit.test("when 'loadChanges' is called with reinitialize", function (assert) {
+		QUnit.test("when 'loadChanges' is called with reinitialize", function(assert) {
 			var sCacheKey = "abc";
 
 			var mPropertyBag = {
 				manifest: this.oManifest,
 				reference: "test.app",
-				componentData: {},
+				componentData: oComponentData,
 				reInitialize: true,
 				asyncHints: {
 					requests: [{
@@ -350,7 +356,7 @@ sap.ui.define([
 					}]
 				}
 			};
-			return Loader.loadFlexData(mPropertyBag).then(function (oResult) {
+			return Loader.loadFlexData(mPropertyBag).then(function(oResult) {
 				assert.equal(oResult.changes.changes.length, 0, "no changes were loaded");
 				assert.equal(this.oStorageCompleteFlexDataStub.callCount, 0, "and Storage.completeFlexData was NOT called");
 				assert.equal(this.oStorageLoadFlexDataStub.callCount, 1, "and Storage.loadFlexData was called");
@@ -360,18 +366,18 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given new connector configuration in bootstrap", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oRawManifest = {
 				property: "value"
 			};
 			this.oManifest = new Manifest(this.oRawManifest);
 		},
-		afterEach: function () {
+		afterEach() {
 			JsObjectConnector.storage.clear();
 			sandbox.restore();
 		}
 	}, function() {
-		QUnit.test("and static preload when loading flex data, get name/reference from mComponent", function (assert) {
+		QUnit.test("and static preload when loading flex data, get name/reference from mComponent", function(assert) {
 			// simulate a component-preload
 			sap.ui.require.preload({
 				"test/app/changes/changes-bundle.json": '[{"otherDummy":true}]'
@@ -380,10 +386,10 @@ sap.ui.define([
 			var mPropertyBag = {
 				manifest: this.oManifest,
 				reference: "test.app",
-				componentData: {}
+				componentData: oComponentData
 			};
 
-			return Loader.loadFlexData(mPropertyBag).then(function (oResult) {
+			return Loader.loadFlexData(mPropertyBag).then(function(oResult) {
 				assert.equal(oResult.changes.changes.length, 1, "one change was loaded");
 				var oChange = oResult.changes.changes[0];
 				assert.equal(oChange.otherDummy, true, "the change dummy data is correctly loaded");
@@ -391,8 +397,7 @@ sap.ui.define([
 		});
 	});
 
-
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

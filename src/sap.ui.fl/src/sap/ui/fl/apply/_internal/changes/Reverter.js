@@ -4,11 +4,13 @@
 
 sap.ui.define([
 	"sap/base/Log",
+	"sap/ui/fl/apply/_internal/changes/Applier",
 	"sap/ui/fl/apply/_internal/changes/FlexCustomData",
 	"sap/ui/fl/apply/_internal/changes/Utils",
 	"sap/ui/fl/Utils"
 ], function(
 	Log,
+	Applier,
 	FlexCustomData,
 	Utils,
 	FlUtils
@@ -75,12 +77,12 @@ sap.ui.define([
 			}
 			return undefined;
 		})
-		.then(function () {
+		.then(function() {
 			oChange.markRevertFinished();
 			return mControl.control;
 		})
 		.catch(function(oError) {
-			var sErrorMessage = "Change could not be reverted: " + oError.message;
+			var sErrorMessage = `Change could not be reverted: ${oError.message}`;
 			Log.error(sErrorMessage);
 			oChange.markRevertFinished(sErrorMessage);
 			return false;
@@ -106,8 +108,8 @@ sap.ui.define([
 				var oSelector = oChange.getSelector && oChange.getSelector();
 				var oControl = mPropertyBag.modifier.bySelector(oSelector, mPropertyBag.appComponent);
 				if (!oControl) {
-					Log.warning("A flexibility change tries to revert changes on a nonexistent control with id " + oSelector.id);
-					return new FlUtils.FakePromise();
+					Log.warning(`A flexibility change tries to revert changes on a nonexistent control with id ${oSelector.id}`);
+					return (FlUtils.FakePromise ? new FlUtils.FakePromise() : Promise.resolve());
 				}
 				var mRevertProperties = {
 					modifier: mPropertyBag.modifier,
@@ -117,8 +119,12 @@ sap.ui.define([
 				return revertAndDeleteChangeOnControl(oChange, oControl, mRevertProperties, mPropertyBag);
 			});
 		});
-
-		return FlUtils.execPromiseQueueSequentially(aPromiseStack);
+		const pReturn = FlUtils.execPromiseQueueSequentially(aPromiseStack);
+		// reverting a change might trigger the propagation listener and the applyAllChangesForControl functionality
+		// this needs to wait for the whole revert to be done so that the persistence is cleaned up and
+		// a reverted change is not applied again
+		Applier.addPreConditionForInitialChangeApplying(pReturn);
+		return pReturn;
 	};
 
 	return Reverter;

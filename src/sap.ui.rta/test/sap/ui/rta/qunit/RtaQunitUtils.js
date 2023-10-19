@@ -64,7 +64,7 @@ sap.ui.define([
 		return oCompCont;
 	};
 
-	RtaQunitUtils.clear = function (oElement, bRevert) {
+	RtaQunitUtils.clear = function(oElement, bRevert) {
 		var oComponent = (oElement && flUtils.getAppComponentForControl(oElement)) || Component.get("Comp1");
 		var aCustomerChanges;
 
@@ -73,24 +73,24 @@ sap.ui.define([
 		}).then(function() {
 			return PersistenceWriteAPI.save({selector: oComponent, layer: Layer.CUSTOMER});
 		})
-		.then(function (aChanges) {
+		.then(function(aChanges) {
 			aCustomerChanges = aChanges;
 			return PersistenceWriteAPI.save({selector: oComponent, layer: Layer.USER});
 		})
-		.then(function (aUserChangesChanges) {
+		.then(function(aUserChangesChanges) {
 			if (bRevert) {
 				return aCustomerChanges.concat(aUserChangesChanges).reverse()
-					.filter(function (oChange) {
-						//skip descriptor changes
-						return !oChange.isA("sap.ui.fl.apply._internal.flexObjects.AppDescriptorChange");
-					})
-					.reduce(function (oPreviousPromise, oChange) {
-						var oElementToBeReverted = JsControlTreeModifier.bySelector(oChange.getSelector(), oComponent);
-						return ChangesWriteAPI.revert({
-							element: oElementToBeReverted,
-							change: oChange
-						});
-					}, new flUtils.FakePromise());
+				.filter(function(oChange) {
+					// skip descriptor changes
+					return !oChange.isA("sap.ui.fl.apply._internal.flexObjects.AppDescriptorChange");
+				})
+				.reduce(function(oPreviousPromise, oChange) {
+					var oElementToBeReverted = JsControlTreeModifier.bySelector(oChange.getSelector(), oComponent);
+					return ChangesWriteAPI.revert({
+						element: oElementToBeReverted,
+						change: oChange
+					});
+				}, Promise.resolve());
 			}
 			return undefined;
 		})
@@ -106,15 +106,12 @@ sap.ui.define([
 		}));
 	};
 
-	RtaQunitUtils.getNumberOfChangesForTestApp = function () {
+	RtaQunitUtils.getNumberOfChangesForTestApp = function() {
 		return FlexTestAPI.getNumberOfStoredChanges("SessionStorage", "sap.ui.rta.qunitrta.Component");
 	};
 
 	RtaQunitUtils.renderTestAppAtAsync = function(sDomId) {
 		disableRtaRestart();
-		Core.getConfiguration().setFlexibilityServices([{
-			connector: "SessionStorageConnector"
-		}]);
 
 		return Component.create({
 			name: "sap.ui.rta.qunitrta",
@@ -125,21 +122,21 @@ sap.ui.define([
 				}
 			}
 		})
-			.then(function(oComponent) {
-				return oComponent.oView
-					.then(function() {
-						return new ComponentContainer({
-							component: oComponent,
-							async: true
-						});
-					});
-			})
-			.then(function(oComponentContainer) {
-				oComponentContainer.placeAt(sDomId);
-				Core.applyChanges();
-
-				return oComponentContainer;
+		.then(function(oComponent) {
+			return oComponent.oView
+			.then(function() {
+				return new ComponentContainer({
+					component: oComponent,
+					async: true
+				});
 			});
+		})
+		.then(function(oComponentContainer) {
+			oComponentContainer.placeAt(sDomId);
+			Core.applyChanges();
+
+			return oComponentContainer;
+		});
 	};
 
 	RtaQunitUtils.renderRuntimeAuthoringAppAt = function(sDomId) {
@@ -154,25 +151,25 @@ sap.ui.define([
 				}
 			}
 		})
-			.then(function(oComponent) {
-				return oComponent.oView
-					.then(function() {
-						return new ComponentContainer({
-							component: oComponent,
-							async: true
-						});
-					});
-			})
-			.then(function(oComponentContainer) {
-				oComponentContainer.placeAt(sDomId);
-				Core.applyChanges();
-				return oComponentContainer;
+		.then(function(oComponent) {
+			return oComponent.oView
+			.then(function() {
+				return new ComponentContainer({
+					component: oComponent,
+					async: true
+				});
 			});
+		})
+		.then(function(oComponentContainer) {
+			oComponentContainer.placeAt(sDomId);
+			Core.applyChanges();
+			return oComponentContainer;
+		});
 	};
 
 	RtaQunitUtils.openContextMenuWithKeyboard = function(oTarget) {
 		return new Promise(function(resolve) {
-			this.oRta.getPlugins()["contextMenu"].attachEventOnce("openedContextMenu", resolve);
+			this.oRta.getPlugins().contextMenu.attachEventOnce("openedContextMenu", resolve);
 			var oParams = {};
 			oParams.keyCode = KeyCodes.F10;
 			oParams.which = oParams.keyCode;
@@ -186,7 +183,7 @@ sap.ui.define([
 
 	RtaQunitUtils.openContextMenuWithClick = function(oTarget, sinon) {
 		return new Promise(function(resolve) {
-			this.oRta.getPlugins()["contextMenu"].attachEventOnce("openedContextMenu", resolve);
+			this.oRta.getPlugins().contextMenu.attachEventOnce("openedContextMenu", resolve);
 
 			var clock = sinon.useFakeTimers();
 			QUnitUtils.triggerMouseEvent(oTarget.getDomRef(), "contextmenu");
@@ -197,7 +194,7 @@ sap.ui.define([
 
 	RtaQunitUtils.closeContextMenu = function(oTarget) {
 		return new Promise(function(resolve) {
-			this.oRta.getPlugins()["contextMenu"].attachEventOnce("closedContextMenu", resolve);
+			this.oRta.getPlugins().contextMenu.attachEventOnce("closedContextMenu", resolve);
 			oTarget.close();
 		}.bind(this));
 	};
@@ -208,30 +205,31 @@ sap.ui.define([
 			oTarget.focus();
 			oTarget.setSelected(true);
 			RtaQunitUtils.openContextMenuWithKeyboard.call(this, oTarget)
-				.then(function () {
-					var oContextMenuControl = this.oRta.getPlugins()["contextMenu"].oContextMenuControl;
-					iItemCount = oContextMenuControl.getItems().length;
-					return oContextMenuControl;
-				}.bind(this))
-				.then(RtaQunitUtils.closeContextMenu.bind(this))
-				.then(function () {
-					resolve(iItemCount);
-				});
+			.then(function() {
+				var {oContextMenuControl} = this.oRta.getPlugins().contextMenu;
+				iItemCount = oContextMenuControl.getItems().length;
+				return oContextMenuControl;
+			}.bind(this))
+			.then(RtaQunitUtils.closeContextMenu.bind(this))
+			.then(function() {
+				resolve(iItemCount);
+			});
 		}.bind(this));
 	};
 
 	RtaQunitUtils.createAndStubAppComponent = function(sandbox, sId, oManifest, oContent) {
-		sId = sId || "someName";
-		oManifest = oManifest || {
+		sId ||= "someName";
+		oManifest ||= {
 			"sap.app": {
-				id: sId
+				id: sId,
+				type: "application"
 			}
 		};
 		var Component = UIComponent.extend("component", {
 			metadata: {
 				manifest: oManifest
 			},
-			createContent: function() {
+			createContent() {
 				return oContent;
 			}
 		});
@@ -246,13 +244,13 @@ sap.ui.define([
 		return FlexObjectFactory.createFromFileContent(oFileContent);
 	};
 
-	RtaQunitUtils.stubSapUiRequire = function() {
-		return FlQUnitUtils.stubSapUiRequire.apply(undefined, arguments);
+	RtaQunitUtils.stubSapUiRequire = function(...aArgs) {
+		return FlQUnitUtils.stubSapUiRequire.apply(undefined, aArgs);
 	};
 
 	RtaQunitUtils.showActionsMenu = function(oToolbar) {
 		return oToolbar.showActionsMenu({
-			getSource: function () {
+			getSource() {
 				return oToolbar.getControl("actionsMenu");
 			}
 		});

@@ -15,12 +15,14 @@ sap.ui.define([
 	"sap/ui/core/Control",
 	"sap/ui/core/Item",
 	"sap/ui/model/odata/v4/ValueListType"
-], function (Log, Button, Column, ColumnListItem, ComboBox, Input, library, ResponsivePopover,
-		Table, Text, Control, Item, ValueListType) {
+], function (Log, Button, Column, ColumnListItem, ComboBox, Input, library,
+		ResponsivePopover, Table, Text, Control, Item, ValueListType) {
 	"use strict";
 
 	// shortcut for sap.m.PlacementType
-	var PlacementType = library.PlacementType;
+	var PlacementType = library.PlacementType,
+		bSharedRequest
+			= new URLSearchParams(window.location.search).get("$$sharedRequest") !== "false";
 
 	return Control.extend("sap.ui.core.sample.common.ValueHelp", {
 		metadata : {
@@ -181,9 +183,8 @@ sap.ui.define([
 					parameters : {
 						// For value helps it makes sense to share the requests.
 						// Here it would not be necessary to specify $$sharedRequest
-						// as separate value help models will implicitly use
-						// $$sharedRequest.
-						$$sharedRequest : true
+						// as separate value help models will implicitly use $$sharedRequest.
+						$$sharedRequest : bSharedRequest
 					},
 					template : oItem
 				});
@@ -246,6 +247,12 @@ sap.ui.define([
 				});
 				oTable.bindItems({
 					path : "/" + oValueListMapping.CollectionPath,
+					parameters : {
+						// For value helps it makes sense to share the requests.
+						// Here it would not be necessary to specify $$sharedRequest
+						// as separate value help models will implicitly use $$sharedRequest.
+						$$sharedRequest : bSharedRequest
+					},
 					template : oColumnListItem
 				});
 				oTable.setModel(oValueListMapping.$model);

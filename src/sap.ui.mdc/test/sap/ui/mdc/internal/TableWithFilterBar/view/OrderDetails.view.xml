@@ -54,14 +54,14 @@
 								<mdc:Field id="fOrderNo" delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{path: 'OrderNo', type: 'sap.ui.model.odata.type.String', constraints: {maxLength: 10, isDigitSequence: true}}" editMode="{=${view>/editMode} ? 'Editable' : 'Display'}" multipleLines="false"/>
 
 								<Label text="Total"></Label>
-								<mdc:Field id="fTotal" delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{parts: [{path: 'total', type:'sap.ui.model.odata.type.Decimal', constraints: {precision: 9, scale: 2}}, {path:'currency_code', type:'sap.ui.model.odata.type.String', constraints: {maxLength: 3}}, {mode:'OneTime', path:'/##@@requestCurrencyCodes', targetType:'any'}], type:'sap.ui.model.odata.type.Currency', mode:'TwoWay'}" editMode="{=${view>/editMode} ? 'Editable' : 'Display'}" multipleLines="false" fieldHelp="FVH-Currency">
+								<mdc:Field id="fTotal" delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{parts: [{path: 'total', type:'sap.ui.model.odata.type.Decimal', constraints: {precision: 9, scale: 2}}, {path:'currency_code', type:'sap.ui.model.odata.type.String', constraints: {maxLength: 3}}, {mode:'OneTime', path:'/##@@requestCurrencyCodes', targetType:'any'}], type:'sap.ui.model.odata.type.Currency', mode:'TwoWay'}" editMode="{=${view>/editMode} ? 'Editable' : 'Display'}" multipleLines="false" valueHelp="FVH-Currency">
 									<mdc:dependents>
 										<mdc:ValueHelp id="FVH-Currency"
 											delegate='\{"name": "sap/ui/v4demo/delegate/ValueHelp.delegate", "payload": \{\}\}'>
 											<mdc:typeahead>
 												<mdcv:Popover title="Currencies">
 													<mdcvc:FixedList items="{/Currencies}" useAsValueHelp="true">
-														<mdcf:ListFieldHelpItem key="{code}" text="{descr}" additionalText="{code}" />
+														<mdcvc:FixedListItem key="{code}" text="{descr}" additionalText="{code}" />
 													</mdcvc:FixedList>
 												</mdcv:Popover>
 											</mdc:typeahead>
@@ -70,14 +70,14 @@
 								</mdc:Field>
 
 								<Label text="Customer"></Label>
-								<mdc:Field id="fCustomer" delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{path: 'customer_ID', type: 'sap.ui.model.odata.type.Int32', formatOptions: {groupingEnabled: false}}" editMode="{=${view>/editMode} ? 'Editable' : 'Display'}" display="Description" multipleLines="false" fieldHelp="FVH-Customer">
+								<mdc:Field id="fCustomer" delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{path: 'customer_ID', type: 'sap.ui.model.odata.type.Int32', formatOptions: {groupingEnabled: false}}" editMode="{=${view>/editMode} ? 'Editable' : 'Display'}" display="Description" multipleLines="false" valueHelp="FVH-Customer">
 									<mdc:dependents>
 										<mdc:ValueHelp id="FVH-Customer"
 											delegate='\{"name": "sap/ui/v4demo/delegate/ValueHelp.delegate", "payload": \{\}\}'>
 											<mdc:typeahead>
 												<mdcv:Popover title="Customer">
 													<mdcvc:FixedList items="{/Customers}" useAsValueHelp="true">
-														<mdcf:ListFieldHelpItem key="{ID}" text="{name}" additionalText="{ID}" />
+														<mdcvc:FixedListItem key="{ID}" text="{name}" additionalText="{ID}" />
 													</mdcvc:FixedList>
 												</mdcv:Popover>
 											</mdc:typeahead>
@@ -111,16 +111,16 @@
 									</mdcat:ActionToolbarAction>
 								</mdc:actions>
 								<mdc:columns>
-									<mdc:table.Column id="cID" header="ID" dataProperty="ID">
+									<mdc:table.Column id="cID" header="ID" propertyKey="ID">
 										<mdc:Field id="F_ID" delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{path: 'ID', type: 'sap.ui.model.odata.type.Guid', constraints: {nullable: false}}" width="100%" editMode="Display" multipleLines="false"/>
 									</mdc:table.Column>
-									<mdc:table.Column id="cAmount" header="amount" dataProperty="amount">
+									<mdc:table.Column id="cAmount" header="amount" propertyKey="amount">
 										<mdc:Field id="F_amount" delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{path: 'amount', type: 'sap.ui.model.odata.type.Int32'}" editMode="Display" width="100%" multipleLines="false"/>
 									</mdc:table.Column>
-									<mdc:table.Column id="cNetAmount" header="netAmount" dataProperty="netAmount">
+									<mdc:table.Column id="cNetAmount" header="netAmount" propertyKey="netAmount">
 										<mdc:Field id="F_netAmount" delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{path: 'netAmount', type: 'sap.ui.model.odata.type.Decimal', constraints: {precision: 9, scale: 2}}" editMode="Display" width="100%" multipleLines="false"/>
 									</mdc:table.Column>
-									<mdc:table.Column id="cBook" header="Book" dataProperty="book_ID">
+									<mdc:table.Column id="cBook" header="Book" propertyKey="book_ID">
 										<mdc:Field id="F_book_ID" delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{path: 'book_ID', type: 'sap.ui.model.odata.type.Int32'}" additionalValue="{book/title}" display="Description" width="100%" editMode="Display" multipleLines="false"/>
 									</mdc:table.Column>
 								</mdc:columns>
@@ -167,17 +167,16 @@
 													<mdc:Table id="FH-Books--mdc--gridtable"
 														autoBindOnInit="false"
 														width="100%"
-														height="100%"
 														selectionMode="Multi"
 														p13nMode="Column,Sort"
 														delegate='\{"name": "sap/ui/v4demo/delegate/GridTable.delegate", "payload": \{"collectionName": "Books"\}\}'
 														threshold="50"
 														enableAutoColumnWidth="true">
 														<mdc:columns>
-															<mdc:table.Column id="FH4--mdc--gridtable--id" header="ID" dataProperty="ID">
+															<mdc:table.Column id="FH4--mdc--gridtable--id" header="ID" propertyKey="ID">
 																<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{path: 'ID', type:'sap.ui.model.odata.type.Int32', formatOptions: {groupingEnabled: false}}" editMode="Display" width="100%" multipleLines="false"/>
 															</mdc:table.Column>
-															<mdc:table.Column id="FH4--mdc--gridtable--title" header="Title" dataProperty="title">
+															<mdc:table.Column id="FH4--mdc--gridtable--title" header="Title" propertyKey="title">
 																<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{path: 'title', type:'sap.ui.model.odata.type.String', constraints: {maxLength: 1111}}" editMode="Display" width="100%" multipleLines="false"/>
 															</mdc:table.Column>
 														</mdc:columns>

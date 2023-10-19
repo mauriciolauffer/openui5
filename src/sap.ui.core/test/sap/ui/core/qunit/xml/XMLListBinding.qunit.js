@@ -11,10 +11,9 @@ sap.ui.define([
 	"sap/ui/model/Sorter",
 	"sap/ui/model/xml/XMLListBinding",
 	"sap/ui/model/xml/XMLModel",
-	"sap/ui/test/TestUtils",
 	"sap/ui/thirdparty/jquery"
 ], function(Log, Device, ChangeReason, ClientListBinding, Filter, FilterOperator, Sorter,
-		XMLListBinding, XMLModel, TestUtils, jQuery) {
+		XMLListBinding, XMLModel, jQuery) {
 	/*global QUnit */
 	"use strict";
 
@@ -68,6 +67,9 @@ sap.ui.define([
 		"</root>";
 
 	QUnit.module("sap.ui.model.xml.XMLListBinding", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach: function() {
 			this.oLogMock = this.mock(Log);
 			this.oLogMock.expects("error").never();
@@ -77,7 +79,6 @@ sap.ui.define([
 		},
 		afterEach: function() {
 			this.oModel.destroy();
-			return TestUtils.awaitRendering();
 		},
 		createListBinding: function(sPath, oContext){
 			// create binding

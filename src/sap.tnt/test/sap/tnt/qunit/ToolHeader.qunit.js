@@ -24,7 +24,6 @@ sap.ui.define([
 	waitForThemeApplied,
 	oCore
 ) {
-
 	'use strict';
 
 	// shortcut for sap.m.OverflowToolbarPriority
@@ -33,7 +32,9 @@ sap.ui.define([
 	// shortcut for sap.m.ButtonType
 	var ButtonType = mobileLibrary.ButtonType;
 
-	jQuery("#qunit-fixture").width('300px');
+	var DOM_RENDER_LOCATION = "qunit-fixture";
+
+	jQuery("#" + DOM_RENDER_LOCATION).width('300px');
 
 	function getToolHeader() {
 		return new ToolHeader({
@@ -195,7 +196,7 @@ sap.ui.define([
 		beforeEach: function () {
 			this.oApp = new App("myApp", { initialPage: "toolHeaderPage" });
 			this.oPage = new Page("toolHeaderPage", { title: "Tool Header" });
-			this.oApp.placeAt("qunit-fixture");
+			this.oApp.placeAt(DOM_RENDER_LOCATION);
 			this.oApp.addPage(this.oPage);
 
 			this.toolHeader = getToolHeader();
@@ -223,14 +224,15 @@ sap.ui.define([
 	});
 
 	QUnit.test("overflow button", function (assert) {
-
 		var overflowButton = this.toolHeader.$('overflowButton');
+		var overflowButtonClone = this.toolHeader.$('overflowButtonClone');
+
 		assert.ok(overflowButton.length > 0, "Overflow button is rendered");
+		assert.ok(overflowButtonClone.length > 0, "Overflow button clone is rendered");
 	});
 
 	QUnit.test("overflow popover", function (assert) {
 		assert.ok(jQuery('.sapMOTAPopover').length == 0, "Popover is not rendered");
-
 
 		var overflowButton = this.toolHeader.$('overflowButton');
 		overflowButton.trigger('tap');

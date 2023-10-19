@@ -351,6 +351,21 @@ sap.ui.define([
 										key: 'manifest.json'
 									}
 								]
+							},
+							{
+								title: 'Image',
+								key: 'objectCardWithImage',
+								experimental: true,
+								settings: {
+									columns: 4
+								},
+								files: [
+									{
+										url: '/samples/object/image/manifest.json',
+										name: 'manifest.json',
+										key: 'manifest.json'
+									}
+								]
 							}
 						]
 					},
@@ -427,6 +442,20 @@ sap.ui.define([
 									name: 'manifest.json',
 									key: 'manifest.json'
 								}]
+							},
+							{
+								title: 'Highlight',
+								key: 'highlight',
+								settings: {
+									columns: 6
+								},
+								files: [
+									{
+										url: '/samples/table/highlight.json',
+										name: 'manifest.json',
+										key: 'manifest.json'
+									}
+								]
 							}
 						]
 					}, {
@@ -916,7 +945,7 @@ sap.ui.define([
 								]
 							},
 							{
-								title: 'Media, header at bottom',
+								title: 'Media, Header at Bottom',
 								key: 'mediaBottom',
 								files: [
 									{
@@ -947,7 +976,7 @@ sap.ui.define([
 								]
 							},
 							{
-								title: 'Buy bus ticket',
+								title: 'Buy Bus Ticket',
 								key: 'busTicket',
 								files: [
 									{
@@ -1004,7 +1033,7 @@ sap.ui.define([
 								]
 							},
 							{
-								title: 'Trigger action',
+								title: 'Trigger Action',
 								key: 'triggerAction',
 								files: [
 									{
@@ -1057,6 +1086,102 @@ sap.ui.define([
 										url: '/samples/component/customActions/Image.png',
 										name: 'Image.png',
 										key: 'Image.png'
+									}
+								]
+							},
+							{
+								title: 'No Data Message',
+								key: 'noDataMessage',
+								files: [
+									{
+										url: '/samples/component/noDataMessage/manifest.json',
+										name: 'manifest.json',
+										key: 'manifest.json'
+									},
+									{
+										url: '/samples/component/noDataMessage/Component.js',
+										name: 'Component.js',
+										key: 'Component.js'
+									},
+									{
+										url: '/samples/component/noDataMessage/View.view.xml',
+										name: 'View.view.xml',
+										key: 'View.view.xml'
+									}
+								]
+							},
+							{
+								title: 'Request Data',
+								key: 'requestData',
+								mockServer: true,
+								files: [
+									{
+										url: '/samples/component/requestData/manifest.json',
+										name: 'manifest.json',
+										key: 'manifest.json'
+									},
+									{
+										url: '/samples/component/requestData/Component.js',
+										name: 'Component.js',
+										key: 'Component.js'
+									},
+									{
+										url: '/samples/component/requestData/View.view.xml',
+										name: 'View.view.xml',
+										key: 'View.view.xml'
+									},
+									{
+										url: '/samples/component/requestData/Main.controller.js',
+										name: 'Main.controller.js',
+										key: 'Main.controller.js'
+									}
+								]
+							},
+							{
+								title: 'Component Preload',
+								key: 'componentPreload',
+								mockServer: true,
+								isPreloadProject: true,
+								files: [
+									{
+										url: '/samples/component/componentPreload/ui5.yaml',
+										name: 'ui5.yaml',
+										key: 'ui5.yaml'
+									},
+									{
+										url: '/samples/component/componentPreload/package.json',
+										name: 'package.json',
+										key: 'package.json'
+									},
+									{
+										url: '/samples/component/componentPreload/card/manifest.json',
+										name: 'card/manifest.json',
+										key: 'card/manifest.json'
+									},
+									{
+										url: '/samples/component/componentPreload/card/Component.js',
+										name: 'card/Component.js',
+										key: 'card/Component.js'
+									},
+									{
+										url: '/samples/component/componentPreload/card/View.view.xml',
+										name: 'card/View.view.xml',
+										key: 'card/View.view.xml'
+									},
+									{
+										url: '/samples/component/componentPreload/card/Main.controller.js',
+										name: 'card/Main.controller.js',
+										key: 'card/Main.controller.js'
+									},
+									{
+										url: '/samples/component/componentPreload/card/Image.png',
+										name: 'card/Image.png',
+										key: 'card/Image.png'
+									},
+									{
+										url: '/samples/component/componentPreload/card/dt/Configuration.js',
+										name: 'card/dt/Configuration.js',
+										key: 'card/dt/Configuration.js'
 									}
 								]
 							}
@@ -1195,6 +1320,21 @@ sap.ui.define([
 								]
 							},
 							{
+								title: 'My Agenda',
+								key: 'agenda',
+								settings: {
+									columns: 3
+								},
+								mockServer: true,
+								files: [
+									{
+										url: '/samples/filters/dateRange/agenda.json',
+										name: 'manifest.json',
+										key: 'manifest.json'
+									}
+								]
+							},
+							{
 								title: "Completed Orders",
 								key: "completedOrders",
 								files: [
@@ -1299,7 +1439,7 @@ sap.ui.define([
 						subSamples: [
 							{
 								title: 'Navigation',
-								key: "navigation",
+								key: 'navigation',
 								target: 'exploreSamples',
 								settings: {
 									columns: 3
@@ -1314,7 +1454,7 @@ sap.ui.define([
 							},
 							{
 								title: 'Intent-Based Navigation',
-								key: "ibn",
+								key: 'ibn',
 								target: 'exploreSamples',
 								experimental: true,
 								settings: {
@@ -1325,6 +1465,52 @@ sap.ui.define([
 										url: '/samples/actions/ibn/manifest.json',
 										name: 'manifest.json',
 										key: 'manifest.json'
+									}
+								]
+							},
+							{
+								title: 'Show/Hide Card',
+								key: 'showHideCard',
+								target: 'exploreSamples',
+								experimental: true,
+								settings: {
+									columns: 3
+								},
+								files: [
+									{
+										url: '/samples/actions/showHide/manifest.json',
+										name: 'manifest.json',
+										key: 'manifest.json'
+									},
+									{
+										url: '/samples/actions/showHide/detailsManifest.json',
+										name: 'detailsManifest.json',
+										key: 'detailsManifest.json'
+									}
+								]
+							},
+							{
+								title: 'Approve/Deny with popup',
+								key: 'approve',
+								target: 'exploreSamples',
+								experimental: true,
+								settings: {
+									columns: 3
+								},
+								files: [{
+										url: '/samples/actions/approve/manifest.json',
+										name: 'manifest.json',
+										key: 'manifest.json'
+									},
+									{
+										url: '/samples/actions/approve/detailsManifest.json',
+										name: 'detailsManifest.json',
+										key: 'detailsManifest.json'
+									},
+									{
+										url: '/samples/actions/approve/ApproveCardExtension.js',
+										name: 'ApproveCardExtension.js',
+										key: 'ApproveCardExtension.js'
 									}
 								]
 							}
@@ -1472,6 +1658,40 @@ sap.ui.define([
 										url: '/samples/data/csrf/manifest.json',
 										name: 'manifest.json',
 										key: 'manifest.json'
+									}
+								]
+							},
+							{
+								title: 'Mock Data for Preview',
+								key: 'mockData',
+								experimental: true,
+								files: [
+									{
+										url: '/samples/data/mockData/manifest.json',
+										name: 'manifest.json',
+										key: 'manifest.json'
+									},
+									{
+										url: '/samples/data/mockData/mockData.json',
+										name: 'mockData.json',
+										key: 'mockData.json'
+									}
+								]
+							},
+							{
+								title: 'Model Size Limit',
+								key: 'modelSizeLimit',
+								experimental: true,
+								files: [
+									{
+										url: '/samples/data/modelSizeLimit/manifest.json',
+										name: 'manifest.json',
+										key: 'manifest.json'
+									},
+									{
+										url: '/samples/data/modelSizeLimit/DataExtension.js',
+										name: 'DataExtension.js',
+										key: 'DataExtension.js'
 									}
 								]
 							}
@@ -1672,6 +1892,28 @@ sap.ui.define([
 										key: 'shared/lib/SharedExtension.js'
 									}
 								]
+							},
+							{
+								title: 'Shared Extension With Fetch',
+								key: 'sharedFetchExtension',
+								experimental: true,
+								files: [
+									{
+										url: '/samples/extension/sharedFetchExtension/manifest.json',
+										name: 'manifest.json',
+										key: 'manifest.json'
+									},
+									{
+										url: '/samples/extension/shared/lib/library.js',
+										name: 'shared/lib/library.js',
+										key: 'shared/lib/library.js'
+									},
+									{
+										url: '/samples/extension/shared/lib/SharedFetchExtension.js',
+										name: 'shared/lib/SharedFetchExtension.js',
+										key: 'shared/lib/SharedFetchExtension.js'
+									}
+								]
 							}
 						]
 					},
@@ -1844,11 +2086,28 @@ sap.ui.define([
 						key: 'dateAndTime',
 						target: 'exploreSamples',
 						title: 'Date and Time',
-						files: [
+						subSamples: [
 							{
-								url: '/samples/formatters/dateAndTime/manifest.json',
-								name: 'manifest.json',
-								key: 'manifest.json'
+								key: 'dateAndTime',
+								title: 'Date and Time',
+								files: [
+									{
+										url: '/samples/formatters/dateAndTime/dateTime/manifest.json',
+										name: 'manifest.json',
+										key: 'manifest.json'
+									}
+								]
+							},
+							{
+								key: 'date',
+								title: 'Date',
+								files: [
+									{
+										url: '/samples/formatters/dateAndTime/date/manifest.json',
+										name: 'manifest.json',
+										key: 'manifest.json'
+									}
+								]
 							}
 						]
 					},
@@ -2339,6 +2598,136 @@ sap.ui.define([
 						]
 					},
 					{
+						key: 'preview',
+						target: 'exploreSamples',
+						title: 'Preview',
+						experimental: true,
+						subSamples: [
+							{
+								title: 'All Modes',
+								key: "allModes",
+								useIFrame: true,
+								isApplication: true,
+								files: [
+									{
+										url: '/samples/preview/allModes/indexTemplate.html',
+										name: 'index.html',
+										key: 'index.html'
+									},
+									{
+										url: '/samples/preview/allModes/View.view.xml',
+										name: 'View.view.xml',
+										key: 'View.view.xml'
+									},
+									{
+										url: '/samples/preview/allModes/PreviewMode.controller.js',
+										name: 'Controller.controller.js',
+										key: 'Controller.controller.js'
+									},
+									{
+										url: '/samples/preview/allModes/manifest.json',
+										name: 'manifest.json',
+										key: 'manifest.json',
+										isApplicationManifest: true
+									},
+									{
+										url: '/samples/preview/allModes/Component.js',
+										name: 'Component.js',
+										key: 'Component.js'
+									},
+									{
+										url: '/samples/preview/allModes/listCard/manifest.json',
+										name: 'listCard/manifest.json',
+										key: 'listCard/manifest.json'
+									},
+									{
+										url: '/samples/preview/allModes/listCard/mockData.json',
+										name: 'listCard/mockData.json',
+										key: 'listCard/mockData.json'
+									}
+								]
+							},
+							{
+								title: 'Missing Mock Data Configuration',
+								key: "missingMockConfiguration",
+								useIFrame: true,
+								isApplication: true,
+								files: [
+									{
+										url: '/samples/preview/missingMockConfiguration/indexTemplate.html',
+										name: 'index.html',
+										key: 'index.html'
+									},
+									{
+										url: '/samples/preview/missingMockConfiguration/View.view.xml',
+										name: 'View.view.xml',
+										key: 'View.view.xml'
+									},
+									{
+										url: '/samples/preview/missingMockConfiguration/manifest.json',
+										name: 'manifest.json',
+										key: 'manifest.json',
+										isApplicationManifest: true
+									},
+									{
+										url: '/samples/preview/missingMockConfiguration/Component.js',
+										name: 'Component.js',
+										key: 'Component.js'
+									},
+									{
+										url: '/samples/preview/missingMockConfiguration/tableCard/manifest.json',
+										name: 'tableCard/manifest.json',
+										key: 'tableCard/manifest.json'
+									}
+								]
+							},
+							{
+								title: 'Component Card',
+								key: "component",
+								useIFrame: true,
+								isApplication: true,
+								files: [
+									{
+										url: '/samples/preview/component/indexTemplate.html',
+										name: 'index.html',
+										key: 'index.html'
+									},
+									{
+										url: '/samples/preview/component/View.view.xml',
+										name: 'View.view.xml',
+										key: 'View.view.xml'
+									},
+									{
+										url: '/samples/preview/component/manifest.json',
+										name: 'manifest.json',
+										key: 'manifest.json',
+										isApplicationManifest: true
+									},
+									{
+										url: '/samples/preview/component/Component.js',
+										name: 'Component.js',
+										key: 'Component.js'
+									},
+									{
+										url: '/samples/preview/component/sampleComponent/manifest.json',
+										name: 'sampleComponent/manifest.json',
+										key: 'sampleComponent/manifest.json'
+									},
+									{
+										url: '/samples/preview/component/sampleComponent/Component.js',
+										name: 'sampleComponent/Component.js',
+										key: 'sampleComponent/Component.js'
+									},
+									{
+										url: '/samples/preview/component/sampleComponent/Main.view.xml',
+										name: 'sampleComponent/Main.view.xml',
+										key: 'sampleComponent/Main.view.xml'
+									}
+								]
+							}
+						]
+					},
+					{
 						key: 'configurationChanges',
 						target: 'exploreSamples',
 						title: 'Configuration Changes',
@@ -2461,6 +2850,51 @@ sap.ui.define([
 								url: '/samples/design/Component.js',
 								name: 'Component.js',
 								key: 'Component.js'
+							}
+						]
+					},
+					{
+						key: 'blockingMessage',
+						target: 'exploreSamples',
+						title: 'Blocking Message',
+						useIFrame: true,
+						isApplication: true,
+						experimental: true,
+						files: [
+							{
+								url: '/samples/blockingMessage/index.html',
+								name: 'index.html',
+								key: 'index.html'
+							},
+							{
+								url: '/samples/blockingMessage/manifest.json',
+								name: 'manifest.json',
+								key: 'manifest.json'
+							},
+							{
+								url: '/samples/blockingMessage/Main.view.xml',
+								name: 'Main.view.xml',
+								key: 'Main.view.xml'
+							},
+							{
+								url: '/samples/blockingMessage/Main.controller.js',
+								name: 'Main.controller.js',
+								key: 'Main.controller.js'
+							},
+							{
+								url: '/samples/blockingMessage/Component.js',
+								name: 'Component.js',
+								key: 'Component.js'
+							},
+							{
+								url: '/samples/blockingMessage/cards/listCard.json',
+								name: 'listCard.json',
+								key: 'listCard.json'
+							},
+							{
+								url: '/samples/blockingMessage/cards/listCardEmpty.json',
+								name: 'listCardEmpty.json',
+								key: 'listCardEmpty.json'
 							}
 						]
 					}
@@ -2996,6 +3430,48 @@ sap.ui.define([
 										url: '/samples/designtimeCustomField/viz/Input.controller.js',
 										name: 'viz/Input.controller.js',
 										key: 'Input.controller.js'
+									}
+								]
+							},
+							{
+								title: 'Destinations',
+								key: 'designtimeDestinations',
+								files: [
+									{
+										url: '/samples/designtimeDestinations/dt/Configuration.js',
+										name: 'dt/Configuration.js',
+										key: 'designtime.js'
+									},
+									{
+										url: '/samples/designtimeDestinations/manifest.json',
+										name: 'manifest.json',
+										key: 'cardManifest.json'
+									},
+									{
+										url: '/samples/designtimeDestinations/i18n/i18n.properties',
+										name: 'i18n/i18n.properties',
+										key: 'i18n.properties'
+									}
+								]
+							},
+							{
+								title: 'Destinations at top',
+								key: 'designtimeDestinationsAtTop',
+								files: [
+									{
+										url: '/samples/designtimeDestinationsAtTop/dt/Configuration.js',
+										name: 'dt/Configuration.js',
+										key: 'designtime.js'
+									},
+									{
+										url: '/samples/designtimeDestinationsAtTop/manifest.json',
+										name: 'manifest.json',
+										key: 'cardManifest.json'
+									},
+									{
+										url: '/samples/designtimeDestinationsAtTop/i18n/i18n.properties',
+										name: 'i18n/i18n.properties',
+										key: 'i18n.properties'
 									}
 								]
 							}

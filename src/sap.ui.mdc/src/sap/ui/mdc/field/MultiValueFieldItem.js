@@ -12,23 +12,19 @@ sap.ui.define([
 	/**
 	 * Constructor for a new <code>MultiValueFieldItem</code>.
 	 *
-	 * The <code>MultiValueField</code> control holds its values as items. The <code>MultiValueFieldItem</code> element defines these items.
-	 *
 	 * @param {string} [sId] ID for the new control, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new control
-	 * @class Base type for <code>MultiValueFieldItem</code> control.
+	 * @class
+	 * Base type for <code>MultiValueFieldItem</code> control.
+	 * The {@link sap.ui.mdc.MultiValueField MultiValueField} holds its values as items. The <code>MultiValueFieldItem</code> element defines these items.
 	 * @extends sap.ui.core.Element
 	 * @version ${version}
 	 * @constructor
-	 * @abstract
-	 * @private
 	 * @since 1.93.0
-	 * @experimental As of version 1.93
-	 * @ui5-restricted sap.fe
-	 * @MDC_PUBLIC_CANDIDATE
+	 * @public
 	 * @alias sap.ui.mdc.field.MultiValueFieldItem
 	 */
-	var MultiValueFieldItem = Element.extend("sap.ui.mdc.field.MultiValueFieldItem", /** @lends sap.ui.mdc.field.MultiValueFieldItem.prototype */
+	const MultiValueFieldItem = Element.extend("sap.ui.mdc.field.MultiValueFieldItem", /** @lends sap.ui.mdc.field.MultiValueFieldItem.prototype */
 	{
 		metadata: {
 			library: "sap.ui.mdc",

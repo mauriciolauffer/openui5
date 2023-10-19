@@ -1,4 +1,4 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/ui/rta/plugin/additionalElements/AdditionalElementsAnalyzer",
@@ -9,7 +9,6 @@ sap.ui.define([
 	"sap/ui/layout/form/FormContainer",
 	"sap/ui/layout/form/FormElement",
 	"sap/m/Input",
-	"sap/ui/rta/util/BindingsExtractor",
 	"./TestUtils"
 ],
 function(
@@ -21,13 +20,14 @@ function(
 	FormContainer,
 	FormElement,
 	Input,
-	BindingsExtractor,
 	TestUtils
 ) {
 	"use strict";
 
 	function _createSimpleFormFakingFormElements(oView) {
-		var oNewSimpleForm = new SimpleForm();
+		var oNewSimpleForm = new SimpleForm({
+			layout: "ResponsiveGridLayout"
+		});
 		var oSimpleForm = oView.byId("SimpleForm");
 		var aFormElementActionObjects = oSimpleForm.getAggregation("form").getFormContainers().reduce(function(aAllFormElements, oFormContainer) {
 			return aAllFormElements.concat(oFormContainer.getFormElements());
@@ -37,7 +37,7 @@ function(
 			return {
 				element: oFormElement,
 				action: {
-					//nothing relevant for the analyzer
+					// nothing relevant for the analyzer
 				}
 			};
 		});
@@ -47,7 +47,7 @@ function(
 		};
 	}
 
-	QUnit.module("Given test view", TestUtils.commonHooks(), function () {
+	QUnit.module("Given test view", TestUtils.commonHooks(), function() {
 		QUnit.test("when getting invisible elements with a control without model", function(assert) {
 			var mTestData = _createSimpleFormFakingFormElements(this.oView);
 			var oSimpleFormWithoutModel = mTestData.simpleForm;
@@ -86,7 +86,6 @@ function(
 			};
 			oSimpleFormWithJSONModel.setModel(new JSONModel({elements: "foo"}));
 
-
 			return AdditionalElementsAnalyzer.enhanceInvisibleElements(oSimpleFormWithJSONModel, mActionsObject).then(function(aAdditionalElements) {
 				assert.equal(aAdditionalElements.length, 5, "then there are 5 invisible Elements that are not enhanced with oDataProperty properties");
 				assert.equal(aAdditionalElements[0].originalLabel, "", "then the originalLabel is not set");
@@ -108,7 +107,7 @@ function(
 				label: "Some Label",
 				visible: false,
 				fields: [
-					new Input({value: "{" + sModelName + ">Property02}"})
+					new Input({value: `{${sModelName}>Property02}`})
 				]
 			});
 			var oForm = new Form({
@@ -125,14 +124,14 @@ function(
 							new FormElement({
 								id: "visible",
 								fields: [
-									new Input({value: "{" + sModelName + ">Property01}"})
+									new Input({value: `{${sModelName}>Property01}`})
 								]
 							}),
 							oInvisibleElement
 						]
 					})
 				]
-			//not assigning delegate as it is not read anymore but passed upfront
+			// not assigning delegate as it is not read anymore but passed upfront
 			});
 			oForm.setModel(new JSONModel({
 				Property01: "foo",
@@ -158,18 +157,18 @@ function(
 				aggregation: "formElements",
 				reveal: {
 					elements: [{
-						action: {}, //reveal action, nothing relevant for the analyzer
+						action: {}, // reveal action, nothing relevant for the analyzer
 						element: mTestData.invisible
 					}]
 				},
 				addViaDelegate: {
-					action: {}, //not relevant for test,
+					action: {}, // not relevant for test,
 					delegateInfo: {
 						payload: {
 							modelName: sModelName
 						},
 						delegate: {
-							getPropertyInfo: function() {
+							getPropertyInfo() {
 								return Promise.resolve([{
 									name: "Property01",
 									bindingPath: "Property01"
@@ -206,7 +205,7 @@ function(
 						modelName: sModelName
 					},
 					delegate: {
-						getPropertyInfo: function() {
+						getPropertyInfo() {
 							return Promise.resolve([{
 								name: "Property01",
 								bindingPath: "Property01"
@@ -227,7 +226,6 @@ function(
 				mTestData.form.destroy();
 			});
 		});
-
 
 		function givenSomeControlsRepresentPropertiesWithoutBindings() {
 			var oInvisibleElement = new FormElement({
@@ -253,7 +251,7 @@ function(
 						]
 					})
 				]
-			//not assigning delegate as it is not read anymore but passed upfront
+			// not assigning delegate as it is not read anymore but passed upfront
 			});
 			return {
 				form: oForm,
@@ -269,20 +267,20 @@ function(
 				aggregation: "formElements",
 				reveal: {
 					elements: [{
-						action: {}, //reveal action, nothing relevant for the analyzer
+						action: {}, // reveal action, nothing relevant for the analyzer
 
 						element: mTestData.invisible
 					}]
 				},
 				addViaDelegate: {
-					action: {}, //not relevant for test,
+					action: {}, // not relevant for test,
 					relevantContainer: mTestData.form,
 					delegateInfo: {
 						payload: {
 							my: "customPayload"
 						},
 						delegate: {
-							getPropertyInfo: function() {
+							getPropertyInfo() {
 								return Promise.resolve([{
 									name: "Property01",
 									bindingPath: "Property01"
@@ -292,7 +290,7 @@ function(
 									label: sOriginalLabel
 								}]);
 							},
-							getRepresentedProperties: function(mPropertyBag) {
+							getRepresentedProperties(mPropertyBag) {
 								assert.equal(mPropertyBag.payload.my, "customPayload", "then the payload is passed correctly to getRepresentedProperties");
 								assert.equal(mPropertyBag.element.getId(), mTestData.form.getId(), "then the correct element is passed to getRepresentedProperties");
 								assert.equal(mPropertyBag.aggregationName, mActionsObject.aggregation, "then the correct aggregationName is passed to getRepresentedProperties");
@@ -331,7 +329,7 @@ function(
 						my: "customPayload"
 					},
 					delegate: {
-						getPropertyInfo: function() {
+						getPropertyInfo() {
 							return Promise.resolve([{
 								name: "Property01",
 								bindingPath: "Property01"
@@ -341,7 +339,7 @@ function(
 								label: "unrepresented property"
 							}]);
 						},
-						getRepresentedProperties: function(mPropertyBag) {
+						getRepresentedProperties(mPropertyBag) {
 							assert.equal(mPropertyBag.payload.my, "customPayload", "then the payload is passed correctly to getRepresentedProperties");
 							assert.equal(mPropertyBag.element.getId(), mTestData.form.getId(), "then the correct element is passed to getRepresentedProperties");
 							assert.equal(mPropertyBag.aggregationName, mActionsObject.action.aggregation, "then the correct aggregationName is passed to getRepresentedProperties");
@@ -379,7 +377,7 @@ function(
 						modelName: sModelName
 					},
 					delegate: {
-						getPropertyInfo: function() {
+						getPropertyInfo() {
 							return Promise.resolve([{
 								name: "Property01",
 								bindingPath: "Property01"
@@ -389,7 +387,7 @@ function(
 								label: "unrepresented property"
 							}]);
 						},
-						getRepresentedProperties: function() {
+						getRepresentedProperties() {
 							return Promise.resolve();
 						}
 					}
@@ -405,7 +403,7 @@ function(
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

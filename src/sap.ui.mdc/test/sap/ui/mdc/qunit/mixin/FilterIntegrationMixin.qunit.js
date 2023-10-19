@@ -3,24 +3,26 @@
 sap.ui.define([
     "sap/ui/mdc/Control",
     "sap/ui/mdc/mixin/FilterIntegrationMixin",
-    "sap/ui/mdc/filterbar/FilterBarBase"
+    "sap/ui/mdc/filterbar/FilterBarBase",
+    "sap/ui/mdc/enums/ReasonMode"
 ], function(
 	Control,
     FilterIntegrationMixin,
-    FilterBarBase
+    FilterBarBase,
+    ReasonMode
 ) {
     "use strict";
 
-    var TestClass;
-    var oSomeInstance;
+    let TestClass;
+    let oSomeInstance;
 
     //can be used to toggle inbuilt filtering
-    var bInbuiltEnabled = false;
+    let bInbuiltEnabled = false;
 
     //Can be used for assertions
-    var fnExecuteOnRebind = function(){};
+    let fnExecuteOnRebind = function(){};
 
-    var fnExtendTestClass = function () {
+    const fnExtendTestClass = function () {
         TestClass = Control.extend("temp",{
             metadata: {
                 associations: {
@@ -36,17 +38,17 @@ sap.ui.define([
 
     };
 
-    var fnCreateValidInstance = function () {
+    const fnCreateValidInstance = function () {
         fnExtendTestClass();
         oSomeInstance = new TestClass();
-        oSomeInstance._rebind = function(){
-            fnExecuteOnRebind();
+        oSomeInstance._rebind = function() {
+            fnExecuteOnRebind(...arguments);
         };
-        oSomeInstance.isFilteringEnabled = function(){ return bInbuiltEnabled;};
-        oSomeInstance.getFilterConditions = function(){return {conditionA : ["abc"], conditionB: ["def"]};};
+        oSomeInstance.isFilteringEnabled = function() { return bInbuiltEnabled; };
+        oSomeInstance.getFilterConditions = function() { return { conditionA : ["abc"], conditionB: ["def"] }; };
         oSomeInstance.getPropertyHelper = function() {
             return {
-                getProperty : function(sPropName){
+                getProperty : function(sPropName) {
                     if (sPropName === "conditionA") {
                         return {label: "ABC"};
                     } else if (sPropName === "conditionB") {
@@ -61,7 +63,7 @@ sap.ui.define([
         return oSomeInstance;
     };
 
-    var fnCleanup = function () {
+    const fnCleanup = function () {
         if (oSomeInstance) {
             oSomeInstance.destroy();
             oSomeInstance = undefined;
@@ -95,8 +97,8 @@ sap.ui.define([
     });
 
     QUnit.test("setFilter error for invalid 'IFilter' connections", function (assert) {
-        var vFilter = new Control();
-        var IFILTER = "sap.ui.mdc.IFilter";
+        const vFilter = new Control();
+        const IFILTER = "sap.ui.mdc.IFilter";
         assert.throws(
             function () {
                 oSomeInstance = fnCreateValidInstance();
@@ -113,8 +115,8 @@ sap.ui.define([
         );
     });
 
-    QUnit.test("setFilter vor valid 'IFiter' connections", function(assert){
-        var oFilter = new FilterBarBase();
+    QUnit.test("setFilter vor valid 'IFiter' connections", function(assert) {
+        const oFilter = new FilterBarBase();
         oSomeInstance = fnCreateValidInstance();
         oSomeInstance.setFilter(oFilter);
         assert.ok("'setFilter' does not crash when used with a valid 'IFilter' implementing control");
@@ -152,11 +154,10 @@ sap.ui.define([
         }
     });
 
-    QUnit.test("Check 'search' registration", function(assert){
+    QUnit.test("Check 'search' registration", function(assert) {
+        const done = assert.async();
 
-        var done = assert.async(1);
-
-        var oExternalFilter = new FilterBarBase();
+        const oExternalFilter = new FilterBarBase();
 
         oSomeInstance.setFilter(oExternalFilter);
 
@@ -169,12 +170,46 @@ sap.ui.define([
 
     });
 
-    QUnit.test("Check 'rebind' functionality - only external filtering enabled", function(assert){
+    QUnit.test("Check forced refresh on search", function(assert) {
+        const oExternalFilter = new FilterBarBase();
+
+        fnExecuteOnRebind = sinon.stub();
+
+        oSomeInstance.setFilter(oExternalFilter);
+        oExternalFilter.fireSearch({reason: ReasonMode.Go});
+        oExternalFilter.fireSearch({reason: ReasonMode.Enter});
+        oExternalFilter.fireSearch();
+
+        assert.notOk(oExternalFilter.getLiveMode(), "LiveMode is not enabled on FilterBar");
+        assert.ok(fnExecuteOnRebind.calledThrice, "Function _rebind was called three times");
+        assert.ok(fnExecuteOnRebind.firstCall.calledWith(true), "Reason 'Go' without liveMode forces refresh");
+        assert.ok(fnExecuteOnRebind.secondCall.calledWith(false), "Reason 'Enter' will not force a refresh when liveMode is set to false");
+        assert.ok(fnExecuteOnRebind.thirdCall.calledWith(false), "Without reason, no refresh is forced");
+    });
+
+    QUnit.test("Check forced refresh with liveMode", function(assert) {
+        const oExternalFilter = new FilterBarBase({ liveMode: true });
+
+        fnExecuteOnRebind = sinon.stub();
+
+        oSomeInstance.setFilter(oExternalFilter);
+        oExternalFilter.fireSearch({reason: ReasonMode.Enter});
+        oExternalFilter.fireSearch({reason: ReasonMode.Go});
+        oExternalFilter.fireSearch();
+
+        assert.ok(oExternalFilter.getLiveMode(), "LiveMode is enabled on FilterBar");
+        assert.ok(fnExecuteOnRebind.calledThrice, "Function _rebind was called three times");
+        assert.ok(fnExecuteOnRebind.firstCall.calledWith(true), "Reason 'Enter' with liveMode forces refresh");
+        assert.ok(fnExecuteOnRebind.secondCall.calledWith(false), "Reason 'Go' will not force a refresh when liveMode is set to true");
+        assert.ok(fnExecuteOnRebind.thirdCall.calledWith(false), "Without reason, no refresh is forced");
+    });
+
+    QUnit.test("Check 'rebind' functionality - only external filtering enabled", function(assert) {
 
         bInbuiltEnabled = false;
 
-        var oExternalFilter = new FilterBarBase();
-        var oInternalFilter = new FilterBarBase();
+        const oExternalFilter = new FilterBarBase();
+        const oInternalFilter = new FilterBarBase();
 
         oSomeInstance.setFilter(oExternalFilter);
 
@@ -182,8 +217,8 @@ sap.ui.define([
             return Promise.resolve(oInternalFilter);
         };
 
-        var oExternalFilterSpy = sinon.spy(oExternalFilter, "validate");
-        var oRetrieveInnerSpy = sinon.spy(oSomeInstance, "retrieveInbuiltFilter");
+        const oExternalFilterSpy = sinon.spy(oExternalFilter, "validate");
+        const oRetrieveInnerSpy = sinon.spy(oSomeInstance, "retrieveInbuiltFilter");
 
         oSomeInstance.rebind();
 
@@ -192,17 +227,17 @@ sap.ui.define([
 
     });
 
-    QUnit.test("Check 'rebind' functionality - no filter association, but inbuilt enabled", function(assert){
+    QUnit.test("Check 'rebind' functionality - no filter association, but inbuilt enabled", function(assert) {
 
         bInbuiltEnabled = true;
 
-        var oInternalFilter = new FilterBarBase();
+        const oInternalFilter = new FilterBarBase();
 
         oSomeInstance.retrieveInbuiltFilter = function() {
             return Promise.resolve(oInternalFilter);
         };
 
-        var oRetrieveInnerSpy = sinon.spy(oSomeInstance, "retrieveInbuiltFilter");
+        const oRetrieveInnerSpy = sinon.spy(oSomeInstance, "retrieveInbuiltFilter");
 
         oSomeInstance.rebind();
 
@@ -210,17 +245,17 @@ sap.ui.define([
 
     });
 
-    QUnit.test("Check 'rebind' functionality - no filter association, inbuilt not enabled", function(assert){
+    QUnit.test("Check 'rebind' functionality - no filter association, inbuilt not enabled", function(assert) {
 
         bInbuiltEnabled = false;
 
-        var oInternalFilter = new FilterBarBase();
+        const oInternalFilter = new FilterBarBase();
 
         oSomeInstance.retrieveInbuiltFilter = function() {
             return Promise.resolve(oInternalFilter);
         };
 
-        var oRetrieveInnerSpy = sinon.spy(oSomeInstance, "retrieveInbuiltFilter");
+        const oRetrieveInnerSpy = sinon.spy(oSomeInstance, "retrieveInbuiltFilter");
 
         oSomeInstance.rebind();
 
@@ -228,12 +263,12 @@ sap.ui.define([
 
     });
 
-    QUnit.test("Check 'rebind' functionality - both (internal/external) enabled", function(assert){
+    QUnit.test("Check 'rebind' functionality - both (internal/external) enabled", function(assert) {
 
         bInbuiltEnabled = true;
 
-        var oExternalFilter = new FilterBarBase();
-        var oInternalFilter = new FilterBarBase();
+        const oExternalFilter = new FilterBarBase();
+        const oInternalFilter = new FilterBarBase();
 
         oSomeInstance.setFilter(oExternalFilter);
 
@@ -241,8 +276,8 @@ sap.ui.define([
             return Promise.resolve(oInternalFilter);
         };
 
-        var oExternalFilterSpy = sinon.spy(oExternalFilter, "validate");
-        var oRetrieveInnerSpy = sinon.spy(oSomeInstance, "retrieveInbuiltFilter");
+        const oExternalFilterSpy = sinon.spy(oExternalFilter, "validate");
+        const oRetrieveInnerSpy = sinon.spy(oSomeInstance, "retrieveInbuiltFilter");
 
         oSomeInstance.rebind();
 
@@ -252,12 +287,12 @@ sap.ui.define([
     });
 
     QUnit.test("Hooks", function(assert) {
-		var oFilter = new FilterBarBase();
-		var oOtherFilter = new FilterBarBase();
-		var oOnFilterProvided = sinon.spy();
-		var oOnFilterRemoved = sinon.spy();
-		var oOnFiltersChanged = sinon.spy();
-		var oOnFilterSearch = sinon.spy();
+		const oFilter = new FilterBarBase();
+		const oOtherFilter = new FilterBarBase();
+		const oOnFilterProvided = sinon.spy();
+		const oOnFilterRemoved = sinon.spy();
+		const oOnFiltersChanged = sinon.spy();
+		const oOnFilterSearch = sinon.spy();
 
 		oSomeInstance._onFilterProvided = oOnFilterProvided;
 		oSomeInstance._onFilterRemoved = oOnFilterRemoved;
@@ -307,7 +342,7 @@ sap.ui.define([
         oSomeInstance = fnCreateValidInstance();
 
         //Act
-        var aLabels = oSomeInstance._getLabelsFromFilterConditions();
+        const aLabels = oSomeInstance._getLabelsFromFilterConditions();
 
         //Assert
         assert.equal(aLabels.length, 2, "Expected two filter labels");
@@ -316,5 +351,4 @@ sap.ui.define([
 
 
     });
-
 });

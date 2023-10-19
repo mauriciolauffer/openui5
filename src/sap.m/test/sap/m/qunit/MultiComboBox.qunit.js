@@ -12,6 +12,7 @@ sap.ui.define([
 	"sap/ui/core/Core",
 	"sap/ui/core/library",
 	"sap/m/InputBase",
+	"sap/m/Input",
 	"sap/m/Link",
 	"sap/ui/base/Event",
 	"sap/base/Log",
@@ -43,6 +44,7 @@ sap.ui.define([
 	Core,
 	coreLibrary,
 	InputBase,
+	Input,
 	Link,
 	Event,
 	Log,
@@ -4734,7 +4736,7 @@ sap.ui.define([
 
 		var oSpyFireSelectionFinish = this.spy(oMCB, "fireSelectionFinish");
 		var oSpySetSelection = this.spy(oMCB, "setSelection");
-		var oList = oMCB.getList();
+		var oList = oMCB._getList();
 
 		Core.applyChanges();
 
@@ -5574,6 +5576,7 @@ sap.ui.define([
 			tooltip: "Tooltip",
 			placeholder: "Placeholder",
 			items: [
+				new SeparatorItem({text: "Group Header"}),
 				new Item({key: "Item1", text: "Item1"}),
 				new Item({key: "Item2", text: "Item2"}),
 				new Item({key: "Item3", text: "Item3"})
@@ -5617,6 +5620,8 @@ sap.ui.define([
 		var oList = oMultiComboBox._getList();
 		assert.ok(oList, "List control available");
 		assert.strictEqual(oList.$("listUl").attr("role"), "listbox", "role='listbox' applied to the list");
+		assert.strictEqual(oList.getItems()[0].$().attr("role"), "group", "role='group' applied to the group header");
+		assert.strictEqual(oList.getItems()[1].$().attr("role"), "option", "role='option' applied to the items");
 
 		oMultiComboBox.close();
 		this.clock.restore();
@@ -6381,6 +6386,83 @@ sap.ui.define([
 		oMultiComboBox.destroy();
 	});
 
+	QUnit.test("Pressing the OK button should tokenize the value if matching a suggestion", function(assert) {
+		//arrange
+		this.stub(Device, "system").value({
+			desktop: false,
+			phone: true,
+			tablet: false
+		});
+		var oMultiComboBox = new MultiComboBox({
+			items: [
+				new Item({
+					text: "Item 1",
+					key: "1"
+				}),
+				new Item({
+					text: "Item 2",
+					key: "2"
+				}),
+				new Item({
+					text: "Item 3",
+					key: "3"
+				})
+			]
+		}),
+		oSuggestionPopover,
+		aTokens;
+
+		oMultiComboBox.placeAt("MultiComboBoxContent");
+		Core.applyChanges();
+
+		//act
+		oMultiComboBox.open();
+		this.clock.tick();
+
+		qutils.triggerCharacterInput(oMultiComboBox.getPickerTextField().getFocusDomRef(), "I");
+		qutils.triggerEvent("input", oMultiComboBox.getPickerTextField().getFocusDomRef());
+
+		//arrange
+		oSuggestionPopover = oMultiComboBox._getSuggestionsPopover();
+
+		//act
+		oSuggestionPopover._oPopover.getBeginButton().firePress();
+		Core.applyChanges();
+
+		//arrange
+		aTokens = oMultiComboBox.getAggregation("tokenizer").getTokens();
+
+		//assert
+		assert.strictEqual(aTokens.length, 1 , "The dialog is closed and the value is tokenized");
+		assert.strictEqual(aTokens[0].getText(), "Item 1" , "The correct item is selected");
+
+		//clean up
+		oMultiComboBox.close();
+		this.clock.tick(nPopoverAnimationTick);
+		oMultiComboBox.destroy();
+	});
+
+	QUnit.test("If_handleInputFocusOut oEvent is missing the logic should be fullfiled", function(assert) {
+		//arrange
+		this.stub(Device, "system").value({
+			desktop: false,
+			phone: true,
+			tablet: false
+		});
+		var oEvent,
+			oMultiComboBox = new MultiComboBox();
+		this.stub(oMultiComboBox, "getPickerTextField").returns(new Input());
+
+		oMultiComboBox._handleInputFocusOut(oEvent);
+
+		//assert
+		assert.strictEqual(oMultiComboBox.bOkButtonPressed, undefined , "The Ok button is undefined since there was no oEvent");
+		assert.strictEqual(oMultiComboBox._bIsPasteEvent, null, "The logic of the function is fullfiled");
+
+		//clean up
+		oMultiComboBox.destroy();
+	});
+
 	QUnit.test("_filterSelectedItems()", function(assert) {
 		this.stub(Device, "system").value({
 			desktop: false,
@@ -6512,7 +6594,7 @@ sap.ui.define([
 		};
 		var fnData = function() {
 			return {
-				isSelected: function () {
+				getSelected: function () {
 					return false;
 				}
 			};
@@ -6611,7 +6693,7 @@ sap.ui.define([
 		};
 		var fnData = function() {
 			return {
-				isSelected: function () {
+				getSelected: function () {
 					return false;
 				}
 			};
@@ -8099,6 +8181,47 @@ sap.ui.define([
 		assert.strictEqual(this.oMultiComboBox.getValueState(), ValueState.Error, "The value state is error");
 		assert.strictEqual(this.oMultiComboBox.getValueStateText(), oResourceBundle.getText("VALUE_STATE_ERROR_ALREADY_SELECTED"), "Value State message is correct");
 		assert.strictEqual(this.oMultiComboBox.getValue(), "Brussel", "The invalid value is corrected");
+	});
+
+	QUnit.test("Value state should reset to None when not set onfocusout", function(assert) {
+		// act
+		this.oMultiComboBox.focus();
+		this.oMultiComboBox.open();
+		Core.applyChanges();
+		this.clock.tick(500);
+
+		qutils.triggerCharacterInput(this.oMultiComboBox.getFocusDomRef(), "Brussel");
+		qutils.triggerKeydown(this.oMultiComboBox.getDomRef(), KeyCodes.ENTER);
+		qutils.triggerKeydown(this.oMultiComboBox.getDomRef(), KeyCodes.ENTER);
+		qutils.triggerKeydown(this.oMultiComboBox.getDomRef(), KeyCodes.ENTER);
+
+		this.oMultiComboBox.getFocusDomRef().blur();
+		this.clock.tick(500);
+
+		// assert
+		assert.strictEqual(this.oMultiComboBox.getValueState(), "None", "Value state should be reset to None");
+	});
+
+	QUnit.test("Value state should reset to inintial value state set by the application onfocusout", function(assert) {
+		this.oMultiComboBox.setValueState("Warning");
+		Core.applyChanges();
+
+		// act
+		this.oMultiComboBox.focus();
+		this.oMultiComboBox.open();
+		Core.applyChanges();
+		this.clock.tick(500);
+
+		qutils.triggerCharacterInput(this.oMultiComboBox.getFocusDomRef(), "Brussel");
+		qutils.triggerKeydown(this.oMultiComboBox.getDomRef(), KeyCodes.ENTER);
+		qutils.triggerKeydown(this.oMultiComboBox.getDomRef(), KeyCodes.ENTER);
+		qutils.triggerKeydown(this.oMultiComboBox.getDomRef(), KeyCodes.ENTER);
+
+		this.oMultiComboBox.getFocusDomRef().blur();
+		this.clock.tick(500);
+
+		// assert
+		assert.strictEqual(this.oMultiComboBox.getValueState(), "Warning", "Value state should be reset to None");
 	});
 
 	QUnit.test("value state message for invalid input should be overwritten by the applications", function(assert) {
@@ -9753,21 +9876,21 @@ sap.ui.define([
 	});
 
 	QUnit.test("The tokens are rendered in the order they have been added in selectectedItems after opening the picker", function (assert) {
-		var items = [new sap.ui.core.Item({
+		var items = [new Item({
 			text : "Algeria"
-		}), new sap.ui.core.Item({
+		}), new Item({
 			text : "Bulgaria"
-		}), new sap.ui.core.Item({
+		}), new Item({
 			text : "Canada"
-		}), new sap.ui.core.Item({
+		}), new Item({
 			text : "Denmark"
-		}), new sap.ui.core.Item({
+		}), new Item({
 			text : "Estonia"
 		})];
 
 		var aSelection = [items[0], items[4], items[2], items[3], items[1]];
 		var aSelectedCountries = aSelection.map(function (itm) { return itm.getText(); });
-		var oMCB = new sap.m.MultiComboBox({
+		var oMCB = new MultiComboBox({
 			items : items,
 			selectedItems : aSelection
 			});

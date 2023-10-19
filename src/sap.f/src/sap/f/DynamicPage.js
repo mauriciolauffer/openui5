@@ -15,6 +15,7 @@ sap.ui.define([
 	"sap/ui/core/delegate/ScrollEnablement",
 	"sap/ui/Device",
 	"sap/ui/base/ManagedObject",
+	"sap/ui/dom/getScrollbarSize",
 	"sap/f/DynamicPageTitle",
 	"sap/f/DynamicPageHeader",
 	"./DynamicPageRenderer",
@@ -33,6 +34,7 @@ sap.ui.define([
 	ScrollEnablement,
 	Device,
 	ManagedObject,
+	getScrollbarSize,
 	DynamicPageTitle,
 	DynamicPageHeader,
 	DynamicPageRenderer,
@@ -406,6 +408,7 @@ sap.ui.define([
 		});
 		this._oStickyHeaderObserver = null;
 		this._oHeaderObserver = null;
+		this._oTitleObserver = null;
 		this._oSubHeaderAfterRenderingDelegate = {onAfterRendering: function() {
 				this._bStickySubheaderInTitleArea = false; // reset the flag as the stickySubHeader is freshly rerendered with the iconTabBar
 				this._cacheDomElements();
@@ -427,6 +430,7 @@ sap.ui.define([
 			this._attachTitleMouseOverHandlers();
 		}
 		this._attachHeaderObserver();
+		this._attachTitleObserver();
 		this._addStickySubheaderAfterRenderingDelegate();
 		this._detachScrollHandler();
 		this._detachResizeHandlers();
@@ -483,6 +487,10 @@ sap.ui.define([
 
 		if (this._oHeaderObserver) {
 			this._oHeaderObserver.disconnect();
+		}
+
+		if (this._oTitleObserver) {
+			this._oTitleObserver.disconnect();
 		}
 
 		if (this._oStickySubheader) {
@@ -618,7 +626,7 @@ sap.ui.define([
 	};
 
 	/**
-	 * Returns the <code>sap.ui.core.ScrollEnablement</code> delegate which is used with this control.
+	 * Returns the <code>sap.ui.core.delegate.ScrollEnablement</code> delegate which is used with this control.
 	 *
 	 * @public
 	 * @returns {sap.ui.core.delegate.ScrollEnablement} The scroll delegate instance
@@ -741,6 +749,12 @@ sap.ui.define([
 		}
 
 		oDynamicPageHeader.$().css("visibility", bTabbable ? "visible" : "hidden");
+
+		// ensure constant header height while the header is hidden in the scroll overflow
+		// in order to avoid unnecessary jumps of the scroll position
+		// due to reflow of the header content while in the scroll overflow
+		oDynamicPageHeader.$().css("height", bTabbable ? "" : this._getHeaderHeight() + "px");
+		oDynamicPageHeader.$().css("overflow", bTabbable ? "" : "hidden");
 	};
 
 	/**
@@ -1324,7 +1338,9 @@ sap.ui.define([
 		var bScrollBarNeeded = this._needsVerticalScrollBar(),
 			oWrapperElement = this.$wrapper.get(0),
 			iTitleHeight = this.$titleArea.get(0).getBoundingClientRect().height,
-			iTitleWidth = this._getTitleAreaWidth();
+			iTitleWidth = this._getTitleAreaWidth(),
+			iScrollbarWidth = getScrollbarSize().width,
+			sClipPath;
 
 		// the top area of the scroll container is reserved for showing the title element,
 		// (where the title element is positioned absolutely on top of the scroll container),
@@ -1333,14 +1349,22 @@ sap.ui.define([
 		// (1) add top padding for the area underneath the title element
 		// so that the title does not overlap the content of the scroll container
 		oWrapperElement.style.paddingTop = iTitleHeight + "px";
+		oWrapperElement.style.scrollPaddingTop = iTitleHeight + "px";
 		this._oScrollHelper.setScrollPaddingTop(iTitleHeight);
 
 		// (2) also make the area underneath the title invisible (using clip-path)
 		// to allow usage of *transparent background* of the title element
 		// (otherwise content from the scroll *overflow* will show underneath the transparent title element)
-		oWrapperElement.style.clipPath = 'polygon(0px ' + Math.floor(iTitleHeight) + 'px, '
+		sClipPath = 'polygon(0px ' + Math.floor(iTitleHeight) + 'px, '
 			+ iTitleWidth + 'px ' + Math.floor(iTitleHeight) + 'px, '
-			+ iTitleWidth + 'px 0, 100% 0, 100% 100%, 0 100%)';
+			+ iTitleWidth + 'px 0, 100% 0, 100% 100%, 0 100%)'; //
+
+		if (Core.getConfiguration().getRTL()) {
+			sClipPath = 'polygon(0px 0px, ' + iScrollbarWidth + 'px 0px, '
+			+ iScrollbarWidth + 'px ' + iTitleHeight + 'px, 100% '
+			+ iTitleHeight + 'px, 100% 100%, 0 100%)';
+		}
+		oWrapperElement.style.clipPath = sClipPath;
 
 		this.toggleStyleClass("sapFDynamicPageWithScroll", bScrollBarNeeded);
 
@@ -1348,11 +1372,9 @@ sap.ui.define([
 	};
 
 	DynamicPage.prototype._updateFitContainer = function (bNeedsVerticalScrollBar) {
-		var bNoScrollBar = typeof bNeedsVerticalScrollBar !== 'undefined' ? !bNeedsVerticalScrollBar : !this._needsVerticalScrollBar(),
-			bFitContent = this.getFitContent(),
-			bToggleClass = bFitContent || bNoScrollBar;
+		var bNoScrollBar = typeof bNeedsVerticalScrollBar !== 'undefined' ? !bNeedsVerticalScrollBar : !this._needsVerticalScrollBar();
 
-		this.$contentFitContainer.toggleClass("sapFDynamicPageContentFitContainer", bToggleClass);
+		this.$contentFitContainer.toggleClass("sapFDynamicPageContentFitContainer", bNoScrollBar);
 	};
 
 	/**
@@ -2141,7 +2163,8 @@ sap.ui.define([
 		var oTitle = this.getTitle(),
 			oHeader = this.getHeader(),
 			oContent = this.getContent(),
-			oPageChildrenAfterRenderingDelegate = {onAfterRendering: this._onChildControlAfterRendering.bind(this)};
+			oCallback = this._onChildControlAfterRendering.bind(this),
+			oPageChildrenAfterRenderingDelegate = {onAfterRendering: oCallback};
 
 		if (exists(oTitle)) {
 			oTitle.addEventDelegate(oPageChildrenAfterRenderingDelegate);
@@ -2212,7 +2235,7 @@ sap.ui.define([
 			// => the header will be removed from DOM
 			// but no afterRendering event will be fired (framework-specific behavior)
 			// so we need to reflect the removal of the header height from now
-			oHeader.rerender(); // force the DOM update
+			oHeader.invalidate(); // force the DOM update
 			// update according to the latest header height
 			this._updateTitlePositioning();
 		}
@@ -2236,6 +2259,24 @@ sap.ui.define([
 		}
 	};
 
+	/**
+	 * Attaches observer to the <code>DynamicPageHeader</code> visible property.
+	 * @private
+	 */
+	 DynamicPage.prototype._attachTitleObserver = function () {
+		var oTitle = this.getTitle();
+
+		if (exists(oTitle) && !this._bAlreadyAttachedTitleObserver) {
+			if (!this._oTitleObserver) {
+				this._oTitleObserver = new ManagedObjectObserver(this._onTitleFieldChange.bind(this));
+			}
+
+			this._oTitleObserver.observe(oTitle, {properties: ["visible"]});
+
+			this._bAlreadyAttachedTitleObserver = true;
+		}
+	};
+
 	DynamicPage.prototype._onHeaderFieldChange = function (oEvent) {
 
 		if ((oEvent.type === "property") && (oEvent.name === "pinnable")) {
@@ -2244,6 +2285,15 @@ sap.ui.define([
 		}
 
 		this._updateToggleHeaderVisualIndicators();
+	};
+
+	DynamicPage.prototype._onTitleFieldChange = function (oEvent) {
+
+		if ((oEvent.type === "property") && (oEvent.name === "visible")) {
+			this.invalidate();
+			return;
+		}
+
 	};
 
 	/**

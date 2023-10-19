@@ -3,8 +3,9 @@
  */
 
 sap.ui.define([
-    'sap/m/p13n/Engine'
-], function(Engine) {
+    'sap/m/p13n/Engine',
+    'sap/m/p13n/modules/xConfigAPI'
+], function(Engine, xConfigAPI) {
 	"use strict";
 
 	/**
@@ -19,16 +20,6 @@ sap.ui.define([
 	 */
     var xConfigHandler = {};
 
-    var fConfigModified = function(oControl) {
-        if (!oControl._bWaitForModificationChanges && oControl.isA) {
-            oControl._bWaitForModificationChanges = true;
-            Engine.getInstance().waitForChanges(oControl).then(function() {
-                delete oControl._bWaitForModificationChanges;
-                Engine.getInstance().fireStateChange(oControl);
-            });
-        }
-	};
-
     var fnQueueChange = function(oControl, fTask) {
 		var fCleanupPromiseQueue = function(pOriginalPromise) {
 			if (oControl._pQueue === pOriginalPromise){
@@ -41,6 +32,36 @@ sap.ui.define([
 
 		return oControl._pQueue;
 	};
+
+	function fConfigModified(oControl, oChange) {
+
+		if (oControl.isA) {
+			Engine.getInstance().trace(oControl, {
+				selectorElement: oControl,
+				changeSpecificData: {
+					changeType: oChange.getChangeType(),
+					content: oChange.getContent()
+				}
+			});
+
+			if (!oControl._pPendingModification) {
+				oControl._pPendingModification = Engine.getInstance().waitForChanges(oControl).then(function() {
+                    Engine.getInstance().fireStateChange(oControl);
+					Engine.getInstance().clearTrace(oControl);
+					delete oControl._pPendingModification;
+				});
+			}
+		}
+	}
+
+    function getOperationType(sChangeType) {
+        const aChangeTypes = ["add", "remove", "move", "set"];
+
+        return aChangeTypes.find((sType) => {
+            return sChangeType.indexOf(sType) === 0;
+        });
+
+    }
 
     /**
      * Creates a changehandler specific to the provided aggregation and property name,
@@ -74,12 +95,32 @@ sap.ui.define([
                         })
                         .then(function(oPriorAggregationConfig) {
 
-                            var sOperation = oChange.getChangeType().indexOf("add") > -1 ? "add" : "remove";
-                            sOperation = oChange.getChangeType().indexOf("move") === 0 ? "move" : sOperation;
+                            var sOperation = getOperationType(oChange.getChangeType());
 
                             sAffectedAggregation = oChange.getContent().targetAggregation;
 
-                            var sOldValue = sOperation !== "add";
+                            var oRevertData = {
+                                key: oChange.getContent().key
+                            };
+
+                            if (sOperation !== "set") {
+                                //In case there is a add/remove operation, flag the revert data as the opposite of the current action (add will be removed as revert and vice versa)
+                                oRevertData.value = sOperation !== "add";
+                            } else {
+                                oRevertData.value = null;
+                            }
+
+                            var aCurrentState;
+                            if (sOperation === "move") {
+                                aCurrentState = Engine.getInstance().getController(oControl, oChange.getChangeType()).getCurrentState();
+                                var oFound = aCurrentState.find(function(oItem, iIndex){
+                                    if (oItem.key === oChange.getContent().key) {
+                                        return oItem;
+                                    }
+                                });
+                                oRevertData.targetAggregation = oChange.getContent().targetAggregation;
+                                oRevertData.index = aCurrentState.indexOf(oFound);
+                            }
 
                             if (oPriorAggregationConfig
                                 && oPriorAggregationConfig.aggregations
@@ -87,20 +128,19 @@ sap.ui.define([
                                 && oPriorAggregationConfig.aggregations[sAffectedAggregation][oChange.getContent().key]
                                 && oPriorAggregationConfig.aggregations[sAffectedAggregation][oChange.getContent().key][sAffectedProperty]
                                 ){
-                                    sOldValue = oPriorAggregationConfig.aggregations[sAffectedAggregation][oChange.getContent().key][sAffectedProperty];
+                                    oRevertData.value = oPriorAggregationConfig.aggregations[sAffectedAggregation][oChange.getContent().key][sAffectedProperty];
                             }
 
-                            oChange.setRevertData({
-                                key: oChange.getContent().key,
-                                value: sOldValue
-                            });
+                            oChange.setRevertData(oRevertData);
 
                             var oConfig = {
                                 property: sAffectedProperty,
                                 key: oChange.getContent().key,
                                 value: oChange.getContent(),
                                 operation: sOperation,
-                                propertyBag: mPropertyBag
+                                changeType: oChange.getChangeType(),
+                                propertyBag: mPropertyBag,
+                                markAsModified: true
                             };
 
                             if (mMetaConfig.aggregationBased) {
@@ -111,10 +151,9 @@ sap.ui.define([
 
                             return Engine.getInstance().enhanceXConfig(oControl, oConfig);
                         })
-                        .then(function() {
-                            fConfigModified(oControl);
+                        .then(function(){
+                            fConfigModified(oControl, oChange);
                         });
-
                     });
 
                 },
@@ -123,8 +162,7 @@ sap.ui.define([
                 },
                 revertChange: function (oChange, oControl, mPropertyBag) {
 
-                    var sOperation = oChange.getChangeType().indexOf("add") > -1 ? "remove" : "add";
-                    sOperation = oChange.getChangeType().indexOf("move") === 0 ? "move" : sOperation;
+                    var sOperation = getOperationType(oChange.getChangeType());
 
                     sAffectedAggregation = oChange.getContent().targetAggregation;
 
@@ -135,6 +173,7 @@ sap.ui.define([
                         },
                         property: sAffectedProperty,
                         operation: sOperation,
+                        changeType: oChange.getChangeType(),
                         key: oChange.getRevertData().key,
                         value: oChange.getRevertData(),
                         propertyBag: mPropertyBag
@@ -149,7 +188,7 @@ sap.ui.define([
                     return Engine.getInstance().enhanceXConfig(oControl, oConfig)
                     .then(function() {
                         oChange.resetRevertData();
-                        fConfigModified(oControl);
+                        fConfigModified(oControl, oChange);
                     });
                 }
             },

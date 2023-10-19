@@ -4,7 +4,7 @@
 
 // Provides control sap.ui.webc.main.CalendarDate.
 sap.ui.define([
-	"sap/ui/webc/common/WebComponent",
+	"sap/ui/core/webc/WebComponent",
 	"./library",
 	"./thirdparty/CalendarDate"
 ], function(WebComponent, library) {
@@ -16,7 +16,7 @@ sap.ui.define([
 	 * @param {string} [sId] ID for the new control, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new control
 	 *
-	 * @extends sap.ui.webc.common.WebComponent
+	 * @extends sap.ui.core.webc.WebComponent
 	 * @class
 	 *
 	 * <h3>Overview</h3>
@@ -43,7 +43,7 @@ sap.ui.define([
 			properties: {
 
 				/**
-				 * The date formatted according to the <code>formatPattern</code> property of the <code>sap.ui.webc.main.Calendar</code> that hosts the component
+				 * The date formatted according to the <code>formatPattern</code> property of the <code>sap.ui.webc.main.Calendar</code> that hosts the component.
 				 */
 				value: {
 					type: "string"

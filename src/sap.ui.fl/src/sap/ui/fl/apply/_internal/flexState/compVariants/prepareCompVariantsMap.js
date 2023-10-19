@@ -16,7 +16,7 @@ sap.ui.define([
 	"use strict";
 
 	function getOrCreate(mMap, sPersistencyKey) {
-		mMap[sPersistencyKey] = mMap[sPersistencyKey] || {
+		mMap[sPersistencyKey] ||= {
 			byId: {},
 			variants: [],
 			nonPersistedVariants: [],
@@ -30,16 +30,16 @@ sap.ui.define([
 	}
 
 	function initialize(mMap, sPersistencyKey, aVariants, sSVMControlId) {
-		aVariants = aVariants || [];
+		aVariants ||= [];
 		var mMapOfKey = getOrCreate(mMap, sPersistencyKey);
 		mMapOfKey.controlId = sSVMControlId;
 
 		// clear all non-persisted variants in case of a reinitialization
-		mMapOfKey.nonPersistedVariants.forEach(function (oVariant) {
+		mMapOfKey.nonPersistedVariants.forEach(function(oVariant) {
 			delete mMapOfKey.byId[oVariant.getId()];
 		});
 
-		mMapOfKey.nonPersistedVariants = aVariants.map(function (oVariant) {
+		mMapOfKey.nonPersistedVariants = aVariants.map(function(oVariant) {
 			var oVariantInstance = Object.assign({
 				id: oVariant.id,
 				persisted: false
@@ -53,7 +53,7 @@ sap.ui.define([
 	}
 
 	function buildSectionMap(mCompSection, sSubSection, mCompVariants) {
-		var aFlexObjects = mCompSection[sSubSection].map(function (oCompVariantChangeDefinition) {
+		var aFlexObjects = mCompSection[sSubSection].map(function(oCompVariantChangeDefinition) {
 			var oFlexObject;
 			if (sSubSection === "variants") {
 				oFlexObject = FlexObjectFactory.createCompVariant(oCompVariantChangeDefinition);
@@ -64,8 +64,10 @@ sap.ui.define([
 			return oFlexObject;
 		});
 
-		aFlexObjects.forEach(function (oFlexObject) {
-			var sPersistencyKey = oFlexObject.getPersistencyKey ? oFlexObject.getPersistencyKey() : oFlexObject.getSelector().persistencyKey;
+		aFlexObjects.forEach(function(oFlexObject) {
+			var sPersistencyKey = oFlexObject.getPersistencyKey
+				? oFlexObject.getPersistencyKey()
+				: oFlexObject.getSelector().persistencyKey;
 			getOrCreate(
 				mCompVariants,
 				sPersistencyKey
@@ -103,7 +105,7 @@ sap.ui.define([
 
 		// check for the existence due to test mocks
 		if (mPropertyBag.storageResponse.changes.comp) {
-			["variants", "changes", "defaultVariants", "standardVariants"].forEach(function (sSection) {
+			["variants", "changes", "defaultVariants", "standardVariants"].forEach(function(sSection) {
 				buildSectionMap(mPropertyBag.storageResponse.changes.comp, sSection, mCompVariants);
 			});
 		}

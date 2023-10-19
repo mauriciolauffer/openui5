@@ -3,11 +3,13 @@
 sap.ui.define([
 	"sap/base/Log",
 	"sap/ui/core/Core",
-	"sap/ui/integration/widgets/Card"
+	"sap/ui/integration/widgets/Card",
+	"sap/ui/core/date/UI5Date"
 ], function(
 	Log,
 	Core,
-	Card
+	Card,
+	UI5Date
 ) {
 	"use strict";
 
@@ -513,7 +515,7 @@ sap.ui.define([
 			var sSubtitle = this.oCard.getCardHeader()._getSubtitle().getText();
 
 			// Assert
-			assert.ok(sSubtitle.indexOf(new Date().toISOString().slice(0, 10)) > -1, "Card should have a subtitle with the now Date");
+			assert.ok(sSubtitle.indexOf(UI5Date.getInstance().toISOString().slice(0, 10)) > -1, "Card should have a subtitle with the now Date");
 			assert.ok(sSubtitle.indexOf(Core.getConfiguration().getLocale().toString()) > -1, "Card should have a subtitle with the locale");
 			done();
 		}.bind(this));
@@ -527,6 +529,50 @@ sap.ui.define([
 				"header": {
 					"title": "Default manifest parameters",
 					"subTitle": "{{parameters.TODAY_ISO}} and {{parameters.LOCALE}}"
+				}
+			}
+		});
+	});
+
+	QUnit.module("Card Dynamic Parameters", {
+		beforeEach: function () {
+			this.oCard = new Card({
+				width: "400px",
+				height: "600px",
+				baseUrl: "test-resources/sap/ui/integration/qunit/testResources/"
+			});
+			this.oCard.placeAt(DOM_RENDER_LOCATION);
+		},
+		afterEach: function () {
+			this.oCard.destroy();
+		}
+	});
+
+	QUnit.test("'parameters>/visibleItems' when there is no data", function (assert) {
+		const done = assert.async();
+
+		this.oCard.attachEvent("_ready", () => {
+			assert.strictEqual(this.oCard.getModel("parameters").getProperty("/visibleItems"), 0, "Property value should be 0");
+			done();
+		});
+
+		// Act
+		this.oCard.setManifest({
+			"sap.app": {
+				"id": "test.card.dataHandling.card8"
+			},
+			"sap.card": {
+				"type": "List",
+				"data": {
+					"json": {}
+				},
+				"header": {
+					"title": "Some title"
+				},
+				"content": {
+					"item": {
+						"title": " "
+					}
 				}
 			}
 		});

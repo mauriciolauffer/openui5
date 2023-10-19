@@ -6,27 +6,35 @@ sap.ui.define([
 	'sap/ui/mdc/util/loadModules',
 	'sap/ui/mdc/valuehelp/base/ListContent',
 	'sap/ui/mdc/condition/Condition',
-	'sap/ui/mdc/enum/ConditionValidated',
+	'sap/ui/mdc/enums/ConditionValidated',
+	"sap/ui/mdc/enums/OperatorName",
 	'sap/ui/mdc/util/Common',
-	'sap/ui/mdc/enum/PersistenceMode',
+	'sap/m/p13n/enum/PersistenceMode',
 	'sap/m/p13n/Engine',
 	'sap/base/util/merge',
-	'sap/ui/mdc/p13n/StateUtil'
+	'sap/ui/mdc/p13n/StateUtil',
+	'sap/ui/mdc/condition/FilterOperatorUtil',
+	'sap/base/Log'
 ], function(
 	loadModules,
 	ListContent,
 	Condition,
 	ConditionValidated,
+	OperatorName,
 	Common,
 	PersistenceMode,
 	Engine,
 	merge,
-	StateUtil
+	StateUtil,
+	FilterOperatorUtil,
+	Log
 ) {
 	"use strict";
 
 	/**
 	 * Constructor for a new <code>FilterableListContent</code>.
+	 *
+	 * This is the basis for various types of value help content with filter functionality. It cannot be used directly.
 	 *
 	 * @param {string} [sId] ID for the new element, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new element
@@ -35,21 +43,19 @@ sap.ui.define([
 	 * @version ${version}
 	 * @constructor
 	 * @abstract
-	 * @private
-	 * @ui5-restricted sap.ui.mdc
+	 * @public
 	 * @since 1.95.0
-	 * @experimental As of version 1.95
 	 * @alias sap.ui.mdc.valuehelp.base.FilterableListContent
 	 */
-	var FilterableListContent = ListContent.extend("sap.ui.mdc.valuehelp.base.FilterableListContent", /** @lends sap.ui.mdc.valuehelp.base.FilterableListContent.prototype */
+	const FilterableListContent = ListContent.extend("sap.ui.mdc.valuehelp.base.FilterableListContent", /** @lends sap.ui.mdc.valuehelp.base.FilterableListContent.prototype */
 	{
 		metadata: {
 			library: "sap.ui.mdc",
 			properties:	{
 				/**
-				 * The fields based on which the table data is filtered. For filtering the value of the <code>filterValue</code> property is used.
+				 * The fields based on which the table data is filtered. For filtering, the value of the <code>filterValue</code> property is used.
 				 *
-				 * If set to <code>$search</code> and the used binding supports search requests, a $search request is used for filtering.
+				 * If set to <code>$search</code>, and if the used binding supports search requests, a $search request is used for filtering.
 				 *
 				 * If set to one or more properties, the filters for these properties are used for filtering.
 				 * These filters are set on the <code>ListBinding</code> used.
@@ -65,8 +71,6 @@ sap.ui.define([
 				/**
 				 * The path of the key field in the content binding.
 				 * If a table is used as content, this is the binding path of the key of the items.
-				 *
-				 * If not set, the FieldPath of the assigned field is used.
 				 */
 				keyPath: {
 					type: "string",
@@ -82,6 +86,11 @@ sap.ui.define([
 					defaultValue: ""
 				},
 
+				/**
+				 * If set, all contents with the same group are arranged together on one tab.
+				 *
+				 * The label of the groups can be defined on the container via {@link sap.ui.mdc.valuehelp.Dialog#setGroupConfig setGroupConfig}.
+				 */
 				group: {
 					type: "string",
 					defaultValue: ""
@@ -89,14 +98,14 @@ sap.ui.define([
 			},
 			aggregations: {
 				/**
-				 * FilterBar
+				 * {@link sap.ui.mdc.filterbar.vh.FilterBar FilterBar} used for filtering.
 				 */
 				filterBar: {
 					type: "sap.ui.mdc.filterbar.vh.FilterBar",
 					multiple: false
 				},
 				/**
-				 * Default FilterBar, ceated internally if none given.
+				 * Default {@link sap.ui.mdc.filterbar.vh.FilterBar FilterBar}, created internally if none given.
 				 */
 				_defaultFilterBar: {
 					type: "sap.ui.mdc.filterbar.vh.FilterBar",
@@ -105,10 +114,6 @@ sap.ui.define([
 				}
 			},
 			associations: {
-				filters: {
-					type: "sap.ui.mdc.IFilter",
-					multiple: true
-				}
 			},
 			events: {
 			}
@@ -127,20 +132,18 @@ sap.ui.define([
 
 	};
 
-	FilterableListContent.prototype._handleFilterValueUpdate = function (oChanges) {
-		if (this.isContainerOpening() || this.isContainerOpen()) {
+	FilterableListContent.prototype.handleFilterValueUpdate = function (oChanges) {
+		if ((this.isContainerOpening() || this.isContainerOpen()) && this._bContentBound) {
 			Promise.resolve(this.applyFilters()).finally(function () {
-				ListContent.prototype._handleFilterValueUpdate.apply(this, arguments);
+				ListContent.prototype.handleFilterValueUpdate.apply(this, arguments);
 			}.bind(this));
 		}
 	};
 
-	FilterableListContent.prototype._reduceIFilterConditions = function (oConditions) {
-		var oDelegate = this._getValueHelpDelegate();
-		var oPayload = this._getValueHelpDelegatePayload();
-		return oDelegate ? oDelegate.reduceIFilterConditions(oPayload, this, oConditions) : oConditions;
-	};
-
+	/**
+	 * Applies the filter to the content control.
+	 * @protected
+	 */
 	FilterableListContent.prototype.applyFilters = function () {
 
 	};
@@ -148,7 +151,7 @@ sap.ui.define([
 
 	FilterableListContent.prototype._prettyPrintFilters = function (oFilter) {
 
-		var sRes;
+		let sRes;
 		if (!oFilter) {
 			return "";
 		}
@@ -163,7 +166,7 @@ sap.ui.define([
 			return "(" + sRes + ")";
 		} else if (oFilter._bMultiFilter) {
 			sRes = "";
-			var bAnd = oFilter.bAnd;
+			const bAnd = oFilter.bAnd;
 			oFilter.aFilters.forEach(function(oFilter, iIndex, aFilters) {
 				sRes += this._prettyPrintFilters(oFilter);
 				if (aFilters.length - 1 != iIndex) {
@@ -180,12 +183,19 @@ sap.ui.define([
 		}
 	};
 
-	FilterableListContent.prototype._getItemFromContext = function (oBindingContext, oOptions) {
+	/**
+	 * Gets an item for a <code>BindingContext</code>.
+	 * @param {sap.ui.model.Context} oBindingContext BindingContext
+	 * @param {object} [oOptions] Options
+	 * @returns {object} Item object containing <code>key</code>, <code>description</code>, and <code>payload</code>
+	 * @protected
+	 */
+	FilterableListContent.prototype.getItemFromContext = function (oBindingContext, oOptions) {
 
-		var sKeyPath = (oOptions && oOptions.keyPath) || this.getKeyPath();
-		var sDescriptionPath = (oOptions && oOptions.descriptionPath) || this.getDescriptionPath();
-		var vKey;
-		var sDescription;
+		const sKeyPath = (oOptions && oOptions.keyPath) || this.getKeyPath();
+		const sDescriptionPath = (oOptions && oOptions.descriptionPath) || this.getDescriptionPath();
+		let vKey;
+		let sDescription;
 		//var sPath;
 
 		if (!sKeyPath) {
@@ -201,35 +211,75 @@ sap.ui.define([
 			return false;
 		}
 
-		var oPayload = this._createConditionPayload([vKey, sDescription], oBindingContext);
+		const oPayload = this.createConditionPayload([vKey, sDescription], oBindingContext);
 
 
 		return {key: vKey, description: sDescription, payload: oPayload};
 	};
 
-	FilterableListContent.prototype._createConditionPayload = function(aValues, vContext) {
-		var oConditionPayload;
-		var oDelegate = this._getValueHelpDelegate();
+	/**
+	 * Creates a payload for a value.
+	 * @param {any[]} aValues Values (key, description)
+	 * @param {any} vContext context
+	 * @returns {object} payload
+	 * @protected
+	 */
+	FilterableListContent.prototype.createConditionPayload = function(aValues, vContext) {
+		let oConditionPayload;
+		const oDelegate = this.getValueHelpDelegate();
 
 		if (oDelegate) {
-			var oDelegatePayload = this._getValueHelpDelegatePayload();
+			const oValueHelp = this.getValueHelpInstance();
 			oConditionPayload = {};
-			oConditionPayload = oDelegate.createConditionPayload(oDelegatePayload, this, aValues, vContext);
+			oConditionPayload = oDelegate.createConditionPayload(oValueHelp, this, aValues, vContext);
 		}
 		return oConditionPayload;
 	};
 
-	FilterableListContent.prototype._isItemSelected = function (oItem, aConditions) {
-		var oDelegate = this._isValueHelpDelegateInitialized() && this._getValueHelpDelegate();
-		return oDelegate ? oDelegate.isFilterableListItemSelected(this._getValueHelpDelegatePayload(), this, oItem, aConditions) : false;
+	FilterableListContent.prototype._isContextSelected = function (oContext, aConditions) {
+		return !!oContext && !!this._findConditionsForContext(oContext, aConditions).length;
 	};
 
+	FilterableListContent.prototype._findConditionsForContext = function (oContext, aConditions) {
+		const oDelegate = this.isValueHelpDelegateInitialized() && this.getValueHelpDelegate();
+		if (oContext && oDelegate) {
+			// <!-- Support for deprecated delegate method isFilterableListItemSelected
+			if (oDelegate.isFilterableListItemSelected) {
+				Log.warning("MDC.ValueHelp", "Delegate method 'isFilterableListItemSelected' is deprecated, please implement 'findConditionsForContext' instead.");
+
+				const bRepresentsConditions = oDelegate.isFilterableListItemSelected(this.getValueHelpInstance(), this, { getBindingContext: function () {
+					return oContext; // Dirty way to simulate listitem.getBindingContext()
+				} }, aConditions);
+
+				if (bRepresentsConditions) {
+					const oValues = this.getItemFromContext(oContext);
+					const oContextCondition = oValues && this.createCondition(oValues.key, oValues.description, oValues.payload);
+
+					return aConditions.filter(function (oCondition) {
+						return FilterOperatorUtil.compareConditions(oCondition, oContextCondition);
+					});
+				}
+				return [];
+			}
+			// -->
+			return oDelegate.findConditionsForContext(this.getValueHelpInstance(), this, oContext, aConditions);
+		}
+		return [];
+	};
+
+	/**
+	 * Creates the default <code>FilterBar</code> control.
+	 * @returns {Promise<sap.ui.mdc.filterbar.vh.FilterBar>} FilterBar
+	 */
 	FilterableListContent.prototype._createDefaultFilterBar = function() {
 		return loadModules([
 			"sap/ui/mdc/filterbar/vh/FilterBar"
 		]).then(function(aModules) {
-			var FilterBar = aModules[0];
-			var oFilterBar = new FilterBar(this.getId() + "-FB", {
+			if (this.isDestroyStarted()) {
+				return null;
+			}
+			const FilterBar = aModules[0];
+			const oFilterBar = new FilterBar(this.getId() + "-FB", {
 				liveMode: false, // !oWrapper.isSuspended(), // if suspended, no live search
 				showGoButton: true
 			});
@@ -240,24 +290,25 @@ sap.ui.define([
 	};
 
 	FilterableListContent.prototype._handleSearch = function (oEvent) {
-		var oFilterBar = oEvent.getSource();
+		const oFilterBar = oEvent.getSource();
 		this._setLocalFilterValue(oFilterBar.getSearch());
 		this.applyFilters();
 
 	};
 
 	function _setBasicSearch(oFilterBar) {
-		var oExistingBasicSearchField = oFilterBar.getBasicSearchField();
-		var sFilterFields =  this.getFilterFields();
+		const oExistingBasicSearchField = oFilterBar.getBasicSearchField();
+		const sFilterFields =  this.getFilterFields();
 		if (!oExistingBasicSearchField && sFilterFields) { // TODO: use isSearchSupported but here Delegate needs to be loaded
 			if (!this._oSearchField) {
 				return loadModules([
 					"sap/ui/mdc/FilterField"
 				]).then(function (aModules){
-					if (!oFilterBar.bIsDestroyed) {
-						var FilterField = aModules[0];
+					if (!oFilterBar.isDestroyed()) {
+						const FilterField = aModules[0];
 						this._oSearchField = new FilterField(this.getId() + "-search", {
 							conditions: "{$filters>/conditions/" + sFilterFields + "}",
+							propertyKey: sFilterFields,
 							placeholder:"{$i18n>filterbar.SEARCH}",
 							label:"{$i18n>filterbar.SEARCH}", // TODO: do we want a label?
 							maxConditions: 1,
@@ -282,17 +333,21 @@ sap.ui.define([
 		this._setLocalFilterValue(undefined);
 	};
 
+	/**
+	 * Gets the currently used <code>FilterBar</code> control.
+	 * @returns {sap.ui.mdc.filterbar.vh.FilterBar} FilterBar
+	 */
 	FilterableListContent.prototype._getPriorityFilterBar = function () {
 		return this.getFilterBar() || this.getAggregation("_defaultFilterBar");
 	};
 
-	FilterableListContent.prototype._observeChanges = function (oChanges) {
+	FilterableListContent.prototype.observeChanges = function (oChanges) {
 		if (oChanges.object == this) {
-			var oFilterBar;
+			let oFilterBar;
 
 			if (["_defaultFilterBar", "filterBar"].indexOf(oChanges.name) !== -1) {
 				oFilterBar = oChanges.child;
-				var oDefaultFilterBar;
+				let oDefaultFilterBar;
 				if (oChanges.mutation === "insert") {
 					_setBasicSearch.call(this, oFilterBar);
 					this._assignCollectiveSearchSelect();
@@ -307,7 +362,7 @@ sap.ui.define([
 						}
 					}
 				} else { // remove case
-					var oExistingBasicSearchField = oFilterBar.getBasicSearchField();
+					const oExistingBasicSearchField = oFilterBar.getBasicSearchField();
 					if (oExistingBasicSearchField && oExistingBasicSearchField._bCreatedByValueHelp) {
 						oFilterBar.setBasicSearchField(); // remove to reuse on other FilterBar
 					}
@@ -331,64 +386,103 @@ sap.ui.define([
 				}
 			}
 		}
-		ListContent.prototype._observeChanges.apply(this, arguments);
+		ListContent.prototype.observeChanges.apply(this, arguments);
 	};
 
 	FilterableListContent.prototype.getCollectiveSearchKey = function () {
 		return this._oCollectiveSearchSelect && this._oCollectiveSearchSelect.getSelectedItemKey();
 	};
 
-	FilterableListContent.prototype._getListBindingInfo = function () {
+	/**
+	 * Gets the <code>BindingInfo</code> of the content.
+	 * @returns {sap.ui.base.ManagedObject.AggregationBindingInfo} <code>ListBindingInfo</code>
+	 * @protected
+	 */
+	FilterableListContent.prototype.getListBindingInfo = function () {
 		throw new Error("FilterableListContent: Every filterable listcontent must implement this method.");
 	};
 
+	/**
+	 * Gets the <code>BindingContext</code> for an item.
+	 * @param {sap.ui.core.Element} oItem item
+	 * @returns {sap.ui.model.Context} <code>BindingContext</code>
+	 */
 	FilterableListContent.prototype._getListItemBindingContext = function (oItem) {
-		var sModelName = this._getListBindingInfo().model;
+		const sModelName = this.getListBindingInfo().model;
 		return oItem && oItem.getBindingContext(sModelName);
 	};
 
+	/**
+	 * Gets the control that holds the initial focus.
+	 * @returns {sap.ui.core.control} control
+	 */
 	FilterableListContent.prototype.getInitialFocusedControl = function() {
 		return this._getPriorityFilterBar().getInitialFocusedControl();
 	};
 
+	/**
+	 * Provides type information for listcontent filtering.
+	 * @param {object} oConditions set of conditions to create filters for
+	 * @returns {object} Returns a type map for property paths
+	 */
 	FilterableListContent.prototype._getTypesForConditions = function (oConditions) {
-		var oDelegate = this._getValueHelpDelegate();
-		var oDelegatePayload = this._getValueHelpDelegatePayload();
-		return oDelegate ? oDelegate.getTypesForConditions(oDelegatePayload, this, oConditions) : {};
+		const oDelegate = this.getValueHelpDelegate();
+		const oValueHelp = this.getValueHelpInstance();
+		return oDelegate ? oDelegate.getTypesForConditions(oValueHelp, this, oConditions) : {};
 	};
 
+	/**
+	 * Gets the formatted title based on the number of conditions.
+	 * @param {int} iCount number of conditions
+	 * @returns {string} formatted title
+	 * @private
+	 * @ui5-restricted sap.ui.mdc.valuehelp.base.Container
+	 */
 	FilterableListContent.prototype.getFormattedTitle = function(iCount) {
-		var sTitle = ListContent.prototype.getFormattedTitle.apply(this, arguments);
+		let sTitle = ListContent.prototype.getFormattedTitle.apply(this, arguments);
 		if (!sTitle) {
-			sTitle = this._oResourceBundle.getText(iCount ? "valuehelp.SELECTFROMLIST" : "valuehelp.SELECTFROMLISTNONUMBER", iCount);
+			sTitle = this._oResourceBundle.getText(iCount ? "valuehelp.SELECTFROMLIST" : "valuehelp.SELECTFROMLISTNONUMBER", [iCount]);
 		}
 		return sTitle;
 	};
 
+	/**
+	 * Gets the formatted short-title.
+	 * @returns {string} formatted short-title
+	 * @private
+	 * @ui5-restricted sap.ui.mdc.valuehelp.base.Container
+	 */
 	FilterableListContent.prototype.getFormattedShortTitle = function() {
-		var sShortTitle = this.getShortTitle();
+		let sShortTitle = this.getShortTitle();
 		if (!sShortTitle) {
 			sShortTitle = this._oResourceBundle.getText("valuehelp.SELECTFROMLIST.Shorttitle");
 		}
 		return sShortTitle;
 	};
 
+	/**
+	 * Gets the formatted tokenizer-title based on the number of conditions.
+	 * @param {int} iCount number of conditions
+	 * @returns {string} formatted tokenizer-title
+	 * @private
+	 * @ui5-restricted sap.ui.mdc.valuehelp.base.Container
+	 */
 	FilterableListContent.prototype.getFormattedTokenizerTitle = function(iCount) {
-		var sTokenizerTitle = this.getTokenizerTitle();
+		let sTokenizerTitle = this.getTokenizerTitle();
 		if (!sTokenizerTitle) {
-			sTokenizerTitle = this._oResourceBundle.getText("valuehelp.SELECTFROMLIST.TokenizerTitle" + (iCount === 0 ? "NoCount" : ""), iCount);
+			sTokenizerTitle = this._oResourceBundle.getText("valuehelp.SELECTFROMLIST.TokenizerTitle" + (iCount === 0 ? "NoCount" : ""), [iCount]);
 		}
 		return sTokenizerTitle;
 	};
 
 	FilterableListContent.prototype.isSearchSupported = function () {
 
-		var sFilterFields = this.getFilterFields();
-		var bSearchSupported = !!sFilterFields;
+		const sFilterFields = this.getFilterFields();
+		let bSearchSupported = !!sFilterFields;
 		if (sFilterFields === "$search") {
-			var oListBinding = this.getListBinding();
-			var oDelegate = this._getValueHelpDelegate();
-			var oDelegatePayload = this._getValueHelpDelegatePayload();
+			const oListBinding = this.getListBinding();
+			const oDelegate = this.getValueHelpDelegate();
+			const oDelegatePayload = this.getValueHelpInstance();
 			bSearchSupported = oDelegate && oDelegate.isSearchSupported(oDelegatePayload, this, oListBinding);
 		}
 
@@ -396,7 +490,7 @@ sap.ui.define([
 	};
 
 	/**
-	 * Sets the collective Search to the <code>FilterBar</code>
+	 * Sets the collective Search to the <code>FilterBar</code>.
 	 *
 	 * @param {sap.ui.mdc.filterbar.vh.CollectiveSearchSelect} oCollectiveSearchSelect Collective search control
 	 *
@@ -409,57 +503,51 @@ sap.ui.define([
 	};
 
 	FilterableListContent.prototype._assignCollectiveSearchSelect = function () {
-		var oFilterBar = this._getPriorityFilterBar();
+		const oFilterBar = this._getPriorityFilterBar();
 		if (oFilterBar.setCollectiveSearch) {
 			oFilterBar.setCollectiveSearch(this._oCollectiveSearchSelect); // remove it if empty
 		}
 	};
 
-	FilterableListContent.prototype._applyFiltersIfNecessary = function () {
-		var oListBinding = this.getListBinding();
-		var oListBindingInfo = this._getListBindingInfo();
-		var bBindingSuspended = oListBinding && oListBinding.isSuspended();
-		var bBindingWillBeSuspended = !oListBinding && oListBindingInfo && oListBindingInfo.suspended;
-
-		if ((bBindingSuspended || bBindingWillBeSuspended) && !this.isTypeahead()) { // in dialog case do not resume suspended table on opening
-			return undefined;
-		}
-
-		// apply filters before opening
-		return this.applyFilters();
-	};
-
+	/**
+	 * Executes logic before content is shown.
+	 * @param {boolean} bInitial If <code>true</code> this is the first time the content is shown
+	 * @returns {Promise} Promise resolved if content is ready to be shown
+	 * @private
+	 * @ui5-restricted sap.ui.mdc.valuehelp.base.Container
+	 */
 	FilterableListContent.prototype.onBeforeShow = function(bInitial) {
 		if (bInitial) {
-			var oDelegate = this._getValueHelpDelegate();
-			return Promise.resolve(oDelegate && oDelegate.getFilterConditions(this._getValueHelpDelegatePayload(), this)).then(function (oConditions) {
+			const oDelegate = this.getValueHelpDelegate();
+			return Promise.resolve(oDelegate && oDelegate.getFilterConditions(this.getValueHelpInstance(), this)).then(function (oConditions) {
 				this._oInitialFilterConditions = oConditions;
 
-				var oFilterBar = this._getPriorityFilterBar();
+				const oFilterBar = this._getPriorityFilterBar();
 				if (oFilterBar) { // apply initial conditions to filterbar if existing
-					var sFilterFields = this.getFilterFields();
-					var oNewConditions = merge({}, this._oInitialFilterConditions), oStateBefore;
+					const sFilterFields = this.getFilterFields();
+					const oNewConditions = merge({}, this._oInitialFilterConditions);
 					return Promise.resolve(!oNewConditions[sFilterFields] && StateUtil.retrieveExternalState(oFilterBar).then(function (oState) {
-						oStateBefore = oState;
 						if (bInitial) {
+							_addSearchConditionToConditionMap(oNewConditions, sFilterFields, this._getPriorityFilterValue());
 							return StateUtil.diffState(oFilterBar, oState, {filter: oNewConditions});
 						}
-					})).then(function (oStateDiff) {
-						_addSearchConditionToConditionMap(oStateDiff.filter, sFilterFields, this._getPriorityFilterValue(), oStateBefore.filter);
+					}.bind(this))).then(function (oStateDiff) {
 						return StateUtil.applyExternalState(oFilterBar, oStateDiff);
-					}.bind(this)).then(this._applyFiltersIfNecessary.bind(this));
-				} else {
-					return this._applyFiltersIfNecessary();
+					});
 				}
 			}.bind(this));
 		}
 		return undefined;
 	};
 
+	/**
+	 * Fires the {@link #event:select select} event.
+	 * @param {object} oChange change object
+	 */
 	FilterableListContent.prototype._fireSelect = function (oChange) {
-		var oDelegate = this._getValueHelpDelegate();
-		var oDelegatePayload = this._getValueHelpDelegatePayload();
-		var oModifiedSelectionChange = oDelegate && oDelegate.modifySelectionBehaviour ? oDelegate.modifySelectionBehaviour(oDelegatePayload, this, oChange) : oChange;
+		const oDelegate = this.getValueHelpDelegate();
+		const oValueHelp = this.getValueHelpInstance();
+		const oModifiedSelectionChange = oDelegate && oDelegate.modifySelectionBehaviour ? oDelegate.modifySelectionBehaviour(oValueHelp, this, oChange) : oChange;
 		if (oModifiedSelectionChange) {
 			this.fireSelect(oModifiedSelectionChange);
 		}
@@ -483,24 +571,29 @@ sap.ui.define([
 	};
 
 	FilterableListContent.prototype.getCount = function (aConditions, sGroup) {
-		var oDelegate = this._isValueHelpDelegateInitialized() && this._getValueHelpDelegate();
-		var oDelegatePayload = oDelegate && this._getValueHelpDelegatePayload();
+		const oDelegate = this.isValueHelpDelegateInitialized() && this.getValueHelpDelegate();
+		const oDelegatePayload = oDelegate && this.getValueHelpInstance();
 		return oDelegate && oDelegate.getCount ? oDelegate.getCount(oDelegatePayload, this, aConditions, sGroup) : ListContent.prototype.getCount.apply(this, arguments);
 	};
 
 	FilterableListContent.prototype._getLocalFilterValue = function() {
-		var oContainer = this.getParent();
+		const oContainer = this.getParent();
 		return oContainer && oContainer.getLocalFilterValue();
 	};
 
 	FilterableListContent.prototype._setLocalFilterValue = function(sValue) {
-		var oContainer = this.getParent();
+		const oContainer = this.getParent();
 		return oContainer && oContainer.setLocalFilterValue(sValue);
 	};
 
+	/**
+	 * Gets the currently used filter value.
+	 * @returns {string} filter value
+	 * @private
+	 * @ui5-restricted sap.ui.mdc.ValueHelpDelegate
+	 */
 	FilterableListContent.prototype._getPriorityFilterValue = function() {
-		var oContainer = this.getParent();
-		var sLocalFilterValue = oContainer && oContainer.getLocalFilterValue();
+		const sLocalFilterValue = this._getLocalFilterValue();
 
 		if (typeof sLocalFilterValue !== 'undefined') {
 			return sLocalFilterValue;
@@ -509,38 +602,25 @@ sap.ui.define([
 		return this.getFilterValue();
 	};
 
-	function _getSearchCondition (sFilterValue) {
-		return Condition.createCondition("Contains", [sFilterValue], undefined, undefined, ConditionValidated.NotValidated);
-	}
+	/**
+	 * Gets the conditions that are selectable from list content.
+	 *
+	 * These are validated conditions as other conditions are shown in the {@link sap.ui.mdc.valuehelp.content.Conditions Conditions}.
+	 * @returns {sap.ui.base.ManagedObject.AggregationBindingInfo} ListBindingInfo
+	 * @protected
+	 */
+	FilterableListContent.prototype.getSelectableConditions = function() {
+		return this.getConditions().filter(function(oCondition) {
+			return oCondition.validated === ConditionValidated.Validated;
+		});
+	};
 
-	function _addSearchConditionToConditionMap(oConditions, sFilterFields, sFilterValue, oCurrentConditions) {
-		if (sFilterFields) {
-			oCurrentConditions = oCurrentConditions || oConditions;
-			var aCurrentSearchConditions = oCurrentConditions[sFilterFields];
-
-			//1) Only create condition for truthy value (e.g. have a string) if no $search path exists in the CM
-			if (!aCurrentSearchConditions) {
-				if (sFilterValue) {
-					oConditions[sFilterFields] = (oConditions[sFilterFields] || []).concat([_getSearchCondition(sFilterValue)]);
-				}
-				return;
-			}
-
-			//2) Only modifiy existing $search condition to new value if its value has changed --> there is an existing condition
-			if (aCurrentSearchConditions.length === 1  && aCurrentSearchConditions[0].values[0] !== sFilterValue) {
-				oConditions[sFilterFields] = (oConditions[sFilterFields] || []).concat([_getSearchCondition(sFilterValue)]);
-				return;
-			}
-
-			//3) Path is existing, but its containing of an empty array --> if its still empty array, don't do anything
-			if (aCurrentSearchConditions.length === 0) {
-				oConditions[sFilterFields] = sFilterValue ? (oConditions[sFilterFields] || []).concat([_getSearchCondition(sFilterValue)]) : [];
-				return;
-			}
-		}
+	function _addSearchConditionToConditionMap(oConditions, sFilterFields, sFilterValue) {
+		oConditions[sFilterFields] = sFilterValue ? [Condition.createCondition(OperatorName.Contains, [sFilterValue], undefined, undefined, ConditionValidated.NotValidated)] : [];
 		return;
 	}
 
 	return FilterableListContent;
 
 });
+

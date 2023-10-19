@@ -9,7 +9,8 @@ sap.ui.define([
 	"sap/ui/core/Core",
 	"sap/ui/core/library",
 	"sap/m/Link",
-	"sap/ui/core/message/Message"
+	"sap/ui/core/message/Message",
+	"sap/ui/core/InvisibleText"
 ], function(
 	qutils,
 	MessageView,
@@ -20,7 +21,8 @@ sap.ui.define([
 	Core,
 	coreLibrary,
 	Link,
-	Message
+	Message,
+	InvisibleText
 ) {
 	"use strict";
 
@@ -606,6 +608,48 @@ sap.ui.define([
 		assert.equal(this.oMessageView.getItems().length, 1, "The message should be one - from MessageManager");
 	});
 
+	QUnit.test("When all messages from model are removed, MessageView / Popover should return to home page", function (assert) {
+		var oMessageView = new MessageView().placeAt("qunit-fixture");
+		var fnAddMessage = function() {
+			Core.getMessageManager().addMessages(
+				new Message({
+					message: "Something wrong happend!",
+					description: "Some Description",
+					type: MessageType.Warning,
+					processor: new JSONModel()
+				})
+			);
+		};
+		var fnClearMessages = function() {
+			Core.getMessageManager().removeAllMessages();
+		};
+
+		fnClearMessages();
+
+		Core.applyChanges();
+		this.clock.tick(500);
+
+		// store pages
+		var oMessageViewCurrentPage = oMessageView._navContainer.getCurrentPage();
+		assert.strictEqual(oMessageView._listPage, oMessageViewCurrentPage, "List Page should be visible");
+
+		fnAddMessage();
+		Core.applyChanges();
+
+		// store pages
+		oMessageViewCurrentPage = oMessageView._navContainer.getCurrentPage();
+		assert.strictEqual(oMessageView._detailsPage, oMessageViewCurrentPage, "Details Page should be visible");
+
+		fnClearMessages();
+		Core.applyChanges();
+
+		// store pages
+		oMessageViewCurrentPage = oMessageView._navContainer.getCurrentPage();
+		assert.strictEqual(oMessageView._listPage, oMessageViewCurrentPage, "List Page should be visible");
+
+		oMessageView.destroy();
+	});
+
 	QUnit.test("NavContainer should be child of the MessageView", function(assert) {
 		assert.equal(this.oMessageView._navContainer.getParent(), this.oMessageView, "Parent child relation is correct");
 	});
@@ -951,7 +995,44 @@ sap.ui.define([
 		Core.applyChanges();
 
 		assert.strictEqual(this.oMessageView.getDomRef().getAttribute("aria-label"), oResourceBundle.getText("MESSAGE_VIEW_ARIA_LABEL"), "The text for the aria-label attribute is set correctly");
-		assert.strictEqual(this.oMessageView.getDomRef().getAttribute("role"), "region", "The role attribute is rendered correctly");
+		assert.strictEqual(this.oMessageView.getDomRef().tagName.toLowerCase(), "section", "The root element is with role section.");
+	});
+
+	QUnit.test("SegmentedButton aria-labelledby attribute should be rendered correctly", function (assert) {
+		//Arrange
+		var oMessageView = new MessageView("msgView", {
+			items: [
+				new MessageItem({
+					title: "Test",
+					description: "Test Description",
+					type: "Error"
+				}),
+				new MessageItem({
+					title: "Test",
+					description: "Test Description",
+					type: "Warning"
+				}),
+				new MessageItem({
+					title: "Test",
+					description: "Test Description",
+					type: "Success"
+				})
+			]
+		});
+		var	oResourceBundle = Core.getLibraryResourceBundle("sap.m");
+
+		oMessageView.placeAt("qunit-fixture");
+		Core.applyChanges();
+
+		var sInvisibleTextId = InvisibleText.getStaticId("sap.m", "MESSAGEVIEW_SEGMENTED_BTN_DESCRIPTION"),
+		oInvisibleText = Core.byId(sInvisibleTextId);
+
+		//Assert
+		assert.strictEqual(oMessageView._oSegmentedButton._oItemNavigation.oDomRef.getAttribute("aria-labelledby"), sInvisibleTextId, "The aria-labelledby attribute is set correctly");
+		assert.strictEqual(oInvisibleText.getText(), oResourceBundle.getText("MESSAGEVIEW_SEGMENTED_BTN_DESCRIPTION"), "The aria-labelledby text is correct");
+
+		//Clean up
+		oMessageView.destroy();
 	});
 
 	QUnit.module("Binding", {

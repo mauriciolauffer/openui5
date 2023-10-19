@@ -3,15 +3,17 @@ sap.ui.define([
 	"sap/ui/mdc/condition/Operator",
 	"sap/ui/mdc/condition/RangeOperator",
 	"sap/ui/model/Filter",
+	'sap/ui/model/FilterOperator',
 	'sap/ui/core/date/UniversalDate',
 	'sap/ui/core/date/UniversalDateUtils',
-	'sap/ui/model/FilterOperator',
 	'sap/m/DatePicker',
 	'sap/m/Slider',
-	'sap/ui/mdc/enum/BaseType'
-], function (FilterOperatorUtil, Operator, RangeOperator, Filter, UniversalDate, UniversalDateUtils, ModelOperator, DatePicker, Slider, BaseType) {
+	'sap/ui/mdc/enums/BaseType',
+	'sap/ui/mdc/enums/OperatorOverwrite',
+	'sap/ui/mdc/enums/OperatorValueType',
+	'sap/ui/mdc/enums/OperatorName'
+], function (FilterOperatorUtil, Operator, RangeOperator, Filter, ModelOperator, UniversalDate, UniversalDateUtils, DatePicker, Slider, BaseType, OperatorOverwrite, OperatorValueType, OperatorName) {
 	"use strict";
-
 
 	var getCustomYearFormat = function (date) {
 		return new Date(date.getTime() - (date.getTimezoneOffset() * 60000 ))
@@ -27,7 +29,7 @@ sap.ui.define([
 		tokenParse: "^#tokenText#$",
 		tokenFormat: "#tokenText#",
 		filterOperator: ModelOperator.BT,
-		valueTypes: [Operator.ValueType.Static],
+		valueTypes: [OperatorValueType.Static],
 		calcRange: function() {
 			return [new UniversalDate(500, 0, 1), new UniversalDate(1500, 0, 1)];
 		},
@@ -42,9 +44,9 @@ sap.ui.define([
 		tokenText: "Renaissance",
 		tokenParse: "^#tokenText#$",
 		tokenFormat: "#tokenText#",
-		valueTypes: [Operator.ValueType.Static],
+		valueTypes: [OperatorValueType.Static],
 		getModelFilter: function (oCondition, sFieldPath) {
-			return new Filter({ path: sFieldPath, operator: "BT", value1: "1500-01-01", value2: "1600-01-01" });
+			return new Filter({ path: sFieldPath, operator: ModelOperator.BT, value1: "1500-01-01", value2: "1600-01-01" });
 		}
 	});
 
@@ -54,9 +56,9 @@ sap.ui.define([
 		tokenText: "Modern",
 		tokenParse: "^#tokenText#$",
 		tokenFormat: "#tokenText#",
-		valueTypes: [Operator.ValueType.Static],
+		valueTypes: [OperatorValueType.Static],
 		getModelFilter: function (oCondition, sFieldPath) {
-			return new Filter({ path: sFieldPath, operator: "BT", value1: "1600-01-01", value2: getCustomYearFormat(new Date()) });
+			return new Filter({ path: sFieldPath, operator: ModelOperator.BT, value1: "1600-01-01", value2: getCustomYearFormat(new Date()) });
 		}
 	});
 
@@ -65,10 +67,10 @@ sap.ui.define([
 		name: "LASTYEAR",
 		tokenParse: "^#tokenText#$",
 		tokenFormat: "#tokenText#",
-		valueTypes: [Operator.ValueType.Static],
+		valueTypes: [OperatorValueType.Static],
 		getModelFilter: function (oCondition, sFieldPath) {
 			var currentDate = new Date();
-			return new Filter({ path: sFieldPath, operator: "BT", value1: getCustomYearFormat(new Date(currentDate.getFullYear() - 1, currentDate.getMonth(), currentDate.getDate())), value2: getCustomYearFormat(new Date(new Date().getFullYear(), currentDate.getMonth(), currentDate.getDate())) });
+			return new Filter({ path: sFieldPath, operator: ModelOperator.BT, value1: getCustomYearFormat(new Date(currentDate.getFullYear() - 1, currentDate.getMonth(), currentDate.getDate())), value2: getCustomYearFormat(new Date(new Date().getFullYear(), currentDate.getMonth(), currentDate.getDate())) });
 
 		}
 	});
@@ -79,9 +81,9 @@ sap.ui.define([
 		tokenText: "Custom Range: $0-$1",
 		tokenParse: "^#tokenText#$",
 		tokenFormat: "#tokenText#",
-		valueTypes: [Operator.ValueType.Self, Operator.ValueType.Self],
+		valueTypes: [OperatorValueType.Self, OperatorValueType.Self],
 		getModelFilter: function (oCondition, sFieldPath) {
-			return new Filter({ path: sFieldPath, operator: "BT", value1: oCondition.values[0], value2: oCondition.values[1] });
+			return new Filter({ path: sFieldPath, operator: ModelOperator.BT, value1: oCondition.values[0], value2: oCondition.values[1] });
 		}
 	});
 
@@ -91,10 +93,10 @@ sap.ui.define([
 		tokenText: "Not in range: $0-$1",
 		tokenParse: "^#tokenText#$",
 		tokenFormat: "#tokenText#",
-		valueTypes: [Operator.ValueType.Self, Operator.ValueType.Self],
+		valueTypes: [OperatorValueType.Self, OperatorValueType.Self],
 		exclude: true,
 		getModelFilter: function (oCondition, sFieldPath) {
-			return new Filter({ path: sFieldPath, operator: "BT", value1: oCondition.values[0], value2: oCondition.values[1] });
+			return new Filter({ path: sFieldPath, operator: ModelOperator.BT, value1: oCondition.values[0], value2: oCondition.values[1] });
 		}
 	});
 
@@ -138,7 +140,7 @@ sap.ui.define([
 				"United Kingdom": "GB",
 				"Vatican City": "VA"
 			}).map(function (code) {
-				return new Filter({ path: sFieldPath, operator: "EQ", value1: code });
+				return new Filter({ path: sFieldPath, operator: ModelOperator.EQ, value1: code });
 			});
 
 			return new Filter({ filters: aFilters, and: false });
@@ -153,7 +155,7 @@ sap.ui.define([
 		tokenText: "Date", // only needed for MultiValue
 		tokenParse: "^=([^=].*)$", // only needed for MultiValue
 		tokenFormat: "{0}", // only needed for MultiValue
-		valueTypes: [Operator.ValueType.Self],
+		valueTypes: [{name: "sap.ui.model.odata.type.Date"}], // use date type to have no time part
 		createControl: function(oType, sPath, iIndex, sId)  { // only needed for MultiValue
 			var oDatePicker = new DatePicker(sId, { // render always a DatePicker, also for DateTime
 				value: {path: sPath, type: oType, mode: 'TwoWay'},
@@ -164,14 +166,16 @@ sap.ui.define([
 		},
 		getModelFilter: function (oCondition, sFieldPath, oType, bCaseSensitive, sBaseType) {
 			if (oType.isA("sap.ui.model.odata.type.DateTimeOffset")) {
+				var oOperatorType = this._createLocalType(this.valueTypes[0]);
 				var sFrom = oCondition.values[0];
-				var oModelFormat = oType.getModelFormat(); // use ModelFormat to convert in JS-Date and add 23:59:59
-				var oDate = oModelFormat.parse(sFrom);
+				var oOperatorModelFormat = oOperatorType.getModelFormat(); // use ModelFormat to convert in JS-Date and add 23:59:59
+				var oDate = oOperatorModelFormat.parse(sFrom, false);
+				sFrom = oType.getModelValue(oDate);
 				oDate.setHours(23);
 				oDate.setMinutes(59);
 				oDate.setSeconds(59);
 				oDate.setMilliseconds(999);
-				var sTo = oModelFormat.format(oDate);
+				var sTo = oType.getModelValue(oDate);
 				return new Filter({path: sFieldPath, operator: ModelOperator.BT, value1: sFrom, value2: sTo});
 			} else {
 				return new Filter({path: sFieldPath, operator: this.filterOperator, value1: oCondition.values[0]});
@@ -187,7 +191,7 @@ sap.ui.define([
 		tokenText: "Date Range", // only needed for MultiValue
 		tokenParse: "^([^!].*)\\.\\.\\.(.+)$", // only needed for MultiValue
 		tokenFormat: "{0}...{1}", // only needed for MultiValue
-		valueTypes: [Operator.ValueType.Self, Operator.ValueType.Self],
+		valueTypes: [{name: "sap.ui.model.odata.type.Date"}, {name: "sap.ui.model.odata.type.Date"}], // use date type to have no time part
 		createControl: function(oType, sPath, iIndex, sId)  { // only needed for MultiValue
 			var oDatePicker = new DatePicker(sId, { // render always a DatePicker, also for DateTime
 				value: {path: sPath, type: oType, mode: 'TwoWay'},
@@ -198,14 +202,20 @@ sap.ui.define([
 		},
 		getModelFilter: function (oCondition, sFieldPath, oType, bCaseSensitive, sBaseType) {
 			if (oType.isA("sap.ui.model.odata.type.DateTimeOffset")) {
+				var oOperatorType = this._createLocalType(this.valueTypes[0]);
 				var sFrom = oCondition.values[0];
-				var oModelFormat = oType.getModelFormat(); // use ModelFormat to convert in JS-Date and add 23:59:59
-				var oDate = oModelFormat.parse(oCondition.values[1]);
+				var oOperatorModelFormat = oOperatorType.getModelFormat(); // use ModelFormat to convert in JS-Date and add 23:59:59
+				var oDate = oOperatorModelFormat.parse(sFrom, false);
+				sFrom = oType.getModelValue(oDate);
+				oOperatorType = this._createLocalType(this.valueTypes[1]);
+				oOperatorModelFormat = oOperatorType.getModelFormat(); // use ModelFormat to convert in JS-Date and add 23:59:59
+				var sTo = oCondition.values[1];
+				oDate = oOperatorModelFormat.parse(sTo, false);
 				oDate.setHours(23);
 				oDate.setMinutes(59);
 				oDate.setSeconds(59);
 				oDate.setMilliseconds(999);
-				var sTo = oModelFormat.format(oDate);
+				sTo = oType.getModelValue(oDate);
 				return new Filter({path: sFieldPath, operator: ModelOperator.BT, value1: sFrom, value2: sTo});
 			} else {
 				return new Filter({path: sFieldPath, operator: this.filterOperator, value1: oCondition.values[0], value2: oCondition.values[1]});
@@ -294,6 +304,63 @@ sap.ui.define([
 
 	// FilterOperatorUtil.addOperatorForType(BaseType.Date, customDateEmpty);
 	// FilterOperatorUtil.addOperatorForType(BaseType.Date, customDateNotEmpty);
+
+
+	var oTodayOp = FilterOperatorUtil.getOperator(OperatorName.TODAY);
+	var fOrgTodayGetModelFilter = oTodayOp.overwrite(OperatorOverwrite.getModelFilter,
+		function(oCondition, sFieldPath, oType, bCaseSensitive, sBaseType) {
+			var oFilter = fOrgTodayGetModelFilter(oCondition, sFieldPath, oType, bCaseSensitive, sBaseType);
+			return new Filter({path: sFieldPath, operator: ModelOperator.EQ, value1: oFilter.oValue1});
+		}
+	);
+
+	var oEmptyOp = FilterOperatorUtil.getOperator(OperatorName.Empty);
+	FilterOperatorUtil.addOperatorForType(BaseType.Date, oEmptyOp);
+	var fOrgEmptyGetModelFilter = oEmptyOp.overwrite(OperatorOverwrite.getModelFilter,
+		function(oCondition, sFieldPath, oType, bCaseSensitive, sBaseType) {
+			if (sBaseType === "Date") {
+				var isNullable = false;
+				if (oType) {
+					var vResult = oType.parseValue("", "string");
+					try {
+						oType.validateValue(vResult);
+						isNullable = vResult === null;
+					} catch (oError) {
+						isNullable = false;
+					}
+				}
+				if (isNullable) {
+					return new Filter({ path: sFieldPath, operator: this.filterOperator, value1: null });
+				} else {
+					throw "Cannot create a Filter for fieldPath " + sFieldPath + " and operator " + this.name;
+				}
+			} else {
+				//TODO this will not work!!!!!
+				return fOrgEmptyGetModelFilter(oCondition, sFieldPath, oType, bCaseSensitive, sBaseType);
+			}
+
+		}.bind(oEmptyOp)
+	);
+
+	var oYesterdayOp = FilterOperatorUtil.getOperator(OperatorName.YESTERDAY);
+	var fOrgYesterdayGetModelFilter = oYesterdayOp.overwrite(OperatorOverwrite.getModelFilter,
+		function(oCondition, sFieldPath, oType, bCaseSensitive, sBaseType) {
+			var oFilter = fOrgYesterdayGetModelFilter(oCondition, sFieldPath, oType, bCaseSensitive, sBaseType);
+			return new Filter({path: sFieldPath, operator: ModelOperator.EQ, value1: oFilter.oValue1});
+		}
+	);
+
+
+	var oLessOp = FilterOperatorUtil.getOperator(OperatorName.LT);
+	var fOrgLessOpGetLongText = oLessOp.overwrite(OperatorOverwrite.getLongText,
+		function(sBaseType) {
+			if (sBaseType === "Date") {
+				return "My Before";
+			} else {
+				return fOrgLessOpGetLongText(sBaseType);
+			}
+		}
+	);
 
 });
 

@@ -4,8 +4,9 @@ sap.ui.define([
 	"sap/ui/table/qunit/TableQUnitUtils",
 	"sap/ui/table/RowAction",
 	"sap/ui/table/RowActionItem",
-	"sap/ui/table/rowmodes/FixedRowMode",
-	"sap/ui/table/rowmodes/AutoRowMode",
+	"sap/ui/table/rowmodes/Type",
+	"sap/ui/table/rowmodes/Fixed",
+	"sap/ui/table/rowmodes/Auto",
 	"sap/ui/table/utils/TableUtils",
 	"sap/ui/table/TableRenderer",
 	"sap/ui/Device",
@@ -16,7 +17,24 @@ sap.ui.define([
 	"sap/ui/model/Context",
 	"sap/ui/model/ChangeReason",
 	"sap/ui/core/Core"
-], function(TableQUnitUtils, RowAction, RowActionItem, FixedRowMode, AutoRowMode, TableUtils, TableRenderer, Device, tableLibrary, Column, Control, JSONModel, Context, ChangeReason, oCore) {
+], function(
+	TableQUnitUtils,
+	RowAction,
+	RowActionItem,
+	RowModeType,
+	FixedRowMode,
+	AutoRowMode,
+	TableUtils,
+	TableRenderer,
+	Device,
+	tableLibrary,
+	Column,
+	Control,
+	JSONModel,
+	Context,
+	ChangeReason,
+	oCore
+) {
 	"use strict";
 
 	// mapping of global function calls
@@ -68,7 +86,9 @@ sap.ui.define([
 				columns: [TableQUnitUtils.createTextColumn().setWidth("800px")],
 				rows: {path: "/"},
 				models: TableQUnitUtils.createJSONModelWithEmptyRows(6),
-				visibleRowCount: 1
+				rowMode: new FixedRowMode({
+					rowCount: 1
+				})
 			});
 
 			return this.oTable.qunit.whenRenderingFinished();
@@ -87,13 +107,13 @@ sap.ui.define([
 		assert.ok(oHSb.offsetWidth > 0 && oHSb.offsetHeight > 0, "Table content does not fit: Horizontal scrollbar is visible");
 
 		oTable.getColumns()[0].setWidth("10px");
-		oTable.rerender();
+		oCore.applyChanges();
 		assert.ok(oHSb.offsetWidth === 0 && oHSb.offsetHeight === 0, "Table content does fit: Horizontal scrollbar is not visible");
 
 		oTable.setSelectionMode(tableLibrary.SelectionMode.None);
-		oTable.setVisibleRowCount(6);
+		oTable.getRowMode().setRowCount(6);
 		oTable.getColumns()[0].setWidth("495px");
-		oTable.rerender();
+		oCore.applyChanges();
 
 		return oTable.qunit.whenRenderingFinished().then(function() {
 			oModel.oData.push({});
@@ -102,7 +122,7 @@ sap.ui.define([
 			assert.ok(oHSb.offsetWidth > 0 && oHSb.offsetHeight > 0,
 				"Increase binding length so that vertical scrollbar appears: Horizontal scrollbar is visible");
 
-			oTable.setVisibleRowCountMode(tableLibrary.VisibleRowCountMode.Auto);
+			oTable.setRowMode(RowModeType.Auto);
 		}).then(oTable.qunit.whenRenderingFinished).then(oTable.qunit.$resize({height: "400px"})).then(function() {
 			assert.ok(oHSb.offsetWidth > 0 && oHSb.offsetHeight > 0,
 				"Decrease visible rows so that vertical scrollbar appears: Horizontal scrollbar is visible");
@@ -118,13 +138,14 @@ sap.ui.define([
 		var oHSbComputedStyle = window.getComputedStyle(oHSb);
 		var oHSbContentComputedStyle = window.getComputedStyle(oHSbContent);
 
-		oTable.rerender();
+		oTable.invalidate();
+		oCore.applyChanges();
 		assert.strictEqual(oHSbComputedStyle.marginLeft, "48px", "Left margin");
 		assert.strictEqual(oHSbComputedStyle.marginRight, "17px", "Right margin");
 		assert.strictEqual(oHSbContentComputedStyle.width, "800px", "Scroll range");
 
 		oTable.getColumns()[0].setWidth("10px");
-		oTable.rerender();
+		oCore.applyChanges();
 		assert.strictEqual(oHSb.style.marginLeft, "", "Scrollbar hidden: Left margin");
 		assert.strictEqual(oHSb.style.marginRight, "", "Scrollbar hidden: Right margin");
 		assert.strictEqual(oHSbContent.style.width, "", "Scrollbar hidden: Scroll range");
@@ -134,7 +155,7 @@ sap.ui.define([
 		oTable.setFixedColumnCount(1);
 		oTable.setRowActionCount(2);
 		oTable.setRowActionTemplate(new RowAction({items: [new RowActionItem({type: tableLibrary.RowActionType.Navigation})]}));
-		oTable.rerender();
+		oCore.applyChanges();
 		assert.strictEqual(oHSbComputedStyle.marginLeft, "88px", "Fixed columns and row actions: Left margin");
 		assert.strictEqual(oHSbComputedStyle.marginRight, "107px", "Fixed columns and row actions: Right margin");
 		assert.strictEqual(oHSbContentComputedStyle.width, "500px", "Fixed columns and row actions: Scroll range");
@@ -148,7 +169,7 @@ sap.ui.define([
 
 		assert.ok(oVSb.offsetWidth > 0 && oVSb.offsetHeight > 0, "Table content does not fit height -> Vertical scrollbar is visible");
 
-		oTable.setVisibleRowCount(6);
+		oTable.getRowMode().setRowCount(6);
 		oCore.applyChanges();
 
 		return oTable.qunit.whenRenderingFinished().then(function() {
@@ -163,7 +184,8 @@ sap.ui.define([
 				path: "/",
 				model: "other"
 			});
-			oTable.rerender();
+			oTable.invalidate();
+			oCore.applyChanges();
 		}).then(oTable.qunit.whenRenderingFinished).then(function() {
 			oVSb = oScrollExtension.getVerticalScrollbar();
 
@@ -183,19 +205,21 @@ sap.ui.define([
 		var oVSbComputedStyle = window.getComputedStyle(oVSb);
 
 		this.oTable.setColumnHeaderHeight(78);
-		this.oTable.rerender();
+		oCore.applyChanges();
 		assert.strictEqual(oVSbComputedStyle.top, "0px", "Top position");
 
-		this.oTable.setVisibleRowCount(2);
-		this.oTable.setFixedRowCount(1);
-		this.oTable.rerender();
+		this.oTable.setRowMode(new FixedRowMode({
+			rowCount: 2,
+			fixedTopRowCount: 1
+		}));
+		oCore.applyChanges();
 		assert.strictEqual(oVSbComputedStyle.top, TableUtils.BaseSize.sapUiSizeCozy + "px", "Fixed rows: Top position");
 	});
 
 	QUnit.test("Vertical scrollbar height if variable row heights enabled", function(assert) {
 		var oTable = this.oTable;
 
-		oTable.setVisibleRowCount(5);
+		oTable.getRowMode().setRowCount(5);
 		oTable._bVariableRowHeightEnabled = true;
 		oTable.addColumn(new Column({
 			template: new HeightControl({
@@ -213,9 +237,11 @@ sap.ui.define([
 	QUnit.module("Extension methods", {
 		beforeEach: function() {
 			this.oTable = TableQUnitUtils.createTable({
-				visibleRowCount: 5,
-				fixedRowCount: 1,
-				fixedBottomRowCount: 1,
+				rowMode: new FixedRowMode({
+					rowCount: 5,
+					fixedTopRowCount: 1,
+					fixedBottomRowCount: 1
+				}),
 				rows: {path: "/"},
 				models: TableQUnitUtils.createJSONModelWithEmptyRows(10),
 				columns: [TableQUnitUtils.createTextColumn().setWidth("1100px")]
@@ -232,7 +258,7 @@ sap.ui.define([
 		var oTable = this.oTable;
 		var oScrollExtension = oTable._getScrollExtension();
 		var iTotalRowCount = oTable._getTotalRowCount();
-		var iVisibleRowCount = oTable.getVisibleRowCount();
+		var iVisibleRowCount = oTable._getRowCounts().count;
 		var iNotVisibleRows = iTotalRowCount - iVisibleRowCount;
 		var i;
 
@@ -263,11 +289,12 @@ sap.ui.define([
 
 	QUnit.test("scrollVertically (page-wise)", function(assert) {
 		var oTable = this.oTable;
+		var mRowCounts = oTable._getRowCounts();
 		var oScrollExtension = oTable._getScrollExtension();
 		var iTotalRowCount = oTable._getTotalRowCount();
-		var iVisibleRowCount = oTable.getVisibleRowCount();
-		var iFixedTop = oTable.getFixedRowCount();
-		var iFixedBottom = oTable.getFixedBottomRowCount();
+		var iVisibleRowCount = mRowCounts.count;
+		var iFixedTop = mRowCounts.fixedTop;
+		var iFixedBottom = mRowCounts.fixedBottom;
 		var iNotVisibleRows = iTotalRowCount - iVisibleRowCount;
 		var iPageSize = iVisibleRowCount - iFixedTop - iFixedBottom;
 		var iPages = Math.ceil((iTotalRowCount - iFixedTop - iFixedBottom) / iPageSize);
@@ -311,13 +338,13 @@ sap.ui.define([
 		// ↓ Down
 		assert.equal(oTable.getFirstVisibleRow(), 0, "First visible row before scrolling");
 		oScrollExtension.scrollVerticallyMax(true);
-		assert.equal(oTable.getFirstVisibleRow(), iTotalRowCount - oTable.getVisibleRowCount(), "First visible row after scrolling");
+		assert.equal(oTable.getFirstVisibleRow(), iTotalRowCount - oTable._getRowCounts().count, "First visible row after scrolling");
 		// ↑ Up
 		oScrollExtension.scrollVerticallyMax(false);
 		assert.equal(oTable.getFirstVisibleRow(), 0, "First visible row after scrolling");
 
 		/* As many data rows as there are visible rows, with fixed top/bottom rows */
-		oTable.setVisibleRowCount(10);
+		oTable.getRowMode().setRowCount(10);
 		oCore.applyChanges();
 
 		return oTable.qunit.whenRenderingFinished().then(function() {
@@ -331,22 +358,22 @@ sap.ui.define([
 
 		}).then(function() {
 			/* More data rows than visible rows, without fixed top/bottom rows */
-			oTable.setVisibleRowCount(5);
-			oTable.setFixedRowCount(0);
-			oTable.setFixedBottomRowCount(0);
+			oTable.setRowMode(new FixedRowMode({
+				rowCount: 5
+			}));
 			oCore.applyChanges();
 		}).then(oTable.qunit.whenRenderingFinished).then(function() {
 			// ↓ Down
 			assert.equal(oTable.getFirstVisibleRow(), 0, "First visible row before scrolling");
 			oScrollExtension.scrollVerticallyMax(true);
-			assert.equal(oTable.getFirstVisibleRow(), iTotalRowCount - oTable.getVisibleRowCount(), "First visible row after scrolling");
+			assert.equal(oTable.getFirstVisibleRow(), iTotalRowCount - oTable._getRowCounts().count, "First visible row after scrolling");
 			// ↑ Up
 			oScrollExtension.scrollVerticallyMax(false);
 			assert.equal(oTable.getFirstVisibleRow(), 0, "First visible row after scrolling");
 
 		}).then(function() {
 			/* As many data rows as there are visible rows, without fixed top/bottom rows */
-			oTable.setVisibleRowCount(10);
+			oTable.getRowMode().setRowCount(10);
 			oCore.applyChanges();
 		}).then(oTable.qunit.whenRenderingFinished).then(function() {
 			// ↓ Down
@@ -409,7 +436,7 @@ sap.ui.define([
 
 		assert.ok(oScrollExtension.isVerticalScrollbarVisible(), "Table content does not fit height -> Vertical scrollbar is visible");
 
-		this.oTable.setVisibleRowCount(10);
+		this.oTable.getRowMode().setRowCount(10);
 		oCore.applyChanges();
 
 		return this.oTable.qunit.whenRenderingFinished().then(function() {
@@ -858,7 +885,9 @@ sap.ui.define([
 		Device.support.pointer = false;
 		Device.support.touch = true;
 		oTable.qunit.preventFocusOnTouch();
-		oTable.setFixedRowCount(1);
+		oTable.setRowMode(new FixedRowMode({
+			fixedTopRowCount: 1
+		}));
 		initRowActions(oTable, 1, 1);
 
 		return oTable.qunit.whenRenderingFinished().then(function() {
@@ -1761,7 +1790,7 @@ sap.ui.define([
 		}
 
 		this.forEachTestedRowMode(function(oRowModeConfig) {
-			if (oRowModeConfig.rowMode.isA("sap.ui.table.rowmodes.AutoRowMode")) {
+			if (oRowModeConfig.rowMode.isA("sap.ui.table.rowmodes.Auto")) {
 				return;
 			}
 			pTestSequence = pTestSequence.then(function() {
@@ -2320,7 +2349,8 @@ sap.ui.define([
 			return oTable.qunit.whenRenderingFinished().then(function() {
 				oTable.setFirstVisibleRow(1);
 			}).then(oTable.qunit.whenNextRowsUpdated).then(TableQUnitUtils.$wait(0)).then(function() {
-				oTable.rerender();
+				oTable.invalidate();
+				oCore.applyChanges();
 			}).then(oTable.qunit.whenRenderingFinished).then(function() {
 				that.assertPosition(assert, 1, 49, 0, mConfig.rowMode + ", FirstVisibleRow = 1");
 			}).then(oTable.qunit.$scrollVSbTo(98)).then(function() {
@@ -2351,7 +2381,8 @@ sap.ui.define([
 			return oTable.qunit.whenRenderingFinished().then(function() {
 				oTable.setFirstVisibleRow(1);
 			}).then(TableQUnitUtils.$wait(0)).then(function() {
-				oTable.rerender();
+				oTable.invalidate();
+				oCore.applyChanges();
 			}).then(oTable.qunit.whenRenderingFinished).then(function() {
 				that.assertPosition(assert, 1, 49, 0, mConfig.rowMode + ", FirstVisibleRow = 1");
 			}).then(oTable.qunit.$scrollVSbTo(98)).then(function() {
@@ -5613,9 +5644,11 @@ sap.ui.define([
 			],
 			rows: {path: "/"},
 			models: TableQUnitUtils.createJSONModelWithEmptyRows(1),
-			rowHeight: 10,
-			fixedColumnCount: 1,
-			visibleRowCount: 1
+			rowMode: new FixedRowMode({
+				rowCount: 1,
+				rowContentHeight: 10
+			}),
+			fixedColumnCount: 1
 		});
 
 		function test(sTitle, iColumnIndex) {

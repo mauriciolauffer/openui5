@@ -5,7 +5,6 @@ sap.ui.define(["exports"], function (_exports) {
     value: true
   });
   _exports.default = void 0;
-
   /**
    * ""                        -> ""
    * "noExtension"             -> ""
@@ -13,19 +12,16 @@ sap.ui.define(["exports"], function (_exports) {
    * "file.with.many.dots.doc" -> ".doc"
    * ".gitignore"              -> ""
    *
-   * @param fileName - the file name
-   * @returns {string}
+   * @param { string } fileName - the file name
+   * @returns { string }
    */
   const getFileExtension = fileName => {
     const dotPos = fileName.lastIndexOf(".");
-
     if (dotPos < 1) {
       return "";
     }
-
     return fileName.slice(dotPos);
   };
-
   var _default = getFileExtension;
   _exports.default = _default;
 });

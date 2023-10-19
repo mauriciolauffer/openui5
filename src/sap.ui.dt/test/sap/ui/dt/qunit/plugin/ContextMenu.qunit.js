@@ -6,15 +6,14 @@ sap.ui.define([
 	"sap/ui/dt/DesignTime",
 	"sap/ui/dt/Util",
 	"sap/ui/rta/plugin/Rename",
-	'sap/ui/rta/command/CommandFactory',
+	"sap/ui/rta/command/CommandFactory",
 	"sap/ui/Device",
 	"sap/ui/qunit/QUnitUtils",
 	"sap/m/Button",
 	"sap/ui/layout/VerticalLayout",
 	"sap/ui/events/KeyCodes",
-	"sap/ui/thirdparty/sinon-4",
-	"sap/ui/core/Core"
-], function (
+	"sap/ui/thirdparty/sinon-4"
+], function(
 	ContextMenuPlugin,
 	OverlayRegistry,
 	DesignTime,
@@ -26,8 +25,7 @@ sap.ui.define([
 	Button,
 	VerticalLayout,
 	KeyCodes,
-	sinon,
-	oCore
+	sinon
 ) {
 	"use strict";
 	var sandbox = sinon.createSandbox();
@@ -59,7 +57,7 @@ sap.ui.define([
 	}
 
 	QUnit.module("ContextMenu API", {
-		beforeEach: function (assert) {
+		beforeEach(assert) {
 			var done = assert.async();
 			this.oButton1 = new Button("button1");
 			this.oButton2 = new Button("button2", {text: "Button 2 text"});
@@ -70,11 +68,10 @@ sap.ui.define([
 				]
 			});
 			this.oLayout.placeAt("qunit-fixture");
-			oCore.applyChanges();
 			this.oMenuEntries = {};
 			this.oMenuEntries.available = {
 				id: "CTX_ALWAYS_THERE",
-				text: function () {
+				text() {
 					return "item that is always there";
 				},
 				handler: sinon.spy()
@@ -83,7 +80,7 @@ sap.ui.define([
 				id: "CTX_ENABLED_BUTTON1",
 				text: "enabled for button 1",
 				handler: sinon.spy(),
-				enabled: function (vElementOverlays) {
+				enabled: function(vElementOverlays) {
 					var aElementOverlays = DtUtil.castArray(vElementOverlays);
 					var oElement = aElementOverlays[0].getElement();
 					return oElement === this.oButton1;
@@ -93,7 +90,7 @@ sap.ui.define([
 				id: "CTX_DISABLED_BUTTON1",
 				text: "disabled for button 1",
 				handler: sinon.spy(),
-				enabled: function (vElementOverlays) {
+				enabled: function(vElementOverlays) {
 					var aElementOverlays = DtUtil.castArray(vElementOverlays);
 					var oElement = aElementOverlays[0].getElement();
 					return oElement !== this.oButton1;
@@ -136,13 +133,13 @@ sap.ui.define([
 				id: "CTX_START_SECTION_BTN1",
 				text: "starts new section for button1",
 				handler: sinon.spy(),
-				startSection: function (oElement) {
+				startSection: function(oElement) {
 					return oElement === this.oButton1;
 				}.bind(this)
 			};
 			this.oMenuEntries.dynamicTextItem = {
 				id: "CTX_DYNAMIC_TEXT",
-				text: function (oOverlay) {
+				text(oOverlay) {
 					var oElement = oOverlay.getElement();
 					return oElement.getId();
 				},
@@ -166,8 +163,8 @@ sap.ui.define([
 					this.oRenamePlugin
 				]
 			});
-			this.oDesignTime.attachEventOnce("synced", function () {
-				oCore.applyChanges();
+			this.oContextMenuControl = this.oContextMenuPlugin.oContextMenuControl;
+			this.oDesignTime.attachEventOnce("synced", function() {
 				this.oButton1Overlay = OverlayRegistry.getOverlay(this.oButton1);
 				this.oButton1Overlay.setSelectable(true);
 				this.oButton2Overlay = OverlayRegistry.getOverlay(this.oButton2);
@@ -176,9 +173,8 @@ sap.ui.define([
 				this.clock = sinon.useFakeTimers();
 				done();
 			}.bind(this));
-			this.oContextMenuControl = this.oContextMenuPlugin.oContextMenuControl;
 		},
-		afterEach: function () {
+		afterEach() {
 			sandbox.restore();
 			this.oDesignTime.destroy();
 			this.oLayout.destroy();
@@ -195,7 +191,7 @@ sap.ui.define([
 				assert.ok(true, "then the event closedContextMenu is fired");
 			});
 			this.oContextMenuPlugin.attachEventOnce("openedContextMenu", function(oEvent) {
-				var oContextMenuControl = oEvent.getSource().oContextMenuControl;
+				var {oContextMenuControl} = oEvent.getSource();
 				// Works only with events on unified menu
 				var aItems = oContextMenuControl._getMenu().getItems();
 				var oMenuItem = aItems[aItems.length - 1];
@@ -207,29 +203,29 @@ sap.ui.define([
 			});
 
 			sandbox.stub(this.oRenamePlugin, "getMenuItems")
-				.callThrough()
-				.withArgs([this.oButton2Overlay])
-				.returns([
-					{
-						id: "CTX_RENAME_BUTTON_2",
-						text: "Rename for button 2",
-						rank: 999,
-						handler: oItemSelectedStub
-					},
-					{
-						id: "CTX_BUTTON2_SUB",
-						text: "button 2 submenu",
-						rank: 888,
-						handler: oItemSelectedStub
-					}
-				]);
+			.callThrough()
+			.withArgs([this.oButton2Overlay])
+			.returns([
+				{
+					id: "CTX_RENAME_BUTTON_2",
+					text: "Rename for button 2",
+					rank: 999,
+					handler: oItemSelectedStub
+				},
+				{
+					id: "CTX_BUTTON2_SUB",
+					text: "button 2 submenu",
+					rank: 888,
+					handler: oItemSelectedStub
+				}
+			]);
 
 			this.oButton2Overlay.setSelected(true);
 			QUnitUtils.triggerMouseEvent(this.oButton2Overlay.getDomRef(), "contextmenu");
 			this.clock.tick(50);
 		});
 
-		QUnit.test("Calling method 'open' after adding a not persisted menu item", function (assert) {
+		QUnit.test("Calling method 'open' after adding a not persisted menu item", function(assert) {
 			var oTestItem1 = {
 				id: "CTX_TEST_NOT_PERSISTED",
 				text: "test for not persisted item",
@@ -243,13 +239,13 @@ sap.ui.define([
 			assert.strictEqual(this.oContextMenuPlugin._aMenuItems.length, 8, "there is 1 item less in the array for the menu items");
 		});
 
-		QUnit.test("Calling method '_addMenuItemToGroup'", function (assert) {
+		QUnit.test("Calling method '_addMenuItemToGroup'", function(assert) {
 			var that = this;
 			var oTestItem = {
 				id: "CTX_ENABLED_BUTTON1",
 				text: "enabled for button 1",
 				handler: sinon.spy(),
-				enabled: function (oOverlay) {
+				enabled(oOverlay) {
 					var oElement = oOverlay.getElement();
 					return oElement === that.oButton1;
 				},
@@ -261,7 +257,7 @@ sap.ui.define([
 				id: "CTX_ENABLED_BUTTON1",
 				text: "enabled for button 1",
 				handler: sinon.spy(),
-				enabled: function (oOverlay) {
+				enabled(oOverlay) {
 					var oElement = oOverlay.getElement();
 					return oElement === that.oButton1;
 				},
@@ -273,7 +269,7 @@ sap.ui.define([
 				id: "CTX_ENABLED_BUTTON1",
 				text: "enabled for button 1",
 				handler: sinon.spy(),
-				enabled: function (oOverlay) {
+				enabled(oOverlay) {
 					var oElement = oOverlay.getElement();
 					return oElement === that.oButton1;
 				},
@@ -283,7 +279,7 @@ sap.ui.define([
 			assert.strictEqual(this.oContextMenuPlugin._aGroupedItems.length, 2, "should add an Item to grouped Items and creating a new group");
 		});
 
-		QUnit.test("Adding a Submenu", function (assert) {
+		QUnit.test("Adding a Submenu", function(assert) {
 			var sId = "I_AM_A_SUBMENU";
 			var sSubId1 = "I_am_a_sub_menu_item";
 			var sSubId2 = "I_am_another_sub_menu_item";
@@ -313,8 +309,8 @@ sap.ui.define([
 			assert.strictEqual(this.oContextMenuPlugin._aSubMenus[0].aSubMenuItems[1].id, sSubId2, "should add all the submenu items");
 		});
 
-		QUnit.test("Adding multiple Submenus", function (assert) {
-			var fnHandler = function () {
+		QUnit.test("Adding multiple Submenus", function(assert) {
+			var fnHandler = function() {
 				return undefined;
 			};
 			var sId0 = "I_AM_A_SUBMENU";
@@ -374,13 +370,13 @@ sap.ui.define([
 			assert.strictEqual(this.oContextMenuPlugin._aSubMenus[1].aSubMenuItems[1].id, sSubId3, "should add submenu item 3 to sub menu 1");
 		});
 
-		QUnit.test("Calling _addItemGroupsToMenu", function (assert) {
+		QUnit.test("Calling _addItemGroupsToMenu", function(assert) {
 			var that = this;
 			var oTestItem = {
 				id: "CTX_ENABLED_BUTTON1",
 				text: "enabled for button 1",
 				handler: sinon.spy(),
-				enabled: function (vElementOverlays) {
+				enabled(vElementOverlays) {
 					var aElementOverlays = DtUtil.castArray(vElementOverlays);
 					var oElement = aElementOverlays[0].getElement();
 					return oElement === that.oButton1;
@@ -392,7 +388,7 @@ sap.ui.define([
 				id: "CTX_ENABLED_BUTTON3",
 				text: "enabled for button 3",
 				handler: sinon.spy(),
-				enabled: function (vElementOverlays) {
+				enabled(vElementOverlays) {
 					var aElementOverlays = DtUtil.castArray(vElementOverlays);
 					var oElement = aElementOverlays[0].getElement();
 					return oElement === that.oButton1;
@@ -407,7 +403,7 @@ sap.ui.define([
 			assert.strictEqual(this.oContextMenuPlugin._aMenuItems[this.oContextMenuPlugin._aMenuItems.length - 1].menuItem.submenu.length, 2, "The second group has a submenu with two items");
 		});
 
-		QUnit.test("Testing onClick function when overlay is not selected", function (assert) {
+		QUnit.test("Testing onClick function when overlay is not selected", function(assert) {
 			// regarding the rta directives the second click on an overlay deselects it,
 			// if it is not "rename"-able. In this case ContextMenu shouldn't be opened
 			var oOpenStub = sandbox.stub(this.oContextMenuPlugin, "open");
@@ -416,9 +412,9 @@ sap.ui.define([
 			assert.equal(oOpenStub.callCount, 0, "the open function was not triggered");
 		});
 
-		QUnit.test("Testing onKeyUp function opening the expanded contextMenu", function (assert) {
+		QUnit.test("Testing onKeyUp function opening the expanded contextMenu", function(assert) {
 			var oOpenStub = sandbox.stub(this.oContextMenuPlugin, "open");
-			var _tempListener = function (oEvent) {
+			var _tempListener = function(oEvent) {
 				oEvent.keyCode = KeyCodes.F10;
 				oEvent.shiftKey = true;
 				oEvent.altKey = false;
@@ -431,9 +427,9 @@ sap.ui.define([
 			QUnitUtils.triggerMouseEvent(this.oButton2Overlay.getDomRef(), "keyup");
 		});
 
-		QUnit.test("Testing onKeyUp function opening the compact contextMenu", function (assert) {
+		QUnit.test("Testing onKeyUp function opening the compact contextMenu", function(assert) {
 			var oOpenStub = sandbox.stub(this.oContextMenuPlugin, "open");
-			var _tempListener = function (oEvent) {
+			var _tempListener = function(oEvent) {
 				oEvent.keyCode = KeyCodes.ENTER;
 				oEvent.shiftKey = false;
 				oEvent.altKey = false;
@@ -446,10 +442,10 @@ sap.ui.define([
 			QUnitUtils.triggerMouseEvent(this.oButton2Overlay.getDomRef(), "keyup");
 		});
 
-		QUnit.test("Testing onKeyUp function (ENTER) with other plugin busy", function (assert) {
+		QUnit.test("Testing onKeyUp function (ENTER) with other plugin busy", function(assert) {
 			var oOpenStub = sandbox.stub(this.oContextMenuPlugin, "open");
 			var oCheckPluginLockStub = sandbox.stub(this.oContextMenuPlugin, "_checkForPluginLock").returns(true);
-			var _tempListener = function (oEvent) {
+			var _tempListener = function(oEvent) {
 				oEvent.keyCode = KeyCodes.ENTER;
 				oEvent.shiftKey = false;
 				oEvent.altKey = false;
@@ -462,12 +458,12 @@ sap.ui.define([
 			QUnitUtils.triggerMouseEvent(this.oButton2Overlay.getDomRef(), "keyup");
 		});
 
-		QUnit.test("Deregistering an Overlay", function (assert) {
+		QUnit.test("Deregistering an Overlay", function(assert) {
 			this.oContextMenuPlugin.deregisterElementOverlay(this.oButton1Overlay);
 			assert.ok(true, "should throw no error");
 		});
 
-		QUnit.test("calling _checkForPluginLock", function (assert) {
+		QUnit.test("calling _checkForPluginLock", function(assert) {
 			Device.os.ios = true;
 			assert.notOk(this.oContextMenuPlugin._checkForPluginLock(), "then return false for ios devices");
 			Device.os.ios = false;
@@ -480,8 +476,8 @@ sap.ui.define([
 			var oPlainMenuItem = { id: "plainItem", group: undefined, submenu: undefined };
 			var aPlugins = [
 				{
-					getMenuItems: function() {return [oPlainMenuItem];},
-					isBusy: function() {return false;}
+					getMenuItems() {return [oPlainMenuItem];},
+					isBusy() {return false;}
 				}
 			];
 			var oAddMenuItemStub = sandbox.stub(this.oContextMenuPlugin, "addMenuItem");
@@ -497,8 +493,8 @@ sap.ui.define([
 			var oGroupMenuItem = { id: "groupItem", group: "group1", submenu: undefined, enabled: true };
 			var aPlugins = [
 				{
-					getMenuItems: function() {return [oGroupMenuItem];},
-					isBusy: function() {return false;}
+					getMenuItems() {return [oGroupMenuItem];},
+					isBusy() {return false;}
 				}
 			];
 			var oAddMenuItemToGroupStub = sandbox.stub(this.oContextMenuPlugin, "_addMenuItemToGroup");
@@ -515,8 +511,8 @@ sap.ui.define([
 			var oSubMenuItem = { id: "subItem", group: undefined, submenu: [oPlainMenuItem] };
 			var aPlugins = [
 				{
-					getMenuItems: function() {return [oSubMenuItem];},
-					isBusy: function() {return false;}
+					getMenuItems() {return [oSubMenuItem];},
+					isBusy() {return false;}
 				}
 			];
 			var oAddSubMenuStub = sandbox.stub(this.oContextMenuPlugin, "_addSubMenu");
@@ -535,7 +531,7 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

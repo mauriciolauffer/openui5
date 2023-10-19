@@ -4,11 +4,13 @@
 
 // Provides control sap.ui.webc.main.TableColumn.
 sap.ui.define([
-	"sap/ui/webc/common/WebComponent",
+	"sap/ui/core/webc/WebComponent",
 	"./library",
 	"./thirdparty/TableColumn"
 ], function(WebComponent, library) {
 	"use strict";
+
+	var TableColumnPopinDisplay = library.TableColumnPopinDisplay;
 
 	/**
 	 * Constructor for a new <code>TableColumn</code>.
@@ -16,7 +18,7 @@ sap.ui.define([
 	 * @param {string} [sId] ID for the new control, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new control
 	 *
-	 * @extends sap.ui.webc.common.WebComponent
+	 * @extends sap.ui.core.webc.WebComponent
 	 * @class
 	 *
 	 * <h3>Overview</h3>
@@ -69,6 +71,24 @@ sap.ui.define([
 				minWidth: {
 					type: "int",
 					defaultValue: Infinity
+				},
+
+				/**
+				 * Defines how the popin row is displayed.
+				 *
+				 * <br>
+				 * <br>
+				 * <b>The available values are:</b>
+				 *
+				 *
+				 * <ul>
+				 *     <li><code>Block</code></li>
+				 *     <li><code>Inline</code></li>
+				 * </ul>
+				 */
+				popinDisplay: {
+					type: "sap.ui.webc.main.TableColumnPopinDisplay",
+					defaultValue: TableColumnPopinDisplay.Block
 				},
 
 				/**

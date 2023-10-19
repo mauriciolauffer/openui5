@@ -12,9 +12,10 @@ sap.ui.define([
 	"sap/ui/events/KeyCodes",
 	"sap/ui/thirdparty/jquery",
 	"sap/base/security/encodeCSS",
+	"sap/ui/Device",
 	"sap/ui/core/library"
 ],
-	function(library, Control, DataType, URLListValidator, ImageRenderer, KeyCodes, jQuery, encodeCSS, coreLibrary) {
+	function(library, Control, DataType, URLListValidator, ImageRenderer, KeyCodes, jQuery, encodeCSS, Device, coreLibrary) {
 	"use strict";
 
 
@@ -235,6 +236,7 @@ sap.ui.define([
 
 				/**
 				 * Event is fired when the user clicks on the control. (This event is deprecated, use the press event instead)
+				 * @deprecated As of version 1.107.0
 				 */
 				tap : {},
 
@@ -502,6 +504,9 @@ sap.ui.define([
 		if (oDomImageRef && oDomImageRef.complete && !this._defaultEventTriggered) {
 			// need to use the naturalWidth property instead of jDomNode.width(),
 			// the later one returns positive value even in case of broken image
+			if (Device.browser.firefox && this.getSrc().indexOf(".svg") > -1) {
+				return;
+			}
 			if (oDomImageRef.naturalWidth > 0) {
 				this.onload({/* empty event object*/});
 			} else {
@@ -532,7 +537,11 @@ sap.ui.define([
 	 * @private
 	 */
 	Image.prototype.ontouchstart = function(oEvent) {
+		/**
+		 * @deprecated event
+		 */
 		if (oEvent.srcControl.mEventRegistry["press"] || oEvent.srcControl.mEventRegistry["tap"]) {
+
 			// mark the event for components that needs to know if the event was handled by the Image
 			oEvent.setMarked();
 		}
@@ -594,6 +603,9 @@ sap.ui.define([
 	 * @private
 	 */
 	Image.prototype.ontap = function(oEvent) {
+		/**
+		 * @deprecated event
+		 */
 		this.fireTap({/* no parameters */}); //	(This event is deprecated, use the press event instead)
 		this.firePress({/* no parameters */});
 	};

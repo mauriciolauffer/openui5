@@ -1,21 +1,19 @@
 sap.ui.define([
 	"sap/base/Log",
-	"sap/ui/model/CompositeDataState",
-	"sap/ui/test/TestUtils"
-], function (Log, CompositeDataState, TestUtils) {
+	"sap/ui/model/CompositeDataState"
+], function (Log, CompositeDataState) {
 	/*global QUnit*/
 	"use strict";
 
 	//*********************************************************************************************
 	QUnit.module("sap.ui.model.CompositeDataState", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach : function () {
 			this.oLogMock = this.mock(Log);
 			this.oLogMock.expects("error").never();
 			this.oLogMock.expects("warning").never();
-		},
-
-		afterEach : function (assert) {
-			return TestUtils.awaitRendering();
 		}
 	});
 

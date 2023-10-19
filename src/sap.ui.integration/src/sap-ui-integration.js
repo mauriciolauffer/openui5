@@ -13,7 +13,7 @@
  * - Based on the dependencies (tags that should be used) automatic registration of these tags
  *   tags are additionally maintained in the library.js file
  * Usage:
- *   <script src="https://some/path/sap-ui-integration.js" id="sap-ui-bootstrap" data-sap-ui-theme="sap_fiori_3">
+ *   <script src="https://some/path/sap-ui-integration.js" id="sap-ui-bootstrap" data-sap-ui-theme="sap_horizon">
  *   </script>
  *
  *   <ui-integration-card manifest="./path/to/manifest"></ui-integration-card>
@@ -108,22 +108,22 @@
 	}
 
 	function registerLibraryTags(sLibrary) {
-		var oLibrary = coreInstance.getLoadedLibraries()[sLibrary];
-		//collect the prefix and the relevant tags
-		var aTags = Object.keys(oLibrary.customElements);
+		var oLibrary = coreInstance.getLoadedLibraries()[sLibrary],
+			mCustomElements = oLibrary.extensions["sap.ui.integration"].customElements,
+			aTags = Object.keys(mCustomElements);
 
 		//collect all the implementation classes and require them
 		window.sap.ui.require(
 			aTags.map(
 				function (o, i) {
-					return oLibrary.customElements[aTags[i]];
+					return mCustomElements[aTags[i]];
 				}
 			)
 		);
 	}
 
 	function initTags() {
-		coreInstance.loadLibraries(["sap.ui.integration"], {
+		coreInstance.loadLibrary("sap.ui.integration", {
 			async: true
 		}).then(function () {
 			//register the tags for this library

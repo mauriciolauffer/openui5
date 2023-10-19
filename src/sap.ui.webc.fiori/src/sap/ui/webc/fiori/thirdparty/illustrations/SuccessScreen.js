@@ -25,11 +25,10 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
   _sapIllusDialogSuccessScreen = _interopRequireDefault(_sapIllusDialogSuccessScreen);
   _sapIllusSceneSuccessScreen = _interopRequireDefault(_sapIllusSceneSuccessScreen);
   _sapIllusSpotSuccessScreen = _interopRequireDefault(_sapIllusSpotSuccessScreen);
-
   function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
   const name = "SuccessScreen";
   const set = "fiori";
+  const collection = "V4";
   const title = _i18nDefaults.IM_TITLE_SUCCESSSCREEN;
   const subtitle = _i18nDefaults.IM_SUBTITLE_SUCCESSSCREEN;
   (0, _Illustrations.registerIllustration)(name, {
@@ -38,6 +37,7 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
     spotSvg: _sapIllusSpotSuccessScreen.default,
     title,
     subtitle,
-    set
+    set,
+    collection
   });
 });

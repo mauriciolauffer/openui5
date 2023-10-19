@@ -9,24 +9,24 @@ sap.ui.define([
 	'sap/ui/mdc/p13n/StateUtil',
 	'sap/ui/mdc/condition/Condition',
 	'sap/ui/mdc/condition/FilterOperatorUtil',
-	'sap/ui/mdc/enum/ConditionValidated',
+	'sap/ui/mdc/enums/ConditionValidated',
+	'sap/ui/mdc/enums/OperatorName',
 	'sap/ui/mdc/util/IdentifierUtil',
 	'sap/ui/model/ParseException',
 	'sap/ui/core/Core'
 ], function(
-	BaseValueHelpDelegate, StateUtil, Condition, FilterOperatorUtil, ConditionValidated, IdentifierUtil, ParseException, Core
+	BaseValueHelpDelegate, StateUtil, Condition, FilterOperatorUtil, ConditionValidated, OperatorName, IdentifierUtil, ParseException, Core
 ) {
 	"use strict";
 
 	var FilterbarInOutValueHelpDelegate = Object.assign({}, BaseValueHelpDelegate);
 
-
-	FilterbarInOutValueHelpDelegate.getInitialFilterConditions = function (oPayload, oContent, oControl) {
-
+	FilterbarInOutValueHelpDelegate.getFilterConditions = function (oValueHelp, oContent, oConfig) {
+		var oPayload = oValueHelp.getPayload();
 		var aInParameters = oPayload.inParameters || [];
-		var oConditions = BaseValueHelpDelegate.getInitialFilterConditions(oPayload, oContent);
+		var oConditions = BaseValueHelpDelegate.getFilterConditions(arguments);
 
-		var oFilterField = oControl;
+		var oFilterField = (oConfig && oConfig.control) || (oContent && oContent.getControl());
 		var oFilterBar = oFilterField && oFilterField.getParent();
 		if (oFilterBar && oFilterBar.isA("sap.ui.mdc.filterbar.FilterBarBase")) {
 
@@ -50,8 +50,8 @@ sap.ui.define([
 		return oConditions;
 	};
 
-	FilterbarInOutValueHelpDelegate.onConditionPropagation = function (oPayload, oValueHelp, sReason) {
-
+	FilterbarInOutValueHelpDelegate.onConditionPropagation = function (oValueHelp, sReason, oConfig) {
+		var oPayload = oValueHelp.getPayload();
 		var aOutParameters = oPayload.outParameters || [];
 
 		//handle only ControlChange reason
@@ -112,16 +112,16 @@ sap.ui.define([
 									control: oOutFilterField
 								};
 								oNewCondition = oOutValueHelp.getItemForValue(oConfig).then(function(oItem) { // if this is an In-Parameter for another this update would need to wait until this one
-									oNewCondition = Condition.createCondition("EQ", [oItem.key], undefined, undefined, ConditionValidated.Validated, oItem.payload);
+									oNewCondition = Condition.createCondition(OperatorName.EQ, [oItem.key], undefined, undefined, ConditionValidated.Validated, oItem.payload);
 									if (oItem.description) {
 										oNewCondition.values.push(oItem.description);
 									}
 									return oNewCondition;
 								}).catch(function(oError) { // if not found just use the given Out-value
-									return Condition.createCondition("EQ", [vValue], undefined, undefined, ConditionValidated.Validated, {});
+									return Condition.createCondition(OperatorName.EQ, [vValue], undefined, undefined, ConditionValidated.Validated, {});
 								});
 							} else {
-								oNewCondition = Condition.createCondition("EQ", [vValue], undefined, undefined, ConditionValidated.Validated, {});
+								oNewCondition = Condition.createCondition(OperatorName.EQ, [vValue], undefined, undefined, ConditionValidated.Validated, {});
 							}
 							Promise.all([oNewCondition]).then(function(aResult) {
 								var oNewCondition = aResult[0];

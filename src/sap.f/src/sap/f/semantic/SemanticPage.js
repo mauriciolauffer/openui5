@@ -32,7 +32,9 @@ sap.ui.define([
 ) {
 	"use strict";
 
-	// shortcut for sap.f.DynamicPageTitleArea
+	/**
+	 * @deprecated As of version 1.54
+	 */
 	var DynamicPageTitleArea = library.DynamicPageTitleArea;
 
 	/**
@@ -187,7 +189,6 @@ sap.ui.define([
 				* If all the areas have assigned values greater than 1, the numbers are scaled so that at least one of them
 				* is equal to 1. For example, value of <code>2:4:8</code> is equal to <code>1:2:4</code>.
 				*
-				* <Note:> When this property is set the <code>titlePrimaryArea</code> property has no effect.
 				*
 				* @since 1.58
 				*/
@@ -681,7 +682,9 @@ sap.ui.define([
 		this._getPage().setShowFooter(bShowFooter);
 		return this.setProperty("showFooter", bShowFooter, true);
 	};
-
+	/**
+	 * @deprecated As of version 1.58, <code>titlePrimaryArea</code> has been deprecated
+	 */
 	SemanticPage.prototype.setTitlePrimaryArea = function (oPrimaryArea) {
 		var oDynamicPageTitle = this._getTitle();
 
@@ -719,6 +722,15 @@ sap.ui.define([
 		}
 
 		return Control.prototype.removeStyleClass.call(this, sClass, bSuppressRerendering);
+	};
+
+	SemanticPage.prototype.clone = function(){
+		var oClone = Control.prototype.clone.apply(this, arguments),
+			oContent = this.getAggregation('_dynamicPage').getContent();
+
+		oClone.setContent(oContent.clone());
+
+		return oClone;
 	};
 
 	/*
@@ -1175,6 +1187,20 @@ sap.ui.define([
 				return (oAction._getControl && oAction._getControl() === aVisibleActions[0])
 						|| oAction === aVisibleActions[0];
 			})[0];
+
+			// Clean action sheet CSS class
+			var oActionCtrl = oActionToBeMoved._getControl && oActionToBeMoved._getControl();
+			if (oActionCtrl) {
+				var AC_CLASS_PREFIX = "sapMActionSheet";
+				oActionCtrl.aCustomStyleClasses
+					.filter(function (sStyleClass) {
+						return sStyleClass.indexOf(AC_CLASS_PREFIX) > -1;
+					})
+					.forEach(function (sACStyleClass) {
+						oActionCtrl.removeStyleClass(sACStyleClass);
+					});
+			}
+
 
 			this._addShareMenuSingleAction(oActionToBeMoved);
 		}

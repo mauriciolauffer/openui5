@@ -1,5 +1,5 @@
 ---
-specVersion: "2.4"
+specVersion: "3.0"
 type: library
 metadata:
   name: sap.ui.unified
@@ -20,10 +20,10 @@ builder:
             filters:
               - sap/ui/unified/
               - sap/ui/unified/manifest.json
-              - '!sap/ui/unified/*-preload.js'
-              - '!sap/ui/unified/**/*.designtime.js'
-              - '!sap/ui/unified/**/designtime/'
-              - '!sap/ui/unified/**/*.support.js'
+              - "!sap/ui/unified/*-preload.js"
+              - "!sap/ui/unified/**/*.designtime.js"
+              - "!sap/ui/unified/**/designtime/"
+              - "!sap/ui/unified/**/*.support.js"
             resolve: false
       bundleOptions:
         optimize: true

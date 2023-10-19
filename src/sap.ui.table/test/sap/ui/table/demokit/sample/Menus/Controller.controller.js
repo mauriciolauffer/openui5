@@ -13,8 +13,9 @@ sap.ui.define([
 	"sap/m/table/columnmenu/ActionItem",
 	"sap/m/ToolbarSpacer",
 	"sap/ui/thirdparty/jquery",
-	"sap/ui/Device"
-], function(Log, Controller, JSONModel, Menu, MenuItem, MessageToast, DateFormat, Popup, MenuM, MenuItemM, ColumnMenu, ActionItem, ToolbarSpacer, jQuery, Device) {
+	"sap/ui/Device",
+	"sap/ui/core/date/UI5Date"
+], function(Log, Controller, JSONModel, Menu, MenuItem, MessageToast, DateFormat, Popup, MenuM, MenuItemM, ColumnMenu, ActionItem, ToolbarSpacer, jQuery, Device, UI5Date) {
 	"use strict";
 
 	return Controller.extend("sap.ui.table.sample.Menus.Controller", {
@@ -31,6 +32,8 @@ sap.ui.define([
 				showFreezeMenuEntry: false,
 				enableCellFilter: false
 			}), "ui");
+
+			this.associateHeaderMenus();
 
 			sap.ui.require(["sap/ui/table/sample/TableExampleUtils"], function(TableExampleUtils) {
 				var oTb = oView.byId("infobar");
@@ -61,8 +64,8 @@ sap.ui.define([
 							aTemp2.push(oProduct.Category);
 							aCategoryData.push({Name: oProduct.Category});
 						}
-						oProduct.DeliveryDate = (new Date()).getTime() - (i % 10 * 4 * 24 * 60 * 60 * 1000);
-						oProduct.DeliveryDateStr = oDateFormat.format(new Date(oProduct.DeliveryDate));
+						oProduct.DeliveryDate = Date.now() - (i % 10 * 4 * 24 * 60 * 60 * 1000);
+						oProduct.DeliveryDateStr = oDateFormat.format(UI5Date.getInstance(oProduct.DeliveryDate));
 						oProduct.Heavy = oProduct.WeightMeasure > 1000 ? "true" : "false";
 						oProduct.Available = oProduct.Status == "Available" ? true : false;
 					}
@@ -156,37 +159,29 @@ sap.ui.define([
 			}
 		},
 
-		onSwitchHeaderMenu: function(oEvent) {
-			var bUseHeaderMenu = oEvent.getSource().getState();
+		associateHeaderMenus: function() {
+			this.oMenu = new ColumnMenu();
+			this.byId("name").setHeaderMenu(this.oMenu.getId());
+			this.byId("productId").setHeaderMenu(this.oMenu.getId());
 
-			if (bUseHeaderMenu) {
-				this.oMenu = new ColumnMenu();
-				this.byId("name").setHeaderMenu(this.oMenu.getId());
-				this.byId("productId").setHeaderMenu(this.oMenu.getId());
-
-				this.oCustomMenu = new ColumnMenu({
-					items: [
-						new ActionItem({
-							label: "My custom menu entry",
-							press: [function(oEvent) {
-								this.onQuantityCustomItemSelect(oEvent);
-							}, this]
-						}),
-						new ActionItem({
-							label: "Sort",
-							icon: "sap-icon://sort",
-							press: [function(oEvent) {
-								this.onQuantitySort(oEvent);
-							}, this]
-						})
-					]
-				});
-				this.byId("quantity").setHeaderMenu(this.oCustomMenu.getId());
-			} else {
-				this.byId("name").setHeaderMenu(null);
-				this.byId("productId").setHeaderMenu(null);
-				this.byId("quantity").setHeaderMenu(null);
-			}
+			this.oCustomMenu = new ColumnMenu({
+				items: [
+					new ActionItem({
+						label: "My custom menu entry",
+						press: [function(oEvent) {
+							this.onQuantityCustomItemSelect(oEvent);
+						}, this]
+					}),
+					new ActionItem({
+						label: "Sort",
+						icon: "sap-icon://sort",
+						press: [function(oEvent) {
+							this.onQuantitySort(oEvent);
+						}, this]
+					})
+				]
+			});
+			this.byId("quantity").setHeaderMenu(this.oCustomMenu.getId());
 		},
 
 		onExit: function() {

@@ -1,7 +1,15 @@
 /*!
  * ${copyright}
  */
-sap.ui.define(['sap/ui/events/KeyCodes', 'sap/ui/thirdparty/jquery'], function(KeyCodes, jQuery) {
+sap.ui.define([
+	'sap/base/i18n/Localization',
+	'sap/ui/events/KeyCodes',
+	'sap/ui/thirdparty/jquery'
+], function(
+	Localization,
+	KeyCodes,
+	jQuery
+) {
 	"use strict";
 
 	/**
@@ -41,8 +49,10 @@ sap.ui.define(['sap/ui/events/KeyCodes', 'sap/ui/thirdparty/jquery'], function(K
 
 
 	/**
-	 * Enumeration of all so called "pseudo events", a useful classification
+	 * Map of all so called "pseudo events", a useful classification
 	 * of standard browser events as implied by SAP product standards.
+	 *
+	 * This map is intended to be used internally in UI5 framework and UI5 Controls.
 	 *
 	 * Whenever a browser event is recognized as one or more pseudo events, then this
 	 * classification is attached to the original {@link jQuery.Event} object and thereby
@@ -56,7 +66,7 @@ sap.ui.define(['sap/ui/events/KeyCodes', 'sap/ui/thirdparty/jquery'], function(K
 	 * be invoked only when that specific pseudo event has been recognized. This simplifies event
 	 * dispatching even further.
 	 *
-	 * @enum {object}
+	 * @type {Object<string, {sName: string, aTypes: string[], fnCheck: function(Event):boolean}>}
 	 * @public
 	 */
 	PseudoEvents.events = { // IMPORTANT: update the public documentation when extending this list
@@ -569,7 +579,7 @@ sap.ui.define(['sap/ui/events/KeyCodes', 'sap/ui/thirdparty/jquery'], function(K
 			sName: "sapdecrease",
 			aTypes: ["keydown"],
 			fnCheck: function(oEvent) {
-				var bRtl = sap.ui.getCore().getConfiguration().getRTL();
+				var bRtl = Localization.getRTL();
 				if (oEvent.key) {
 					if (bRtl) {
 						return (oEvent.key === "ArrowRight" || oEvent.key === "ArrowDown") && !hasModifierKeys(oEvent);
@@ -602,7 +612,7 @@ sap.ui.define(['sap/ui/events/KeyCodes', 'sap/ui/thirdparty/jquery'], function(K
 			sName: "sapdecreasemodifiers",
 			aTypes: ["keydown"],
 			fnCheck: function(oEvent) {
-				var bRtl = sap.ui.getCore().getConfiguration().getRTL();
+				var bRtl = Localization.getRTL();
 				if (oEvent.key) {
 					if (bRtl) {
 						return (oEvent.key === "ArrowRight" || oEvent.key === "ArrowDown") && hasModifierKeys(oEvent);
@@ -623,7 +633,7 @@ sap.ui.define(['sap/ui/events/KeyCodes', 'sap/ui/thirdparty/jquery'], function(K
 			sName: "sapincrease",
 			aTypes: ["keydown"],
 			fnCheck: function(oEvent) {
-				var bRtl = sap.ui.getCore().getConfiguration().getRTL();
+				var bRtl = Localization.getRTL();
 				var iNextKey;
 				if (oEvent.key) {
 					if (bRtl) {
@@ -657,7 +667,7 @@ sap.ui.define(['sap/ui/events/KeyCodes', 'sap/ui/thirdparty/jquery'], function(K
 			sName: "sapincreasemodifiers",
 			aTypes: ["keydown"],
 			fnCheck: function(oEvent) {
-				var bRtl = sap.ui.getCore().getConfiguration().getRTL();
+				var bRtl = Localization.getRTL();
 				if (oEvent.key) {
 					if (bRtl) {
 						return (oEvent.key === "ArrowLeft" || oEvent.key === "ArrowUp") && hasModifierKeys(oEvent);
@@ -679,7 +689,7 @@ sap.ui.define(['sap/ui/events/KeyCodes', 'sap/ui/thirdparty/jquery'], function(K
 			sName: "sapprevious",
 			aTypes: ["keydown"],
 			fnCheck: function(oEvent) {
-				var bRtl = sap.ui.getCore().getConfiguration().getRTL();
+				var bRtl = Localization.getRTL();
 				if (oEvent.key) {
 					if (bRtl) {
 						return (oEvent.key === "ArrowRight" || oEvent.key === "ArrowUp") && !hasModifierKeys(oEvent);
@@ -700,7 +710,7 @@ sap.ui.define(['sap/ui/events/KeyCodes', 'sap/ui/thirdparty/jquery'], function(K
 			sName: "sappreviousmodifiers",
 			aTypes: ["keydown"],
 			fnCheck: function(oEvent) {
-				var bRtl = sap.ui.getCore().getConfiguration().getRTL();
+				var bRtl = Localization.getRTL();
 				if (oEvent.key) {
 					if (bRtl) {
 						return (oEvent.key === "ArrowRight" || oEvent.key === "ArrowUp") && hasModifierKeys(oEvent);
@@ -721,7 +731,7 @@ sap.ui.define(['sap/ui/events/KeyCodes', 'sap/ui/thirdparty/jquery'], function(K
 			sName: "sapnext",
 			aTypes: ["keydown"],
 			fnCheck: function(oEvent) {
-				var bRtl = sap.ui.getCore().getConfiguration().getRTL();
+				var bRtl = Localization.getRTL();
 				if (oEvent.key) {
 					if (bRtl) {
 						return (oEvent.key === "ArrowLeft" || oEvent.key === "ArrowDown") && !hasModifierKeys(oEvent);
@@ -742,7 +752,7 @@ sap.ui.define(['sap/ui/events/KeyCodes', 'sap/ui/thirdparty/jquery'], function(K
 			sName: "sapnextmodifiers",
 			aTypes: ["keydown"],
 			fnCheck: function(oEvent) {
-				var bRtl = sap.ui.getCore().getConfiguration().getRTL();
+				var bRtl = Localization.getRTL();
 				if (oEvent.key) {
 					if (bRtl) {
 						return (oEvent.key === "ArrowLeft" || oEvent.key === "ArrowDown") && hasModifierKeys(oEvent);

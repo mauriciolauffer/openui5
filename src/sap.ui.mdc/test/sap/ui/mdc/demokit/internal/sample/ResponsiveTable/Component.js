@@ -2,9 +2,9 @@
 
 sap.ui.define([
 	"../component/BaseComponent",
-	"sap/ui/mdc/library",
-	"sap/ui/model/json/JSONModel"
-], function(BaseComponent, library, JSONModel) {
+	"sap/ui/model/json/JSONModel",
+	"sap/ui/mdc/enums/TableGrowingMode"
+], function(BaseComponent, JSONModel, GrowingMode) {
 	"use strict";
 
 	return BaseComponent.extend("sap.ui.mdc.sample.ResponsiveTable.Component", {
@@ -13,9 +13,9 @@ sap.ui.define([
 			// call the init function of the parent
 			BaseComponent.prototype.init.apply(this, arguments);
 
-			var aGrowingModes = [];
-			for (var p in library.GrowingMode) {
-				aGrowingModes.push({key: p, text: library.GrowingMode[p]});
+			const aGrowingModes = [];
+			for (const p in GrowingMode) {
+				aGrowingModes.push({key: p, text: GrowingMode[p]});
 			}
 
 			this.setModel(new JSONModel(

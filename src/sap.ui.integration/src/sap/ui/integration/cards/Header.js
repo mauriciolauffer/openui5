@@ -8,10 +8,12 @@ sap.ui.define([
 	"sap/f/cards/Header",
 	"sap/f/cards/HeaderRenderer",
 	"sap/m/library",
+	"sap/m/Text",
 	"sap/ui/integration/util/BindingHelper",
 	"sap/ui/integration/util/BindingResolver",
 	"sap/ui/integration/util/LoadingProvider",
-	"sap/ui/integration/util/Utils"
+	"sap/ui/integration/util/Utils",
+	"sap/ui/integration/formatters/IconFormatter"
 ], function (
 	Core,
 	JSONModel,
@@ -19,10 +21,12 @@ sap.ui.define([
 	FHeader,
 	FHeaderRenderer,
 	mLibrary,
+	Text,
 	BindingHelper,
 	BindingResolver,
 	LoadingProvider,
-	Utils
+	Utils,
+	IconFormatter
 ) {
 	"use strict";
 
@@ -49,7 +53,7 @@ sap.ui.define([
 	 */
 	var Header = FHeader.extend("sap.ui.integration.cards.Header", {
 
-		constructor: function (mConfiguration, oActionsToolbar, oIconFormatter) {
+		constructor: function (sId, mConfiguration, oActionsToolbar, oIconFormatter) {
 
 			mConfiguration = mConfiguration || {};
 
@@ -64,6 +68,7 @@ sap.ui.define([
 
 			if (mConfiguration.status && mConfiguration.status.text && !mConfiguration.status.text.format) {
 				mSettings.statusText = mConfiguration.status.text;
+				mSettings.statusVisible = mConfiguration.status.visible;
 			}
 
 			if (mConfiguration.icon) {
@@ -84,11 +89,27 @@ sap.ui.define([
 				});
 			}
 
+			if (mConfiguration.banner) {
+				mSettings.bannerLines = mConfiguration.banner.map(function (mBannerLine) { // TODO validate that it is an array and with no more than 2 elements
+					var oBannerLine = new Text({
+						text: mBannerLine.text,
+						visible: mBannerLine.visible
+					});
+
+					if (mBannerLine.diminished) {
+						oBannerLine.addStyleClass("sapFCardHeaderBannerLineDiminished");
+					}
+
+					return oBannerLine;
+				});
+			}
+
 			mSettings.toolbar = oActionsToolbar;
 
-			FHeader.call(this, mSettings);
+			FHeader.call(this, sId, mSettings);
 
 			this._oConfiguration = mConfiguration;
+			this._oIconFormatter = oIconFormatter;
 		},
 
 		metadata: {
@@ -151,7 +172,14 @@ sap.ui.define([
 	/**
 	 * @override
 	 */
-	Header.prototype._isInteractive = function () {
+	Header.prototype.shouldShowIcon = function () {
+		return this.getIconVisible() && this.getIconSrc() !== IconFormatter.SRC_FOR_HIDDEN_ICON;
+	};
+
+	/**
+	 * @override
+	 */
+	Header.prototype.isInteractive = function () {
 		return this.getInteractive();
 	};
 
@@ -164,15 +192,21 @@ sap.ui.define([
 	};
 
 	Header.prototype.isLoading = function () {
-		var oLoadingProvider = this.getAggregation("_loadingProvider"),
-			oCard = this.getCardInstance(),
-			bCardLoading = oCard && oCard.isA("sap.ui.integration.widgets.Card") ? oCard.isLoading() : false;
+		if (!this.isReady()) {
+			return true;
+		}
 
-		return !oLoadingProvider.isDataProviderJson() && (oLoadingProvider.getLoading() || bCardLoading);
+		if (this._oDataProvider) {
+			return this.getAggregation("_loadingProvider").getLoading();
+		}
+
+		var oCard = this.getCardInstance();
+
+		return oCard && oCard.isLoading();
 	};
 
-	Header.prototype._handleError = function (sLogMessage) {
-		this.fireEvent("_error", { logMessage: sLogMessage });
+	Header.prototype._handleError = function (mErrorInfo) {
+		this.fireEvent("_error", { errorInfo: mErrorInfo });
 	};
 
 	/**
@@ -215,6 +249,10 @@ sap.ui.define([
 			oConfiguration.status.text = oBindingInfo;
 		}
 
+		if (oConfiguration.icon && oConfiguration.icon.src) {
+			oConfiguration.icon.src = this._oIconFormatter.formatSrc(BindingResolver.resolveValue(oConfiguration.icon.src, this));
+		}
+
 		return oConfiguration;
 	};
 
@@ -241,8 +279,6 @@ sap.ui.define([
 
 		this._oDataProvider = this._oDataProviderFactory.create(oDataSettings, this._oServiceManager);
 
-		this.getAggregation("_loadingProvider").setDataProvider(this._oDataProvider);
-
 		if (oDataSettings && oDataSettings.name) {
 			oModel = oCard.getModel(oDataSettings.name);
 		} else if (this._oDataProvider) {
@@ -261,7 +297,10 @@ sap.ui.define([
 			}.bind(this));
 
 			this._oDataProvider.attachError(function (oEvent) {
-				this._handleError(oEvent.getParameter("message"));
+				this._handleError({
+					requestErrorParams: oEvent.getParameters(),
+					requestSettings: this._oDataProvider.getSettings()
+				});
 				this.onDataRequestComplete();
 			}.bind(this));
 
@@ -282,7 +321,9 @@ sap.ui.define([
 	 * @ui5-restricted
 	 */
 	Header.prototype.showLoadingPlaceholders = function () {
-		this.getAggregation("_loadingProvider").setLoading(true);
+		if (!this._isDataProviderJson()) {
+			this.getAggregation("_loadingProvider").setLoading(true);
+		}
 	};
 
 	/**
@@ -311,6 +352,10 @@ sap.ui.define([
 	 */
 	Header.prototype.getCardInstance = function () {
 		return Core.byId(this.getCard());
+	};
+
+	Header.prototype._isDataProviderJson = function () {
+		return this._oDataProvider && this._oDataProvider.getSettings() && this._oDataProvider.getSettings()["json"];
 	};
 
 	return Header;

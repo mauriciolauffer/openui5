@@ -1,5 +1,4 @@
 sap.ui.define([
-	"sap/base/util/UriParameters",
 	"sap/base/Log",
 	"sap/ui/core/mvc/Controller",
 	"sap/ui/core/util/MockServer",
@@ -8,9 +7,8 @@ sap.ui.define([
 	"sap/ui/model/odata/v2/ODataModel",
 	"sap/ui/model/odata/CountMode",
 	"sap/ui/fl/Utils",
-	"sap/ui/core/Core"
+	"sap/ui/core/Element"
 ], function(
-	UriParameters,
 	Log,
 	Controller,
 	MockServer,
@@ -19,15 +17,15 @@ sap.ui.define([
 	ODataModel,
 	CountMode,
 	FlUtils,
-	oCore
+	Element
 ) {
 	"use strict";
 
-	Controller.extend("sap.ui.rta.qunitrta.ComplexTest", {
-		onInit: function () {
+	return Controller.extend("sap.ui.rta.qunitrta.ComplexTest", {
+		onInit() {
 			this._sResourcePath = sap.ui.require.toUrl("sap/ui/rta/test");
 			var oManifest = FlUtils.getAppComponentForControl(this.getView()).getManifest();
-			var iServerDelay = UriParameters.fromQuery(window.location.search).get("serverDelay");
+			var iServerDelay = new URLSearchParams(window.location.search).get("serverDelay");
 
 			var iAutoRespond = iServerDelay || 1000;
 			var oMockServer;
@@ -35,7 +33,7 @@ sap.ui.define([
 			var sMockServerPath;
 			var sMetadataUrl;
 			var aEntities = [];
-			var oDataSources = oManifest["sap.app"]["dataSources"];
+			var oDataSources = oManifest["sap.app"].dataSources;
 
 			MockServer.config({
 				autoRespond: true,
@@ -43,7 +41,7 @@ sap.ui.define([
 			});
 
 			var fnGetDataPromise = function(oView) {
-				return new Promise(function (resolve) {
+				return new Promise(function(resolve) {
 					oView.bindElement({
 						path: "/Headers(AccountingDocument='100015012',CompanyCode='0001',FiscalYear='2015')",
 						events: {
@@ -57,7 +55,7 @@ sap.ui.define([
 				if (oDataSources.hasOwnProperty(property)) {
 					dataSource = oDataSources[property];
 
-					//do we have a mock url in the app descriptor
+					// do we have a mock url in the app descriptor
 					if (dataSource.settings && dataSource.settings.localUri) {
 						if (typeof dataSource.type === "undefined" || dataSource.type === "OData") {
 							oMockServer = new MockServer({
@@ -72,9 +70,9 @@ sap.ui.define([
 								aEntitySetsNames: aEntities
 							});
 						}
-						//else if *Other types can be inserted here, like Annotations*
+						// else if *Other types can be inserted here, like Annotations*
 						oMockServer.start();
-						Log.info("Running the app with mock data for " + property);
+						Log.info(`Running the app with mock data for ${property}`);
 
 						if (property === "mainService") {
 							var oModel;
@@ -106,27 +104,27 @@ sap.ui.define([
 							this._dataPromise = fnGetDataPromise(oView);
 						}
 					} else {
-						Log.error("Running the app with mock data for " + property);
+						Log.error(`Running the app with mock data for ${property}`);
 					}
 				}
 			}
 		},
 
-		switchToAdaptionMode: function() {
+		switchToAdaptionMode() {
 			sap.ui.require(["sap/ui/rta/api/startAdaptation"], function(startAdaptation) {
-				var sUriParam = UriParameters.fromQuery(window.location.search).get("sap-ui-xx-ccf");
+				var sUriParam = new URLSearchParams(window.location.search).get("sap-ui-xx-ccf");
 				startAdaptation({
-					rootControl: oCore.byId("Comp1---idMain1"),
-					customFieldUrl: this._sResourcePath + "/testdata/rta/CustomField.html",
+					rootControl: Element.getElementById("Comp1---idMain1"),
+					customFieldUrl: `${this._sResourcePath}/testdata/rta/CustomField.html`,
 					showCreateCustomField: sUriParam === "true",
-					stop: function() {
+					stop() {
 						this.destroy();
 					}
 				});
 			}.bind(this));
 		},
 
-		isDataReady: function () {
+		isDataReady() {
 			return this._dataPromise;
 		}
 	});

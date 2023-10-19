@@ -1,4 +1,4 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/ui/fl/util/DescriptorChangeCheck",
@@ -18,10 +18,10 @@ sap.ui.define([
 	}
 
 	function assertReserverd(sId, oChange, sPrefix, assert) {
-		assertNotCompliant(sId, oChange, "Id " + sId + " must not start with reserved " + sPrefix, "throws error that there is reserved '" + sPrefix + "' prefix", assert);
+		assertNotCompliant(sId, oChange, `Id ${sId} must not start with reserved ${sPrefix}`, `throws error that there is reserved '${sPrefix}' prefix`, assert);
 	}
 	function assertMissing(sId, oChange, sPrefix, assert) {
-		assertNotCompliant(sId, oChange, "Id " + sId + " must start with " + sPrefix, "throws error that there is no mandatory '" + sPrefix + "' prefix", assert);
+		assertNotCompliant(sId, oChange, `Id ${sId} must start with ${sPrefix}`, `throws error that there is no mandatory '${sPrefix}' prefix`, assert);
 	}
 
 	QUnit.module("sap.ui.fl.DescriptorChangeCheck.checkIdNamespaceCompliance", {}, function() {
@@ -66,6 +66,30 @@ sap.ui.define([
 			assert.throws(function() {
 				DescriptorChangeCheck.getNamespacePrefixForLayer(Layer.USER);
 			}, Error("Layer USER not supported."), "Layer USER is not supported");
+		});
+	});
+
+	QUnit.module("sap.ui.fl.DescriptorChangeCheck.getClearedGenericPath", {}, function() {
+		QUnit.test("Correct cleared array", function(assert) {
+			var aClearedGernicPath1 = DescriptorChangeCheck.getClearedGenericPath(["title", "subTitle", "some1/path1/*", "icon"]);
+			var aClearedGernicPath2 = DescriptorChangeCheck.getClearedGenericPath(["title", "subTitle", "signature1/parameters1/*/*/*", "icon", "signature2/parameters2/*"]);
+			var aClearedGernicPath3 = DescriptorChangeCheck.getClearedGenericPath(["/*"]);
+			var aClearedGernicPath4 = DescriptorChangeCheck.getClearedGenericPath(["/*", "/*/*/*", "/*"]);
+			assert.deepEqual(aClearedGernicPath1, ["some1/path1"], "Correct returned array");
+			assert.deepEqual(aClearedGernicPath2, ["signature1/parameters1", "signature2/parameters2"], "Correct returned array");
+			assert.deepEqual(aClearedGernicPath3, [], "Correct returned array");
+			assert.deepEqual(aClearedGernicPath4, [], "Correct returned array");
+		});
+	});
+
+	QUnit.module("sap.ui.fl.DescriptorChangeCheck.isGenericPropertyPathSupported", {}, function() {
+		QUnit.test("Testing if gernic propertyPath is suporrted", function(assert) {
+			assert.equal(DescriptorChangeCheck.isGenericPropertyPathSupported(["title", "subTitle", "some1/path1/*", "icon"], "some1/path1/property1/property2"), true, "Generic property path is supported");
+			assert.equal(DescriptorChangeCheck.isGenericPropertyPathSupported(["title", "subTitle", "some1/path1/*", "icon"], "some1/path1/property1"), true, "Generic property path is supported");
+			assert.equal(DescriptorChangeCheck.isGenericPropertyPathSupported(["title", "subTitle", "signature1/parameters1/*/*/*", "icon", "signature2/parameters2/*"], "signature1/parameters1/property1"), true, "Generic property path is supported");
+			assert.equal(DescriptorChangeCheck.isGenericPropertyPathSupported(["title", "subTitle", "signature1/parameters1/*/*/*", "icon", "signature2/parameters2/*"], "signature2/parameters2/property1/property2"), true, "Generic property path is supported");
+			assert.equal(DescriptorChangeCheck.isGenericPropertyPathSupported(["title", "subTitle", "signature1/parameters1/*/*/*", "icon", "signature2/parameters2/*"], "signature1/parameters2/property1/property2"), false, "Generic property path is not supported");
+			assert.equal(DescriptorChangeCheck.isGenericPropertyPathSupported(["title", "subTitle", "icon"], "icon"), false, "Only Gernic properties will be checked");
 		});
 	});
 });

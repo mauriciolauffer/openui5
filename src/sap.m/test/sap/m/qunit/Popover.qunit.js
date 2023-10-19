@@ -507,6 +507,19 @@ sap.ui.define([
 
 			assert.strictEqual(oPopover3._oCalcedPos, expectedPlace);
 
+			/**
+			 * @deprecated Since version 1.36
+			 *
+			 * Repeat the test a second time for the legacy values of PlacementType
+			 */
+			if (placement.includes("Preferred")) {
+				const legacyPlacement = placement.replace("Preferred", "Prefered");
+				oPopover3.setPlacement(legacyPlacement);
+				oPopover3._calcPlacement();
+
+				assert.strictEqual(oPopover3._oCalcedPos, expectedPlace);
+			}
+
 			stubOpenByRef.restore();
 			stubOffset.restore();
 			stubOffsetTop.restore();
@@ -518,26 +531,20 @@ sap.ui.define([
 		testCase(450, 50, 500, PlacementType.Vertical, PlacementType.Top);
 
 		// Preferred Top
-		testCase(400, 50, 500, PlacementType.VerticalPreferedTop, PlacementType.Top); // You have enough space to the Top and Top space is greater than the Bottom space
 		testCase(400, 50, 500, PlacementType.VerticalPreferredTop, PlacementType.Top); // You have enough space to the Top and Top space is greater than the Bottom space
-		testCase(150, 50, 500, PlacementType.VerticalPreferedTop, PlacementType.Top); // You have enough space to the Top but Top space is smaller than the Bottom space
 		testCase(150, 50, 500, PlacementType.VerticalPreferredTop, PlacementType.Top); // You have enough space to the Top but Top space is smaller than the Bottom space
-		testCase(40, 50, 500, PlacementType.VerticalPreferedTop, PlacementType.Bottom); // You do not have enough space at the preferred position, so the position with more space is used
 		testCase(40, 50, 500, PlacementType.VerticalPreferredTop, PlacementType.Bottom); // You do not have enough space at the preferred position, so the position with more space is used
 
 		// Preferred Bottom
-		testCase(100, 50, 500, PlacementType.VerticalPreferedBottom, PlacementType.Bottom); // You have enough space to the Bottom and Bottom space is greater than the Top space
 		testCase(100, 50, 500, PlacementType.VerticalPreferredBottom, PlacementType.Bottom); // You have enough space to the Bottom and Bottom space is greater than the Top space
-		testCase(350, 50, 500, PlacementType.VerticalPreferedBottom, PlacementType.Bottom); // You have enough space to the Bottom but Bottom space is smaller than the Bottom space
 		testCase(350, 50, 500, PlacementType.VerticalPreferredBottom, PlacementType.Bottom); // You have enough space to the Bottom but Bottom space is smaller than the Bottom space
-		testCase(450, 50, 500, PlacementType.VerticalPreferedBottom, PlacementType.Top); // You do not have enough space at the preferred position, so the position with more space is used
 		testCase(450, 50, 500, PlacementType.VerticalPreferredBottom, PlacementType.Top); // You do not have enough space at the preferred position, so the position with more space is used
 	});
 
 	QUnit.test("Vertical calculation of Popover position when Popover's content is bigger than the screen height and preferredVertical is set", function(assert){
 
 		var oList = new List();
-		var oPopover = new Popover({ placement: "VerticalPreferedBottom"});
+		var oPopover = new Popover({ placement: "VerticalPreferredBottom"});
 
 		for (var i = 0; i < 1000; i++) {
 			oList.addItem(new StandardListItem());
@@ -635,22 +642,14 @@ sap.ui.define([
 			stubWindowWidth.restore();
 		};
 
-		testCase(400, 50, 500, PlacementType.HorizontalPreferedLeft, PlacementType.Left);
-
 		// Preferred Left
-		testCase(400, 50, 500, PlacementType.HorizontalPreferedLeft, PlacementType.Left); // You have enough space to the Left and Left space is greater than the Right space
 		testCase(400, 50, 500, PlacementType.HorizontalPreferredLeft, PlacementType.Left); // You have enough space to the Left and Left space is greater than the Right space
-		testCase(100, 50, 500, PlacementType.HorizontalPreferedLeft, PlacementType.Left); // You have enough space to the Left but Left space is smaller than the Right space
 		testCase(100, 50, 500, PlacementType.HorizontalPreferredLeft, PlacementType.Left); // You have enough space to the Left but Left space is smaller than the Right space
-		testCase(40, 50, 500, PlacementType.HorizontalPreferedLeft, PlacementType.Right); // You do not have enough space at the preferred position, so the position with more space is used
 		testCase(40, 50, 500, PlacementType.HorizontalPreferredLeft, PlacementType.Right); // You do not have enough space at the preferred position, so the position with more space is used
 
 		// Preferred Right
-		testCase(100, 50, 500, PlacementType.HorizontalPreferedRight, PlacementType.Right); // You have enough space to the Right and Right space is greater than the Left space
 		testCase(100, 50, 500, PlacementType.HorizontalPreferredRight, PlacementType.Right); // You have enough space to the Right and Right space is greater than the Left space
-		testCase(350, 50, 500, PlacementType.HorizontalPreferedRight, PlacementType.Right); // You have enough space to the Right but Right space is smaller than the Left space
 		testCase(350, 50, 500, PlacementType.HorizontalPreferredRight, PlacementType.Right); // You have enough space to the Right but Right space is smaller than the Left space
-		testCase(450, 50, 500, PlacementType.HorizontalPreferedRight, PlacementType.Left); // You do not have enough space at the preferred position, so the position with more space is used
 		testCase(450, 50, 500, PlacementType.HorizontalPreferredRight, PlacementType.Left); // You do not have enough space at the preferred position, so the position with more space is used
 	});
 
@@ -761,11 +760,13 @@ sap.ui.define([
 	});
 
 	QUnit.test("Add right button", function (assert){
+		var oInserAggregationSpy = this.spy(oPopover._internalHeader.insertAggregation);
 		oPopover.setEndButton(oEndButton);
 		oCore.applyChanges();
 		assert.ok(document.getElementById("endButton"), "EndButton should be rendered");
 		assert.ok(oEndButton.$().closest("#" + oPopover.getId() + "-intHeader-BarRight")[0], "EndButton is set in the right side of the bar");
 
+		assert.notOk(oInserAggregationSpy.called, "insert aggregation should not be called");
 		if (!Device.support.touch) {
 			assert.equal(oEndButton.getFocusDomRef(), document.activeElement, "endButton should be focused, when beginButton is disabled");
 		}
@@ -1598,15 +1599,16 @@ sap.ui.define([
 			assert.equal(domQueryLength,  0, "Arrow not found in popover because not desktop device");
 		} else {
 			// Assert when resizable
-			var domQueryLength = this.oPopover.getDomRef().querySelectorAll('.sapMPopoverResizeHandle').length;
-			assert.equal(domQueryLength,  1, "Arrow found in popover");
+			var domQuery = this.oPopover.getDomRef().querySelectorAll('.sapMPopoverResizeHandle');
+			assert.equal(domQuery.length,  1, "Arrow found in popover");
+			assert.equal(domQuery[0].getAttribute("aria-hidden"), "true", "Aria-hidden should be added to the icon.");
 
 			this.oPopover.setResizable(false);
 			this.oPopover.rerender();
 
 			// Assert when not resizable
-			var domQueryLength = this.oPopover.getDomRef().querySelectorAll('.sapMPopoverResizeHandle').length;
-			assert.equal(domQueryLength,  0, "Arrow not found in popover");
+			domQuery = this.oPopover.getDomRef().querySelectorAll('.sapMPopoverResizeHandle');
+			assert.equal(domQuery.length,  0, "Arrow not found in popover");
 		}
 	});
 
@@ -1972,9 +1974,9 @@ sap.ui.define([
 		oPopover._adaptPositionParams();
 
 		assert.equal(oPopover._marginTop, 0, "_marginTop should be 0");
-		assert.equal(oPopover._marginRight, 0, "_marginTop should be 0");
-		assert.equal(oPopover._marginBottom, 0, "_marginTop should be 0");
-		assert.equal(oPopover._marginLeft, 0, "_marginTop should be 0");
+		assert.equal(oPopover._marginRight, 0, "_marginRight should be 0");
+		assert.equal(oPopover._marginBottom, 0, "_marginBttom should be 0");
+		assert.equal(oPopover._marginLeft, 0, "_marginLeft should be 0");
 		assert.equal(oPopover._arrowOffset, 0, "_arrowoffset should be 0");
 		assert.deepEqual(oPopover._offsets, ["0 0", "0 0", "0 0", "0 0"], "offsets should be correct according the arrowOffset");
 		assert.deepEqual(oPopover._myPositions, ["begin bottom", "begin center", "begin top", "end center"], "myPositions should be correct");

@@ -6,7 +6,7 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
   });
   _exports.pathData = _exports.ltr = _exports.default = _exports.accData = void 0;
   const name = "badge";
-  const pathData = "M409 96L256 52 102 96v160q0 43 19 77.5t44.5 60T217 435t39 23q13-7 38.5-23t51-41.5 44.5-60 19-77.5V96zm33-44q19 5 19 25v179q0 42-14 77t-35 63-45.5 49-46.5 35.5-37 21.5-17 8q-6 2-10 2t-10-2q-2-1-17-8t-37-21.5-46.5-35.5-45.5-49-35-63-14-77V77q0-20 19-25L249 1q6-2 14 0zM231 174q2-9 9-14.5t16-5.5 16 5.5 9 14.5l9 47 48 10q9 2 14.5 9t5.5 16-5.5 16-14.5 9l-48 10-9 47q-2 9-9 14.5t-16 5.5-16-5.5-9-14.5l-10-47-47-10q-9-2-15-9t-6-16 6-16 15-9l47-10z";
+  const pathData = "M256 512q-8 0-24-8t-32.5-19-31-21.5T148 448q-49-42-74.5-90T48 256V97q0-18 19-25L249 1q2-1 7-1t7 1l182 71q19 7 19 25v159q0 43-16.5 82T404 409.5 343 467t-69 40q-14 5-18 5zM99 116v140q0 35 13.5 65.5t36 56 50.5 46 57 34.5q29-14 57-34.5t50.5-46 36-56T413 256V116L256 52zm191 64l48 7q14 2 14 16 0 7-4 11l-35 37 8 53q0 16-16 16-2 0-8-2l-41-24-41 24q-6 2-8 2-16 0-16-16l8-53-34-37q-5-4-5-11 0-14 14-16l48-7 19-43q5-9 15-9 11 0 15 9z";
   _exports.pathData = pathData;
   const ltr = false;
   _exports.ltr = ltr;
@@ -20,6 +20,6 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
     collection,
     packageName
   });
-  var _default = "badge";
+  var _default = "SAP-icons-v5/badge";
   _exports.default = _default;
 });

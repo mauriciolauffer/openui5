@@ -192,11 +192,6 @@ Copyright: 2012 Matteo Spinelli
 License: MIT
 Comment: these files belong to: cubiq.org - swipeview
 
-Files: src/sap.ui.core/src/sap/ui/thirdparty/mobify-carousel.js
-Copyright: Mobify R&D Inc.
-License: MIT
-Comment: these files belong to: Mobify.js
-
 Files: src/sap.ui.core/src/sap/ui/thirdparty/zyngascroll.js
 Copyright: 2011 Zynga Inc.
 License: MIT
@@ -461,11 +456,6 @@ Comment: these files belong to: UI5 Web Components
 
 
 # Outside of Libraries:
-
-Files: src/testsuite-utils/src/main/resources/META-INF/less/less.js
-Copyright: 2009-2014, Alexis Sellier <self@cloudhead.net>
-License: Apache-2.0
-Comment: these files belong to: LESS
 
 Files: lib/jsdoc/ui5/plugin.js
 Copyright:

@@ -26,7 +26,8 @@ sap.ui.define([
 	"sap/m/HBox",
 	"sap/ui/model/json/JSONModel",
 	"sap/m/IllustratedMessageType",
-	"sap/m/IllustratedMessageSize"
+	"sap/m/IllustratedMessageSize",
+	"sap/ui/integration/formatters/IconFormatter"
 ],
 	function (
 		Card,
@@ -54,7 +55,8 @@ sap.ui.define([
 		HBox,
 		JSONModel,
 		IllustratedMessageType,
-		IllustratedMessageSize
+		IllustratedMessageSize,
+		IconFormatter
 	) {
 		"use strict";
 
@@ -63,6 +65,7 @@ sap.ui.define([
 		var AvatarColor = mLibrary.AvatarColor;
 		var MessageType = coreLibrary.MessageType;
 		var CardDataMode = library.CardDataMode;
+		var CardBlockingMessageType = library.CardBlockingMessageType;
 
 		var oManifest_Header = {
 			"sap.app": {
@@ -680,24 +683,6 @@ sap.ui.define([
 			}
 		};
 
-		var oManifest_No_Data_List = {
-			"sap.app": {
-				"id": "test.card.NoData"
-			},
-			"sap.card": {
-				"type": "List",
-				"header": {},
-				"content": {
-					"item": {
-						"title": ""
-					}
-				},
-				"data": {
-					"json": []
-				}
-			}
-		};
-
 		var oManifest_List_Simple = {
 			"sap.app": {
 				"id": "my.card.qunit.test.ListCardSimple"
@@ -745,20 +730,10 @@ sap.ui.define([
 					"json": {
 						"firstName": "Donna",
 						"lastName": "Moore",
-						"position": "Sales Executive",
-						"phone": "+1 202 555 5555",
-						"email": "my@mymail.com",
-						"photo": "./DonnaMoore.png",
-						"agendaUrl": "/agenda",
 						"manager": {
 						},
 						"company": {
-							"name": "Robert Brown Entertainment",
-							"address": "481 West Street, Anytown OH 45066, USA",
-							"email": "mail@mycompany.com",
-							"emailSubject": "Subject",
-							"website": "www.company_a.example.com",
-							"url": "https://www.company_a.example.com"
+							"name": "Robert Brown Entertainment"
 						}
 					}
 				},
@@ -772,144 +747,10 @@ sap.ui.define([
 								{
 									"label": "First Name",
 									"value": "{firstName}"
-								},
-								{
-									"label": "Last Name",
-									"value": "{lastName}"
-								},
-								{
-									"label": "Phone",
-									"value": "{phone}",
-									"actions": [
-										{
-											"type": "Navigation",
-											"parameters": {
-												"url": "tel:{phone}"
-											}
-										}
-									]
-								},
-								{
-									"label": "Email",
-									"value": "{email}",
-									"actions": [
-										{
-											"type": "Navigation",
-											"parameters": {
-												"url": "mailto:{email}"
-											}
-										}
-									]
-								},
-								{
-									"label": "Agenda",
-									"value": "Book a meeting",
-									"actions": [
-										{
-											"type": "Navigation",
-											"enabled": "{= ${agendaUrl}}",
-											"parameters": {
-												"url": "{agendaUrl}"
-											}
-										}
-									]
-								}
-							]
-						},
-						{
-							"title": "Company Details",
-							"items": [
-								{
-									"label": "Company Name",
-									"value": "{company/name}"
-								},
-								{
-									"label": "Address",
-									"value": "{company/address}"
-								},
-								{
-									"label": "Email",
-									"value": "{company/email}",
-									"actions": [
-										{
-											"type": "Navigation",
-											"parameters": {
-												"url": "mailto:{company/email}?subject={company/emailSubject}"
-											}
-										}
-									]
-								},
-								{
-									"label": "Website",
-									"value": "{company/website}",
-									"actions": [
-										{
-											"type": "Navigation",
-											"parameters": {
-												"url": "{company/url}"
-											}
-										}
-									]
-								}
-							]
-						},
-						{
-							"title": "Organizational Details",
-							"items": [
-								{
-									"label": "Direct Manager",
-									"value": "{manager/firstName} {manager/lastName}",
-									"icon": {
-										"src": "{manager/photo}"
-									}
 								}
 							]
 						}
 					]
-				}
-			}
-		};
-		var oManifest_No_Data_Table = {
-			"sap.app": {
-				"id": "test.card.NoData"
-			},
-			"sap.card": {
-				"type": "Table",
-				"header": {},
-				"content": {
-					"row": {
-						"columns": [{
-							"title": "Sales Order",
-							"value": "{salesOrder}",
-							"identifier": true
-						},
-							{
-								"title": "Customer",
-								"value": "{customerName}"
-							},
-							{
-								"title": "Net Amount",
-								"value": "{netAmount}",
-								"hAlign": "End"
-							},
-							{
-								"title": "Status",
-								"value": "{status}",
-								"state": "{statusState}"
-							},
-							{
-								"title": "Delivery Progress",
-								"progressIndicator": {
-									"percent": "{deliveryProgress}",
-									"text": "{= format.percent(${deliveryProgress} / 100)}",
-									"state": "{statusState}"
-								}
-							}
-						]
-					}
-				},
-				"data": {
-					json: []
 				}
 			}
 		};
@@ -1030,7 +871,7 @@ sap.ui.define([
 			oCard.destroy();
 		});
 
-		QUnit.test("Register module path", function (assert) {
+		QUnit.test("Register module path for card with manifest as object, without baseUrl", function (assert) {
 			// Arrange
 			var done = assert.async(),
 				oCard = new Card({
@@ -1041,7 +882,7 @@ sap.ui.define([
 			oCard.attachEventOnce("_ready", function () {
 				// Assert
 				assert.ok(fnRegisterSpy.called, "LoaderExtensions.registerResourcePath is called.");
-				assert.ok(fnRegisterSpy.calledWith("my/card/qunit/test/ListCard", "resources/my/card/qunit/test/ListCard/"), "LoaderExtensions.registerResourcePath is called with correct params.");
+				assert.ok(fnRegisterSpy.calledWith("my/card/qunit/test/ListCard", "/"), "LoaderExtensions.registerResourcePath is called with correct params.");
 
 				// Clean up
 				oCard.destroy();
@@ -1051,7 +892,54 @@ sap.ui.define([
 
 			// Act
 			oCard.placeAt(DOM_RENDER_LOCATION);
-			Core.applyChanges();
+		});
+
+		QUnit.test("Register module path for card with manifest as object, with baseUrl", function (assert) {
+			// Arrange
+			var done = assert.async(),
+				sBaseUrl = "test-resources/sap/ui/integration/qunit/testResources/cardWithTranslations",
+				oCard = new Card({
+					manifest: oManifest_ListCard,
+					baseUrl: sBaseUrl
+				}),
+				fnRegisterSpy = sinon.spy(LoaderExtensions, "registerResourcePath");
+
+			oCard.attachEventOnce("_ready", function () {
+				// Assert
+				assert.ok(fnRegisterSpy.called, "LoaderExtensions.registerResourcePath is called.");
+				assert.ok(fnRegisterSpy.calledWith("my/card/qunit/test/ListCard", sBaseUrl), "LoaderExtensions.registerResourcePath is called with correct params.");
+
+				// Clean up
+				oCard.destroy();
+				fnRegisterSpy.restore();
+				done();
+			});
+
+			// Act
+			oCard.placeAt(DOM_RENDER_LOCATION);
+		});
+
+		QUnit.test("Register module path for card with manifest given by URL", function (assert) {
+			// Arrange
+			var done = assert.async(),
+				oCard = new Card({
+					manifest: "test-resources/sap/ui/integration/qunit/testResources/cardWithTranslations/manifest.json"
+				}),
+				fnRegisterSpy = sinon.spy(LoaderExtensions, "registerResourcePath");
+
+			oCard.attachEventOnce("_ready", function () {
+				// Assert
+				assert.ok(fnRegisterSpy.called, "LoaderExtensions.registerResourcePath is called.");
+				assert.ok(fnRegisterSpy.calledWith("my/test/card", "test-resources/sap/ui/integration/qunit/testResources/cardWithTranslations"), "LoaderExtensions.registerResourcePath is called with correct params.");
+
+				// Clean up
+				oCard.destroy();
+				fnRegisterSpy.restore();
+				done();
+			});
+
+			// Act
+			oCard.placeAt(DOM_RENDER_LOCATION);
 		});
 
 		QUnit.test("Default model is not propagated", function (assert) {
@@ -1102,6 +990,28 @@ sap.ui.define([
 			// Act
 			oCard.setManifest({});
 			oCard.startManifestProcessing();
+		});
+
+		QUnit.test("Base url in combination with manifest path", function (assert) {
+			// Arrange
+			var done = assert.async(),
+				oCard = new Card({
+					manifest: "test-resources/sap/ui/integration/qunit/manifests/manifest.json",
+					baseUrl: "http://someurltest/"
+				});
+
+			oCard.attachEventOnce("_ready", function () {
+				// Assert
+				assert.strictEqual(oCard.getRuntimeUrl("/"), "http://someurltest/", "The given baseUrl is used for card base url.");
+
+				// Clean up
+				oCard.destroy();
+				done();
+			});
+
+			// Act
+			oCard.placeAt(DOM_RENDER_LOCATION);
+			Core.applyChanges();
 		});
 
 		QUnit.module("Clone");
@@ -1223,10 +1133,10 @@ sap.ui.define([
 					done();
 				});
 
-			this.oCard.createManifest(oManifest_ListCard);
+			this.oCard.createManifest(oManifest_ListCard, "");
 
 			this.oCard._destroyManifest();
-			this.oCard.createManifest(oManifest_ListCard);
+			this.oCard.createManifest(oManifest_ListCard, "");
 		});
 
 		QUnit.test("Manifest works if it has very deep structure", function (assert) {
@@ -1305,7 +1215,7 @@ sap.ui.define([
 			oCard.placeAt(DOM_RENDER_LOCATION);
 		});
 
-		QUnit.test("getRuntimeUrl", function (assert) {
+		QUnit.test("getRuntimeUrl when baseUrl is not set", function (assert) {
 			// Arrange
 			var done = assert.async(),
 				oCard = this.oCard,
@@ -1315,21 +1225,21 @@ sap.ui.define([
 					}
 				},
 				mSamples = new Map([
-					["", "resources/sample/card/"],
+					["", "/"],
+					["some.json", "/some.json"],
+
+					["./", "/./"],
+					["./images/Avatar.png", "/./images/Avatar.png"],
+
+					["/", "/"],
+					["/some.json", "/some.json"],
 
 					["//some.json", "//some.json"],
 
-					["./", "resources/sample/card/./"],
-					["./images/Avatar.png", "resources/sample/card/./images/Avatar.png"],
-
-					["/", "resources/sample/card/"],
-					["/some.json", "resources/sample/card/some.json"],
+					["../some.json", "/../some.json"],
 
 					["http://sap.com", "http://sap.com"],
-					["https://sap.com", "https://sap.com"],
-
-					["../some.json", "resources/sample/card/../some.json"],
-					["some.json", "resources/sample/card/some.json"]
+					["https://sap.com", "https://sap.com"]
 				]);
 
 			oCard.attachManifestReady(function () {
@@ -1344,6 +1254,50 @@ sap.ui.define([
 
 			// Act
 			oCard.setManifest(oManifest);
+			oCard.placeAt(DOM_RENDER_LOCATION);
+		});
+
+		QUnit.test("getRuntimeUrl when baseUrl is set", function (assert) {
+			// Arrange
+			var done = assert.async(),
+				oCard = this.oCard,
+				sBaseUrl = "https://sdk.openui5.org",
+				oManifest = {
+					"sap.app": {
+						"id": "sample.card"
+					}
+				},
+				mSamples = new Map([
+					["", sBaseUrl + "/"],
+					["some.json", sBaseUrl + "/some.json"],
+
+					["./", sBaseUrl + "/./"],
+					["./images/Avatar.png", sBaseUrl + "/./images/Avatar.png"],
+
+					["/", sBaseUrl + "/"],
+					["/some.json", sBaseUrl + "/some.json"],
+
+					["../some.json", sBaseUrl + "/../some.json"],
+
+					["//some.json", "//some.json"],
+
+					["http://sap.com", "http://sap.com"],
+					["https://sap.com", "https://sap.com"]
+				]);
+
+			oCard.attachManifestReady(function () {
+				// Assert
+				mSamples.forEach(function (sExpectedResult, sUrl) {
+					var sResult = oCard.getRuntimeUrl(sUrl);
+
+					assert.strictEqual(sResult, sExpectedResult, "Result is correct for '" + sUrl + "'.");
+				});
+				done();
+			});
+
+			// Act
+			oCard.setManifest(oManifest);
+			oCard.setBaseUrl(sBaseUrl);
 			oCard.placeAt(DOM_RENDER_LOCATION);
 		});
 
@@ -1506,6 +1460,30 @@ sap.ui.define([
 			}.bind(this));
 
 			this.oCard.setManifest("test-resources/sap/ui/integration/qunit/manifests/manifest.json");
+		});
+
+		QUnit.test("Any messages are removed after calling hideMessage", function (assert) {
+			var done = assert.async(),
+				oCard = this.oCard;
+
+			oCard.attachManifestApplied(function () {
+				oCard.attachEventOnce("stateChanged", function () {
+					oCard.attachEventOnce("stateChanged", function () {
+						var oContent = oCard.getCardContent(),
+							oMessageContainer = oContent.getAggregation("_messageContainer"),
+							aMessages = oMessageContainer.getItems();
+
+							assert.strictEqual(aMessages.length, 0, "There are no messages after hideMessage().");
+							done();
+						});
+					oCard.hideMessage();
+				});
+
+				// Act
+				oCard.showMessage();
+			});
+
+			oCard.setManifest("test-resources/sap/ui/integration/qunit/manifests/manifest.json");
 		});
 
 		QUnit.module("Default Header", {
@@ -1764,7 +1742,7 @@ sap.ui.define([
 			});
 		});
 
-		QUnit.test("header icon when visible property is set to false", function (assert) {
+		QUnit.test("Header icon when visible property is set to false", function (assert) {
 			// Arrange
 			var done = assert.async();
 
@@ -1801,7 +1779,7 @@ sap.ui.define([
 		});
 
 
-		QUnit.test("header icon when visible property is not set", function (assert) {
+		QUnit.test("Header icon when visible property is not set", function (assert) {
 			// Arrange
 			var done = assert.async();
 
@@ -1831,8 +1809,7 @@ sap.ui.define([
 			});
 		});
 
-
-		QUnit.test("hidden header icon if visible property is set to true", function (assert) {
+		QUnit.test("Hidden header icon if visible property is set to true", function (assert) {
 			// Arrange
 			var done = assert.async();
 
@@ -1862,6 +1839,117 @@ sap.ui.define([
 							"src": "",
 							"visible": "{iconVisible}",
 							"shape": "Circle"
+						}
+					}
+				}
+			});
+		});
+
+		QUnit.test("Header icon not visible when src set to IconFormatter.SRC_FOR_HIDDEN_ICON", function (assert) {
+			// Arrange
+			var done = assert.async();
+
+			this.oCard.attachEvent("_ready", function () {
+				Core.applyChanges();
+
+				// Assert
+				assert.notOk(this.oCard.getCardHeader().shouldShowIcon(), "Card Header icon should not be shown.");
+
+				done();
+			}.bind(this));
+
+			this.oCard.setManifest({
+				"sap.app": {
+					"id": "test.card.hiddenIconWithSrc"
+				},
+				"sap.card": {
+					"type": "List",
+					"data": {
+						"json": {
+							"iconVisible": true
+						}
+					},
+					"configuration": {
+						"parameters": {
+							"iconSrc": {
+								"value": "SRC_FOR_HIDDEN_ICON"
+							}
+						}
+					},
+					"header": {
+						"title": "Card header icon should be hidden",
+						"icon": {
+							"src": "{parameters>/iconSrc/value}",
+							"visible": "{iconVisible}"
+						}
+					}
+				}
+			});
+		});
+
+		QUnit.test("Header status text when visible property is set to false", function (assert) {
+			// Arrange
+			var done = assert.async();
+
+			this.oCard.attachEvent("_ready", function () {
+				Core.applyChanges();
+				// Assert
+				assert.notOk(this.oCard.getCardHeader().getStatusVisible(), "Card Header status text is hidden.");
+
+				done();
+			}.bind(this));
+
+			this.oCard.setManifest({
+				"sap.app": {
+					"id": "test.card.hiddenStatus"
+				},
+				"sap.card": {
+					"type": "List",
+					"header": {
+						"data": {
+							"json": {
+								"statusVisible": false
+							}
+						},
+						"title": "Card title",
+						"status": {
+							"text": "4 of 20",
+							"visible": "{statusVisible}"
+						}
+					}
+				}
+			});
+		});
+
+		QUnit.test("Header status when visible property is set to true", function (assert) {
+			// Arrange
+			var done = assert.async();
+
+			this.oCard.attachEvent("_ready", function () {
+				Core.applyChanges();
+
+				// Assert
+				assert.ok(this.oCard.getCardHeader().getStatusVisible(), "Card Header status text is not hidden.");
+
+				done();
+			}.bind(this));
+
+			this.oCard.setManifest({
+				"sap.app": {
+					"id": "test.card.hiddenStatus"
+				},
+				"sap.card": {
+					"type": "List",
+					"header": {
+						"data": {
+							"json": {
+								"statusVisible": true
+							}
+						},
+						"title": "Card title",
+						"status": {
+							"text": "4 of 20",
+							"visible": "{statusVisible}"
 						}
 					}
 				}
@@ -2637,6 +2725,7 @@ sap.ui.define([
 			beforeEach: function () {
 				this.oCard = new Card();
 				this.oRb = Core.getLibraryResourceBundle("sap.ui.integration");
+				this.oCard.placeAt(DOM_RENDER_LOCATION);
 			},
 			afterEach: function () {
 				this.oCard.destroy();
@@ -2648,136 +2737,23 @@ sap.ui.define([
 		QUnit.test("Handler call", function (assert) {
 			// Arrange
 			var oLogSpy = sinon.spy(Log, "error"),
-				sLogMessage = "Log this error in the console.";
+				mErrorInfo = {
+					description: "Log this error in the console."
+				};
 
 			this.oCard.setManifest(oManifest_ListCard);
 			this.oCard.setDataMode(CardDataMode.Active);
-			this.oCard.placeAt(DOM_RENDER_LOCATION);
 			Core.applyChanges();
 
 			// Act
-			this.oCard._handleError(sLogMessage);
+			this.oCard._handleError(mErrorInfo);
 			Core.applyChanges();
 
 			// Assert
-			assert.ok(oLogSpy.calledOnceWith(sLogMessage), "Provided message should be logged to the console.");
+			assert.ok(oLogSpy.calledWith(mErrorInfo.description), "Provided message should be logged to the console.");
 
 			// Clean up
 			oLogSpy.restore();
-		});
-
-		QUnit.test("IllustratedMessage should be set by developer", function (assert) {
-
-			// Arrange
-			var done = assert.async();
-			this.oCard.attachEventOnce("_ready", function () {
-					Core.applyChanges();
-					var oErrorConfiguration = {
-						"noData": {
-							"type": "NoEntries",
-							"title": "No new products",
-							"description": "Please review later",
-							"size": "Auto"
-						}
-					};
-					var oFlexBox = this.oCard._getIllustratedMessage(oErrorConfiguration, true),
-						oIllustratedMessage = oFlexBox.getItems()[0];
-
-					// Assert
-					assert.strictEqual(oIllustratedMessage.getIllustrationType(), IllustratedMessageType.NoEntries, "The message type set by developer is correct");
-					assert.strictEqual(oIllustratedMessage.getIllustrationSize(), IllustratedMessageSize.Auto, "The message size set by developer is correct");
-					assert.strictEqual(oIllustratedMessage.getTitle(), "No new products", "The message title set by developer is correct");
-					assert.strictEqual(oIllustratedMessage.getDescription(), "Please review later", "The message description set by developer is correct");
-
-					// Clean up
-					done();
-			}.bind(this));
-			// Act
-			this.oCard.setManifest(oManifest_No_Data_List);
-			this.oCard.placeAt(DOM_RENDER_LOCATION);
-			Core.applyChanges();
-		});
-
-		QUnit.test("IllustratedMessage should be used for no data case in List Card", function (assert) {
-
-			// Arrange
-			var done = assert.async();
-			this.oCard.attachEventOnce("_ready", function () {
-				Core.applyChanges();
-				var oFlexBox = this.oCard._getIllustratedMessage(),
-					oIllustratedMessage = oFlexBox.getItems()[0];
-				// Assert
-				assert.strictEqual(oIllustratedMessage.getIllustrationType(), IllustratedMessageType.UnableToLoad, "Default message type is used for list");
-
-				// Clean up
-				done();
-			}.bind(this));
-			// Act
-			this.oCard.setManifest(oManifest_No_Data_List);
-			this.oCard.placeAt(DOM_RENDER_LOCATION);
-			Core.applyChanges();
-		});
-
-		QUnit.test("IllustratedMessage should be used for error in no data scenario - List Card", function (assert) {
-			// Arrange
-			var done = assert.async();
-			this.oCard.attachEventOnce("_ready", function () {
-				Core.applyChanges();
-				var oFlexBox = this.oCard._getIllustratedMessage(undefined, true),
-					oIllustratedMessage = oFlexBox.getItems()[0];
-				// Assert
-				assert.strictEqual(oIllustratedMessage.getIllustrationType(), IllustratedMessageType.NoData, "Illustrated message type should be no data for List Card");
-				assert.strictEqual(this.oCard.getCardContent().getItems()[0].getTitle(), this.oRb.getText("CARD_NO_ITEMS_ERROR_LISTS"), "Correct message is displayed");
-
-				// Clean up
-				done();
-			}.bind(this));
-			// Act
-			this.oCard.setManifest(oManifest_No_Data_List);
-			this.oCard.placeAt(DOM_RENDER_LOCATION);
-			Core.applyChanges();
-		});
-
-		QUnit.test("IllustratedMessage should be used for error in no data scenario - Table Card", function (assert) {
-			// Arrange
-			var done = assert.async();
-			this.oCard.attachEventOnce("_ready", function () {
-				Core.applyChanges();
-				var oFlexBox = this.oCard._getIllustratedMessage(undefined, true),
-					oIllustratedMessage = oFlexBox.getItems()[0];
-
-				// Assert
-				assert.strictEqual(oIllustratedMessage.getIllustrationType(), IllustratedMessageType.NoEntries, "Illustrated message type should be no data for Table Card");
-				assert.strictEqual(this.oCard.getCardContent().getItems()[0].getTitle(), this.oRb.getText("CARD_NO_ITEMS_ERROR_LISTS"), "Correct message is displayed");
-
-				// Clean up
-				done();
-			}.bind(this));
-			// Act
-			this.oCard.setManifest(oManifest_No_Data_Table);
-			this.oCard.placeAt(DOM_RENDER_LOCATION);
-			Core.applyChanges();
-		});
-
-		QUnit.test("IllustratedMessage should be used for error in no data scenario - Object Card", function (assert) {
-			// Arrange
-			var done = assert.async();
-			this.oCard.attachEventOnce("_ready", function () {
-				Core.applyChanges();
-				var oFlexBox = this.oCard._getIllustratedMessage(undefined, true),
-					oIllustratedMessage = oFlexBox.getItems()[0];
-
-				// Assert
-				assert.strictEqual(oIllustratedMessage.getIllustrationType(), IllustratedMessageType.NoData, "Illustrated message type should be no data for Object Card");
-				assert.strictEqual(this.oCard.getCardContent().getItems()[0].getTitle(), this.oRb.getText("CARD_NO_ITEMS_ERROR_CHART"), "Correct message is displayed");
-
-				// Clean up
-				done();
-			}.bind(this));
-			// Act
-			this.oCard.setManifest(oManifest_No_Data_Object);
-			this.oCard.placeAt(DOM_RENDER_LOCATION);
-			Core.applyChanges();
 		});
 
 		QUnit.test("In a card with no content, the error is rendered in the header", function (assert) {
@@ -2789,14 +2765,12 @@ sap.ui.define([
 				var oHeaderDomRef = this.oCard.getCardHeader().getDomRef();
 
 				// Assert
-				assert.ok(oHeaderDomRef.querySelector(".sapFCardErrorContent"), "error element is rendered in the header");
+				assert.ok(oHeaderDomRef.querySelector(".sapUiIntBlockingMsg"), "error element is rendered in the header");
 				done();
 			}.bind(this));
 
 			// Act
 			this.oCard.setManifest(oManifest_DefaultHeader_NoContent);
-			this.oCard.placeAt(DOM_RENDER_LOCATION);
-			Core.applyChanges();
 		});
 
 		QUnit.test("Error is logged when binding syntax is not 'complex'", function (assert) {
@@ -2817,7 +2791,7 @@ sap.ui.define([
 			});
 
 			// Act
-			this.oCard.startManifestProcessing(DOM_RENDER_LOCATION);
+			this.oCard.startManifestProcessing();
 
 			// Assert
 			assert.ok(
@@ -2831,20 +2805,27 @@ sap.ui.define([
 			// Arrange
 			var done = assert.async();
 			this.oCard.attachEventOnce("_ready", function () {
-				var initialCardHeight = this.oCard.getCardContent().getDomRef().offsetHeight + "px";
+				Core.applyChanges();
+				var initialContentWrapperHeight = this.oCard.getDomRef("contentSection").offsetHeight;
+				var initialContentHeight = this.oCard.getCardContent().getDomRef().offsetHeight;
+				var EPS = 2;
 
-				var oErrorConfiguration = {
-					"noData": {
-						"type": "NoEntries",
-						"title": "No new products",
-						"description": "Please review later",
-						"size": "Auto"
-					}
-				};
-				var oFlexBox = this.oCard._getIllustratedMessage(oErrorConfiguration, true);
+				// Act
+				this.oCard._handleError({
+					title: "No new products",
+					description: "Please review later",
+					size: "Auto"
+				});
+				Core.applyChanges();
+
+				var oErrorMessage = this.oCard.getCardContent().getAggregation("_blockingMessage");
+				var currentContentWrapperHeight = this.oCard.getDomRef("contentSection").offsetHeight;
+				var currentContentHeight = this.oCard.getCardContent().getDomRef().offsetHeight;
 
 				// Assert
-				assert.strictEqual(initialCardHeight, oFlexBox.getHeight(), "Height of the card content is not changed (Illustrated message is with the same height as the card before the error)");
+				assert.strictEqual(initialContentHeight + "px", oErrorMessage.getHeight(), "Height of the card error message is set correctly");
+				assert.ok(initialContentWrapperHeight - currentContentWrapperHeight <= EPS, "Height of the card content wrapper is not changed");
+				assert.ok(initialContentHeight - currentContentHeight <= EPS, "Height of the card content is not changed (Card error message is with the same height as the card before the error)");
 
 				// Clean up
 				done();
@@ -2852,8 +2833,161 @@ sap.ui.define([
 
 			// Act
 			this.oCard.setManifest(oManifest_List_Simple);
-			this.oCard.placeAt(DOM_RENDER_LOCATION);
-			Core.applyChanges();
+		});
+
+		QUnit.module("No Data", {
+			beforeEach: function () {
+				this.oCard = new Card();
+				this.oRb = Core.getLibraryResourceBundle("sap.ui.integration");
+				this.oCard.placeAt(DOM_RENDER_LOCATION);
+			},
+			afterEach: function () {
+				this.oCard.destroy();
+				this.oCard = null;
+				this.oRb = null;
+			}
+		});
+
+		QUnit.test("IllustratedMessage should be set by developer", function (assert) {
+			// Arrange
+			var done = assert.async();
+
+			this.oCard.attachEventOnce("_ready", function () {
+					Core.applyChanges();
+					var oMessage = this.oCard.getCardContent().getAggregation("_blockingMessage");
+
+					// Assert
+					assert.strictEqual(oMessage.getIllustrationType(), IllustratedMessageType.NoEntries, "The message type set by developer is correct");
+					assert.strictEqual(oMessage.getIllustrationSize(), IllustratedMessageSize.Auto, "The message size set by developer is correct");
+					assert.strictEqual(oMessage.getTitle(), "No new products", "The message title set by developer is correct");
+					assert.strictEqual(oMessage.getDescription(), "Please review later", "The message description set by developer is correct");
+
+					// Clean up
+					done();
+			}.bind(this));
+
+			// Act
+			this.oCard.setManifest({
+				"sap.app": {
+					"id": "test.card.NoData"
+				},
+				"sap.card": {
+					"type": "List",
+					"configuration": {
+						"messages": {
+							"noData": {
+								"type": "NoEntries",
+								"title": "No new products",
+								"description": "Please review later",
+								"size": "Auto"
+							}
+						}
+					},
+					"header": {},
+					"content": {
+						"item": {
+							"title": ""
+						}
+					},
+					"data": {
+						"json": []
+					}
+				}
+			});
+		});
+
+		QUnit.test("Default IllustratedMessage in no data scenario - List Card", function (assert) {
+			// Arrange
+			var done = assert.async();
+			this.oCard.attachEventOnce("_ready", function () {
+				Core.applyChanges();
+				var oMessage = this.oCard.getCardContent().getAggregation("_blockingMessage");
+
+				// Assert
+				assert.strictEqual(oMessage.getIllustrationType(), IllustratedMessageType.NoEntries, "Default message type is used for list");
+				assert.strictEqual(oMessage.getTitle(), this.oRb.getText("CARD_NO_ITEMS_ERROR_LISTS"), "Correct message is displayed");
+
+				// Clean up
+				done();
+			}.bind(this));
+
+			// Act
+			this.oCard.setManifest({
+				"sap.app": {
+					"id": "test.card.NoData"
+				},
+				"sap.card": {
+					"type": "List",
+					"header": {},
+					"content": {
+						"item": {
+							"title": ""
+						}
+					},
+					"data": {
+						"json": []
+					}
+				}
+			});
+		});
+
+		QUnit.test("Default IllustratedMessage in no data scenario - Table Card", function (assert) {
+			// Arrange
+			var done = assert.async();
+			this.oCard.attachEventOnce("_ready", function () {
+				Core.applyChanges();
+				var oMessage = this.oCard.getCardContent().getAggregation("_blockingMessage");
+
+				// Assert
+				assert.strictEqual(oMessage.getIllustrationType(), IllustratedMessageType.NoEntries, "Illustrated message type should be no data for Table Card");
+				assert.strictEqual(oMessage.getTitle(), this.oRb.getText("CARD_NO_ITEMS_ERROR_LISTS"), "Correct message is displayed");
+
+				// Clean up
+				done();
+			}.bind(this));
+
+			// Act
+			this.oCard.setManifest({
+				"sap.app": {
+					"id": "test.card.NoData"
+				},
+				"sap.card": {
+					"type": "Table",
+					"header": {},
+					"content": {
+						"row": {
+							"columns": [
+								{
+									"title": "Customer",
+									"value": "{customerName}"
+								}
+							]
+						}
+					},
+					"data": {
+						"json": []
+					}
+				}
+			});
+		});
+
+		QUnit.test("Default IllustratedMessage in no data scenario - Object Card", function (assert) {
+			// Arrange
+			var done = assert.async();
+			this.oCard.attachEventOnce("_ready", function () {
+				Core.applyChanges();
+				var oMessage = this.oCard.getCardContent().getAggregation("_blockingMessage");
+
+				// Assert
+				assert.strictEqual(oMessage.getIllustrationType(), IllustratedMessageType.NoData, "Illustrated message type should be no data for Object Card");
+				assert.strictEqual(oMessage.getTitle(), this.oRb.getText("CARD_NO_ITEMS_ERROR_CHART"), "Correct message is displayed");
+
+				// Clean up
+				done();
+			}.bind(this));
+
+			// Act
+			this.oCard.setManifest(oManifest_No_Data_Object);
 		});
 
 		QUnit.module("Component Card");
@@ -3220,8 +3354,8 @@ sap.ui.define([
 			this.oCard.attachEventOnce("_ready", function () {
 				Core.applyChanges();
 
-				var oContent = this.oCard.getCardContent();
-				assert.notOk(oContent.isA("sap.ui.integration.cards.BaseContent"), "Error is displayed.");
+				var oError = this.oCard.getCardContent().getAggregation("_blockingMessage");
+				assert.ok(oError.isA("sap.ui.integration.controls.BlockingMessage"), "Error is displayed.");
 
 				this.oCard.refreshData();
 
@@ -3263,6 +3397,16 @@ sap.ui.define([
 			});
 		});
 
+		QUnit.module("Event stateChanged", {
+			beforeEach: function () {
+				this.oCard = new Card();
+			},
+			afterEach: function () {
+				this.oCard.destroy();
+				this.oCard = null;
+			}
+		});
+
 		QUnit.test("Event stateChanged is fired on refreshData", function (assert) {
 			var done = assert.async(),
 				oCard = this.oCard,
@@ -3296,6 +3440,7 @@ sap.ui.define([
 			});
 
 			// Act
+			oCard.setBaseUrl("/test-resources/sap/ui/integration/qunit/testResources/");
 			oCard.setManifest({
 				"sap.app": {
 					"id": "test.card.stateChanged"
@@ -3311,6 +3456,44 @@ sap.ui.define([
 						"item": {
 							"title": "{Name}"
 						}
+					}
+				}
+			});
+			oCard.placeAt(DOM_RENDER_LOCATION);
+			Core.applyChanges();
+		});
+
+		QUnit.test("Event stateChanged is fired only once", function (assert) {
+			var done = assert.async(),
+				oCard = this.oCard,
+				iStateChangedCounter = 0;
+
+			assert.expect(1);
+
+			oCard.attachEventOnce("_ready", function () {
+				oCard.attachStateChanged(function () {
+					iStateChangedCounter++;
+				});
+
+				oCard.scheduleFireStateChanged();
+				oCard.scheduleFireStateChanged();
+
+				setTimeout(function () {
+					assert.strictEqual(iStateChangedCounter, 1, "Event stateChanged is fired only once.");
+					done();
+				}, 100);
+			});
+
+			// Act
+			oCard.setBaseUrl("/test-resources/sap/ui/integration/qunit/testResources/");
+			oCard.setManifest({
+				"sap.app": {
+					"id": "test.card.stateChanged2"
+				},
+				"sap.card": {
+					"type": "Object",
+					"header": {
+						"title": "Test state changed"
 					}
 				}
 			});
@@ -4181,14 +4364,14 @@ sap.ui.define([
 
 		QUnit.test("Destroy card while manifest is loading", function (assert) {
 			// Arrange
-			var oSpy = sinon.spy(Card.prototype, "_registerManifestModulePath"),
-				done = assert.async();
+			var done = assert.async();
 
 			this.oCard.setManifest("test-resources/sap/ui/integration/qunit/testResources/listCard.manifest.json");
 			this.oCard.setDataMode(CardDataMode.Active);
 			Core.applyChanges();
 
 			assert.ok(this.oCard._oCardManifest, "There is Manifest instance");
+			var oSpy = sinon.spy(this.oCard._oCardManifest, "loadDependenciesAndIncludes");
 
 			// Act
 			this.oCard.destroy();
@@ -4204,7 +4387,9 @@ sap.ui.define([
 
 		QUnit.module("Custom Models", {
 			beforeEach: function () {
-				this.oCard = new Card();
+				this.oCard = new Card({
+					baseUrl: "test-resources/sap/ui/integration/qunit/testResources"
+				});
 			},
 			afterEach: function () {
 				this.oCard.destroy();
@@ -4272,134 +4457,10 @@ sap.ui.define([
 				oCard.setManifest(oManifest_CustomModels);
 				oCard.startManifestProcessing();
 				Core.applyChanges();
-
 			});
 
 			// Act
 			oCard.setManifest(oManifest_CustomModels);
-			oCard.startManifestProcessing();
-		});
-
-		QUnit.module("Grouping", {
-			beforeEach: function () {
-				this.oCard = new Card();
-			},
-			afterEach: function () {
-				this.oCard.destroy();
-				this.oCard = null;
-			}
-		});
-
-		QUnit.test("List card items can be grouped", function (assert) {
-			// Arrange
-			var done = assert.async(),
-				oCard = this.oCard;
-
-			oCard.attachEvent("_ready", function () {
-				var aItems = this.oCard.getCardContent().getInnerList().getItems();
-				// Assert
-				assert.strictEqual(aItems.length, 4, "There are two list items and two group titles in the list.");
-				assert.ok(aItems[0].isA("sap.m.GroupHeaderListItem"), "The first item of the list is the group title");
-				assert.strictEqual(aItems[0].getTitle(), "Expensive", "The group title is correct");
-				done();
-			}.bind(this));
-
-			// Act
-			oCard.setManifest({
-				"sap.app": {
-					"id": "test.card.listGrouping.card"
-				},
-				"sap.card": {
-					"type": "List",
-					"header": {
-						"title": "List Card"
-					},
-					"content": {
-						"data": {
-							"json": [{
-									"Name": "Product 1",
-									"Price": "100"
-								},
-								{
-									"Name": "Product 2",
-									"Price": "200"
-								}
-							]
-						},
-						"item": {
-							"title": "{Name}",
-							"description": "{Price}"
-						},
-						"group": {
-							"title": "{= ${Price} > 150 ? 'Expensive' : 'Cheap'}",
-							"order": {
-								"path": "Price",
-								"dir": "DESC"
-							}
-						}
-					}
-				}
-			});
-			oCard.startManifestProcessing();
-		});
-
-		QUnit.test("Table card items can be grouped", function (assert) {
-			// Arrange
-			var done = assert.async(),
-				oCard = this.oCard;
-
-			oCard.attachEvent("_ready", function () {
-				var aItems = this.oCard.getCardContent().getInnerList().getItems();
-				// Assert
-				assert.strictEqual(aItems.length, 4, "There are two list items and two group titles in the list.");
-				assert.ok(aItems[0].isA("sap.m.GroupHeaderListItem"), "The first item of the list is the group title");
-				assert.strictEqual(aItems[0].getTitle(), "Cheap", "The group title is correct");
-				done();
-			}.bind(this));
-
-			// Act
-			oCard.setManifest({
-				"sap.app": {
-					"id": "test.card.tableGrouping.card"
-				},
-				"sap.card": {
-					"type": "Table",
-					"data": {
-						"json":[{
-							"Name": "Product 1",
-							"Price": "100"
-						},
-						{
-							"Name": "Product 2",
-							"Price": "200"
-						}
-					]
-					},
-					"header": {
-						"title": "L3 Request list content Card"
-					},
-					"content": {
-						"row": {
-							"columns": [{
-									"title": "Name",
-									"value": "{Name}"
-								},
-								{
-									"title": "Price",
-									"value": "{Price}"
-								}
-							]
-						},
-						"group": {
-							"title": "{= ${Price} > 150 ? 'Expensive' : 'Cheap'}",
-							"order": {
-								"path": "Price",
-								"dir": "ASC"
-							}
-						}
-					}
-				}
-			});
 			oCard.startManifestProcessing();
 		});
 
@@ -4586,5 +4647,383 @@ sap.ui.define([
 			});
 		});
 
+		QUnit.module("Card grouping items count", {
+			beforeEach: function () {
+				this.oCard = new Card();
+				this.oCard.placeAt(DOM_RENDER_LOCATION);
+			},
+			afterEach: function () {
+				this.oCard.destroy();
+				this.oCard = null;
+			}
+		});
+
+		QUnit.test("Cards content items count", function (assert) {
+			// Arrange
+			var done = assert.async();
+
+
+			this.oCard.attachEventOnce("_ready", function () {
+				// Assert
+				assert.strictEqual(this.oCard.getCardHeader().getStatusText(), "5 of 20", "The group headers are not counted as visible list items");
+
+				done();
+			}.bind(this));
+
+			// Act
+			this.oCard.setManifest({
+				"sap.card": {
+					"type": "List",
+					"header": {
+						"type": "Numeric",
+						"status": {
+							"text": {
+								"format": {
+									"translationKey": "i18n>CARD.COUNT_X_OF_Y",
+									"parts": [
+										"parameters>/visibleItems",
+										"20"
+									]
+								}
+							}
+						},
+						"title": "Top 5 products sales",
+						"subTitle": "By average price",
+						"unitOfMeasurement": "EUR",
+						"mainIndicator": {
+							"number": "{number}",
+							"unit": "{unit}",
+							"trend": "{trend}",
+							"state": "{state}"
+						},
+						"details": "{details}"
+					},
+					"content": {
+						"data": {
+							"json": [{
+									"Name": "Comfort Easy",
+									"Description": "32 GB Digital Assistant with high-resolution color screen",
+									"Sales": "150",
+									"State": "Warning"
+								},
+								{
+									"Name": "ITelO Vault",
+									"Description": "Digital Organizer with State-of-the-Art Storage Encryption",
+									"Sales": "540",
+									"State": "Success"
+								},
+								{
+									"Name": "Notebook Professional 15",
+									"Description": "Notebook Professional 15 with 2,80 GHz quad core, 15\" Multitouch LCD, 8 GB DDR3 RAM, 500 GB SSD - DVD-Writer (DVD-R/+R/-RW/-RAM),Windows 8 Pro",
+									"Sales": "350",
+									"State": "Success"
+								},
+								{
+									"Name": "Ergo Screen E-I",
+									"Description": "Optimum Hi-Resolution max. 1920 x 1080 @ 85Hz, Dot Pitch: 0.27mm",
+									"Sales": "100",
+									"State": "Error"
+								},
+								{
+									"Name": "Laser Professional Eco",
+									"Description": "Print 2400 dpi image quality color documents at speeds of up to 32 ppm (color) or 36 ppm (monochrome), letter/A4. Powerful 500 MHz processor, 512MB of memory",
+									"Sales": "200",
+									"State": "Warning"
+								}
+							]
+						},
+						"item": {
+							"title": "{Name}",
+							"description": "{Description}",
+							"info": {
+								"value": "{Sales} K",
+								"state": "{State}"
+							}
+						},
+						"group": {
+							"title": "{= ${Sales} > 150 ? 'Over 150' : 'Under 150'}",
+							"order": {
+								"path": "Sales",
+								"dir": "ASC"
+							}
+						}
+					}
+				}
+			});
+		});
+
+		QUnit.module("Card preview modes", {
+			beforeEach: function () {
+				this.oCard = new Card();
+				this.oCard.placeAt(DOM_RENDER_LOCATION);
+			},
+			afterEach: function () {
+				this.oCard.destroy();
+				this.oCard = null;
+			}
+		});
+
+		QUnit.test("Card in 'Abstract' preview mode", function (assert) {
+			// Arrange
+			var done = assert.async();
+
+			this.oCard.attachEventOnce("_ready", function () {
+				Core.applyChanges();
+				var oContent = this.oCard.getCardContent();
+				var oLoadingPlaceholder = oContent.getAggregation("_loadingPlaceholder");
+
+				// Assert
+				assert.ok(oContent.isA("sap.ui.integration.cards.ObjectContent"), "ObjectContent is created as card content");
+				assert.ok(oContent.getAggregation("_loadingPlaceholder").getDomRef(), "Loading placeholder is displayed in the content");
+				assert.notOk(oLoadingPlaceholder.getDomRef().getAttribute("title"), "No tooltip is rendered");
+				assert.ok(this.oCard.getDomRef().classList.contains("sapFCardPreview"), "'sapFCardPreview' CSS class should be added");
+
+				done();
+			}.bind(this));
+
+			// Act
+			this.oCard.setPreviewMode(library.CardPreviewMode.Abstract);
+			this.oCard.setManifest({
+				"sap.app": {
+					"id": "test.card.previewMode"
+				},
+				"sap.card": {
+					"type": "Object",
+					"header": {
+						"title": "Title"
+					},
+					"content": {
+						"groups": [{
+							"items": [
+								{
+									"id": "item1"
+								}
+							]
+						}]
+					}
+				}
+			});
+		});
+
+		QUnit.test("Fallback to Abstract preview when mock data configuration is missing", function (assert) {
+			var done = assert.async(),
+				oCard = this.oCard;
+
+			oCard.attachEventOnce("_ready", function () {
+				oCard.addEventDelegate({
+					onAfterRendering: function () {
+						// Assert
+						assert.strictEqual(oCard.getPreviewMode(), library.CardPreviewMode.Abstract, "Fallback to Abstract preview.");
+						assert.ok(oCard.getDomRef().classList.contains("sapFCardPreview"), library.CardPreviewMode.Abstract, "Abstract preview class is there.");
+
+						done();
+					}
+				});
+			});
+
+			// Act
+			oCard.setPreviewMode(library.CardPreviewMode.MockData);
+			oCard.setManifest({
+				"sap.app": {
+					"type": "card",
+					"id": "test.dataProvider.card2"
+				},
+				"sap.card": {
+					"type": "List",
+					"header": {
+						"title": "List Card"
+					},
+					"content": {
+						"data": {
+							"request": {
+								"url": "./relativeData.json"
+							}
+						},
+						"item": {
+							"title": {
+								"value": "{Name}"
+							}
+						}
+					}
+				}
+			});
+		});
+
+		QUnit.test("Don't fallback to Abstract preview when data configuration is with 'path' only", function (assert) {
+			var done = assert.async(),
+				oCard = this.oCard;
+
+			oCard.attachEventOnce("_ready", function () {
+				oCard.addEventDelegate({
+					onAfterRendering: function () {
+						// Assert
+						assert.strictEqual(oCard.getPreviewMode(), library.CardPreviewMode.MockData, "Didn't fallback to Abstract preview.");
+						assert.notOk(oCard.getDomRef().classList.contains("sapFCardPreview"), library.CardPreviewMode.Abstract, "Abstract preview class is not there.");
+
+						done();
+					}
+				});
+			});
+
+			// Act
+			oCard.setPreviewMode(library.CardPreviewMode.MockData);
+			oCard.setManifest({
+				"sap.app": {
+					"type": "card",
+					"id": "test.dataProvider.card2"
+				},
+				"sap.card": {
+					"type": "List",
+					"header": {
+						"title": "List Card"
+					},
+					"content": {
+						"data": {
+							"path": "/"
+						},
+						"item": {
+							"title": {
+								"value": "{Name}"
+							}
+						}
+					}
+				}
+			});
+		});
+
+		QUnit.module("Blocking Message", {
+			beforeEach: function () {
+				this.oCard = new Card();
+				this.oCard.placeAt(DOM_RENDER_LOCATION);
+			},
+			afterEach: function () {
+				this.oCard.destroy();
+				this.oCard = null;
+			}
+		});
+
+		QUnit.test("getBlockingMessage() when the card is not ready", function (assert) {
+			assert.strictEqual(this.oCard.getBlockingMessage(), null, "'null' should be returned when the card is not ready");
+		});
+
+		QUnit.test("getBlockingMessage() on 'stateChanged' event", function (assert) {
+			var done = assert.async();
+
+			this.oCard.attachStateChanged(function () {
+				assert.ok(this.oCard.getBlockingMessage(), "Blocking message should be returned");
+				assert.strictEqual(this.oCard.getBlockingMessage().type, CardBlockingMessageType.NoData, "Correct blocking message should be returned");
+
+				done();
+			}, this);
+
+			this.oCard.setManifest({
+				"sap.app": {
+					"id": "test.card.NoData"
+				},
+				"sap.card": {
+					"type": "List",
+					"header": {},
+					"content": {
+						"item": {
+							"title": ""
+						}
+					},
+					"data": {
+						"json": []
+					}
+				}
+			});
+		});
+
+		QUnit.test("getBlockingMessage() when there is data", function (assert) {
+			var done = assert.async();
+
+			this.oCard.attachStateChanged(function () {
+				assert.strictEqual(this.oCard.getBlockingMessage(), null, "'null' should be returned");
+
+				done();
+			}, this);
+
+			this.oCard.setManifest(oManifest_ListCard);
+		});
+
+		QUnit.test("getBlockingMessage() on content that doesn't support 'No Data'", function (assert) {
+			var done = assert.async();
+
+			this.oCard.attachStateChanged(function () {
+				assert.strictEqual(this.oCard.getBlockingMessage(), null, "'null' should be returned");
+
+				done();
+			}, this);
+
+			this.oCard.setManifest({
+				"sap.app": {
+					"id": "test.card.NoData"
+				},
+				"sap.card": {
+					"type": "Calendar",
+					"data": {
+						"json": {
+							"item": []
+						}
+					},
+					"header": {
+						"title": "My calendar"
+					},
+					"content": {}
+				}
+			});
+		});
+
+		QUnit.test("getBlockingMessage() after showBlockingMessage()", function (assert) {
+			var done = assert.async();
+			var stateChangedCount = 0;
+
+			this.oCard.attachStateChanged(function () {
+				stateChangedCount++;
+
+				if (stateChangedCount === 1) {
+					assert.strictEqual(this.oCard.getBlockingMessage(), null, "'null' should be returned");
+
+					// Act
+					this.oCard.showBlockingMessage({
+						type: CardBlockingMessageType.NoData
+					});
+				} else if (stateChangedCount === 2) {
+					assert.ok(this.oCard.getBlockingMessage(), "Blocking message should be returned");
+					done();
+				}
+			}, this);
+
+			this.oCard.setManifest(oManifest_ListCard);
+		});
+
+		QUnit.test("getBlockingMessage() when content couldn't be created", function (assert) {
+			var done = assert.async();
+
+			this.oCard.attachStateChanged(function () {
+				var oBlockingMessage = this.oCard.getBlockingMessage();
+
+				assert.ok(oBlockingMessage, "Blocking message should be returned");
+				assert.strictEqual(oBlockingMessage.type, CardBlockingMessageType.Error, "Correct blocking message type should be set.");
+
+				done();
+			}, this);
+
+			this.oCard.setManifest({
+				"sap.app": {
+					"id": "test.invalid.content"
+				},
+				"sap.card": {
+					"type": "invalidListType",
+					"header": {
+						"title": "Invalid card"
+					},
+					"content": {}
+				}
+			});
+		});
+
 	}
 );
+

@@ -10,10 +10,9 @@ sap.ui.define([
 	"sap/ui/model/FilterOperator",
 	"sap/ui/model/Sorter",
 	"sap/ui/model/json/JSONListBinding",
-	"sap/ui/model/json/JSONModel",
-	"sap/ui/test/TestUtils"
+	"sap/ui/model/json/JSONModel"
 ], function(Log, deepEqual, Device, ClientListBinding, Filter, FilterOperator, Sorter,
-		JSONListBinding, JSONModel, TestUtils) {
+		JSONListBinding, JSONModel) {
 	/*global QUnit */
 	"use strict";
 
@@ -141,6 +140,9 @@ sap.ui.define([
 	}
 
 	QUnit.module("sap.ui.model.json.JSONListbinding: getContexts", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach: function() {
 			setup();
 			createListBinding("/teamMembers", "");
@@ -254,6 +256,9 @@ sap.ui.define([
 	});
 
 	QUnit.module("sap.ui.model.json.JSONListbinding: refresh", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach: function() {
 			setup();
 			createListBinding("/teamMembers", "");
@@ -325,6 +330,9 @@ sap.ui.define([
 	});
 
 	QUnit.module("sap.ui.model.json.JSONListbinding: sort", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach: function() {
 			setup();
 		}
@@ -639,6 +647,9 @@ sap.ui.define([
 	});
 
 	QUnit.module("sap.ui.model.json.JSONListbinding: filter", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach: function() {
 			setup();
 			createListBinding("/teamMembers", "");
@@ -992,6 +1003,9 @@ sap.ui.define([
 	}
 
 	QUnit.module("sap.ui.model.json.JSONListbinding: filter case sensitive", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach: function() {
 			setup();
 			createListBinding("/caseSensitive", "");
@@ -1041,6 +1055,9 @@ sap.ui.define([
 	});
 
 	QUnit.module("sap.ui.model.json.JSONListbinding: Unsupported Filters", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		getErrorWithMessage: function(sFilter) {
 			return new Error("Filter instances contain an unsupported FilterOperator: " + sFilter);
 		}
@@ -1191,6 +1208,9 @@ sap.ui.define([
 
 
 	QUnit.module("sap.ui.model.json.JSONListbinding: general", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach: function() {
 			setup();
 		}
@@ -1358,6 +1378,9 @@ sap.ui.define([
 	});
 
 	QUnit.module("sap.ui.model.json.JSONListbinding: diff calculation", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach: function() {
 			setup();
 			this.oModel = new JSONModel(testData.teamMembers);
@@ -1440,6 +1463,9 @@ sap.ui.define([
 
 
 	QUnit.module("sap.ui.model.json.JSONListbinding: suspend/resume", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach: function() {
 			setup();
 			this.oData = testData.teamMembers.slice(0);
@@ -1521,14 +1547,13 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.module("sap.ui.model.json.JSONListBinding", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach : function () {
 			this.oLogMock = this.mock(Log);
 			this.oLogMock.expects("error").never();
 			this.oLogMock.expects("warning").never();
-		},
-
-		afterEach : function (assert) {
-			return TestUtils.awaitRendering();
 		}
 	});
 

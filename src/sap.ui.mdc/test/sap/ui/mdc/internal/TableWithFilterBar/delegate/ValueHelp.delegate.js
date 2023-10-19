@@ -7,12 +7,12 @@ sap.ui.define([
 	'sap/ui/mdc/p13n/StateUtil',
 	'sap/ui/mdc/condition/Condition',
 	'sap/ui/mdc/condition/FilterOperatorUtil',
-	'sap/ui/mdc/enum/ConditionValidated',
-	'sap/ui/mdc/enum/SelectType',
+	'sap/ui/mdc/enums/ConditionValidated',
+	'sap/ui/mdc/enums/ValueHelpSelectionType',
 	'sap/ui/core/Core',
 	'sap/base/util/deepEqual'
 ], function(
-	ODataV4ValueHelpDelegate, StateUtil, Condition, FilterOperatorUtil, ConditionValidated, SelectType, Core, deepEqual
+	ODataV4ValueHelpDelegate, StateUtil, Condition, FilterOperatorUtil, ConditionValidated, ValueHelpSelectionType, Core, deepEqual
 ) {
 	"use strict";
 
@@ -31,8 +31,8 @@ sap.ui.define([
 
 	};
 
-	ValueHelpDelegate.createConditionPayload = function (oPayload, oContent, aValues, vContext) {
-
+	ValueHelpDelegate.createConditionPayload = function (oValueHelp, oContent, aValues, vContext) {
+		var oPayload = oValueHelp.getPayload();
 		var _addContext = function(oContext, aProperties, oStore) {
 			if (!Array.isArray(aProperties)) {
 				aProperties = [aProperties];
@@ -68,12 +68,11 @@ sap.ui.define([
 		return oConditionPayload;
 	};
 
-	ValueHelpDelegate.modifySelectionBehaviour = function (oPayload, oContent, oChange) {
-
+	ValueHelpDelegate.modifySelectionBehaviour = function (oValueHelp, oContent, oChange) {
 		var aConditions = oChange.conditions;
 		var aOldConditions = oContent.getConditions();
 
-		if (oChange.type === SelectType.Remove) {
+		if (oChange.type === ValueHelpSelectionType.Remove) {
 			for (var i = 0; i < aConditions.length; i++) {
 				var oCondition = aConditions[i];
 				var iIndex = FilterOperatorUtil.indexOfCondition(oCondition, aOldConditions);

@@ -117,7 +117,7 @@ function(
 				title: { type: "string", group: "Appearance", defaultValue: "" },
 
 				/**
-				 * Determines the start date used in the calendar picker, as a JavaScript date object. It is considered as a local date.
+				 * Determines the start date used in the calendar picker, as a UI5Date or JavaScript Date object. It is considered as a local date.
 				 * The time part will be ignored. The current date is used as default.
 				 */
 				startDate: { type : "object", group : "Data" },
@@ -423,7 +423,7 @@ function(
 	PlanningCalendarHeader.prototype.onBeforeRendering = function () {
 		var bVisible = !!this.getActions().length || !!this.getTitle() || this._getOrCreateViewSwitch().getItems().length > 1;
 		var sSecondaryCalendarType = this.getProperty("_secondaryCalendarType");
-		this._getActionsToolbar().setProperty("visible", bVisible, true);
+		this._getActionsToolbar().setVisible(bVisible);
 
 		this.setPrimaryCalendarTypeToPickers(this.getProperty("_primaryCalendarType"));
 		if (sSecondaryCalendarType){

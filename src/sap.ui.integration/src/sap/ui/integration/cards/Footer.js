@@ -7,16 +7,14 @@ sap.ui.define([
 	"sap/base/util/merge",
 	"sap/ui/integration/controls/ActionsStrip",
 	"sap/ui/integration/controls/Paginator",
-	"sap/ui/integration/util/BindingHelper",
-	"sap/ui/integration/util/BindingResolver"
+	"sap/ui/integration/util/BindingHelper"
 ], function (
 	Control,
 	Core,
 	merge,
 	ActionsStrip,
 	Paginator,
-	BindingHelper,
-	BindingResolver
+	BindingHelper
 ) {
 	"use strict";
 
@@ -112,7 +110,7 @@ sap.ui.define([
 		// to do: if more precise check is needed search recursively
 		return (oConfiguration.actionsStrip || []).some(function (oButtonConfig) {
 			for (var sKey in oButtonConfig) {
-				if (BindingResolver.isBindingInfo(oButtonConfig[sKey])) {
+				if (BindingHelper.isBindingInfo(oButtonConfig[sKey])) {
 					return true;
 				}
 			}
@@ -162,7 +160,7 @@ sap.ui.define([
 
 	Footer.create = function (oCard, oConfiguration) {
 		return new Footer({
-			configuration: oConfiguration,
+			configuration: BindingHelper.createBindingInfos(oConfiguration, oCard.getBindingNamespaces()),
 			card: oCard,
 			actionsStrip: ActionsStrip.create(oCard, oConfiguration.actionsStrip, true),
 			paginator: Paginator.create(oCard, oConfiguration.paginator),

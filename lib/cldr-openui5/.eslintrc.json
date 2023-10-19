@@ -3,8 +3,30 @@
 		"node": true,
 		"browser": false
 	},
+	"parserOptions": {
+		"sourceType": "module"
+	},
 	"rules": {
-		"strict": ["error", "never"],
-		"no-loop-func": "warn"
+		"indent": [
+			"error",
+			"tab",
+			{"SwitchCase": 1}
+		],
+		"max-len": [
+			"error",
+			{"code": 120, "ignoreUrls": true, "ignoreRegExpLiterals": true}
+		],
+		"no-console": "off",
+		"no-prototype-builtins": "off",
+		"no-var": "error",
+		"quotes": [
+			"error",
+			"double",
+			{"allowTemplateLiterals": true}
+		],
+		"strict": [
+			"error",
+			"never"
+		]
 	}
 }

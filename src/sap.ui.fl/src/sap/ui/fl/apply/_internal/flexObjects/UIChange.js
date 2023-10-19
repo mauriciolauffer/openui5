@@ -69,6 +69,20 @@ sap.ui.define([
 					type: "string"
 				},
 
+				/**
+				 * Whether the change is related to the standard variant, if variant dependent
+				 */
+				isChangeOnStandardVariant: {
+					type: "boolean"
+				},
+
+				/**
+				 * Indicates if the UIChange is saved to a variant
+				 */
+				savedToVariant: {
+					type: "boolean"
+				},
+
 				// TODO: consolidate with other revert data properties
 				/**
 				 * Information with which the UIChange can be reverted
@@ -82,8 +96,9 @@ sap.ui.define([
 			associations: {},
 			events: {}
 		},
-		constructor: function() {
-			FlexObject.apply(this, arguments);
+		// eslint-disable-next-line object-shorthand
+		constructor: function(...aArgs) {
+			FlexObject.apply(this, aArgs);
 
 			this._oChangeProcessingPromises = {};
 			this.setInitialApplyState();
@@ -100,7 +115,8 @@ sap.ui.define([
 			selector: "selector",
 			dependentSelectors: "dependentSelector",
 			jsOnly: "jsOnly",
-			variantReference: "variantReference"
+			variantReference: "variantReference",
+			isChangeOnStandardVariant: "isChangeOnStandardVariant"
 		});
 	};
 
@@ -143,7 +159,7 @@ sap.ui.define([
 		this._oChangeProcessedPromise = {};
 		this._oChangeProcessedPromise.promise = new Promise(function(resolve) {
 			this._oChangeProcessedPromise.resolveFunction = {
-				resolve: resolve
+				resolve
 			};
 		}.bind(this));
 	};
@@ -153,7 +169,7 @@ sap.ui.define([
 	};
 
 	UIChange.prototype.isValidForDependencyMap = function() {
-		//Change without id in selector should be skipped from adding dependencies process
+		// Change without id in selector should be skipped from adding dependencies process
 		return !!this.getSelector().id;
 	};
 
@@ -242,7 +258,7 @@ sap.ui.define([
 			this._oChangeProcessingPromises[sKey] = {};
 			this._oChangeProcessingPromises[sKey].promise = new Promise(function(resolve) {
 				this._oChangeProcessingPromises[sKey].resolveFunction = {
-					resolve: resolve
+					resolve
 				};
 			}.bind(this));
 		}
@@ -319,7 +335,7 @@ sap.ui.define([
 		var oCurrentDependentSelectors = Object.assign({}, this.getDependentSelectors());
 
 		if (oCurrentDependentSelectors[sAlias]) {
-			throw new Error("Alias '" + sAlias + "' already exists in the change.");
+			throw new Error(`Alias '${sAlias}' already exists in the change.`);
 		}
 
 		var oModifier = mPropertyBag.modifier;
@@ -336,7 +352,7 @@ sap.ui.define([
 		}
 		this.setDependentSelectors(oCurrentDependentSelectors);
 
-		//remove dependency list so that it will be created again in method getDependentSelectorList
+		// remove dependency list so that it will be created again in method getDependentSelectorList
 		delete this._aDependentSelectorList;
 	};
 
@@ -436,7 +452,6 @@ sap.ui.define([
 		return this.getDependentSelectors().originalSelector;
 	};
 
-	// TODO: check if extension point changes should have a dedicated class
 	/**
 	 * Sets the extension point information.
 	 * @param {*} oExtensionPointInfo Extension point information

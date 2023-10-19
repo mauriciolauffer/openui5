@@ -1,4 +1,4 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/m/Text",
@@ -30,17 +30,17 @@ sap.ui.define([
 	var sandbox = sinon.createSandbox();
 
 	QUnit.module("getControlIfTemplateAffected", {
-		beforeEach: function () {
+		beforeEach() {
 			this.oControl = new Control("controlId");
 			this.oText = new Text("textId");
 		},
-		afterEach: function () {
+		afterEach() {
 			this.oControl.destroy();
 			this.oText.destroy();
 			sandbox.restore();
 		}
 	}, function() {
-		QUnit.test("when calling 'getControlIfTemplateAffected' with a change containing the parameter boundAggregation", function (assert) {
+		QUnit.test("when calling 'getControlIfTemplateAffected' with a change containing the parameter boundAggregation", function(assert) {
 			var oChange = new UIChange({
 				content: {
 					boundAggregation: true
@@ -68,7 +68,7 @@ sap.ui.define([
 			assert.deepEqual(mControl.bTemplateAffected, mExpectedResult.bTemplateAffected, "the parameter 'bTemplateAffected' is correct.");
 		});
 
-		QUnit.test("when calling 'getControlIfTemplateAffected' with a change without containing the parameter boundAggregation", function (assert) {
+		QUnit.test("when calling 'getControlIfTemplateAffected' with a change without containing the parameter boundAggregation", function(assert) {
 			var oChange = new UIChange({
 				content: {}
 			});
@@ -90,7 +90,7 @@ sap.ui.define([
 			assert.deepEqual(mControl.bTemplateAffected, mExpectedResult.bTemplateAffected, "the parameter 'bTemplateAffected' is correct.");
 		});
 
-		QUnit.test("when calling 'getControlIfTemplateAffected' without a control and a change without containing the parameter boundAggregation", function (assert) {
+		QUnit.test("when calling 'getControlIfTemplateAffected' without a control and a change without containing the parameter boundAggregation", function(assert) {
 			var oChange = new UIChange({
 				content: {}
 			});
@@ -114,7 +114,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("getChangeHandler", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oChange = new UIChange({
 				flexObjectMetadata: {
 					changeType: "type"
@@ -123,19 +123,19 @@ sap.ui.define([
 			});
 			this.oControl = new Control("control");
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 			this.oControl.destroy();
 		}
 	}, function() {
 		QUnit.test("when change handler is not loaded yet and we have to wait for registration", function(assert) {
 			var oWaitStub = sandbox.stub(ChangeHandlerRegistration, "waitForChangeHandlerRegistration")
-				.withArgs("library")
-				.resolves();
+			.withArgs("library")
+			.resolves();
 			var oGetChangeHandlerStub = sandbox.stub(ChangeHandlerStorage, "getChangeHandler").resolves("changeHandler");
 			var mPropertyBag = {
 				modifier: {
-					getLibraryName: function() {return "library";}
+					getLibraryName() {return Promise.resolve("library");}
 				}
 			};
 			var mControl = {
@@ -154,14 +154,14 @@ sap.ui.define([
 	});
 
 	QUnit.module("checkIfDependencyIsStillValid", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oChange = new UIChange({});
-			sandbox.stub(FlUtils, "getChangeFromChangesMap").returns(this.oChange);
+			this.oGetChangesFromMapStub = sandbox.stub(FlUtils, "getChangeFromChangesMap").returns(this.oChange);
 			this.oModifier = {
-				bySelector: function() {}
+				bySelector() { return "foo"; }
 			};
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
@@ -180,13 +180,23 @@ sap.ui.define([
 			sandbox.stub(FlexCustomData, "hasChangeApplyFinishedCustomData").returns(false);
 			assert.equal(ChangeUtils.checkIfDependencyIsStillValid({}, this.oModifier, {}, ""), true, "the dependency is still valid");
 		});
+
+		QUnit.test("with change deleted from the changes map (e.g. after condensing)", function(assert) {
+			this.oGetChangesFromMapStub.returns(undefined);
+			assert.equal(ChangeUtils.checkIfDependencyIsStillValid({}, this.oModifier, {}, ""), false, "the dependency is not valid anymore");
+		});
+
+		QUnit.test("with an unavailable control", function(assert) {
+			sandbox.stub(this.oModifier, "bySelector").returns(undefined);
+			assert.equal(ChangeUtils.checkIfDependencyIsStillValid({}, this.oModifier, {}, ""), true, "the dependency is still valid");
+		});
 	});
 
 	QUnit.module("filterChangeByView", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oAppComponent = new UIComponent("app");
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oAppComponent.destroy();
 			sandbox.restore();
 		}

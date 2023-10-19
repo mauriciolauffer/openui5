@@ -94,18 +94,25 @@ sap.ui.define([
 					libs: ["sap.m"]
 				}
 			},
-			"Row": {
+			/**
+			 * @deprecated As of Version 1.117
+			 */
+			"LegacyColumnMenuAdapter": {
+				group: "Menus",
+				module: "./menus/{name}.qunit"
 			},
-			"RowAction": {
-			},
-			"RowSettings": {
-			},
+			"Row": {},
+			"RowAction": {},
+			"RowSettings": {},
 			"CreationRow": {
 				ui5: {
 					// The test and sap.ui.table.CreationRow have dependencies to sap.m modules
 					libs: ["sap.ui.table", "sap.m"]
 				}
 			},
+			/**
+			 * @deprecated since 1.115
+			 */
 			"TablePersoController": {
 				ui5: {
 					// sap.ui.table.TablePersoController requires sap.m.TablePersoDialog
@@ -120,10 +127,9 @@ sap.ui.define([
 					only: null /*full report*/
 				}
 			},
-			"AnalyticalTable": {
-			},
-			"TableColumnHeaders": {
-			},
+			"AnalyticalTable": {},
+			"AnalyticalColumn": {},
+			"TableColumnHeaders": {},
 
 			// Utils
 			"TableUtils": {
@@ -224,31 +230,31 @@ sap.ui.define([
 				group: "Row Mode",
 				module: "./rowmodes/{name}.qunit"
 			},
-			"FixedRowMode": {
+			"Fixed": {
 				group: "Row Mode",
 				module: "./rowmodes/{name}.qunit"
 			},
-			"FixedRowMode with ODataV2": {
+			"Fixed with ODataV2": {
 				group: "Row Mode",
-				module: "./rowmodes/FixedRowMode.ODataV2.qunit"
+				module: "./rowmodes/Fixed.ODataV2.qunit"
 			},
-			"InteractiveRowMode": {
-				group: "Row Mode",
-				module: "./rowmodes/{name}.qunit"
-			},
-			"InteractiveRowMode with ODataV2": {
-				group: "Row Mode",
-				module: "./rowmodes/InteractiveRowMode.ODataV2.qunit"
-			},
-			"AutoRowMode": {
+			"Interactive": {
 				group: "Row Mode",
 				module: "./rowmodes/{name}.qunit"
 			},
-			"AutoRowMode with ODataV2": {
+			"Interactive with ODataV2": {
 				group: "Row Mode",
-				module: "./rowmodes/AutoRowMode.ODataV2.qunit"
+				module: "./rowmodes/Interactive.ODataV2.qunit"
 			},
-			"VariableRowMode": {
+			"Auto": {
+				group: "Row Mode",
+				module: "./rowmodes/{name}.qunit"
+			},
+			"Auto with ODataV2": {
+				group: "Row Mode",
+				module: "./rowmodes/Auto.ODataV2.qunit"
+			},
+			"Variable": {
 				group: "Row Mode",
 				module: "./rowmodes/{name}.qunit"
 			},
@@ -266,9 +272,45 @@ sap.ui.define([
 				group: "Plugins",
 				module: "./plugins/SelectionModelSelection.ODataV2.qunit"
 			},
+			"BindingSelection (TreeBinding)": {
+				group: "Plugins",
+				module: "./plugins/BindingSelection.TreeBinding.qunit"
+			},
 			"MultiSelectionPlugin": {
 				group: "Plugins",
 				module: "./plugins/{name}.qunit",
+				ui5: {
+					// sap.ui.table.plugins.MultiSelectionPlugin requires sap.m modules
+					libs: ["sap.ui.table", "sap.m"]
+				}
+			},
+			"MultiSelectionPlugin with ODataV2 (ListBinding)": {
+				group: "Plugins",
+				module: "./plugins/MultiSelectionPlugin.ODataV2.ListBinding.qunit",
+				ui5: {
+					// sap.ui.table.plugins.MultiSelectionPlugin requires sap.m modules
+					libs: ["sap.ui.table", "sap.m"]
+				}
+			},
+			"MultiSelectionPlugin with ODataV2 (TreeBinding)": {
+				group: "Plugins",
+				module: "./plugins/MultiSelectionPlugin.ODataV2.TreeBinding.qunit",
+				ui5: {
+					// sap.ui.table.plugins.MultiSelectionPlugin requires sap.m modules
+					libs: ["sap.ui.table", "sap.m"]
+				}
+			},
+			"MultiSelectionPlugin with ODataV2 (AnalyticalBinding)": {
+				group: "Plugins",
+				module: "./plugins/MultiSelectionPlugin.ODataV2.AnalyticalBinding.qunit",
+				ui5: {
+					// sap.ui.table.plugins.MultiSelectionPlugin requires sap.m modules
+					libs: ["sap.ui.table", "sap.m"]
+				}
+			},
+			"MultiSelectionPlugin with ODataV4": {
+				group: "Plugins",
+				module: "./plugins/MultiSelectionPlugin.ODataV4.qunit",
 				ui5: {
 					// sap.ui.table.plugins.MultiSelectionPlugin requires sap.m modules
 					libs: ["sap.ui.table", "sap.m"]

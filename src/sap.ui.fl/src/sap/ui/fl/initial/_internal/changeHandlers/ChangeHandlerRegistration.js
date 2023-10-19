@@ -3,7 +3,7 @@
 */
 
 sap.ui.define([
-	"sap/ui/core/Core",
+	"sap/ui/core/Lib",
 	"sap/ui/fl/initial/_internal/changeHandlers/ChangeHandlerStorage",
 	"sap/ui/fl/changeHandler/AddXML",
 	"sap/ui/fl/changeHandler/AddXMLAtExtensionPoint",
@@ -16,7 +16,7 @@ sap.ui.define([
 	"sap/ui/fl/changeHandler/UnhideControl",
 	"sap/ui/fl/changeHandler/UnstashControl"
 ], function(
-	Core,
+	Lib,
 	ChangeHandlerStorage,
 	AddXML,
 	AddXMLAtExtensionPoint,
@@ -52,10 +52,10 @@ sap.ui.define([
 	function addRegistrationPromise(sKey, oPromise) {
 		mRegistrationPromises[sKey] = oPromise;
 		oPromise
-			.catch(function() {})
-			.then(function() {
-				delete mRegistrationPromises[sKey];
-			});
+		.catch(function() {})
+		.then(function() {
+			delete mRegistrationPromises[sKey];
+		});
 	}
 
 	function registerFlexChangeHandlers(oFlChangeHandlers) {
@@ -88,8 +88,9 @@ sap.ui.define([
 		 *
 		 * @returns {Promise} Returns an empty promise when all changeHandlers from all libraries are registered.
 		 */
-		getChangeHandlersOfLoadedLibsAndRegisterOnNewLoadedLibs: function () {
-			var oAlreadyLoadedLibraries = Core.getLoadedLibraries();
+		getChangeHandlersOfLoadedLibsAndRegisterOnNewLoadedLibs() {
+			var oAlreadyLoadedLibraries = Lib.all();
+			Lib.attachLibraryChanged(handleLibraryRegistrationAfterFlexLibraryIsLoaded);
 			var aPromises = [];
 
 			Object.values(oAlreadyLoadedLibraries).forEach(function(oLibrary) {
@@ -98,12 +99,10 @@ sap.ui.define([
 				}
 			});
 
-			Core.attachLibraryChanged(handleLibraryRegistrationAfterFlexLibraryIsLoaded);
-
 			return Promise.all(aPromises);
 		},
 
-		waitForChangeHandlerRegistration: function(sKey) {
+		waitForChangeHandlerRegistration(sKey) {
 			if (mRegistrationPromises[sKey]) {
 				return mRegistrationPromises[sKey].catch(function() {});
 			}
@@ -114,7 +113,7 @@ sap.ui.define([
 		 * Registers the predefined change handlers to the <code>ChangeHandlerStorage</code>.
 		 * This includes both default (e.g. <code>UnhideControl</code> or <code>MoveControls</code>) and <code>DeveloperMode</code> change handlers (e.g. <code>AddXML</code> or <code>propertyChange</code>)
 		 */
-		registerPredefinedChangeHandlers: function() {
+		registerPredefinedChangeHandlers() {
 			ChangeHandlerStorage.registerPredefinedChangeHandlers(mDefaultHandlers, mDeveloperModeHandlers);
 		}
 	};

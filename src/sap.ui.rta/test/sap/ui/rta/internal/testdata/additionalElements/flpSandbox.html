@@ -92,7 +92,7 @@
 			document.write('\
 				<script \
 					id="sap-ui-bootstrap" \
-					data-sap-ui-theme="sap_fiori_3" \
+					data-sap-ui-theme="sap_horizon" \
 					data-sap-ui-language="en" \
 					data-sap-ui-noConflict="true" \
 					data-sap-ui-async="true" \
@@ -106,10 +106,12 @@
 		</script>
 
 		<script type="text/javascript">
-			sap.ui.getCore().attachInit(function() {
-				sap.ushell.Container.createRenderer(true).then(function(oRenderer){
-					oRenderer.placeAt("content");
-				});
+			sap.ui.require(["sap/ui/core/Core"], (Core) => {
+				Core.ready().then(() => {
+					sap.ui.require("sap/ushell/Container").createRenderer(true).then(function(oRenderer){
+						oRenderer.placeAt("content");
+					});
+				})
 			});
 		</script>
 	</head>

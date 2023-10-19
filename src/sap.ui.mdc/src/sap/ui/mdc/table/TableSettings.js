@@ -9,15 +9,15 @@
 // ---------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------
 sap.ui.define([
-	"sap/m/OverflowToolbarButton", "sap/m/library", "sap/m/OverflowToolbarMenuButton", "sap/ui/core/library", 	"sap/ui/Device", "sap/ui/core/ShortcutHintsMixin", "sap/ui/core/theming/Parameters"
+	"sap/m/OverflowToolbarButton", "sap/m/library", "sap/m/OverflowToolbarMenuButton", "sap/m/Menu", "sap/m/MenuItem", "sap/ui/core/library", "sap/ui/Device", "sap/ui/core/ShortcutHintsMixin", "sap/ui/core/theming/Parameters", "sap/ui/performance/trace/FESRHelper"
 
-], function(OverflowToolbarButton, MLibrary, OverflowToolbarMenuButton, CoreLibrary, Device, ShortcutHintsMixin, ThemeParameters) {
+], function(OverflowToolbarButton, MLibrary, OverflowToolbarMenuButton, Menu, MenuItem, CoreLibrary, Device, ShortcutHintsMixin, ThemeParameters, FESRHelper) {
 	"use strict";
 
-	var HasPopup = CoreLibrary.aria.HasPopup;
+	const HasPopup = CoreLibrary.aria.HasPopup;
 
 	// TODO: this is just a draft version and is not final --> just for verifying flex/p13n concepts
-	var oRb;
+	let oRb;
 	/**
 	 * P13n/Settings helper class for sap.ui.mdc.Table.
 	 * <h3><b>Note:</b></h3>
@@ -29,12 +29,12 @@ sap.ui.define([
 	 * @since 1.60
 	 * @alias sap.ui.mdc.table.TableSettings
 	 */
-	var TableSettings = {
+	const TableSettings = {
 		createSettingsButton: function(sIdPrefix, aEventInfo) {
 			if (!oRb) {
 				this._loadResourceBundle();
 			}
-			var oBtn = this._createButton(sIdPrefix + "-settings", {
+			const oBtn = this._createButton(sIdPrefix + "-settings", {
 				icon: "sap-icon://action-settings",
 				text: oRb.getText("table.SETTINGS"),
 				press: aEventInfo,
@@ -42,6 +42,7 @@ sap.ui.define([
 				ariaHasPopup: HasPopup.Dialog
 			});
 
+			FESRHelper.setSemanticStepname(oBtn, "press", "mdc:tbl:p13n");
 
 			ShortcutHintsMixin.addConfig(oBtn, {
 					addAccessibilityLabel: true,
@@ -53,7 +54,9 @@ sap.ui.define([
 			return oBtn;
 		},
 		createPasteButton: function (sIdPrefix) {
-			var oPasteButton = this._createButton(sIdPrefix + "-paste");
+			const oPasteButton = this._createButton(sIdPrefix + "-paste");
+
+			FESRHelper.setSemanticStepname(oPasteButton, "press", "mdc:tbl:paste");
 
 			sap.ui.require(["sap/m/plugins/PasteProvider"], function(PasteProvider) {
 				oPasteButton.addDependent(new PasteProvider({
@@ -67,8 +70,8 @@ sap.ui.define([
 			if (!oRb) {
 				this._loadResourceBundle();
 			}
-			var sButtonType = ThemeParameters.get({name: "_sap_ui_mdc_Table_ExportButtonType"});
-			var oMenuButton = new OverflowToolbarMenuButton(sIdPrefix + "-export", {
+			const sButtonType = ThemeParameters.get({name: "_sap_ui_mdc_Table_ExportButtonType"});
+			const oMenuButton = new OverflowToolbarMenuButton(sIdPrefix + "-export", {
 				icon: "sap-icon://excel-attachment",
 				text: oRb.getText("table.QUICK_EXPORT"),
 				tooltip: oRb.getText("table.EXPORT_BUTTON_TEXT"),
@@ -78,24 +81,23 @@ sap.ui.define([
 				defaultAction: mEventInfo.default
 			});
 
-			// sap.m.Menu requires modules from the unified Lib - load it properly with preload
-			sap.ui.getCore().loadLibrary("sap.ui.unified", {async: true}).then(function() {
-				sap.ui.require(["sap/m/Menu", "sap/m/MenuItem"], function(Menu, MenuItem) {
-					var oMenu = new Menu({
-						items: [
-							new MenuItem({
-								text: oRb.getText("table.QUICK_EXPORT"),
-								press: mEventInfo.default
-							}),
-							new MenuItem({
-								text: oRb.getText("table.EXPORT_WITH_SETTINGS"),
-								press: mEventInfo.exportAs
-							})
-						]
-					});
-					oMenuButton.setMenu(oMenu);
-				});
+			const oMenu = new Menu({
+				items: [
+					new MenuItem({
+						text: oRb.getText("table.QUICK_EXPORT"),
+						press: mEventInfo.default
+					}),
+					new MenuItem({
+						text: oRb.getText("table.EXPORT_WITH_SETTINGS"),
+						press: mEventInfo.exportAs
+					})
+				]
 			});
+			oMenuButton.setMenu(oMenu);
+
+			FESRHelper.setSemanticStepname(oMenuButton, "defaultAction", "OI:QE");
+			FESRHelper.setSemanticStepname(oMenu.getItems()[0], "press", "OI:QE");
+			FESRHelper.setSemanticStepname(oMenu.getItems()[1], "press", "OI:EXP:SETTINGS");
 
 			ShortcutHintsMixin.addConfig(oMenuButton._getButtonControl(), {
 					addAccessibilityLabel: true,
@@ -106,126 +108,30 @@ sap.ui.define([
 
 			return oMenuButton;
 		},
+		createExpandCollapseAllButton: function (sIdPrefix, aEventInfo, bIsExpand) {
+			if (!oRb) {
+				this._loadResourceBundle();
+			}
+
+			const sId = bIsExpand ? sIdPrefix + "-expandAll" : sIdPrefix + "-collapseAll",
+				sText = bIsExpand ? oRb.getText("table.EXPAND_ALL") : oRb.getText("table.COLLAPSE_ALL");
+
+			const oButton = this._createButton(sId, {
+				icon: bIsExpand ? "sap-icon://expand-all" : "sap-icon://collapse-all",
+				text: sText,
+				press: aEventInfo,
+				tooltip: sText
+			});
+
+			FESRHelper.setSemanticStepname(oButton, "press", "mdc:tbl:" + (bIsExpand ? "expandAll" : "collapseAll"));
+
+			return oButton;
+		},
 		_createButton: function(sId, mSettings) {
 			return new OverflowToolbarButton(sId, mSettings);
 		},
 		_loadResourceBundle: function() {
 			oRb = sap.ui.getCore().getLibraryResourceBundle("sap.ui.mdc");
-		},
-
-		showPanel: function(oControl, sP13nType) {
-			return oControl.finalizePropertyHelper().then(function() {
-				return TableSettings["showUI" + sP13nType](oControl);
-			});
-		},
-
-		showUIColumns: function(oControl) {
-			if (oControl.getInbuiltFilter()) {
-				oControl.getInbuiltFilter().setVisibleFields(null);
-			}
-			return oControl.getEngine().uimanager.show(oControl, oControl.getActiveP13nModes());
-		},
-
-		showUIFilter: function(oControl) {
-			if (oControl.getInbuiltFilter()) {
-				oControl.getInbuiltFilter().setVisibleFields(null);
-			}
-			return oControl.getEngine().uimanager.show(oControl, "Filter");
-		},
-
-		/**
-		 * Adds sorting to a column by calling <code>createChanges</code> in the <code>Engine</code>.
-		 *
-		 * @param {object} oControl The control for which the sorting is used
-		 * @param {string} sProperty The property for which the sorting is used
-		 * @param {sap.ui.core.SortOrder} sSortOrder Whether to sort in descending or ascending order
-		 * @param {boolean} [bRemoveAllExisting=true] Set to remove the previous sorters
-		 */
-		createSort: function(oControl, sProperty, sSortOrder, bRemoveAllExisting) {
-			oControl.getEngine().createChanges({
-				control: oControl,
-				key: "Sort",
-				state: [{
-					selected: true,
-					name: sProperty,
-					descending: sSortOrder === CoreLibrary.SortOrder.Descending,
-					sorted: sSortOrder !== CoreLibrary.SortOrder.None
-				}],
-				applyAbsolute: bRemoveAllExisting
-			});
-
-		},
-
-		createGroup: function (oControl, sProperty) {
-			var oGroupLevels = {
-				grouped: true,
-				name: sProperty
-			};
-			var aGroup = [oGroupLevels];
-			oControl.getCurrentState().groupLevels.some(function(oProp) {
-				if (oProp.name == sProperty) {
-					aGroup[0].grouped = false;
-				}
-			});
-
-			oControl.getEngine().createChanges({
-				control: oControl,
-				key: "Group",
-				state: aGroup,
-				applyAbsolute: oControl._isOfType("ResponsiveTable")
-			});
-		},
-
-		createAggregation: function(oControl, sProperty) {
-			var oAggregations = {
-				name: sProperty,
-				aggregated: true
-			};
-
-			var aAggregate = [oAggregations];
-			if (oControl.getCurrentState().aggregations[sProperty]) {
-				oAggregations.aggregated = false;
-			}
-
-			oControl.getEngine().createChanges({
-				control: oControl,
-				key: "Aggregate",
-				state: aAggregate,
-				applyAbsolute: false
-			});
-		},
-
-		createColumnWidth: function(oControl, sProperty, sWidth) {
-			var oColumnWidth = {
-				name: sProperty,
-				width: sWidth
-			};
-
-			var aColumnWidth = [oColumnWidth];
-
-			oControl.getEngine().createChanges({
-				control: oControl,
-				key: "ColumnWidth",
-				state: aColumnWidth,
-				applyAbsolute: false
-			});
-		},
-
-		moveColumn: function(oTable, oColumn, iNewIndex) {
-			var iCurrentIndex = oTable.indexOfColumn(oColumn);
-
-			if (iCurrentIndex === iNewIndex){
-				return;
-			}
-
-			var aVisibleFields = oTable.getCurrentState(oTable).items || [];
-			var oMovedField = aVisibleFields[iCurrentIndex];
-
-			oTable.getEngine().createChanges({
-				control: oTable,
-				key: "Column",
-				state: [{name: oMovedField.name, position: iNewIndex}]
-			});
 		}
 	};
 

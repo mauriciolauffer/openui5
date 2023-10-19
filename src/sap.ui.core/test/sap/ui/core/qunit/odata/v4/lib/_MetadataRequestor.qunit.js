@@ -2,16 +2,16 @@
  * ${copyright}
  */
 sap.ui.define([
-	"jquery.sap.global",
 	"sap/base/Log",
 	"sap/ui/model/odata/v4/lib/_Helper",
 	"sap/ui/model/odata/v4/lib/_MetadataConverter",
 	"sap/ui/model/odata/v4/lib/_MetadataRequestor",
 	"sap/ui/model/odata/v4/lib/_V2MetadataConverter",
 	"sap/ui/model/odata/v4/lib/_V4MetadataConverter",
-	"sap/ui/test/TestUtils"
-], function (jQuery, Log, _Helper, _MetadataConverter, _MetadataRequestor, _V2MetadataConverter,
-		_V4MetadataConverter, TestUtils) {
+	"sap/ui/test/TestUtils",
+	"sap/ui/thirdparty/jquery"
+], function (Log, _Helper, _MetadataConverter, _MetadataRequestor, _V2MetadataConverter,
+		_V4MetadataConverter, TestUtils, jQuery) {
 	"use strict";
 
 	var mFixture = {
@@ -109,7 +109,8 @@ sap.ui.define([
 			oJQueryMock.expects("ajax")
 				.withExactArgs(sUrl + "?...", {
 					headers : sinon.match.same(mHeaders),
-					method : "GET"
+					method : "GET",
+					xhrFields : {withCredentials : true}
 				}).returns(createMock(oExpectedXml));
 			if (sODataVersion === "4.0") {
 				this.mock(_V4MetadataConverter.prototype).expects("convertXMLMetadata").twice()
@@ -127,7 +128,9 @@ sap.ui.define([
 
 			// code under test
 			oMetadataRequestor
-				= _MetadataRequestor.create(mHeaders, sODataVersion, false, mQueryParams);
+				= _MetadataRequestor.create(mHeaders, sODataVersion,
+						/*bIgnoreAnnotationsFromMetadata*/false, mQueryParams,
+						/*bWithCredentials*/true);
 
 			// code under test
 			return oMetadataRequestor.read(sUrl).then(function (oResult) {
@@ -136,7 +139,8 @@ sap.ui.define([
 				oJQueryMock.expects("ajax")
 					.withExactArgs(sUrl, {
 						headers : sinon.match.same(mHeaders),
-						method : "GET"
+						method : "GET",
+						xhrFields : {withCredentials : true}
 					}).returns(createMock(oExpectedXml));
 
 				// code under test

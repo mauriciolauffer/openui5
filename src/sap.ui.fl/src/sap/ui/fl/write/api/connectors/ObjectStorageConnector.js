@@ -21,12 +21,12 @@ sap.ui.define([
 ) {
 	"use strict";
 
-	function loadDataFromStorage (mPropertyBag) {
+	function loadDataFromStorage(mPropertyBag) {
 		var aFlexObjects = [];
 
 		return ObjectStorageUtils.forEachObjectInStorage(mPropertyBag, function(mFlexObject) {
 			aFlexObjects.push(mFlexObject.changeDefinition);
-		}).then(function () {
+		}).then(function() {
 			return aFlexObjects;
 		});
 	}
@@ -206,11 +206,11 @@ sap.ui.define([
 		 * @param {string} mPropertyBag.reference reference of the application
 		 * @returns {Promise<Object>} resolving with an object containing a data contained in the changes-bundle
 		 */
-		loadFlexData: function(mPropertyBag) {
+		loadFlexData(mPropertyBag) {
 			return loadDataFromStorage({
 				storage: this.storage,
 				reference: mPropertyBag.reference
-			}).then(function (aFlexObjects) {
+			}).then(function(aFlexObjects) {
 				StorageUtils.sortFlexObjects(aFlexObjects);
 				var mGroupedFlexObjects = StorageUtils.getGroupedFlexObjects(aFlexObjects);
 				var aResponses = StorageUtils.filterAndSortResponses(mGroupedFlexObjects);
@@ -224,23 +224,26 @@ sap.ui.define([
 		/**
 		 * @inheritDoc
 		 */
-		write: function(mPropertyBag) {
-			var aPromises = mPropertyBag.flexObjects.map(function(oFlexObject, iIndex) {
-				var sKey = ObjectStorageUtils.createFlexObjectKey(oFlexObject);
-				oFlexObject = setFlexObjectCreation(oFlexObject, ++iIndex);
-				var vFlexObject = this.storage._itemsStoredAsObjects ? oFlexObject : JSON.stringify(oFlexObject);
-				return this.storage.setItem(sKey, vFlexObject);
-			}.bind(this));
-
-			return Promise.all(aPromises).then(function () {
-				// return nothing
-			});
+		async write(mPropertyBag) {
+			let iIndex = 0;
+			const aUpdatedFlexObjects = [];
+			for (const oFlexObject of mPropertyBag.flexObjects) {
+				const sKey = ObjectStorageUtils.createFlexObjectKey(oFlexObject);
+				const oUpdatedFlexObject = setFlexObjectCreation(oFlexObject, ++iIndex);
+				const vUpdatedFlexObject = this.storage._itemsStoredAsObjects ? oUpdatedFlexObject : JSON.stringify(oUpdatedFlexObject);
+				await this.storage.setItem(sKey, vUpdatedFlexObject);
+				aUpdatedFlexObjects.push(oUpdatedFlexObject);
+			}
+			// Return response structure like from the backend to update objects with creation data
+			return {
+				response: aUpdatedFlexObjects
+			};
 		},
 
 		/**
 		 * @inheritDoc
 		 */
-		update: function(mPropertyBag) {
+		update(mPropertyBag) {
 			var oFlexObject = mPropertyBag.flexObject;
 			var sKey = ObjectStorageUtils.createFlexObjectKey(mPropertyBag.flexObject);
 			var vFlexObject = this.storage._itemsStoredAsObjects ? oFlexObject : JSON.stringify(oFlexObject);
@@ -252,14 +255,14 @@ sap.ui.define([
 		/**
 		 * @inheritDoc
 		 */
-		reset: function(mPropertyBag) {
+		reset(mPropertyBag) {
 			return ObjectStorageUtils.forEachObjectInStorage({
 				storage: this.storage,
 				reference: mPropertyBag.reference,
 				layer: mPropertyBag.layer
 			}, function(mFlexObject) {
 				if (shouldChangeBeDeleted(mPropertyBag, mFlexObject.changeDefinition)) {
-					return Promise.resolve(this.storage.removeItem(mFlexObject.key)).then(function () {
+					return Promise.resolve(this.storage.removeItem(mFlexObject.key)).then(function() {
 						return {
 							fileName: mFlexObject.changeDefinition && mFlexObject.changeDefinition.fileName
 						};
@@ -268,7 +271,7 @@ sap.ui.define([
 			}.bind(this))
 			.then(function(aResponse) {
 				return {
-					response: aResponse.filter(function (oChangeDefinition) {
+					response: aResponse.filter(function(oChangeDefinition) {
 						return !!oChangeDefinition;
 					})
 				};
@@ -278,7 +281,7 @@ sap.ui.define([
 		/**
 		 * @inheritDoc
 		 */
-		remove: function(mPropertyBag) {
+		remove(mPropertyBag) {
 			var sKey = ObjectStorageUtils.createFlexObjectKey(mPropertyBag.flexObject);
 			this.storage.removeItem(sKey);
 			var vRemoveResponse = this.storage.removeItem(sKey);
@@ -289,21 +292,22 @@ sap.ui.define([
 		/**
 		 * @inheritDoc
 		 */
-		loadFeatures: function() {
+		loadFeatures() {
 			return Promise.resolve({
 				isKeyUser: true,
 				isVariantSharingEnabled: true,
 				isProductiveSystem: false,
-				isCondensingEnabled: true
+				isCondensingEnabled: true,
+				isContextSharingEnabled: false
 			});
 		},
 
 		/**
 		 * @inheritDoc
 		 */
-		getFlexInfo: function(mPropertyBag) {
+		getFlexInfo(mPropertyBag) {
 			mPropertyBag.storage = this.storage;
-			return ObjectStorageUtils.getAllFlexObjects(mPropertyBag).then(function (aFlexObjects) {
+			return ObjectStorageUtils.getAllFlexObjects(mPropertyBag).then(function(aFlexObjects) {
 				return {
 					isResetEnabled: aFlexObjects.length > 0
 				};
@@ -313,7 +317,7 @@ sap.ui.define([
 		/**
 		 * @inheritDoc
 		 */
-		condense: function(mPropertyBag) {
+		condense(mPropertyBag) {
 			// the functionality below would normally be done in the back end
 			// but in this case the storage can't be extended, so the logic has to be included in the connector
 			var oCondenseInformation = mPropertyBag.flexObjects;

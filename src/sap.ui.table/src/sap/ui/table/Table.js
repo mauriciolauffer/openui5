@@ -21,13 +21,15 @@ sap.ui.define([
 	"./extensions/Scrolling",
 	"./extensions/DragAndDrop",
 	"./TableRenderer",
-	"./rowmodes/FixedRowMode",
-	"./rowmodes/InteractiveRowMode",
-	"./rowmodes/AutoRowMode",
+	"./rowmodes/Type",
+	"./rowmodes/Fixed",
+	"./rowmodes/Interactive",
+	"./rowmodes/Auto",
 	"./plugins/SelectionModelSelection",
 	"sap/ui/thirdparty/jquery",
 	"sap/base/Log",
-	"sap/ui/core/Configuration"
+	"sap/ui/core/Configuration",
+	"sap/ui/core/library"
 ], function(
 	Device,
 	Control,
@@ -47,13 +49,15 @@ sap.ui.define([
 	ScrollExtension,
 	DragAndDropExtension,
 	TableRenderer,
+	RowModeType,
 	FixedRowMode,
 	InteractiveRowMode,
 	AutoRowMode,
 	SelectionModelSelectionPlugin,
 	jQuery,
 	Log,
-	Configuration
+	Configuration,
+	CoreLibrary
 ) {
 	"use strict";
 
@@ -61,7 +65,7 @@ sap.ui.define([
 	var NavigationMode = library.NavigationMode;
 	var SelectionMode = library.SelectionMode;
 	var SelectionBehavior = library.SelectionBehavior;
-	var SortOrder = library.SortOrder;
+	var SortOrder = CoreLibrary.SortOrder;
 	var VisibleRowCountMode = library.VisibleRowCountMode;
 	var Hook = TableUtils.Hook.Keys.Table;
 	var _private = TableUtils.createWeakMapFacade();
@@ -123,8 +127,10 @@ sap.ui.define([
 			 *
 			 * If no value is set (includes 0), a default height is applied based on the content density configuration. In any
 			 * <code>visibleRowCountMode</code>, the actual height can increase based on the content.
+			 *
+			 * @deprecated As of version 1.119, use the <code>rowMode</code> aggregation instead.
 			 */
-			rowHeight: {type: "int", group: "Appearance", defaultValue: null},
+			rowHeight: {type: "int", group: "Appearance", defaultValue: null, deprecated: true},
 
 			/**
 			 * Header row height in pixel. If a value greater than 0 is set, it overrides the height defined in the <code>rowHeight</code> property
@@ -146,8 +152,10 @@ sap.ui.define([
 
 			/**
 			 * Number of visible rows of the table.
+			 *
+			 * @deprecated As of version 1.119, use the <code>rowMode</code> aggregation instead.
 			 */
-			visibleRowCount: {type: "int", group: "Appearance", defaultValue: 10},
+			visibleRowCount: {type: "int", group: "Appearance", defaultValue: 10, deprecated: true},
 
 			/**
 			 * First visible row.
@@ -160,7 +168,9 @@ sap.ui.define([
 			 * When the selection mode is changed, the current selection is removed.
 			 * <b>Note:</b> Since the group header visualization relies on the row selectors, the row selectors are always shown if the grouping
 			 * functionality (depends on table type) is enabled, even if <code>sap.ui.table.SelectionMode.None</code> is set.
-			 * <b>Note:</b> If a selection plugin is applied to the table, the selection mode is controlled by the plugin.
+			 * <b>Note:</b> The built-in selection API has limited functionality, especially when it is combined with paging (e.g. OData). Therefore,
+			 * it is recommended to use a selection plugin instead.
+			 * <b>Note:</b> If a selection plugin is used with the table, the selection mode is controlled by the plugin.
 			 */
 			selectionMode: {type: "sap.ui.table.SelectionMode", group: "Behavior", defaultValue: SelectionMode.MultiToggle},
 
@@ -187,8 +197,10 @@ sap.ui.define([
 
 			/**
 			 * Flag whether the controls of the Table are editable or not (currently this only controls the background color in certain themes!)
+			 *
+			 * @deprecated As of version 1.115
 			 */
-			editable: {type: "boolean", group: "Behavior", defaultValue: true},
+			editable: {type: "boolean", group: "Behavior", defaultValue: true, deprecated: true},
 
 			/**
 			 * This property has been deprecated and must not be used anymore, since <code>Scrollbar</code> is the only supported option.
@@ -231,11 +243,13 @@ sap.ui.define([
 			 * @see sap.ui.table.Table#setGroupBy
 			 * @deprecated As of version 1.110, this feature has a limited functionality and should not be used anymore.
 			 */
-			enableGrouping: {type: "boolean", group: "Behavior", defaultValue: false},
+			enableGrouping: {type: "boolean", group: "Behavior", defaultValue: false, deprecated: true},
 
 			/**
 			 * Flag to show or hide the column visibility menu. This menu will get displayed in each
 			 * generated column header menu. It allows to show or hide columns
+			 * @deprecated As of Version 1.117, use a <code>ColumnMenu</code> with a custom menu item in the <code>headerMenu</code> association
+			 * instead.
 			 */
 			showColumnVisibilityMenu: {type: "boolean", group: "Appearance", defaultValue: false},
 
@@ -264,14 +278,17 @@ sap.ui.define([
 			 * rendering. The user can change the <code>visibleRowCount</code> by dragging a resizer.
 			 *
 			 * @since 1.9.2
+			 * @deprecated As of version 1.119, use the <code>rowMode</code> aggregation instead.
 			 */
-			visibleRowCountMode: {type: "sap.ui.table.VisibleRowCountMode", group: "Appearance", defaultValue: VisibleRowCountMode.Fixed},
+			visibleRowCountMode: {type: "sap.ui.table.VisibleRowCountMode", group: "Appearance", defaultValue: VisibleRowCountMode.Fixed, deprecated: true},
 
 			/**
 			 * This property is used to set the minimum count of visible rows when the property visibleRowCountMode is set to Auto or Interactive.
 			 * For any other visibleRowCountMode, it is ignored.
+			 *
+			 * @deprecated As of version 1.119, use the <code>rowMode</code> aggregation instead.
 			 */
-			minAutoRowCount: {type: "int", group: "Appearance", defaultValue: 5},
+			minAutoRowCount: {type: "int", group: "Appearance", defaultValue: 5, deprecated: true},
 
 			/**
 			 * Number of columns that are fixed on the left. Only columns which are not fixed can be scrolled horizontally.
@@ -288,18 +305,17 @@ sap.ui.define([
 			/**
 			 * Number of rows that are fix on the top. When you use a vertical scrollbar, only the rows which are not fixed, will scroll.
 			 *
-			 * This property is only supported if the <code>rows</code> aggregation is bound to a {@link sap.ui.model.ClientModel client model}.
+			 * @deprecated As of version 1.119, use the <code>rowMode</code> aggregation instead.
 			 */
-			fixedRowCount: {type: "int", group: "Appearance", defaultValue: 0},
+			fixedRowCount: {type: "int", group: "Appearance", defaultValue: 0, deprecated: true},
 
 			/**
 			 * Number of rows that are fix on the bottom. When you use a vertical scrollbar, only the rows which are not fixed, will scroll.
 			 *
-			 * This property is only supported if the <code>rows</code> aggregation is bound to a {@link sap.ui.model.ClientModel client model}.
-			 *
 			 * @since 1.18.7
+			 * @deprecated As of version 1.119, use the <code>rowMode</code> aggregation instead.
 			 */
-			fixedBottomRowCount: {type: "int", group: "Appearance", defaultValue: 0},
+			fixedBottomRowCount: {type: "int", group: "Appearance", defaultValue: 0, deprecated: true},
 
 			/**
 			 * Flag whether to show or hide the column menu item to freeze or unfreeze a column.
@@ -372,12 +388,14 @@ sap.ui.define([
 			/**
 			 * Control or text of title section of the Table (if not set it will be hidden)
 			 *
-			 * @deprecated As of 1.72. Use the <code>extension</code> aggregation instead.
+			 * @deprecated As of version 1.72. Use, for example, a <code>sap.m.Title</code> control in the <code>extension</code> aggregation instead.
 			 */
 			title: {type: "sap.ui.core.Control", altTypes: ["string"], multiple: false, deprecated: true},
 
 			/**
-			 * Control or text of footer section of the Table (if not set it will be hidden)
+			 * Control or text of footer section of the Table (if not set it will be hidden).
+			 *
+			 * <b>Note:</b> The <code>altType</code> string is deprecated as of version 1.118. Use a <code>Control</code> instead.
 			 */
 			footer: {type: "sap.ui.core.Control", altTypes: ["string"], multiple: false},
 
@@ -385,7 +403,7 @@ sap.ui.define([
 			 * Toolbar of the Table
 			 * If not set, no toolbar area will be rendered.
 			 * Note: The CSS class sapMTBHeader-CTX is applied on the given toolbar.
-			 * @deprecated Since version 1.38. This aggregation is deprecated, use the <code>extension</code> aggregation instead.
+			 * @deprecated As of version 1.38. This aggregation is deprecated, use the <code>extension</code> aggregation instead.
 			 */
 			toolbar: {type: "sap.ui.core.Toolbar", multiple: false, deprecated: true},
 
@@ -415,18 +433,24 @@ sap.ui.define([
 			 * The actions of rows can be defined with the {@link sap.ui.table.Table#setRowActionTemplate rowActionTemplate} aggregation of the table.
 			 * Furthermore, row-specific settings can be defined with the {@link sap.ui.table.Table#setRowSettingsTemplate rowSettingsTemplate}
 			 * aggregation of the table.
+			 *
+			 * <b>Note:</b> During the binding of rows, the (exact) count needs to be available in the table and has to be requested.
+			 * If the count is not requested, this may lead to unexpected behavior in the table, such as scrolling, accessibility, or keyboard issues.
+			 * Please refer to the documentation of the used model for information on requesting the count, for example, {@link sap.ui.model.odata.v2.ODataModel}
+			 * or {@link sap.ui.model.odata.v4.ODataModel}.
 			 */
 			rows: {type: "sap.ui.table.Row", multiple: true, singularName: "row", bindable: "bindable", selector: "#{id}-tableCCnt", dnd: true},
 
-			// TODO: should row modes be implemented as plugins?
-			// TODO: The type should be sap.ui.table.rowmodes.RowMode, but then the build fails because RowMode is a private class.
 			/**
-			 * Row mode
+			 * Defines how the table handles the rows. By default, the table operates in {@link sap.ui.table.rowmodes.Type Fixed} mode.
 			 *
-			 * @private
-			 * @ui5-restricted sap.ui.mdc
+			 * @since 1.119
 			 */
-			rowMode: {type: "sap.ui.core.Element", multiple: false, visibility: "hidden"},
+			rowMode: {
+				type: "sap.ui.table.rowmodes.RowMode",
+				multiple: false,
+				altTypes: ["sap.ui.table.rowmodes.Type"]
+			},
 
 			/**
 			 * This row can be used for user input to create new data.
@@ -484,16 +508,12 @@ sap.ui.define([
 			/**
 			 * Plugin section of the table. Multiple plugins are possible, but always only <b>one</b> of a certain type.
 			 *
-			 * The following restrictions apply:
-			 * <ul>
-			 *  <li>If a selection plugin is applied to the table, the table's selection API must not be used. Instead, use the API of the
-			 *      plugin.</li>
-			 *  <li>Only one MultiSelectionPlugin can be applied. No other plugins can be applied.</li>
-			 * </ul>
+			 * If a selection plugin is used, the table's selection API must not be used. Instead, use the API of the plugin.
 			 *
 			 * @since 1.64
+			 * @deprecated As of version 1.120. Please add plugins to the <code>dependents</code> aggregation instead.
 			 */
-			plugins: {type: "sap.ui.table.plugins.SelectionPlugin", multiple: true, singularName: "plugin"},
+			plugins: {type: "sap.ui.table.plugins.SelectionPlugin", multiple: true, singularName: "plugin", deprecated: true},
 
 			/**
 			 * Defines the message strip to display binding-related messages.
@@ -518,8 +538,9 @@ sap.ui.define([
 			 *
 			 * @experimental Since 1.28. This feature has a limited functionality.
 			 * @see sap.ui.table.Table#setEnableGrouping
+			 * @deprecated As of version 1.110.
 			 */
-			groupBy: {type: "sap.ui.table.Column", multiple: false},
+			groupBy: {type: "sap.ui.table.Column", multiple: false, deprecated: true},
 
 			/**
 			 * Association to controls / ids which label this control (see WAI-ARIA attribute aria-labelledby).
@@ -529,10 +550,15 @@ sap.ui.define([
 		events: {
 
 			/**
-			 * fired when the row selection of the table has been changed (the event parameters can be used to determine
-			 * selection changes - to find out the selected rows you should better use the table selection API)
+			 * Fired if the row selection of the table has been changed.
 			 *
-			 * <b>Note:</b> If a selection plugin is applied to the table, this event won't be fired.
+			 * The event parameters can be used to determine selection changes. To find the selected rows, you should
+			 * use {@link sap.ui.table.Table#getSelectedIndices} or the related function of the used selection plugin
+			 * if it exists.
+			 *
+			 * <b>Note:</b> The built-in selection API has limited functionality, especially when it is combined with paging (e.g. OData). Therefore,
+			 * it is recommended to use a selection plugin instead.
+			 * <b>Note:</b> If a selection plugin is used with the table, this event won't be fired.
 			 */
 			rowSelectionChange: {
 				parameters: {
@@ -629,19 +655,18 @@ sap.ui.define([
 			sort: {
 				allowPreventDefault: true,
 				parameters: {
-
 					/**
-					 * sorted column.
+					 * The column for which the sorting is changed
 					 */
 					column: {type: "sap.ui.table.Column"},
 
 					/**
-					 * Sort Order
+					 * The new sort order
 					 */
-					sortOrder: {type: "sap.ui.table.SortOrder"},
+					sortOrder: {type: "sap.ui.core.SortOrder"},
 
 					/**
-					 * If column was added to sorter this is true. If new sort is started this is set to false
+					 * Indicates that the column is added to the list of sorted columns
 					 */
 					columnAdded: {type: "boolean"}
 				}
@@ -674,6 +699,7 @@ sap.ui.define([
 
 			/**
 			 * fired when the table is grouped (experimental!).
+			 * @deprecated As of version 1.118.
 			 */
 			group: {
 				allowPreventDefault: true,
@@ -682,11 +708,13 @@ sap.ui.define([
 					 * grouped column.
 					 */
 					column: {type: "sap.ui.table.Column"}
-				}
+				},
+				deprecated: true
 			},
 
 			/**
 			 * fired when the visibility of a table column is changed.
+			 * @deprecated As of Version 1.117
 			 */
 			columnVisibility: {
 				allowPreventDefault: true,
@@ -747,7 +775,7 @@ sap.ui.define([
 			/**
 			 * fired when the user clicks a cell of the table.
 			 * @since 1.21.0
-			 * @deprecated As of 1.54, replaced by <code>beforeOpenContextMenu</code>.
+			 * @deprecated As of version 1.54, replaced by <code>beforeOpenContextMenu</code>.
 			 */
 			cellContextmenu: {
 				allowPreventDefault: true,
@@ -990,7 +1018,7 @@ sap.ui.define([
 		this._mAnimationFrames = {};
 
 		// TBD: Tooltips are not desired by Visual Design, discuss whether to switch it off by default
-		this._bHideStandardTooltips = false;
+		this._setHideStandardTooltips(false);
 
 		this._aRowHeights = [];
 		this._aSortedColumns = [];
@@ -1017,11 +1045,17 @@ sap.ui.define([
 	 * @inheritDoc
 	 */
 	Table.prototype.applySettings = function(mSettings, oScope) {
-		// Some settings might rely on the existence of a row mode or plugin. If row modes and plugins are in the settings and applied before
-		// other settings, initialization of legacy row modes and plugins can be avoided.
+		// The threshold and firstVisibleRow must be set before the OData binding for the "rows" aggregation is initialized. If the metadata is
+		// already loaded, a getContexts call may be triggered immediately with the default values instead of the one in the settings.
+		// Some settings might rely on the existence of a row mode.
 		if (mSettings) {
-			var aEarlySettings = ["rowMode", "plugins"];
+			var aEarlySettings = ["threshold", "firstVisibleRow", "rowMode"];
 			var mEarlySettings = {};
+
+			/**
+			 * @deprecated As of version 1.120
+			 */
+			aEarlySettings.push("plugins");
 
 			for (var i = 0; i < aEarlySettings.length; i++) {
 				var sSetting = aEarlySettings[i];
@@ -1037,9 +1071,8 @@ sap.ui.define([
 			}
 		}
 
-		this._initLegacyRowMode();
-		this._initLegacySelectionPlugin();
-
+		this._initLegacySelectionPlugin(); // Doing it at the end can eliminate the need to create a legacy selection plugin.
+		initDefaultRowMode(this);
 		Control.prototype.applySettings.call(this, mSettings, oScope);
 	};
 
@@ -1166,8 +1199,10 @@ sap.ui.define([
 				// Clear the cell context menu.
 				TableUtils.Menu.cleanupDefaultContentCellContextMenu(this);
 
-				// Update the column menus.
-				this._invalidateColumnMenus();
+				/**
+				 * @deprecated As of Version 1.117
+				 */
+				this._invalidateColumnMenus(); // Update the column menus.
 			}
 		}.bind(this));
 	};
@@ -1365,6 +1400,9 @@ sap.ui.define([
 
 			if (this._bIgnoreFixedColumnCount !== bIgnoreFixedColumnCountCandidate) {
 				this._bIgnoreFixedColumnCount = bIgnoreFixedColumnCountCandidate;
+				/**
+				 * @deprecated As of Version 1.117
+				 */
 				if (this.getEnableColumnFreeze()) {
 					this._invalidateColumnMenus();
 				}
@@ -1575,7 +1613,7 @@ sap.ui.define([
 			var oDummyColumn = this.getDomRef("dummycolhdr");
 
 			if (oDummyColumn) {
-				var bDummyColumnHasWidth = oDummyColumn.clientWidth > 0;
+				var bDummyColumnHasWidth = oDummyColumn.clientWidth > 1;
 
 				if (!bHasFlexibleRowActions && bDummyColumnHasWidth) {
 					var iColumnsWidth = this.getColumns().reduce(function(iColumnsWidth, oColumn) {
@@ -1654,8 +1692,8 @@ sap.ui.define([
 	/**
 	 * Sets the focus to the stored focus DOM reference.
 	 *
-	 * If {@param oFocusInfo.targetInfo} is of type {@type sap.ui.core.message.Message},
-	 * the focus will be set as accurately as possible according to the information provided by {@type sap.ui.core.message.Message}.
+	 * If <code>oFocusInfo.targetInfo</code> is of type {@link sap.ui.core.message.Message},
+	 * the focus will be set as accurately as possible according to the information provided by {@link sap.ui.core.message.Message}.
 	 *
 	 * @param {object} [oFocusInfo={}] Options for setting the focus
 	 * @param {boolean} [oFocusInfo.preventScroll=false] @since 1.60 If set to <code>true</code>, the focused
@@ -1708,7 +1746,7 @@ sap.ui.define([
 	Table.prototype.setTitle = function(vTitle) {
 		var oTitle = vTitle;
 		if (typeof (vTitle) === "string" || vTitle instanceof String) {
-			oTitle = library.TableHelper.createTextView({
+			oTitle = TableUtils._getTableTemplateHelper().createTextView({
 				text: vTitle
 			});
 			oTitle.addStyleClass("sapUiTableHdrTitle");
@@ -1723,7 +1761,7 @@ sap.ui.define([
 	Table.prototype.setFooter = function(vFooter) {
 		var oFooter = vFooter;
 		if (typeof (vFooter) === "string" || vFooter instanceof String) {
-			oFooter = library.TableHelper.createTextView({
+			oFooter = TableUtils._getTableTemplateHelper().createTextView({
 				text: vFooter
 			});
 		}
@@ -1737,6 +1775,9 @@ sap.ui.define([
 	 * @param {sap.ui.table.SelectionMode} sSelectionMode the selection mode, see sap.ui.table.SelectionMode
 	 * @returns {this} Reference to <code>this</code> in order to allow method chaining
 	 * @public
+	 *
+	 * <b>Note:</b> The built-in selection API has limited functionality, especially when it is combined with paging (e.g. OData). Therefore,
+	 * it is recommended to use a selection plugin instead.
 	 */
 	Table.prototype.setSelectionMode = function(sSelectionMode) {
 		if (sSelectionMode === SelectionMode.Multi) {
@@ -1749,7 +1790,7 @@ sap.ui.define([
 			Log.error("If a selection plugin is applied to the table, the selection mode is controlled by the plugin.", this);
 		} else {
 			this.setProperty("selectionMode", sSelectionMode);
-			this._oLegacySelectionPlugin.setSelectionMode(sSelectionMode);
+			this._getSelectionPlugin().setSelectionMode(sSelectionMode);
 		}
 
 		return this;
@@ -2118,78 +2159,105 @@ sap.ui.define([
 	 */
 	Table.prototype._onBindingChange = function(oEvent) {};
 
-	/*
-	 * @see JSDoc generated by SAPUI5 control API generator
-	 */
-	Table.prototype.setRowMode = function(oRowMode) {
-		this._destroyLegacyRowMode();
-		this.setAggregation("rowMode", oRowMode);
-		this._initLegacyRowMode();
+	Table.prototype.setRowMode = function(vRowMode) {
+		destroyDefaultRowMode(this);
+		this.setAggregation("rowMode", vRowMode);
+		initDefaultRowMode(this);
+		return this;
 	};
 
-	// this method can be removed when the aggregation is made public
-	Table.prototype.getRowMode = function() {
-		return this.getAggregation("rowMode");
-	};
+	Table.prototype.destroyRowMode = function() {
+		this.destroyAggregation("rowMode");
 
-	/**
-	 * Gets the row mode of the table. If no row mode is set, a legacy row mode is returned.
-	 *
-	 * @returns {sap.ui.table.rowmodes.RowMode} The row mode of the table.
-	 * @private
-	 */
-	Table.prototype._getRowMode = function() {
-		var oRowMode = this.getRowMode() || this._oLegacyRowMode;
-
-		if (!oRowMode) {
-			// To avoid null checks everywhere if the row mode is accessed after destroying the table.
-			this._initLegacyRowMode();
-			oRowMode = this._oLegacyRowMode;
+		if (!_private(this).oDefaultRowMode) {
+			initDefaultRowMode(this);
 		}
 
-		return oRowMode;
+		return this;
 	};
 
 	/**
-	 * Initializes a legacy row mode based on the <code>visibleRowCountMode</code> property, if no row mode is set in the <code>rowMode</code>
-	 * aggregation.
+	 * Gets the row mode of the table. This is either the applied row mode instance, or the default row mode instance if it was already created.
 	 *
-	 * @private
+	 * @param {sap.ui.table.Table} oTable The table from which to get the row mode.
+	 * @returns {sap.ui.table.rowmodes.RowMode | undefined} The row mode of the table.
 	 */
-	Table.prototype._initLegacyRowMode = function() {
-		if (this._oLegacyRowMode || this.getRowMode()) {
-			// No legacy row mode needs to be created if it already exists, or if a row mode is set.
+	function getRowMode(oTable) {
+		var vRowMode = oTable.getRowMode();
+
+		/**
+		 * @deprecated As of version 1.119
+		 */
+		if (!oTable.isDestroyStarted() && !TableUtils.isA(vRowMode, "sap.ui.table.rowmodes.RowMode") && !_private(oTable).oDefaultRowMode) {
+			initDefaultRowMode(oTable);
+		}
+
+		return TableUtils.isA(vRowMode, "sap.ui.table.rowmodes.RowMode") ? vRowMode : _private(oTable).oDefaultRowMode;
+	}
+
+	/**
+	 * Initializes a row mode instance with default settings if no row mode instance exists.
+	 *
+	 * @param {sap.ui.table.Table} oTable The table for which to create a default row mode instance.
+	 */
+	function initDefaultRowMode(oTable) {
+		const vRowMode = oTable.getRowMode();
+		const sRowMode = TableUtils.isA(vRowMode, "sap.ui.table.rowmodes.RowMode") ? undefined : vRowMode || RowModeType.Fixed;
+
+		// If row mode is an instance, a default is not needed.
+		if (sRowMode === undefined || _private(oTable).oDefaultRowMode) {
 			return;
 		}
 
-		this._oLegacyRowMode = createLegacyRowMode(this);
-		this.addAggregation("_hiddenDependents", this._oLegacyRowMode);
-	};
+		/**
+		 * @deprecated As of version 1.119
+		 */
+		if (vRowMode === null) {
+			switch (oTable.getVisibleRowCountMode()) {
+				case RowModeType.Fixed:
+					_private(oTable).oDefaultRowMode = new FixedRowMode(true);
+					break;
+				case RowModeType.Interactive:
+					_private(oTable).oDefaultRowMode = new InteractiveRowMode(true);
+					break;
+				case RowModeType.Auto:
+					_private(oTable).oDefaultRowMode = new AutoRowMode(true);
+					break;
+				default:
+					throw new Error("Default row mode could not be created");
+			}
 
-	Table.prototype._destroyLegacyRowMode = function() {
-		if (this._oLegacyRowMode) {
-			this._oLegacyRowMode.destroy();
-			delete this._oLegacyRowMode;
+			oTable.addAggregation("_hiddenDependents", _private(oTable).oDefaultRowMode);
+			return;
 		}
-	};
 
-	function createLegacyRowMode(oTable) {
-		var oRowMode;
-
-		switch (oTable.getVisibleRowCountMode()) {
-			case VisibleRowCountMode.Fixed:
-				oRowMode = new FixedRowMode(true);
+		switch (sRowMode) {
+			case RowModeType.Fixed:
+				_private(oTable).oDefaultRowMode = new FixedRowMode();
 				break;
-			case VisibleRowCountMode.Interactive:
-				oRowMode = new InteractiveRowMode(true);
+			case RowModeType.Interactive:
+				_private(oTable).oDefaultRowMode = new InteractiveRowMode();
 				break;
-			case VisibleRowCountMode.Auto:
-				oRowMode = new AutoRowMode(true);
+			case RowModeType.Auto:
+				_private(oTable).oDefaultRowMode = new AutoRowMode();
 				break;
 			default:
+				throw new Error("Default row mode could not be created");
 		}
 
-		return oRowMode;
+		oTable.addAggregation("_hiddenDependents", _private(oTable).oDefaultRowMode);
+	}
+
+	/**
+	 * Destroys the default row mode instance.
+	 *
+	 * @param {sap.ui.table.Table} oTable The table whose default row mode instance to destroy.
+	 */
+	function destroyDefaultRowMode(oTable) {
+		if (_private(oTable).oDefaultRowMode) {
+			_private(oTable).oDefaultRowMode.destroy();
+			delete _private(oTable).oDefaultRowMode;
+		}
 	}
 
 	/**
@@ -2199,7 +2267,7 @@ sap.ui.define([
 	 * @private
 	 */
 	Table.prototype._getRowCounts = function() {
-		var mRowCounts = this._getRowMode().getComputedRowCounts();
+		var mRowCounts = getRowMode(this).getComputedRowCounts();
 
 		// TODO: Enhance the RowMode interface and move these calculations to the row modes that support variable row heights.
 		// TableUtils.isVariableRowHeightEnabled can't be used because it calls this method, which causes infinite recursion.
@@ -2214,9 +2282,15 @@ sap.ui.define([
 		return mRowCounts;
 	};
 
-	/*
-	 * @see JSDoc generated by SAPUI5 control API generator
+	/**
+	 * Returns whether showing the NoData element is disabled. It can, for example, be disabled with the <code>showNoData</code> property.
+	 *
+	 * @returns {boolean} Whether showing the NoData element is disabled.
 	 */
+	Table.prototype._isNoDataDisabled = function() {
+		return !this.getShowNoData() || (getRowMode(this)?.isNoDataDisabled() ?? false);
+	};
+
 	Table.prototype.setVisibleRowCountMode = function(sVisibleRowCountMode) {
 		if (this.getRowMode()) {
 			Log.warning("If the \"rowMode\" aggregation is set, setting the \"visibleRowCountMode\" has no effect");
@@ -2228,16 +2302,13 @@ sap.ui.define([
 		var sNewVisibleRowCountMode = this.getVisibleRowCountMode();
 
 		if (sNewVisibleRowCountMode !== sOldVisibleRowCountMode) {
-			this._destroyLegacyRowMode();
-			this._initLegacyRowMode();
+			destroyDefaultRowMode(this);
+			initDefaultRowMode(this);
 		}
 
 		return this;
 	};
 
-	/*
-	 * @see JSDoc generated by SAPUI5 control API generator
-	 */
 	Table.prototype.setVisibleRowCount = function(iVisibleRowCount) {
 		var sVisibleRowCountMode = this.getVisibleRowCountMode();
 		if (sVisibleRowCountMode == VisibleRowCountMode.Auto) {
@@ -2333,7 +2404,7 @@ sap.ui.define([
 			iThreshold = Math.max(iRequestLength - mRowCounts.fixedTop - mRowCounts.fixedBottom, iThreshold);
 		}
 
-		iRequestLength = Math.max(iRequestLength, this._getRowMode().getMinRequestLength(), 0);
+		iRequestLength = Math.max(iRequestLength, getRowMode(this).getMinRequestLength(), 0);
 
 		if (!oBinding || iRequestLength === 0) {
 			return [];
@@ -3042,7 +3113,7 @@ sap.ui.define([
 	 * Pushes the sorted column to array.
 	 *
 	 * @param {sap.ui.table.Column} oColumn Column to be sorted
-	 * @param {boolean} bAdd Set to true to add the new sort criterion to the existing sort criteria
+	 * @param {boolean} [bAdd = false] Set to true to add the new sort criterion to the existing sort criteria
 	 * @private
 	 */
 	Table.prototype.pushSortedColumn = function(oColumn, bAdd) {
@@ -3064,8 +3135,7 @@ sap.ui.define([
 
 	/**
 	 * Gets the sorted columns in the order in which sorting was performed through the {@link sap.ui.table.Table#sort} method and menus.
-	 * Does not reflect sorting at binding level or the columns sort visualization set with {@link sap.ui.table.Column#setSorted} and
-	 * {@link sap.ui.table.Column#setSortOrder}.
+	 * Does not reflect sorting at binding level or the columns sort visualization set with {@link sap.ui.table.Column#setSortOrder}.
 	 *
 	 * @see sap.ui.table.Table#sort
 	 * @returns {sap.ui.table.Column[]} Array of sorted columns
@@ -3077,31 +3147,31 @@ sap.ui.define([
 	};
 
 	/**
-	 * Sorts the given column ascending or descending.
+	 * Changes or removes sorting from the table.
 	 *
-	 * @param {sap.ui.table.Column | undefined} oColumn Column to be sorted or undefined to clear sorting
-	 * @param {sap.ui.table.SortOrder} oSortOrder Sort order of the column (if undefined the default will be ascending)
-	 * @param {boolean} bAdd Set to true to add the new sort criterion to the existing sort criteria
+	 * @param {sap.ui.table.Column} [oColumn] Column to be sorted or undefined to clear sorting
+	 * @param {sap.ui.core.SortOrder} [sSortOrder = sap.ui.core.SortOrder.Ascending] Sort order of the column
+	 * @param {boolean} [bAdd = false]
+	 *     Set to <code>true</code> to add the new sort criterion to the existing sort criteria, otherwise to replace it. If the sort order is
+	 *     <code>sap.ui.core.SortOrder.None</code>, this parameter has no effect, and only the sort criterion for this column is removed from the
+	 *     sort criteria.
 	 * @public
 	 */
-	Table.prototype.sort = function(oColumn, oSortOrder, bAdd) {
+	Table.prototype.sort = function(oColumn, sSortOrder, bAdd) {
 		if (!oColumn) {
-			// mimic the list binding sort API, if no column is provided, just restore the default sorting
-			// make sure to also update the sorted property to correctly indicate sorted columns
-			for (var i = 0; i < this._aSortedColumns.length; i++) {
-				this._aSortedColumns[i].setSorted(false);
-			}
-
-			var oBinding = this.getBinding();
-			if (oBinding) {
-				oBinding.sort();
-			}
-
+			// Mimic the list binding sort API. If no column is provided, restore the default sorting.
+			// Make sure to also update the "sortOrder" property to correctly indicate sorted columns.
+			this._aSortedColumns.forEach((oColumn) => {
+				/** @deprecated As of version 1.120 */
+				oColumn.setSorted(false);
+				oColumn.setSortOrder(SortOrder.None);
+			});
+			this.getBinding()?.sort();
 			this._aSortedColumns = [];
 		}
 
 		if (this.getColumns().indexOf(oColumn) >= 0) {
-			oColumn.sort(oSortOrder === SortOrder.Descending, bAdd);
+			oColumn._sort(sSortOrder ?? SortOrder.Ascending, bAdd);
 		}
 	};
 
@@ -3159,7 +3229,7 @@ sap.ui.define([
 		}
 
 		if (mRenderConfig.headerSelector.type === "toggle") {
-			var bAllRowsSelected = TableUtils.areAllRowsSelected(this);
+			var bAllRowsSelected = mRenderConfig.headerSelector.selected;
 
 			$SelectAll.toggleClass("sapUiTableSelAll", !bAllRowsSelected);
 			this._getAccExtension().setSelectAllState(bAllRowsSelected);
@@ -3178,20 +3248,42 @@ sap.ui.define([
 
 		if (sSelectAllResourceTextID) {
 			sSelectAllText = TableUtils.getResourceText(sSelectAllResourceTextID);
-			if (this._getShowStandardTooltips()) {
-				$SelectAll.attr('title', sSelectAllText);
-			} else if (mRenderConfig.headerSelector.type === "toggle") {
-				this.getDomRef("ariaselectall").innerText = sSelectAllText;
-			}
+			$SelectAll.attr('title', sSelectAllText);
 		}
 	};
 
 	/**
-	 * Returns <code>true</code>, if the standard tooltips (e.g. for selection should be shown).
+	 * Returns whether certain additional standard tooltips should be shown or not.
+	 *
+	 * see <code>_setHideStandardTooltips</code> for more details
+	 *
 	 * @private
+	 * @returns {boolean} <code>true</code>, when additional standard tooltips should be shown
 	 */
-	Table.prototype._getShowStandardTooltips = function() {
-		return !this._bHideStandardTooltips;
+	Table.prototype._getHideStandardTooltips = function() {
+		return this._bHideStandardTooltips;
+	};
+
+	/**
+	 * Defines whether certain additional standard tooltips should be shown or hidden.
+	 * The tooltips which are affected by this setting are:
+	 *
+	 * <ul>
+	 *  <li>Text on Group headers</li>
+	 *  <li>Tooltips on Row Selectors and Row for Selection</li>
+	 *  <li>Default tooltips on AnalyticalColumn headers</li>
+	 * </ul>
+	 *
+	 * Other tooltips like for Select All / Clear All icons, Expand / Collapse icons or Row Actions are not affected.
+	 *
+	 * <b>Note: The changes only take effect after a full invalidation / rerendering of the table.</b>
+	 *
+	 * @param {boolean} bHideStandardTooltips Whether to show the additional tooltips or not
+	 * @private
+	 * @ui5-restricted sap.ui.comp, sap.ui.mdc
+	 */
+	Table.prototype._setHideStandardTooltips = function(bHideStandardTooltips) {
+		this._bHideStandardTooltips = bHideStandardTooltips;
 	};
 
 	/**
@@ -3199,42 +3291,62 @@ sap.ui.define([
 	 * @private
 	 */
 	Table.prototype._onSelectionChanged = function(oEvent) {
+		this._updateSelection();
+
+		// If a selection plugin is applied to the table, the "rowSelectionChange" event should not be fired.
+		if (this._hasSelectionPlugin()) {
+			return;
+		}
+
 		var oSelectionPlugin = this._getSelectionPlugin();
 		var aRowIndices = oEvent.getParameter("rowIndices");
 		var bSelectAll = oEvent.getParameter("selectAll");
 		var iRowIndex = this._iSourceRowIndex !== undefined ? this._iSourceRowIndex : oSelectionPlugin.getSelectedIndex();
 
-		this._updateSelection();
-
-		// If a selection plugin is applied to the table, the "rowSelectionChange" event should not be fired.
-		if (!this._hasSelectionPlugin()) {
+		/**
+		* @deprecated As of Version 1.69
+		*/
+		if (this.getMetadata().hasProperty("selectedIndex")) {
 			this.setProperty("selectedIndex", oSelectionPlugin.getSelectedIndex(), true);
-			this.fireRowSelectionChange({
-				rowIndex: iRowIndex,
-				rowContext: this.getContextByIndex(iRowIndex),
-				rowIndices: aRowIndices,
-				selectAll: bSelectAll,
-				userInteraction: this._iSourceRowIndex !== undefined
-			});
 		}
+
+		this.fireRowSelectionChange({
+			rowIndex: iRowIndex,
+			rowContext: this.getContextByIndex(iRowIndex),
+			rowIndices: aRowIndices,
+			selectAll: bSelectAll,
+			userInteraction: this._iSourceRowIndex !== undefined
+		});
 	};
 
 	/**
 	 * Returns the context of a row by its index. Please note that for server-based models like OData,
 	 * the supplied index might not have been loaded yet. If the context is not available at the client,
-	 * the binding will trigger a backend request and request this single context. Although this API
+	 * the binding may trigger a backend request and request this single context. Although this API
 	 * looks synchronous it may not return a context but load it and fire a change event on the binding.
 	 *
 	 * For server-based models you should consider to only make this API call when the index is within
 	 * the currently visible scroll area.
 	 *
 	 * @param {int} iIndex Index of the row to return the context from.
-	 * @returns {sap.ui.model.Context | null} The context at this index or <code>null</code>
+	 * @returns {sap.ui.model.Context | null} The context at this index if available
 	 * @public
 	 */
 	Table.prototype.getContextByIndex = function(iIndex) {
 		var oBinding = this.getBinding();
-		return iIndex >= 0 && oBinding ? oBinding.getContexts(iIndex, 1, 0, true)[0] : null;
+		var oContext = null;
+
+		if (!oBinding || iIndex < 0) {
+			return oContext;
+		}
+
+		if (oBinding.getContextByIndex) {
+			oContext = oBinding.getContextByIndex(iIndex);
+		} else {
+			oContext = oBinding.getContexts(iIndex, 1, 0, true)[0];
+		}
+
+		return oContext || null;
 	};
 
 	// =============================================================================
@@ -3264,6 +3376,9 @@ sap.ui.define([
 	 * @returns {this} Reference to <code>this</code> in order to allow method chaining
 	 * @throws {Error} If a selection plugin is applied
 	 * @public
+	 *
+	 * <b>Note:</b> The built-in selection API has limited functionality, especially when it is combined with paging (e.g. OData). Therefore,
+	 * it is recommended to use a selection plugin instead.
 	 */
 	Table.prototype.setSelectedIndex = function(iIndex) {
 		if (this._hasSelectionPlugin()) {
@@ -3280,6 +3395,9 @@ sap.ui.define([
 	 * @returns {this} Reference to <code>this</code> in order to allow method chaining
 	 * @throws {Error} If a selection plugin is applied
 	 * @public
+	 *
+	 * <b>Note:</b> The built-in selection API has limited functionality, especially when it is combined with paging (e.g. OData). Therefore,
+	 * it is recommended to use a selection plugin instead.
 	 */
 	Table.prototype.clearSelection = function() {
 		if (this._hasSelectionPlugin()) {
@@ -3299,6 +3417,9 @@ sap.ui.define([
 	 * @returns {this} Reference to <code>this</code> in order to allow method chaining
 	 * @throws {Error} If a selection plugin is applied
 	 * @public
+	 *
+	 * <b>Note:</b> The built-in selection API has limited functionality, especially when it is combined with paging (e.g. OData). Therefore,
+	 * it is recommended to use a selection plugin instead.
 	 */
 	Table.prototype.selectAll = function() {
 		if (this._hasSelectionPlugin()) {
@@ -3318,6 +3439,9 @@ sap.ui.define([
 	 * @returns {int[]} Selected indices
 	 * @throws {Error} If a selection plugin is applied
 	 * @public
+	 *
+	 * <b>Note:</b> The built-in selection API has limited functionality, especially when it is combined with paging (e.g. OData). Therefore,
+	 * it is recommended to use a selection plugin instead.
 	 */
 	Table.prototype.getSelectedIndices = function() {
 		if (this._hasSelectionPlugin()) {
@@ -3335,6 +3459,9 @@ sap.ui.define([
 	 * @returns {this} Reference to <code>this</code> in order to allow method chaining
 	 * @throws {Error} If a selection plugin is applied
 	 * @public
+	 *
+	 * <b>Note:</b> The built-in selection API has limited functionality, especially when it is combined with paging (e.g. OData). Therefore,
+	 * it is recommended to use a selection plugin instead.
 	 */
 	Table.prototype.addSelectionInterval = function(iIndexFrom, iIndexTo) {
 		if (this._hasSelectionPlugin()) {
@@ -3353,6 +3480,9 @@ sap.ui.define([
 	 * @returns {this} Reference to <code>this</code> in order to allow method chaining
 	 * @throws {Error} If a selection plugin is applied
 	 * @public
+	 *
+	 * <b>Note:</b> The built-in selection API has limited functionality, especially when it is combined with paging (e.g. OData). Therefore,
+	 * it is recommended to use a selection plugin instead.
 	 */
 	Table.prototype.setSelectionInterval = function(iIndexFrom, iIndexTo) {
 		if (this._hasSelectionPlugin()) {
@@ -3371,6 +3501,9 @@ sap.ui.define([
 	 * @returns {this} Reference to <code>this</code> in order to allow method chaining
 	 * @throws {Error} If a selection plugin is applied
 	 * @public
+	 *
+	 * <b>Note:</b> The built-in selection API has limited functionality, especially when it is combined with paging (e.g. OData). Therefore,
+	 * it is recommended to use a selection plugin instead.
 	 */
 	Table.prototype.removeSelectionInterval = function(iIndexFrom, iIndexTo) {
 		if (this._hasSelectionPlugin()) {
@@ -3388,6 +3521,9 @@ sap.ui.define([
 	 * @returns {boolean} Whether the index is selected
 	 * @throws {Error} If a selection plugin is applied
 	 * @public
+	 *
+	 * <b>Note:</b> The built-in selection API has limited functionality, especially when it is combined with paging (e.g. OData). Therefore,
+	 * it is recommended to use a selection plugin instead.
 	 */
 	Table.prototype.isIndexSelected = function(iIndex) {
 		if (this._hasSelectionPlugin()) {
@@ -3403,6 +3539,8 @@ sap.ui.define([
 
 	/*
 	 * @see JSDoc generated by SAPUI5 control API generator
+	 *
+	 * @deprecated As of version 1.118.
 	 */
 	Table.prototype.setGroupBy = function(vValue) {
 		var oGroupByColumn = vValue;
@@ -3468,6 +3606,7 @@ sap.ui.define([
 
 	/*
 	 * @see JSDoc generated by SAPUI5 control API generator
+	 * @deprecated As of version 1.118.
 	 */
 	Table.prototype.setEnableGrouping = function(bEnableGrouping) {
 		var oGroupedByColumn = sap.ui.getCore().byId(this.getGroupBy());
@@ -3484,36 +3623,6 @@ sap.ui.define([
 			TableUtils.Grouping.resetExperimentalGrouping(this);
 		}
 
-		// update the column headers
-		this._invalidateColumnMenus();
-		return this;
-	};
-
-	/*
-	 * @see JSDoc generated by SAPUI5 control API generator
-	 */
-	Table.prototype.setEnableCustomFilter = function(bEnableCustomFilter) {
-		this.setProperty("enableCustomFilter", bEnableCustomFilter);
-		// update the column headers
-		this._invalidateColumnMenus();
-		return this;
-	};
-
-	/*
-	 * @see JSDoc generated by SAPUI5 control API generator
-	 */
-	Table.prototype.setEnableColumnFreeze = function(bEnableColumnFreeze) {
-		this.setProperty("enableColumnFreeze", bEnableColumnFreeze);
-		this._invalidateColumnMenus();
-		return this;
-	};
-
-	/*
-	 * @see JSDoc generated by SAPUI5 control API generator
-	 */
-	Table.prototype.setShowColumnVisibilityMenu = function(bShowColumnVisibilityMenu) {
-		this.setProperty("showColumnVisibilityMenu", bShowColumnVisibilityMenu);
-		this._invalidateColumnMenus();
 		return this;
 	};
 
@@ -3581,6 +3690,9 @@ sap.ui.define([
 
 		this._collectTableSizes(); // Avoid double rendering if the fixed column count needs to be adjusted.
 
+		/**
+		 * @deprecated As of Version 1.117
+		 */
 		if (this.getEnableColumnFreeze()) {
 			this._invalidateColumnMenus();
 		}
@@ -3588,9 +3700,6 @@ sap.ui.define([
 		return this;
 	};
 
-	/*
-	 * @see JSDoc generated by SAPUI5 control API generator
-	 */
 	Table.prototype.setFixedRowCount = function(iFixedRowCount) {
 		if (!(parseInt(iFixedRowCount) >= 0)) {
 			Log.error("Number of fixed rows must be greater or equal 0", this);
@@ -3611,9 +3720,6 @@ sap.ui.define([
 		return this.setProperty("fixedRowCount", iFixedRowCount);
 	};
 
-	/*
-	 * @see JSDoc generated by SAPUI5 control API generator
-	 */
 	Table.prototype.setFixedBottomRowCount = function(iFixedRowCount) {
 		if (!(parseInt(iFixedRowCount) >= 0)) {
 			Log.error("Number of fixed bottom rows must be greater or equal 0", this);
@@ -3649,12 +3755,10 @@ sap.ui.define([
 	/**
 	 * Invalidates all column menus.
 	 * @private
+	 * @deprecated As of Version 1.117
 	 */
 	Table.prototype._invalidateColumnMenus = function() {
-		var aCols = this.getColumns();
-		for (var i = 0, l = aCols.length; i < l; i++) {
-			aCols[i]._invalidateMenu();
-		}
+		TableUtils.Hook.call(this, TableUtils.Hook.Keys.Table.InvalidateColumnMenus, this);
 	};
 
 	/**
@@ -3736,7 +3840,7 @@ sap.ui.define([
 	 * @private
 	 */
 	Table.prototype._getBaseRowHeight = function() {
-		var iBaseRowContentHeight = this._getRowMode().getBaseRowContentHeight();
+		var iBaseRowContentHeight = getRowMode(this).getBaseRowContentHeight();
 
 		if (iBaseRowContentHeight > 0) {
 			return iBaseRowContentHeight + TableUtils.RowHorizontalFrameSize;
@@ -3822,7 +3926,7 @@ sap.ui.define([
 	 * @param {object} [mSettings] settings for the new Export, see {@link sap.ui.core.util.Export} <code>constructor</code>
 	 * @returns {sap.ui.core.util.Export} Export object
 	 * @experimental Experimental because the property for the column/cell definitions (sortProperty) could change in future.
-	 * @deprecated As of 1.56, replaced by the <code>sap.ui.export</code> library.
+	 * @deprecated As of version 1.56, replaced by the <code>sap.ui.export</code> library.
 	 * @public
 	 */
 	Table.prototype.exportData = function(mSettings) {
@@ -3888,7 +3992,7 @@ sap.ui.define([
 	};
 
 	/**
-	 *
+	 * @deprecated As of version 1.115
 	 * @private
 	 */
 	Table.prototype._onPersoApplied = function() {
@@ -3898,7 +4002,7 @@ sap.ui.define([
 		var aSorters = [];//, aFilters = [];
 		for (var i = 0, l = aColumns.length; i < l; i++) {
 			var oColumn = aColumns[i];
-			if (oColumn.getSorted()) {
+			if (oColumn.getSorted() && oColumn.getSortOrder() !== SortOrder.None) {
 				aSorters.push(new Sorter(oColumn.getSortProperty(), oColumn.getSortOrder() === SortOrder.Descending));
 			}
 		}
@@ -3909,29 +4013,6 @@ sap.ui.define([
 				oBinding.sort(aSorters);
 			}
 		}
-	};
-
-	/**
-	 * Toggles the selection state of all cells.
-	 * @private
-	 */
-	Table.prototype._toggleSelectAll = function() {
-		if (!TableUtils.hasData(this) || this.getSelectionMode() !== SelectionMode.MultiToggle) {
-			return;
-		}
-
-		var oSelectionPlugin = this._getSelectionPlugin();
-
-		// in order to fire the rowSelectionChanged event, the SourceRowIndex mus be set to -1
-		// to indicate that the selection was changed by user interaction
-		if (TableUtils.areAllRowsSelected(this)) {
-			this._iSourceRowIndex = -1;
-			oSelectionPlugin.clearSelection();
-		} else {
-			this._iSourceRowIndex = 0;
-			oSelectionPlugin.selectAll();
-		}
-		this._iSourceRowIndex = undefined;
 	};
 
 	Table.prototype.setBusy = function(bBusy) {
@@ -4050,86 +4131,6 @@ sap.ui.define([
 		return this;
 	};
 
-	/*
-	 * @see JSDoc generated by SAPUI5 control API generator
-	 */
-	Table.prototype.addPlugin = function(oPlugin) {
-		this.addAggregation("plugins", oPlugin);
-
-		if (TableUtils.isA(oPlugin, "sap.ui.table.plugins.SelectionPlugin")) {
-			this._initSelectionPlugin();
-		}
-
-		return this;
-	};
-
-	/*
-	 * @see JSDoc generated by SAPUI5 control API generator
-	 */
-	Table.prototype.insertPlugin = function(oPlugin, iIndex) {
-		this.insertAggregation("plugins", oPlugin, iIndex);
-
-		if (TableUtils.isA(oPlugin, "sap.ui.table.plugins.SelectionPlugin")) {
-			this._initSelectionPlugin();
-		}
-
-		return this;
-	};
-
-	/*
-	 * @see JSDoc generated by SAPUI5 control API generator
-	 */
-	Table.prototype.removePlugin = function(oPlugin) {
-		var oRemovedPlugin = this.removeAggregation("plugins", oPlugin);
-
-		if (TableUtils.isA(oRemovedPlugin, "sap.ui.table.plugins.SelectionPlugin")) {
-			this._initSelectionPlugin();
-		}
-
-		return oRemovedPlugin;
-	};
-
-	/*
-	 * @see JSDoc generated by SAPUI5 control API generator
-	 */
-	Table.prototype.removeAllPlugins = function() {
-		var aPlugins = this.removeAllAggregation("plugins");
-		this._initSelectionPlugin();
-		return aPlugins;
-	};
-
-	/*
-	 * @see JSDoc generated by SAPUI5 control API generator
-	 */
-	Table.prototype.destroyPlugins = function() {
-		this.destroyAggregation('plugins');
-		this._initSelectionPlugin();
-		return this;
-	};
-
-	/**
-	 * Gets the first plugin of a certain type.
-	 *
-	 * @param {string} sType The type of the plugin.
-	 * @returns {sap.ui.table.plugins.SelectionPlugin|null} The first plugin of a certain type, or <code>null</code> if no plugin of this type exists.
-	 * @private
-	 */
-	Table.prototype.getPlugin = function(sType) {
-		if (typeof sType !== "string") {
-			return null;
-		}
-
-		var aPlugins = this.getPlugins();
-
-		for (var i = 0; i < aPlugins.length; i++) {
-			if (aPlugins[i].isA(sType)) {
-				return aPlugins[i];
-			}
-		}
-
-		return null;
-	};
-
 	/**
 	 * Gets the selection plugin. If no selection plugin is applied to the table, a legacy selection plugin is returned.
 	 *
@@ -4138,12 +4139,6 @@ sap.ui.define([
 	 */
 	Table.prototype._getSelectionPlugin = function() {
 		var oSelectionPlugin = this._oSelectionPlugin || this._oLegacySelectionPlugin;
-
-		if (!oSelectionPlugin) {
-			// To avoid null checks everywhere if the selection plugin is accessed after destroying the table.
-			this._initLegacySelectionPlugin();
-			oSelectionPlugin = this._oLegacySelectionPlugin;
-		}
 
 		// Temporary fix for the Support Assistant hacks. Support Assistant should implement a selection plugin.
 		// TODO: Before we recommend to implement a selection plugin -> Complete BLI CPOUIFTEAMB-1464
@@ -4169,24 +4164,36 @@ sap.ui.define([
 		return this._oSelectionPlugin != null;
 	};
 
+	function getMainSelectionPlugin(oTable) {
+		var aSelectionPlugins = oTable.getDependents().filter((oPlugin) => oPlugin.isA("sap.ui.table.plugins.SelectionPlugin"));
+
+		/**
+		 * @deprecated As of version 1.120
+		 */
+		aSelectionPlugins.unshift(...oTable.getPlugins());
+
+		return aSelectionPlugins[0];
+	}
+
 	/**
-	 * Initializes the selection plugin used by the table. Attaches event listeners and forwards binding information to the plugin.
+	 * Initializes the selection plugin used by the table. Attaches event listeners.
 	 * The first plugin of type <code>sap.ui.table.plugins.SelectionPlugin</code> in the <code>plugins</code> aggregation is used by the table. If no
 	 * selection plugin is applied, a legacy selection plugin is created.
 	 *
 	 * @private
 	 */
 	Table.prototype._initSelectionPlugin = function() {
-		var oSelectionPlugin = this.getPlugin("sap.ui.table.plugins.SelectionPlugin");
+		var oSelectionPlugin = getMainSelectionPlugin(this);
+
+		if (this.isDestroyed() || this.isDestroyStarted()) {
+			return;
+		}
 
 		if (oSelectionPlugin) {
 			this._destroyLegacySelectionPlugin();
-
-			if (oSelectionPlugin !== this._oSelectionPlugin) {
-				detachSelectionPlugin(this, this._oSelectionPlugin);
-				attachSelectionPlugin(this, oSelectionPlugin);
-				this._oSelectionPlugin = oSelectionPlugin;
-			}
+			detachSelectionPlugin(this, this._oSelectionPlugin);
+			attachSelectionPlugin(this, oSelectionPlugin);
+			this._oSelectionPlugin = oSelectionPlugin;
 		} else {
 			this._initLegacySelectionPlugin();
 			detachSelectionPlugin(this, this._oSelectionPlugin);
@@ -4195,12 +4202,12 @@ sap.ui.define([
 	};
 
 	/**
-	 * Initializes a legacy selection plugin, if no selection plugin is set in the <code>plugins</code> aggregation.
+	 * Initializes a legacy selection plugin, if no selection plugin is set.
 	 *
 	 * @private
 	 */
 	Table.prototype._initLegacySelectionPlugin = function() {
-		if (this._oLegacySelectionPlugin || this.getPlugin("sap.ui.table.plugins.SelectionPlugin")) {
+		if (this._oLegacySelectionPlugin || getMainSelectionPlugin(this)) {
 			// No legacy selection plugin needs to be created if it already exists, or if a selection plugin is set.
 			return;
 		}
@@ -4211,7 +4218,7 @@ sap.ui.define([
 	};
 
 	Table.prototype._destroyLegacySelectionPlugin = function() {
-		if (this._oLegacySelectionPlugin) {
+		if (this._oLegacySelectionPlugin && !this._oLegacySelectionPlugin.isDestroyStarted()) {
 			this._oLegacySelectionPlugin.destroy();
 			delete this._oLegacySelectionPlugin;
 		}
@@ -4351,6 +4358,7 @@ sap.ui.define([
 
 	Table.prototype.onRowsUpdated = function(mParameters) {
 		TableUtils.Grouping.updateGroups(this);
+		TableUtils.Menu.closeContentCellContextMenu(this);
 		this._getAccExtension()._updateAriaRowIndices();
 		this._updateSelection();
 		updateNoData(this);
@@ -4423,6 +4431,7 @@ sap.ui.define([
 	 * @throws {Error} If a selection plugin is applied
 	 * @private
 	 * @ui5-restricted sap.watt.hanaplugins.editor.plugin.hdbcalculationview
+	 * @deprecated As of version 1.115
 	 */
 	Table.prototype._enableLegacyMultiSelection = function() {
 		if (this._hasSelectionPlugin()) {
@@ -4443,7 +4452,7 @@ sap.ui.define([
 				} else {
 					this.setSelectedIndex(iIndex);
 				}
-			} else if (bAdd || this._getSelectionPlugin().getSelectedCount() === 1) {
+			} else if (bAdd || this.getSelectedIndices().length === 1) {
 				this.removeSelectionInterval(iIndex, iIndex);
 			} else {
 				this.setSelectedIndex(iIndex);
@@ -4463,6 +4472,51 @@ sap.ui.define([
 		this.setProperty("rowCountConstraints", mConstraints);
 	};
 
-	return Table;
+	function excludeHiddenDepdendents(oTable, aAggregatedObjects) {
+		const aHiddenDependents = oTable.getAggregation("_hiddenDependents") || [];
+		return aAggregatedObjects.filter((oObject) => !aHiddenDependents.includes(oObject));
+	}
 
+	/**
+	 * @inheritDoc
+	 */
+	Table.prototype.findAggregatedObjects = function() {
+		return excludeHiddenDepdendents(this, Control.prototype.findAggregatedObjects.apply(this, arguments));
+	};
+
+	/**
+	 * @inheritDoc
+	 */
+	Table.prototype.findElements = function() {
+		return excludeHiddenDepdendents(this, Control.prototype.findElements.apply(this, arguments));
+	};
+
+	/**
+	 * Returns the first applied plugin for the given plugin type.
+	 *
+	 * @param {string} sType The full class name of the plugin
+	 * @returns {sap.ui.table.plugins.SelectionPlugin|undefined} The found plugin instance, or <code>undefined</code> if not found
+	 * @throws {Error} If the type to search for is not in <code>sap.ui.table.plugins</code>
+	 * @private
+	 * @deprecated As of version 1.120
+	 */
+	Table.prototype.getPlugin = function(sType) {
+		if (!sType || !sType.startsWith("sap.ui.table.plugins.")) {
+			throw new Error("This method can only be used to get plugins of the sap.ui.table library");
+		}
+
+		var oFoundPlugin = this.getDependents().find((oDependent) => {
+			return oDependent.isA(sType);
+		});
+
+		if (!oFoundPlugin) {
+			oFoundPlugin = this.getPlugins().find((oPlugin) => {
+				return oPlugin.isA(sType);
+			});
+		}
+
+		return oFoundPlugin;
+	};
+
+	return Table;
 });

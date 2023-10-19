@@ -1,11 +1,11 @@
 sap.ui.define([
-	"sap/ui/table/library",
 	"sap/ui/table/Table",
 	"sap/ui/table/TreeTable",
 	"sap/ui/table/AnalyticalTable",
 	"sap/ui/table/Column",
 	"sap/ui/table/RowAction",
 	"sap/ui/table/RowActionItem",
+	"sap/ui/table/rowmodes/Fixed",
 	"sap/ui/table/plugins/PluginBase",
 	"sap/ui/table/utils/TableUtils",
 	"sap/ui/Device",
@@ -16,7 +16,21 @@ sap.ui.define([
 	"sap/ui/core/Core",
 	"sap/ui/dom/jquery/scrollLeftRTL" // provides jQuery.fn.scrollLeftRTL
 ], function(
-	TableLibrary, Table, TreeTable, AnalyticalTable, Column, RowAction, RowActionItem, PluginBase, TableUtils, Device, JSONModel, Control, merge, jQuery, oCore
+	Table,
+	TreeTable,
+	AnalyticalTable,
+	Column,
+	RowAction,
+	RowActionItem,
+	FixedRowMode,
+	PluginBase,
+	TableUtils,
+	Device,
+	JSONModel,
+	Control,
+	merge,
+	jQuery,
+	oCore
 ) {
 	"use strict";
 
@@ -268,17 +282,20 @@ sap.ui.define([
 		return oClone;
 	}
 
-	TableLibrary.TableHelper = {
-		createLabel: function(mConfig) {
-			return new TestControl(mConfig);
-		},
-		createTextView: function(mConfig) {
-			return new TestControl(mConfig);
-		},
-		addTableClass: function() {
-			return "sapUiTableTest";
-		},
-		bFinal: true
+	TableUtils._getTableTemplateHelper = function() {
+		// Esure that for test purposes the table helper mechanism is still in place for now
+		return {
+			createLabel: function(mConfig) {
+				return new TestControl(mConfig);
+			},
+			createTextView: function(mConfig) {
+				return new TestControl(mConfig);
+			},
+			addTableClass: function() {
+				return "sapUiTableTest";
+			},
+			bFinal: true
+		};
 	};
 
 	[Table, TreeTable].forEach(function(TableClass) {
@@ -289,23 +306,9 @@ sap.ui.define([
 			}
 		});
 
-		// TODO: Remove once the "plugins" aggregation is of type sap.ui.table.PluginBase
-		var fnOriginalValidateAggregation = TableClass.prototype.validateAggregation;
-		TableClass.prototype.validateAggregation = function(sAggregationName, oObject) {
-			if (sAggregationName === "plugins" && oObject.isA("sap.ui.table.test.HelperPlugin")) {
-				return oObject;
-			} else {
-				return fnOriginalValidateAggregation.apply(this, arguments);
-			}
-		};
-
-		// TODO: Remove this once row modes and CreationRow are public.
+		// TODO: Remove this once CreationRow is removed.
 		var fnApplySettings = TableClass.prototype.applySettings;
 		TableClass.prototype.applySettings = function(mSettings) {
-			if (mSettings && "rowMode" in mSettings) {
-				this.setRowMode(mSettings.rowMode);
-				delete mSettings.rowMode;
-			}
 			if (mSettings && "creationRow" in mSettings) {
 				this.setCreationRow(mSettings.creationRow);
 				delete mSettings.creationRow;
@@ -317,7 +320,7 @@ sap.ui.define([
 	function createTableSettings(TableClass, mSettings) {
 		var aAllSettingKeys = Object.keys(TableClass.getMetadata().getAllSettings());
 
-		aAllSettingKeys = aAllSettingKeys.concat(["rowMode", "creationRow"]); // TODO: Remove this once row modes and CreationRow are public.
+		aAllSettingKeys = aAllSettingKeys.concat(["creationRow"]); // TODO: Remove this once CreationRow is removed.
 
 		return Object.keys(mSettings).reduce(function(oObject, sKey) {
 			if (aAllSettingKeys.indexOf(sKey) >= 0) {
@@ -888,7 +891,7 @@ sap.ui.define([
 	};
 
 	TableQUnitUtils.getDefaultSettings = function() {
-		return Object.create(mDefaultSettings);
+		return mDefaultSettings;
 	};
 
 	TableQUnitUtils.createTable = function(TableClass, mSettings, fnBeforePlaceAt) {
@@ -908,10 +911,10 @@ sap.ui.define([
 
 		var oHelperPlugin = new HelperPlugin();
 
-		if ("plugins" in mSettings) {
-			mSettings.plugins.push(oHelperPlugin);
+		if ("dependents" in mSettings) {
+			mSettings.dependents.push(oHelperPlugin);
 		} else {
-			mSettings.plugins = [oHelperPlugin];
+			mSettings.dependents = [oHelperPlugin];
 		}
 
 		var oTable = new TableClass(createTableSettings(TableClass, mSettings));
@@ -1297,8 +1300,7 @@ sap.ui.define([
 	 */
 	TableQUnitUtils.assertColumnHeaderHeights = function(assert, oTable, mTestSettings) {
 		var sDensity = mTestSettings.density ? mTestSettings.density.replace("sapUiSize", "") : "undefined";
-		mTestSettings.title += " (VisibleRowCountMode=\"" + mTestSettings.visibleRowCountMode + "\""
-			+ ", Density=\"" + sDensity + "\")";
+		mTestSettings.title += " (Density=\"" + sDensity + "\")";
 
 		var aRowDomRefs = oTable.getDomRef().querySelectorAll(".sapUiTableColHdrTr");
 		var oColumnHeaderCnt = oTable.getDomRef().querySelector(".sapUiTableColHdrCnt");
@@ -1340,10 +1342,6 @@ sap.ui.define([
 
 		return oOuterElement;
 	};
-
-	/***********************************
-	 * Legacy utils                    *
-	 ***********************************/
 
 	/**
 	 * Adds a column to the tested table.
@@ -1503,6 +1501,93 @@ sap.ui.define([
 		return new window.Event("scroll");
 	};
 
+	/**
+	 * Creates and returns an object that can be used to predefine QUnit tests to reuse them in multiple QUnit test pages.
+	 *
+	 * @example
+	 * // The module that contains the reusable tests returns the QUnit test collector.
+	 * const QUnitTestCollector = TableQUnitUtils.createQUnitTestCollector();
+	 * QUnitTestCollector.module("My module", {
+	 *     beforeEach: () => {...}
+	 * });
+	 * QUnitTestCollector.test("My test", function(assert) {...});
+	 * QUnitTestCollector.skip("My other test", function(assert) {...});
+	 * return QUnitTestCollector;
+	 *
+	 * // The tests are registered in the QUnit test page.
+	 * QUnitTestCollector.registerTo(QUnit);
+	 * @returns {{registerTo: function(QUnit, fnTestStart), testStart: function(assert, fnOriginalTest)}} A QUnit test collector
+	 */
+	TableQUnitUtils.createQUnitTestCollector = function() {
+		const aCollection = [];
+		let fnTestCallback;
+
+		function wrapTest(fnTest) {
+			return function(assert) {
+				const _fnTest = () => { return fnTest.apply(this, arguments); };
+				return fnTestCallback ? fnTestCallback.call(this, assert, _fnTest) : _fnTest();
+			};
+		}
+
+		const oCollector = new Proxy({
+			testStart: (fnCallback) => {
+				fnTestCallback = fnCallback;
+			},
+			registerTo: function(QUnit, fnCallback) {
+				fnTestCallback = fnCallback;
+				aCollection.forEach((entry) => {
+					QUnit[entry.methodName](...entry.arguments);
+				});
+			}
+		}, {
+			get: (oTarget, sProperty, oProxy) => {
+				return new Proxy(() => {}, {
+					apply: (fn, thisArg, aArgumentsList) => {
+						if (typeof oTarget[sProperty] === "function") {
+							oTarget[sProperty].apply(oTarget, aArgumentsList);
+						} else {
+							if (typeof aArgumentsList[1] === "function") {
+								aArgumentsList[1] = wrapTest(aArgumentsList[1]);
+							}
+							aCollection.push({
+								methodName: sProperty,
+								arguments: aArgumentsList
+							});
+						}
+					}
+				});
+			}
+		});
+
+		return oCollector;
+	};
+
+	TableQUnitUtils.hideTestContainer = function() {
+		const oQunitFixture = document.getElementById("qunit-fixture");
+
+		oQunitFixture.dataset.originalDisplayStyle = oQunitFixture.style.display;
+		oQunitFixture.style.display = "none";
+
+		return new Promise(function(resolve) {
+			window.requestAnimationFrame(resolve);
+		});
+	};
+
+	TableQUnitUtils.showTestContainer = function() {
+		const oQunitFixture = document.getElementById("qunit-fixture");
+
+		oQunitFixture.style.display = oQunitFixture.dataset.originalDisplayStyle;
+		delete oQunitFixture.dataset.originalDisplayStyle;
+
+		return new Promise(function(resolve) {
+			window.requestAnimationFrame(resolve);
+		});
+	};
+
+	/***********************************
+	 * Legacy utils                    *
+	 ***********************************/
+
 	var oTable, oTreeTable;
 	var oModel = new JSONModel();
 	var aFields = ["A", "B", "C", "D", "E"];
@@ -1518,7 +1603,9 @@ sap.ui.define([
 			rows: "{/rows}",
 			title: "Grid Table",
 			selectionMode: "MultiToggle",
-			visibleRowCount: 3,
+			rowMode: new FixedRowMode({
+				rowCount: 3
+			}),
 			ariaLabelledBy: "ARIALABELLEDBY",
 			fixedColumnCount: 1
 		});
@@ -1531,7 +1618,9 @@ sap.ui.define([
 			},
 			title: "Tree Table",
 			selectionMode: "Single",
-			visibleRowCount: 3,
+			rowMode: new FixedRowMode({
+				rowCount: 3
+			}),
 			groupHeaderProperty: aFields[0],
 			ariaLabelledBy: "ARIALABELLEDBY"
 		});
@@ -1727,7 +1816,8 @@ sap.ui.define([
 		oRow.isExpanded = function() { return true; };
 		oRow.isContentHidden = function() { return true; };
 
-		oTableInstance.rerender();
+		oTableInstance.invalidate();
+		oCore.applyChanges();
 		return new Promise(function(resolve) {
 			oTableInstance.attachEventOnce("rowsUpdated", function() {
 				resolve(getRowDomRefs(oTableInstance, iRow));
@@ -1745,7 +1835,8 @@ sap.ui.define([
 		oRow.getType = function() { return oRow.Type.Summary; };
 		oRow.getLevel = function() { return 1; };
 
-		oTableInstance.rerender();
+		oTableInstance.invalidate();
+		oCore.applyChanges();
 		return new Promise(function(resolve) {
 			oTableInstance.attachEventOnce("rowsUpdated", function() {
 				resolve(getRowDomRefs(oTableInstance, iRow));

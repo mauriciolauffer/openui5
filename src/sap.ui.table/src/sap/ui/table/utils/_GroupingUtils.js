@@ -319,7 +319,7 @@ sap.ui.define([
 				oRow.$("groupHeader")
 					.toggleClass("sapUiTableGroupIconOpen", bIsExpandable && bIsExpanded)
 					.toggleClass("sapUiTableGroupIconClosed", bIsExpandable && !bIsExpanded)
-					.attr("title", oTable._getShowStandardTooltips() && sTitle ? sTitle : null)
+					.attr("title", !oTable._getHideStandardTooltips() && sTitle ? sTitle : null)
 					.text(sTitle);
 				GroupingUtils.setGroupIndent(oRow, iIndent);
 				$Row.toggleClass("sapUiTableRowIndented", iIndent > 0)
@@ -423,6 +423,7 @@ sap.ui.define([
 		 * Initializes the experimental grouping for sap.ui.table.Table.
 		 *
 		 * @param {sap.ui.table.Table} oTable Instance of the table.
+		 * @deprecated As of version 1.118.
 		 */
 		setupExperimentalGrouping: function(oTable) {
 			if (!oTable.getEnableGrouping()) {

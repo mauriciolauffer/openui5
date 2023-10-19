@@ -1,11 +1,9 @@
 sap.ui.define([
 	"sap/base/Log",
-	"sap/base/util/deepExtend",
 	"sap/base/util/Deferred",
 	"sap/base/util/fetch",
 	"sap/base/util/LoaderExtensions",
 	"sap/ui/core/Component",
-	"sap/ui/core/Configuration",
 	"sap/ui/core/Lib",
 	"sap/ui/core/Manifest",
 	"sap/ui/core/UIComponent",
@@ -13,12 +11,10 @@ sap.ui.define([
 	"sap/ui/VersionInfo"
 ], function(
 	Log,
-	deepExtend,
 	Deferred,
 	fetch,
 	LoaderExtensions,
 	Component,
-	Configuration,
 	Library,
 	Manifest,
 	UIComponent,
@@ -29,31 +25,33 @@ sap.ui.define([
 	"use strict";
 	/*global sinon, QUnit*/
 
+	var privateLoaderAPI = sap.ui.loader._;
+
 	/**
 	 * Checks whether the given (JavaScript) resource has been loaded
 	 * and executed.
 	 */
 	function hasBeenLoadedAndExecuted(sResourceName) {
-		return sap.ui.loader._.getModuleState(sResourceName) === 4 /* READY */;
+		return privateLoaderAPI.getModuleState(sResourceName) === 4 /* READY */;
 	}
 
 	function unloadResources() {
 		// unload libs and components (not an API)
-		sap.ui.loader._.unloadResources('sap.test.lib2.library-preload', true, true, true);
-		sap.ui.loader._.unloadResources('sap/test/lib2/library-preload.js', false, true, true);
-		sap.ui.loader._.unloadResources('sap.test.lib3.library-preload', true, true, true);
-		sap.ui.loader._.unloadResources('sap/test/lib3/library-preload.js', false, true, true);
-		sap.ui.loader._.unloadResources('sap.test.lib4.library-preload', true, true, true);
-		sap.ui.loader._.unloadResources('sap/test/lib4/library-preload.js', false, true, true);
-		sap.ui.loader._.unloadResources('sap/test/mycomp/Component.js', false, true, true);
-		sap.ui.loader._.unloadResources('sap/test/mycomp/Component-preload', true, true, true);
-		sap.ui.loader._.unloadResources('sap/test/mycomp/Component-preload.js', false, true, true);
-		sap.ui.loader._.unloadResources('sap/test/mysubcomp/Component.js', false, true, true);
-		sap.ui.loader._.unloadResources('sap/test/mysubcomp/Component-preload', true, true, true);
-		sap.ui.loader._.unloadResources('sap/test/mysubcomp/Component-preload.js', false, true, true);
-		sap.ui.loader._.unloadResources('sap/test/manifestcomp/Component.js', false, true, true);
-		sap.ui.loader._.unloadResources('sap/test/manifestcomp/Component-preload', true, true, true);
-		sap.ui.loader._.unloadResources('sap/test/manifestcomp/Component-preload.js', false, true, true);
+		privateLoaderAPI.unloadResources('sap.test.lib2.library-preload', true, true, true);
+		privateLoaderAPI.unloadResources('sap/test/lib2/library-preload.js', false, true, true);
+		privateLoaderAPI.unloadResources('sap.test.lib3.library-preload', true, true, true);
+		privateLoaderAPI.unloadResources('sap/test/lib3/library-preload.js', false, true, true);
+		privateLoaderAPI.unloadResources('sap.test.lib4.library-preload', true, true, true);
+		privateLoaderAPI.unloadResources('sap/test/lib4/library-preload.js', false, true, true);
+		privateLoaderAPI.unloadResources('sap/test/mycomp/Component.js', false, true, true);
+		privateLoaderAPI.unloadResources('sap/test/mycomp/Component-preload', true, true, true);
+		privateLoaderAPI.unloadResources('sap/test/mycomp/Component-preload.js', false, true, true);
+		privateLoaderAPI.unloadResources('sap/test/mysubcomp/Component.js', false, true, true);
+		privateLoaderAPI.unloadResources('sap/test/mysubcomp/Component-preload', true, true, true);
+		privateLoaderAPI.unloadResources('sap/test/mysubcomp/Component-preload.js', false, true, true);
+		privateLoaderAPI.unloadResources('sap/test/manifestcomp/Component.js', false, true, true);
+		privateLoaderAPI.unloadResources('sap/test/manifestcomp/Component-preload', true, true, true);
+		privateLoaderAPI.unloadResources('sap/test/manifestcomp/Component-preload.js', false, true, true);
 		// undo module path registration (official API)
 		sap.ui.loader.config({
 			paths: {
@@ -388,7 +386,7 @@ sap.ui.define([
 
 	QUnit.module("Synchronization of Preloads", {
 		beforeEach: function(assert) {
-			this.loadScript = sinon.stub(sap.ui.loader._, "loadJSResourceAsync");
+			this.loadScript = sinon.stub(privateLoaderAPI, "loadJSResourceAsync");
 			this.requireSpy = sinon.stub(sap.ui, "require").callsArgWith(1);
 		},
 		afterEach: function(assert) {
@@ -399,7 +397,7 @@ sap.ui.define([
 
 	QUnit.test("preload only", function(assert) {
 
-		this.oConfigurationGetPreloadStub = sinon.stub(Configuration, "getPreload").returns("async"); // sync or async both activate the preload
+		this.oLibraryGetPreloadStub = sinon.stub(Library, "getPreloadMode").returns("async"); // sync or async both activate the preload
 
 		function contains(dep) {
 			return sinon.match(function(value) {
@@ -438,14 +436,14 @@ sap.ui.define([
 			}.bind(this));
 
 		}.bind(this)).finally(function () {
-			this.oConfigurationGetPreloadStub.restore();
+			this.oLibraryGetPreloadStub.restore();
 		}.bind(this));
 
 	});
 
 	QUnit.test("preload bundles and libs", function(assert) {
 
-		this.oConfigurationGetPreloadStub = sinon.stub(Configuration, "getPreload").returns("async"); // sync or async both activate the preload
+		this.oLibraryGetPreloadStub = sinon.stub(Library, "getPreloadMode").returns("async"); // sync or async both activate the preload
 
 		function contains(dep) {
 			return sinon.match(function(value) {
@@ -499,7 +497,7 @@ sap.ui.define([
 			assert.ok( this.requireSpy.calledWith( contains('scenario2/lib2/library') ), "lib2 has been required");
 			assert.ok( this.requireSpy.calledWith( contains('scenario2/comp/Component') ), "component has been required");
 		}.bind(this)).finally(function () {
-			this.oConfigurationGetPreloadStub.restore();
+			this.oLibraryGetPreloadStub.restore();
 		}.bind(this));
 
 	});
@@ -530,7 +528,7 @@ sap.ui.define([
 	});
 
 	QUnit.test("dependencies with manifest component", function(assert) {
-		this.oConfigurationGetPreloadStub = sinon.stub(Configuration, "getPreload").returns("async"); // sync or async both activate the preload
+		this.oLibraryGetPreloadStub = sinon.stub(Library, "getPreloadMode").returns("async"); // sync or async both activate the preload
 
 		var done = assert.async();
 
@@ -571,13 +569,13 @@ sap.ui.define([
 		}.bind(this), function(oError) {
 			assert.ok(false, "Promise of Component hasn't been resolved correctly.");
 		}).finally(function () {
-			this.oConfigurationGetPreloadStub.restore();
+			this.oLibraryGetPreloadStub.restore();
 			done();
 		}.bind(this));
 	});
 
 	QUnit.test("dependencies with component (no manifest first)", function(assert) {
-		this.oConfigurationGetPreloadStub = sinon.stub(Configuration, "getPreload").returns("async"); // sync or async both activate the preload
+		this.oLibraryGetPreloadStub = sinon.stub(Library, "getPreloadMode").returns("async"); // sync or async both activate the preload
 
 		var done = assert.async();
 
@@ -610,7 +608,7 @@ sap.ui.define([
 		}.bind(this), function(oError) {
 			assert.ok(false, "Promise of Component hasn't been resolved correctly.");
 		}).finally(function () {
-			this.oConfigurationGetPreloadStub.restore();
+			this.oLibraryGetPreloadStub.restore();
 			done();
 		}.bind(this));
 	});
@@ -687,17 +685,23 @@ sap.ui.define([
 				}
 			});
 
+			// Clear cached version info data before each test starts
+			VersionInfo._reset();
+
 			return LoaderExtensions.loadResource({
 				dataType: "json",
 				url: sap.ui.require.toUrl("testlibs/scenario15/sap-ui-version.json"),
 				async: true
 			}).then(function(oVersionInfo) {
-				this.stub(LoaderExtensions, "loadResource").withArgs("sap-ui-version.json", {
-					async: true,
-					failOnError: true
-				}).resolves(oVersionInfo);
-
-				LoaderExtensions.loadResource.callThrough();
+				this.oServer = this._oSandbox.useFakeServer();
+				this.oServer.autoRespond = true;
+				this.oServer.respondWith("GET", sap.ui.require.toUrl("sap-ui-version.json"), [
+					200,
+					{
+						"Content-Type": "application/json"
+					},
+					JSON.stringify(oVersionInfo)
+				]);
 			}.bind(this));
 		},
 		afterEach: function() {
@@ -714,21 +718,20 @@ sap.ui.define([
 	 */
 	QUnit.test("Load library-preload.js instead of Component-preload.js when the Component.js is included in a library preload", function(assert) {
 		return VersionInfo.load().then(function() {
-			assert.equal(LoaderExtensions.loadResource.callCount, 1, "The loadResource call is called once for loading the sap-ui-version.json");
 			this.spy(sap.ui, 'require');
-			this.spy(sap.ui.loader._, 'loadJSResourceAsync');
+			this.spy(privateLoaderAPI, 'loadJSResourceAsync');
 
 			var loadLibrariesSpy = this.spy(Library, '_load');
 
-			// this.spy(LoaderExtensions, 'loadResource');
+			this.spy(LoaderExtensions, 'loadResource');
 
 			var pLoad =  Component.load({
 				name: "testlibs.scenario15.lib1.comp"
 			});
 
-			assert.equal(LoaderExtensions.loadResource.callCount, 2, "The loadResource call is called once more for loading the component's manifest.json");
+			assert.equal(LoaderExtensions.loadResource.callCount, 1, "The loadResource call is called once");
 
-			var sURL = LoaderExtensions.loadResource.getCall(1).args[0].url;
+			var sURL = LoaderExtensions.loadResource.getCall(0).args[0].url;
 			assert.ok(/\/scenario15\/lib1\/comp\/manifest\.json/.test(sURL), "The manifest.json load request is sent");
 
 			return pLoad.then(function() {
@@ -736,7 +739,7 @@ sap.ui.define([
 				sinon.assert.calledWith(sap.ui.require, ["testlibs/scenario15/lib1/comp/Component"]);
 
 				// no component preload should be triggered since the component is contained in lib1
-				sinon.assert.neverCalledWith(sap.ui.loader._.loadJSResourceAsync, sinon.match(/Component-preload\.js$/));
+				sinon.assert.neverCalledWith(privateLoaderAPI.loadJSResourceAsync, sinon.match(/Component-preload\.js$/));
 
 				// load of trans. dependencies should be triggered
 				var loadedLibraries = loadLibrariesSpy.getCall(0).args[0];
@@ -750,10 +753,10 @@ sap.ui.define([
 				]);
 
 				// lib10 is loaded with a separate request and not part of the initial loadLibraries call
-				sinon.assert.calledWith(sap.ui.loader._.loadJSResourceAsync, sinon.match(/scenario15\/lib10\/library-preload\.js$/));
+				sinon.assert.calledWith(privateLoaderAPI.loadJSResourceAsync, sinon.match(/scenario15\/lib10\/library-preload\.js$/));
 
 				// lib5 is not requested --> lazy: true
-				sinon.assert.neverCalledWith(sap.ui.loader._.loadJSResourceAsync, sinon.match(/scenario15\/lib5\/library-preload\.js$/));
+				sinon.assert.neverCalledWith(privateLoaderAPI.loadJSResourceAsync, sinon.match(/scenario15\/lib5\/library-preload\.js$/));
 			});
 		}.bind(this));
 	});
@@ -805,17 +808,17 @@ sap.ui.define([
 		afterEach: function() {
 			this.oLogSpy.restore();
 
-			sap.ui.loader._.unloadResources('testlibs/scenario16/embeddingLib/library-preload.js', true, true, true);
+			privateLoaderAPI.unloadResources('testlibs/scenario16/embeddingLib/library-preload.js', true, true, true);
 		}
 	});
 
 	QUnit.test("[library IS NOT loaded]: NO 'Component-preload.js' is loaded, AND warning is logged", function(assert) {
-		this.spy(sap.ui.loader._, 'loadJSResourceAsync');
+		this.spy(privateLoaderAPI, 'loadJSResourceAsync');
 
 		return Component.create({
 			name: "testlibs.scenario16.embeddingLib.embeddedComponent"
 		}).then(function(oComponent) {
-			sinon.assert.neverCalledWith(sap.ui.loader._.loadJSResourceAsync, sinon.match(/Component-preload\.js$/));
+			sinon.assert.neverCalledWith(privateLoaderAPI.loadJSResourceAsync, sinon.match(/Component-preload\.js$/));
 
 			assert.ok(this.oLogSpy.calledWith(
 				"Component 'testlibs.scenario16.embeddingLib.embeddedComponent' is defined to be embedded in a library or another component" +
@@ -827,13 +830,13 @@ sap.ui.define([
 	});
 
 	QUnit.test("[library IS loaded]: NO 'Component-preload.js' is loaded, NO warning is logged", function(assert) {
-		this.spy(sap.ui.loader._, 'loadJSResourceAsync');
+		this.spy(privateLoaderAPI, 'loadJSResourceAsync');
 
 		return Library.load("testlibs.scenario16.embeddingLib").then(function() {
 			return Component.create({
 				name: "testlibs.scenario16.embeddingLib.embeddedComponent"
 			}).then(function(oComponent) {
-				sinon.assert.neverCalledWith(sap.ui.loader._.loadJSResourceAsync, sinon.match(/Component-preload\.js$/));
+				sinon.assert.neverCalledWith(privateLoaderAPI.loadJSResourceAsync, sinon.match(/Component-preload\.js$/));
 
 				assert.ok(this.oLogSpy.neverCalledWith(
 					"Component 'testlibs.scenario16.embeddingLib.embeddedComponent' is defined to be embedded in a library or another component" +

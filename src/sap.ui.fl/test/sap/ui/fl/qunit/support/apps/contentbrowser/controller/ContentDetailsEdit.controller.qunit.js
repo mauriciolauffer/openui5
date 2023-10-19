@@ -1,4 +1,4 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/ui/fl/support/apps/contentbrowser/controller/ContentDetailsEdit.controller",
@@ -27,14 +27,14 @@ sap.ui.define([
 	var oController;
 
 	QUnit.module("ContentDetailsEdit", {
-		beforeEach: function () {
+		beforeEach() {
 			oController = new ContentDetailsEdit();
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
-		QUnit.test("sets all parameters when a route matched for this page", function (assert) {
+		QUnit.test("sets all parameters when a route matched for this page", function(assert) {
 			var sLayer = Layer.VENDOR;
 			var sNamespace = "hi/there/";
 			var sFileName = "helloWorld";
@@ -44,7 +44,7 @@ sap.ui.define([
 				value: "CUSTOMER"
 			}];
 			var oRouteParameters = {
-				getParameter: function () {
+				getParameter() {
 					return {
 						layer: sLayer,
 						namespace: sNamespace,
@@ -57,15 +57,15 @@ sap.ui.define([
 			oController.oSelectedContentModel = oSelectedContentModel;
 
 			sandbox.stub(oController, "getView").returns({
-				getContent: function () {
+				getContent() {
 					return [{
-						setBusy: function () {
+						setBusy() {
 						}
 					}];
 				},
-				byId: function() {
+				byId() {
 					return {
-						setVisible: function() {}
+						setVisible() {}
 					};
 				}
 			});
@@ -76,9 +76,9 @@ sap.ui.define([
 			return oController._onRouteMatched(oRouteParameters).then(function() {
 				assert.equal(oSubbedLRepConGetContent.callCount, 2, "then the Lrep getcontent called twice");
 				assert.equal(oSubbedLRepConGetContent.getCall(0).args[0], sLayer, "first call has correct layer");
-				assert.equal(oSubbedLRepConGetContent.getCall(0).args[1], sNamespace + sFileName + "." + sFileType, "first call has correct suffix");
+				assert.equal(oSubbedLRepConGetContent.getCall(0).args[1], `${sNamespace + sFileName}.${sFileType}`, "first call has correct suffix");
 				assert.equal(oSubbedLRepConGetContent.getCall(1).args[0], sLayer, "second call has correct layer");
-				assert.equal(oSubbedLRepConGetContent.getCall(1).args[1], sNamespace + sFileName + "." + sFileType, "second call has correct suffix");
+				assert.equal(oSubbedLRepConGetContent.getCall(1).args[1], `${sNamespace + sFileName}.${sFileType}`, "second call has correct suffix");
 				assert.equal(oSubbedLRepConGetContent.getCall(1).args[2], true, "second call includes correct third param");
 				assert.ok(oSubbedFormatData.calledOnce, "then format data called one");
 				assert.ok(oSubbedSetData.calledOnce, "and setData to model called");
@@ -87,9 +87,9 @@ sap.ui.define([
 
 		QUnit.test("on LRep content received", function(assert) {
 			sandbox.stub(oController, "getView").returns({
-				byId: function() {
+				byId() {
 					return {
-						setVisible: function() {}
+						setVisible() {}
 					};
 				}
 			});
@@ -101,18 +101,18 @@ sap.ui.define([
 				value: "CUSTOMER"
 			}];
 			var oPage = {
-				setBusy: function () {}
+				setBusy() {}
 			};
 			var sContentSuffix = "pathtothefile";
 			var oStubbedFormatData = sandbox.stub(DataUtils, "formatData");
 			var oStubbedGetContent = sandbox.stub(LRepConnector, "getContent").resolves(oData);
 			var oStubbedSetBusy = sandbox.stub(oPage, "setBusy");
 			oController.oSelectedContentModel = {
-				setData: function() {}
+				setData() {}
 			};
 
 			return oController._onContentReceived(oModelData, oPage, sContentSuffix, oData).then(
-				function () {
+				function() {
 					assert.ok(oStubbedGetContent.calledOnce, "then request for metadata is sent");
 					assert.ok(oStubbedFormatData.calledOnce, "then received data is formatted");
 					assert.equal(oStubbedFormatData.getCall(0).args[0], oData, "with correct data");
@@ -122,7 +122,7 @@ sap.ui.define([
 			);
 		});
 
-		QUnit.test("when _saveFile is called", function (assert) {
+		QUnit.test("when _saveFile is called", function(assert) {
 			var oStubbedNavTo = sandbox.stub(oController, "_navToDisplayMode");
 			var oStubbedLrepConSaveFile = sandbox.stub(LRepConnector, "saveFile").returns(Promise.resolve());
 			return oController._saveFile(Layer.VENDOR, "namespace", "fileName", "fileType", "somedata", "sTransportId", "package").then(function() {
@@ -131,11 +131,11 @@ sap.ui.define([
 			});
 		});
 
-		QUnit.test("when onSave is called with USER layer", function (assert) {
+		QUnit.test("when onSave is called with USER layer", function(assert) {
 			sandbox.stub(oController, "getView").returns({
-				getModel: function () {
+				getModel() {
 					return {
-						getData: function () {
+						getData() {
 							return {
 								fileName: "fileName",
 								fileType: "fileType",
@@ -149,9 +149,9 @@ sap.ui.define([
 						}
 					};
 				},
-				byId: function() {
+				byId() {
 					return {
-						getSelected: function() {
+						getSelected() {
 							return false;
 						}
 					};
@@ -171,11 +171,11 @@ sap.ui.define([
 			assert.equal(oStubbedSaveFile.getCall(0).args[6], undefined, "with correct package");
 		});
 
-		QUnit.test("when onSave is called with LOAD layer", function (assert) {
+		QUnit.test("when onSave is called with LOAD layer", function(assert) {
 			sandbox.stub(oController, "getView").returns({
-				getModel: function () {
+				getModel() {
 					return {
-						getData: function () {
+						getData() {
 							return {
 								fileName: "fileName",
 								fileType: "fileType",
@@ -189,9 +189,9 @@ sap.ui.define([
 						}
 					};
 				},
-				byId: function() {
+				byId() {
 					return {
-						getSelected: function() {
+						getSelected() {
 							return false;
 						}
 					};
@@ -211,11 +211,11 @@ sap.ui.define([
 			assert.equal(oStubbedSaveFile.getCall(0).args[6], undefined, "with correct package");
 		});
 
-		QUnit.test("when onSave is called with ATO_NOTIFICATION content", function (assert) {
+		QUnit.test("when onSave is called with ATO_NOTIFICATION content", function(assert) {
 			sandbox.stub(oController, "getView").returns({
-				getModel: function () {
+				getModel() {
 					return {
-						getData: function () {
+						getData() {
 							return {
 								data: "{packageName: \"$TMP\"}",
 								fileName: "fileName",
@@ -233,9 +233,9 @@ sap.ui.define([
 						}
 					};
 				},
-				byId: function() {
+				byId() {
 					return {
-						getSelected: function() {
+						getSelected() {
 							return false;
 						}
 					};
@@ -255,11 +255,11 @@ sap.ui.define([
 			assert.equal(oStubbedSaveFile.getCall(0).args[6], undefined, "with correct package");
 		});
 
-		QUnit.test("when onSave is called with local object in VENDOR layer", function (assert) {
+		QUnit.test("when onSave is called with local object in VENDOR layer", function(assert) {
 			sandbox.stub(oController, "getView").returns({
-				getModel: function () {
+				getModel() {
 					return {
-						getData: function () {
+						getData() {
 							return {
 								data: "{packageName: \"\"}",
 								fileName: "fileName",
@@ -274,9 +274,9 @@ sap.ui.define([
 						}
 					};
 				},
-				byId: function() {
+				byId() {
 					return {
-						getSelected: function() {
+						getSelected() {
 							return false;
 						}
 					};
@@ -296,11 +296,11 @@ sap.ui.define([
 			assert.equal(oStubbedSaveFile.getCall(0).args[6], undefined, "with correct package");
 		});
 
-		QUnit.test("when onSave is called with transported content", function (assert) {
+		QUnit.test("when onSave is called with transported content", function(assert) {
 			var oStubbedGetView = sandbox.stub(oController, "getView").returns({
-				getModel: function () {
+				getModel() {
 					return {
-						getData: function () {
+						getData() {
 							return {
 								data: "{packageName: \"package\"}",
 								fileName: "fileName",
@@ -318,16 +318,16 @@ sap.ui.define([
 						}
 					};
 				},
-				addDependent: function() {},
-				byId: function() {
+				addDependent() {},
+				byId() {
 					return {
-						getSelected: function() {
+						getSelected() {
 							return false;
 						}
 					};
 				}
 			});
-			var oStubbedOpenDialog = sandbox.stub(Dialog.prototype, 'open').returns("dummy");
+			var oStubbedOpenDialog = sandbox.stub(Dialog.prototype, "open").returns("dummy");
 
 			oController.onSave();
 
@@ -335,7 +335,7 @@ sap.ui.define([
 			assert.ok(oStubbedOpenDialog.calledOnce, "The transport Dialog is opened");
 		});
 
-		QUnit.test("when cancel button is clicked", function (assert) {
+		QUnit.test("when cancel button is clicked", function(assert) {
 			var oStubbedNavTo = sandbox.stub(oController, "_navToDisplayMode");
 
 			oController.onCancel();
@@ -343,12 +343,12 @@ sap.ui.define([
 			assert.ok(oStubbedNavTo.calledOnce, "then navigation to display mode is triggered");
 		});
 
-		QUnit.test("when navigate to display mode is triggered", function (assert) {
+		QUnit.test("when navigate to display mode is triggered", function(assert) {
 			var oRouter = new Router();
 			sandbox.stub(oController, "getView").returns({
-				getModel: function () {
+				getModel() {
 					return {
-						getData: function () {
+						getData() {
 							return {
 								layer: Layer.VENDOR,
 								fileName: "fileName",
@@ -358,9 +358,9 @@ sap.ui.define([
 						}
 					};
 				},
-				byId: function() {
+				byId() {
 					return {
-						getSelected: function() {
+						getSelected() {
 							return false;
 						}
 					};

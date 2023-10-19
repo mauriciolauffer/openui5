@@ -1,7 +1,6 @@
-sap.ui.define(['jquery.sap.global', 'sap/ui/core/UIComponent'],
-	function(jQuery, UIComponent) {
+sap.ui.define(['sap/ui/core/UIComponent'],
+	function(UIComponent) {
 	"use strict";
-
 
 	var Component = UIComponent.extend("sap.ui.test.v2inline.Component", {
 
@@ -66,7 +65,7 @@ sap.ui.define(['jquery.sap.global', 'sap/ui/core/UIComponent'],
 							"uri": "i18n/i18n.properties"
 						},
 						"sfapi": {
-							"type": "sap.ui.model.odata.ODataModel",
+							"type": "sap.ui.model.odata.v2.ODataModel",
 							"uri": "./some/odata/service"
 						}
 					},
@@ -161,7 +160,5 @@ sap.ui.define(['jquery.sap.global', 'sap/ui/core/UIComponent'],
 
 	});
 
-
 	return Component;
-
 });

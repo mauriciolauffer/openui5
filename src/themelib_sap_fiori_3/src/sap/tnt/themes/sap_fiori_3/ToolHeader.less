@@ -7,7 +7,7 @@
 @_sap_tnt_ToolHeader_IconHeight: 0.75rem;
 @_sap_tnt_ToolHeader_DisabledOpacity: @sapUiContentDisabledOpacity;
 
-.sapTntToolHeader {
+.sapTntToolHeader:not(.sapUshellShellToolHeader) {
 	&.sapMTB {
 		background-color: @sapUiShellColor;
 		box-shadow: inset 0 -0.0625rem 0 0 @sapUiShellBorderColor;
@@ -55,8 +55,8 @@
 	}
 
 	.sapMBtn:hover:not(.sapMBtnDisabled) .sapMBtnTransparent,
-	.sapMBtn:hover:not(.sapMBtnDisabled) .sapMBtnDefault,
-	.sapMBtn:hover:not(.sapMBtnDisabled) .sapMBtnBack,
+	.sapMBtn:hover:not(.sapMBtnDisabled):not(.sapMSBActive) > .sapMBtnHoverable:not(.sapMBtnDisabled):not(.sapMBtnActive):not(.sapMToggleBtnPressed):not(.sapMBtnTransparent).sapMBtnDefault,
+	.sapMBtn:hover:not(.sapMBtnDisabled):not(.sapMSBActive) > .sapMBtnHoverable:not(.sapMBtnDisabled):not(.sapMBtnActive):not(.sapMToggleBtnPressed):not(.sapMBtnTransparent).sapMBtnBack,
 	.sapMBtn:hover:not(.sapMBtnDisabled) .sapMBtnUp {
 		background: @sapUiShellHoverBackground;
 		border-color: transparent;
@@ -143,8 +143,8 @@
 
 	.sapMBtn:hover:not(.sapMBtnDisabled) > span.sapMBtnInner.sapMBtnTransparent:not(.sapMBtnActive):not(.sapMToggleBtnPressed) > .sapMBtnIcon,
 	.sapMBtn:hover:not(.sapMBtnDisabled) > span.sapMBtnInner.sapMBtnEmphasized:not(.sapMBtnActive):not(.sapMToggleBtnPressed) > .sapMBtnIcon,
-	.sapMBtn:hover:not(.sapMBtnDisabled) > span.sapMBtnInner.sapMBtnDefault:not(.sapMBtnActive):not(.sapMToggleBtnPressed) > .sapMBtnIcon,
-	.sapMBtn:hover:not(.sapMBtnDisabled) > span.sapMBtnInner.sapMBtnBack:not(.sapMBtnActive):not(.sapMToggleBtnPressed) > .sapMBtnIcon,
+	.sapMBtn:hover:not(.sapMBtnDisabled):not(.sapMSBActive) > .sapMBtnHoverable:not(.sapMBtnDisabled):not(.sapMBtnActive):not(.sapMToggleBtnPressed):not(.sapMBtnTransparent).sapMBtnDefault > .sapMBtnIcon,
+	.sapMBtn:hover:not(.sapMBtnDisabled):not(.sapMSBActive) > .sapMBtnHoverable:not(.sapMBtnDisabled):not(.sapMBtnActive):not(.sapMToggleBtnPressed):not(.sapMBtnTransparent).sapMBtnBack > .sapMBtnIcon,
 	.sapMBtn:hover:not(.sapMBtnDisabled) > span.sapMBtnInner.sapMBtnUp:not(.sapMBtnActive):not(.sapMToggleBtnPressed) > .sapMBtnIcon {
 		color: @sapUiShellInteractiveTextColor;
 		border-color: transparent;
@@ -437,7 +437,7 @@ html.sap-desktop .sapTntToolHeader .sapMFocus > .sapMSFF::before {
 // sap.m.IconTabHeader overriding
 // ==========================================================================
 
-.sapTntToolHeader {
+.sapTntToolHeader:not(.sapUshellShellToolHeader) {
 	.sapMITH {
 		height: 2.75rem;
 		background-color: transparent;

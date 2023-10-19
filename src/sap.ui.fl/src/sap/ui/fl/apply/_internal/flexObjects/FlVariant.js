@@ -41,17 +41,12 @@ sap.ui.define([
 				 */
 				variantManagementReference: {
 					type: "string"
-				},
-				/**
-				 * Indicates if the variant should be shown to the user.
-				 */
-				visible: {
-					type: "boolean",
-					defaultValue: true
 				}
 			}
 		},
-		constructor: function(sId, mSettings) {
+		// eslint-disable-next-line object-shorthand
+		constructor: function(...aArgs) {
+			let [sId, mSettings] = aArgs;
 			if (typeof sId !== "string" && sId !== undefined) {
 				mSettings = sId;
 				sId = mSettings && mSettings.id;
@@ -61,15 +56,10 @@ sap.ui.define([
 				mSettings.favorite = true;
 			}
 
-			Variant.apply(this, arguments);
+			Variant.apply(this, aArgs);
 
 			if (!this.getName() && mSettings.content && mSettings.content.title) {
 				this.setName(mSettings.content.title);
-			}
-
-			var aTitleKeyMatch = this.getName().match(/.i18n>(\w+)./);
-			if (aTitleKeyMatch) {
-				this.setName(Core.getLibraryResourceBundle("sap.ui.fl").getText(aTitleKeyMatch[1]));
 			}
 
 			var oSupportInfo = this.getSupportInformation();
@@ -88,7 +78,7 @@ sap.ui.define([
 	 * @returns {object} Mapping information
 	 * @static
 	 */
-	FlVariant.getMappingInfo = function () {
+	FlVariant.getMappingInfo = function() {
 		return Object.assign(Variant.getMappingInfo(), {
 			variantReference: "variantReference",
 			variantManagementReference: "variantManagementReference"
@@ -100,8 +90,13 @@ sap.ui.define([
 	 * Can be overridden to avoid access of static mapping within base methods.
 	 * @returns {object} Mapping information
 	 */
-	FlVariant.prototype.getMappingInfo = function () {
+	FlVariant.prototype.getMappingInfo = function() {
 		return FlVariant.getMappingInfo();
+	};
+
+	FlVariant.prototype.cloneFileContentWithNewId = function(...aArgs) {
+		var mFileContent = Variant.prototype.cloneFileContentWithNewId.apply(this, aArgs);
+		return mFileContent;
 	};
 
 	return FlVariant;

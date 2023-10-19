@@ -1,4 +1,4 @@
-sap.ui.define(function () {
+sap.ui.define(function() {
 	"use strict";
 
 	return {
@@ -36,115 +36,84 @@ sap.ui.define(function () {
 			module: "./{name}.qunit"
 		},
 		tests: {
+			"Table": {
+				group: "Controls",
+				module: "./{name}.qunit"
+			},
 			"Column": {
-				group: "Control element",
-				module: "./Column.qunit",
-				ui5: {
-					libs: [
-						"sap.ui.mdc"
-					]
-				}
+				group: "Controls",
+				module: "./{name}.qunit"
 			},
 			"CreationRow": {
-				group: "Column logic",
-				module: "./CreationRow.qunit",
-				ui5: {
-					libs: [
-						"sap.ui.mdc"
-					]
-				}
+				group: "Controls",
+				module: "./{name}.qunit"
 			},
 			"Menu": {
-				group: "UI panels",
-				module: "./Menu.qunit",
-				ui5: {
-					libs: [
-						"sap.ui.mdc"
-					]
-				}
+				group: "Controls",
+				module: "./{name}.qunit"
 			},
-			"PropertyHelper": {
-				group: "Control helper",
-				module: "./PropertyHelper.qunit",
-				ui5: {
-					libs: [
-						"sap.ui.mdc"
-					]
-				}
+			"TableTypeBase": {
+				group: "Table types",
+				module: "./{name}.qunit"
+			},
+			"GridTableType": {
+				group: "Table types",
+				module: "./{name}.qunit"
 			},
 			"ResponsiveTableType": {
-				group: "Control element",
-				module: "./ResponsiveTableType.qunit",
-				ui5: {
-					libs: [
-						"sap.ui.mdc"
-					]
-				}
+				group: "Table types",
+				module: "./{name}.qunit"
 			},
-			"Table": {
-				group: "MDCTable control",
-				module: "./Table.qunit",
-				ui5: {
-					libs: [
-						"sap.ui.mdc"
-					]
-				}
+			"TreeTableType": {
+				group: "Table types",
+				module: "./{name}.qunit"
 			},
 			"TableDelegate": {
-				group: "Control helper",
-				module: "./TableDelegate.qunit",
-				ui5: {
-					libs: [
-						"sap.ui.mdc"
-					]
-				}
-			},
-			"v4.TableDelegate": {
 				group: "Delegates",
-				module: "test-resources/sap/ui/mdc/qunit/odata/v4/TableDelegate.qunit",
-				qunit: {
-					reorder: false
-				}
+				module: "./{name}.qunit"
 			},
-			"TableFlex": {
-				group: "Control logic",
-				module: "./TableFlex.qunit",
+			"TableDelegate for ODataV4": {
+				group: "Delegates",
+				module: "test-resources/sap/ui/mdc/qunit/odata/v4/TableDelegate.qunit"
+			},
+			"PropertyHelper": {
+				group: "Helper",
+				module: "./{name}.qunit"
+			},
+			"PropertyHelper for ODataV4": {
+				group: "Helper",
+				module: "./V4AnalyticsPropertyHelper.qunit"
+			},
+			"Personalization": {
+				group: "Utils",
+				module: "./utils/{name}.qunit",
 				ui5: {
 					libs: [
-						"sap.ui.mdc"
+						"sap.ui.fl", "sap.ui.mdc"
 					]
 				}
 			},
 			"TableSettings": {
-				group: "Control helper",
-				module: "./TableSettings.qunit",
+				group: "Utils",
+				module: "./{name}.qunit"
+			},
+			"Table Journey": {
+				group: "OPA",
+				module: "./OpaTests/TableJourney.qunit",
+				autostart: false
+			},
+			"TableFlex": {
+				group: "Flexibility",
+				module: "./{name}.qunit",
 				ui5: {
 					libs: [
-						"sap.ui.mdc"
+						"sap.ui.fl", "sap.ui.mdc"
 					]
 				}
 			},
-			"TreeTableType": {
-				group: "Control element",
-				module: "./TreeTableType.qunit",
-				ui5: {
-					libs: [
-						"sap.ui.mdc"
-					]
-				}
-			},
-			"V4AnalyticsPropertyHelper": {
-				group: "Control helper",
-				module: "./V4AnalyticsPropertyHelper.qunit",
-				ui5: {
-					libs: [
-						"sap.ui.mdc"
-					]
-				}
-			},
-			"MDCTableOPA": {
+			"MDCTreeTableV4OPA": {
 				group: "Table UI Test",
-				module: "./OpaTests/MDCTableOPA.qunit",
+				module: "./OpaTests/MDCTreeTableV4Opa.qunit",
 				ui5: {
 					libs: [
 						"sap.ui.mdc"
@@ -153,6 +122,7 @@ sap.ui.define(function () {
 				autostart: false
 			},
 			"ChangeCondenser": {
+				group: "Flexibility",
 				module: "./Condenser.qunit",
 				ui5: {
 					libs: [
@@ -165,6 +135,16 @@ sap.ui.define(function () {
 					}
 				},
 				sinon: false
+			},
+			"DragDropConfig": {
+				group: "DragAndDrop",
+				module: "./DragDropConfig.qunit",
+				ui5: {
+					libs: ["sap.m", "sap.ui.table", "sap.ui.mdc"]
+				},
+				coverage: {
+					only: ["sap/ui/mdc/table/DragDropConfig"]
+				}
 			}
 		}
 	};

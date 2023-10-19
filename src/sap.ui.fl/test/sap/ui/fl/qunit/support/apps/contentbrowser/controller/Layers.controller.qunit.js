@@ -1,4 +1,4 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/ui/fl/support/apps/contentbrowser/controller/Layers.controller",
@@ -21,20 +21,20 @@ sap.ui.define([
 	var oController;
 
 	QUnit.module("Layers", {
-		beforeEach: function () {
+		beforeEach() {
 			oController = new Layers();
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
-		QUnit.test("when a layer is selected", function (assert) {
+		QUnit.test("when a layer is selected", function(assert) {
 			var oEvent = {
-				getSource: function () {
+				getSource() {
 					return {
-						getBindingContextPath: function () {
+						getBindingContextPath() {
 							return {
-								substring: function () {
+								substring() {
 									return "layer";
 								}
 							};
@@ -43,9 +43,9 @@ sap.ui.define([
 				}
 			};
 			sandbox.stub(oController, "getView").returns({
-				getModel: function () {
+				getModel() {
 					return {
-						getData: function () {
+						getData() {
 							return {
 								layer: {
 									name: Layer.VENDOR
@@ -67,9 +67,9 @@ sap.ui.define([
 			assert.equal(oStubbedNavTo.getCall(0).args[1].layer, Layer.VENDOR, "with correct layer");
 		});
 
-		QUnit.test("when MessagePopover is press", function (assert) {
+		QUnit.test("when MessagePopover is press", function(assert) {
 			var oEvent = {
-				getSource: function () {
+				getSource() {
 					return "source";
 				}
 			};

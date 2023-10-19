@@ -47,7 +47,7 @@ sap.ui.define([
 		 * @returns {object} Contains the information about the control
 		 * @private
 		 */
-		getControlIfTemplateAffected: function (oChange, oControl, mPropertyBag) {
+		getControlIfTemplateAffected(oChange, oControl, mPropertyBag) {
 			var oModifier = mPropertyBag.modifier;
 			var mControl = {
 				originalControl: oControl
@@ -77,17 +77,18 @@ sap.ui.define([
 		 * @param {sap.ui.core.util.reflection.BaseTreeModifier} mPropertyBag.modifier - Control tree modifier
 		 * @returns {Promise} Promise resolving with the change handler or an empty object
 		 */
-		getChangeHandler: function(oChange, mControl, mPropertyBag) {
-			var sLibraryName = mPropertyBag.modifier.getLibraryName(mControl.control);
+		getChangeHandler(oChange, mControl, mPropertyBag) {
+			var oLibraryNamePromise = mPropertyBag.modifier.getLibraryName(mControl.control);
 			// the ChangeHandlerRegistration includes all the predefined ChangeHandlers.
 			// With this as a standard import the ChangeHandlers would not be able to access API classes due to circular dependencies.
 			// TODO should be removed as soon as the ChangePersistence / FlexController are gone
-			return requireAsync("sap/ui/fl/initial/_internal/changeHandlers/ChangeHandlerRegistration")
-
-			.then(function(ChangeHandlerRegistration) {
-				return ChangeHandlerRegistration.waitForChangeHandlerRegistration(sLibraryName);
+			return Promise.all([
+				requireAsync("sap/ui/fl/initial/_internal/changeHandlers/ChangeHandlerRegistration"),
+				oLibraryNamePromise
+			])
+			.then(function(aPromiseValues) {
+				return aPromiseValues[0].waitForChangeHandlerRegistration(aPromiseValues[1]);
 			})
-
 			.then(function() {
 				var sChangeType = oChange.getChangeType();
 				var sLayer = oChange.getLayer();
@@ -95,9 +96,18 @@ sap.ui.define([
 			});
 		},
 
-		checkIfDependencyIsStillValid: function(oAppComponent, oModifier, mChangesMap, sChangeId) {
+		checkIfDependencyIsStillValid(oAppComponent, oModifier, mChangesMap, sChangeId) {
 			var oChange = FlUtils.getChangeFromChangesMap(mChangesMap.mChanges, sChangeId);
+			// Change could be deleted after a save (condensing) so it is no longer a relevant dependency
+			if (!oChange) {
+				return false;
+			}
 			var oControl = oModifier.bySelector(oChange.getSelector(), oAppComponent);
+			// if the control is currently not available,
+			// the change is also not applied anymore and the dependency is still valid
+			if (!oControl) {
+				return true;
+			}
 			var bHasChangeApplyFinishedCustomData = FlexCustomData.hasChangeApplyFinishedCustomData(oControl, oChange, oModifier);
 			return isDependencyStillValid(oChange, bHasChangeApplyFinishedCustomData);
 		},
@@ -112,7 +122,7 @@ sap.ui.define([
 		 * @param {sap.ui.fl.apply._internal.flexObjects.FlexObject} oChange - Change instance to check
 		 * @returns {boolean} <code>true</code> if the change belongs to the given view
 		 */
-		filterChangeByView: function(mPropertyBag, oChange) {
+		filterChangeByView(mPropertyBag, oChange) {
 			var oModifier = mPropertyBag.modifier;
 			var oAppComponent = mPropertyBag.appComponent;
 			var oSelector = oChange.getSelector();

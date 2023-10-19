@@ -1,23 +1,21 @@
 sap.ui.define([
 	"./ValueHelp.delegate",
-	"sap/ui/mdc/library",
 	"sap/ui/mdc/FilterField",
 	"sap/ui/mdc/filterbar/vh/FilterBar",
 	"sap/ui/mdc/Table",
 	"sap/ui/mdc/table/Column",
 	"sap/ui/mdc/table/GridTableType",
 	"sap/ui/mdc/table/ResponsiveTableType",
-	"sap/m/Text"
-], function (ODataValueHelpDelegate, library, FilterField, FilterBar, MdcTable, MdcColumn, GridTableType, ResponsiveTableType, Text) {
+	"sap/m/Text",
+	"sap/ui/mdc/enums/TableGrowingMode",
+	"sap/ui/mdc/enums/TableRowCountMode",
+	"sap/ui/mdc/enums/TableSelectionMode",
+	"sap/ui/mdc/enums/TableP13nMode"
+], function (ODataValueHelpDelegate, FilterField, FilterBar, MdcTable, MdcColumn, GridTableType, ResponsiveTableType, Text, GrowingMode, TableRowCountMode, TableSelectionMode, TableP13nMode) {
 	"use strict";
-	var TableP13nMode = library.TableP13nMode;
-	var RowCountMode = library.RowCountMode;
-	var SelectionMode = library.SelectionMode;
-	var GrowingMode = library.GrowingMode;
 	var Delegate = Object.assign({}, ODataValueHelpDelegate);
 
-	Delegate.retrieveContent = function (oPayload, oContainer, sContentId) {
-		var oValueHelp = oContainer && oContainer.getParent();
+	Delegate.retrieveContent = function (oValueHelp, oContainer, sContentId) {
 		var aCurrentContent = oContainer && oContainer.getContent();
 		var oCurrentContent = aCurrentContent && aCurrentContent.find(function(oContent){ return oContent.getId() === sContentId; });
 		var bMultiSelect = oValueHelp.getMaxConditions() === -1;
@@ -71,17 +69,16 @@ sap.ui.define([
 					oTable = new MdcTable(oCurrentContent.getId() + "--" +  "template1", {
 						autoBindOnInit: false,
 						width: "100%",
-						height: "100%",
-						selectionMode: bMultiSelect ? SelectionMode.Multi : SelectionMode.Single,
+						selectionMode: bMultiSelect ? TableSelectionMode.Multi : TableSelectionMode.Single,
 						p13nMode: [TableP13nMode.Sort],
 						delegate: {name: 'sap/ui/v4demo/delegate/GridTable.delegate', payload: {collectionName: 'Authors'}},
 						threshold: 50,
 						enableAutoColumnWidth: true,
 						type: new ResponsiveTableType({growingMode: GrowingMode.Scroll}),
 						columns: [
-							new MdcColumn({header: "ID", dataProperty : "ID", template: new Text(oCurrentContent.getId() + "--" +  "template1-AuthorId", {text: "{path: 'ID', type:'sap.ui.model.odata.type.Int32', formatOptions: {groupingEnabled: false}}"})}),
-							new MdcColumn({header: "Name", dataProperty : "name", template: new Text({text: "{path: 'name', type:'sap.ui.model.odata.type.String'}"})}),
-							new MdcColumn({header: "Country", dataProperty : "countryOfOrigin_code", template: new Text({text: "{path: 'countryOfOrigin_code', type:'sap.ui.model.odata.type.String'}"})})
+							new MdcColumn({header: "ID", propertyKey : "ID", template: new Text(oCurrentContent.getId() + "--" +  "template1-AuthorId", {text: "{path: 'ID', type:'sap.ui.model.odata.type.Int32', formatOptions: {groupingEnabled: false}}"})}),
+							new MdcColumn({header: "Name", propertyKey : "name", template: new Text({text: "{path: 'name', type:'sap.ui.model.odata.type.String'}"})}),
+							new MdcColumn({header: "Country", propertyKey : "countryOfOrigin_code", template: new Text({text: "{path: 'countryOfOrigin_code', type:'sap.ui.model.odata.type.String'}"})})
 						]
 					});
 					break;
@@ -113,17 +110,16 @@ sap.ui.define([
 					oTable = new MdcTable(oCurrentContent.getId() + "--" +  "default", {
 						autoBindOnInit: false,
 						width: "100%",
-						height: "100%",
-						selectionMode: bMultiSelect ? SelectionMode.Multi : SelectionMode.Single,
+						selectionMode: bMultiSelect ? TableSelectionMode.Multi : TableSelectionMode.Single,
 						p13nMode: [TableP13nMode.Sort],
 						delegate: {name: 'sap/ui/v4demo/delegate/GridTable.delegate', payload: {collectionName: 'Authors'}},
 						threshold: 50,
 						enableAutoColumnWidth: true,
-						type: new GridTableType({rowCountMode: RowCountMode.Auto}),
+						type: new GridTableType({rowCountMode: TableRowCountMode.Auto}),
 						columns: [
-							new MdcColumn({header: "ID", dataProperty : "ID", template: new Text(oCurrentContent.getId() + "--" +  "template1-AuthorId", {text: "{path: 'ID', type:'sap.ui.model.odata.type.Int32', formatOptions: {groupingEnabled: false}}"})}),
-							new MdcColumn({header: "Name", dataProperty : "name", template: new Text({text: "{path: 'name', type:'sap.ui.model.odata.type.String'}"})}),
-							new MdcColumn({header: "Date of Birth", dataProperty : "dateOfBirth", template: new Text({text: "{path: 'dateOfBirth', type:'sap.ui.model.odata.type.Date'}"})})
+							new MdcColumn({header: "ID", propertyKey : "ID", template: new Text(oCurrentContent.getId() + "--" +  "template1-AuthorId", {text: "{path: 'ID', type:'sap.ui.model.odata.type.Int32', formatOptions: {groupingEnabled: false}}"})}),
+							new MdcColumn({header: "Name", propertyKey : "name", template: new Text({text: "{path: 'name', type:'sap.ui.model.odata.type.String'}"})}),
+							new MdcColumn({header: "Date of Birth", propertyKey : "dateOfBirth", template: new Text({text: "{path: 'dateOfBirth', type:'sap.ui.model.odata.type.Date'}"})})
 						]
 					});
 					break;
@@ -138,8 +134,8 @@ sap.ui.define([
 		// return Promise.resolve();
 	};
 
-	Delegate.determineSearchSupported = function(oPayload, oFieldHelp) {
-		oFieldHelp.setFilterFields("$search");
+	Delegate.determineSearchSupported = function(oValueHelp) {
+		oValueHelp.setFilterFields("$search");
 		return Promise.resolve();
 	};
 

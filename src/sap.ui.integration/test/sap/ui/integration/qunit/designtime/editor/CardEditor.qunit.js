@@ -689,6 +689,7 @@ sap.ui.define([
 								oMultiComboBox.focus();
 								// sometimes the focus in not in the test browser, need to call the onfocusin function hardly to set the message strip
 								oField1.onfocusin();
+								Core.applyChanges();
 								var sMsgStripId = oField1.getAssociation("_messageStrip");
 								var oMsgStrip = Core.byId(sMsgStripId);
 								assert.equal(oMsgStrip.getDomRef().style.opacity, "1", "Message strip visible");
@@ -1068,11 +1069,17 @@ sap.ui.define([
 						onAfterRendering: function () {
 							var card = cardPreview._getCardPreview();
 							assert.ok(card, "Preview mode card: OK");
-							var modeToggleButton = cardPreview._getModeToggleButton();
+							var modeToggleButton = cardPreview._oModeToggleButton;
 							assert.ok(modeToggleButton.getDomRef(), "Preview mode button: Button is OK");
 							assert.equal(modeToggleButton.getIcon(), "sap-icon://media-pause", "Preview mode button: Icon is OK");
 							assert.ok(modeToggleButton.getPressed(), "Preview mode button: Pressed is OK");
 							assert.equal(modeToggleButton.getTooltip(), "Sample Preview", "Preview mode button: Tooltip is OK");
+
+							var SizeToggleButton = cardPreview._oSizeToggleButton;
+							assert.ok(SizeToggleButton.getDomRef(), "Preview size button: Button is OK");
+							assert.equal(SizeToggleButton.getIcon(), "sap-icon://full-screen", "Preview size button: Icon is OK");
+							assert.ok(!SizeToggleButton.getPressed(), "Preview size button: Pressed is OK");
+							assert.equal(SizeToggleButton.getTooltip(), "Full Size", "Preview size button: Tooltip is OK");
 							resolve();
 						}
 					});
@@ -1107,11 +1114,17 @@ sap.ui.define([
 						onAfterRendering: function () {
 							var card = cardPreview._getCardPreview();
 							assert.ok(card, "Preview mode card: OK");
-							var modeToggleButton = cardPreview._getModeToggleButton();
+							var modeToggleButton = cardPreview._oModeToggleButton;
 							assert.ok(modeToggleButton.getDomRef(), "Preview mode button: Button is OK");
 							assert.equal(modeToggleButton.getIcon(), "sap-icon://media-play", "Preview mode button: Icon is OK");
 							assert.ok(!modeToggleButton.getPressed(), "Preview mode button: Pressed is OK");
 							assert.equal(modeToggleButton.getTooltip(), "Live Preview", "Preview mode button: Tooltip is OK");
+
+							var SizeToggleButton = cardPreview._oSizeToggleButton;
+							assert.ok(SizeToggleButton.getDomRef(), "Preview size button: Button is OK");
+							assert.equal(SizeToggleButton.getIcon(), "sap-icon://full-screen", "Preview size button: Icon is OK");
+							assert.ok(!SizeToggleButton.getPressed(), "Preview size button: Pressed is OK");
+							assert.equal(SizeToggleButton.getTooltip(), "Full Size", "Preview size button: Tooltip is OK");
 							resolve();
 						}
 					});
@@ -1178,11 +1191,17 @@ sap.ui.define([
 						onAfterRendering: function () {
 							var card = cardPreview._getCardPreview();
 							assert.ok(card, "Preview mode card: OK");
-							var modeToggleButton = cardPreview._getModeToggleButton();
+							var modeToggleButton = cardPreview._oModeToggleButton;
 							assert.ok(modeToggleButton.getDomRef(), "Preview mode button: Button is OK");
 							assert.equal(modeToggleButton.getIcon(), "sap-icon://media-pause", "Preview mode button: Icon is OK");
 							assert.ok(modeToggleButton.getPressed(), "Preview mode button: Pressed is OK");
 							assert.equal(modeToggleButton.getTooltip(), "Sample Preview", "Preview mode button: Tooltip is OK");
+
+							var SizeToggleButton = cardPreview._oSizeToggleButton;
+							assert.ok(SizeToggleButton.getDomRef(), "Preview size button: Button is OK");
+							assert.equal(SizeToggleButton.getIcon(), "sap-icon://full-screen", "Preview size button: Icon is OK");
+							assert.ok(!SizeToggleButton.getPressed(), "Preview size button: Pressed is OK");
+							assert.equal(SizeToggleButton.getTooltip(), "Full Size", "Preview size button: Tooltip is OK");
 							resolve();
 						}
 					});
@@ -1219,11 +1238,17 @@ sap.ui.define([
 							assert.ok(card, "Preview mode card: OK");
 							var image = card.getAggregation("items")[0];
 							assert.ok(image.getSrc().endsWith("./img/preview.png"), "Preview mode image: OK");
-							var modeToggleButton = cardPreview._getModeToggleButton();
+							var modeToggleButton = cardPreview._oModeToggleButton;
 							assert.ok(modeToggleButton.getDomRef(), "Preview mode button: Button is OK");
 							assert.equal(modeToggleButton.getIcon(), "sap-icon://media-play", "Preview mode button: Icon is OK");
 							assert.ok(!modeToggleButton.getPressed(), "Preview mode button: Pressed is OK");
 							assert.equal(modeToggleButton.getTooltip(), "Live Preview", "Preview mode button: Tooltip is OK");
+
+							var SizeToggleButton = cardPreview._oSizeToggleButton;
+							assert.ok(SizeToggleButton.getDomRef(), "Preview size button: Button is OK");
+							assert.equal(SizeToggleButton.getIcon(), "sap-icon://full-screen", "Preview size button: Icon is OK");
+							assert.ok(!SizeToggleButton.getPressed(), "Preview size button: Pressed is OK");
+							assert.equal(SizeToggleButton.getTooltip(), "Full Size", "Preview size button: Tooltip is OK");
 							resolve();
 						}
 					});
@@ -1258,11 +1283,14 @@ sap.ui.define([
 						onAfterRendering: function () {
 							var card = cardPreview._getCardPreview();
 							assert.ok(card, "Preview mode card: OK");
-							var modeToggleButton = cardPreview._getModeToggleButton();
-							assert.equal(modeToggleButton.getDomRef(), null, "Preview mode button: Button is OK");
-							assert.equal(modeToggleButton.getIcon(), "sap-icon://media-pause", "Preview mode button: Icon is OK");
-							assert.ok(modeToggleButton.getPressed(), "Preview mode button: Pressed is OK");
-							assert.equal(modeToggleButton.getTooltip(), "Sample Preview", "Preview mode button: Tooltip is OK");
+							var modeToggleButton = cardPreview._oModeToggleButton;
+							assert.equal(modeToggleButton, null, "Preview mode button: Button is OK");
+
+							var SizeToggleButton = cardPreview._oSizeToggleButton;
+							assert.ok(SizeToggleButton.getDomRef(), "Preview size button: Button is OK");
+							assert.equal(SizeToggleButton.getIcon(), "sap-icon://full-screen", "Preview size button: Icon is OK");
+							assert.ok(!SizeToggleButton.getPressed(), "Preview size button: Pressed is OK");
+							assert.equal(SizeToggleButton.getTooltip(), "Full Size", "Preview size button: Tooltip is OK");
 							resolve();
 						}
 					});
@@ -1297,11 +1325,11 @@ sap.ui.define([
 						onAfterRendering: function () {
 							var card = cardPreview._getCardPreview();
 							assert.ok(card, "Preview mode card: OK");
-							var modeToggleButton = cardPreview._getModeToggleButton();
-							assert.equal(modeToggleButton.getDomRef(), null, "Preview mode button: Button is OK");
-							assert.equal(modeToggleButton.getIcon(), "sap-icon://media-play", "Preview mode button: Icon is OK");
-							assert.ok(!modeToggleButton.getPressed(), "Preview mode button: Pressed is OK");
-							assert.equal(modeToggleButton.getTooltip(), "Live Preview", "Preview mode button: Tooltip is OK");
+							var modeToggleButton = cardPreview._oModeToggleButton;
+							assert.equal(modeToggleButton, null, "Preview mode button: Button is OK");
+
+							var SizeToggleButton = cardPreview._oSizeToggleButton;
+							assert.equal(SizeToggleButton, null, "Preview size button: Button is OK");
 							resolve();
 						}
 					});
@@ -1319,12 +1347,18 @@ sap.ui.define([
 						onAfterRendering: function () {
 							var card = cardPreview._getCardPreview();
 							assert.ok(card, "Preview mode card: OK");
-							assert.ok(card.mCustomStyleClassMap.sapUiIntegrationDTPreviewNoScale, "Preview mode no scale: OK");
-							var modeToggleButton = cardPreview._getModeToggleButton();
+							assert.equal(card.getParent().getDomRef("card").getAttribute("class"), "sapUiIntegrationDTPreviewNoScale", "Preview mode no scale: OK");
+							var modeToggleButton = cardPreview._oModeToggleButton;
 							assert.ok(modeToggleButton.getDomRef(), "Preview mode button: Button is OK");
 							assert.equal(modeToggleButton.getIcon(), "sap-icon://media-play", "Preview mode button: Icon is OK");
 							assert.ok(!modeToggleButton.getPressed(), "Preview mode button: Pressed is OK");
 							assert.equal(modeToggleButton.getTooltip(), "Live Preview", "Preview mode button: Tooltip is OK");
+
+							var SizeToggleButton = cardPreview._oSizeToggleButton;
+							assert.ok(SizeToggleButton.getDomRef(), "Preview size button: Button is OK");
+							assert.equal(SizeToggleButton.getIcon(), "sap-icon://full-screen", "Preview size button: Icon is OK");
+							assert.ok(!SizeToggleButton.getPressed(), "Preview size button: Pressed is OK");
+							assert.equal(SizeToggleButton.getTooltip(), "Full Size", "Preview size button: Tooltip is OK");
 							resolve();
 						}
 					});
@@ -1391,6 +1425,12 @@ sap.ui.define([
 							var oEditorDom = this.oCardEditor.getDomRef();
 							assert.equal(oEditorDom.children.length, 2, "Editor children length: OK");
 							assert.equal(oEditorDom.children[1].id, cardPreview.getId(), "Preview Position: OK");
+
+							var SizeToggleButton = cardPreview._oSizeToggleButton;
+							assert.ok(SizeToggleButton.getDomRef(), "Preview size button: Button is OK");
+							assert.equal(SizeToggleButton.getIcon(), "sap-icon://full-screen", "Preview size button: Icon is OK");
+							assert.ok(!SizeToggleButton.getPressed(), "Preview size button: Pressed is OK");
+							assert.equal(SizeToggleButton.getTooltip(), "Full Size", "Preview size button: Tooltip is OK");
 							resolve();
 						}.bind(this)
 					});
@@ -1430,6 +1470,9 @@ sap.ui.define([
 							var oEditorDom = this.oCardEditor.getDomRef();
 							assert.equal(oEditorDom.children.length, 2, "Editor children length: OK");
 							assert.equal(oEditorDom.children[0].id, cardPreview.getId(), "Preview Position: OK");
+
+							var SizeToggleButton = cardPreview._oSizeToggleButton;
+							assert.equal(SizeToggleButton, null, "Preview size button: Button is OK");
 							resolve();
 						}.bind(this)
 					});
@@ -1469,6 +1512,9 @@ sap.ui.define([
 							var oEditorDom = this.oCardEditor.getDomRef();
 							assert.equal(oEditorDom.children.length, 2, "Editor children length: OK");
 							assert.equal(oEditorDom.children[1].id, cardPreview.getId(), "Preview Position: OK");
+
+							var SizeToggleButton = cardPreview._oSizeToggleButton;
+							assert.equal(SizeToggleButton, null, "Preview size button: Button is OK");
 							resolve();
 						}.bind(this)
 					});
@@ -1508,6 +1554,12 @@ sap.ui.define([
 							var oEditorDom = this.oCardEditor.getDomRef();
 							assert.equal(oEditorDom.children.length, 2, "Editor children length: OK");
 							assert.equal(oEditorDom.children[0].id, cardPreview.getId(), "Preview Position: OK");
+
+							var SizeToggleButton = cardPreview._oSizeToggleButton;
+							assert.ok(SizeToggleButton.getDomRef(), "Preview size button: Button is OK");
+							assert.equal(SizeToggleButton.getIcon(), "sap-icon://full-screen", "Preview size button: Icon is OK");
+							assert.ok(!SizeToggleButton.getPressed(), "Preview size button: Pressed is OK");
+							assert.equal(SizeToggleButton.getTooltip(), "Full Size", "Preview size button: Tooltip is OK");
 							resolve();
 						}.bind(this)
 					});
@@ -1547,8 +1599,134 @@ sap.ui.define([
 							var oEditorDom = this.oCardEditor.getDomRef();
 							assert.equal(oEditorDom.children.length, 2, "Editor children length: OK");
 							assert.equal(oEditorDom.children[1].id, cardPreview.getId(), "Preview Position: OK");
+
+							var SizeToggleButton = cardPreview._oSizeToggleButton;
+							assert.ok(SizeToggleButton.getDomRef(), "Preview size button: Button is OK");
+							assert.equal(SizeToggleButton.getIcon(), "sap-icon://full-screen", "Preview size button: Icon is OK");
+							assert.ok(!SizeToggleButton.getPressed(), "Preview size button: Pressed is OK");
+							assert.equal(SizeToggleButton.getTooltip(), "Full Size", "Preview size button: Tooltip is OK");
 							resolve();
 						}.bind(this)
+					});
+				}.bind(this));
+			}.bind(this));
+		});
+	});
+
+	QUnit.module("Special cases", {
+		beforeEach: function () {
+			this.oHost = new Host("host");
+			this.oContextHost = new ContextHost("contexthost");
+
+			this.oCardEditor = new CardEditor();
+			var oContent = document.getElementById("content");
+			if (!oContent) {
+				oContent = document.createElement("div");
+				oContent.setAttribute("id", "content");
+				document.body.appendChild(oContent);
+				document.body.style.zIndex = 1000;
+			}
+			this.oCardEditor.placeAt(oContent);
+		},
+		afterEach: function () {
+			this.oCardEditor.destroy();
+			this.oHost.destroy();
+			this.oContextHost.destroy();
+			sandbox.restore();
+			var oContent = document.getElementById("content");
+			if (oContent) {
+				oContent.innerHTML = "";
+				document.body.style.zIndex = "unset";
+			}
+		}
+	}, function () {
+		QUnit.test("1 icon parameter as value (as json)", function (assert) {
+			this.oCardEditor.setCard({
+				baseUrl: sBaseUrl,
+				manifest: {
+					"sap.app": {
+						"id": "test.sample",
+						"i18n": "../i18n/i18n.properties"
+					},
+					"sap.card": {
+						"designtime": "designtime/iconWithPreview",
+						"type": "List",
+						"configuration": {
+							"parameters": {}
+						},
+						"header": {
+							"title": "Icon Card",
+							"icon": {
+								"src": "sap-icon://add-document"
+							}
+						}
+					}
+				}
+			});
+			return new Promise(function (resolve, reject) {
+				this.oCardEditor.attachReady(function () {
+					assert.ok(this.oCardEditor.isReady(), "Card Editor is ready");
+					var oLabel = this.oCardEditor.getAggregation("_formContent")[1];
+					var oField = this.oCardEditor.getAggregation("_formContent")[2];
+					assert.ok(oLabel.isA("sap.m.Label"), "Label: Form content contains a Label");
+					assert.ok(oField.getAggregation("_field").isA("sap.ui.integration.editor.fields.viz.IconSelect"), "Field: Icon Select Field");
+					var cardPreview = this.oCardEditor.getAggregation("_preview");
+					cardPreview.addEventDelegate({
+						onAfterRendering: function () {
+							wait().then(function () {
+								assert.ok(cardPreview._oCardPreview.getCardHeader().shouldShowIcon(), "Preview Header icon is not hidden");
+								resolve();
+							});
+						}
+					});
+				}.bind(this));
+			}.bind(this));
+		});
+
+		QUnit.test("1 icon parameter with select NONE as value (as json)", function (assert) {
+			this.oCardEditor.setCard({
+				baseUrl: sBaseUrl,
+				manifest: {
+					"sap.app": {
+						"id": "test.sample",
+						"i18n": "../i18n/i18n.properties"
+					},
+					"sap.card": {
+						"designtime": "designtime/iconWithPreview",
+						"type": "List",
+						"configuration": {
+							"parameters": {}
+						},
+						"header": {
+							"title": "Icon Card",
+							"icon": {
+								"src": "sap-icon://add-document"
+							}
+						}
+					}
+				}
+			});
+			return new Promise(function (resolve, reject) {
+				this.oCardEditor.attachReady(function () {
+					assert.ok(this.oCardEditor.isReady(), "Card Editor is ready");
+					var oLabel = this.oCardEditor.getAggregation("_formContent")[1];
+					var oField = this.oCardEditor.getAggregation("_formContent")[2];
+					assert.ok(oLabel.isA("sap.m.Label"), "Label: Form content contains a Label");
+					assert.ok(oField.getAggregation("_field").isA("sap.ui.integration.editor.fields.viz.IconSelect"), "Field: Icon Select Field");
+					var oSelect = oField.getAggregation("_field").getAggregation("_control");
+					var cardPreview = this.oCardEditor.getAggregation("_preview");
+					cardPreview.addEventDelegate({
+						onAfterRendering: function () {
+							wait().then(function () {
+								oSelect.setSelectedIndex(0);
+								oSelect.fireChange({ selectedItem: oSelect.getItems()[0] });
+								oSelect.focus();
+								wait().then(function () {
+									assert.ok(!cardPreview._oCardPreview.getCardHeader().shouldShowIcon(), "Preview Header icon is hidden after selecing 'None'");
+									resolve();
+								});
+							});
+						}
 					});
 				}.bind(this));
 			}.bind(this));

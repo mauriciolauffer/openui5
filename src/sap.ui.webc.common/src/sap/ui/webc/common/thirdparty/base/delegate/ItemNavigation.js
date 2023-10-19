@@ -1,4 +1,4 @@
-sap.ui.define(["exports", "../Keys", "../util/getActiveElement", "../types/NavigationMode", "../types/ItemNavigationBehavior"], function (_exports, _Keys, _getActiveElement, _NavigationMode, _ItemNavigationBehavior) {
+sap.ui.define(["exports", "../Keys", "../util/getActiveElement", "../types/NavigationMode", "../types/ItemNavigationBehavior", "../UI5Element"], function (_exports, _Keys, _getActiveElement, _NavigationMode, _ItemNavigationBehavior, _UI5Element) {
   "use strict";
 
   Object.defineProperty(_exports, "__esModule", {
@@ -8,9 +8,7 @@ sap.ui.define(["exports", "../Keys", "../util/getActiveElement", "../types/Navig
   _getActiveElement = _interopRequireDefault(_getActiveElement);
   _NavigationMode = _interopRequireDefault(_NavigationMode);
   _ItemNavigationBehavior = _interopRequireDefault(_ItemNavigationBehavior);
-
   function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
   /**
    * The ItemNavigation class manages the calculations to determine the correct "tabindex" for a group of related items inside a root component.
    * Important: ItemNavigation only does the calculations and does not change "tabindex" directly, this is a responsibility of the developer.
@@ -48,7 +46,7 @@ sap.ui.define(["exports", "../Keys", "../util/getActiveElement", "../types/Navig
     /**
      *
      * @param rootWebComponent the component to operate on (component that slots or contains within its shadow root the items the user navigates among)
-     * @param options Object with configuration options:
+     * @param {ItemNavigationOptions} options Object with configuration options:
      *  - currentIndex: the index of the item that will be initially selected (from which navigation will begin)
      *  - navigationMode (Auto|Horizontal|Vertical): whether the items are displayed horizontally (Horizontal), vertically (Vertical) or as a matrix (Auto) meaning the user can navigate in both directions (up/down and left/right)
      *  - rowSize: tells how many items per row there are when the items are not rendered as a flat list but rather as a matrix. Relevant for navigationMode=Auto
@@ -59,30 +57,18 @@ sap.ui.define(["exports", "../Keys", "../util/getActiveElement", "../types/Navig
      *  - getItemsCallback: function that, when called, returns an array with all items the user can navigate among
      *  - affectedPropertiesNames: a list of metadata properties on the root component which, upon user navigation, will be reassigned by address thus causing the root component to invalidate
      */
-    constructor(rootWebComponent, options = {}) {
-      this._setRootComponent(rootWebComponent);
-
-      this._initOptions(options);
-    }
-
-    _setRootComponent(rootWebComponent) {
+    constructor(rootWebComponent, options) {
       if (!rootWebComponent.isUI5Element) {
         throw new Error("The root web component must be a UI5 Element instance");
       }
-
       this.rootWebComponent = rootWebComponent;
       this.rootWebComponent.addEventListener("keydown", this._onkeydown.bind(this));
-
       this.rootWebComponent._onComponentStateFinalized = () => {
         this._init();
       };
-    }
-
-    _initOptions(options) {
       if (typeof options.getItemsCallback !== "function") {
         throw new Error("getItemsCallback is required");
       }
-
       this._getItems = options.getItemsCallback;
       this._currentIndex = options.currentIndex || 0;
       this._rowSize = options.rowSize || 1;
@@ -98,19 +84,13 @@ sap.ui.define(["exports", "../Keys", "../util/getActiveElement", "../types/Navig
      * @public
      * @param current the new selected item
      */
-
-
     setCurrentItem(current) {
       const currentItemIndex = this._getItems().indexOf(current);
-
       if (currentItemIndex === -1) {
         console.warn(`The provided item is not managed by ItemNavigation`, current); // eslint-disable-line
-
         return;
       }
-
       this._currentIndex = currentItemIndex;
-
       this._applyTabIndex();
     }
     /**
@@ -119,27 +99,21 @@ sap.ui.define(["exports", "../Keys", "../util/getActiveElement", "../types/Navig
      * @public
      * @param newRowSize
      */
-
-
     setRowSize(newRowSize) {
       this._rowSize = newRowSize;
     }
-
     _init() {
       this._getItems().forEach((item, idx) => {
         item._tabIndex = idx === this._currentIndex ? "0" : "-1";
       });
     }
-
     _onkeydown(event) {
       if (!this._canNavigate()) {
         return;
       }
-
       const horizontalNavigationOn = this._navigationMode === _NavigationMode.default.Horizontal || this._navigationMode === _NavigationMode.default.Auto;
       const verticalNavigationOn = this._navigationMode === _NavigationMode.default.Vertical || this._navigationMode === _NavigationMode.default.Auto;
       const isRTL = this.rootWebComponent.effectiveDir === "rtl";
-
       if (isRTL && (0, _Keys.isLeft)(event) && horizontalNavigationOn) {
         this._handleRight();
       } else if (isRTL && (0, _Keys.isRight)(event) && horizontalNavigationOn) {
@@ -165,97 +139,75 @@ sap.ui.define(["exports", "../Keys", "../util/getActiveElement", "../types/Navig
       }
 
       event.preventDefault();
-
       this._applyTabIndex();
-
       this._focusCurrentItem();
     }
-
     _handleUp() {
       const itemsLength = this._getItems().length;
-
       if (this._currentIndex - this._rowSize >= 0) {
         // no border reached, just decrease the index by a row
         this._currentIndex -= this._rowSize;
         return;
       }
-
       if (this._behavior === _ItemNavigationBehavior.default.Cyclic) {
         // if cyclic, go to the **last** item in the **previous** column
         const firstItemInThisColumnIndex = this._currentIndex % this._rowSize;
         const firstItemInPreviousColumnIndex = firstItemInThisColumnIndex === 0 ? this._rowSize - 1 : firstItemInThisColumnIndex - 1; // find the first item in the previous column (if the current column is the first column -> move to the last column)
-
         const rows = Math.ceil(itemsLength / this._rowSize); // how many rows there are (even if incomplete, f.e. for 14 items and _rowSize=4 -> 4 rows total, although only 2 items on the last row)
-
         let lastItemInPreviousColumnIndex = firstItemInPreviousColumnIndex + (rows - 1) * this._rowSize; // multiply rows by columns, and add the column's first item's index
-
         if (lastItemInPreviousColumnIndex > itemsLength - 1) {
           // for incomplete rows, use the previous row's last item, as for them the last item is missing
           lastItemInPreviousColumnIndex -= this._rowSize;
         }
-
         this._currentIndex = lastItemInPreviousColumnIndex;
       } else {
         // not cyclic, so just go to the first item
         this._currentIndex = 0;
       }
     }
-
     _handleDown() {
       const itemsLength = this._getItems().length;
-
       if (this._currentIndex + this._rowSize < itemsLength) {
         // no border reached, just increase the index by a row
         this._currentIndex += this._rowSize;
         return;
       }
-
       if (this._behavior === _ItemNavigationBehavior.default.Cyclic) {
         // if cyclic, go to the **first** item in the **next** column
         const firstItemInThisColumnIndex = this._currentIndex % this._rowSize; // find the first item in the current column first
-
         const firstItemInNextColumnIndex = (firstItemInThisColumnIndex + 1) % this._rowSize; // to get the first item in the next column, just increase the index by 1. The modulo by rows is for the case when we are at the last column
-
         this._currentIndex = firstItemInNextColumnIndex;
       } else {
         // not cyclic, so just go to the last item
         this._currentIndex = itemsLength - 1;
       }
     }
-
     _handleLeft() {
       const itemsLength = this._getItems().length;
-
       if (this._currentIndex > 0) {
         this._currentIndex -= 1;
         return;
       }
-
       if (this._behavior === _ItemNavigationBehavior.default.Cyclic) {
         // go to the first item in the next column
         this._currentIndex = itemsLength - 1;
       }
     }
-
     _handleRight() {
       const itemsLength = this._getItems().length;
-
       if (this._currentIndex < itemsLength - 1) {
         this._currentIndex += 1;
         return;
       }
-
       if (this._behavior === _ItemNavigationBehavior.default.Cyclic) {
         // go to the first item in the next column
         this._currentIndex = 0;
       }
     }
-
     _handleHome() {
       const homeEndRange = this._rowSize > 1 ? this._rowSize : this._getItems().length;
       this._currentIndex -= this._currentIndex % homeEndRange;
     }
-
     _handleEnd() {
       const homeEndRange = this._rowSize > 1 ? this._rowSize : this._getItems().length;
       this._currentIndex += homeEndRange - 1 - this._currentIndex % homeEndRange; // eslint-disable-line
@@ -267,30 +219,25 @@ sap.ui.define(["exports", "../Keys", "../util/getActiveElement", "../types/Navig
         // TODO: handle page up on matrix (grid) layout - ColorPalette, ProductSwitch.
         return;
       }
-
       this._handlePageUpFlat();
     }
-
     _handlePageDown() {
       if (this._rowSize > 1) {
         // eslint-disable-next-line
         // TODO: handle page up on matrix (grid) layout - ColorPalette, ProductSwitch.
         return;
       }
-
       this._handlePageDownFlat();
     }
     /**
      * Handles PAGE_UP in a flat list-like structure, both vertically and horizontally.
      */
-
-
     _handlePageUpFlat() {
       if (this._skipItemsSize === null) {
         // Move the focus to the very top (as Home).
         this._currentIndex -= this._currentIndex;
+        return;
       }
-
       if (this._currentIndex + 1 > this._skipItemsSize) {
         // When there are more than "skipItemsSize" number of items to the top,
         // move the focus up/left with the predefined number.
@@ -303,16 +250,13 @@ sap.ui.define(["exports", "../Keys", "../util/getActiveElement", "../types/Navig
     /**
      * Handles PAGE_DOWN in a flat list-like structure, both vertically and horizontally.
      */
-
-
     _handlePageDownFlat() {
       if (this._skipItemsSize === null) {
         // Move the focus to the very bottom (as End).
         this._currentIndex = this._getItems().length - 1;
+        return;
       }
-
       const currentToEndRange = this._getItems().length - this._currentIndex - 1;
-
       if (currentToEndRange > this._skipItemsSize) {
         // When there are more than "skipItemsSize" number of items until the bottom,
         // move the focus down/right with the predefined number.
@@ -322,71 +266,57 @@ sap.ui.define(["exports", "../Keys", "../util/getActiveElement", "../types/Navig
         this._currentIndex = this._getItems().length - 1;
       }
     }
-
     _applyTabIndex() {
       const items = this._getItems();
-
       for (let i = 0; i < items.length; i++) {
         items[i]._tabIndex = i === this._currentIndex ? "0" : "-1";
       }
-
       this._affectedPropertiesNames.forEach(propName => {
         const prop = this.rootWebComponent[propName];
-        this.rootWebComponent[propName] = Array.isArray(prop) ? [...prop] : { ...prop
+        this.rootWebComponent[propName] = Array.isArray(prop) ? [...prop] : {
+          ...prop
         };
       });
     }
-
     _focusCurrentItem() {
       const currentItem = this._getCurrentItem();
-
       if (currentItem) {
         currentItem.focus();
       }
     }
-
     _canNavigate() {
       const currentItem = this._getCurrentItem();
-
       const activeElement = (0, _getActiveElement.default)();
       return currentItem && currentItem === activeElement;
     }
-
     _getCurrentItem() {
       const items = this._getItems();
-
       if (!items.length) {
-        return null;
-      } // normalize the index
-
-
+        return;
+      }
+      // normalize the index
       while (this._currentIndex >= items.length) {
         this._currentIndex -= this._rowSize;
       }
-
       if (this._currentIndex < 0) {
         this._currentIndex = 0;
       }
-
       const currentItem = items[this._currentIndex];
-
       if (!currentItem) {
         return;
       }
-
-      if (currentItem.isUI5Element) {
+      if ((0, _UI5Element.instanceOfUI5Element)(currentItem)) {
         return currentItem.getFocusDomRef();
       }
-
-      if (!this.rootWebComponent.getDomRef()) {
+      const currentItemDOMRef = this.rootWebComponent.getDomRef();
+      if (!currentItemDOMRef) {
         return;
       }
-
-      return this.rootWebComponent.getDomRef().querySelector(`#${currentItem.id}`);
+      if (currentItem.id) {
+        return currentItemDOMRef.querySelector(`[id="${currentItem.id}"]`);
+      }
     }
-
   }
-
   var _default = ItemNavigation;
   _exports.default = _default;
 });

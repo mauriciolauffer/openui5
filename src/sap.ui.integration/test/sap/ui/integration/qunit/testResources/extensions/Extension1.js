@@ -9,6 +9,20 @@ sap.ui.define(["sap/ui/integration/Extension", "sap/ui/integration/ActionDefinit
 		this.setFormatters({
 			toUpperCase: function (sValue) {
 				return sValue.toUpperCase();
+			},
+			stringifiedJsonSample: function (sValue) {
+				return JSON.stringify({
+					"value": sValue,
+					"presentationVariant": {
+						"SortOrder": [
+							{
+								"Property": "BillingDocDateYearMonth",
+								"Descending": false
+							}
+						]
+					},
+					"sensitiveProps": {}
+				});
 			}
 		});
 	};
@@ -29,6 +43,18 @@ sap.ui.define(["sap/ui/integration/Extension", "sap/ui/integration/ActionDefinit
 			{ city: "Berlin", description: "Germany" },
 			{ city: "Tokyo", description: "Japan" }
 		]);
+	};
+
+	Extension1.prototype.loadData = function () {
+		return Promise.resolve(
+			{
+				IMType: "SimpleError",
+				IMTntType: "tnt-Tools",
+				IMTitle: "No Data",
+				IMDescription: "Test",
+				IMSize: "Auto"
+			}
+		);
 	};
 
 	Extension1.prototype.getDataForContent = function () {

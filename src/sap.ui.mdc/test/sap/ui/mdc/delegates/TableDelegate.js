@@ -8,7 +8,6 @@ sap.ui.define([
 	"sap/ui/mdc/table/Column",
 	"sap/ui/mdc/FilterField",
 	"sap/ui/mdc/util/FilterUtil",
-	"sap/ui/mdc/util/TypeUtil",
 	"sap/ui/model/Filter",
 	"sap/ui/core/Core"
 ], function(
@@ -17,7 +16,6 @@ sap.ui.define([
 	Column,
 	FilterField,
 	FilterUtil,
-	TypeUtil,
 	Filter,
 	Core
 ) {
@@ -25,7 +23,7 @@ sap.ui.define([
 
 	var TestTableDelegate = Object.assign({}, TableDelegate);
 
-	TestTableDelegate.addItem = function(sPropertyName, oTable, mPropertyBag) {
+	TestTableDelegate.addItem = function(oTable, sPropertyName, mPropertyBag) {
 		return TableDelegateUtils.createColumn(oTable, sPropertyName);
 	};
 
@@ -42,7 +40,7 @@ sap.ui.define([
 
 		if (bFilterEnabled) {
 			var aTableProperties = oMDCTable.getPropertyHelper().getProperties();
-			var oInnerFilterInfo = FilterUtil.getFilterInfo(TestTableDelegate.getTypeUtil(), oMDCTable.getConditions(), aTableProperties);
+			var oInnerFilterInfo = FilterUtil.getFilterInfo(TestTableDelegate.getTypeMap(), oMDCTable.getConditions(), aTableProperties);
 
 			if (oInnerFilterInfo.filters) {
 				aFilters.push(oInnerFilterInfo.filters);
@@ -54,7 +52,7 @@ sap.ui.define([
 
 			if (mConditions) {
 				var aPropertiesMetadata = oFilter.getPropertyInfoSet ? oFilter.getPropertyInfoSet() : null;
-				var oFilterInfo = FilterUtil.getFilterInfo(TestTableDelegate.getTypeUtil(), mConditions, aPropertiesMetadata);
+				var oFilterInfo = FilterUtil.getFilterInfo(TestTableDelegate.getTypeMap(), mConditions, aPropertiesMetadata);
 
 				if (oFilterInfo.filters) {
 					aFilters.push(oFilterInfo.filters);
@@ -73,7 +71,7 @@ sap.ui.define([
 
 	TestTableDelegate.getFilterDelegate = function() {
 		return {
-			addItem: function(sPropertyName, oTable) {
+			addItem: function(oTable, sPropertyName) {
 				return this.fetchProperties(oTable).then(function(aProperties) {
 					var oProperty = aProperties.find(function(oProperty) {
 						return oProperty.name === sPropertyName;
@@ -81,15 +79,12 @@ sap.ui.define([
 
 					return new FilterField({
 						label: oProperty.label,
-						conditions: "{$filters>/conditions/" + oProperty.name + "}"
+						conditions: "{$filters>/conditions/" + oProperty.name + "}",
+						propertyKey: oProperty.name
 					});
 				});
 			}.bind(this)
 		};
-	};
-
-	TestTableDelegate.getTypeUtil = function(oPayload) {
-		return TypeUtil;
 	};
 
 	return TestTableDelegate;

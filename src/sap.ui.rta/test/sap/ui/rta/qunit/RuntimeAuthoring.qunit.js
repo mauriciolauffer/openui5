@@ -4,7 +4,8 @@ sap.ui.define([
 	"qunit/RtaQunitUtils",
 	"sap/base/Log",
 	"sap/m/MessageBox",
-	"sap/ui/core/Core",
+	"sap/m/MessageToast",
+	"sap/ui/core/Element",
 	"sap/ui/Device",
 	"sap/ui/dt/DesignTimeMetadata",
 	"sap/ui/dt/OverlayRegistry",
@@ -13,7 +14,10 @@ sap.ui.define([
 	"sap/ui/fl/apply/api/FlexRuntimeInfoAPI",
 	"sap/ui/fl/write/api/PersistenceWriteAPI",
 	"sap/ui/fl/write/api/ChangesWriteAPI",
+	"sap/ui/fl/write/api/VersionsAPI",
+	"sap/ui/fl/write/_internal/Versions",
 	"sap/ui/fl/Layer",
+	"sap/ui/qunit/utils/nextUIUpdate",
 	"sap/ui/qunit/QUnitUtils",
 	"sap/ui/rta/command/BaseCommand",
 	"sap/ui/rta/command/CommandFactory",
@@ -27,7 +31,8 @@ sap.ui.define([
 	RtaQunitUtils,
 	Log,
 	MessageBox,
-	oCore,
+	MessageToast,
+	Element,
 	Device,
 	DesignTimeMetadata,
 	OverlayRegistry,
@@ -36,7 +41,10 @@ sap.ui.define([
 	FlexRuntimeInfoAPI,
 	PersistenceWriteAPI,
 	ChangesWriteAPI,
+	VersionsAPI,
+	Versions,
 	Layer,
+	nextUIUpdate,
 	QUnitUtils,
 	RTABaseCommand,
 	CommandFactory,
@@ -71,21 +79,22 @@ sap.ui.define([
 
 	function cleanInfoSessionStorage() {
 		var sFlexReference = FlexRuntimeInfoAPI.getFlexReference({element: oComp});
-		window.sessionStorage.removeItem("sap.ui.fl.info." + sFlexReference);
+		window.sessionStorage.removeItem(`sap.ui.fl.info.${sFlexReference}`);
 	}
 
 	QUnit.module("Given that RuntimeAuthoring based on test-view is available together with a CommandStack with changes...", {
-		before: function() {
+		before() {
 			return oComponentPromise;
 		},
-		beforeEach: function(assert) {
+		beforeEach(assert) {
+			Versions.clearInstances();
 			var fnDone = assert.async();
 
 			sandbox.stub(ChangesWriteAPI, "getChangeHandler").resolves();
 
 			// Prepare elements an designtime
-			var oElement1 = oCore.byId("Comp1---idMain1--GeneralLedgerDocument.Name");
-			var oElement2 = oCore.byId("Comp1---idMain1--GeneralLedgerDocument.CompanyCode");
+			var oElement1 = Element.getElementById("Comp1---idMain1--GeneralLedgerDocument.Name");
+			var oElement2 = Element.getElementById("Comp1---idMain1--GeneralLedgerDocument.CompanyCode");
 			this.oGroupElementDesignTimeMetadata = new DesignTimeMetadata({
 				data: {
 					actions: {
@@ -115,16 +124,16 @@ sap.ui.define([
 					}
 				});
 				return RtaQunitUtils.clear()
-					.then(this.oRta.start.bind(this.oRta))
-					.then(function() {
-						this.oRootControlOverlay = OverlayRegistry.getOverlay(oRootControl);
-						this.oElement2Overlay = OverlayRegistry.getOverlay(oElement2);
-						this.oCommandStack.pushAndExecute(oRemoveCommand);
-					}.bind(this))
-					.then(fnDone);
+				.then(this.oRta.start.bind(this.oRta))
+				.then(function() {
+					this.oRootControlOverlay = OverlayRegistry.getOverlay(oRootControl);
+					this.oElement2Overlay = OverlayRegistry.getOverlay(oElement2);
+					this.oCommandStack.pushAndExecute(oRemoveCommand);
+				}.bind(this))
+				.then(fnDone);
 			}.bind(this));
 		},
-		afterEach: function() {
+		afterEach() {
 			cleanInfoSessionStorage();
 			sandbox.restore();
 			this.oRemoveCommand.destroy();
@@ -139,7 +148,7 @@ sap.ui.define([
 			var fnStackModifiedSpy = sinon.spy(function() {
 				if (fnStackModifiedSpy.calledOnce) {
 					assert.equal(this.oCommandStack.getAllExecutedCommands().length, 0, "after CMD + Z the stack is empty");
-					//redo -> execute -> fireModified (inside promise)
+					// redo -> execute -> fireModified (inside promise)
 					triggerKeydown(this.oElement2Overlay.getDomRef(), KeyCodes.Z, true, false, false, true);
 				} else if (fnStackModifiedSpy.calledTwice) {
 					assert.equal(this.oCommandStack.getAllExecutedCommands().length, 1, "after CMD + SHIFT + Z is again 1 command in the stack");
@@ -152,7 +161,7 @@ sap.ui.define([
 			Device.os.macintosh = true;
 			assert.equal(this.oCommandStack.getAllExecutedCommands().length, 1, "1 commands is still in the stack");
 
-			//undo -> _unExecute -> fireModified
+			// undo -> _unExecute -> fireModified
 			document.activeElement.blur(); // reset focus to body
 			triggerKeydown(this.oRootControlOverlay.getDomRef(), KeyCodes.Z, false, false, false, true);
 		});
@@ -163,7 +172,7 @@ sap.ui.define([
 			var fnStackModifiedSpy = sinon.spy(function() {
 				if (fnStackModifiedSpy.calledOnce) {
 					assert.equal(this.oCommandStack.getAllExecutedCommands().length, 0, "after CTRL + Z the stack is empty");
-					//redo -> execute -> fireModified (inside promise)
+					// redo -> execute -> fireModified (inside promise)
 					triggerKeydown(this.oElement2Overlay.getDomRef(), KeyCodes.Y, false, false, true, false);
 				} else if (fnStackModifiedSpy.calledTwice) {
 					assert.equal(this.oCommandStack.getAllExecutedCommands().length, 1, "after CTRL + Y is again 1 command in the stack");
@@ -176,22 +185,22 @@ sap.ui.define([
 			Device.os.macintosh = false;
 			assert.equal(this.oCommandStack.getAllExecutedCommands().length, 1, "1 commands is still in the stack");
 
-			//undo -> _unExecute -> fireModified
+			// undo -> _unExecute -> fireModified
 			document.activeElement.blur(); // reset focus to body
 			triggerKeydown(this.oRootControlOverlay.getDomRef(), KeyCodes.Z, false, false, true, false);
 		});
 
-		QUnit.test("when handleElementModified is called if a create container command was executed on a simple form", function(assert) {
+		QUnit.test("when handleElementModified is called if a create container command was executed on a simple form", async function(assert) {
 			var done = assert.async();
-			var fnFireElementModifiedSpy = sandbox.spy(this.oRta.getPluginManager().getDefaultPlugins()["createContainer"], "fireElementModified");
+			var fnFireElementModifiedSpy = sandbox.spy(this.oRta.getPluginManager().getDefaultPlugins().createContainer, "fireElementModified");
 
-			var oSimpleForm = oCore.byId("Comp1---idMain1--SimpleForm");
+			var oSimpleForm = Element.getElementById("Comp1---idMain1--SimpleForm");
 			var oSimpleFormOverlay = OverlayRegistry.getOverlay(oSimpleForm.getAggregation("form").getId());
 
-			sandbox.stub(this.oRta.getPluginManager().getDefaultPlugins()["rename"], "startEdit").callsFake(function(oNewContainerOverlay) {
-				oCore.applyChanges();
+			sandbox.stub(this.oRta.getPluginManager().getDefaultPlugins().rename, "startEdit").callsFake(async function(oNewContainerOverlay) {
+				await nextUIUpdate();
 				var oArgs = fnFireElementModifiedSpy.getCall(0).args[0];
-				var sNewControlContainerId = this.oRta.getPluginManager().getDefaultPlugins()["createContainer"].getCreatedContainerId(oArgs.action, oArgs.newControlId);
+				var sNewControlContainerId = this.oRta.getPluginManager().getDefaultPlugins().createContainer.getCreatedContainerId(oArgs.action, oArgs.newControlId);
 				assert.ok(fnFireElementModifiedSpy.calledOnce, "then 'fireElementModified' from the createContainer plugin is called once");
 				assert.ok(true, "then the new container starts the edit for rename");
 				assert.strictEqual(oNewContainerOverlay.getElement().getId(), sNewControlContainerId, "then rename is called with the new container's overlay");
@@ -199,48 +208,82 @@ sap.ui.define([
 				this.oCommandStack.undo().then(done);
 			}.bind(this));
 
-			this.oRta.getPlugins()["createContainer"].handleCreate(false, oSimpleFormOverlay);
-			oCore.applyChanges();
+			this.oRta.getPlugins().createContainer.handleCreate(false, oSimpleFormOverlay);
+			await nextUIUpdate();
 		});
 
-		QUnit.test("when handleElementModified is called if a create container command was executed on a smart form", function(assert) {
+		QUnit.test("when handleElementModified is called if a create container command was executed on a smart form", async function(assert) {
 			var done = assert.async();
 
-			var fnFireElementModifiedSpy = sinon.spy(this.oRta.getPluginManager().getDefaultPlugins()["createContainer"], "fireElementModified");
+			var fnFireElementModifiedSpy = sinon.spy(this.oRta.getPluginManager().getDefaultPlugins().createContainer, "fireElementModified");
 
-			var oSmartForm = oCore.byId("Comp1---idMain1--MainForm");
+			var oSmartForm = Element.getElementById("Comp1---idMain1--MainForm");
 			var oSmartFormOverlay = OverlayRegistry.getOverlay(oSmartForm.getId());
 
-			sandbox.stub(this.oRta.getPlugins()["rename"], "startEdit").callsFake(function(oNewContainerOverlay) {
+			sandbox.stub(this.oRta.getPlugins().rename, "startEdit").callsFake(async function(oNewContainerOverlay) {
 				var oArgs = fnFireElementModifiedSpy.getCall(0).args[0];
-				var sNewControlContainerId = this.oRta.getPluginManager().getDefaultPlugins()["createContainer"].getCreatedContainerId(oArgs.action, oArgs.newControlId);
-				oCore.applyChanges();
+				var sNewControlContainerId = this.oRta.getPluginManager().getDefaultPlugins().createContainer.getCreatedContainerId(oArgs.action, oArgs.newControlId);
+				await nextUIUpdate();
 				assert.ok(true, "then the new container starts the edit for rename");
 				assert.strictEqual(oNewContainerOverlay.getElement().getId(), sNewControlContainerId, "then rename is called with the new container's overlay");
 				assert.ok(oNewContainerOverlay.isSelected(), "then the new container is selected");
 				this.oCommandStack.undo().then(done);
 			}.bind(this));
 
-			this.oRta.getPlugins()["createContainer"].handleCreate(false, oSmartFormOverlay);
-			oCore.applyChanges();
+			this.oRta.getPlugins().createContainer.handleCreate(false, oSmartFormOverlay);
+			await nextUIUpdate();
 		});
 
-		QUnit.test("when handleElementModified is called if a create container command was executed on an empty form", function(assert) {
+		QUnit.test("when handleElementModified is called if a title is already available when the container is created", async function(assert) {
+			var done = assert.async();
+			var sNewControlId;
+			var oCreateContainerPlugin = this.oRta.getPlugins().createContainer;
+
+			var oFireElementModifiedStub = sandbox.stub(oCreateContainerPlugin, "fireElementModified").callsFake(function(oParams) {
+				sNewControlId = oParams.newControlId;
+				oFireElementModifiedStub.wrappedMethod.call(
+					oCreateContainerPlugin,
+					{
+						command: oParams.command,
+						newControlId: oParams.newControlId,
+						action: oParams.action,
+						title: "Potato"
+					}
+				);
+			});
+
+			var oSmartForm = Element.getElementById("Comp1---idMain1--MainForm");
+			var oSmartFormOverlay = OverlayRegistry.getOverlay(oSmartForm);
+
+			var oCreateRenameCommandSpy = sandbox.spy(this.oRta.getPlugins().rename, "createRenameCommand");
+
+			sandbox.stub(this.oRta.getCommandStack(), "compositeLastTwoCommands")
+			.callsFake(function() {
+				assert.ok(oCreateRenameCommandSpy.calledWith(OverlayRegistry.getOverlay(sNewControlId), "Potato"), "then the rename command was created");
+				assert.ok(true, "and the commands were combined in a composite command");
+				done();
+			});
+
+			oCreateContainerPlugin.handleCreate(false, oSmartFormOverlay);
+			await nextUIUpdate();
+		});
+
+		QUnit.test("when handleElementModified is called if a create container command was executed on an empty form", async function(assert) {
 			var done = assert.async();
 
 			// An existing empty Form is used for the test
-			var oForm = oCore.byId("Comp1---idMain1--MainForm1");
+			var oForm = Element.getElementById("Comp1---idMain1--MainForm1");
 			var oFormOverlay = OverlayRegistry.getOverlay(oForm.getId());
 
-			sandbox.stub(this.oRta.getPlugins()["rename"], "startEdit").callsFake(function(oNewContainerOverlay) {
-				oCore.applyChanges();
+			sandbox.stub(this.oRta.getPlugins().rename, "startEdit").callsFake(async function(oNewContainerOverlay) {
+				await nextUIUpdate();
 				assert.ok(oNewContainerOverlay.isSelected(), "then the new container is selected");
 				assert.ok(true, "then the new container starts the edit for rename");
 				this.oCommandStack.undo().then(done);
 			}.bind(this));
 
-			this.oRta.getPlugins()["createContainer"].handleCreate(false, oFormOverlay);
-			oCore.applyChanges();
+			this.oRta.getPlugins().createContainer.handleCreate(false, oFormOverlay);
+			await nextUIUpdate();
 		});
 
 		QUnit.test("when handleElementModified is called and the command fails because of dependencies", function(assert) {
@@ -248,12 +291,12 @@ sap.ui.define([
 			var oLogStub = sandbox.stub(Log, "error");
 			var oMessageBoxStub = sandbox.stub(RtaUtils, "showMessageBox");
 			var oCommandStack = {
-				pushAndExecute: function() {
+				pushAndExecute() {
 					return Promise.reject(Error("Some stuff.... The following Change cannot be applied because of a dependency .... some other stuff"));
 				}
 			};
 			sandbox.stub(this.oRta, "getCommandStack").returns(oCommandStack);
-			this.oRta.getPluginManager().getDefaultPlugins()["rename"].fireElementModified({
+			this.oRta.getPluginManager().getDefaultPlugins().rename.fireElementModified({
 				command: new RTABaseCommand()
 			});
 			return this.oRta._pElementModified.then(function() {
@@ -267,12 +310,12 @@ sap.ui.define([
 			var oLogStub = sandbox.stub(Log, "error");
 			var oMessageBoxStub = sandbox.stub(RtaUtils, "showMessageBox");
 			var oCommandStack = {
-				pushAndExecute: function() {
+				pushAndExecute() {
 					return Promise.reject(Error("Some stuff........ some other stuff"));
 				}
 			};
 			sandbox.stub(this.oRta, "getCommandStack").returns(oCommandStack);
-			this.oRta.getPluginManager().getDefaultPlugins()["rename"].fireElementModified({
+			this.oRta.getPluginManager().getDefaultPlugins().rename.fireElementModified({
 				command: new RTABaseCommand()
 			});
 			return this.oRta._pElementModified.then(function() {
@@ -284,9 +327,12 @@ sap.ui.define([
 		QUnit.test("when saving RTA without exiting,", function(assert) {
 			var fnDone = assert.async();
 			var oCVizUpdateSpy = sandbox.spy(ChangeVisualization.prototype, "updateAfterSave");
+			var oMessageToastShowSpy = sandbox.spy(MessageToast, "show");
+			var sExpectedMessageToastMessage = this.oRta._getTextResources().getText("MSG_SAVE_SUCCESS");
 
 			function fnChecks() {
 				assert.ok(this.oRta, "RTA is still up and running");
+				assert.ok(oMessageToastShowSpy.calledWith(sExpectedMessageToastMessage), "message toast save confirmation is triggered");
 				assert.equal(this.oCommandStack.getAllExecutedCommands().length, 0, "command stack is cleared");
 				assert.ok(DOMUtil.isVisible(document.querySelector(".sapUiRtaToolbar")), "and the Toolbar is visible.");
 				var oToolbar = this.oRta.getToolbar();
@@ -296,13 +342,58 @@ sap.ui.define([
 				);
 				assert.ok(oCVizUpdateSpy.called, "then CViz has been updated");
 				RtaQunitUtils.showActionsMenu(oToolbar)
-				.then(function () {
+				.then(function() {
 					assert.ok(
 						oToolbar.getControl("restore").getEnabled(),
 						"then the reset button is enabled"
 					);
 					fnDone();
 				});
+			}
+
+			// Simulate pressing the "save" button
+			this.oRta.getToolbar().fireSave({
+				callback: fnChecks.bind(this)
+			});
+		});
+
+		QUnit.test("when saving RTA including variants without exiting,", function(assert) {
+			var fnDone = assert.async();
+			var oMessageToastShowSpy = sandbox.spy(MessageToast, "show");
+			var sExpectedMessageToastMessage = this.oRta._getTextResources().getText("MSG_SAVE_DRAFT_SUCCESS");
+			this.oRta._oVersionsModel.setProperty("/versioningEnabled", true);
+
+			function fnChecks() {
+				assert.ok(this.oRta, "RTA is still up and running");
+				assert.ok(oMessageToastShowSpy.calledWith(sExpectedMessageToastMessage), "appropriate message toast save confirmation is triggered");
+				assert.equal(this.oCommandStack.getAllExecutedCommands().length, 0, "command stack is cleared");
+				assert.ok(DOMUtil.isVisible(document.querySelector(".sapUiRtaToolbar")), "and the Toolbar is visible");
+				assert.ok(this.oRta.getToolbar().getControl("versionButton").getVisible(), "and versionButton into the toolbar is visible");
+				fnDone();
+			}
+
+			// Simulate pressing the "save" button
+			this.oRta.getToolbar().fireSave({
+				callback: fnChecks.bind(this)
+			});
+		});
+
+		QUnit.test("when saving RTA without exiting with error in saving changes,", function(assert) {
+			var fnDone = assert.async();
+			var oMessageToastShowSpy = sandbox.spy(MessageToast, "show");
+			sandbox.stub(this.oRta, "_serializeToLrep").returns(Promise.reject("Test Exception"));
+			var oMessageBoxStub = sandbox.stub(MessageBox, "error")
+			.resolves(this.oRta._getTextResources().getText("BTN_UNSAVED_CHANGES_ON_CLOSE_SAVE"));
+			var sExpectedErrorMessage = this.oRta._getTextResources().getText("MSG_LREP_TRANSFER_ERROR");
+
+			function fnChecks() {
+				assert.ok(this.oRta, "RTA is still up and running");
+				assert.strictEqual(oMessageToastShowSpy.callCount, 0, "then message toast with confirmation message is not called");
+				assert.strictEqual(oMessageBoxStub.callCount, 1, "then the messagebox with the error message is called once");
+				assert.ok(oMessageBoxStub.getCall(0).args[0].includes(sExpectedErrorMessage), "then the expected messagebox is called");
+				assert.ok(this.oCommandStack.getAllExecutedCommands().length > 0, "command stack is not cleared");
+				assert.ok(DOMUtil.isVisible(document.querySelector(".sapUiRtaToolbar")), "and the Toolbar is visible");
+				fnDone();
 			}
 
 			// Simulate pressing the "save" button
@@ -328,16 +419,16 @@ sap.ui.define([
 
 		QUnit.test("when stopping rta without saving changes,", function(assert) {
 			var oSerializeToLrepSpy = sandbox.spy(this.oRta, "_serializeToLrep");
-			return this.oRta.stop(/*bSkipSave=*/true)
-				.then(function() {
-					assert.ok(true, "then the promise got resolved");
-					assert.equal(this.oCommandStack.getAllExecutedCommands().length, 1, "1 command is still in the stack");
-					assert.ok(oSerializeToLrepSpy.notCalled, "then 'serializeToLrep' was not called");
-				}.bind(this))
-				.then(RtaQunitUtils.getNumberOfChangesForTestApp)
-				.then(function(iNumOfChanges) {
-					assert.equal(iNumOfChanges, 0, "there is no change written");
-				});
+			return this.oRta.stop(/* bSkipSave= */true)
+			.then(function() {
+				assert.ok(true, "then the promise got resolved");
+				assert.equal(this.oCommandStack.getAllExecutedCommands().length, 1, "1 command is still in the stack");
+				assert.ok(oSerializeToLrepSpy.notCalled, "then 'serializeToLrep' was not called");
+			}.bind(this))
+			.then(RtaQunitUtils.getNumberOfChangesForTestApp)
+			.then(function(iNumOfChanges) {
+				assert.equal(iNumOfChanges, 0, "there is no change written");
+			});
 		});
 
 		QUnit.test("when stopping rta in personalization mode,", function(assert) {
@@ -345,15 +436,14 @@ sap.ui.define([
 			var oSerializeToLrepSpy = sandbox.spy(this.oRta, "_serializeToLrep");
 			var oMessageBoxSpy = sandbox.stub(RtaUtils, "showMessageBox");
 			sandbox.stub(this.oRta, "getLayer").returns(Layer.USER);
-
 			return this.oRta.stop(false, false)
-				.then(function() {
-					var oSavePropertyBag = oSaveSpy.getCall(0).args[0];
-					assert.ok(oSavePropertyBag.removeOtherLayerChanges, "then removeOtherLayerChanges is set to true");
-					assert.strictEqual(oSavePropertyBag.layer, Layer.USER, "then the layer is properly passed along");
-					assert.ok(oMessageBoxSpy.notCalled, "then the messagebox is not called (personalization always saves)");
-					assert.ok(oSerializeToLrepSpy.called, "then _serializeToLrep is called");
-				});
+			.then(function() {
+				var oSavePropertyBag = oSaveSpy.getCall(0).args[0];
+				assert.ok(oSavePropertyBag.removeOtherLayerChanges, "then removeOtherLayerChanges is set to true");
+				assert.strictEqual(oSavePropertyBag.layer, Layer.USER, "then the layer is properly passed along");
+				assert.ok(oMessageBoxSpy.notCalled, "then the messagebox is not called (personalization always saves)");
+				assert.ok(oSerializeToLrepSpy.called, "then _serializeToLrep is called");
+			});
 		});
 
 		QUnit.test("when stopping rta with changes and choosing not to save them on the dialog,", function(assert) {
@@ -363,100 +453,113 @@ sap.ui.define([
 			.resolves(this.oRta._getTextResources().getText("BTN_UNSAVED_CHANGES_ON_CLOSE_DONT_SAVE"));
 
 			return this.oRta.stop(false)
-				.then(function() {
-					assert.strictEqual(oMessageBoxStub.getCall(0).args[1], "MSG_UNSAVED_CHANGES_ON_CLOSE", "then the expected messagebox is called");
-					assert.deepEqual(oMessageBoxStub.getCall(0).args[2], {
-						titleKey: "TIT_UNSAVED_CHANGES_ON_CLOSE",
-						actionKeys: ["BTN_UNSAVED_CHANGES_ON_CLOSE_SAVE", "BTN_UNSAVED_CHANGES_ON_CLOSE_DONT_SAVE"],
-						emphasizedActionKey: "BTN_UNSAVED_CHANGES_ON_CLOSE_SAVE",
-						showCancel: true
-					}, "and the message box is called with the right parameters");
-					assert.ok(true, "then the promise got resolved");
-					assert.equal(this.oCommandStack.getAllExecutedCommands().length, 0, "command stack is cleared");
-					assert.ok(oSaveSpy.called, "then save was called (to invalidate the cache)");
-					assert.ok(oCheckReloadOnExitSpy.calledBefore(oSaveSpy), "then the reload check happened before the save");
-					var mPropertyBag = {
-						oComponent: oComp,
-						selector: oComp,
-						invalidateCache: false,
-						currentLayer: this.oRta.getLayer(),
-						includeDirtyChanges: true
-					};
-					return PersistenceWriteAPI._getUIChanges(mPropertyBag);
-				}.bind(this))
-				.then(function(aChanges) {
-					assert.equal(aChanges.length, 0, "then all dirty changes are cleared");
-					return RtaQunitUtils.getNumberOfChangesForTestApp();
-				}).then(function(iNumOfChanges) {
-					assert.equal(iNumOfChanges, 0, "there is no change written");
-				});
+			.then(function() {
+				assert.strictEqual(oMessageBoxStub.getCall(0).args[1], "MSG_UNSAVED_CHANGES_ON_CLOSE", "then the expected messagebox is called");
+				assert.deepEqual(oMessageBoxStub.getCall(0).args[2], {
+					titleKey: "TIT_UNSAVED_CHANGES_ON_CLOSE",
+					actionKeys: ["BTN_UNSAVED_CHANGES_ON_CLOSE_SAVE", "BTN_UNSAVED_CHANGES_ON_CLOSE_DONT_SAVE"],
+					emphasizedActionKey: "BTN_UNSAVED_CHANGES_ON_CLOSE_SAVE",
+					showCancel: true
+				}, "and the message box is called with the right parameters");
+				assert.ok(true, "then the promise got resolved");
+				assert.equal(this.oCommandStack.getAllExecutedCommands().length, 0, "command stack is cleared");
+				assert.ok(oSaveSpy.called, "then save was called (to invalidate the cache)");
+				assert.ok(oCheckReloadOnExitSpy.calledBefore(oSaveSpy), "then the reload check happened before the save");
+				var mPropertyBag = {
+					oComponent: oComp,
+					selector: oComp,
+					invalidateCache: false,
+					currentLayer: this.oRta.getLayer(),
+					includeDirtyChanges: true
+				};
+				return PersistenceWriteAPI._getUIChanges(mPropertyBag);
+			}.bind(this))
+			.then(function(aChanges) {
+				assert.equal(aChanges.length, 0, "then all dirty changes are cleared");
+				return RtaQunitUtils.getNumberOfChangesForTestApp();
+			}).then(function(iNumOfChanges) {
+				assert.equal(iNumOfChanges, 0, "there is no change written");
+			});
 		});
 
-		QUnit.test("when stopping rta with changes and pressing cancel on the dialog,", function(assert) {
-			sandbox.stub(RtaUtils, "showMessageBox").resolves(MessageBox.Action.CANCEL);
+		QUnit.test("when stopping rta with versioning enabled, existing changes and pressing cancel on the dialog,", function(assert) {
+			var oMessageBoxStub = sandbox.stub(RtaUtils, "showMessageBox").resolves(MessageBox.Action.CANCEL);
+			this.oRta._oVersionsModel.setProperty("/versioningEnabled", true);
+			var oVersionsClearInstances = sandbox.spy(VersionsAPI, "clearInstances");
 
 			return this.oRta.stop(false)
-				.then(function() {
-					assert.ok(true, "then the promise gets resolved");
-					assert.ok(this.oRta, "RTA is still up and running");
-					assert.ok(DOMUtil.isVisible(document.querySelector(".sapUiRtaToolbar")), "and the Toolbar is visible.");
-					assert.equal(this.oCommandStack.getAllExecutedCommands().length, 1, "1 command is still in the stack");
-				}.bind(this))
-				.then(RtaQunitUtils.getNumberOfChangesForTestApp)
-				.then(function(iNumOfChanges) {
-					assert.equal(iNumOfChanges, 0, "there is no change written");
-				});
+			.then(function() {
+				assert.deepEqual(oMessageBoxStub.getCall(0).args[2], {
+					titleKey: "TIT_UNSAVED_CHANGES_ON_CLOSE",
+					actionKeys: ["BTN_UNSAVED_DRAFT_CHANGES_ON_CLOSE_SAVE", "BTN_UNSAVED_CHANGES_ON_CLOSE_DONT_SAVE"],
+					emphasizedActionKey: "BTN_UNSAVED_CHANGES_ON_CLOSE_SAVE",
+					showCancel: true
+				}, "and the message box is called with the right parameters (save draft button)");
+				assert.deepEqual(oMessageBoxStub.getCall(0).args[1], "MSG_UNSAVED_DRAFT_CHANGES_ON_CLOSE",
+					"then message box message text is selected accordingly");
+				assert.ok(true, "then the promise gets resolved");
+				assert.ok(this.oRta, "RTA is still up and running");
+				assert.ok(DOMUtil.isVisible(document.querySelector(".sapUiRtaToolbar")), "and the Toolbar is visible.");
+				assert.equal(this.oCommandStack.getAllExecutedCommands().length, 1, "1 command is still in the stack");
+			}.bind(this))
+			.then(RtaQunitUtils.getNumberOfChangesForTestApp)
+			.then(function(iNumOfChanges) {
+				assert.equal(iNumOfChanges, 0, "there is no change written");
+				assert.equal(oVersionsClearInstances.callCount, 0, "do not clear version model instances");
+			});
 		});
 
 		QUnit.test("when stopping rta with saving changes", function(assert) {
 			var oSaveSpy = sandbox.spy(PersistenceWriteAPI, "save");
+			var oVersionsClearInstances = sandbox.spy(VersionsAPI, "clearInstances");
 			var oSerializeToLrepSpy = sandbox.spy(this.oRta, "_serializeToLrep");
 			var oMessageBoxStub = sandbox.stub(RtaUtils, "showMessageBox")
 			.resolves(this.oRta._getTextResources().getText("BTN_UNSAVED_CHANGES_ON_CLOSE_SAVE"));
 
 			return this.oRta.stop()
-				.then(function() {
-					var oSavePropertyBag = oSaveSpy.getCall(0).args[0];
-					assert.ok(oSavePropertyBag.removeOtherLayerChanges, "then removeOtherLayerChanges is set to true");
-					assert.strictEqual(oSavePropertyBag.layer, this.oRta.getLayer(), "then the layer is properly passed along");
-					assert.strictEqual(oMessageBoxStub.callCount, 1, "then the messagebox is called once");
-					assert.strictEqual(oMessageBoxStub.getCall(0).args[1], "MSG_UNSAVED_CHANGES_ON_CLOSE", "then the expected messagebox is called");
-				}.bind(this))
-				.then(RtaQunitUtils.getNumberOfChangesForTestApp)
-				.then(function(iNumberOfChanges) {
-					assert.strictEqual(iNumberOfChanges, 1, "then the change is written");
-					var mPropertyBag = {
-						oComponent: oComp,
-						selector: oComp,
-						invalidateCache: false,
-						currentLayer: this.oRta.getLayer(),
-						includeDirtyChanges: true
-					};
-					return PersistenceWriteAPI._getUIChanges(mPropertyBag).then(function(aChanges) {
-						assert.ok(
-							aChanges[0].isSuccessfullyApplied(),
-							"then the change keeps its apply state"
-						);
-						assert.notStrictEqual(
-							aChanges[0].getRevertData(),
-							null,
-							"then the change keeps its revert data"
-						);
-						assert.strictEqual(
-							oSerializeToLrepSpy.args[0][0],
-							false,
-							"then '_serializeToLrep' was called with 'bCondenseAnyLayer' parameter equal to false"
-						);
-						assert.strictEqual(
-							oSerializeToLrepSpy.args[0][1],
-							true,
-							"then '_serializeToLrep' was called with 'bIsExit' parameter equal to true"
-						);
-					});
-				}.bind(this));
+			.then(function() {
+				var oSavePropertyBag = oSaveSpy.getCall(0).args[0];
+				assert.ok(oSavePropertyBag.removeOtherLayerChanges, "then removeOtherLayerChanges is set to true");
+				assert.strictEqual(oSavePropertyBag.layer, this.oRta.getLayer(), "then the layer is properly passed along");
+				assert.strictEqual(oMessageBoxStub.callCount, 1, "then the messagebox is called once");
+				assert.strictEqual(oMessageBoxStub.getCall(0).args[1], "MSG_UNSAVED_CHANGES_ON_CLOSE", "then the expected messagebox is called");
+			}.bind(this))
+			.then(RtaQunitUtils.getNumberOfChangesForTestApp)
+			.then(function(iNumberOfChanges) {
+				assert.equal(oVersionsClearInstances.callCount, 1, "clear version model instances");
+				assert.strictEqual(iNumberOfChanges, 1, "then the change is written");
+				var mPropertyBag = {
+					oComponent: oComp,
+					selector: oComp,
+					invalidateCache: false,
+					currentLayer: this.oRta.getLayer(),
+					includeDirtyChanges: true
+				};
+				return PersistenceWriteAPI._getUIChanges(mPropertyBag).then(function(aChanges) {
+					assert.ok(
+						aChanges[0].isSuccessfullyApplied(),
+						"then the change keeps its apply state"
+					);
+					assert.notStrictEqual(
+						aChanges[0].getRevertData(),
+						null,
+						"then the change keeps its revert data"
+					);
+					assert.strictEqual(
+						oSerializeToLrepSpy.args[0][0],
+						false,
+						"then '_serializeToLrep' was called with 'bCondenseAnyLayer' parameter equal to false"
+					);
+					assert.strictEqual(
+						oSerializeToLrepSpy.args[0][1],
+						true,
+						"then '_serializeToLrep' was called with 'bIsExit' parameter equal to true"
+					);
+				});
+			}.bind(this));
 		});
 
-		QUnit.test("when stopping rta with saving changes and versioning is disabled", function(assert) {
+		QUnit.test("when saving changes and versioning and cba is disabled", function(assert) {
 			var oSaveStub = sandbox.stub(PersistenceWriteAPI, "save").resolves();
 
 			return this.oRta._serializeToLrep()
@@ -464,12 +567,15 @@ sap.ui.define([
 				assert.equal(oSaveStub.callCount, 1, "save was triggered");
 				var aSavePropertyBag = oSaveStub.getCall(0).args[0];
 				assert.equal(aSavePropertyBag.draft, false, "the draft flag is set to false");
+				assert.notOk(aSavePropertyBag.version, "the version is not passed");
+				assert.notOk(aSavePropertyBag.adaptationId, "the adaptationId is not passed");
 			});
 		});
 
-		QUnit.test("when stopping rta with saving changes and versioning is enabled and condenseAnyLayer true", function(assert) {
+		QUnit.test("when saving changes and versioning and cba is enabled and condenseAnyLayer true", function(assert) {
 			this.oRta._oVersionsModel.setProperty("/versioningEnabled", true);
-
+			this.oRta._oContextBasedAdaptationsModel.setProperty("/contextBasedAdaptationsEnabled", true);
+			this.oRta._oContextBasedAdaptationsModel.setProperty("/displayedAdaptation", {id: "ad123"});
 			var oSaveStub = sandbox.stub(PersistenceWriteAPI, "save").resolves();
 
 			return this.oRta._serializeToLrep(true)
@@ -478,6 +584,38 @@ sap.ui.define([
 				var aSavePropertyBag = oSaveStub.getCall(0).args[0];
 				assert.strictEqual(aSavePropertyBag.draft, true, "the draft flag is set to true");
 				assert.strictEqual(aSavePropertyBag.condenseAnyLayer, true, "the condense flag is set to true");
+				assert.equal(aSavePropertyBag.version, "0", "the draft version is passed");
+				assert.equal(aSavePropertyBag.adaptationId, "ad123", "the adaptationId is passed");
+			});
+		});
+
+		QUnit.test("when stopping rta with saving changes and versioning and cba is disabled", function(assert) {
+			var oSaveStub = sandbox.stub(PersistenceWriteAPI, "save").resolves();
+
+			return this.oRta._serializeToLrep(false, true)
+			.then(function() {
+				assert.equal(oSaveStub.callCount, 1, "save was triggered");
+				var aSavePropertyBag = oSaveStub.getCall(0).args[0];
+				assert.equal(aSavePropertyBag.draft, false, "the draft flag is set to false");
+				assert.notOk(aSavePropertyBag.version, "the version is not passed");
+				assert.notOk(aSavePropertyBag.adaptationId, "the adaptationId is not passed");
+			});
+		});
+
+		QUnit.test("when stopping rta with saving changes and versioning and cba is enabled and condenseAnyLayer true", function(assert) {
+			this.oRta._oVersionsModel.setProperty("/versioningEnabled", true);
+			this.oRta._oContextBasedAdaptationsModel.setProperty("/contextBasedAdaptationsEnabled", true);
+			this.oRta._oContextBasedAdaptationsModel.setProperty("/displayedAdaptation", {id: "ad123"});
+			var oSaveStub = sandbox.stub(PersistenceWriteAPI, "save").resolves();
+
+			return this.oRta._serializeToLrep(true, true)
+			.then(function() {
+				assert.equal(oSaveStub.callCount, 1, "save was triggered");
+				var aSavePropertyBag = oSaveStub.getCall(0).args[0];
+				assert.strictEqual(aSavePropertyBag.draft, true, "the draft flag is set to true");
+				assert.strictEqual(aSavePropertyBag.condenseAnyLayer, true, "the condense flag is set to true");
+				assert.notOk(aSavePropertyBag.version, "the version is not passed because we switch to active version");
+				assert.notOk(aSavePropertyBag.adaptationId, "the adaptationId is not passed");
 			});
 		});
 
@@ -493,10 +631,10 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given that RuntimeAuthoring is started with a scope set...", {
-		before: function() {
+		before() {
 			return oComponentPromise;
 		},
-		beforeEach: function() {
+		beforeEach() {
 			this.oRta = new RuntimeAuthoring({
 				rootControl: oComp.getAggregation("rootControl"),
 				metadataScope: "someScope"
@@ -505,7 +643,7 @@ sap.ui.define([
 			return RtaQunitUtils.clear()
 			.then(this.oRta.start.bind(this.oRta));
 		},
-		afterEach: function() {
+		afterEach() {
 			cleanInfoSessionStorage();
 			this.oRta.destroy();
 			sandbox.restore();

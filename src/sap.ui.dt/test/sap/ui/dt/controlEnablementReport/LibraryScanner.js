@@ -6,11 +6,10 @@
 sap.ui.define([
 	"sap/ui/base/ManagedObject",
 	"controlEnablementReport/ElementActionDefinitionTest",
-	"sap/ui/core/Core",
+	"sap/ui/core/Lib",
 	"sap/ui/VersionInfo"
-], function(ManagedObject, ElementActionDefinitionTest, oCore, VersionInfo) {
+], function(ManagedObject, ElementActionDefinitionTest, Lib, VersionInfo) {
 	"use strict";
-
 
 	/**
 	 * Constructor for a LibraryEnablementTest.
@@ -30,11 +29,9 @@ sap.ui.define([
 	 * @private
 	 * @since 1.48
 	 * @alias sap.ui.dt.test.LibraryEnablementTest2
-	 * @experimental Since 1.48. This class is experimental and provides only limited functionality. Also the API might be changed in future.
 	 */
 	var LibraryEnablementTest2 = ManagedObject.extend("sap.ui.dt.test.LibraryEnablementTest", /** @lends sap.ui.dt.test.LibraryEnablementTest2.prototype */ {
 	});
-
 
 	LibraryEnablementTest2.prototype._fillElementArray = function(sType) {
 		var oElementTestData = {};
@@ -51,7 +48,6 @@ sap.ui.define([
 		}
 	};
 
-
 	/**
 	 * @return {Promise} A promise providing the test results.
 	 * @override
@@ -62,7 +58,7 @@ sap.ui.define([
 		this.aElementEnablementTest = [];
 		this._aControlsCollection = [];
 
-		return VersionInfo.load().then(function (oVersionInfo) {
+		return VersionInfo.load().then(function(oVersionInfo) {
 			var aLoadLibraryPromises = [];
 			if (aLibraries.length === 0) {
 				oVersionInfo.libraries.forEach(function(oLib) {
@@ -73,22 +69,22 @@ sap.ui.define([
 						oLib.name !== "sap.ui.core" &&
 						oLib.name !== "sap.ui.fl"
 					) {
-						aLoadLibraryPromises.push(oCore.loadLibrary(oLib.name, { async: true }));
+						aLoadLibraryPromises.push(Lib.load({name: oLib.name}));
 					}
 				});
 			} else {
 				aLibraries.forEach(function(sLib) {
-					aLoadLibraryPromises.push(oCore.loadLibrary(sLib, { async: true }));
+					aLoadLibraryPromises.push(Lib.load({name: sLib}));
 				});
 			}
 			return Promise.all(aLoadLibraryPromises);
-		}).then(function () {
-			var oLoadedLibs = oCore.getLoadedLibraries();
+		}).then(function() {
+			var oLoadedLibs = Lib.all();
 			for (var sLibraryName in oLoadedLibs) {
 				if (aLibraries.length > 0 && aLibraries.indexOf(sLibraryName) === -1) {
 					continue;
 				}
-				var oLib = oCore.getLoadedLibraries()[sLibraryName];
+				var oLib = Lib.all()[sLibraryName];
 				if (oLib && sLibraryName !== "sap.ui.core") {
 					var aLibraryControls = oLib.controls;
 					var aLibraryElements = oLib.elements;
@@ -98,13 +94,13 @@ sap.ui.define([
 			}
 
 			var aResults = [];
-			var fnIterate = function (mResult) {
+			var fnIterate = function(mResult) {
 				if (mResult && mResult.actions) {
 					aResults.push(mResult);
 				}
 				var oElementEnablementTest = this.aElementEnablementTest.shift();
 				if (oElementEnablementTest) {
-					return oElementEnablementTest.run().then(function (mResult) {
+					return oElementEnablementTest.run().then(function(mResult) {
 						oElementEnablementTest.destroy();
 						return fnIterate(mResult);
 					});
@@ -113,16 +109,14 @@ sap.ui.define([
 				return Promise.resolve(aResults);
 			}.bind(this);
 
-
-			return fnIterate().then(function (aResults) {
+			return fnIterate().then(function(aResults) {
 				var mResult = {
 					results: []
 				};
 
-				aResults.forEach(function (mElementTestResult) {
+				aResults.forEach(function(mElementTestResult) {
 					mResult.results.push(mElementTestResult);
 				});
-
 
 				return mResult;
 			});

@@ -25,11 +25,10 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
   _sapIllusDialogSearchEarth = _interopRequireDefault(_sapIllusDialogSearchEarth);
   _sapIllusSceneSearchEarth = _interopRequireDefault(_sapIllusSceneSearchEarth);
   _sapIllusSpotSearchEarth = _interopRequireDefault(_sapIllusSpotSearchEarth);
-
   function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
   const name = "SearchEarth";
   const set = "fiori";
+  const collection = "V4";
   const title = _i18nDefaults.IM_TITLE_BEFORESEARCH;
   const subtitle = _i18nDefaults.IM_SUBTITLE_BEFORESEARCH;
   (0, _Illustrations.registerIllustration)(name, {
@@ -38,6 +37,7 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
     spotSvg: _sapIllusSpotSearchEarth.default,
     title,
     subtitle,
-    set
+    set,
+    collection
   });
 });

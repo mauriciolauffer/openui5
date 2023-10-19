@@ -4,7 +4,7 @@
 
 // Provides control sap.ui.webc.main.SuggestionItem.
 sap.ui.define([
-	"sap/ui/webc/common/WebComponent",
+	"sap/ui/core/webc/WebComponent",
 	"./library",
 	"sap/ui/core/library",
 	"./thirdparty/SuggestionItem"
@@ -20,7 +20,7 @@ sap.ui.define([
 	 * @param {string} [sId] ID for the new control, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new control
 	 *
-	 * @extends sap.ui.webc.common.WebComponent
+	 * @extends sap.ui.core.webc.WebComponent
 	 * @class
 	 *
 	 * The <code>sap.ui.webc.main.SuggestionItem</code> represents the suggestion item of the <code>sap.ui.webc.main.Input</code>.
@@ -54,7 +54,7 @@ sap.ui.define([
 				/**
 				 * Defines the state of the <code>additionalText</code>. <br>
 				 * <br>
-				 * Available options are: <code>"None"</code> (by default), <code>"Success"</code>, <code>"Information"</code>, <code>"Warning"</code> and <code>"Erorr"</code>.
+				 * Available options are: <code>"None"</code> (by default), <code>"Success"</code>, <code>"Information"</code>, <code>"Warning"</code> and <code>"Error"</code>.
 				 */
 				additionalTextState: {
 					type: "sap.ui.core.ValueState",

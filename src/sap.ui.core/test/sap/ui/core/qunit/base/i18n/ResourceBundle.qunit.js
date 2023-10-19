@@ -1,42 +1,37 @@
 /*global QUnit */
 sap.ui.define([
-	"sap/base/Log",
+	"sap/base/i18n/Localization",
 	"sap/base/i18n/ResourceBundle",
 	"sap/base/util/Properties",
 	"sap/base/util/merge",
-	"sap/ui/core/Configuration"
-], function(Log, ResourceBundle, Properties, merge, Configuration) {
+	"sap/base/Log"
+], function(Localization, ResourceBundle, Properties, merge, Log) {
 	"use strict";
 
-	QUnit.module("sap/base/i18n/ResourceBundle", {
-		beforeEach: function () {
-			var oConfiguration = Configuration;
-			var aSupportedLanguages = oConfiguration.getSupportedLanguages();
-			this.oSupportedLanguagesStub = this.stub(oConfiguration, "getSupportedLanguages");
-			this.oSupportedLanguagesStub.returns(aSupportedLanguages);
-		},
-		afterEach: function () {
-		}
-	});
+	QUnit.module("sap/base/i18n/ResourceBundle");
 
 	QUnit.test("create invalid url", function(assert) {
 		assert.throws(ResourceBundle.create, new Error("resource URL '' has unknown type (should be one of .properties,.hdbtextbundle)"), "creation fails without valid url");
 	});
 
 	QUnit.test("create", function(assert) {
-		var done = assert.async();
-
 		var oEmptyProps = createFakeProperties({number: "47"});
 
 		this.stub(Properties, "create").returns(Promise.resolve(oEmptyProps));
 
-		ResourceBundle.create({url: 'my.properties', async: true}).then(function(oResourceBundle) {
+		// Uses default locale as defined in testsuite.i18n.qunit.js
+		return ResourceBundle.create({url: 'my.properties', async: true}).then(function(oResourceBundle) {
+			assert.ok(oResourceBundle instanceof ResourceBundle);
 			assert.deepEqual(oResourceBundle.aPropertyFiles[0], oEmptyProps, "properties are correctly loaded");
-			done();
+			assert.equal(Properties.create.callCount, 1, "Properties.create should be called once");
+			assert.deepEqual(Properties.create.getCall(0).args, [{
+				async: true,
+				headers: undefined,
+				returnNullIfMissing: true,
+				url: "my_en_US.properties"
+			}], "Properties.create should be called with expected arguments");
 		});
-
 	});
-
 
 	function createFakeProperties(obj, oCallStub) {
 		return {
@@ -85,6 +80,88 @@ sap.ui.define([
 			return oResourceBundle1;
 		});
 	}
+
+	QUnit.test("_recreate (async instance)", function(assert) {
+		return ResourceBundle.create({
+			"async": true,
+			"bundleUrl": "i18n/i18n.properties"
+		}).then(function(oResourceBundle1) {
+			return oResourceBundle1._recreate().then(function(oResourceBundle2) {
+				assert.ok(oResourceBundle2 instanceof ResourceBundle, "recreate should resolve with ResourceBundle");
+				assert.notEqual(oResourceBundle1, oResourceBundle2, "recreate should not resolve with same instance");
+				assert.deepEqual(oResourceBundle1, oResourceBundle2, "recreate should resolve with equal ResourceBundle as new instance");
+			});
+		});
+	});
+
+	QUnit.test("_recreate (async instance, with enhanceWith)", function(assert) {
+		return ResourceBundle.create({
+			"async": true,
+			"includeInfo": false,
+			"locale": "en-US",
+			"enhanceWith": [
+				{
+					"bundleUrl": "enhance/i18n/i18n.properties",
+					"supportedLocales": [""],
+					"fallbackLocale": "",
+					"bundleUrlRelativeTo": "manifest"
+				}
+			],
+			"bundleUrl": "i18n/i18n.properties"
+		}).then(function(oResourceBundle1) {
+			return oResourceBundle1._recreate().then(function(oResourceBundle2) {
+				assert.ok(oResourceBundle2 instanceof ResourceBundle, "recreate should resolve with ResourceBundle");
+				assert.notEqual(oResourceBundle1, oResourceBundle2, "recreate should not resolve with same instance");
+				assert.deepEqual(oResourceBundle1, oResourceBundle2, "recreate should resolve with equal ResourceBundle as new instance");
+			});
+		});
+	});
+
+	QUnit.test("_recreate (sync instance)", function(assert) {
+		var oResourceBundle1 = ResourceBundle.create({
+			"bundleUrl": "i18n/i18n.properties"
+		});
+		var oResourceBundle2 = oResourceBundle1._recreate();
+		assert.ok(oResourceBundle2 instanceof ResourceBundle, "recreate should resolve with ResourceBundle");
+		assert.notEqual(oResourceBundle1, oResourceBundle2, "recreate should not resolve with same instance");
+		assert.deepEqual(oResourceBundle1, oResourceBundle2, "recreate should resolve with equal ResourceBundle as new instance");
+	});
+
+	QUnit.test("_recreate (sync instance, with enhanceWith)", function(assert) {
+		var oResourceBundle1 = ResourceBundle.create({
+			"includeInfo": true,
+			"enhanceWith": [
+				{
+					"bundleUrl": "enhance/i18n/i18n.properties",
+					"supportedLocales": [""],
+					"fallbackLocale": "",
+					"bundleUrlRelativeTo": "manifest"
+				}
+			],
+			"bundleUrl": "i18n/i18n.properties"
+		});
+		var oResourceBundle2 = oResourceBundle1._recreate();
+		assert.ok(oResourceBundle2 instanceof ResourceBundle, "recreate should resolve with ResourceBundle");
+		assert.notEqual(oResourceBundle1, oResourceBundle2, "recreate should not resolve with same instance");
+		assert.deepEqual(oResourceBundle1, oResourceBundle2, "recreate should resolve with equal ResourceBundle as new instance");
+	});
+
+	QUnit.test("_recreate (async, rejects with error when not created via factory)", function(assert) {
+		return new ResourceBundle("i18n/i18n.properties", undefined, undefined, true /* async */).then(function(oResourceBundle) {
+			return oResourceBundle._recreate();
+		}).then(function() {
+			assert.ok(false, "_recreate should not resolve");
+		}, function(err) {
+			assert.equal(err.message, "ResourceBundle instance can't be recreated as it has not been created by the ResourceBundle.create factory.");
+		});
+	});
+
+	QUnit.test("_recreate (sync, throws error when not created via factory)", function(assert) {
+		var oResourceBundle = new ResourceBundle("i18n/i18n.properties");
+		assert.throws(function() {
+			oResourceBundle._recreate();
+		}, "ResourceBundle instance can't be recreated as it has not been created by the ResourceBundle.create factory.");
+	});
 
 	QUnit.test("multiple resource bundles using _enhance", function(assert) {
 		return createResourceBundleWithCustomBundles(this).then(function(oResourceBundle) {
@@ -157,7 +234,7 @@ sap.ui.define([
 
 	QUnit.test("fallback locale: supportedLocales not defined, but configuration has supportedLocales", function(assert) {
 		// configuration returns ["da", "en"] which is used as supportedLocales
-		this.oSupportedLanguagesStub.returns(["da", "en"]);
+		this.stub(Localization, "getSupportedLanguages").returns(["da", "en"]);
 
 		// fallback chain: -> de_CH (not supported) -> de (not supported) -> da (fallback)
 		var oStub = this.stub(Properties, "create").returns(createFakePropertiesPromise({number: "47", mee: "yo"}));
@@ -1017,6 +1094,170 @@ sap.ui.define([
 			], "called urls must match");
 		});
 
+	});
+
+	QUnit.test("getText - with placeholder", function(assert) {
+		var oStub = this.stub(Properties, "create").returns(createFakePropertiesPromise({sayHello: "Hello {0}"}));
+
+		return ResourceBundle.create({url: 'my.properties', locale: "", async: true, supportedLocales: [""], fallbackLocale: ""}).then(function(oResourceBundle) {
+			assert.equal(oStub.callCount, 1);
+			assert.equal(oStub.getCall(0).args[0].url, "my.properties", "raw properties file is requested");
+
+			// placeholder values are given as an array
+			assert.equal(oResourceBundle.getText("sayHello", ["Peter", "Marcus"]), "Hello Peter");
+			assert.equal(oResourceBundle.getText("sayHello", ["Peter"]), "Hello Peter");
+
+			// "falsy" placeholder values
+			assert.equal(oResourceBundle.getText("sayHello", []), "Hello undefined");
+			assert.equal(oResourceBundle.getText("sayHello", [""]), "Hello ");
+
+			// array of placeholder values is not given (no formatting)
+			assert.equal(oResourceBundle.getText("sayHello"), "Hello {0}");
+			assert.equal(oResourceBundle.getText("sayHello", undefined), "Hello {0}");
+		});
+	});
+
+	/**
+	 * Note: this test describes an unsupported usage of getText(...) where placeholder values
+	 * are given as positonal parameters, not as an array.
+	 *
+	 * Future versions of UI5 will forbid this usage!
+	 */
+	QUnit.test("getText - with placeholder values as positional parameters (not supported)", function(assert) {
+		var oStub = this.stub(Properties, "create").returns(createFakePropertiesPromise({sayHello: "Hello {0}"}));
+		var oErrorLogSpy = this.spy(Log, "error");
+		return ResourceBundle.create({url: 'my.properties', locale: "", async: true, supportedLocales: [""], fallbackLocale: ""}).then(function(oResourceBundle) {
+			assert.equal(oStub.callCount, 1);
+			assert.equal(oStub.getCall(0).args[0].url, "my.properties", "raw properties file is requested");
+			assert.equal(oErrorLogSpy.callCount, 0, "Log.error should be called once");
+
+			// non-falsy, non-array value for 2nd parameter of #getText
+			assert.equal(oResourceBundle.getText("sayHello", "Peter"), "Hello Peter");
+			assert.equal(oErrorLogSpy.callCount, 1, "Log.error should be called");
+			assert.equal(oErrorLogSpy.getCall(0).args[0],
+				"sap/base/i18n/ResourceBundle: value for parameter 'aArgs' is not of type array",
+				"Log.error should be called with expected message");
+
+			// non-nullish but "falsy" value for 2nd parameter of #getText
+			assert.equal(oResourceBundle.getText("sayHello", ""), "Hello {0}");
+			assert.equal(oErrorLogSpy.callCount, 2, "Log.error should be called");
+			assert.equal(oErrorLogSpy.getCall(1).args[0],
+				"sap/base/i18n/ResourceBundle: value for parameter 'aArgs' is not of type array",
+				"Log.error should be called with expected message");
+		});
+	});
+
+	QUnit.module("sap/base/i18n/ResourceBundle: hdbtextbundle");
+
+	QUnit.test("create with default locale", async function(assert) {
+		var oEmptyProps = createFakeProperties({number: "47"});
+		this.stub(Properties, "create").resolves(oEmptyProps);
+
+		// Uses default locale as defined in testsuite.i18n.qunit.js
+		const oResourceBundle = await ResourceBundle.create({url: 'my.hdbtextbundle', async: true});
+
+		assert.ok(oResourceBundle instanceof ResourceBundle);
+
+		assert.deepEqual(oResourceBundle.aPropertyFiles[0], oEmptyProps, "properties are correctly loaded");
+
+		assert.equal(Properties.create.callCount, 1, "Properties.create should be called once");
+		assert.deepEqual(Properties.create.getCall(0).args, [{
+			async: true,
+			headers: {
+				"Accept-Language": "en-US"
+			},
+			returnNullIfMissing: true,
+			url: "my.hdbtextbundle"
+		}], "Properties.create should be called with expected arguments");
+	});
+
+	QUnit.test("create with locale en_US_saptrc", async function(assert) {
+		this.stub(Properties, "create").resolves(createFakeProperties({number: "47"}));
+
+		const oResourceBundle = await ResourceBundle.create({
+			async: true,
+			url: "my.hdbtextbundle",
+			locale: "en_US_saptrc"
+		});
+
+		assert.ok(oResourceBundle instanceof ResourceBundle);
+
+		assert.equal(Properties.create.callCount, 1, "Properties.create should be called once");
+		assert.deepEqual(Properties.create.getCall(0).args, [{
+			async: true,
+			headers: {
+				"Accept-Language": "en-US-saptrc"
+			},
+			returnNullIfMissing: true,
+			url: "my.hdbtextbundle?sap-language=1Q"
+		}], "Properties.create should be called with expected arguments");
+	});
+
+	QUnit.test("create with locale en_US_sappsd", async function(assert) {
+		this.stub(Properties, "create").resolves(createFakeProperties({number: "47"}));
+
+		const oResourceBundle = await ResourceBundle.create({
+			async: true,
+			url: "my.hdbtextbundle",
+			locale: "en_US_sappsd"
+		});
+
+		assert.ok(oResourceBundle instanceof ResourceBundle);
+
+		assert.equal(Properties.create.callCount, 1, "Properties.create should be called once");
+		assert.deepEqual(Properties.create.getCall(0).args, [{
+			async: true,
+			headers: {
+				"Accept-Language": "en-US-sappsd"
+			},
+			returnNullIfMissing: true,
+			url: "my.hdbtextbundle?sap-language=2Q"
+		}], "Properties.create should be called with expected arguments");
+	});
+
+	QUnit.test("create with locale en_US_saprigi", async function(assert) {
+		this.stub(Properties, "create").resolves(createFakeProperties({number: "47"}));
+
+		const oResourceBundle = await ResourceBundle.create({
+			async: true,
+			url: "my.hdbtextbundle",
+			locale: "en_US_saprigi"
+		});
+
+		assert.ok(oResourceBundle instanceof ResourceBundle);
+
+		assert.equal(Properties.create.callCount, 1, "Properties.create should be called once");
+		assert.deepEqual(Properties.create.getCall(0).args, [{
+			async: true,
+			headers: {
+				"Accept-Language": "en-US-saprigi"
+			},
+			returnNullIfMissing: true,
+			url: "my.hdbtextbundle?sap-language=3Q"
+		}], "Properties.create should be called with expected arguments");
+	});
+
+	QUnit.test("create with empty locale", async function(assert) {
+		this.stub(Properties, "create").resolves(createFakeProperties({number: "47"}));
+
+		const oResourceBundle = await ResourceBundle.create({
+			async: true,
+			url: "my.hdbtextbundle",
+			locale: "",
+			supportedLocales: [""]
+		});
+
+		assert.ok(oResourceBundle instanceof ResourceBundle);
+
+		assert.equal(Properties.create.callCount, 1, "Properties.create should be called once");
+		assert.deepEqual(Properties.create.getCall(0).args, [{
+			async: true,
+			headers: {
+				"Accept-Language": "*"
+			},
+			returnNullIfMissing: true,
+			url: "my.hdbtextbundle"
+		}], "Properties.create should be called with expected arguments");
 	});
 
 	var oTerminologies = {

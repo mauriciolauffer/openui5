@@ -626,7 +626,7 @@ sap.ui.define([
 	 * @returns {sap.m.IconTabBar|null} Aggregation for the IconTabBar.
 	 */
 	IconTabBar.prototype._getIconTabHeader = function () {
-		if (this.isDestroyed()) {
+		if (this.isDestroyStarted()) {
 			return null;
 		}
 
@@ -683,6 +683,8 @@ sap.ui.define([
 	 * @public
 	 * @param {boolean} bValue the new value.
 	 * @returns {this} this IconTabBar reference for chaining.
+	 * @deprecated As of 1.15.0.
+	 * Regarding to changes of this control this property is not needed anymore.
 	 */
 	IconTabBar.prototype.setShowSelection = function (bValue) {
 		var oIconTabHeader = this._getIconTabHeader();

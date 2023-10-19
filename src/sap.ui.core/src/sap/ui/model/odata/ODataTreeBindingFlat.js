@@ -94,6 +94,7 @@ sap.ui.define([
 		this._aPendingRequests = [];
 		this._aPendingChildrenRequests = [];
 		this._aPendingSubtreeRequests = [];
+		// TODO: No longer required in legacy-free UI5
 		// Whether ODataTreeBindingFlat#submitChanges has been called
 		this._bSubmitChangesCalled = false;
 	};
@@ -792,6 +793,7 @@ sap.ui.define([
 			var sAbsolutePath = this.getResolvedPath();
 			if (sAbsolutePath) {
 				oRequest.oRequestHandle = this.oModel.read(sAbsolutePath, {
+					headers: this._getHeaders(),
 					urlParameters: aUrlParameters,
 					filters: [new Filter({
 						filters: aFilters,
@@ -1104,6 +1106,7 @@ sap.ui.define([
 			var sAbsolutePath = this.getResolvedPath();
 			if (sAbsolutePath) {
 				oRequest.oRequestHandle = this.oModel.read(sAbsolutePath, {
+					headers: this._getHeaders(),
 					urlParameters: aUrlParameters,
 					filters: [new Filter({
 						filters: aFilters,
@@ -1335,8 +1338,9 @@ sap.ui.define([
 			}
 
 			// construct multi-filter for level filter and application filters
-			var oNodeFilter = new Filter(this.oTreeProperties["hierarchy-node-for"], "EQ",
-											oParentNode.context.getProperty(this.oTreeProperties["hierarchy-node-for"]));
+			const sHierarchyNodeForProperty = this.oTreeProperties["hierarchy-node-for"];
+			const oNodeFilter = new Filter(sHierarchyNodeForProperty, "EQ",
+					oParentNode.context.getProperty(sHierarchyNodeForProperty));
 			var oLevelFilter = new Filter(this.oTreeProperties["hierarchy-level-for"], "LE", iLevel);
 			var aFilters = [oNodeFilter, oLevelFilter];
 			if (this.aApplicationFilters) {
@@ -1346,6 +1350,7 @@ sap.ui.define([
 			var sAbsolutePath = this.getResolvedPath();
 			if (sAbsolutePath) {
 				oRequest.oRequestHandle = this.oModel.read(sAbsolutePath, {
+					headers: this._getHeaders(),
 					urlParameters: aUrlParameters,
 					filters: [new Filter({
 						filters: aFilters,
@@ -2130,7 +2135,7 @@ sap.ui.define([
 		var bChangeDetected = false;
 
 		this._map(function (oNode, oRecursionBreaker) {
-			if (oNode.key in mChangedEntities) {
+			if (oNode && oNode.key in mChangedEntities) {
 				bChangeDetected = true;
 				oRecursionBreaker.broken = true;
 			}
@@ -3217,6 +3222,12 @@ sap.ui.define([
 
 		if (sResolvedPath) {
 			mParameters = mParameters || {};
+			if (mParameters.expand) {
+				throw new Error("Parameter 'expand' is not supported");
+			}
+			if (mParameters.inactive) {
+				throw new Error("Parameter 'inactive' is not supported");
+			}
 			mParameters.groupId = this.oModel._resolveGroup(sResolvedPath).groupId;
 			mParameters.refreshAfterChange = false;
 
@@ -3463,6 +3474,7 @@ sap.ui.define([
 		mUrlParameters.select = aSelect.join(",");
 
 		this.oModel.read(sResolvedPath, {
+			headers: this._getHeaders(),
 			filters : [new Filter({filters : aFilters, and : true})],
 			error : mParameters.error,
 			groupId : mParameters.groupId || this.sGroupId,
@@ -3500,6 +3512,7 @@ sap.ui.define([
 
 		// request the siblings position for moved nodes only as siblings position are already available for added nodes
 		this.oModel.read(oNode.context.getPath(), {
+			headers: this._getHeaders(),
 			urlParameters: this.oModel.createCustomParams(mUrlParameters),
 			// filters: [new Filter({
 			// 	filters: aFilters,
@@ -3555,7 +3568,7 @@ sap.ui.define([
 		var oContext = oNode.context;
 
 		if (oNode.nodeState.added) {
-			this.oModel.deleteCreatedEntry(oContext);
+			this.oModel._discardEntityChanges(oContext.getPath().slice(1), true);
 
 			return undefined;
 		} else {
@@ -4532,23 +4545,12 @@ sap.ui.define([
 				},
 				getContext: function () {
 					return oContext;
-				},
-				_restore: function () {
-					oNodeForContext.nodeState.removed = false;
-					var iNodeStateFound = that._aRemoved.indexOf(oNodeForContext);
-					if (iNodeStateFound != -1) {
-						that._aRemoved.splice(iNodeStateFound, 1);
-					}
-					// clear cache to make sure findNode etc. don't deliver wrong nodes (index is shifted due to adding)
-					this._aNodeCache = [];
-					that._cleanTreeStateMaps();
-					that._fireChange({reason: ChangeReason.Add});
 				}
 			};
 
 			return oContext;
 		} else {
-			Log.warning("ODataTreeBinding.removeContexts(): The given context is not part of the tree. Was it removed already?");
+			Log.warning("ODataTreeBinding.removeContext(): The given context is not part of the tree. Was it removed already?");
 		}
 
 		return undefined;

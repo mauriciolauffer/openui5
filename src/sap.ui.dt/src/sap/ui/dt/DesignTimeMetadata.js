@@ -3,22 +3,23 @@
  */
 
 sap.ui.define([
-	"sap/ui/thirdparty/jquery",
-	"sap/ui/base/ManagedObject",
-	"sap/ui/dt/ElementUtil",
-	"sap/ui/dt/DOMUtil",
+	"sap/base/util/includes",
 	"sap/base/util/merge",
 	"sap/base/util/ObjectPath",
-	"sap/base/util/includes"
-],
-function(
-	jQuery,
-	ManagedObject,
-	ElementUtil,
-	DOMUtil,
+	"sap/ui/base/ManagedObject",
+	"sap/ui/core/Lib",
+	"sap/ui/dt/ElementUtil",
+	"sap/ui/dt/DOMUtil",
+	"sap/ui/thirdparty/jquery"
+], function(
+	includes,
 	merge,
 	ObjectPath,
-	includes
+	ManagedObject,
+	Lib,
+	ElementUtil,
+	DOMUtil,
+	jQuery
 ) {
 	"use strict";
 
@@ -50,7 +51,6 @@ function(
 	 * @private
 	 * @since 1.30
 	 * @alias sap.ui.dt.DesignTimeMetadata
-	 * @experimental Since 1.30. This class is experimental and provides only limited functionality. Also the API might be changed in future.
 	 */
 	var DesignTimeMetadata = ManagedObject.extend("sap.ui.dt.DesignTimeMetadata", /** @lends sap.ui.dt.DesignTimeMetadata.prototype */ {
 		metadata: {
@@ -131,7 +131,8 @@ function(
 	 * @return {jQuery} Returns associated DOM references wrapped by jQuery object
 	 * @public
 	 */
-	DesignTimeMetadata.prototype.getAssociatedDomRef = function(oElement, vDomRef, sAggregationName) {
+	DesignTimeMetadata.prototype.getAssociatedDomRef = function(...aArgs) {
+		const [oElement, vDomRef, sAggregationName] = aArgs;
 		if (oElement) {
 			var oElementDomRef = ElementUtil.getDomRef(oElement);
 			var aArguments = [];
@@ -142,7 +143,7 @@ function(
 
 			if (typeof (vDomRef) === "function") {
 				try {
-					var vRes = vDomRef.apply(null, aArguments);
+					var vRes = vDomRef(...aArgs);
 					return vRes && jQuery(vRes);
 				} catch (error) {
 					return undefined;
@@ -151,6 +152,7 @@ function(
 				return DOMUtil.getDomRefForCSSSelector(oElementDomRef, vDomRef);
 			}
 		}
+		return undefined;
 	};
 
 	/**
@@ -189,26 +191,26 @@ function(
 		);
 		function findAction(mActionMap) {
 			return Object.keys(mActionMap)
-				.map(function(sCommandName) {
-					var vAction = mActionMap[sCommandName];
-					if (sCommandName === "add" && !vAction.changeType) {
-						// Handle nested subactions
-						return {
-							delegate: "addDelegateProperty",
-							custom: "customAdd"
-						}[findAction(vAction)];
-					}
-					try {
-						var oActionData = evaluateAction(vAction, oElement);
-						return oActionData && (oActionData.changeType === sChangeType) && sCommandName;
-					} catch (vError) {
-						// If a function action expects to be called with a certain element
-						// it might throw an error when trying with other/without elements
-						// Silently fail in such cases
-						return undefined;
-					}
-				})
-				.filter(Boolean)[0];
+			.map(function(sCommandName) {
+				var vAction = mActionMap[sCommandName];
+				if (sCommandName === "add" && !vAction.changeType) {
+					// Handle nested subactions
+					return {
+						delegate: "addDelegateProperty",
+						custom: "customAdd"
+					}[findAction(vAction)];
+				}
+				try {
+					var oActionData = evaluateAction(vAction, oElement);
+					return oActionData && (oActionData.changeType === sChangeType) && sCommandName;
+				} catch (vError) {
+					// If a function action expects to be called with a certain element
+					// it might throw an error when trying with other/without elements
+					// Silently fail in such cases
+					return undefined;
+				}
+			})
+			.filter(Boolean)[0];
 		}
 
 		return findAction(mActions);
@@ -260,17 +262,18 @@ function(
 	};
 
 	DesignTimeMetadata.prototype._getTextFromLibrary = function(sLibraryName, sKey, aArgs) {
-		var oLibResourceBundle = sap.ui.getCore().getLibraryResourceBundle(sLibraryName + ".designtime");
+		var oLibResourceBundle = Lib.getResourceBundleFor(`${sLibraryName}.designtime`);
 		if (oLibResourceBundle && oLibResourceBundle.hasText(sKey)) {
 			return oLibResourceBundle.getText(sKey, aArgs);
 		}
 
-		//Fallback to old logic that tries to get the text from the libraries resource bundle
-		//TODO: remove the fallback after all libraries have introduced a library.designtime.js that will provide the resource bundle and texts
-		oLibResourceBundle = sap.ui.getCore().getLibraryResourceBundle(sLibraryName);
+		// Fallback to old logic that tries to get the text from the libraries resource bundle
+		// TODO: remove the fallback after all libraries have introduced a library.designtime.js that will provide the resource bundle and texts
+		oLibResourceBundle = Lib.getResourceBundleFor(sLibraryName);
 		if (oLibResourceBundle && oLibResourceBundle.hasText(sKey)) {
 			return oLibResourceBundle.getText(sKey, aArgs);
 		}
+		return undefined;
 	};
 
 	/**
@@ -278,10 +281,10 @@ function(
 	 * @return {string|undefined} Returns the label calculated from getLabel() in designtime metadata
 	 * @public
 	 */
-	DesignTimeMetadata.prototype.getLabel = function() {
+	DesignTimeMetadata.prototype.getLabel = function(...aArgs) {
 		var vLabel = this.getData().getLabel;
 		return typeof vLabel === "function"
-			? vLabel.apply(this, arguments)
+			? vLabel.apply(this, aArgs)
 			: undefined;
 	};
 
@@ -301,6 +304,7 @@ function(
 		if (fnResponsibleElement) {
 			return fnResponsibleElement(oElement);
 		}
+		return undefined;
 	};
 
 	/**

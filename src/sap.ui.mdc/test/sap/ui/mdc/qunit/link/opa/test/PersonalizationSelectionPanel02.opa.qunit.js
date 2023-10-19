@@ -22,10 +22,10 @@ sap.ui.define([
 		autoWait: true
 	});
 
-	var fnCheckLinks = function(Then, mItems) {
+	const fnCheckLinks = function(Then, mItems) {
 		Object.entries(mItems).forEach(function (oEntry) {
-			var sLinkText = oEntry[0];
-			var oValue = oEntry[1];
+			const sLinkText = oEntry[0];
+			const oValue = oEntry[1];
 			Then.iShouldSeeLinkItemOnPosition(sLinkText, oValue.position);
 			Then.iShouldSeeLinkItemWithSelection(sLinkText, oValue.selected);
 			Then.iShouldSeeLinkItemAsEnabled(sLinkText, oValue.enabled);
@@ -122,7 +122,6 @@ sap.ui.define([
 
 	opaTest("When I look at the screen of appUnderTest, a table with links should appear", function(Given, When, Then) {
 		Given.iStartMyAppInAFrame('test-resources/sap/ui/mdc/qunit/link/opa/appUnderTest/start.html');
-		Given.iEnableTheLocalLRep();
 		Given.iClearTheLocalStorageFromRtaRestart();
 
 		Then.iShouldSeeStartRtaButton();

@@ -24,16 +24,13 @@ sap.ui.define([
 	 * @extends sap.ui.mdc.table.ColumnSettings
 	 * @version ${version}
 	 * @author SAP SE
-	 * @private
 	 * @constructor
-	 * @experimental
-	 * @ui5-restricted sap.fe
-	 * MDC_PUBLIC_CANDIDATE
+	 * @public
 	 * @alias sap.ui.mdc.table.ResponsiveColumnSettings
 	 * @since 1.110
 	 */
 
-	var ResponsiveColumnSettings = ColumnSettings.extend("sap.ui.mdc.table.ResponsiveColumnSettings", {
+	const ResponsiveColumnSettings = ColumnSettings.extend("sap.ui.mdc.table.ResponsiveColumnSettings", {
 		metadata: {
 			library: "sap.ui.mdc",
 			"final": true,

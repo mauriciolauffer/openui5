@@ -1,4 +1,4 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/m/Button",
@@ -31,8 +31,8 @@ sap.ui.define([
 	"sap/ui/fl/LayerUtils",
 	"sap/ui/thirdparty/sinon-4",
 	"test-resources/sap/ui/rta/qunit/RtaQunitUtils",
-	"sap/ui/core/Core"
-], function (
+	"sap/ui/qunit/utils/nextUIUpdate"
+], function(
 	Button,
 	Input,
 	MessageBox,
@@ -63,7 +63,7 @@ sap.ui.define([
 	flLayerUtils,
 	sinon,
 	RtaQunitUtils,
-	oCore
+	nextUIUpdate
 ) {
 	"use strict";
 
@@ -85,10 +85,10 @@ sap.ui.define([
 	}
 
 	QUnit.module("Given a command factory", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oButton = new Button(oMockedAppComponent.createId("myButton"));
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 			this.oButton.destroy();
 		}
@@ -120,8 +120,8 @@ sap.ui.define([
 				assert.strictEqual(oCommand.getNewValue(), false, "and its settings are merged correctly");
 			})
 
-			.catch(function (oError) {
-				assert.ok(false, "catch must never be called - Error: " + oError);
+			.catch(function(oError) {
+				assert.ok(false, `catch must never be called - Error: ${oError}`);
 			});
 		});
 
@@ -147,14 +147,14 @@ sap.ui.define([
 				assert.ok(oPrepareStub.lastCall.args[0].rootNamespace, "and the rootNamespace got added to the flexSettings");
 			})
 
-			.catch(function (oError) {
-				assert.ok(false, "catch must never be called - Error: " + oError);
+			.catch(function(oError) {
+				assert.ok(false, `catch must never be called - Error: ${oError}`);
 			});
 		});
 	});
 
 	QUnit.module("Given a flex command", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oButton = new Button("mockButton");
 			this.fnApplyChangeSpy = sandbox.spy(HideControl, "applyChange");
 			this.oFlexCommand = new FlexCommand({
@@ -162,7 +162,7 @@ sap.ui.define([
 				changeType: "hideControl"
 			});
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 			this.oFlexCommand.destroy();
 			this.oButton.destroy();
@@ -173,26 +173,26 @@ sap.ui.define([
 			var oCreateChangeSpy = sandbox.spy(ChangesWriteAPI, "create");
 
 			return prepareAndExecute(this.oFlexCommand)
-				.then(function() {
-					assert.strictEqual(this.fnApplyChangeSpy.callCount, 1, "then the change handler should do the work.");
-					assert.strictEqual(oCreateChangeSpy.lastCall.args[0].changeSpecificData.generator, "myFancyGenerator", "the generator was passed properly");
-				}.bind(this));
+			.then(function() {
+				assert.strictEqual(this.fnApplyChangeSpy.callCount, 1, "then the change handler should do the work.");
+				assert.strictEqual(oCreateChangeSpy.lastCall.args[0].changeSpecificData.generator, "myFancyGenerator", "the generator was passed properly");
+			}.bind(this));
 		});
 
 		QUnit.test("when executing a command that fails", function(assert) {
 			sandbox.stub(ChangesWriteAPI, "apply").rejects();
 			return prepareAndExecute(this.oFlexCommand)
-				.then(function() {
-					assert.ok(false, "then must never be called. An Exception should be thrown");
-				})
-				.catch(function() {
-					assert.ok(true, "the promise gets rejected if the apply fails");
-				});
+			.then(function() {
+				assert.ok(false, "then must never be called. An Exception should be thrown");
+			})
+			.catch(function() {
+				assert.ok(true, "the promise gets rejected if the apply fails");
+			});
 		});
 	});
 
 	QUnit.module("Given a command stack", {
-		beforeEach: function() {
+		beforeEach() {
 			this.stack = new Stack();
 			this.command = new BaseCommand();
 			this.failingCommand = this.command.clone();
@@ -202,7 +202,7 @@ sap.ui.define([
 			this.command2 = new BaseCommand();
 			sandbox.stub(MessageBox, "error");
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 			this.command.destroy();
 			this.command2.destroy();
@@ -218,8 +218,8 @@ sap.ui.define([
 					" the to be executed index is in range");
 			}.bind(this))
 
-			.catch(function (oError) {
-				assert.ok(false, "catch must never be called - Error: " + oError);
+			.catch(function(oError) {
+				assert.ok(false, `catch must never be called - Error: ${oError}`);
 			});
 		});
 
@@ -233,8 +233,8 @@ sap.ui.define([
 					" the to be executed index is in range");
 			}.bind(this))
 
-			.catch(function (oError) {
-				assert.ok(false, "catch must never be called - Error: " + oError);
+			.catch(function(oError) {
+				assert.ok(false, `catch must never be called - Error: ${oError}`);
 			});
 		});
 
@@ -268,8 +268,8 @@ sap.ui.define([
 				assert.equal(oTopCommand.getId(), this.command2.getId(), " the correct command is returned");
 			}.bind(this))
 
-			.catch(function (oError) {
-				assert.ok(false, "catch must never be called - Error: " + oError);
+			.catch(function(oError) {
+				assert.ok(false, `catch must never be called - Error: ${oError}`);
 			});
 		});
 
@@ -322,8 +322,8 @@ sap.ui.define([
 				assert.equal(oTopCommand.getId(), this.command.getId(), " the correct command is returned");
 			}.bind(this))
 
-			.catch(function (oError) {
-				assert.ok(false, "catch must never be called - Error: " + oError);
+			.catch(function(oError) {
+				assert.ok(false, `catch must never be called - Error: ${oError}`);
 			});
 		});
 
@@ -337,8 +337,8 @@ sap.ui.define([
 				assert.equal(oTopCommand.getId(), this.command.getId(), " the correct command is returned");
 			}.bind(this))
 
-			.catch(function (oError) {
-				assert.ok(false, "catch must never be called - Error: " + oError);
+			.catch(function(oError) {
+				assert.ok(false, `catch must never be called - Error: ${oError}`);
 			});
 		});
 
@@ -352,8 +352,8 @@ sap.ui.define([
 				assert.ok(!this.stack.canRedo(), "then stack cannot be redone");
 			}.bind(this))
 
-			.catch(function (oError) {
-				assert.ok(false, "catch must never be called - Error: " + oError);
+			.catch(function(oError) {
+				assert.ok(false, `catch must never be called - Error: ${oError}`);
 			});
 		});
 
@@ -370,8 +370,8 @@ sap.ui.define([
 				assert.equal(oError.command.getId(), this.failingCommand.getId(), "the error object contains the failing command");
 			}.bind(this))
 
-			.catch(function (oError) {
-				assert.ok(false, "catch must never be called - Error: " + oError);
+			.catch(function(oError) {
+				assert.ok(false, `catch must never be called - Error: ${oError}`);
 			});
 		});
 
@@ -383,7 +383,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given a property command", {
-		beforeEach: function() {
+		beforeEach() {
 			var oFlexSettings = {
 				developerMode: true,
 				layer: Layer.VENDOR
@@ -404,7 +404,7 @@ sap.ui.define([
 				this.fnApplyChangeSpy = sandbox.spy(FlexCommand.prototype, "_applyChange");
 			}.bind(this));
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 			this.oControl.destroy();
 			this.oPropertyCommand.destroy();
@@ -431,14 +431,14 @@ sap.ui.define([
 				assert.equal(this.oControl.getWidth(), this.NEW_VALUE, "then the controls text changed accordingly");
 			}.bind(this))
 
-			.catch(function (oError) {
-				assert.ok(false, "catch must never be called - Error: " + oError);
+			.catch(function(oError) {
+				assert.ok(false, `catch must never be called - Error: ${oError}`);
 			});
 		});
 	});
 
 	QUnit.module("Given a bind property command", {
-		beforeEach: function(assert) {
+		beforeEach(assert) {
 			var oFlexSettings = {
 				developerMode: true,
 				layer: Layer.VENDOR
@@ -499,11 +499,11 @@ sap.ui.define([
 				this.fnApplyChangeSpy = sandbox.spy(FlexCommand.prototype, "_applyChange");
 			}.bind(this))
 
-			.catch(function (oError) {
-				assert.ok(false, "catch must never be called - Error: " + oError);
+			.catch(function(oError) {
+				assert.ok(false, `catch must never be called - Error: ${oError}`);
 			});
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 			this.oInput.destroy();
 			this.oBindShowValueHelpCommandWithoutOldValueSet.destroy();
@@ -532,8 +532,8 @@ sap.ui.define([
 				assert.equal(this.oInput.getShowValueHelp(), this.NEW_BOOLEAN_VALUE, "then the controls property changed accordingly");
 			}.bind(this))
 
-			.catch(function (oError) {
-				assert.ok(false, "catch must never be called - Error: " + oError);
+			.catch(function(oError) {
+				assert.ok(false, `catch must never be called - Error: ${oError}`);
 			});
 		});
 
@@ -557,32 +557,28 @@ sap.ui.define([
 				assert.equal(this.oInput.getValue(), this.NEW_VALUE, "then the controls property changed accordingly");
 			}.bind(this))
 
-			.catch(function (oError) {
-				assert.ok(false, "catch must never be called - Error: " + oError);
+			.catch(function(oError) {
+				assert.ok(false, `catch must never be called - Error: ${oError}`);
 			});
 		});
 	});
 
 	QUnit.module("Given variant model, variant management reference and flex settings for a rename command", {
-		beforeEach: function () {
-			var sVariantManagementReference = "dummyVariantManagementReference";
-			this.sCurrentVariantReference = "dummyVariantReference";
+		beforeEach() {
+			this.sCurrentVMReference = "dummyVariantManagementReference";
 			this.oFlexSettings = {
 				layer: Layer.VENDOR,
 				developerMode: false
 			};
 
-			sandbox.stub(oMockedAppComponent, "getModel").callsFake(function (sModelName) {
-				if (sModelName === ControlVariantApplyAPI.getVariantModelName()) {
-					return {
-						getCurrentVariantReference: function (sVariantManagementRef) {
-							if (sVariantManagementRef === sVariantManagementReference) {
-								return this.sCurrentVariantReference;
-							}
-						}.bind(this)
-					};
-				}
-			}.bind(this));
+			var oVariantModel = {
+				getCurrentVariantReference() {}
+			};
+			sandbox.stub(oMockedAppComponent, "getModel")
+			.callThrough()
+			.withArgs(ControlVariantApplyAPI.getVariantModelName())
+			.returns(oVariantModel);
+			this.oGetCurrentVariantReferenceStub = sandbox.stub(oVariantModel, "getCurrentVariantReference");
 
 			sandbox.spy(FlexCommand.prototype, "prepare");
 
@@ -591,10 +587,7 @@ sap.ui.define([
 			this.oCommandFactory = new CommandFactory({
 				flexSettings: this.oFlexSettings
 			});
-
-			return oCommandFactory.getCommandFor(this.oButton, "Rename", {
-				renamedElement: this.oButton
-			}, new ElementDesignTimeMetadata({
+			this.oElementDTMetadata = new ElementDesignTimeMetadata({
 				data: {
 					actions: {
 						rename: {
@@ -602,31 +595,78 @@ sap.ui.define([
 						}
 					}
 				}
-			}), "dummyVariantManagementReference")
-				.then(function (oCommand) {
-					this.oCommand = oCommand;
-				}.bind(this));
+			});
 		},
-		afterEach: function () {
+		afterEach() {
 			sandbox.restore();
-			this.oCommand.destroy();
 			this.oButton.destroy();
 			this.oCommandFactory.destroy();
 			delete this.fnOriginalGetModel;
 			delete this.oFlexSettings;
-			delete this.sCurrentVariantReference;
+			delete this.sCurrentVMReference;
 		}
-	}, function () {
-		QUnit.test("when prepare() of remove command is called", function (assert) {
-			assert.ok(FlexCommand.prototype.prepare.calledOnce, "then FlexCommand.prepare() called once");
-			assert.strictEqual(this.oCommand.getPreparedChange().getVariantReference(), this.sCurrentVariantReference, "then correct variant reference set to the prepared change");
-			assert.strictEqual(this.oCommand.getPreparedChange().getLayer(), this.oFlexSettings.layer, "then correct layer was set to the prepared change");
-			assert.deepEqual(this.oCommandFactory.getFlexSettings(), this.oFlexSettings, "then correct flex settings were set to the command factory");
+	}, function() {
+		QUnit.test("when prepare() of rename command is called while standard variant is active", function(assert) {
+			this.oGetCurrentVariantReferenceStub.returns(this.sCurrentVMReference);
+			return oCommandFactory.getCommandFor(
+				this.oButton,
+				"Rename",
+				{ renamedElement: this.oButton },
+				this.oElementDTMetadata,
+				"dummyVariantManagementReference"
+			)
+			.then(function(oCommand) {
+				assert.ok(FlexCommand.prototype.prepare.calledOnce, "then FlexCommand.prepare() called once");
+				assert.strictEqual(
+					oCommand.getPreparedChange().getVariantReference(),
+					this.sCurrentVMReference,
+					"then the correct variant reference is set to the prepared change"
+				);
+				assert.ok(
+					oCommand.getPreparedChange().getIsChangeOnStandardVariant(),
+					"then isChangeOnStandardVariant is set to true"
+				);
+				assert.strictEqual(
+					oCommand.getPreparedChange().getLayer(),
+					this.oFlexSettings.layer,
+					"then the correct layer was set to the prepared change"
+				);
+				assert.deepEqual(
+					this.oCommandFactory.getFlexSettings(),
+					this.oFlexSettings,
+					"then the correct flex settings were set to the command factory"
+				);
+				oCommand.destroy();
+			}.bind(this));
+		});
+
+		QUnit.test("when prepare() of rename command is called while a custom variant is active", function(assert) {
+			this.oGetCurrentVariantReferenceStub.returns("someCustomVariant");
+			return oCommandFactory.getCommandFor(
+				this.oButton,
+				"Rename",
+				{ renamedElement: this.oButton },
+				this.oElementDTMetadata,
+				"dummyVariantManagementReference"
+			)
+			.then(function(oCommand) {
+				assert.ok(FlexCommand.prototype.prepare.calledOnce, "then FlexCommand.prepare() called once");
+				assert.strictEqual(
+					oCommand.getPreparedChange().getVariantReference(),
+					"someCustomVariant",
+					"then the correct variant reference is set to the prepared change"
+				);
+				assert.notOk(
+					oCommand.getPreparedChange().getIsChangeOnStandardVariant(),
+					"then isChangeOnStandardVariant is set to false"
+				);
+				oCommand.destroy();
+			});
 		});
 	});
 
 	QUnit.module("Given a command stack with multiple already executed commands", {
-		beforeEach: function(assert) {
+		beforeEach(assert) {
 			this.renamedButton = new Button();
 			this.stack = new Stack();
 			this.command = new BaseCommand();
@@ -638,11 +678,11 @@ sap.ui.define([
 
 			.then(this.stack.pushAndExecute.bind(this.stack, this.command2))
 
-			.catch(function (oError) {
-				assert.ok(false, "catch must never be called - Error: " + oError);
+			.catch(function(oError) {
+				assert.ok(false, `catch must never be called - Error: ${oError}`);
 			});
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 			this.command.destroy();
 			this.command2.destroy();
@@ -670,8 +710,8 @@ sap.ui.define([
 				assert.ok(this.stack.canRedo(), "then stack can be redone");
 			}.bind(this))
 
-			.catch(function (oError) {
-				assert.ok(false, "catch must never be called - Error: " + oError);
+			.catch(function(oError) {
+				assert.ok(false, `catch must never be called - Error: ${oError}`);
 			});
 		});
 
@@ -696,8 +736,8 @@ sap.ui.define([
 				assert.equal(fnStackModified.callCount, 2, " the modify stack listener is called");
 			}.bind(this))
 
-			.catch(function (oError) {
-				assert.ok(false, "catch must never be called - Error: " + oError);
+			.catch(function(oError) {
+				assert.ok(false, `catch must never be called - Error: ${oError}`);
 			});
 		});
 
@@ -730,12 +770,12 @@ sap.ui.define([
 				assert.equal(fnStackModified.callCount, 2, " the modify stack listener is called for undo and redo");
 			}.bind(this))
 
-			.catch(function (oError) {
-				assert.ok(false, "catch must never be called - Error: " + oError);
+			.catch(function(oError) {
+				assert.ok(false, `catch must never be called - Error: ${oError}`);
 			});
 		});
 
-		QUnit.test("when having nothing to redo, redo shouldn't do anything, next command to execute will be still the top command, then", function (assert) {
+		QUnit.test("when having nothing to redo, redo shouldn't do anything, next command to execute will be still the top command, then", function(assert) {
 			var fnRedo1 = sinon.spy(this.command, "execute");
 			var fnRedo2 = sinon.spy(this.command2, "execute");
 			return this.stack.redo()
@@ -762,7 +802,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given an empty command stack and commands", {
-		beforeEach: function() {
+		beforeEach() {
 			this.stack = new Stack();
 			sandbox.stub(flUtils, "getComponentForControl").returns(oMockedAppComponent);
 			this.command = new BaseCommand();
@@ -773,7 +813,7 @@ sap.ui.define([
 			this.compositeCommand = new CompositeCommand();
 			sandbox.stub(MessageBox, "error");
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 			this.command.destroy();
 			this.command2.destroy();
@@ -804,8 +844,8 @@ sap.ui.define([
 				assert.equal(this.stack._toBeExecuted, -1, " nothing is to be executed");
 			}.bind(this))
 
-			.catch(function (oError) {
-				assert.ok(false, "catch must never be called - Error: " + oError);
+			.catch(function(oError) {
+				assert.ok(false, `catch must never be called - Error: ${oError}`);
 			});
 		});
 
@@ -831,8 +871,8 @@ sap.ui.define([
 				assert.equal(this.stack._toBeExecuted, 0, " one command to be executed");
 			}.bind(this))
 
-			.catch(function (oError) {
-				assert.ok(false, "catch must never be called - Error: " + oError);
+			.catch(function(oError) {
+				assert.ok(false, `catch must never be called - Error: ${oError}`);
 			});
 		});
 
@@ -926,7 +966,7 @@ sap.ui.define([
 			})
 
 			.catch(function(oError) {
-				assert.ok(false, "catch must never be called - Error: " + oError);
+				assert.ok(false, `catch must never be called - Error: ${oError}`);
 			});
 		});
 
@@ -974,7 +1014,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given controls and designTimeMetadata", {
-		beforeEach: function () {
+		beforeEach() {
 			sandbox.stub(flUtils, "getComponentForControl").returns(oMockedAppComponent);
 			sandbox.stub(ChangesWriteAPI, "getChangeHandler").resolves();
 			this.oMovable = new Button(oMockedAppComponent.createId("attribute"));
@@ -1003,7 +1043,7 @@ sap.ui.define([
 				}
 			});
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 			this.oRootElement.destroy();
 			this.oSourceParentDesignTimeMetadata.destroy();
@@ -1035,13 +1075,13 @@ sap.ui.define([
 			})
 
 			.catch(function(oError) {
-				assert.ok(false, "catch must never be called - Error: " + oError);
+				assert.ok(false, `catch must never be called - Error: ${oError}`);
 			});
 		});
 	});
 
 	QUnit.module("Given a command stack with a hideControl flex command", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oCommandStack = new Stack();
 			sandbox.stub(flUtils, "getComponentForControl").returns(oMockedAppComponent);
 			this.oButton = new Button(oMockedAppComponent.createId("button"));
@@ -1057,7 +1097,7 @@ sap.ui.define([
 			sandbox.stub(ChangesWriteAPI, "apply").resolves({success: true});
 			this.oWriteAPIRevertStub = sandbox.stub(ChangesWriteAPI, "revert").resolves({success: true});
 		},
-		afterEach: function () {
+		afterEach() {
 			sandbox.restore();
 			this.oFlexCommand.destroy();
 			this.oCompositeCommand.destroy();
@@ -1065,42 +1105,42 @@ sap.ui.define([
 			this.oLayout.destroy();
 		}
 	}, function() {
-		QUnit.test("when command is executed and undo is called", function (assert) {
+		QUnit.test("when command is executed and undo is called", function(assert) {
 			assert.expect(4);
 			sandbox.stub(ChangesWriteAPI, "getChangeHandler").resolves({});
 
 			this.oCommandStack.push(this.oFlexCommand);
 
 			return Promise.resolve()
-				.then(this.oFlexCommand.prepare.bind(this.oFlexCommand, {layer: Layer.CUSTOMER}))
-				.then(this.oCommandStack.execute.bind(this.oCommandStack))
-				.then(function () {
-					var oChange = this.oFlexCommand.getPreparedChange();
-					assert.ok(true, "then a Promise.resolve() is returned on Stack.execute()");
-					assert.equal(this.fnApplyChangeSpy.callCount, 1, "then Command._applyChange called once");
+			.then(this.oFlexCommand.prepare.bind(this.oFlexCommand, {layer: Layer.CUSTOMER}))
+			.then(this.oCommandStack.execute.bind(this.oCommandStack))
+			.then(function() {
+				var oChange = this.oFlexCommand.getPreparedChange();
+				assert.ok(true, "then a Promise.resolve() is returned on Stack.execute()");
+				assert.equal(this.fnApplyChangeSpy.callCount, 1, "then Command._applyChange called once");
 
-					return this.oCommandStack.undo()
-						.then(function () {
-							assert.ok(true, "then a Promise.resolve() is returned on Stack.undo()");
-							assert.ok(this.oWriteAPIRevertStub.calledWithExactly({change: oChange, element: this.oButton}), "then PersistenceWriteAPI.remove called with required parameters");
-						}.bind(this));
+				return this.oCommandStack.undo()
+				.then(function() {
+					assert.ok(true, "then a Promise.resolve() is returned on Stack.undo()");
+					assert.ok(this.oWriteAPIRevertStub.calledWithExactly({change: oChange, element: this.oButton}), "then PersistenceWriteAPI.remove called with required parameters");
 				}.bind(this));
+			}.bind(this));
 		});
 
-		QUnit.test("when change handler is not available", function (assert) {
+		QUnit.test("when change handler is not available", function(assert) {
 			assert.expect(1);
 			sandbox.stub(ChangesWriteAPI, "getChangeHandler").resolves(undefined);
 			this.oCommandStack.push(this.oFlexCommand);
 
 			return this.oCommandStack.execute()
-				.catch(function () {
-					assert.ok(true, "then Promise reject returned");
-				});
+			.catch(function() {
+				assert.ok(true, "then Promise reject returned");
+			});
 		});
 	});
 
 	QUnit.module("Given a command factory and a bound control containing a template binding", {
-		beforeEach: function(assert) {
+		async beforeEach(assert) {
 			sandbox.stub(flUtils, "getComponentForControl").returns(oMockedAppComponent);
 
 			var done = assert.async();
@@ -1135,11 +1175,10 @@ sap.ui.define([
 			}).setModel(oModel);
 
 			this.oList.placeAt("qunit-fixture");
-			oCore.applyChanges();
+			await nextUIUpdate();
 
-			this.oVBox31 = this.oList.getItems()[1].getContent()[0].getItems()[0].getItems()[0];
-			this.oText1 = this.oList.getItems()[1].getContent()[0].getItems()[0].getItems()[0].getItems()[0];
-			this.oText2 = this.oList.getItems()[1].getContent()[0].getItems()[0].getItems()[0].getItems()[1];
+			[this.oVBox31] = this.oList.getItems()[1].getContent()[0].getItems()[0].getItems();
+			[this.oText1, this.oText2] = this.oList.getItems()[1].getContent()[0].getItems()[0].getItems()[0].getItems();
 			this.oDesignTime = new DesignTime({
 				rootElements: [this.oList]
 			});
@@ -1152,7 +1191,7 @@ sap.ui.define([
 				done();
 			}.bind(this));
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 			this.oList.destroy();
 			this.oItemTemplate.destroy();
@@ -1351,7 +1390,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given a command factory and a bound control containing multiple template bindings", {
-		beforeEach: function(assert) {
+		async beforeEach(assert) {
 			sandbox.stub(flUtils, "getComponentForControl").returns(oMockedAppComponent);
 			sandbox.stub(ChangesWriteAPI, "getChangeHandler").resolves();
 
@@ -1363,14 +1402,14 @@ sap.ui.define([
 				texts1: aTexts1
 			});
 
-			this.oItemTemplate = new CustomListItem("item", { //binding context /texts1
+			this.oItemTemplate = new CustomListItem("item", { // binding context /texts1
 				content: new VBox(oMockedAppComponent.createId("vbox1"), {
 					items: [
-						new Text({id: oMockedAppComponent.createId("text"), text: "{text}"}), //binding context /texts1
+						new Text({id: oMockedAppComponent.createId("text"), text: "{text}"}), // binding context /texts1
 						new VBox(oMockedAppComponent.createId("vbox2"), {
 							items: {
 								path: "inner",
-								template: new Text({id: oMockedAppComponent.createId("inner-text"), text: "{text}"}), //binding context /texts1/inner
+								template: new Text({id: oMockedAppComponent.createId("inner-text"), text: "{text}"}), // binding context /texts1/inner
 								templateShareable: false
 							}
 						})
@@ -1386,7 +1425,7 @@ sap.ui.define([
 			}).setModel(oModel);
 
 			this.oList.placeAt("qunit-fixture");
-			oCore.applyChanges();
+			await nextUIUpdate();
 
 			this.oDesignTime = new DesignTime({
 				rootElements: [this.oList]
@@ -1397,7 +1436,7 @@ sap.ui.define([
 				done();
 			}.bind(this));
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 			this.oList.destroy();
 			this.oItemTemplate.destroy();
@@ -1431,7 +1470,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given a command factory and a bound control containing an aggregation binding with a factory function", {
-		beforeEach: function(assert) {
+		async beforeEach(assert) {
 			sandbox.stub(flUtils, "getComponentForControl").returns(oMockedAppComponent);
 
 			var done = assert.async();
@@ -1446,19 +1485,19 @@ sap.ui.define([
 				var oItem;
 				if (oContext.getProperty("text1").charAt(5) % 2 === 0) {
 					oItem = new CustomListItem(sId, {
-						content: new VBox(sId + "--vbox", {
+						content: new VBox(`${sId}--vbox`, {
 							items: [
-								new Text(sId + "--text1", {text: "{text1}"}),
-								new Text(sId + "--text2", {text: "{text2}"})
+								new Text(`${sId}--text1`, {text: "{text1}"}),
+								new Text(`${sId}--text2`, {text: "{text2}"})
 							]
 						})
 					});
 				} else {
 					oItem = new CustomListItem(sId, {
-						content: new VBox(sId + "--vbox", {
+						content: new VBox(`${sId}--vbox`, {
 							items: [
-								new Button(sId + "--button1", {text: "{text1}"}),
-								new Button(sId + "--button2", {text: "{text2}"})
+								new Button(`${sId}--button1`, {text: "{text1}"}),
+								new Button(`${sId}--button2`, {text: "{text2}"})
 							]
 						})
 					});
@@ -1467,16 +1506,16 @@ sap.ui.define([
 			});
 
 			this.oList.placeAt("qunit-fixture");
-			oCore.applyChanges();
+			await nextUIUpdate();
 
-			this.oText1 = this.oList.getItems()[1].getContent()[0].getItems()[0];
+			[this.oText1] = this.oList.getItems()[1].getContent()[0].getItems();
 			var oDesignTime = new DesignTime({
 				rootElements: [this.oList]
 			});
 
 			oDesignTime.attachEventOnce("synced", done);
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 			this.oList.destroy();
 		}
@@ -1523,7 +1562,7 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		oMockedAppComponent.destroy();
 		document.getElementById("qunit-fixture").style.display = "none";
 	});

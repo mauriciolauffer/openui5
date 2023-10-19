@@ -4,13 +4,16 @@
 
 // Provides control sap.ui.webc.main.Carousel.
 sap.ui.define([
-	"sap/ui/webc/common/WebComponent",
+	"sap/ui/core/webc/WebComponent",
 	"./library",
 	"./thirdparty/Carousel"
 ], function(WebComponent, library) {
 	"use strict";
 
+	var BackgroundDesign = library.BackgroundDesign;
+	var BorderDesign = library.BorderDesign;
 	var CarouselArrowsPlacement = library.CarouselArrowsPlacement;
+	var CarouselPageIndicatorStyle = library.CarouselPageIndicatorStyle;
 
 	/**
 	 * Constructor for a new <code>Carousel</code>.
@@ -18,7 +21,7 @@ sap.ui.define([
 	 * @param {string} [sId] ID for the new control, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new control
 	 *
-	 * @extends sap.ui.webc.common.WebComponent
+	 * @extends sap.ui.core.webc.WebComponent
 	 * @class
 	 *
 	 * <h3>Overview</h3> The Carousel allows the user to browse through a set of items. The component is mostly used for showing a gallery of images, but can hold any other HTML element. <br>
@@ -50,12 +53,18 @@ sap.ui.define([
 	 *
 	 * <h4>Basic Navigation</h4> When the <code>sap.ui.webc.main.Carousel</code> is focused the user can navigate between the items with the following keyboard shortcuts: <br>
 	 *
-	 *
-	 *
-	 *
 	 * <ul>
 	 *     <li>[UP/DOWN] - Navigates to previous and next item</li>
 	 *     <li>[LEFT/RIGHT] - Navigates to previous and next item</li>
+	 * </ul>
+	 *
+	 *
+	 * <h3>CSS Shadow Parts</h3>
+	 *
+	 * {@link https://developer.mozilla.org/en-US/docs/Web/CSS/::part CSS Shadow Parts} allow developers to style elements inside the Shadow DOM. <br>
+	 * The <code>sap.ui.webc.main.Carousel</code> exposes the following CSS Shadow Parts:
+	 * <ul>
+	 *     <li>content - Used to style the content of the component</li>
 	 * </ul>
 	 *
 	 * @author SAP SE
@@ -78,15 +87,21 @@ sap.ui.define([
 				 * <br>
 				 * Available options are:
 				 * <ul>
-				 *     <li><code>Content</code></li>
-				 *     <li><code>Navigation</code></li>
-				 * </ul> <br>
-				 * When set to "Content", the arrows are placed on the sides of the current page. <br>
-				 * When set to "Navigation", the arrows are placed on the sides of the page indicator.
+				 *     <li><code>Content</code> - the arrows are placed on the sides of the current page.</li>
+				 *     <li><code>Navigation</code> - the arrows are placed on the sides of the page indicator.</li>
+				 * </ul>
 				 */
 				arrowsPlacement: {
 					type: "sap.ui.webc.main.CarouselArrowsPlacement",
 					defaultValue: CarouselArrowsPlacement.Content
+				},
+
+				/**
+				 * Defines the carousel's background design.
+				 */
+				backgroundDesign: {
+					type: "sap.ui.webc.main.BackgroundDesign",
+					defaultValue: BackgroundDesign.Translucent
 				},
 
 				/**
@@ -108,7 +123,7 @@ sap.ui.define([
 				},
 
 				/**
-				 * Defines the visibility of the paging indicator. If set to true the page indicator will be hidden.
+				 * Defines the visibility of the page indicator. If set to true the page indicator will be hidden.
 				 */
 				hidePageIndicator: {
 					type: "boolean",
@@ -137,6 +152,34 @@ sap.ui.define([
 				itemsPerPageS: {
 					type: "int",
 					defaultValue: 1
+				},
+
+				/**
+				 * Defines the page indicator background design.
+				 */
+				pageIndicatorBackgroundDesign: {
+					type: "sap.ui.webc.main.BackgroundDesign",
+					defaultValue: BackgroundDesign.Solid
+				},
+
+				/**
+				 * Defines the page indicator border design.
+				 */
+				pageIndicatorBorderDesign: {
+					type: "sap.ui.webc.main.BorderDesign",
+					defaultValue: BorderDesign.Solid
+				},
+
+				/**
+				 * Defines the style of the page indicator. Available options are:
+				 * <ul>
+				 *     <li><code>Default</code> - The page indicator will be visualized as dots if there are fewer than 9 pages. If there are more pages, the page indicator will switch to displaying the current page and the total number of pages. (e.g. X of Y)</li>
+				 *     <li><code>Numeric</code> - The page indicator will display the current page and the total number of pages. (e.g. X of Y)</li>
+				 * </ul>
+				 */
+				pageIndicatorStyle: {
+					type: "sap.ui.webc.main.CarouselPageIndicatorStyle",
+					defaultValue: CarouselPageIndicatorStyle.Default
 				}
 			},
 			defaultAggregation: "content",

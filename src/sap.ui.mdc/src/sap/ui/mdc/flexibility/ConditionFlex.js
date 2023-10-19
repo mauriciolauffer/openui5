@@ -15,8 +15,8 @@ sap.ui.define([
 	 * queueing becomes necessary since ControPersonalizationWriteAPI#add process parallel
 	 * appliance in parallel
 	 */
-	var fnQueueChange = function(oControl, fTask) {
-		var fCleanupPromiseQueue = function(pOriginalPromise) {
+	const fnQueueChange = function(oControl, fTask) {
+		const fCleanupPromiseQueue = function(pOriginalPromise) {
 			if (oControl._pQueue === pOriginalPromise){
 				delete oControl._pQueue;
 			}
@@ -28,30 +28,24 @@ sap.ui.define([
 		return oControl._pQueue;
 	};
 
-	var fnGetDelegate = function(sDelegatePath) {
+	const fnGetDelegate = function(sDelegatePath) {
 		return new Promise(function(fResolveLoad, fRejectLoad){
 			sap.ui.require([
 				sDelegatePath
 			], fResolveLoad, fRejectLoad);
+		})
+		.then(function(Delegate){
+			return Delegate;
 		});
 	};
 
-	var fDetermineFilterControl = function(oControl) {
-		var oController = oControl && oControl.getEngine ? oControl.getEngine().getController(oControl, "Filter") : null;
-		return oController ? oController.getFilterControl() : null;
-	};
+	const fAddCondition = function(oChange, oControl, mPropertyBag, sChangeReason) {
 
-	var fAddCondition = function(oChange, oControl, mPropertyBag, sChangeReason) {
+		const bIsRevert = (sChangeReason === Util.REVERT);
+		const oChangeContent = bIsRevert ? oChange.getRevertData() : oChange.getContent();
 
-		var oFilterControl = fDetermineFilterControl(oControl);
-		var bIsRevert = (sChangeReason === Util.REVERT);
-		var oChangeContent = bIsRevert ? oChange.getRevertData() : oChange.getContent();
-
-		if (oFilterControl && oFilterControl.applyConditionsAfterChangesApplied) {
-			oFilterControl.applyConditionsAfterChangesApplied(oControl);
-		}
-
-		var mConditionsData, aConditions = null, oModifier = mPropertyBag.modifier;
+		let mConditionsData, aConditions = null;
+		const oModifier = mPropertyBag.modifier;
 
 		return fnQueueChange(oControl, function(){
 			return oModifier.getProperty(oControl, "filterConditions")
@@ -59,7 +53,7 @@ sap.ui.define([
 				// 'filterConditions' property needs to be updated for change selector
 				mConditionsData = merge({}, mFilterConditions);
 				if (mConditionsData) {
-					for (var sFieldPath in mConditionsData) {
+					for (const sFieldPath in mConditionsData) {
 						if (sFieldPath === oChangeContent.name) {
 							aConditions = mConditionsData[sFieldPath];
 							break;
@@ -80,7 +74,7 @@ sap.ui.define([
 					});
 				}
 
-				var nConditionIdx = FilterOperatorUtil.indexOfCondition(oChangeContent.condition, aConditions);
+				const nConditionIdx = FilterOperatorUtil.indexOfCondition(oChangeContent.condition, aConditions);
 				if (nConditionIdx < 0) {
 					aConditions.push(oChangeContent.condition);
 
@@ -93,9 +87,9 @@ sap.ui.define([
 						return fnGetDelegate(oDelegate.name);
 					})
 					.then(function(Delegate){
-						var fnDelegateAddCondition = Delegate && (Delegate.getFilterDelegate ? Delegate.getFilterDelegate().addCondition : Delegate.addCondition);
+						const fnDelegateAddCondition = Delegate && (Delegate.getFilterDelegate ? Delegate.getFilterDelegate().addCondition : Delegate.addCondition);
 						if (fnDelegateAddCondition) {
-							return fnDelegateAddCondition(oChangeContent.name, oControl, mPropertyBag)
+							return fnDelegateAddCondition(oControl, oChangeContent.name, mPropertyBag)
 							.catch(function(oEx) {
 								Log.error("Error during Delegate.addCondition call: " + oEx);
 							});
@@ -112,17 +106,13 @@ sap.ui.define([
 
 	};
 
-	var fRemoveCondition = function(oChange, oControl, mPropertyBag, sChangeReason) {
+	const fRemoveCondition = function(oChange, oControl, mPropertyBag, sChangeReason) {
 
-		var oFilterControl = fDetermineFilterControl(oControl);
-		var bIsRevert = (sChangeReason === Util.REVERT);
-		var oChangeContent = bIsRevert ? oChange.getRevertData() : oChange.getContent();
+		const bIsRevert = (sChangeReason === Util.REVERT);
+		const oChangeContent = bIsRevert ? oChange.getRevertData() : oChange.getContent();
 
-		if (oFilterControl && oFilterControl.applyConditionsAfterChangesApplied) {
-			oFilterControl.applyConditionsAfterChangesApplied(oControl);
-		}
-
-		var mConditionsData, aConditions, nDelIndex = -1, oModifier = mPropertyBag.modifier;
+		let mConditionsData, aConditions, nDelIndex = -1;
+		const oModifier = mPropertyBag.modifier;
 
 		return fnQueueChange(oControl, function(){
 			return oModifier.getProperty(oControl, "filterConditions")
@@ -131,7 +121,7 @@ sap.ui.define([
 				mConditionsData = merge({}, mFilterConditions);
 
 				if (mConditionsData) {
-					for (var sFieldPath in mConditionsData) {
+					for (const sFieldPath in mConditionsData) {
 						if (sFieldPath === oChangeContent.name) {
 							aConditions = mConditionsData[sFieldPath];
 							break;
@@ -163,9 +153,9 @@ sap.ui.define([
 							return fnGetDelegate(oDelegate.name);
 						})
 						.then(function(Delegate){
-							var fnDelegateRemoveCondition = Delegate && (Delegate.getFilterDelegate ? Delegate.getFilterDelegate().removeCondition : Delegate.removeCondition);
+							const fnDelegateRemoveCondition = Delegate && (Delegate.getFilterDelegate ? Delegate.getFilterDelegate().removeCondition : Delegate.removeCondition);
 							if (fnDelegateRemoveCondition) {
-								return fnDelegateRemoveCondition(oChangeContent.name, oControl, mPropertyBag)
+								return fnDelegateRemoveCondition(oControl, oChangeContent.name, mPropertyBag)
 								.catch(function(oEx) {
 									Log.error("Error during Delegate.removeCondition call: " + oEx);
 								});
@@ -182,8 +172,8 @@ sap.ui.define([
 		});
 	};
 
-	var fGetCondenserInfoCondition = function(oChange, mPropertyBag) {
-		var oContent = oChange.getContent();
+	const fGetCondenserInfoCondition = function(oChange, mPropertyBag) {
+		const oContent = oChange.getContent();
 		return {
 			classification: Classification.Reverse,
 			affectedControl: oChange.getSelector(),
@@ -191,7 +181,7 @@ sap.ui.define([
 		};
 	};
 
-	var ConditionFlex = {};
+	const ConditionFlex = {};
 
 	ConditionFlex.addCondition = Util.createChangeHandler({
 		apply: fAddCondition,

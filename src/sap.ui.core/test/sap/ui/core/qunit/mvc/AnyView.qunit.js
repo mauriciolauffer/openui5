@@ -1,18 +1,17 @@
 /*global QUnit */
 sap.ui.define([
-	"sap/base/util/ObjectPath",
 	"sap/ui/Device",
 	"sap/ui/core/mvc/Controller",
-	"sap/ui/qunit/QUnitUtils"
-], function(ObjectPath, Device, Controller, qutils) {
+	"sap/ui/qunit/QUnitUtils",
+	"sap/ui/qunit/utils/createAndAppendDiv",
+	"sap/ui/qunit/utils/nextUIUpdate"
+], function(Device, Controller, qutils, createAndAppendDiv, nextUIUpdate) {
 	"use strict";
 
 	QUnit.config.reorder = false;
 
 	// create content div
-	var oDIV = document.createElement("div");
-	oDIV.id = "content";
-	document.body.appendChild(oDIV);
+	createAndAppendDiv("content");
 
 	function testsuite(oConfig, sCaption, fnViewFactory, bCheckViewData) {
 
@@ -30,8 +29,7 @@ sap.ui.define([
 
 				view = oView;
 				assert.ok(view, "view must exist after creation");
-				var fnClass = ObjectPath.get(oConfig.viewClassName);
-				assert.ok(view instanceof fnClass, "view must be instance of " + oConfig.viewClassName);
+				assert.ok(view instanceof oConfig.viewClass, "view must be instance of " + oConfig.viewClass.getMetadata().getName());
 				return oView;
 			});
 		});
@@ -54,12 +52,12 @@ sap.ui.define([
 		});
 
 		QUnit.test("Lifecycle: onAfterRendering", function(assert) {
-			return pView.then(function(oView) {
+			return pView.then(async function(oView) {
 				assert.expect(5);
 				window.onAfterRenderingCalled = false;
 
 				oView.placeAt("content");
-				sap.ui.getCore().applyChanges();
+				await nextUIUpdate();
 
 				assert.ok(window.onAfterRenderingCalled, "controller.onAfterRendering should be called by now");
 				window.onAfterRenderingCalled = false;
@@ -129,12 +127,12 @@ sap.ui.define([
 
 		});
 
-		QUnit.test("Re-Rendering", function(assert) {
+		QUnit.test("Re-Rendering", async function(assert) {
 			assert.expect(4 + oConfig.idsToBeChecked.length);
 			window.onBeforeRenderingCalled = false;
 			window.onAfterRenderingCalled = false;
 			view.invalidate();
-			sap.ui.getCore().applyChanges();
+			await nextUIUpdate();
 
 			function doCheck() {
 				for (var i = 0; i < oConfig.idsToBeChecked.length; i++) {

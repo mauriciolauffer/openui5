@@ -4,6 +4,9 @@
 
 // Provides control sap.m.Dialog.
 sap.ui.define([
+	"sap/ui/core/ControlBehavior",
+	"sap/base/i18n/Localization",
+	"sap/ui/core/Lib",
 	"./Bar",
 	"./InstanceManager",
 	"./AssociativeOverflowToolbar",
@@ -35,6 +38,9 @@ sap.ui.define([
 	"sap/ui/dom/jquery/Focusable"
 ],
 function(
+	ControlBehavior,
+	Localization,
+	Library,
 	Bar,
 	InstanceManager,
 	AssociativeOverflowToolbar,
@@ -86,7 +92,7 @@ function(
 		// shortcut for sap.m.TitleAlignment
 		var TitleAlignment = library.TitleAlignment;
 
-		var sAnimationMode = Core.getConfiguration().getAnimationMode();
+		var sAnimationMode = ControlBehavior.getAnimationMode();
 		var bUseAnimations = sAnimationMode !== Configuration.AnimationMode.none && sAnimationMode !== Configuration.AnimationMode.minimal;
 
 		// the time should be longer the longest transition in the CSS (200ms),
@@ -346,6 +352,7 @@ function(
 
 					/**
 					 * The footer of this dialog. It is always located at the bottom of the dialog. The footer aggregation can not  be used together with the buttons aggregation.
+					 * @since 1.110
 					 */
 					footer: {type: "sap.m.Toolbar", multiple: false},
 
@@ -488,7 +495,7 @@ function(
 			return this._headerTitle ? this._headerTitle.getId() : false;
 		});
 
-		Dialog._bPaddingByDefault = (Core.getConfiguration().getCompatibilityVersion("sapMDialogWithPadding").compareTo("1.16") < 0);
+		Dialog._bPaddingByDefault = (Configuration.getCompatibilityVersion("sapMDialogWithPadding").compareTo("1.16") < 0);
 
 		Dialog._initIcons = function () {
 			if (Dialog._mIcons) {
@@ -502,6 +509,42 @@ function(
 			Dialog._mIcons[ValueState.Information] = IconPool.getIconURI("information");
 		};
 
+		/**
+		 * Returns an invisible text control that can be used to label the header toolbar of
+		 * the dialog for accessibility purposes.
+		 *
+		 * @param {string} sId - The ID to use for the invisible text control.
+		 * @returns {sap.ui.core.InvisibleText} The invisible text control for the header toolbar.
+		 * @private
+		 */
+		Dialog._getHeaderToolbarAriaLabelledByText = function() {
+			if (!Dialog._oHeaderToolbarInvisibleText) {
+				Dialog._oHeaderToolbarInvisibleText = new InvisibleText("__headerActionsToolbar-invisibleText", {
+					text: Library.getResourceBundleFor("sap.m").getText("ARIA_LABEL_TOOLBAR_HEADER_ACTIONS")
+				}).toStatic();
+			}
+
+			return Dialog._oHeaderToolbarInvisibleText;
+		};
+
+		/**
+		 * Returns an invisible text control that can be used to label the footer toolbar of
+		 * the dialog for accessibility purposes.
+		 *
+		 * @param {string} sId - The ID to use for the invisible text control.
+		 * @returns {sap.ui.core.InvisibleText} The invisible text control for the header toolbar.
+		 * @private
+		 */
+		Dialog._getFooterToolbarAriaLabelledByText = function() {
+			if (!Dialog._oFooterToolbarInvisibleText) {
+				Dialog._oFooterToolbarInvisibleText = new InvisibleText("__footerActionsToolbar-invisibleText", {
+					text: Library.getResourceBundleFor("sap.m").getText("ARIA_LABEL_TOOLBAR_FOOTER_ACTIONS")
+				}).toStatic();
+			}
+
+			return Dialog._oFooterToolbarInvisibleText;
+		};
+
 		/* =========================================================== */
 		/*                  begin: Lifecycle functions                 */
 		/* =========================================================== */
@@ -509,7 +552,7 @@ function(
 			var that = this;
 			this._oManuallySetSize = null;
 			this._oManuallySetPosition = null;
-			this._bRTL = Core.getConfiguration().getRTL();
+			this._bRTL = Localization.getRTL();
 
 			// used to judge if enableScrolling needs to be disabled
 			this._scrollContentList = ["sap.m.NavContainer", "sap.m.Page", "sap.m.ScrollContainer", "sap.m.SplitContainer", "sap.m.MultiInput", "sap.m.SimpleFixFlex"];
@@ -589,7 +632,7 @@ function(
 
 			this._createToolbarButtons();
 
-			if (Core.getConfiguration().getAccessibility() && this.getState() != ValueState.None) {
+			if (ControlBehavior.isAccessibilityEnabled() && this.getState() != ValueState.None) {
 				if (!this._oValueState) {
 					this._oValueState = new InvisibleText();
 
@@ -601,7 +644,7 @@ function(
 
 			// title alignment
 			if (oHeader && oHeader.setTitleAlignment) {
-				oHeader.setProperty("titleAlignment", this.getTitleAlignment(), true);
+				oHeader.setTitleAlignment(this.getTitleAlignment());
 			}
 
 			if (oHeader && this._getTitles(oHeader).length === 0) {
@@ -1393,7 +1436,8 @@ function(
 			if (!this._header) {
 				// set parent of header to detect changes on title
 				this._header = new Bar(this.getId() + "-header", {
-					titleAlignment: this.getTitleAlignment()
+					titleAlignment: this.getTitleAlignment(),
+					ariaLabelledBy: Dialog._getHeaderToolbarAriaLabelledByText()
 				});
 
 				this.setAggregation("_header", this._header);
@@ -1574,7 +1618,7 @@ function(
 		};
 
 		/**
-		 * Returns the <code>sap.ui.core.ScrollEnablement</code> delegate which is used with this control.
+		 * Returns the <code>sap.ui.core.delegate.ScrollEnablement</code> delegate which is used with this control.
 		 *
 		 * @private
 		 */
@@ -1751,7 +1795,10 @@ function(
 		 */
 		Dialog.prototype._getToolbar = function () {
 			if (!this._oToolbar) {
-				this._oToolbar = new AssociativeOverflowToolbar(this.getId() + "-footer").addStyleClass("sapMTBNoBorders");
+				this._oToolbar = new AssociativeOverflowToolbar(this.getId() + "-footer", {
+					ariaLabelledBy: Dialog._getFooterToolbarAriaLabelledByText()
+				}).addStyleClass("sapMTBNoBorders");
+
 				this._oToolbar.addDelegate({
 					onAfterRendering: function () {
 						if (this.getType() === DialogType.Message) {
@@ -1773,7 +1820,7 @@ function(
 		 * @private
 		 */
 		Dialog.prototype.getValueStateString = function (sValueState) {
-			var rb = Core.getLibraryResourceBundle("sap.m");
+			var rb = Library.getResourceBundleFor("sap.m");
 
 			switch (sValueState) {
 				case (ValueState.Success):
@@ -1802,7 +1849,7 @@ function(
 		 * @private
 		 */
 		Dialog.prototype._getAriaDescribedByText = function () {
-			var oRb = Core.getLibraryResourceBundle("sap.m");
+			var oRb = Library.getResourceBundleFor("sap.m");
 			if (this.getResizable() && this.getDraggable()) {
 				return oRb.getText("DIALOG_HEADER_ARIA_DESCRIBEDBY_DRAGGABLE_RESIZABLE");
 			}

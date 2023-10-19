@@ -13,6 +13,42 @@ sap.ui.define([
 ) {
 	"use strict";
 
+	function createManifestWithFormElement(oFormElement) {
+		return {
+			"sap.app": {
+				"id": "test.mobileSdk.form",
+				"type": "card"
+			},
+			"sap.card": {
+				"type": "Object",
+				"data": {
+					"json": {
+						"activityTypes": [
+							{
+								"id": "activity1",
+								"title": "Processing"
+							},
+							{
+								"id": "activity2",
+								"title": "Monitoring"
+							}
+						],
+						"activityTypeSelectedKey": "activity1"
+					}
+				},
+				"content": {
+					"groups": [
+						{
+							"items": [
+								oFormElement
+							]
+						}
+					]
+				}
+			}
+		};
+	}
+
 	QUnit.module("Generic");
 
 	QUnit.test("Resolve bindings to default model", function (assert) {
@@ -35,7 +71,10 @@ sap.ui.define([
 					}
 				},
 				"header": {
-					"title": "{firstName} {lastName}"
+					"title": "{firstName} {lastName}",
+					"icon": {
+						"src": "{photo}"
+					}
 				},
 				"content": {
 					"groups": [
@@ -43,6 +82,9 @@ sap.ui.define([
 							"title": "Contact Details",
 							"items": [
 								{
+									"icon": {
+										"src": "{photo}"
+									},
 									"label": "First name",
 									"value": "{firstName}"
 								}
@@ -63,7 +105,9 @@ sap.ui.define([
 			.then(function (oRes) {
 				// Assert
 				assert.strictEqual(oRes["sap.card"].header.title, "Donna Moore", "Binding is resolved in the header");
+				assert.strictEqual(oRes["sap.card"].header.icon.src, "test-resources/sap/ui/integration/qunit/testResources/manifestResolver/./images/Woman_avatar_01.png", "The icon paths are resolved correctly.");
 				assert.strictEqual(oRes["sap.card"].content.groups[0].items[0].value, "Donna", "Binding is resolved in the content");
+				assert.strictEqual(oRes["sap.card"].content.groups[0].items[0].icon.src, "test-resources/sap/ui/integration/qunit/testResources/manifestResolver/./images/Woman_avatar_01.png", "The icon paths are resolved correctly.");
 
 				oCard.destroy();
 			});
@@ -203,7 +247,7 @@ sap.ui.define([
 							"items": []
 						}
 					]
-				 }
+				}
 			}
 		};
 
@@ -283,7 +327,7 @@ sap.ui.define([
 				assert.strictEqual(sResolvedStatusText, "1 of 3", "Predefined translation key is correctly resolved");
 
 				var sResolvedFormattedTranslation = oRes["sap.card"].header.subTitle;
-				assert.strictEqual(sResolvedFormattedTranslation , "2 categories, 3 items", "Formatted translation from i18n file is correctly resolved");
+				assert.strictEqual(sResolvedFormattedTranslation, "2 categories, 3 items", "Formatted translation from i18n file is correctly resolved");
 
 				oCard.destroy();
 			});
@@ -340,8 +384,9 @@ sap.ui.define([
 				var oExpectedResult = {
 					"message": {
 						"type": "error",
-						"title": oResourceBundle.getText("CARD_ERROR_OCCURED"),
-						"description": "Card sap.app/id entry in the manifest is mandatory There must be a 'sap.card' section in the manifest.",
+						"title": oResourceBundle.getText("CARD_ERROR_CONFIGURATION_TITLE"),
+						"description": oResourceBundle.getText("CARD_ERROR_CONFIGURATION_DESCRIPTION"),
+						"details": "Card sap.app/id entry in the manifest is mandatory There must be a 'sap.card' section in the manifest.",
 						"illustrationType": "sapIllus-SimpleError",
 						"illustrationSize": "Spot"
 					}
@@ -356,8 +401,8 @@ sap.ui.define([
 
 	QUnit.test("Resolve with unreachable manifest", function (assert) {
 		// Arrange
-			var oCard = new SkeletonCard();
-			oCard.setManifest("UnreachableManifestUrl");
+		var oCard = new SkeletonCard();
+		oCard.setManifest("UnreachableManifestUrl");
 
 		// Act
 		return ManifestResolver.resolveCard(oCard)
@@ -372,19 +417,81 @@ sap.ui.define([
 	QUnit.test("Resolve with data loading error", function (assert) {
 		// Arrange
 		var oManifest = {
+			"sap.app": {
+				"id": "manifestResolver.test.card.errorData",
+				"type": "card"
+			},
+			"sap.card": {
+				"type": "Object",
+				"data": {
+					"request": {
+						"url": "./wrong_url.json"
+					}
+				},
+				"header": {
+					"title": "Error in data loading"
+				},
+				"content": {
+					"groups": [
+						{
+							"title": "Contact Details",
+							"items": [
+								{
+									"label": "First name",
+									"value": "{firstName}"
+								}
+							]
+						}
+					]
+				}
+			}
+		},
+			oCard = new SkeletonCard({
+				manifest: oManifest,
+				baseUrl: "test-resources/sap/ui/integration/qunit/testResources/manifestResolver/"
+			}),
+			oResourceBundle = Core.getLibraryResourceBundle("sap.ui.integration");
+
+		// Act
+		return ManifestResolver.resolveCard(oCard)
+			.then(function (oRes) {
+				var oExpectedResult = {
+					"message": {
+						"type": "error",
+						"title": "404 " + oResourceBundle.getText("CARD_ERROR_REQUEST_NOTFOUND_TITLE"),
+						"illustrationType": "sapIllus-PageNotFound",
+						"illustrationSize": "Auto",
+						"description": oResourceBundle.getText("CARD_ERROR_REQUEST_DESCRIPTION")
+					}
+				},
+					oResult = oRes["sap.card"].content;
+
+				delete oResult.message.details;
+
+				// Assert
+				assert.deepEqual(oResult, oExpectedResult, "The content contains a message when there is error with data loading.");
+
+				oCard.destroy();
+			});
+	});
+
+	QUnit.test("Resolve with syntax error in data provider", function (assert) {
+		// Arrange
+		var oManifest = {
 				"sap.app": {
-					"id": "manifestResolver.test.card.errorData",
+					"id": "manifestResolver.test.card.errorDataSyntax",
 					"type": "card"
 				},
 				"sap.card": {
 					"type": "Object",
+					"extension": "./extensions/ExtensionSimulateFetchError",
 					"data": {
 						"request": {
 							"url": "./wrong_url.json"
 						}
 					},
 					"header": {
-						"title": "Error in data loading"
+						"title": "Syntax Error in Data Provider"
 					},
 					"content": {
 						"groups": [
@@ -403,24 +510,27 @@ sap.ui.define([
 			},
 			oCard = new SkeletonCard({
 				manifest: oManifest,
-				baseUrl: "test-resources/sap/ui/integration/qunit/testResources/manifestResolver/"
-			}),
-			oResourceBundle = Core.getLibraryResourceBundle("sap.ui.integration");
+				baseUrl: "test-resources/sap/ui/integration/qunit/testResources/"
+			});
 
 		// Act
 		return ManifestResolver.resolveCard(oCard)
 			.then(function (oRes) {
 				var oExpectedResult = {
-					"message": {
-						"type": "error",
-						"title": oResourceBundle.getText("CARD_DATA_LOAD_ERROR"),
-						"illustrationType": "sapIllus-UnableToLoad",
-						"illustrationSize": "Auto"
-					}
-				};
+						"message": {
+							"type": "error",
+							"title": "An error occurred",
+							"illustrationType": "sapIllus-ErrorScreen",
+							"illustrationSize": "Auto",
+							"description": "Error: Simulated fetch error"
+						}
+					},
+					oResult = oRes["sap.card"].content;
+
+				delete oResult.message.details;
 
 				// Assert
-				assert.deepEqual(oRes["sap.card"].content, oExpectedResult, "The content contains a message when there is error with data loading.");
+				assert.deepEqual(oResult, oExpectedResult, "The content contains a message with correct error description.");
 
 				oCard.destroy();
 			});
@@ -450,9 +560,9 @@ sap.ui.define([
 			}
 		};
 		var oCard = new SkeletonCard({
-				manifest: oManifest,
-				baseUrl: "test-resources/sap/ui/integration/qunit/testResources/manifestResolver/"
-			});
+			manifest: oManifest,
+			baseUrl: "test-resources/sap/ui/integration/qunit/testResources/manifestResolver/"
+		});
 
 		// Act
 		return ManifestResolver.resolveCard(oCard)
@@ -565,15 +675,20 @@ sap.ui.define([
 					"data": {
 						"json": [
 							{
-								"Name": "Comfort Easy"
+								"Name": "Comfort Easy",
+								"Icon": "../../images/Woman_avatar_01.png"
 							},
 							{
-								"Name": "ITelO Vault"
+								"Name": "ITelO Vault",
+								"Icon": "../../images/Woman_avatar_02.png"
 							}
 						]
 					},
 					"item": {
-						"title": "{Name}"
+						"title": "{Name}",
+						"icon": {
+							"src": "{Icon}"
+						}
 					}
 				}
 			}
@@ -592,10 +707,16 @@ sap.ui.define([
 						{
 							"items": [
 								{
-									"title": "Comfort Easy"
+									"title": "Comfort Easy",
+									"icon": {
+										"src": "test-resources/sap/ui/integration/qunit/testResources/manifestResolver/../../images/Woman_avatar_01.png"
+									}
 								},
 								{
-									"title": "ITelO Vault"
+									"title": "ITelO Vault",
+									"icon": {
+										"src": "test-resources/sap/ui/integration/qunit/testResources/manifestResolver/../../images/Woman_avatar_02.png"
+									}
 								}
 							]
 						}
@@ -611,22 +732,22 @@ sap.ui.define([
 
 	QUnit.test("List item template - 'no data' ", function (assert) {
 		var oManifest = {
-				"sap.app": {
-					"id": "manifestResolver.test.card",
-					"type": "card"
-				},
-				"sap.card": {
-					"type": "List",
-					"content": {
-						"data": {
-							"json": []
-						},
-						"item": {
-							"title": "{Name}"
-						}
+			"sap.app": {
+				"id": "manifestResolver.test.card",
+				"type": "card"
+			},
+			"sap.card": {
+				"type": "List",
+				"content": {
+					"data": {
+						"json": []
+					},
+					"item": {
+						"title": "{Name}"
 					}
 				}
-			},
+			}
+		},
 			oCard = new SkeletonCard({
 				manifest: oManifest,
 				baseUrl: "test-resources/sap/ui/integration/qunit/testResources/manifestResolver/"
@@ -638,10 +759,10 @@ sap.ui.define([
 			.then(function (oRes) {
 				var oExpectedResult = {
 					"message": {
+						"type": "noData",
 						"illustrationSize": "Auto",
-						"illustrationType": "sapIllus-NoData",
-						"title": oResourceBundle.getText("CARD_NO_ITEMS_ERROR_LISTS"),
-						"type": "noData"
+						"illustrationType": "sapIllus-NoEntries",
+						"title": oResourceBundle.getText("CARD_NO_ITEMS_ERROR_LISTS")
 					}
 				};
 
@@ -1219,37 +1340,37 @@ sap.ui.define([
 
 	QUnit.test("List with pagination", function (assert) {
 		var oManifest = {
-				"sap.app": {
-					"id": "manifestResolver.test.card",
-					"type": "card"
-				},
-				"sap.card": {
-					"type": "List",
-					"content": {
-						"data": {
-							"json": [
-								{
-									"Name": "Comfort Easy"
-								},
-								{
-									"Name": "ITelO Vault"
-								},
-								{
-									"Name": "Product 3"
-								}
-							]
-						},
-						"item": {
-							"title": "{Name}"
-						}
+			"sap.app": {
+				"id": "manifestResolver.test.card",
+				"type": "card"
+			},
+			"sap.card": {
+				"type": "List",
+				"content": {
+					"data": {
+						"json": [
+							{
+								"Name": "Comfort Easy"
+							},
+							{
+								"Name": "ITelO Vault"
+							},
+							{
+								"Name": "Product 3"
+							}
+						]
 					},
-					"footer": {
-						"paginator": {
-							"pageSize": 2
-						}
+					"item": {
+						"title": "{Name}"
+					}
+				},
+				"footer": {
+					"paginator": {
+						"pageSize": 2
 					}
 				}
-			},
+			}
+		},
 			oExpectedItemsPage1 = [
 				{
 					"title": "Comfort Easy"
@@ -1323,17 +1444,22 @@ sap.ui.define([
 						"json": [
 							{
 								"FirstName": "Donna",
-								"LastName": "Moore"
+								"LastName": "Moore",
+								"Icon": "../../images/Woman_avatar_01.png"
 							},
 							{
 								"FirstName": "John",
-								"LastName": "Miller"
+								"LastName": "Miller",
+								"Icon": "../../images/Woman_avatar_02.png"
 							}
 						]
 					},
 					"row": {
 						"columns": [
 							{
+								"icon": {
+									"src": "{Icon}"
+								},
 								"title": "First Name",
 								"value": "{FirstName}",
 								"width": "18%",
@@ -1378,6 +1504,9 @@ sap.ui.define([
 								{
 									"columns": [
 										{
+											"icon": {
+												"src": "test-resources/sap/ui/integration/qunit/testResources/manifestResolver/../../images/Woman_avatar_01.png"
+											},
 											"value": "Donna"
 										},
 										{
@@ -1388,6 +1517,10 @@ sap.ui.define([
 								{
 									"columns": [
 										{
+
+											"icon": {
+												"src": "test-resources/sap/ui/integration/qunit/testResources/manifestResolver/../../images/Woman_avatar_02.png"
+											},
 											"value": "John"
 										},
 										{
@@ -1409,27 +1542,27 @@ sap.ui.define([
 
 	QUnit.test("Table item template - 'no data' ", function (assert) {
 		var oManifest = {
-				"sap.app": {
-					"id": "manifestResolver.test.card",
-					"type": "card"
-				},
-				"sap.card": {
-					"type": "Table",
-					"content": {
-						"data": {
-							"json": []
-						},
-						"row": {
-							"columns": [
-								{
-									"value": "{{value}}",
-									"title": "Title"
-								}
-							]
-						}
+			"sap.app": {
+				"id": "manifestResolver.test.card",
+				"type": "card"
+			},
+			"sap.card": {
+				"type": "Table",
+				"content": {
+					"data": {
+						"json": []
+					},
+					"row": {
+						"columns": [
+							{
+								"value": "{{value}}",
+								"title": "Title"
+							}
+						]
 					}
 				}
-			},
+			}
+		},
 			oCard = new SkeletonCard({
 				manifest: oManifest,
 				baseUrl: "test-resources/sap/ui/integration/qunit/testResources/manifestResolver/"
@@ -1441,10 +1574,10 @@ sap.ui.define([
 			.then(function (oRes) {
 				var oExpectedResult = {
 					"message": {
+						"type": "noData",
 						"illustrationSize": "Auto",
 						"illustrationType": "sapIllus-NoEntries",
-						"title": oResourceBundle.getText("CARD_NO_ITEMS_ERROR_LISTS"),
-						"type": "noData"
+						"title": oResourceBundle.getText("CARD_NO_ITEMS_ERROR_LISTS")
 					}
 				};
 
@@ -1807,42 +1940,45 @@ sap.ui.define([
 			});
 	});
 
-	QUnit.test("Invalid actions binding", function (assert) {
+	QUnit.test("Actions binding with stringified json", function (assert) {
 		// Arrange
-		var oManifest = {
-			"sap.app": {
-				"id": "sap.ui.integration.test"
-			},
-			"sap.card": {
-				"type": "List",
-				"extension": "./extensions/Extension1",
-				"data": {
-					"extension": {
-						"method": "getData"
-					}
+		var sExpectedValue1 = "{\"presentationVariant\":{\"SortOrder\":[{\"Property\":\"BillingDocDateYearMonth\",\"Descending\":false}]},\"sensitiveProps\":{}}",
+			sExpectedValue2 = "{\"value\":\"Berlin\",\"presentationVariant\":{\"SortOrder\":[{\"Property\":\"BillingDocDateYearMonth\",\"Descending\":false}]},\"sensitiveProps\":{}}",
+			oManifest = {
+				"sap.app": {
+					"id": "sap.ui.integration.test"
 				},
-				"configuration": {
-					"parameters": {
-						"state": {
-							"value": "{\"presentationVariant\":{\"SortOrder\":[{\"Property\":\"BillingDocDateYearMonth\",\"Descending\":false}]},\"sensitiveProps\":{}}"
+				"sap.card": {
+					"type": "List",
+					"extension": "./extensions/Extension1",
+					"data": {
+						"extension": {
+							"method": "getData"
+						}
+					},
+					"configuration": {
+						"parameters": {
+							"state": {
+								"value": "{\"presentationVariant\":{\"SortOrder\":[{\"Property\":\"BillingDocDateYearMonth\",\"Descending\":false}]},\"sensitiveProps\":{}}"
+							}
+						}
+					},
+					"content": {
+						"item": {
+							"title": "{= extension.formatters.toUpperCase(${city}) }",
+							"actions": [
+								{
+									"type": "Navigation",
+									"parameters": {
+										"value1": "{parameters>/state/value}",
+										"value2": "{= extension.formatters.stringifiedJsonSample(${city}) }"
+									}
+								}
+							]
 						}
 					}
-				},
-				"content": {
-					"item": {
-						"title": "{= extension.formatters.toUpperCase(${city}) }",
-						"actions": [
-							{
-								"type": "Navigation",
-								"parameters": {
-									"title": "{= extension.formatters.toUpperCase(${parameters>/state/value}) }"
-								}
-							}
-						]
-					}
 				}
-			}
-		};
+			};
 
 		var oCard = new SkeletonCard({
 			baseUrl: "test-resources/sap/ui/integration/qunit/testResources/",
@@ -1852,8 +1988,12 @@ sap.ui.define([
 		// Act
 		return ManifestResolver.resolveCard(oCard)
 			.then(function (oRes) {
+				var oAction = oRes["sap.card"].content.groups[0].items[0].actions[0],
+					oParams = oAction.parameters;
+
 				// Assert
-				assert.strictEqual(oRes["sap.card"].content.message.type, "error", "an error message is returned");
+				assert.strictEqual(oParams.value1, sExpectedValue1, "Action parameter from parameters is resolved correctly.");
+				assert.strictEqual(oParams.value2, sExpectedValue2, "Action parameter from extension formatter is resolved correctly.");
 				oCard.destroy();
 			});
 	});
@@ -1882,42 +2022,42 @@ sap.ui.define([
 				},
 				"content": {
 					"groups": [{
-							"title": "{{contactDetails}}",
-							"items": [
-								{
-									"label": "Icons",
-									"type": "IconGroup",
-									"path": "team",
-									"template": {
-										"icon": {
-											"src": "{imageUrl}",
-											"initials": "{= format.initials(${firstName} + ' ' + ${lastName}) }"
-										},
-										"actions": [{
-											"type": "Navigation",
-											"parameters": {
-												"url": "{imageUrl}"
-											}
-										}]
-									}
-								},
-								{
-									"label": "Buttons",
-									"type": "ButtonGroup",
-									"path": "attachments",
-									"template": {
-										"icon": "{icon}",
-										"text": "{title}",
-										"actions": [{
-											"type": "Navigation",
-											"parameters": {
-												"url": "{url}"
-											}
-										}]
-									}
+						"title": "{{contactDetails}}",
+						"items": [
+							{
+								"label": "Icons",
+								"type": "IconGroup",
+								"path": "team",
+								"template": {
+									"icon": {
+										"src": "{imageUrl}",
+										"initials": "{= format.initials(${firstName} + ' ' + ${lastName}) }"
+									},
+									"actions": [{
+										"type": "Navigation",
+										"parameters": {
+											"url": "{imageUrl}"
+										}
+									}]
 								}
-							]
-						}
+							},
+							{
+								"label": "Buttons",
+								"type": "ButtonGroup",
+								"path": "attachments",
+								"template": {
+									"icon": "{icon}",
+									"text": "{title}",
+									"actions": [{
+										"type": "Navigation",
+										"parameters": {
+											"url": "{url}"
+										}
+									}]
+								}
+							}
+						]
+					}
 					]
 				}
 			}
@@ -1935,25 +2075,25 @@ sap.ui.define([
 					"label": "Buttons",
 					"type": "ButtonGroup",
 					"items": [{
-							"icon": "sap-icon://excel-attachment",
-							"text": "Schedule",
-							"actions": [{
-								"type": "Navigation",
-								"parameters": {
-									"url": "./somefile.csv"
-								}
-							}]
-						},
-						{
-							"icon": "sap-icon://attachment",
-							"text": "Attachment 2",
-							"actions": [{
-								"type": "Navigation",
-								"parameters": {
-									"url": "./somefile.csv"
-								}
-							}]
-						}
+						"icon": "sap-icon://excel-attachment",
+						"text": "Schedule",
+						"actions": [{
+							"type": "Navigation",
+							"parameters": {
+								"url": "./somefile.csv"
+							}
+						}]
+					},
+					{
+						"icon": "sap-icon://attachment",
+						"text": "Attachment 2",
+						"actions": [{
+							"type": "Navigation",
+							"parameters": {
+								"url": "./somefile.csv"
+							}
+						}]
+					}
 					]
 				},
 					oExpectedIconGroup = {
@@ -1962,7 +2102,7 @@ sap.ui.define([
 						"items": [
 							{
 								"icon": {
-									"src": "../../images/Woman_avatar_01.png",
+									"src": "test-resources/sap/ui/integration/qunit/testResources/manifestResolver/../../images/Woman_avatar_01.png",
 									"initials": "EE"
 								},
 								"actions": [{
@@ -1982,7 +2122,7 @@ sap.ui.define([
 								}]
 							}
 						]
-				};
+					};
 				// Assert
 				assert.deepEqual(oRes["sap.card"].content.groups[0].items[0], oExpectedIconGroup);
 				assert.deepEqual(oRes["sap.card"].content.groups[0].items[1], oExpectedButtonGroup);
@@ -2058,5 +2198,605 @@ sap.ui.define([
 
 				oCard.destroy();
 			});
+	});
+
+	QUnit.module("Resolving form elements");
+
+	QUnit.test("ComboBox with 'selectedKey' and no 'value'", function (assert) {
+		// Arrange
+		var oManifest = createManifestWithFormElement({
+			"id": "activity",
+			"label": "Activity",
+			"type": "ComboBox",
+			"selectedKey": "{/activityTypeSelectedKey}",
+			"required": true,
+			"item": {
+				"path": "/activityTypes",
+				"template": {
+					"key": "{id}",
+					"title": "{title}"
+				}
+			},
+			"validations": [
+				{
+					"required": true,
+					"message": "Value is required"
+				},
+				{
+					"restrictToPredefinedOptions": true
+				}
+			]
+		});
+
+		var oCard = new SkeletonCard({
+			manifest: oManifest,
+			baseUrl: "test-resources/sap/ui/integration/qunit/testResources/manifestResolver/"
+		});
+
+		// Act
+		return ManifestResolver.resolveCard(oCard)
+			.then(function (oRes) {
+				var oExpectedResult = {
+					"groups": [
+						{
+							"items": [
+								{
+									"id": "activity",
+									"label": "Activity",
+									"type": "ComboBox",
+									"value": "Processing",
+									"selectedKey": "activity1",
+									"required": true,
+									"items": [
+										{
+											"key": "activity1",
+											"title": "Processing"
+										},
+										{
+											"key": "activity2",
+											"title": "Monitoring"
+										}
+									],
+									"validations": [
+										{
+											"required": true,
+											"message": "Value is required"
+										},
+										{
+											"restrictToPredefinedOptions": true
+										}
+									]
+								}
+							]
+						}
+					]
+				};
+
+				// Assert
+				assert.deepEqual(oRes["sap.card"].content, oExpectedResult, "Form elements should be resolved correctly.");
+
+				oCard.destroy();
+			});
+	});
+
+	QUnit.test("ComboBox with 'value' only", function (assert) {
+		// Arrange
+		var oManifest = createManifestWithFormElement({
+			"id": "activity",
+			"label": "Activity",
+			"type": "ComboBox",
+			"value": "option 1",
+			"required": true
+		});
+
+		var oCard = new SkeletonCard({
+			manifest: oManifest,
+			baseUrl: "test-resources/sap/ui/integration/qunit/testResources/manifestResolver/"
+		});
+
+		// Act
+		return ManifestResolver.resolveCard(oCard)
+			.then(function (oRes) {
+				var oExpectedResult = {
+					"groups": [
+						{
+							"items": [
+								{
+									"id": "activity",
+									"label": "Activity",
+									"type": "ComboBox",
+									"value": "option 1",
+									"required": true,
+									"selectedKey": ""
+								}
+							]
+						}
+					]
+				};
+
+				// Assert
+				assert.deepEqual(oRes["sap.card"].content, oExpectedResult, "Form elements should be resolved correctly.");
+
+				oCard.destroy();
+			});
+	});
+
+	function assertObjectGroupItemResolvesTo(assert, oCard, oExpectedResult) {
+		return ManifestResolver.resolveCard(oCard)
+			.then(function (oRes) {
+				assert.deepEqual(oRes["sap.card"].content, oExpectedResult, "Resolved form element contains valueState.");
+			});
+	}
+
+	QUnit.module("Using Card#setFormValues API");
+
+	QUnit.test("Input: 'valueState' is resolved", function (assert) {
+		var done = assert.async(),
+			oManifest = createManifestWithFormElement({
+				"id": "i1",
+				"label": "Label",
+				"type": "Input",
+				"value": "a",
+				"validations": [
+					{
+						"required": true
+					},
+					{
+						"minLength": 30,
+						"message": "warning message",
+						"type": "Warning"
+					}
+				]
+			});
+
+		var oCard = new SkeletonCard({
+			manifest: oManifest
+		});
+
+		// Assert
+		var fnAssert = function () {
+			return assertObjectGroupItemResolvesTo(assert, oCard, {
+				"groups": [
+					{
+						"items": [
+							{
+								"id": "i1",
+								"label": "Label",
+								"type": "Input",
+								"value": "short text",
+								"valueState": {
+									"message": "warning message",
+									"type": "Warning"
+								},
+								"validations": [
+									{
+										"required": true
+									},
+									{
+										"minLength": 30,
+										"message": "warning message",
+										"type": "Warning"
+									}
+								]
+							}
+						]
+					}
+				]
+			});
+		};
+
+		// Cleanup
+		var fnCleanup = function () {
+			oCard.destroy();
+			done();
+		};
+
+		oCard.resolveManifest().then(function () {
+			oCard.attachStateChanged(function () {
+				fnAssert().then(fnCleanup);
+			});
+
+			// Act
+			oCard.setFormValues([
+				{
+					"id": "i1",
+					"value": "short text"
+				}
+			]);
+		});
+	});
+
+	QUnit.test("TextArea: 'valueState' is resolved", function (assert) {
+		var done = assert.async(),
+			oManifest = createManifestWithFormElement({
+				"id": "i1",
+				"label": "Label",
+				"rows": 2,
+				"type": "TextArea",
+				"validations": [
+					{
+						"required": true,
+						"message": "error message",
+						"type": "Error"
+					}
+				]
+			});
+
+		var oCard = new SkeletonCard({
+			manifest: oManifest
+		});
+
+		// Assert
+		var fnAssert = function () {
+			return assertObjectGroupItemResolvesTo(assert, oCard, {
+				"groups": [
+					{
+						"items": [
+							{
+								"id": "i1",
+								"label": "Label",
+								"rows": 2,
+								"type": "TextArea",
+								"value": "",
+								"valueState": {
+									"message": "error message",
+									"type": "Error"
+								},
+								"validations": [
+									{
+										"required": true,
+										"message": "error message",
+										"type": "Error"
+
+									}
+								]
+							}
+						]
+					}
+				]
+			});
+		};
+
+		// Cleanup
+		var fnCleanup = function () {
+			oCard.destroy();
+			done();
+		};
+
+		oCard.resolveManifest().then(function () {
+			oCard.attachStateChanged(function () {
+				fnAssert().then(fnCleanup);
+			});
+
+			// Act
+			oCard.setFormValues([
+				{
+					"id": "i1",
+					"value": ""
+				}
+			]);
+		});
+	});
+
+	QUnit.test("ComboBox: 'valueState' is resolved (invalid data set through 'value')", function (assert) {
+		var done = assert.async(),
+			oManifest = createManifestWithFormElement({
+				"id": "i1",
+				"label": "Label",
+				"type": "ComboBox",
+				"validations": [
+					{
+						"required": true,
+						"message": "error message",
+						"type": "Error"
+					},
+					{
+						"restrictToPredefinedOptions": true
+					}
+				]
+			});
+
+		var oCard = new SkeletonCard({
+			manifest: oManifest
+		});
+
+		// Assert
+		var fnAssert = function () {
+			return assertObjectGroupItemResolvesTo(assert, oCard, {
+				"groups": [
+					{
+						"items": [
+							{
+								"id": "i1",
+								"label": "Label",
+								"type": "ComboBox",
+								"value": "",
+								"selectedKey": "",
+								"valueState": {
+									"message": "error message",
+									"type": "Error"
+								},
+								"validations": [
+									{
+										"required": true,
+										"message": "error message",
+										"type": "Error"
+									},
+									{
+										"restrictToPredefinedOptions": true
+									}
+								]
+							}
+						]
+					}
+				]
+			});
+		};
+
+		// Cleanup
+		var fnCleanup = function () {
+			oCard.destroy();
+			done();
+		};
+
+		oCard.resolveManifest().then(function () {
+			oCard.attachStateChanged(function () {
+				fnAssert().then(fnCleanup);
+			});
+
+			// Act
+			oCard.setFormValues([
+				{
+					"id": "i1",
+					"value": ""
+				}
+			]);
+		});
+
+	});
+
+	QUnit.test("ComboBox: 'valueState' is resolved (invalid data set through 'selectedKey')", function (assert) {
+		var done = assert.async(),
+			oManifest = createManifestWithFormElement({
+				"id": "i1",
+				"label": "Label",
+				"type": "ComboBox",
+				"selectedKey": "{/activityTypeSelectedKey}",
+				"item": {
+					"path": "/activityTypes",
+					"template": {
+						"key": "{id}",
+						"title": "{title}"
+					}
+				},
+				"validations": [
+					{
+						"required": true,
+						"message": "error message",
+						"type": "Error"
+					}
+				]
+			});
+
+		var oCard = new SkeletonCard({
+			manifest: oManifest
+		});
+
+		// Assert
+		var fnAssert = function () {
+			return assertObjectGroupItemResolvesTo(assert, oCard, {
+				"groups": [
+					{
+						"items": [
+							{
+								"id": "i1",
+								"label": "Label",
+								"type": "ComboBox",
+								"value": "",
+								"selectedKey": "missing",
+								"items": [
+									{
+										"key": "activity1",
+										"title": "Processing"
+									},
+									{
+										"key": "activity2",
+										"title": "Monitoring"
+									}
+								],
+								"valueState": {
+									"message": "error message",
+									"type": "Error"
+								},
+								"validations": [
+									{
+										"required": true,
+										"message": "error message",
+										"type": "Error"
+									}
+								]
+							}
+						]
+					}
+				]
+			});
+		};
+
+		// Cleanup
+		var fnCleanup = function () {
+			oCard.destroy();
+			done();
+		};
+
+		oCard.resolveManifest().then(function () {
+			oCard.attachStateChanged(function () {
+				fnAssert().then(fnCleanup);
+			});
+
+			// Act
+			oCard.setFormValues([
+				{
+					"id": "i1",
+					"key": "missing"
+				}
+			]);
+		});
+	});
+
+	QUnit.test("ComboBox: 'valueState' is resolved (valid data)", function (assert) {
+		var done = assert.async(),
+			oManifest = createManifestWithFormElement({
+				"id": "i1",
+				"label": "Label",
+				"type": "ComboBox",
+				"selectedKey": "{/activityTypeSelectedKey}",
+				"item": {
+					"path": "/activityTypes",
+					"template": {
+						"key": "{id}",
+						"title": "{title}"
+					}
+				},
+				"validations": [
+					{
+						"required": true,
+						"message": "error message",
+						"type": "Error"
+					}
+				]
+			});
+
+		var oCard = new SkeletonCard({
+			manifest: oManifest
+		});
+
+		// Assert
+		var fnAssert = function () {
+			return assertObjectGroupItemResolvesTo(assert, oCard, {
+				"groups": [
+					{
+						"items": [
+							{
+								"id": "i1",
+								"label": "Label",
+								"type": "ComboBox",
+								"value": "Monitoring",
+								"selectedKey": "activity2",
+								"items": [
+									{
+										"key": "activity1",
+										"title": "Processing"
+									},
+									{
+										"key": "activity2",
+										"title": "Monitoring"
+									}
+								],
+								"validations": [
+									{
+										"required": true,
+										"message": "error message",
+										"type": "Error"
+									}
+								]
+							}
+						]
+					}
+				]
+			});
+		};
+
+		// Cleanup
+		var fnCleanup = function () {
+			oCard.destroy();
+			done();
+		};
+
+		oCard.resolveManifest().then(function () {
+			oCard.attachStateChanged(function () {
+				fnAssert().then(fnCleanup);
+			});
+
+			// Act
+			oCard.setFormValues([
+				{
+					"id": "i1",
+					"key": "activity2"
+				}
+			]);
+		});
+	});
+
+	QUnit.module("Resolve show/hide message");
+
+	QUnit.test("Show message and hide message is working", function (assert) {
+		var done = assert.async(),
+			oCard = new SkeletonCard({
+				baseUrl: "test-resources/sap/ui/integration/qunit/testResources/manifestResolver/",
+				manifest: {
+					"sap.app": {
+						"id": "manifestResolver.test.card.showMessage",
+						"type": "card",
+						"i18n": {
+							"bundleUrl": "i18n/i18n.properties",
+							"supportedLocales": [""],
+							"fallbackLocale": ""
+						}
+					},
+					"sap.card": {
+						"type": "Object",
+						"header": {
+							"title": "Test show message"
+						},
+						"content": {
+							"groups": [
+								{
+									"items": []
+								}
+							]
+						}
+					}
+				}
+			}),
+			oExpectedMessage = {
+				text: "Test message.",
+				type: "Error"
+			};
+
+		var fnCheckMessage = function () {
+			return oCard.resolveManifest().then(function (oResolvedManifest) {
+				var oMessage = oResolvedManifest["sap.card"].messageStrip;
+				assert.deepEqual(oMessage, oExpectedMessage, "Message strip is resolved as expected.");
+			});
+		};
+
+		var fnCheckMessageIsHidden = function () {
+			return oCard.resolveManifest().then(function (oResolvedManifest) {
+				var oMessage = oResolvedManifest["sap.card"].messageStrip;
+				assert.notOk(oMessage, "Message strip is hidden.");
+				oCard.destroy();
+				done();
+			});
+		};
+
+		oCard.attachEventOnce("stateChanged", function () {
+			oCard.attachEventOnce("stateChanged", function () {
+				// Assert - show message
+				fnCheckMessage().then(function () {
+					// Act - hide message
+					oCard.hideMessage();
+				});
+
+				oCard.attachEventOnce("stateChanged", function () {
+					// Assert - hide message
+					fnCheckMessageIsHidden();
+				});
+			});
+
+			// Act - show message
+			oCard.showMessage("{i18n>testMessage}", "Error");
+		});
+
+		oCard.startManifestProcessing();
 	});
 });

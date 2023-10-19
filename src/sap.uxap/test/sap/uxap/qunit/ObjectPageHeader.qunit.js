@@ -228,8 +228,8 @@ function (jQuery, Core, Element, IconPool, ObjectPageLayout, ObjectPageHeader, O
 		assert.strictEqual(this._oPage.getHeaderTitle().getAggregation("_objectImage").getMode(), "Background", "image is in Background mode");
 	});
 
-	QUnit.test("Size of image is 'contain'", function (assert) {
-		assert.strictEqual(this._oPage.getHeaderTitle().getAggregation("_objectImage").getBackgroundSize(), "contain", "size of image is 'contain'");
+	QUnit.test("Size of image is 'cover'", function (assert) {
+		assert.strictEqual(this._oPage.getHeaderTitle().getAggregation("_objectImage").getBackgroundSize(), "cover", "size of image is 'cover'");
 	});
 
 	QUnit.test("Position of image is 'center'", function (assert) {
@@ -441,7 +441,7 @@ function (jQuery, Core, Element, IconPool, ObjectPageLayout, ObjectPageHeader, O
 
 
 	/**
-	 * @deprecated as of version 1.50, the <code>breadCrumbsLinks</code> aggregation has been replaced with the <code>breadcrumbs</code> aggregation
+	 * @deprecated As of version 1.50, the <code>breadCrumbsLinks</code> aggregation has been replaced with the <code>breadcrumbs</code> aggregation
 	 */
 	QUnit.module("Breadcrumbs API", {
 		beforeEach: function (assert) {
@@ -462,40 +462,42 @@ function (jQuery, Core, Element, IconPool, ObjectPageLayout, ObjectPageHeader, O
 			this._oHeader = null;
 		}
 	});
-
+	/**
+	 * @deprecated As of version 1.50, <code>breadCrumbsLinks</code> has been deprecated
+	 */
 	QUnit.test("Legacy breadCrumbsLinks: Trail of links in the ObjectPageHeader should dynamically update", function (assert) {
-		var iInitialLinksCount = this._oHeader.getBreadCrumbsLinks().length,
+		var iInitialLinksCount = this._oHeader.getBreadcrumbs().getLinks().length,
 			oNewLink = oFactory.getLink();
 
-		this._oHeader.addBreadCrumbLink(oNewLink);
+		this._oHeader.getBreadcrumbs().addLink(oNewLink);
 
-		assert.strictEqual(this._oHeader.getBreadCrumbsLinks().length, iInitialLinksCount + 1,
+		assert.strictEqual(this._oHeader.getBreadcrumbs().getLinks().length, iInitialLinksCount + 1,
 			"The link was added to the breadcrumbs");
 
-		assert.strictEqual(this._oHeader.getBreadCrumbsLinks()[iInitialLinksCount].sId, oNewLink.sId,
+		assert.strictEqual(this._oHeader.getBreadcrumbs().getLinks()[iInitialLinksCount].sId, oNewLink.sId,
 			"The correct link was added to the breadcrumbs");
 
-		assert.strictEqual(this._oHeader.indexOfBreadCrumbLink(oNewLink), iInitialLinksCount);
+		assert.strictEqual(this._oHeader.getBreadcrumbs().getLinks().indexOf(oNewLink), iInitialLinksCount);
 
-		this._oHeader.removeBreadCrumbLink(oNewLink);
+		this._oHeader.getBreadcrumbs().removeLink(oNewLink);
 
-		assert.strictEqual(this._oHeader.getBreadCrumbsLinks().length, iInitialLinksCount,
+		assert.strictEqual(this._oHeader.getBreadcrumbs().getLinks().length, iInitialLinksCount,
 			"The link was removed from the breadcrumbs");
 
-		assert.strictEqual(this._oHeader.getBreadCrumbsLinks().indexOf(oNewLink), -1,
+		assert.strictEqual(this._oHeader.getBreadcrumbs().getLinks().indexOf(oNewLink), -1,
 			"The link was removed from the breadcrumbs");
 
-		this._oHeader.removeAllBreadCrumbsLinks();
+		this._oHeader.getBreadcrumbs().removeAllLinks();
 
-		assert.ok(!this._oHeader.getBreadCrumbsLinks().length,
+		assert.ok(!this._oHeader.getBreadcrumbs().getLinks().length,
 			"There are no breadcrumb links left");
 
-		this._oHeader.insertBreadCrumbLink(oNewLink, 0);
+		this._oHeader.getBreadcrumbs().insertLink(oNewLink, 0);
 
-		assert.strictEqual(this._oHeader.getBreadCrumbsLinks()[0].sId, oNewLink.sId,
+		assert.strictEqual(this._oHeader.getBreadcrumbs().getLinks()[0].sId, oNewLink.sId,
 			"The link was added to in the correct position in the breadcrumb");
 
-		this._oHeader.destroyBreadCrumbsLinks();
+		this._oHeader.getBreadcrumbs().destroyLinks();
 
 		assert.ok(oNewLink.bIsDestroyed, "The breadcrumbs are destroyed");
 	});
@@ -783,8 +785,8 @@ function (jQuery, Core, Element, IconPool, ObjectPageLayout, ObjectPageHeader, O
 		// Act: search element within the clone
 		$HeaderClone_identifier = oHeader._findById($HeaderClone, "identifierLine");
 
-		assert.ok(jQuery.contains($HeaderClone.get(0), $HeaderClone_identifier.get(0)), "returned element is part of clone");
-		assert.ok(!jQuery.contains(oHeader.getDomRef(), $HeaderClone_identifier.get(0)), "returned element is not part of the original element");
+		assert.ok($HeaderClone.get(0).contains($HeaderClone_identifier.get(0)), "returned element is part of clone");
+		assert.ok(!oHeader.getDomRef().contains($HeaderClone_identifier.get(0)), 'returned element is not part of the original element');
 	});
 
 	QUnit.test("_findById can find id with special characters", function (assert) {
@@ -804,7 +806,7 @@ function (jQuery, Core, Element, IconPool, ObjectPageLayout, ObjectPageHeader, O
 		// Act: search element within the context
 		$HeaderClone_action = oHeader._findById($HeaderClone, "my.action");
 
-		assert.ok(jQuery.contains($HeaderClone.get(0), $HeaderClone_action.get(0)), "returned element is part of clone");
+		assert.ok($HeaderClone.get(0) !== $HeaderClone_action.get(0) && $HeaderClone.get(0).contains($HeaderClone_action.get(0)), "returned element is part of clone");
 	});
 
 	QUnit.module("Action buttons", {
@@ -881,26 +883,30 @@ function (jQuery, Core, Element, IconPool, ObjectPageLayout, ObjectPageHeader, O
 		var oButton = new Button({
 			text : "Some button",
 			visible: false
-		});
+		}),
+		oSpy;
 
 		this._oHeader.addAction(oButton);
 
 		Core.applyChanges();
 
+		oSpy = this.spy(this._oHeader, "_adaptLayout");
 		oButton.setVisible(true);
 
 		Core.applyChanges();
 
 		assert.strictEqual(oButton._getInternalVisible(), true, "The button is visible");
 		assert.ok(this._oHeader._oOverflowButton.$().is(':hidden'), "There is no overflow button");
+		assert.ok(oSpy.called, "_adaptLayout is called, when visibility of a button is changed");
 
+		oSpy.reset();
 		oButton.setVisible(false);
 
 		Core.applyChanges();
 
 		assert.strictEqual(oButton._getInternalVisible(), false, "The button is invisible");
 		assert.ok(this._oHeader._oOverflowButton.$().is(':hidden'), "There is no overflow button");
-
+		assert.ok(oSpy.called, "_adaptLayout is called, when visibility of a button is changed");
 	});
 
 	QUnit.test("Correct hook states", function (assert) {
@@ -990,7 +996,8 @@ function (jQuery, Core, Element, IconPool, ObjectPageLayout, ObjectPageHeader, O
 
 		oHeader.addEventDelegate(oDelegate);
 		// Act: rerender the header while hidden
-		oHeader.rerender();
+		oHeader.invalidate();
+		Core.applyChanges();
 	});
 
 	QUnit.module("Breadcrumbs rendering", {
@@ -1003,6 +1010,9 @@ function (jQuery, Core, Element, IconPool, ObjectPageLayout, ObjectPageHeader, O
 				this.oHeaderView = oView;
 				this.oHeaderView.placeAt("qunit-fixture");
 				this._oHeader = Core.byId("UxAP-ObjectPageHeader--header");
+				/**
+				 * @deprecated As of version 1.50, <code>breadCrumbsLinks</code> has been deprecated
+				 */
 				this._oHeader.destroyBreadCrumbsLinks();
 				this._oHeader.destroyBreadcrumbs();
 				Core.applyChanges();
@@ -1020,7 +1030,7 @@ function (jQuery, Core, Element, IconPool, ObjectPageLayout, ObjectPageHeader, O
 	});
 
 	/**
-	 * @deprecated as of version 1.50, the <code>breadCrumbsLinks</code> aggregation has been replaced with the <code>breadcrumbs</code> aggregation
+	 * @deprecated As of version 1.50, the <code>breadCrumbsLinks</code> aggregation has been replaced with the <code>breadcrumbs</code> aggregation
 	 */
 	QUnit.test("After inserting a link in Legacy breadCrumbsLinks aggregation, the Legacy breadCrumbsLinks aggregation should be rendered", function (assert) {
 		this._oHeader.insertBreadCrumbLink(oFactory.getLink());
@@ -1037,7 +1047,7 @@ function (jQuery, Core, Element, IconPool, ObjectPageLayout, ObjectPageHeader, O
 	});
 
 	/**
-	 * @deprecated as of version 1.50, the <code>breadCrumbsLinks</code> aggregation has been replaced with the <code>breadcrumbs</code> aggregation
+	 * @deprecated As of version 1.50, the <code>breadCrumbsLinks</code> aggregation has been replaced with the <code>breadcrumbs</code> aggregation
 	 */
 	QUnit.test("Having both New breadcrumbs and Legacy breadCrumbsLinks, the New breadcrumbs aggregation should be rendered", function (assert) {
 		this._oHeader.setBreadcrumbs(new Breadcrumbs());
@@ -1049,7 +1059,7 @@ function (jQuery, Core, Element, IconPool, ObjectPageLayout, ObjectPageHeader, O
 	});
 
 	/**
-	 * @deprecated as of version 1.50, the <code>breadCrumbsLinks</code> aggregation has been replaced with the <code>breadcrumbs</code> aggregation
+	 * @deprecated As of version 1.50, the <code>breadCrumbsLinks</code> aggregation has been replaced with the <code>breadcrumbs</code> aggregation
 	 */
 	QUnit.test("Having both New breadcrumbs and Legacy breadCrumbsLinks. After destroying the New breadcrumbs, Legacy breadCrumbsLinks should be rendered", function (assert) {
 		this._oHeader.setBreadcrumbs(new Breadcrumbs());
@@ -1062,7 +1072,7 @@ function (jQuery, Core, Element, IconPool, ObjectPageLayout, ObjectPageHeader, O
 	});
 
 	/**
-	 * @deprecated as of version 1.50, the <code>breadCrumbsLinks</code> aggregation has been replaced with the <code>breadcrumbs</code> aggregation
+	 * @deprecated As of version 1.50, the <code>breadCrumbsLinks</code> aggregation has been replaced with the <code>breadcrumbs</code> aggregation
 	 */
 	QUnit.test("Having the New breadcrumbs aggregation. After adding the Legacy breadCrumbsLinks, New breadcrumbs should remain rendered", function (assert) {
 		this._oHeader.setBreadcrumbs(new Breadcrumbs());

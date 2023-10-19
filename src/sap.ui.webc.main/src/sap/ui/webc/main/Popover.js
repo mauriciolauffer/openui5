@@ -4,7 +4,7 @@
 
 // Provides control sap.ui.webc.main.Popover.
 sap.ui.define([
-	"sap/ui/webc/common/WebComponent",
+	"sap/ui/core/webc/WebComponent",
 	"./library",
 	"./thirdparty/Popover"
 ], function(WebComponent, library) {
@@ -13,6 +13,7 @@ sap.ui.define([
 	var PopoverHorizontalAlign = library.PopoverHorizontalAlign;
 	var PopoverPlacementType = library.PopoverPlacementType;
 	var PopoverVerticalAlign = library.PopoverVerticalAlign;
+	var PopupAccessibleRole = library.PopupAccessibleRole;
 
 	/**
 	 * Constructor for a new <code>Popover</code>.
@@ -20,7 +21,7 @@ sap.ui.define([
 	 * @param {string} [sId] ID for the new control, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new control
 	 *
-	 * @extends sap.ui.webc.common.WebComponent
+	 * @extends sap.ui.core.webc.WebComponent
 	 * @class
 	 *
 	 * <h3>Overview</h3>
@@ -68,7 +69,15 @@ sap.ui.define([
 				 */
 				accessibleName: {
 					type: "string",
-					defaultValue: ""
+					defaultValue: undefined
+				},
+
+				/**
+				 * Allows setting a custom role.
+				 */
+				accessibleRole: {
+					type: "sap.ui.webc.main.PopupAccessibleRole",
+					defaultValue: PopupAccessibleRole.Dialog
 				},
 
 				/**
@@ -114,15 +123,7 @@ sap.ui.define([
 				},
 
 				/**
-				 * Determines the horizontal alignment of the component. <br>
-				 * <br>
-				 * Available options are:
-				 * <ul>
-				 *     <li><code>Center</code></li>
-				 *     <li><code>Left</code></li>
-				 *     <li><code>Right</code></li>
-				 *     <li><code>Stretch</code></li>
-				 * </ul>
+				 * Determines the horizontal alignment of the component.
 				 */
 				horizontalAlign: {
 					type: "sap.ui.webc.main.PopoverHorizontalAlign",
@@ -146,15 +147,7 @@ sap.ui.define([
 				},
 
 				/**
-				 * Determines on which side the component is placed at. <br>
-				 * <br>
-				 * Available options are:
-				 * <ul>
-				 *     <li><code>Left</code></li>
-				 *     <li><code>Right</code></li>
-				 *     <li><code>Top</code></li>
-				 *     <li><code>Bottom</code></li>
-				 * </ul>
+				 * Determines on which side the component is placed at.
 				 */
 				placementType: {
 					type: "sap.ui.webc.main.PopoverPlacementType",
@@ -170,15 +163,7 @@ sap.ui.define([
 				},
 
 				/**
-				 * Determines the vertical alignment of the component. <br>
-				 * <br>
-				 * Available options are:
-				 * <ul>
-				 *     <li><code>Center</code></li>
-				 *     <li><code>Top</code></li>
-				 *     <li><code>Bottom</code></li>
-				 *     <li><code>Stretch</code></li>
-				 * </ul>
+				 * Determines the vertical alignment of the component.
 				 */
 				verticalAlign: {
 					type: "sap.ui.webc.main.PopoverVerticalAlign",
@@ -225,7 +210,7 @@ sap.ui.define([
 			associations: {
 
 				/**
-				 * Defines the opener id of the element that the popover is shown at
+				 * Defines the ID or DOM Reference of the element that the popover is shown at
 				 */
 				opener: {
 					type: "sap.ui.core.Control",
@@ -313,7 +298,7 @@ sap.ui.define([
 	 */
 
 	/**
-	 * Hides the block layer (for modal popups only)
+	 * Closes the popup.
 	 * @public
 	 * @name sap.ui.webc.main.Popover#close
 	 * @function

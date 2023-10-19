@@ -5,7 +5,7 @@ sap.ui.define([
 	"sap/ui/fl/apply/_internal/controlVariants/URLHandler",
 	"fl/performance/utils/FlexPerformanceTestUtil",
 	"sap/ui/core/mvc/XMLView",
-	"sap/ui/core/Core"
+	"sap/ui/core/Element"
 ], function(
 	App,
 	UIComponent,
@@ -13,7 +13,7 @@ sap.ui.define([
 	URLHandler,
 	FlexPerformanceTestUtil,
 	XMLView,
-	oCore
+	Element
 ) {
 	"use strict";
 
@@ -22,32 +22,33 @@ sap.ui.define([
 			manifest: "json"
 		},
 
-		constructor: function() {
+		// eslint-disable-next-line object-shorthand
+		constructor: function(...aArgs) {
 			var sCurrentVariantFromURL = FlUtils.getUrlParameter(URLHandler.variantTechnicalParameterName);
 			if (sCurrentVariantFromURL) {
-				arguments[0].componentData = {technicalParameters: {}};
-				arguments[0].componentData.technicalParameters[URLHandler.variantTechnicalParameterName] = [sCurrentVariantFromURL];
+				aArgs[0].componentData = {technicalParameters: {}};
+				aArgs[0].componentData.technicalParameters[URLHandler.variantTechnicalParameterName] = [sCurrentVariantFromURL];
 			}
-			UIComponent.prototype.constructor.apply(this, arguments);
+			UIComponent.prototype.constructor.apply(this, aArgs);
 		},
 
-		createContent: function () {
+		createContent() {
 			var oApp = new App();
 			var sTestCase = FlUtils.getUrlParameter("sap-ui-fl-test-case") || "rename";
 			var sTestProcessing = FlUtils.getUrlParameter("sap-ui-fl-test-processing") || "js";
 			var mViewProperties = {
 				id: "idMain1",
 				async: true,
-				viewName: "fl.performance.view." + (sTestProcessing === "js" ? "jsBaseView" : sTestCase + "-scenario")
+				viewName: `fl.performance.view.${sTestProcessing === "js" ? "jsBaseView" : `${sTestCase}-scenario`}`
 			};
 			if (sTestProcessing === "js") {
-				XMLView.create(mViewProperties).then(function (oView) {
+				XMLView.create(mViewProperties).then(function(oView) {
 					oApp.addPage(oView);
 					window.fnResolve();
 				});
 			} else {
-				FlexPerformanceTestUtil.startMeasurementForXmlPreprocessing(this);
-				XMLView.create(mViewProperties).then(function (oView) {
+				FlexPerformanceTestUtil.startMeasurementForXmlPreprocessing();
+				XMLView.create(mViewProperties).then(function(oView) {
 					oApp.addPage(oView);
 
 					var sControlToBeChanged;
@@ -60,7 +61,7 @@ sap.ui.define([
 							break;
 						default:
 					}
-					var oControlToBeChanged = oCore.byId(sControlToBeChanged);
+					var oControlToBeChanged = Element.getElementById(sControlToBeChanged);
 					return FlexPerformanceTestUtil.waitForChangesAndWriteData(oControlToBeChanged);
 				});
 			}

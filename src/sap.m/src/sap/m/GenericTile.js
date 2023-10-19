@@ -22,7 +22,9 @@ sap.ui.define([
 	"sap/ui/thirdparty/jquery",
 	"sap/ui/core/library",
 	"sap/ui/core/Configuration",
-	"sap/ui/core/InvisibleText"
+	"sap/ui/core/InvisibleText",
+	"sap/ui/core/Core",
+	"sap/ui/core/Theming"
 ], function (
 	library,
 	Control,
@@ -43,7 +45,9 @@ sap.ui.define([
 	jQuery,
 	coreLibrary,
 	Configuration,
-	InvisibleText
+	InvisibleText,
+	Core,
+	Theming
 ) {
 	"use strict";
 
@@ -117,14 +121,12 @@ sap.ui.define([
 				frameType: {type: "sap.m.FrameType", group: "Misc", defaultValue: FrameType.OneByOne},
 				/**
 				 * Backend system context information
-				 * @private
 				 * @since 1.92.0
 				 * @experimental Since 1.92
 				 */
 				systemInfo: {type:"string",  group: "Misc", defaultValue:null},
 				/**
 				 * Application information such as ID/Shortcut
-				 * @private
 				 * @since 1.92.0
 				 * @experimental Since 1.92
 				 */
@@ -237,7 +239,25 @@ sap.ui.define([
 				 * @experimental Since 1.106
 				 * @since 1.106
 				 */
-				 renderOnThemeChange: {type: "boolean", group: "Misc", defaultValue: false}
+				 renderOnThemeChange: {type: "boolean", group: "Misc", defaultValue: false},
+				/**
+				 * Show Badge Information associated with a Tile. Limited to 3 characters.
+				 * When enabled, the badge information is displayed inside a folder icon.
+				 * Display limited only for tile in IconMode in TwoByHalf frameType.
+				 * Characters currently trimmed to 3.
+				 * @experimental Since 1.113
+				 * @since 1.113
+				 */
+				tileBadge: { type: "string", group: "Misc", defaultValue: "" },
+				/**
+				 * Sets the offset for the Drop Area associated with a Generic Tile.
+				 * The offset is applied uniformly to all the tile edges.
+				 * @experimental Since 1.113
+				 * @internal
+				 * @since 1.118
+				 * @ui5-restricted Used by S/4 MyHome (ux.eng.s4producthomes1)
+				 */
+				dropAreaOffset: { type: "int", group: "Misc", defaultValue: 0 }
 			},
 			defaultAggregation: "tileContent",
 			aggregations: {
@@ -245,6 +265,11 @@ sap.ui.define([
 				 * The content of the tile.
 				 */
 				tileContent: {type: "sap.m.TileContent", multiple: true, bindable: "bindable"},
+				/**
+				 * LinkTileContent is being added to the GenericTile, it is advised to use in TwoByOne frameType
+				 * @since 1.120
+				 */
+				linkTileContents: {type: "sap.m.LinkTileContent", multiple: true, singularName: "linkTileContent"},
 				/**
 				 * An icon or image to be displayed in the control.
 				 * This aggregation is deprecated since version 1.36.0, to display an icon or image use sap.m.ImageContent control instead.
@@ -333,7 +358,7 @@ sap.ui.define([
 	/* --- Lifecycle Handling --- */
 
 	GenericTile.prototype.init = function () {
-		this._oRb = sap.ui.getCore().getLibraryResourceBundle("sap.m");
+		this._oRb = Core.getLibraryResourceBundle("sap.m");
 
 		// Defines custom screen range set: smaller than or equal to 449px defines 'small' and bigger than 449px defines 'large' screen
 		if (!Device.media.hasRangeSet(DEVICE_SET)) {
@@ -395,13 +420,8 @@ sap.ui.define([
 		this._bTilePress = true;
 
 		this._sBGColor = DEFAULT_BG_COLOR;
-		this._bThemeApplied = true;
-		if (!sap.ui.getCore().isInitialized()) {
-			this._bThemeApplied = false;
-			sap.ui.getCore().attachInit(this._handleCoreInitialized.bind(this));
-		} else {
-			this._handleCoreInitialized();
-		}
+		this._bThemeApplied = false;
+		Core.ready(this._handleCoreInitialized.bind(this));
 
 		//Navigate Action Button in Article Mode
 		this._oNavigateAction = new Button(this.getId() + "-navigateAction");
@@ -444,10 +464,7 @@ sap.ui.define([
 	 * @private
 	 */
 	GenericTile.prototype._handleCoreInitialized = function () {
-		this._bThemeApplied = sap.ui.getCore().isThemeApplied();
-		if (!this._bThemeApplied) {
-			sap.ui.getCore().attachThemeChanged(this._handleThemeApplied, this);
-		}
+		Theming.attachApplied(this._handleThemeApplied.bind(this));
 	};
 
 	/**
@@ -458,7 +475,7 @@ sap.ui.define([
 	GenericTile.prototype._handleThemeApplied = function () {
 		this._bThemeApplied = true;
 		this._oTitle.clampHeight();
-		sap.ui.getCore().detachThemeChanged(this._handleThemeApplied, this);
+		Theming.detachApplied(this._handleThemeApplied.bind(this));
 	};
 
 	/**
@@ -601,7 +618,7 @@ sap.ui.define([
 		}
 		var iTiles = this.getTileContent().length;
 		for (var i = 0; i < iTiles; i++) {
-			this.getTileContent()[i].setProperty("disabled", this.getState() === LoadState.Disabled, true);
+			this.getTileContent()[i].setDisabled(this.getState() === LoadState.Disabled);
 		}
 
 		this._initScopeContent("sapMGT");
@@ -632,7 +649,7 @@ sap.ui.define([
 		}
 
 		if (this.getFrameType() === FrameType.Auto) {
-			this.setProperty("frameType", FrameType.OneByOne, true);
+			this.setFrameType(FrameType.OneByOne);
 		}
 		//sets the maxlines for the appshortcut and systeminfo in different tile sizes
 		if (this.getMode() !== GenericTileMode.LineMode && (this.getAppShortcut() || this.getSystemInfo())) {
@@ -648,6 +665,7 @@ sap.ui.define([
 		if (this._isIconMode()) {
 			this._validateBackgroundColor();
 		}
+		this._isLinkTileContentPresent = this.getLinkTileContents().length > 0;
 	};
 
 	GenericTile.prototype.onAfterRendering = function () {
@@ -704,7 +722,7 @@ sap.ui.define([
 		}
 
 		//Adds Extra height to the TileContent when GenericTile is in ActionMode
-		if (this.getFrameType()  === FrameType.TwoByOne && this.getMode() === GenericTileMode.ActionMode && this.getState() === LoadState.Loaded && !this.isA("sap.m.ActionTile")) {
+		if (this.getFrameType()  === FrameType.TwoByOne && (this.getMode() === GenericTileMode.ActionMode || this._isLinkTileContentPresent) && this.getState() === LoadState.Loaded && !this.isA("sap.m.ActionTile")) {
 			this._applyExtraHeight();
 		}
 
@@ -731,6 +749,24 @@ sap.ui.define([
 			this.getDomRef("content").classList.add("sapMGTFtrMarginTop");
 		} else {
 			this.getDomRef("content").classList.remove("sapMGTFtrMarginTop");
+		}
+		if (this._isLinkTileContentPresent) {
+			this._adjustFocusOnLinkTiles(this.getDomRef().classList.contains("sapMTileSmallPhone"),iHeaderLines);
+		}
+	};
+
+	GenericTile.prototype._adjustFocusOnLinkTiles = function(bIsSmall,iHeaderLines) {
+		var iVisibleLinks = (bIsSmall) ? 5 : 6;
+		iVisibleLinks = (iHeaderLines === 2) ? --iVisibleLinks : iVisibleLinks;
+		var i;
+		//This removes the focus from the hidden links while navigating from tab
+		for (i = this.getLinkTileContents().length - 1; i > iVisibleLinks - 1; --i) {
+			this.getLinkTileContents() [i]._getLink().getDomRef().setAttribute("tabindex",-1);
+		}
+		//The logic mentioned here is useful when a small tile is being changed to a normal tile. In this case, the focus is removed for a couple of links at the bottom. To restore this focus, the tabindex is set back to 0
+		while ( i >= 0) {
+			this.getLinkTileContents() [i]._getLink().getDomRef().setAttribute("tabindex",0);
+			i--;
 		}
 	};
 	/**
@@ -759,8 +795,8 @@ sap.ui.define([
 			iLines = sFrameType === FrameType.OneByOne || sFrameType === FrameType.TwoByHalf ? 1 : 2;
 
 		//Default maxLines
-		this._oAppShortcut.setProperty("maxLines", iLines, true);
-		this._oSystemInfo.setProperty("maxLines", iLines, true);
+		this._oAppShortcut.setMaxLines(iLines);
+		this._oSystemInfo.setMaxLines(iLines);
 
 		if (this.getFrameType() === FrameType.TwoByHalf) {
 			var bAppShortcutMore = this.getAppShortcut().length > 11,
@@ -768,9 +804,9 @@ sap.ui.define([
 
 			// Line break to happen after 11 characters, App Shortcut to have more priority in display
 			if ((bAppShortcutMore && bSystemInfoMore) || bAppShortcutMore) {
-				this._oAppShortcut.setProperty("maxLines", 2, true);
+				this._oAppShortcut.setMaxLines(2);
 			} else if (bSystemInfoMore) {
-				this._oSystemInfo.setProperty("maxLines", 2, true);
+				this._oSystemInfo.setMaxLines(2);
 			}
 		}
 	};
@@ -861,6 +897,9 @@ sap.ui.define([
 			} else {
 				this.$().removeClass("sapMTileSmallPhone");
 				this.removeStyleClass("sapMGTStretch");
+			}
+			if (this.__isLinkTileContentPresent) {
+				this._applyExtraHeight();
 			}
 		}.bind(this);
 
@@ -1194,8 +1233,12 @@ sap.ui.define([
 		}
 	};
 
+	GenericTile.prototype.ondragend = function() {
+		this.onDragComplete();
+	};
+
 	GenericTile.prototype.ontap = function (event) {
-		if (!_isInnerTileButtonPressed(event, this)) {
+		if (!_isInnerTileButtonPressed(event, this) && !this._isLinkPressed(event)) {
 			var oParams;
 			// The ActionMore button in IconMode tile would be fired irrespective of the pressEnabled property
 			if ((this._bTilePress || this._isActionMoreButtonVisibleIconMode(event)) && this.getState() !== LoadState.Disabled) {
@@ -1211,7 +1254,7 @@ sap.ui.define([
 
 	var preventPress = false;
 	GenericTile.prototype.onkeydown = function (event) {
-		if (!_isInnerTileButtonPressed(event, this)) {
+		if (!_isInnerTileButtonPressed(event, this) && !this._isLinkPressed(event)) {
 			preventPress = (event.keyCode === 16 || event.keyCode === 27) ? true : false;
 			var currentKey = keyPressed[event.keyCode];
 			if (!currentKey) {
@@ -1259,7 +1302,7 @@ sap.ui.define([
 		}
 	};
 	GenericTile.prototype.onkeyup = function (event) {
-		if (!_isInnerTileButtonPressed(event, this)) {
+		if (!_isInnerTileButtonPressed(event, this) && !this._isLinkPressed(event)) {
 			var currentKey = keyPressed[event.keyCode];    //disable navigation to other tiles when one tile is selected
 			if (currentKey) {
 				delete keyPressed[event.keyCode];
@@ -1361,17 +1404,17 @@ sap.ui.define([
 			} else if (frameType === FrameType.TwoByHalf) {
 				iHeaderLines = (bSubheader) ? 1 : 2;
 			}
-			this._oTitle.setProperty("maxLines", iHeaderLines, true);
-			this._oSubTitle.setProperty("maxLines", iSubHeaderLines, true);
-		} else if (frameType === FrameType.TwoByOne && this.getMode() === GenericTileMode.ActionMode) {
-			this._oTitle.setProperty("maxLines", 2, true);
+			this._oTitle.setMaxLines(iHeaderLines);
+			this._oSubTitle.setMaxLines(iSubHeaderLines);
+		} else if (frameType === FrameType.TwoByOne && (this.getLinkTileContents() > 0 || this.getMode() === GenericTileMode.ActionMode)) {
+			this._oTitle.setMaxLines(2);
 		} else if (frameType === FrameType.OneByHalf || frameType === FrameType.TwoByHalf) {
-			this._oTitle.setProperty("maxLines", 2, true);
+			this._oTitle.setMaxLines(2);
 		} else {
 			if (bSubheader) {
-				this._oTitle.setProperty("maxLines", 4, true);
+				this._oTitle.setMaxLines(4);
 			} else {
-				this._oTitle.setProperty("maxLines", 5, true);
+				this._oTitle.setMaxLines(5);
 			}
 		}
 		this._changeTileContentContentVisibility(false);
@@ -1399,28 +1442,28 @@ sap.ui.define([
 					if (aTileCnt !== null) {
 						if ((frameType === FrameType.OneByHalf && aTileCnt.getMetadata().getName() === "sap.m.ImageContent")) {
 							bIsImageContent = true;
-							this._oTitle.setProperty("maxLines", 2, true);
+							this._oTitle.setMaxLines(2);
 							break;
 						} else {
-							this._oTitle.setProperty("maxLines", 1, true);
+							this._oTitle.setMaxLines(1);
 							break;
 						}
 					}
-					this._oTitle.setProperty("maxLines", 2, true);
+					this._oTitle.setMaxLines(2);
 				}
 			} else {
-				this._oTitle.setProperty("maxLines", 2, true);
+				this._oTitle.setMaxLines(2);
 			}
-		} else if (frameType === FrameType.TwoByOne && this.getMode() === GenericTileMode.ActionMode) {
+		} else if (frameType === FrameType.TwoByOne && (this.getLinkTileContents().length > 0 || this.getMode() === GenericTileMode.ActionMode)) {
 			if (bSubheader) {
-				this._oTitle.setProperty("maxLines", 1, true);
+				this._oTitle.setMaxLines(1);
 			} else {
-				this._oTitle.setProperty("maxLines", 2, true);
+				this._oTitle.setMaxLines(2);
 			}
 		} else if (bSubheader) {
-			this._oTitle.setProperty("maxLines", 2, true);
+			this._oTitle.setMaxLines(2);
 		} else {
-			this._oTitle.setProperty("maxLines", 3, true);
+			this._oTitle.setMaxLines(3);
 		}
 
 		this._changeTileContentContentVisibility(true, frameType, bIsImageContent);
@@ -1547,7 +1590,11 @@ sap.ui.define([
 		}
 		if (!bHideSizeAnnouncement) {
 			sAriaText = sAriaText.trim();
-			sAriaText += ("\n" + this._getSizeDescription());
+			if (this.getLinkTileContents().length > 0) {
+				sAriaText += ("\n" + this._oRb.getText("GENERICTILE_LINK_TILE_CONTENT_DESCRIPTION"));
+			} else {
+				sAriaText += ("\n" + this._getSizeDescription());
+			}
 		}
 		return sAriaText.trim();  // ARIA label set by the app, equal to tooltip
 	};
@@ -1638,6 +1685,14 @@ sap.ui.define([
 			|| this.getScope() === GenericTileScope.ActionRemove;
 	};
 
+	GenericTile.prototype._isLinkPressed = function (oEvent)  {
+		var sEventId = oEvent.target.id;
+		var oLinkTileContent = this.getLinkTileContents().find(function(oLinkTileContent){
+			return oLinkTileContent._getLink().getDomRef().id === sEventId;
+		});
+		return !!oLinkTileContent;
+	};
+
 	/**
 	 * Shows if the scope is set to the remove action
 	 *
@@ -1667,8 +1722,8 @@ sap.ui.define([
 	GenericTile.prototype._generateFailedText = function () {
 		var sCustomFailedMsg = this.getFailedText();
 		var sFailedMsg = sCustomFailedMsg ? sCustomFailedMsg : this._sFailedToLoad;
-		this._oFailedText.setProperty("text", sFailedMsg, true);
-		this._oFailedText.setAggregation("tooltip", sFailedMsg, true);
+		this._oFailedText.setText(sFailedMsg);
+		this._oFailedText.setTooltip(sFailedMsg);
 	};
 
 	/**
@@ -1871,7 +1926,7 @@ sap.ui.define([
 			useIconTooltip: false,
 			src: oIcon
 		});
-		if (!this._oIcon){
+		if (!this._oIcon) {
 			this._oIcon = IconPool.createControlByURI({
 				height: this.getFrameType() === FrameType.OneByOne ? "2rem" : "1.25rem",
 				width: this.getFrameType() === FrameType.OneByOne ? "2rem" : "1.25rem",
@@ -1896,23 +1951,20 @@ sap.ui.define([
 	};
 
 	/**
-	 * Returns true if Current Tile is in IconMode, FrameType is OneByOne or TwoByHalf, backgroundColor, TileIcon Properties are set.
+	 * Checks if Current Tile is in IconMode, FrameType is OneByOne or TwoByHalf, backgroundColor, TileIcon Properties are set.
+	 * @returns {boolean} - indicates whether icon mode is supported or not.
 	 */
 	GenericTile.prototype._isIconMode = function () {
-		if (this.getMode() === GenericTileMode.IconMode
-			&& (this.getFrameType() === FrameType.OneByOne || this.getFrameType() === FrameType.TwoByHalf)){
-				if (this.getTileIcon() && this.getBackgroundColor()) {
-					return true;
-				} else {
-					if (!this.getIconLoaded()) {
-						return true;
-					} else {
-						return false;
-					}
-				}
-		} else {
-			return false;
-		}
+		var sMode = this.getMode(),
+			sFrameType = this.getFrameType(),
+			sTileIcon = this.getTileIcon(),
+			sBackgroundColor = this.getBackgroundColor(),
+			bIsIconLoaded = this.getIconLoaded();
+
+		this._sTileBadge = sFrameType === FrameType.TwoByHalf && this.getTileBadge().trim().substring(0, 3);
+		return sMode === GenericTileMode.IconMode &&
+			(sFrameType === FrameType.OneByOne || sFrameType === FrameType.TwoByHalf) &&
+			((sTileIcon && sBackgroundColor) || (this._sTileBadge && sBackgroundColor) || !bIsIconLoaded);
 	};
 
 	/**
@@ -1964,6 +2016,28 @@ GenericTile.prototype._isNavigateActionEnabled = function() {
 		oEvent.preventDefault();
 		var sURL = oEvent.getSource().getParent().getUrl();
 		URLHelper.redirect(sURL, true);
+	};
+
+	/**
+	 * Calculates and returns the bounding client rectangle
+	 * of the drop area taking the offset property into account.
+	 * @private
+	 * @param {string} sDropLayout - current drop layout
+	 * @returns {object} mDropRect - bounding rectangle information factoring in offset, if required
+	 */
+	GenericTile.prototype.getDropAreaRect = function(sDropLayout) {
+		var mDropRect = this.getDomRef().getBoundingClientRect().toJSON();
+		var iDropAreaOffset = this.getDropAreaOffset();
+
+		if (sDropLayout === "Horizontal") {
+			mDropRect.left -= iDropAreaOffset;
+			mDropRect.right += iDropAreaOffset;
+		} else {
+			mDropRect.top -= iDropAreaOffset;
+			mDropRect.bottom += iDropAreaOffset;
+		}
+
+		return mDropRect;
 	};
 
 	/**

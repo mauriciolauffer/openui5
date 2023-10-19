@@ -1,60 +1,60 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/m/Bar",
 	"sap/m/Button",
 	"sap/m/HBox",
+	"sap/m/InstanceManager",
+	"sap/m/Popover",
 	"sap/m/Text",
 	"sap/m/VBox",
-	"sap/ui/Device",
+	"sap/ui/core/Core",
 	"sap/ui/events/KeyCodes",
 	"sap/ui/dt/DesignTime",
+	"sap/ui/dt/DOMUtil",
 	"sap/ui/dt/ElementOverlay",
 	"sap/ui/dt/OverlayRegistry",
 	"sap/ui/fl/write/api/ChangesWriteAPI",
 	"sap/ui/fl/Layer",
-	"sap/ui/qunit/QUnitUtils",
 	"sap/ui/rta/command/CommandFactory",
 	"sap/ui/rta/plugin/Combine",
 	"sap/ui/rta/plugin/Remove",
+	"sap/ui/rta/plugin/Rename",
 	"sap/ui/rta/plugin/Selection",
 	"sap/ui/rta/Utils",
-	"sap/m/InstanceManager",
-	"sap/m/Popover",
 	"sap/ui/thirdparty/sinon-4",
-	"test-resources/sap/ui/rta/qunit/RtaQunitUtils",
-	"sap/ui/core/Core"
-], function (
+	"test-resources/sap/ui/rta/qunit/RtaQunitUtils"
+], function(
 	Bar,
 	Button,
 	HBox,
+	InstanceManager,
+	Popover,
 	Text,
 	VBox,
-	Device,
+	Core,
 	KeyCodes,
 	DesignTime,
+	DOMUtil,
 	ElementOverlay,
 	OverlayRegistry,
 	ChangesWriteAPI,
 	Layer,
-	QUnitUtils,
 	CommandFactory,
 	Combine,
 	Remove,
+	Rename,
 	Selection,
 	Utils,
-	InstanceManager,
-	Popover,
 	sinon,
-	RtaQunitUtils,
-	oCore
+	RtaQunitUtils
 ) {
 	"use strict";
 
 	var sandbox = sinon.createSandbox();
 
-	QUnit.module("Given a Selection plugin and designtime in MultiSelection mode and controls with custom dt metadata to simulate different cases...", {
-		beforeEach: function(assert) {
+	QUnit.module("Given a Selection plugin, DT in MultiSelection mode and controls with custom dt metadata for different cases...", {
+		beforeEach(assert) {
 			var done = assert.async();
 
 			sandbox.stub(ChangesWriteAPI, "getChangeHandler").resolves();
@@ -112,13 +112,14 @@ sap.ui.define([
 				]
 			});
 			this.oVBox.placeAt("qunit-fixture");
-			oCore.applyChanges();
+			Core.applyChanges();
 
 			this.oDesignTime = new DesignTime({
 				plugins: [
 					this.oSelectionPlugin,
 					new Remove({commandFactory: this.oCommandFactory}),
-					new Combine({commandFactory: this.oCommandFactory})
+					new Combine({commandFactory: this.oCommandFactory}),
+					new Rename({commandFactory: this.oCommandFactory})
 				],
 				rootElements: [this.oVBox],
 				designTimeMetadata: {
@@ -147,7 +148,12 @@ sap.ui.define([
 								changeType: "combineChange",
 								changeOnRelevantContainer: true
 							},
-							remove: null
+							remove: null,
+							rename: {
+								domRef(oElement) {
+									return oElement.getDomRef();
+								}
+							}
 						}
 					},
 					"sap.m.Text": {
@@ -167,7 +173,7 @@ sap.ui.define([
 			this.oEvent.shiftKey = false;
 			this.oEvent.altKey = false;
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 			this.oComponent.destroy();
 			this.oVBox.destroy();
@@ -189,6 +195,54 @@ sap.ui.define([
 
 			assert.ok(oOverlay1.isSelected(), "then innerBtn11 overlay is selected");
 			assert.ok(oOverlay2.isSelected(), "then innerBtn12 overlay is selected");
+		});
+
+		QUnit.test("when trying to select the 2. controls and deselect individually", function(assert) {
+			var oOverlay1 = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn11"));
+			var oOverlay2 = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn12"));
+			this.oSelectionManager.set([oOverlay1, oOverlay2]);
+
+			assert.ok(oOverlay1.isSelected(), "then innerBtn11 overlay is selected");
+			assert.ok(oOverlay2.isSelected(), "then innerBtn12 overlay is selected");
+
+			oOverlay1.getDomRef().dispatchEvent(new Event("click"));
+			assert.ok(oOverlay1.isSelected(), "then after click on innerBtn11, overlay is not selected anymore");
+			assert.notOk(oOverlay2.isSelected(), "then innerBtn12 overlay is selected");
+		});
+
+		QUnit.test("when trying to select the 2. controls and deselect one overlay by holding SHIFT key", function(assert) {
+			var oOverlay1 = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn11"));
+			var oOverlay2 = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn12"));
+
+			this.oSelectionManager.set([oOverlay1, oOverlay2]);
+			assert.ok(oOverlay1.isSelected(), "then innerBtn11 overlay is selected");
+			assert.ok(oOverlay2.isSelected(), "then innerBtn12 overlay is selected");
+
+			var oClickEvent = new Event("click");
+			oClickEvent.shiftKey = true;
+			oOverlay1.getDomRef().dispatchEvent(oClickEvent);
+			assert.notOk(oOverlay1.isSelected(), "then after click on innerBtn11 with SHIFT key pressed, overlay is not selected anymore");
+			assert.ok(oOverlay2.isSelected(), "then innerBtn12 overlay is still selected");
+
+			this.oSelectionManager.set([oOverlay1, oOverlay2]);
+			assert.ok(true, "then select both overlays again");
+			assert.ok(oOverlay1.isSelected(), "then innerBtn11 overlay is selected");
+			assert.ok(oOverlay2.isSelected(), "then innerBtn12 overlay is selected");
+
+			oClickEvent.ctrlKey = true;
+			oOverlay1.getDomRef().dispatchEvent(oClickEvent);
+			assert.notOk(oOverlay1.isSelected(), "then after click on innerBtn11 with CTRL key pressed, overlay is not selected anymore");
+			assert.ok(oOverlay2.isSelected(), "then innerBtn12 overlay is still selected");
+
+			this.oSelectionManager.set([oOverlay1, oOverlay2]);
+			assert.ok(true, "then select both overlays again");
+			assert.ok(oOverlay1.isSelected(), "then innerBtn11 overlay is selected");
+			assert.ok(oOverlay2.isSelected(), "then innerBtn12 overlay is selected");
+
+			oClickEvent.metaKey = true;
+			oOverlay1.getDomRef().dispatchEvent(oClickEvent);
+			assert.notOk(oOverlay1.isSelected(), "then after click on innerBtn11 with META key pressed, overlay is not selected anymore");
+			assert.ok(oOverlay2.isSelected(), "then innerBtn12 overlay is still selected");
 		});
 
 		QUnit.test("when trying to select the 2. control not multiselection enabled control (removable/combinable)", function(assert) {
@@ -271,7 +325,7 @@ sap.ui.define([
 			assert.notOk(oOverlay2.isSelected(), "then innerVBox2 overlay is not selected");
 		});
 
-		//Note: we might support this case in the future
+		// Note: we might support this case in the future
 		QUnit.test("when trying to select innerVBox1Txt in innerVBox1 and innerVBox2Btn in innerVBox2 (different control types, different parents and same relevant container)", function(assert) {
 			var oOverlay1 = OverlayRegistry.getOverlay(this.oComponent.createId("innerVBox1Txt"));
 			var oOverlay2 = OverlayRegistry.getOverlay(this.oComponent.createId("innerVBox2Btn"));
@@ -290,7 +344,7 @@ sap.ui.define([
 				isRoot: false
 			});
 			sandbox.stub(oOverlay, "getDesignTimeMetadata").returns({
-				markedAsNotAdaptable: function() { return false; }
+				markedAsNotAdaptable() { return false; }
 			});
 			var oAttachEditableChangeStub = sandbox.stub(oOverlay, "attachEditableChange");
 			this.oSelectionPlugin.registerElementOverlay(oOverlay);
@@ -308,7 +362,7 @@ sap.ui.define([
 				isRoot: false
 			});
 			sandbox.stub(oOverlay, "getDesignTimeMetadata").returns({
-				markedAsNotAdaptable: function() { return true; }
+				markedAsNotAdaptable() { return true; }
 			});
 			var oAttachEditableChangeStub = sandbox.stub(oOverlay, "attachEditableChange");
 			this.oSelectionPlugin.registerElementOverlay(oOverlay);
@@ -319,14 +373,14 @@ sap.ui.define([
 			oElement.destroy();
 		});
 
-		QUnit.test("Deregistering an Overlay", function (assert) {
+		QUnit.test("Deregistering an Overlay", function(assert) {
 			var oOverlay = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn11"));
 			this.oSelectionPlugin.registerElementOverlay(oOverlay);
 			this.oSelectionPlugin.deregisterElementOverlay(oOverlay);
 			assert.ok(true, "Should throw no error");
 		});
 
-		QUnit.test("Pressing a Keyboard-key other than Arrows and Enter (e.g.TAB) on an Overlay", function (assert) {
+		QUnit.test("Pressing a Keyboard-key other than Arrows and Enter (e.g.TAB) on an Overlay", function(assert) {
 			var oOverlay = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn11"));
 			oOverlay.focus();
 			this.oEvent.keyCode = KeyCodes.TAB;
@@ -334,7 +388,7 @@ sap.ui.define([
 			assert.notOk(oOverlay.isSelected(), "then this overlay is not selected");
 		});
 
-		QUnit.test("Pressing any Keyboard-key on an Overlay and isActive is false", function (assert) {
+		QUnit.test("Pressing any Keyboard-key on an Overlay and isActive is false", function(assert) {
 			// processing of the key-down event can be proofed by checking the calls of
 			// "getFocusedOverlay" function
 			this.oSelectionPlugin.setIsActive(false);
@@ -346,7 +400,7 @@ sap.ui.define([
 			assert.strictEqual(oGetFocusedOverlayStub.callCount, 0, "then KayDown Event is not processed");
 		});
 
-		QUnit.test("Pressing ENTER on an Overlay", function (assert) {
+		QUnit.test("Pressing ENTER on an Overlay", function(assert) {
 			var oOverlay1 = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn12"));
 			this.oSelectionManager.add(oOverlay1);
 			var oOverlay2 = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn11"));
@@ -357,7 +411,7 @@ sap.ui.define([
 			assert.ok(oOverlay2.isSelected(), "then Overlay2 is selected");
 		});
 
-		QUnit.test("Pressing CTRL-ENTER on an Overlay", function (assert) {
+		QUnit.test("Pressing CTRL-ENTER on an Overlay", function(assert) {
 			var oOverlay1 = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn12"));
 			this.oSelectionManager.add(oOverlay1);
 			var oOverlay2 = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn11"));
@@ -369,7 +423,7 @@ sap.ui.define([
 			assert.ok(oOverlay2.isSelected(), "then Overlay2 is selected");
 		});
 
-		QUnit.test("Pressing SHIFT-ENTER on an Overlay", function (assert) {
+		QUnit.test("Pressing SHIFT-ENTER on an Overlay", function(assert) {
 			var oOverlay1 = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn12"));
 			this.oSelectionManager.add(oOverlay1);
 			var oOverlay2 = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn11"));
@@ -381,7 +435,7 @@ sap.ui.define([
 			assert.ok(oOverlay2.isSelected(), "then Overlay2 is selected");
 		});
 
-		QUnit.test("Pressing ESC on an Overlay when there are selected Overlays", function (assert) {
+		QUnit.test("Pressing ESC on an Overlay when there are selected Overlays", function(assert) {
 			var oOverlay1 = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn12"));
 			this.oSelectionManager.add(oOverlay1);
 			var oOverlay2 = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn11"));
@@ -393,7 +447,7 @@ sap.ui.define([
 			assert.equal(this.oSelectionManager.get().length, 0, "No Overlays are selected after Keypress");
 		});
 
-		QUnit.test("Pressing UP-Arrow on an Overlay", function (assert) {
+		QUnit.test("Pressing UP-Arrow on an Overlay", function(assert) {
 			var oOverlay = OverlayRegistry.getOverlay(this.oComponent.createId("innerVBox2Btn"));
 			oOverlay.focus();
 			var oParentOverlay = Utils.getFocusableParentOverlay(oOverlay);
@@ -402,7 +456,7 @@ sap.ui.define([
 			assert.ok(Utils.getFocusedOverlay() === oParentOverlay, "Parent Overlay is focused");
 		});
 
-		QUnit.test("Pressing DOWN-Arrow on an Overlay", function (assert) {
+		QUnit.test("Pressing DOWN-Arrow on an Overlay", function(assert) {
 			var oOverlay = OverlayRegistry.getOverlay(this.oComponent.createId("innerVBox2"));
 			oOverlay.focus();
 			var oFirstChildOverlay = Utils.getFirstFocusableDescendantOverlay(oOverlay);
@@ -411,7 +465,7 @@ sap.ui.define([
 			assert.ok(Utils.getFocusedOverlay() === oFirstChildOverlay, "Child Overlay is focused");
 		});
 
-		QUnit.test("Pressing Left-arrow on an Overlay", function (assert) {
+		QUnit.test("Pressing Left-arrow on an Overlay", function(assert) {
 			var oOverlay = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn12"));
 			oOverlay.focus();
 			var oPrevSiblingOverlay = Utils.getPreviousFocusableSiblingOverlay(oOverlay);
@@ -420,7 +474,7 @@ sap.ui.define([
 			assert.ok(Utils.getFocusedOverlay() === oPrevSiblingOverlay, "Previous Sibling Overlay is focused");
 		});
 
-		QUnit.test("Pressing Right-arrow on an Overlay", function (assert) {
+		QUnit.test("Pressing Right-arrow on an Overlay", function(assert) {
 			var oOverlay = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn11"));
 			oOverlay.focus();
 			var oNextSiblingOverlay = Utils.getNextFocusableSiblingOverlay(oOverlay);
@@ -429,27 +483,25 @@ sap.ui.define([
 			assert.ok(Utils.getFocusedOverlay() === oNextSiblingOverlay, "Next Sibling Overlay is focused");
 		});
 
-		QUnit.test("Invoking 'contextmenu' on an Overlay which is selectable", function (assert) {
+		QUnit.test("Invoking 'contextmenu' on an Overlay which is selectable", function(assert) {
 			var oOverlay1 = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn12"));
 			this.oSelectionManager.add(oOverlay1);
 			var oOverlay2 = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn11"));
-			var oMouseEvent = new Event("contextmenu");
-			oOverlay2.getDomRef().dispatchEvent(oMouseEvent);
+			oOverlay2.getDomRef().dispatchEvent(new Event("contextmenu"));
 			assert.notOk(oOverlay1.isSelected(), "then Overlay1 is not selected");
 			assert.ok(oOverlay2.isSelected(), "then Overlay2 is selected");
 		});
 
-		QUnit.test("Invoking 'click' on an Overlay which is selectable", function (assert) {
+		QUnit.test("Invoking 'click' on an Overlay which is selectable", function(assert) {
 			var oOverlay1 = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn12"));
 			this.oSelectionManager.add(oOverlay1);
 			var oOverlay2 = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn11"));
-			var oMouseEvent = new Event("click");
-			oOverlay2.getDomRef().dispatchEvent(oMouseEvent);
+			oOverlay2.getDomRef().dispatchEvent(new Event("click"));
 			assert.notOk(oOverlay1.isSelected(), "then Overlay1 is not selected");
 			assert.ok(oOverlay2.isSelected(), "then Overlay2 is selected");
 		});
 
-		QUnit.test("Invoking Mouse-Down on an Overlay which is selectable and isActive is false and two PopOvers are open", function (assert) {
+		QUnit.test("Invoking Mouse-Down on an Overlay which is selectable and isActive is false and two PopOvers are open", function(assert) {
 			var fnDone = assert.async();
 			this.oSelectionPlugin.setIsActive(false);
 			var oOverlay1 = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn11"));
@@ -459,67 +511,69 @@ sap.ui.define([
 			oPopOver1._bOpenedByChangeIndicator = false;
 			oPopOver2._bOpenedByChangeIndicator = true;
 			assert.strictEqual(InstanceManager.getOpenPopovers().length, 2, "then 2 PopOvers are opened initially");
-			var oMouseEvent = new Event("mousedown");
-			oOverlay1.getDomRef().dispatchEvent(oMouseEvent);
-			oPopOver2.attachAfterClose(function () {
+			oOverlay1.getDomRef().dispatchEvent(new Event("mousedown"));
+			oPopOver2.attachAfterClose(function() {
 				assert.strictEqual(InstanceManager.getOpenPopovers().length, 1, "then one PopOver is closed");
 				fnDone();
 			});
 		});
 
-		QUnit.test("When selecting an Overlay and then setting isActive to false", function (assert) {
+		QUnit.test("When selecting an Overlay and then setting isActive to false", function(assert) {
 			var oOverlay = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn11"));
 			oOverlay.setSelected(true);
 			this.oSelectionPlugin.setIsActive(false);
 			assert.notOk(oOverlay.isSelected(), "then the Overlay is no longer selected");
 		});
 
-		QUnit.test("Invoking Mouse-Over and Mouse-Leave on an Overlay which is selectable", function (assert) {
+		QUnit.test("Invoking Mouse-Over and Mouse-Leave on an Overlay which is selectable", function(assert) {
 			var oOverlay = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn11"));
 			assert.ok(!oOverlay.hasStyleClass("sapUiRtaOverlayHover"), "initially the CSS class is not set");
-			var oMouseOverEvent = new Event("mouseover");
-			oOverlay.getDomRef().dispatchEvent(oMouseOverEvent);
+			oOverlay.getDomRef().dispatchEvent(new Event("mouseover"));
 			assert.ok(oOverlay.hasStyleClass("sapUiRtaOverlayHover"), "then the Overlay has the proper CSS class after mouse-over event");
-			// this does not seem to work without jQuery
-			QUnitUtils.triggerEvent("mouseleave", oOverlay.getDomRef());
+			oOverlay.getDomRef().dispatchEvent(new Event("mouseout"));
 			assert.ok(!oOverlay.hasStyleClass("sapUiRtaOverlayHover"), "then the CSS class is removed again after mouse-leave event");
 		});
 
-		QUnit.test("Invoking Mouse-Over and Mouse-Leave on an Overlay which is selectable and isActive is false", function (assert) {
+		QUnit.test("Invoking Mouse-Over and Mouse-Leave on an Overlay which is selectable and isActive is false", function(assert) {
 			this.oSelectionPlugin.setIsActive(false);
 			var oOverlay = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn11"));
 			assert.ok(!oOverlay.hasStyleClass("sapUiRtaOverlayHover"), "initially the CSS class is not set");
-			var oMouseOverEvent = new Event("mouseover");
-			oOverlay.getDomRef().dispatchEvent(oMouseOverEvent);
+			oOverlay.getDomRef().dispatchEvent(new Event("mouseover"));
 			assert.ok(!oOverlay.hasStyleClass("sapUiRtaOverlayHover"), "then the CSS class is still not not set after mouse-over event");
-			// this does not seem to work without jQuery
-			QUnitUtils.triggerEvent("mouseleave", oOverlay.getDomRef());
+			oOverlay.getDomRef().dispatchEvent(new Event("mouseout"));
 			assert.ok(!oOverlay.hasStyleClass("sapUiRtaOverlayHover"), "then the CSS class is still not not set after mouse-leave event");
 		});
 
-		QUnit.test("Invoking Mouse-Over on an Overlay which is not selectable", function (assert) {
+		QUnit.test("Invoking Mouse-Over and Mouse-Leave on an Overlay which is selectable and has a movable parent", function(assert) {
+			var oHBoxOverlay = OverlayRegistry.getOverlay(this.oComponent.createId("container1"));
+			oHBoxOverlay.setMovable(true);
+			var oOverlay = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn11"));
+			oOverlay.getDomRef().dispatchEvent(new Event("mouseover"));
+			assert.notOk(oHBoxOverlay.getMovable(), "then the movable parent is temporarily not movable on mouse-over event");
+			oOverlay.getDomRef().dispatchEvent(new Event("mouseout"));
+			assert.ok(oHBoxOverlay.getMovable(), "then the parent is movable again after mouse-leave event");
+		});
+
+		QUnit.test("Invoking Mouse-Over on an Overlay which is not selectable", function(assert) {
 			var oOverlay = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn11"));
 			oOverlay.setSelectable(false);
 			assert.ok(!oOverlay.hasStyleClass("sapUiRtaOverlayHover"), "initially the CSS class is not set");
-			var oMouseEvent = new Event("mouseover");
-			oOverlay.getDomRef().dispatchEvent(oMouseEvent);
+			oOverlay.getDomRef().dispatchEvent(new Event("mouseover"));
 			assert.ok(!oOverlay.hasStyleClass("sapUiRtaOverlayHover"), "then the CSS class is still not set after Mouse-over event");
 		});
 
-		QUnit.test("Invoking Mouse-Over on an Overlay when a plugin is busy", function (assert) {
+		QUnit.test("Invoking Mouse-Over on an Overlay when a plugin is busy", function(assert) {
 			var oOverlay = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn11"));
 			sandbox.stub(this.oDesignTime, "getBusyPlugins").returns(["busy-plugin"]);
 			assert.ok(!oOverlay.hasStyleClass("sapUiRtaOverlayHover"), "initially the CSS class is not set");
-			var oMouseEvent = new Event("mouseover");
-			oOverlay.getDomRef().dispatchEvent(oMouseEvent);
+			oOverlay.getDomRef().dispatchEvent(new Event("mouseover"));
 			assert.ok(!oOverlay.hasStyleClass("sapUiRtaOverlayHover"), "then the CSS class is still not set after Mouse-over event");
 		});
 
-		QUnit.test("When 'Editable' changes to false on an hovered Overlay", function (assert) {
+		QUnit.test("When 'Editable' changes to false on an hovered Overlay", function(assert) {
 			var fnDone = assert.async();
 			var oOverlay = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn12"));
-			var oMouseEvent = new Event("mouseover");
-			oOverlay.getDomRef().dispatchEvent(oMouseEvent);
+			oOverlay.getDomRef().dispatchEvent(new Event("mouseover"));
 			assert.ok(oOverlay.hasStyleClass("sapUiRtaOverlayHover"), "then the Overlay has initaly the proper CSS class");
 			this.oSelectionPlugin.attachEventOnce("elementEditableChange", function() {
 				assert.ok(!oOverlay.hasStyleClass("sapUiRtaOverlayHover"), "then the CSS class is removed again after editable change");
@@ -528,14 +582,14 @@ sap.ui.define([
 			oOverlay.setEditable(false);
 		});
 
-		QUnit.test("When the method _checkDeveloperMode is called and Developermode is true", function (assert) {
+		QUnit.test("When the method _checkDeveloperMode is called and Developermode is true", function(assert) {
 			var fnDone = assert.async();
 			var oOverlay = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn12"));
 			oOverlay.setEditable(false);
 			oOverlay.setSelectable(false);
 			this.oCommandFactory.setProperty("flexSettings", {layer: Layer.CUSTOMER, developerMode: true});
-			this.oSelectionPlugin.attachEventOnce("elementEditableChange", function () {
-				assert.ok(true, 'elementEditableChange event was called');
+			this.oSelectionPlugin.attachEventOnce("elementEditableChange", function() {
+				assert.ok(true, "elementEditableChange event was called");
 				fnDone();
 			});
 			assert.ok(this.oSelectionPlugin._checkDeveloperMode(oOverlay, {}), "_checkDeveloperMode returns true");
@@ -543,13 +597,13 @@ sap.ui.define([
 			assert.ok(oOverlay.getSelectable() === true, "Overlay is set to 'selectable = true'");
 		});
 
-		QUnit.test("When the method _checkDeveloperMode is called and Developermode is false", function (assert) {
+		QUnit.test("When the method _checkDeveloperMode is called and Developermode is false", function(assert) {
 			var oOverlay = OverlayRegistry.getOverlay(this.oComponent.createId("innerBtn12"));
 			assert.notOk(this.oSelectionPlugin._checkDeveloperMode(oOverlay, {}), "_checkDeveloperMode returns false");
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

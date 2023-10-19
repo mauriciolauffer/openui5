@@ -1,4 +1,4 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/base/Log",
@@ -14,7 +14,7 @@ sap.ui.define([
 	"sap/ui/rta/Utils",
 	"sap/ui/thirdparty/sinon-4",
 	"test-resources/sap/ui/rta/qunit/RtaQunitUtils",
-	"sap/ui/core/Core"
+	"sap/ui/qunit/utils/nextUIUpdate"
 ], function(
 	Log,
 	Button,
@@ -29,16 +29,15 @@ sap.ui.define([
 	Utils,
 	sinon,
 	RtaQunitUtils,
-	oCore
+	nextUIUpdate
 ) {
 	"use strict";
-
 
 	var sandbox = sinon.createSandbox();
 	var oMockedAppComponent = RtaQunitUtils.createAndStubAppComponent(sinon);
 
 	QUnit.module("Given a designTime and remove plugin are instantiated", {
-		beforeEach: function(assert) {
+		async beforeEach(assert) {
 			var done = assert.async();
 			sandbox.stub(ChangesWriteAPI, "getChangeHandler").resolves();
 			this.oRemovePlugin = new RemovePlugin({
@@ -49,7 +48,7 @@ sap.ui.define([
 			this.oVerticalLayout = new VerticalLayout({
 				content: [this.oButton, this.oButton1]
 			}).placeAt("qunit-fixture");
-			oCore.applyChanges();
+			await nextUIUpdate();
 
 			this.oDesignTime = new DesignTime({
 				rootElements: [this.oVerticalLayout],
@@ -64,12 +63,12 @@ sap.ui.define([
 				done();
 			}.bind(this));
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 			this.oDesignTime.destroy();
 			this.oVerticalLayout.destroy();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("when an overlay has no remove action designTime metadata", function(assert) {
 			this.oButtonOverlay.setDesignTimeMetadata({});
 			this.oRemovePlugin.deregisterElementOverlay(this.oButtonOverlay);
@@ -78,10 +77,10 @@ sap.ui.define([
 			assert.strictEqual(this.oRemovePlugin.isAvailable([this.oButtonOverlay]), false, "... then isAvailable is called, then it returns false");
 			assert.strictEqual(this.oRemovePlugin.isEnabled([this.oButtonOverlay]), false, "... then isEnabled is called, then it returns false");
 			return Promise.resolve()
-				.then(this.oRemovePlugin._isEditable.bind(this.oRemovePlugin, this.oButtonOverlay))
-				.then(function(bEditable) {
-					assert.strictEqual(bEditable, false, "then the overlay is not editable");
-				});
+			.then(this.oRemovePlugin._isEditable.bind(this.oRemovePlugin, this.oButtonOverlay))
+			.then(function(bEditable) {
+				assert.strictEqual(bEditable, false, "then the overlay is not editable");
+			});
 		});
 
 		QUnit.test("when an overlay has remove action designTime metadata, but has no isEnabled property defined", function(assert) {
@@ -99,10 +98,10 @@ sap.ui.define([
 				assert.strictEqual(this.oRemovePlugin.isAvailable([this.oButtonOverlay]), true, "... then isAvailable is called, then it returns true");
 				assert.strictEqual(this.oRemovePlugin.isEnabled([this.oButtonOverlay]), true, "... then isEnabled is called, then it returns true");
 				this.oRemovePlugin._isEditable(this.oButtonOverlay)
-					.then(function(bEditable) {
-						assert.strictEqual(bEditable, true, "then the overlay is editable");
-						done();
-					});
+				.then(function(bEditable) {
+					assert.strictEqual(bEditable, true, "then the overlay is editable");
+					done();
+				});
 			}.bind(this));
 
 			this.oRemovePlugin.deregisterElementOverlay(this.oButtonOverlay);
@@ -128,7 +127,7 @@ sap.ui.define([
 
 			this.oButtonOverlay.setDesignTimeMetadata({
 				actions: {
-					getResponsibleElement: function (oElement) {
+					getResponsibleElement: function(oElement) {
 						if (oElement === this.oButton) {
 							return this.oButton1;
 						}
@@ -232,18 +231,18 @@ sap.ui.define([
 
 			sandbox.stub(this.oButtonOverlay, "getRelevantContainer").returns(this.oVerticalLayout);
 			return this.oRemovePlugin._isEditable(this.oButtonOverlay)
-				.then(function(bEditable) {
-					assert.strictEqual(bEditable, false, "... then _isEditable returns false");
-				});
+			.then(function(bEditable) {
+				assert.strictEqual(bEditable, false, "... then _isEditable returns false");
+			});
 		});
 
-		QUnit.test("when an overlay has remove action designTime metadata with a confirmation text defined and is selected", function (assert) {
+		QUnit.test("when an overlay has remove action designTime metadata with a confirmation text defined and is selected", function(assert) {
 			var done = assert.async();
 			this.oButtonOverlay.setDesignTimeMetadata({
 				actions: {
 					remove: {
 						changeType: "hideControl",
-						getConfirmationText: function (oElementInstance) {
+						getConfirmationText(oElementInstance) {
 							return oElementInstance.getText();
 						}
 					}
@@ -270,13 +269,13 @@ sap.ui.define([
 			assert.ok(true, "... when plugin removeElement is called ...");
 		});
 
-		QUnit.test("when an overlay has remove action designTime metadata with a confirmation text defined and is selected and cancel is pressed", function (assert) {
+		QUnit.test("when an overlay has remove action designTime metadata with a confirmation text defined and is selected and cancel is pressed", function(assert) {
 			var done = assert.async();
 			this.oButtonOverlay.setDesignTimeMetadata({
 				actions: {
 					remove: {
 						changeType: "hideControl",
-						getConfirmationText: function (oElementInstance) {
+						getConfirmationText(oElementInstance) {
 							return oElementInstance.getText();
 						}
 					}
@@ -300,7 +299,7 @@ sap.ui.define([
 			assert.ok(true, "... when plugin removeElement is called ...");
 		});
 
-		QUnit.test("when an overlay has remove action designTime metadata defined and backspace button is pressed", function (assert) {
+		QUnit.test("when an overlay has remove action designTime metadata defined and backspace button is pressed", function(assert) {
 			var done = assert.async();
 			this.oButtonOverlay.setDesignTimeMetadata({
 				actions: {
@@ -343,10 +342,10 @@ sap.ui.define([
 				assert.strictEqual(this.oRemovePlugin.isAvailable([this.oButtonOverlay]), true, "... then isAvailable is called, then it returns true");
 				assert.strictEqual(this.oRemovePlugin.isEnabled([this.oButtonOverlay]), false, "... then isEnabled is called, then it returns correct value");
 				this.oRemovePlugin._isEditable(this.oButtonOverlay)
-					.then(function(bEditable) {
-						assert.strictEqual(bEditable, true, "then the overlay is editable");
-						done();
-					});
+				.then(function(bEditable) {
+					assert.strictEqual(bEditable, true, "then the overlay is editable");
+					done();
+				});
 			}.bind(this));
 
 			this.oRemovePlugin.deregisterElementOverlay(this.oButtonOverlay);
@@ -359,7 +358,7 @@ sap.ui.define([
 				actions: {
 					remove: {
 						changeType: "hideControl",
-						isEnabled: function(oElementInstance) {
+						isEnabled(oElementInstance) {
 							return oElementInstance.getMetadata().getName() !== "sap.m.Button";
 						}
 					}
@@ -369,10 +368,10 @@ sap.ui.define([
 				assert.strictEqual(this.oRemovePlugin.isAvailable([this.oButtonOverlay]), true, "... then isAvailable is called, then it returns true");
 				assert.strictEqual(this.oRemovePlugin.isEnabled([this.oButtonOverlay]), false, "... then isEnabled is called, then it returns correct value from function call");
 				this.oRemovePlugin._isEditable(this.oButtonOverlay)
-					.then(function(bEditable) {
-						assert.strictEqual(bEditable, true, "then the overlay is editable");
-						done();
-					});
+				.then(function(bEditable) {
+					assert.strictEqual(bEditable, true, "then the overlay is editable");
+					done();
+				});
 			}.bind(this));
 
 			this.oRemovePlugin.deregisterElementOverlay(this.oButtonOverlay);
@@ -392,22 +391,22 @@ sap.ui.define([
 				assert.strictEqual(this.oRemovePlugin.isAvailable([this.oButtonOverlay]), false, "... then isAvailable is called, then it returns false");
 				assert.strictEqual(this.oRemovePlugin.isEnabled([this.oButtonOverlay]), false, "... then isEnabled is called, then it returns correct value");
 				Promise.resolve()
-					.then(this.oRemovePlugin._isEditable.bind(this.oRemovePlugin, this.oButtonOverlay))
-					.then(function(bEditable) {
-						assert.strictEqual(bEditable, false, "then the overlay is not editable");
-						done();
-					});
+				.then(this.oRemovePlugin._isEditable.bind(this.oRemovePlugin, this.oButtonOverlay))
+				.then(function(bEditable) {
+					assert.strictEqual(bEditable, false, "then the overlay is not editable");
+					done();
+				});
 
 				var bIsAvailable = true;
 
-				sandbox.stub(this.oRemovePlugin, "isAvailable").callsFake(function (aElementOverlays) {
+				sandbox.stub(this.oRemovePlugin, "isAvailable").callsFake(function(aElementOverlays) {
 					assert.equal(aElementOverlays[0].getId(), this.oButtonOverlay.getId(), "the 'available' function calls isAvailable with the correct overlay");
 					return bIsAvailable;
 				}.bind(this));
-				sandbox.stub(this.oRemovePlugin, "handler").callsFake(function (aElementOverlays) {
+				sandbox.stub(this.oRemovePlugin, "handler").callsFake(function(aElementOverlays) {
 					assert.deepEqual(aElementOverlays, [this.oButtonOverlay], "the 'handler' method is called with the right overlays");
 				}.bind(this));
-				sandbox.stub(this.oRemovePlugin, "isEnabled").callsFake(function (aElementOverlays) {
+				sandbox.stub(this.oRemovePlugin, "isEnabled").callsFake(function(aElementOverlays) {
 					assert.equal(aElementOverlays[0].getId(), this.oButtonOverlay.getId(), "the 'enabled' function calls isEnabled with the correct overlay");
 				}.bind(this));
 
@@ -459,7 +458,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given a designTime and a Layout with 3 Buttons in it, when _getElementToFocus is called...", {
-		beforeEach: function(assert) {
+		async beforeEach(assert) {
 			var done = assert.async();
 			sandbox.stub(ChangesWriteAPI, "getChangeHandler").resolves();
 			this.oButton1 = new Button("button1", {text: "Button1"});
@@ -468,7 +467,7 @@ sap.ui.define([
 			this.oVerticalLayout = new VerticalLayout({
 				content: [this.oButton1, this.oButton2, this.oButton3]
 			}).placeAt("qunit-fixture");
-			oCore.applyChanges();
+			await nextUIUpdate();
 
 			this.oDesignTime = new DesignTime({
 				rootElements: [this.oVerticalLayout]
@@ -482,35 +481,35 @@ sap.ui.define([
 				done();
 			}.bind(this));
 		},
-		afterEach: function () {
+		afterEach() {
 			this.oVerticalLayout.destroy();
 			this.oDesignTime.destroy();
 			sandbox.restore();
 		}
-	}, function () {
-		QUnit.test(" with the first button", function (assert) {
+	}, function() {
+		QUnit.test(" with the first button", function(assert) {
 			assert.equal(RemovePlugin._getElementToFocus([this.oButtonOverlay1]).getId(), this.oButtonOverlay2.getId(), "then the second button is returned");
 		});
 
-		QUnit.test(" with the second button", function (assert) {
+		QUnit.test(" with the second button", function(assert) {
 			assert.equal(RemovePlugin._getElementToFocus([this.oButtonOverlay2]).getId(), this.oButtonOverlay3.getId(), "then the second button is returned");
 		});
 
-		QUnit.test(" with the third button", function (assert) {
+		QUnit.test(" with the third button", function(assert) {
 			assert.equal(RemovePlugin._getElementToFocus([this.oButtonOverlay3]).getId(), this.oButtonOverlay2.getId(), "then the second button is returned");
 		});
 
-		QUnit.test(" with two buttons", function (assert) {
+		QUnit.test(" with two buttons", function(assert) {
 			assert.equal(RemovePlugin._getElementToFocus([this.oButtonOverlay1, this.oButtonOverlay2]).getId(), this.oLayoutOverlay.getId(), "then the second button is returned");
 		});
 
-		QUnit.test(" with the second button and the third hidden", function (assert) {
+		QUnit.test(" with the second button and the third hidden", function(assert) {
 			this.oButton3.setVisible(false);
 			assert.equal(RemovePlugin._getElementToFocus([this.oButtonOverlay2]).getId(), this.oButtonOverlay1.getId(), "then the second button is returned");
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		oMockedAppComponent.destroy();
 		document.getElementById("qunit-fixture").style.display = "none";
 	});

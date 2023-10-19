@@ -8,8 +8,8 @@
  * ${version}
  */
 sap.ui.define([
-	'sap/ui/core/UIComponent', 'sap/ui/model/odata/v2/ODataModel', 'sap/ui/core/util/MockServer', 'sap/ui/mdc/link/FakeFlpConnector', 'sap/ui/fl/FakeLrepConnectorLocalStorage'
-], function(UIComponent, ODataModel, MockServer, FakeFlpConnector, FakeLrepConnectorLocalStorage) {
+	'sap/ui/core/UIComponent', 'sap/ui/model/odata/v2/ODataModel', 'sap/ui/core/util/MockServer', 'testutils/link/FakeUShellConnector'
+], function(UIComponent, ODataModel, MockServer, FakeUShellConnector) {
 	"use strict";
 
 	return UIComponent.extend("appUnderTest.Component", {
@@ -21,7 +21,6 @@ sap.ui.define([
 		},
 		init: function() {
 			this.enableFakeFLP();
-			FakeLrepConnectorLocalStorage.enableFakeConnector();
 			this.startMockServer();
 
 			UIComponent.prototype.init.apply(this, arguments);
@@ -29,23 +28,21 @@ sap.ui.define([
 		destroy: function() {
 			this.oMockServer.stop();
 			this.oMockServer.destroy();
-			FakeLrepConnectorLocalStorage.disableFakeConnector();
-			FakeFlpConnector.disableFakeConnector();
+			FakeUShellConnector.disableFakeConnector();
 			// call the base component's destroy function
 			UIComponent.prototype.destroy.apply(this, arguments);
 		},
 		exit: function() {
-			FakeFlpConnector.disableFakeConnector();
-			FakeLrepConnectorLocalStorage.disableFakeConnector();
+			FakeUShellConnector.disableFakeConnector();
 		},
 		startMockServer: function() {
-			var sMockServerUrl = "/odata/";
+			const sMockServerUrl = "/odata/";
 
 			this.oMockServer = new MockServer({
 				rootUri: sMockServerUrl
 			});
 
-			var sPath = sap.ui.require.toUrl("appUnderTest/localService");
+			const sPath = sap.ui.require.toUrl("appUnderTest/localService");
 
 			// load local mock data
 			this.oMockServer.simulate(sPath + "/metadata.xml", {
@@ -61,7 +58,7 @@ sap.ui.define([
 			}));
 		},
 		enableFakeFLP: function() {
-			FakeFlpConnector.enableFakeConnector({
+			FakeUShellConnector.enableFakeConnector({
 				'appUnderTest_SemanticObjectName': {
 					links: [
 						{

@@ -9,7 +9,7 @@ sap.ui.define(
 		"sap/ui/mdc/filterbar/aligned/FilterItemLayout",
 		"sap/ui/mdc/filterbar/vh/FilterContainer",
 		"sap/m/Button",
-		"sap/ui/mdc/enum/PersistenceMode"
+		"sap/m/p13n/enum/PersistenceMode"
 	],
 	function (
 		mLibrary,
@@ -22,52 +22,44 @@ sap.ui.define(
 	) {
 		"use strict";
 		/**
-		 * Modules for different filterbars
-		 * @namespace
-		 * @name sap.ui.mdc.filterbar
-		 * @since 1.80.0
-		 * @private
-		 * @experimental As of version 1.80
-		 * @ui5-restricted sap.ui.mdc
-		 */
-
-		/**
-		 * Base-modules for {@link sap.ui.mdc.filterbar.vh.FiterBar FilterBar}
-		 *
-		 * These modules are not to be used stand-alone.
+		 * Modules for value help dialog {@link sap.ui.mdc.filterbar.vh.FilterBar FilterBar}
 		 * @namespace
 		 * @name sap.ui.mdc.filterbar.vh
 		 * @since 1.84.0
-		 * @private
-		 * @experimental As of version 1.84
-		 * @ui5-restricted sap.ui.mdc
+		 * @public
 		 */
 
 		/**
-		 * Constructor for a new FilterBar.
+		 * Constructor for a new <code>FilterBar</code> for a value help dialog.
 		 * @param {string} [sId] ID for the new control, generated automatically if no ID is given
 		 * @param {object} [mSettings] initial settings for the new control
 		 * @class The <code>FilterBar</code> control is used to display filter properties in a user-friendly manner to populate values for a query.
 		 * The filters are arranged in a logical row that is divided depending on the space available and the width of the filters.
 		 * The Go button triggers the search event, and the Show Filters button shows the additional filter field.<br>
 		 * The <code>FilterBar</code> control creates and handles the filters based on the provided metadata information.
-		 * The metadata information is provided via the {@link sap.ui.mdc.FilterBarDelegate FilterBarDelegate} implementation. This implementation has to be provided by the application.
+		 * The metadata information is provided via the {@link sap.ui.mdc.FilterBarDelegate FilterBarDelegate} implementation. This implementation has to be provided by the application.<br>
+		 * <b>Note:</b> The <code>FilterBar</code> can only be used for a {@link sap.ui.mdc.valuehelp.Dialog Dialog} and not on its own.
 		 * @extends sap.ui.mdc.filterbar.FilterBarBase
 		 * @author SAP SE
 		 * @version ${version}
 		 * @constructor
-		 * @private
-		 * @ui5-restricted sap.fe
-		 * @MDC_PUBLIC_CANDIDATE
+		 * @public
 		 * @since 1.84.0
 		 * @alias sap.ui.mdc.filterbar.vh.FilterBar
 		 */
-		var FilterBar = FilterBarBase.extend(
+		const FilterBar = FilterBarBase.extend(
 			"sap.ui.mdc.filterbar.vh.FilterBar",
 			{
 				metadata: {
 					library: "sap.ui.mdc",
 					properties: {
+						/**
+						 * Path to the <code>Delegate</code> module that provides the required APIs to execute model-specific logic.<br>
+						 * <b>Note:</b> Ensure that the related file can be requested (any required library has to be loaded before that).<br>
+						 * Do not bind or modify the module. This property can only be configured during control initialization.
+						 *
+						 * @experimental
+						 */
 						delegate: {
 							type: "object",
 							defaultValue: {
@@ -77,7 +69,7 @@ sap.ui.define(
 								name: "sap/ui/mdc/filterbar/vh/FilterBarDelegate",
 								/**
 								 * Contains the mandatory information about the metamodel name <code>modelName</code> and the main data part in its <code>collectionName</code>.<br>
-								 * <b>Note:</b> Additional information relevant for the specific {@link sap.ui.mdc.FilterBarDelegate FilterBarDelegate} implementation might be included but is of no relevance for the filter bar itself.
+								 * <b>Note:</b> Additional information relevant for the specific {@link sap.ui.mdc.FilterBarDelegate FilterBarDelegate} implementation might be included but is of no relevance for the {@link sap.ui.mdc.FilterBar FilterBar} control itself.
 								 */
 								payload: {
 									modelName: undefined,
@@ -107,7 +99,7 @@ sap.ui.define(
 			}
 		);
 
-		var ButtonType = mLibrary.ButtonType;
+		const ButtonType = mLibrary.ButtonType;
 
 		FilterBar.prototype._createInnerLayout = function () {
 			this._cLayoutItem = FilterItemLayout;
@@ -154,29 +146,19 @@ sap.ui.define(
 
 			this._oFilterBarLayout.addControl(this._oBtnFilters);
 
-
 			this._oShowAllFiltersBtn = new Button(this.getId() + "-btnShowAllFilters", {
 				type: ButtonType.Transparent,
 				press: this._onShowAllFilters.bind(this),
-				text: this._oRb.getText("valuehelp.SHOWALLFILTERS")
+				text: this._oRb.getText("valuehelp.SHOWALLFILTERS"),
+				visible: false
 			});
+
 			this._oFilterBarLayout.addEndContent(this._oShowAllFiltersBtn);
-		};
-
-		FilterBar.prototype.applySettings = function(mSettings, oScope) {
-			this._applySettings(mSettings, oScope);
-			this._waitForMetadata();
-		};
-
-		FilterBar.prototype._handleConditionModelPropertyChange = function() {
-			FilterBarBase.prototype._handleConditionModelPropertyChange.apply(this, arguments);
-			this.fireFiltersChanged({conditionsBased: true});
 		};
 
 
 		FilterBar.prototype.init = function() {
 			FilterBarBase.prototype.init.apply(this, arguments);
-			this._bPersistValues = true;
 			this.getEngine().defaultProviderRegistry.attach(this, PersistenceMode.Transient);
 		};
 
@@ -201,12 +183,12 @@ sap.ui.define(
 		};
 
 		/**
-		 * Sets the <code>CollectiveSearch</code> control
+		 * Sets the {@link sap.ui.mdc.filterbar.vh.CollectiveSearchSelect CollectiveSearchSelect} control.
 		 *
 		 * <b>Note:</b> This must only be done by the corresponding value help, not from outside.
 		 *
-		 * @param {sap.ui.mdc.filterbar.vh.CollectiveSearchSelect} oCollectiveSearch <code>CollectiveSearch</code> control
-		 * @returns {this} Reference to <code>this</code> to allow method chaining
+		 * @param {sap.ui.mdc.filterbar.vh.CollectiveSearchSelect} oCollectiveSearch Instance of the {@link sap.ui.mdc.filterbar.vh.CollectiveSearchSelect CollectiveSearchSelect} control
+		 * @returns {sap.ui.mdc.filterbar.vh.FilterBar} Reference to <code>this</code> to allow method chaining
 		 * @protected
 		 */
 		FilterBar.prototype.setCollectiveSearch = function (oCollectiveSearch) {
@@ -224,11 +206,11 @@ sap.ui.define(
 		};
 
 		/**
-		 * Gets the <code>CollectiveSearch</code> control
+		 * Gets the {@link sap.ui.mdc.filterbar.vh.CollectiveSearchSelect CollectiveSearchSelect} control
 		 *
 		 * <b>Note:</b> This must only be used by the corresponding value help, not from outside.
 		 *
-		 * @returns {sap.ui.mdc.filterbar.vh.CollectiveSearchSelect} <code>CollectiveSearch</code> control
+		 * @returns {sap.ui.mdc.filterbar.vh.CollectiveSearchSelect} Instance of the {@link sap.ui.mdc.filterbar.vh.CollectiveSearchSelect CollectiveSearchSelect} control
 		 * @protected
 		 */
 		FilterBar.prototype.getCollectiveSearch = function () {
@@ -236,11 +218,11 @@ sap.ui.define(
 		};
 
 		/**
-		 * Destroyes the <code>CollectiveSearch</code> control
+		 * Destroys the {@link sap.ui.mdc.filterbar.vh.CollectiveSearchSelect CollectiveSearchSelect} control.
 		 *
 		 * <b>Note:</b> This must only be used by the corresponding value help, not from outside.
 		 *
-		 * @returns {this} Reference to <code>this</code> to allow method chaining
+		 * @returns {this} {sap.ui.mdc.filterbar.vh.FilterBar}Reference to <code>this</code> to allow method chaining
 		 * @protected
 		 */
 		 FilterBar.prototype.destroyCollectiveSearch = function () {
@@ -307,7 +289,7 @@ sap.ui.define(
 		 * @ui5-restricted sap.ui.mdc
 		 */
 		FilterBar.prototype.getInitialFocusedControl = function() {
-			var oCtrl = this.getBasicSearchField();
+			let oCtrl = this.getBasicSearchField();
 			if (!oCtrl && this.getShowGoButton()) {
 				oCtrl = this._btnSearch;
 			}

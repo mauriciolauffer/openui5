@@ -2,12 +2,14 @@ sap.ui.define([
 	"sap/ui/test/Opa5",
 	"test-resources/sap/ui/mdc/qunit/table/OpaTests/pages/Actions",
 	"test-resources/sap/ui/mdc/qunit/table/OpaTests/pages/Assertions",
-	"test-resources/sap/ui/mdc/testutils/opa/table/Actions"
+	"test-resources/sap/ui/mdc/testutils/opa/table/Actions",
+	"test-resources/sap/ui/mdc/qunit/p13n/OpaTests/utility/Action"
 ], function(
 	/** @type sap.ui.test.Opa5 */ Opa5,
 	/** @type sap.ui.test.Opa5 */ AppUnderTestActions,
 	/** @type sap.ui.test.Opa5 */ AppUnderTestAssertions,
-	/** @type sap.ui.test.Opa5 */ TableActions) {
+	/** @type sap.ui.test.Opa5 */ TableActions,
+	/** @type sap.ui.test.Opa5 */ P13nAction) {
 	"use strict";
 
 	Opa5.createPageObjects({
@@ -67,7 +69,61 @@ sap.ui.define([
 				},
 
 				/**
-				 * Performs an Press action on {@type sap.m.SegmentedButtonItem}
+				 * Emulates a click action on the expand all rows button.
+				 *
+				 * @function
+				 * @name iClickOnExpandAllRowsButton
+				 * @param {String|sap.ui.mdc.Table} vControl Id or control instance of the MDCTable
+				 * @returns {Promise} OPA waitFor
+				 * @private
+				 */
+				iClickOnExpandAllRowsButton: function(vControl) {
+					return AppUnderTestActions.iClickOnExpandAllRowsButton.call(this, vControl);
+				},
+
+				/**
+				 * Emulates a click action on the collapse all rows button.
+				 *
+				 * @function
+				 * @name iClickOnCollapseAllRowsButton
+				 * @param {String|sap.ui.mdc.Table} vControl Id or control instance of the MDCTable
+				 * @returns {Promise} OPA waitFor
+				 * @private
+				 */
+				iClickOnCollapseAllRowsButton: function(vControl) {
+					return AppUnderTestActions.iClickOnCollapseAllRowsButton.call(this, vControl);
+				},
+
+				/**
+				 * Emulates a drag action on a column to move it.
+				 *
+				 * @function
+				 * @name iDragColumn
+				 * @param {String|sap.ui.mdc.Table} vControl Id or control instance of the MDCTable
+				 * @param {Number} iColumnIndex Index of Column to drag
+				 * @returns {Promise} OPA waitFor
+				 * @private
+				 */
+				iDragColumn: function(vControl, iColumnIndex) {
+					return AppUnderTestActions.iDragColumn.call(this, vControl, iColumnIndex);
+				},
+
+				/**
+				 *  Emulates a drop action on a column to drop it after a defined column.
+				 *
+				 * @function
+				 * @name iDropColumnAfter
+				 * @param {String|sap.ui.mdc.Table} vControl Id or control instance of the MDCTable
+				 * @param {Number} iColumnIndex Index of Column on which Drop should be executed
+				 * @returns {Promise} OPA waitFor
+				 * @private
+				 */
+				iDropColumnAfter: function(vControl, iColumnIndex) {
+					return AppUnderTestActions.iDropColumnAfter.call(this, vControl, iColumnIndex);
+				},
+
+				/**
+				 * Performs a Press action on {@link sap.m.SegmentedButtonItem}
 				 * 'showDetails' to display hidden columns in the pop-in area.
 				 *
 				 * @function
@@ -81,7 +137,7 @@ sap.ui.define([
 				},
 
 				/**
-				 * Performs an Press action on {@type sap.m.SegmentedButtonItem}
+				 * Performs a Press action on {@link sap.m.SegmentedButtonItem}
 				 * 'hideDetails' to hide hidden columns from the pop-in area.
 				 *
 				 * @function
@@ -95,7 +151,7 @@ sap.ui.define([
 				},
 
 				/**
-				 * Performs an Press action on {@type sap.m.Button}
+				 * Performs a Press action on {@link sap.m.Button}
 				 * 'export-internalSplitBtn-textButton' to start the Excel export.
 				 *
 				 * @function
@@ -109,9 +165,9 @@ sap.ui.define([
 				},
 
 				/**
-				 * Performs an Press action on {@type sap.m.Button}
+				 * Performs a Press action on {@link sap.m.Button}
 				 * 'export-internalSplitBtn-arrowButton' that shows up the
-				 * additional {@type sap.ui.unified.Menu} with the items
+				 * additional {@link sap.ui.unified.Menu} with the items
 				 * <ul>
 				 *     <li>Export</li>
 				 *     <li>Export as...</li>
@@ -128,8 +184,8 @@ sap.ui.define([
 				},
 
 				/**
-				 * Performs an Press action on {@type sap.ui.unified.MenuItem} 'Export'
-				 * that is shown up from {@see iPressExportMenuButton}.
+				 * Performs a Press action on {@link sap.ui.unified.MenuItem} 'Export'
+				 * that is shown up from {@link #iPressExportMenuButton}.
 				 *
 				 * @function
 				 * @name iPressExportMenuButton
@@ -141,8 +197,8 @@ sap.ui.define([
 				},
 
 				/**
-				 * Performs an Press action on {@type sap.ui.unified.MenuItem} 'Export as...'
-				 * that is shown up from {@see iPressExportMenuButton}.
+				 * Performs a Press action on {@link sap.ui.unified.MenuItem} 'Export as...'
+				 * that is shown up from {@link #iPressExportMenuButton}.
 				 *
 				 * @function
 				 * @name iPressExportAsButtonInMenu
@@ -154,8 +210,8 @@ sap.ui.define([
 				},
 
 				/**
-				 * Fills in the data in the {@type sap.m.Dialog} 'exportSettingsDialog'
-				 * that is shown up from {@see iPressExportAsButtonInMenu} and triggers the excel export.
+				 * Fills in the data in the {@link sap.m.Dialog} 'exportSettingsDialog'
+				 * that is shown up from {@link #iPressExportAsButtonInMenu} and triggers the excel export.
 				 *
 				 * @function
 				 * @name iFillInExportSettingsDialog
@@ -173,8 +229,8 @@ sap.ui.define([
 				},
 
 				/**
-				 * Performs Press action on {@type sap.m.Button} 'exportSettingsDialog-exportButton'
-				 * in {@type sap.m.Dialog} 'exportSettingsDialog'.
+				 * Performs Press action on {@link sap.m.Button} 'exportSettingsDialog-exportButton'
+				 * in {@link sap.m.Dialog} 'exportSettingsDialog'.
 				 *
 				 * @function
 				 * @name iPressExportButtonInExportSettingsDialog
@@ -226,6 +282,19 @@ sap.ui.define([
 				},
 
 				/**
+				 * Emulates a press action on a column header to open the column menu.
+				 *
+				 * @function
+				 * @name iPressOnColumnHeader
+				 * @param {String|sap.ui.mdc.Table} oControl Id or control instance of the MDCTable
+				 * @param {String|sap.ui.mdc.table.Column} vColumn Header name or control instance of the column
+				 * @returns {Promise} OPA waitFor
+				 */
+				iPressOnColumnHeader: function(oControl, vColumn) {
+					return AppUnderTestActions.iPressOnColumnHeader.call(this, oControl, vColumn);
+				},
+
+				/**
 				 * Selects all visible rows available in the MDCTable.
 				 *
 				 * @function
@@ -253,33 +322,14 @@ sap.ui.define([
 				 * Selects one or multiple rows.
 				 *
 				 * @function
-				 * @name iSelectSomeRows
+				 * @name iSelectRows
 				 * @param {String|sap.ui.mdc.Table} oControl Id or control instance of the MDCTable
 				 * @param {Number} iStartIndex Index from which the selection starts
 				 * @param {Number} iEndIndex Index up to the selection ends
 				 * @returns {Promise} OPA waitFor
 				 */
-				iSelectSomeRows: function(oControl, iStartIndex, iEndIndex) {
-					return TableActions.iSelectSomeRows.call(this, oControl, iStartIndex, iEndIndex);
-				},
-
-				/**
-				 * Removes the selection for one or multiple rows.
-				 *
-				 * @function
-				 * @name iDeselectSomeRows
-				 * @param {String|sap.ui.mdc.Table} oControl Id or control instance of the MDCTable
-				 * @param {Number} iStartIndex Index from which the selection starts
-				 * @param {Number} iEndIndex Index up to the selection ends
-				 * @returns {Promise} OPA waitFor
-				 * @private
-				 */
-				iDeselectSomeRows: function(oControl, iStartIndex, iEndIndex) {
-					return TableActions.iDeselectSomeRows.call(this, oControl, iStartIndex, iEndIndex);
-				},
-
-				iPressOnColumnHeader: function(sName, bResponsiveTable){
-					return AppUnderTestActions.iPressOnColumnHeader.apply(this, arguments);
+				iSelectRows: function(oControl, iStartIndex, iEndIndex) {
+					return TableActions.iSelectRows.call(this, oControl, iStartIndex, iEndIndex);
 				},
 
 				iCloseTheColumnMenu: function() {
@@ -310,12 +360,80 @@ sap.ui.define([
 					return AppUnderTestActions.iPressResetInColumnMenuItemContent.apply(this, arguments);
 				},
 
+				/**
+				 * Chooses the specified column in the combobox of the sort menu item inside the column menu.
+				 *
+				 * @function
+				 * @name iSortByColumnInColumnMenuItemContent
+				 * @param {String} sColumn Header of the column
+				 * @param {Boolean} bDescending Sorting direction is descending
+				 * @returns {Promise} OPA waitFor
+				 * @private
+				 */
+				iSortByColumnInColumnMenuItemContent: function(sColumn) {
+					return AppUnderTestActions.iSortByColumnInColumnMenuItemContent.apply(this, arguments);
+				},
+
 				iPressConfirmInColumnMenuItemContent: function() {
 					return AppUnderTestActions.iPressConfirmInColumnMenuItemContent.apply(this, arguments);
 				},
 
 				iPressCancelInColumnMenuItemContent: function() {
 					return AppUnderTestActions.iPressCancelInColumnMenuItemContent.apply(this, arguments);
+				},
+
+				/**
+				 * Presses the filter info bar on the table.
+				 *
+				 * @param {string|sap.ui.core.Control} vControl control ID or control instance
+				 * @returns {Promise} OPA waitFor
+				 */
+				iPressFilterInfoBar: function(vControl) {
+					return AppUnderTestActions.iPressFilterInfoBar.apply(this, arguments);
+				},
+
+				/**
+				 * Removes all filters by pressing the "Remove All Filters" button on the filter info bar.
+				 *
+				 * @returns {Promise} OPA waitFor
+				 */
+				iRemoveAllFiltersViaInfoFilterBar: function() {
+					return AppUnderTestActions.iRemoveAllFiltersViaInfoFilterBar.apply(this, arguments);
+				},
+
+				iConfirmColumnMenuItemContent: function() {
+					return AppUnderTestActions.iConfirmColumnMenuItemContent.apply(this, arguments);
+				},
+
+				iOpenP13nDialog: function() {
+					return AppUnderTestActions.iOpenP13nDialog.apply(this, arguments);
+				},
+
+				iSelectVariant: function(sVariantName) {
+					const Action = new P13nAction();
+					return Action.iSelectVariant(sVariantName);
+				},
+
+				/** Selects the column in Selection panel from p13n or column menu
+				 *
+				 * @param {Array} aColumnName list of column lanel that needs to be selected.
+				 * @param {Boolean} [bModal] Indicates whether column menu or p13n dialog is used.
+				 * @returns {Promise} OPA waitFor
+				 */
+				iSelectColumns: function(aColumnName, bModal) {
+					const Action = new P13nAction();
+					return aColumnName.forEach(function(sColumnName) {
+						Action.iSelectColumn(sColumnName, null, undefined, bModal);
+					});
+				},
+
+				/** Closes the p13n dialog
+				 *
+				 * @returns {Promise} OPA waitFor
+				 */
+				iPressDialogOk: function() {
+					const Action = new P13nAction();
+					return Action.iPressDialogOk();
 				}
 			},
 			assertions: {
@@ -404,11 +522,13 @@ sap.ui.define([
 				 * @function
 				 * @name iShouldSeeTheShowHideDetailsButton
 				 * @param {String|sap.ui.mdc.Table} oControl Id or control instance of the MDCTable
+				 * @param {Boolean} sKey The selected key
+		 		 * @param {Boolean} bValue Button visibility
 				 * @returns {Promise} OPA waitFor
 				 * @private
 				 */
-				iShouldSeeTheShowHideDetailsButton: function(oControl) {
-					return AppUnderTestAssertions.iShouldSeeTheShowHideDetailsButton.call(this, oControl);
+				iShouldSeeTheShowHideDetailsButton: function(oControl, sKey, bValue) {
+					return AppUnderTestAssertions.iShouldSeeTheShowHideDetailsButton.call(this, oControl, sKey, bValue);
 				},
 
 				/**
@@ -425,16 +545,17 @@ sap.ui.define([
 				},
 
 				/**
-				 * Checks if the P13n button is visible on the screen
+				 * Checks if the P13n button is visible/not visible on the MDCTable.
 				 *
 				 * @function
 				 * @name iShouldSeeTheP13nButton
 				 * @param {String|sap.ui.mdc.Table} oControl Id or control instance of the MDCTable
+				 * @param {Boolean} bShowP13n Flag if P13n button should be visible
 				 * @returns {Promise} OPA waitFor
 				 * @private
 				 */
-				iShouldSeeTheP13nButton: function(oControl) {
-					return AppUnderTestAssertions.iShouldSeeTheP13nButton.call(this, oControl);
+				iShouldSeeTheP13nButton: function(oControl, bShowP13n) {
+					return AppUnderTestAssertions.iShouldSeeTheP13nButton.call(this, oControl, bShowP13n);
 				},
 
 				/**
@@ -494,6 +615,34 @@ sap.ui.define([
 				},
 
 				/**
+				 * Checks if row count is correct.
+				 *
+				 * @function
+				 * @name iCheckBindingLength
+				 * @param {String|sap.ui.mdc.Table} vControl Id or control instance of the MDCTable
+				 * @param {Number} iRowNumber Number of expected visible rows
+				 * @returns {Promise} OPA waitFor
+				 * @private
+				 */
+				iCheckBindingLength: function(vControl, iRowNumber) {
+					return AppUnderTestAssertions.iCheckBindingLength.call(this, vControl, iRowNumber);
+				},
+
+				/**
+				 * Checks if column is in correct position.
+				 *
+				 * @function
+				 * @name iCheckColumnPosition
+				 * @param {String|sap.ui.mdc.Table} vControl Id or control instance of the MDCTable
+				 * @param {String} sColumnId Column Id String
+				 * @param {Number} iColumnNumber Number of expected column position
+				 * @returns {Promise} OPA waitFor
+				 * @private
+				 */
+				iCheckColumnPosition: function(vControl, sColumnId, iColumnNumber) {
+					return AppUnderTestAssertions.iCheckColumnPosition.call(this, vControl, sColumnId, iColumnNumber);
+				},
+				/**
 				 * Checks if the dialog, showing the actual process status of the export,
 				 * is visible on the screen.
 				 *
@@ -507,8 +656,8 @@ sap.ui.define([
 				},
 
 				/**
-				 * Checks if the sap.ui.unified.Menu shows up after
-				 * pressing on the arrow button performed in {@see iPressExportMenuButton}.
+				 * Checks if the {@link sap.ui.unified.Menu} shows up after
+				 * pressing on the arrow button performed in {@link #iPressExportMenuButton}.
 				 *
 				 * @function
 				 * @name iShouldSeeExportMenu
@@ -521,7 +670,7 @@ sap.ui.define([
 
 				/**
 				 * Checks if the sap.m.Dialog 'exportSettingsDialog' is visible on the screen after
-				 * pressing on the 'Export as...' button performed in {@see iPressExportAsButtonInMenu}.
+				 * pressing on the 'Export as...' button performed in {@link #iPressExportAsButtonInMenu}.
 				 *
 				 * @function
 				 * @name iShouldSeeExportSettingsDialog
@@ -530,6 +679,17 @@ sap.ui.define([
 				 */
 				iShouldSeeExportSettingsDialog: function() {
 					return AppUnderTestAssertions.iShouldSeeExportSettingsDialog.call(this);
+				},
+
+				/**
+				 * Checks if the ColumnMenu is visible.
+				 *
+				 * @function
+				 * @name iShouldSeeTheColumnMenu
+				 * @returns {Promise} OPA waitFor
+				 */
+				iShouldSeeTheColumnMenu: function() {
+					return AppUnderTestAssertions.iShouldSeeTheColumnMenu.call(this);
 				},
 
 				iShouldSeeOneColumnMenu: function() {
@@ -564,6 +724,13 @@ sap.ui.define([
 					return AppUnderTestAssertions.iShouldSeeNumberOfColumnMenuItems.apply(this, arguments);
 				},
 
+				/**
+				 * Checks if there are no QuickActions available in the column menu.
+				 *
+				 * @function
+				 * @name iShouldNotSeeColumnMenuItems
+				 * @returns {Promise} OPA waitFor
+				 */
 				iShouldNotSeeColumnMenuItems: function() {
 					return AppUnderTestAssertions.iShouldNotSeeColumnMenuItems.apply(this, arguments);
 				},
@@ -578,6 +745,109 @@ sap.ui.define([
 
 				iShouldSeeColumnMenuItemContent: function(sTitle) {
 					return AppUnderTestAssertions.iShouldSeeColumnMenuItemContent.apply(this, arguments);
+				},
+
+				/**
+				 * Checks if sorting configuration of the column matches the specified sorting settings.
+				 *
+				 * @function
+				 * @name iShouldSeeColumnSorted
+				 * @param {sap.ui.mdc.Table} oControl Instance of the MDCTable
+				 * @param {String|sap.ui.mdc.table.Column} vColumn Header name or control instance of the column
+				 * @param {Boolean} bDescending Sorting direction is descending
+				 * @returns {Promise} OPA waitFor
+				 * @private
+				 */
+				iShouldSeeColumnSorted: function(oControl, vColumn, bDescending) {
+					return AppUnderTestAssertions.iShouldSeeColumnSorted.apply(this, arguments);
+				},
+
+				/**
+				 * Checks if the selected column of the sorting combobox matches the specified column in the parameter.
+				 *
+				 * @function
+				 * @name iShouldSeeSortedByColumnInColumnMenuItem
+				 * @param {String} sColumn Header of the column
+				 * @returns {Promise} OPA waitFor
+				 * @private
+				 */
+				iShouldSeeSortedByColumnInColumnMenuItem: function(sColumn) {
+					return AppUnderTestAssertions.iShouldSeeSortedByColumnInColumnMenuItem.apply(this, arguments);
+				},
+
+				/**
+				 * Checks if sorting direction inside the column menu matches the specified sorting direction in the parameter.
+				 *
+				 * @function
+				 * @name iShouldSeeSortDirectionInColumnMenuItem
+				 * @param {Boolean} bDescending Sorting direction is descending
+				 * @returns {Promise} OPA waitFor
+				 * @private
+				 */
+				iShouldSeeSortDirectionInColumnMenuItem: function(bDescending) {
+					return AppUnderTestAssertions.iShouldSeeSortDirectionInColumnMenuItem.apply(this, arguments);
+				},
+
+				/**
+				 * Checks if the P13n dialog is visible.
+				 *
+				 * @returns {Promise} OPA waitFor
+				 * @private
+				 */
+				iShouldSeeP13nDialog: function() {
+					return AppUnderTestAssertions.iShouldSeeP13nDialog.apply(this, arguments);
+				},
+
+				/**
+				 * Checks if the specified values in the filter dialog can be seen for the column.
+				 * @param {string} sColumn column name
+				 * @param {string} sValue filter value
+				 * @returns {Promise} OPA waitFor
+				 */
+				iShouldSeeValuesInFilterDialog: function(sColumn, sValue) {
+					return AppUnderTestAssertions.iShouldSeeValuesInFilterDialog.apply(this, arguments);
+				},
+
+				/**
+				 * Checks if the filter info bar contains all the filtered columns.
+				 *
+				 * @param {sap.ui.core.Control|string} vControl control instance or control ID
+				 * @param {string[]} aFilteredColumns array of column names that should be visible
+				 * @returns {Promise} OPA waitFor
+				 */
+				iShouldSeeInfoFilterBarWithFilters: function(aFilteredColumns) {
+					return AppUnderTestAssertions.iShouldSeeInfoFilterBarWithFilters.apply(this, arguments);
+				},
+
+				/**
+				 * Checks if the filter info bar is not visible.
+				 *
+				 * @param {sap.ui.core.Control|string} vControl control instance or control ID
+				 * @returns {Promise} OPA waitFor
+				 */
+				iShouldNotSeeInfoFilterBar: function(vControl) {
+					return AppUnderTestAssertions.iShouldNotSeeInfoFilterBar.apply(this, arguments);
+				},
+
+				/**
+				 * Checks if the focus is on a given control.
+				 *
+				 * @param {string|sap.ui.core.Control} vControl control instance or a control ID
+				 * @returns {Promise} OPA waitFor
+				 * @private
+				 */
+				iShouldSeeFocusOnControl: function(vControl) {
+					return AppUnderTestAssertions.iShouldSeeFocusOnControl.apply(this, arguments);
+				},
+
+				/**
+				 * Checks if the variant is selected
+				 *
+				 * @param {String} sVariantName Selected variant name
+				 * @returns {Promise} OPA waitFor
+				 */
+				iShouldSeeSelectedVariant: function(sVariantName) {
+					return AppUnderTestAssertions.iShouldSeeSelectedVariant.apply(this, arguments);
 				}
 			}
 		}

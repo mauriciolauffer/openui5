@@ -70,7 +70,7 @@
 				</table>
 			</div>
 
-			<h4 id="listItemProperties">ListItem properties</h4>
+			<div id="listItemProperties" class="boldBlock">ListItem Properties</div>
 			<div class="tableWrapper">
 				<table>
 					<tr>
@@ -86,14 +86,14 @@
 						<td>title</td>
 						<td>string</td>
 						<td></td>
-						<td>No</td>
+						<td>Yes</td>
 						<td>The title of the item.</td>
 						<td>1.14.0</td>
 						<td>1.62</td>
 					</tr>
 					<tr>
 						<td>description</td>
-						<td>string</td>
+						<td>string|<a href="#descriptionProperties">Description</a></td>
 						<td></td>
 						<td>No</td>
 						<td>The description of the item.</td>
@@ -114,9 +114,18 @@
 						<td>string</td>
 						<td></td>
 						<td>No</td>
-						<td>The highlight of the item.</td>
+						<td>The highlight state of the item.</td>
 						<td>1.14.0</td>
 						<td>1.62</td>
+					</tr>
+					<tr>
+						<td>highlightText</td>
+						<td>string</td>
+						<td></td>
+						<td>No</td>
+						<td>Defines the semantics of the "highlight" property. It is used for accessibility purposes.</td>
+						<td>1.53.0</td>
+						<td>1.113</td>
 					</tr>
 					<tr>
 						<td>icon</td>
@@ -187,7 +196,44 @@
 				</table>
 			</div>
 
-			<h4 id="iconApi">Icon properties</h4>
+			<div id="descriptionProperties" class="boldBlock">Description Properties</div>
+			<div class="tableWrapper">
+				<table>
+					<tr>
+						<th>Property</th>
+						<th>Type</th>
+						<th>Default Value</th>
+						<th>Required</th>
+						<th>Description</th>
+						<th>Schema Version</th>
+						<th>Since</th>
+					</tr>
+					<tr>
+						<td>value</td>
+						<td>string</td>
+						<td></td>
+						<td>Yes</td>
+						<td>The description of the item.</td>
+						<td>1.14.0</td>
+						<td>1.62</td>
+					</tr>
+					<tr>
+						<td>visible</td>
+						<td>boolean</td>
+						<td>true</td>
+						<td>No</td>
+						<td>
+							Visibility of the description.
+							<br>
+							<b>Note:</b> This property is experimental and may change!
+						</td>
+						<td>1.56.0</td>
+						<td>1.116</td>
+					</tr>
+				</table>
+			</div>
+
+			<div id="iconApi" class="boldBlock">Icon Properties</div>
 			<div class="tableWrapper">
 				<table>
 					<tr>
@@ -266,6 +312,7 @@
 					<tr>
 						<td>visible</td>
 						<td>boolean</td>
+						<td>true</td>
 						<td>No</td>
 						<td>
 							Defines whether the icon should be displayed.
@@ -276,7 +323,7 @@
 				</table>
 			</div>
 
-			<h4 id="valueStateItemApi">ValueStateItem properties</h4>
+			<div id="valueStateItemApi" class="boldBlock">ValueStateItem Properties</div>
 			<div class="tableWrapper">
 				<table>
 					<tr>
@@ -311,9 +358,18 @@
 						<td>boolean</td>
 						<td>false</td>
 						<td>No</td>
-						<td>Defines if a default state icon is shown</td>
+						<td>Defines if a state icon is shown.</td>
 						<td>1.50.0</td>
 						<td>1.110</td>
+					</tr>
+					<tr>
+						<td>customStateIcon</td>
+						<td>string</td>
+						<td></td>
+						<td>No</td>
+						<td>The custom state icon. If it is set, then "showStateIcon" property should be set to true.</td>
+						<td>1.53.0</td>
+						<td>1.113</td>
 					</tr>
 					<tr>
 						<td>visible</td>
@@ -327,7 +383,7 @@
 				</table>
 			</div>
 
-			<h4 id="groupApi">Group properties</h4>
+			<div id="groupApi" class="boldBlock">Group Properties</div>
 			<div class="tableWrapper">
 				<table>
 					<tr>
@@ -360,7 +416,7 @@
 				</table>
 			</div>
 
-			<h4 id="groupOrderApi">Group order properties</h4>
+			<div id="groupOrderApi" class="boldBlock">Group order Properties</div>
 			<div class="tableWrapper">
 				<table>
 					<tr>
@@ -534,12 +590,6 @@
 	&lt;w:Card manifest="./manifest.json" width="400px" height="auto" /&gt;
 &lt;/mvc:View&gt;</pre>
 			<a class="try-button" href="../../../index.html#/explore/list" target="_parent">Try it Out</a>
-		</div>
-		<div class="navigation">
-			<h4>Table of Contents</h4>
-			<div><a href="#overview">List Card</a></div>
-			<div><a href="#properties">Properties</a></div>
-			<div><a href="#example">Example</a></div>
 		</div>
 	</div>
 </body>

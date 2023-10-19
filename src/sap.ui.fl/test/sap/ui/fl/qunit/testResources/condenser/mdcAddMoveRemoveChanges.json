@@ -2,14 +2,14 @@
 	{
 		"fileName": "id_01_addColumn",
 		"changeType": "addColumn",
-		"reference": "test.Component",
+		"reference": "test",
 		"content": {
 			"name": "column3",
 			"index": 1
 		},
 		"selector": {
 			"id": "view--mdcTable",
-			"idIsLocal": true
+			"idIsLocal": false
 		},
 		"layer": "USER",
 		"creation": "2020-02-10T08:57:31.119Z"
@@ -17,14 +17,14 @@
 	{
 		"fileName": "id_02_moveColumn",
 		"changeType": "moveColumn",
-		"reference": "test.Component",
+		"reference": "test",
 		"content": {
 			"name": "column3",
 			"index": 2
 		},
 		"selector": {
 			"id": "view--mdcTable",
-			"idIsLocal": true
+			"idIsLocal": false
 		},
 		"layer": "USER",
 		"creation": "2020-01-31T06:33:51.192Z"
@@ -32,14 +32,14 @@
 	{
 		"fileName": "id_03_moveColumn",
 		"changeType": "moveColumn",
-		"reference": "test.Component",
+		"reference": "test",
 		"content": {
 			"name": "column3",
 			"index": 0
 		},
 		"selector": {
 			"id": "view--mdcTable",
-			"idIsLocal": true
+			"idIsLocal": false
 		},
 		"layer": "USER",
 		"creation": "2020-01-31T06:33:51.193Z"
@@ -47,14 +47,14 @@
 	{
 		"fileName": "id_04_moveColumn",
 		"changeType": "moveColumn",
-		"reference": "test.Component",
+		"reference": "test",
 		"content": {
 			"name": "column3",
 			"index": 3
 		},
 		"selector": {
 			"id": "view--mdcTable",
-			"idIsLocal": true
+			"idIsLocal": false
 		},
 		"layer": "USER",
 		"creation": "2020-01-31T06:33:51.194Z"
@@ -62,14 +62,14 @@
 	{
 		"fileName": "id_05_moveColumn",
 		"changeType": "moveColumn",
-		"reference": "test.Component",
+		"reference": "test",
 		"content": {
 			"name": "column3",
 			"index": 1
 		},
 		"selector": {
 			"id": "view--mdcTable",
-			"idIsLocal": true
+			"idIsLocal": false
 		},
 		"layer": "USER",
 		"creation": "2020-01-31T06:33:51.195Z"
@@ -77,14 +77,14 @@
 	{
 		"fileName": "id_06_moveColumn",
 		"changeType": "moveColumn",
-		"reference": "test.Component",
+		"reference": "test",
 		"content": {
 			"name": "column3",
 			"index": 2
 		},
 		"selector": {
 			"id": "view--mdcTable",
-			"idIsLocal": true
+			"idIsLocal": false
 		},
 		"layer": "USER",
 		"creation": "2020-01-31T06:33:51.196Z"
@@ -92,14 +92,14 @@
 	{
 		"fileName": "id_07_removeColumn",
 		"changeType": "removeColumn",
-		"reference": "test.Component",
+		"reference": "test",
 		"content": {
 			"name": "column3",
 			"id": "mdcTable--column3"
 		},
 		"selector": {
 			"id": "view--mdcTable",
-			"idIsLocal": true
+			"idIsLocal": false
 		},
 		"layer": "USER",
 		"creation": "2020-01-31T06"

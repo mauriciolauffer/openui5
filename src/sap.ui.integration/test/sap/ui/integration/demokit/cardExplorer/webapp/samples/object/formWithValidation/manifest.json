@@ -36,7 +36,10 @@
 						"status": "approved",
 						"reason": "{form>/reason/key}",
 						"reasonText": "{form>/reason/value}",
-						"comment": "{form>/comment}"
+						"comment": "{form>/comment}",
+						"e-mail": "{form>/e-mail}",
+						"duration": "{form>/duration}",
+						"date": "{form>/date/range/startLocalDate}"
 					}
 				}
 			}
@@ -113,10 +116,11 @@
 						},
 						{
 							"id": "comment",
-							"label": "Comment",
+							"label": "Have anything to add?",
 							"type": "TextArea",
 							"rows": 4,
 							"placeholder": "Comment",
+							"showColon": false,
 							"validations": [
 								{
 									"required": true
@@ -132,8 +136,7 @@
 						{
 							"id": "e-mail",
 							"label": "E-mail",
-							"type": "TextArea",
-							"rows": 1,
+							"type": "Input",
 							"placeholder": "e-mail",
 							"validations": [
 								{
@@ -142,6 +145,26 @@
 								{
 									"pattern": "^\\w+[\\w-+\\.]*\\@\\w+([-\\.]\\w+)*\\.[a-zA-Z]{2,}+$",
 									"message": "You should enter a valid e-mail."
+								}
+							]
+						},
+						{
+							"id": "duration",
+							"label": "Duration",
+							"type": "Duration",
+							"validations": [
+								{
+									"required": true
+								}
+							]
+						},
+						{
+							"id": "date",
+							"label": "Date",
+							"type": "DateRange",
+							"validations": [
+								{
+									"required": true
 								}
 							]
 						}

@@ -5,29 +5,27 @@
 sap.ui.define([
 	"./GridTableType",
 	"./ResponsiveTableType",
-	"../library",
 	"sap/base/Log",
 	"sap/m/library",
 	"sap/m/Label",
 	"sap/ui/model/json/JSONModel",
 	"sap/ui/model/base/ManagedObjectModel",
 	"sap/ui/core/Control",
-	"sap/ui/core/Core"
+	"sap/ui/core/Core",
+	"sap/ui/mdc/enums/TableType"
 ], function(
 	GridTableType,
 	ResponsiveTableType,
-	library,
 	Log,
 	MLibrary,
 	Label,
 	JSONModel,
 	ManagedObjectModel,
 	Control,
-	Core
+	Core,
+	TableType
 ) {
 	"use strict";
-
-	var TableType = library.TableType;
 
 	/**
 	 * Constructor for a new <code>Column</column>.
@@ -37,14 +35,11 @@ sap.ui.define([
 	 * @class The column for the metadata-driven table with the template, which is shown if the rows have data.
 	 * @extends sap.ui.core.Control
 	 * @author SAP SE
-	 * @private
-	 * @experimental
-	 * @ui5-restricted sap.fe
-	 * @MDC_PUBLIC_CANDIDATE
+	 * @public
 	 * @since 1.58
 	 * @alias sap.ui.mdc.table.Column
 	 */
-	var Column = Control.extend("sap.ui.mdc.table.Column", {
+	const Column = Control.extend("sap.ui.mdc.table.Column", {
 		metadata: {
 			library: "sap.ui.mdc",
 			defaultAggregation: "template",
@@ -111,20 +106,20 @@ sap.ui.define([
 					group: "Behavior",
 					defaultValue: "None"
 				},
-				/*
-				 * Only used during creation of table for initial/1st rendering, 0 based index
+				/**
+				 * Defines data property related to the column.
+				 * @deprecated Since 1.115. Please use <code>propertyKey</code> instead.
+				 * @since 1.84
 				 */
-				// TODO: Delete!
-				initialIndex: {
-					type: "int",
-					defaultValue: -1
+				dataProperty: {
+					type: "string"
 				},
 				/**
 				 * Defines data property related to the column.
 				 *
-				 * @since 1.84
+				 * @since 1.115
 				 */
-				dataProperty: {
+				propertyKey: {
 					type: "string"
 				},
 				/**
@@ -150,6 +145,9 @@ sap.ui.define([
 				 * <code>CreationRow</code> template.
 				 *
 				 * <b>Note:</b> Once the binding supports creating transient records, this aggregation will be removed.
+				 *
+				 * @experimental Do not use
+				 * @ui5-restricted sap.fe
 				 */
 				creationTemplate: {
 					type: "sap.ui.core.Control",
@@ -199,7 +197,7 @@ sap.ui.define([
 	};
 
 	Column.prototype.getInnerColumn = function() {
-		var oTable = this.getTable();
+		const oTable = this.getTable();
 
 		if (oTable && (!this._oInnerColumn || this._oInnerColumn.isDestroyed())) {
 			this._oInnerColumn = this._createInnerColumn();
@@ -209,10 +207,10 @@ sap.ui.define([
 	};
 
 	Column.prototype._createInnerColumn = function() {
-		var oTable = this.getTable();
-		var oColumn;
+		const oTable = this.getTable();
+		let oColumn;
 
-		var oWidthBindingInfo = {
+		const oWidthBindingInfo = {
 			parts: [
 				{path: "$this>/width"},
 				{path: "$columnSettings>/calculatedWidth"},
@@ -223,6 +221,21 @@ sap.ui.define([
 			}
 		};
 
+		const oTooltipBindingInfo = {
+			parts: [
+				{path: "$this>/tooltip"},
+				{path: "$this>/header"},
+				{path: "$this>/headerVisible"},
+				{path: "$sap.ui.mdc.Table>/useColumnLabelsAsTooltips"}
+			],
+			formatter: function(sTooltip, sHeader, bHeaderVisible, bUseColumnLabelsAsTooltips) {
+				if (sTooltip || !bUseColumnLabelsAsTooltips) {
+					return sTooltip;
+				}
+				return bHeaderVisible ? sHeader : "";
+			}
+		};
+
 		this._readP13nValues(); // XConfig might not have been available on init - depends on the order settings are applied in Table#applySettings.
 
 		if (oTable._isOfType(TableType.ResponsiveTable)) {
@@ -230,7 +243,7 @@ sap.ui.define([
 				width: oWidthBindingInfo,
 				autoPopinWidth: "{$this>/minWidth}",
 				hAlign: "{$this>/hAlign}",
-				header: this._getColumnHeaderLabel(),
+				header: this._getColumnHeaderLabel(oTooltipBindingInfo),
 				importance: {
 					parts: [
 						{path: "$this>/importance"},
@@ -246,7 +259,6 @@ sap.ui.define([
 					}
 				},
 				popinDisplay: "{= ${$this>/headerVisible} ? 'Inline' : 'WithoutHeader' }",
-				tooltip: "{$this>/tooltip}",
 				mergeDuplicates: {
 					parts: [
 						{path: "$this>/extendedSettings/mergeFunction"},
@@ -281,7 +293,7 @@ sap.ui.define([
 				label: this._getColumnHeaderLabel(),
 				resizable: "{$columnSettings>/resizable}",
 				autoResizable: "{$columnSettings>/resizable}",
-				tooltip: "{$this>/tooltip}",
+				tooltip: oTooltipBindingInfo,
 				template: this.getTemplateClone()
 			});
 			oColumn.setCreationTemplate(this.getCreationTemplateClone());
@@ -294,7 +306,7 @@ sap.ui.define([
 		return oColumn;
 	};
 
-	var ColumnHeaderLabel = Control.extend("sap.ui.mdc.table.ColumnHeaderLabel", {
+	const ColumnHeaderLabel = Control.extend("sap.ui.mdc.table.ColumnHeaderLabel", {
 		metadata: {
 			"final": true,
 			aggregations: {
@@ -326,20 +338,22 @@ sap.ui.define([
 	 * Creates and returns the column header control.
 	 * If <code>headerVisible=false</code> then <code>width=0px</code> is applied to the <code>sap.m.Label</code> control for accessibility purposes.
 	 *
+	 * @param {object} oTooltipBindingInfo The binding info to be usd for the tooltip of the created column header control.
+	 *
 	 * @returns {object} The column header control
 	 * @private
 	 */
-	Column.prototype._getColumnHeaderLabel = function() {
-		var oTable = this.getTable();
+	Column.prototype._getColumnHeaderLabel = function(oTooltipBindingInfo) {
+		const oTable = this.getTable();
 
 		if (oTable && (!this._oColumnHeaderLabel || this._oColumnHeaderLabel.isDestroyed())) {
 			this._oColumnHeaderLabel = new ColumnHeaderLabel({
 				column: this,
 				label: new Label({
-					width: "{= ${$this>/headerVisible} ? null : '0px' }",
+					width: "{= ${$this>/headerVisible} ? '100%' : '0px' }",
 					text: "{$this>/header}",
 					textAlign: "{$this>/hAlign}",
-					tooltip: oTable._isOfType(TableType.ResponsiveTable) ? "{$this>/tooltip}" : "",
+					tooltip: oTooltipBindingInfo ? oTooltipBindingInfo : "",
 					wrapping: {
 						parts: [
 							{path: "$this>/headerVisible"},
@@ -359,8 +373,8 @@ sap.ui.define([
 	};
 
 	Column.prototype.getTemplateClone = function() {
-		var oTable = this.getTable();
-		var oTemplate = this.getTemplate();
+		const oTable = this.getTable();
+		const oTemplate = this.getTemplate();
 
 		if (oTable && oTemplate && (!this._oTemplateClone || this._oTemplateClone.isDestroyed())) {
 			this._oTemplateClone = oTemplate.clone();
@@ -380,8 +394,8 @@ sap.ui.define([
 	};
 
 	Column.prototype.getCreationTemplateClone = function() {
-		var oTable = this.getTable();
-		var oCreationTemplate = this.getCreationTemplate();
+		const oTable = this.getTable();
+		const oCreationTemplate = this.getCreationTemplate();
 
 		if (oTable && oCreationTemplate && (!this._oCreationTemplateClone || this._oCreationTemplateClone.isDestroyed())) {
 			this._oCreationTemplateClone = oCreationTemplate.clone();
@@ -403,12 +417,18 @@ sap.ui.define([
 	Column.prototype.setHeader = function(sHeader) {
 		this.setProperty("header", sHeader, true);
 
-		var oLabelElement = this.getDomRef();
+		const oLabelElement = this.getDomRef();
 		if (oLabelElement) {
 			oLabelElement.textContent = this.getHeader();
 		}
 
 		return this;
+	};
+
+	//Temporary fallback for compatibility until the dataProperty can be removed
+	Column.prototype.getPropertyKey = function() {
+		const sPropertyKey = this.getProperty("propertyKey");
+		return sPropertyKey || this.getDataProperty();
 	};
 
 	/**
@@ -439,13 +459,13 @@ sap.ui.define([
 	};
 
 	Column.prototype._readTableSettings = function() {
-		var oTable = this.getTable();
+		const oTable = this.getTable();
 
 		this._oSettingsModel.setProperty("/resizable", oTable.getEnableColumnResize());
 	};
 
 	Column.prototype.setParent = function(oParent) {
-		var oPreviousTable = this.getTable();
+		const oPreviousTable = this.getTable();
 		Control.prototype.setParent.apply(this, arguments);
 
 		if (this._bIsBeingMoved) { // Set by the table when moving this column.
@@ -457,7 +477,7 @@ sap.ui.define([
 	};
 
 	Column.prototype._connectToTable = function() {
-		var oTable = this.getTable();
+		const oTable = this.getTable();
 
 		if (!oTable) {
 			return;
@@ -477,11 +497,7 @@ sap.ui.define([
 		}
 
 		if (this._oInnerColumn) {
-			this._oInnerColumn.destroy("KeepDom");
-
-			if (!oTable.isInvalidateSuppressed()) {
-				oTable.invalidate();
-			}
+			this._oInnerColumn.destroy();
 		}
 	};
 
@@ -490,13 +506,13 @@ sap.ui.define([
 	};
 
 	Column.prototype._calculateColumnWidth = function() {
-		var oTable = this.getTable();
+		const oTable = this.getTable();
 
 		if (!oTable || !oTable.getEnableAutoColumnWidth() || !this.isPropertyInitial("width")) {
 			return;
 		}
 
-		var oPropertyHelper = oTable.getPropertyHelper();
+		const oPropertyHelper = oTable.getPropertyHelper();
 
 		if (oPropertyHelper) {
 			oPropertyHelper.calculateColumnWidth(this).then(function(sWidth) {
@@ -508,16 +524,16 @@ sap.ui.define([
 	};
 
 	Column.prototype._readP13nValues = function() {
-		var oTable = this.getTable();
-		var vXConfig = oTable.getCurrentState().xConfig;
-		var sPropertyKey = this.getDataProperty();
+		const oTable = this.getTable();
+		const vXConfig = oTable.getCurrentState().xConfig;
+		const sPropertyKey = this.getPropertyKey();
 
 		if (vXConfig instanceof Promise) {
 			vXConfig.then(this._readP13nValues.bind(this));
 			return;
 		}
 
-		var sWidth = vXConfig &&
+		const sWidth = vXConfig &&
 			vXConfig.aggregations &&
 			vXConfig.aggregations.columns &&
 			vXConfig.aggregations.columns[sPropertyKey] &&
@@ -527,7 +543,7 @@ sap.ui.define([
 	};
 
 	Column.prototype.getTable = function() {
-		var oParent = this.getParent();
+		const oParent = this.getParent();
 		return oParent && oParent.isA("sap.ui.mdc.Table") ? oParent : null;
 	};
 

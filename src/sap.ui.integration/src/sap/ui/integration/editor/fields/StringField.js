@@ -14,17 +14,11 @@ sap.ui.define([
 	"sap/m/OverflowToolbar",
 	"sap/m/ToolbarSpacer",
 	"sap/ui/core/ListItem",
-	"sap/m/List",
-	"sap/m/CustomListItem",
 	"sap/m/VBox",
 	"sap/base/util/each",
 	"sap/base/util/restricted/_debounce",
 	"sap/ui/core/Core",
-	"sap/ui/model/json/JSONModel",
-	"sap/base/util/deepClone",
-	"sap/ui/model/Sorter",
-	"sap/m/GroupHeaderListItem",
-	"sap/ui/core/CustomData"
+	"sap/base/util/deepClone"
 ], function (
 	BaseField,
 	Input,
@@ -37,17 +31,11 @@ sap.ui.define([
 	OverflowToolbar,
 	ToolbarSpacer,
 	ListItem,
-	List,
-	CustomListItem,
 	VBox,
 	each,
 	_debounce,
 	Core,
-	JSONModel,
-	deepClone,
-	Sorter,
-	GroupHeaderListItem,
-	CustomData
+	deepClone
 ) {
 	"use strict";
 	var REGEXP_PARAMETERS = /parameters\.([^\}\}]+)/g;
@@ -77,6 +65,7 @@ sap.ui.define([
 
 	StringField.prototype.initVisualization = function (oConfig) {
 		var oVisualization = oConfig.visualization;
+		var oItem;
 		if (!oVisualization) {
 			// check if value contains {{parameters.XX}} syntax
 			var aResult = oConfig.value ? oConfig.value.match(REGEXP_PARAMETERS) : undefined;
@@ -140,6 +129,7 @@ sap.ui.define([
 							},
 							editable: oConfig.editable,
 							visible: oConfig.visible,
+							maxLength: oConfig.maxLength,
 							placeholder: oConfig.placeholder
 						}
 					};
@@ -159,7 +149,7 @@ sap.ui.define([
 					};
 				}
 			} else if (oConfig.enum) {
-				var oItem = new ListItem({
+				oItem = new ListItem({
 					key: {
 						path: "currentSettings>"
 					},
@@ -185,7 +175,7 @@ sap.ui.define([
 					}
 				};
 			} else if (oConfig.values) {
-				var oItem = this.formatListItem(oConfig.values.item);
+				oItem = this.formatListItem(oConfig.values.item);
 				if (!oConfig.values.item.key) {
 					oConfig.values.item.key = oConfig.values.item.text;
 				}
@@ -235,10 +225,11 @@ sap.ui.define([
 						},
 						editable: oConfig.editable,
 						visible: oConfig.visible,
+						maxLength: oConfig.maxLength,
 						placeholder: oConfig.placeholder,
 						valueHelpIconSrc: "sap-icon://translate",
 						showValueHelp: true,
-						valueHelpRequest: this.openTranslationListPopup,
+						valueHelpRequest: this.openTranslationListPopup.bind(this),
 						change: function(oEvent) {
 							//add current change into translation texts
 							var oControl = oEvent.getSource();
@@ -268,6 +259,7 @@ sap.ui.define([
 						},
 						editable: oConfig.editable,
 						visible: oConfig.visible,
+						maxLength: oConfig.maxLength,
 						placeholder: oConfig.placeholder
 					}
 				};
@@ -279,6 +271,26 @@ sap.ui.define([
 			}
 		} else if (oVisualization.type === "TextArea") {
 			oVisualization.type = "sap/m/TextArea";
+		} else if (oVisualization.type === "Select" && oConfig.values) {
+			oItem = this.formatListItem(oConfig.values.item);
+			var oSettings = Object.assign({
+				selectedKey: {
+					path: 'currentSettings>value'
+				},
+				forceSelection: false,
+				editable: oConfig.editable,
+				visible: oConfig.visible,
+				showSecondaryValues: false,
+				width: "100%",
+				items: {
+					path: '',
+					template: oItem
+				}
+			}, oVisualization.settings || {});
+			oVisualization = {
+				type: Select,
+				settings: oSettings
+			};
 		}
 		this._visualization = oVisualization;
 		this.attachAfterInit(this._afterInit);
@@ -334,6 +346,7 @@ sap.ui.define([
 	//get origin values in i18n files
 	StringField.prototype.getOriginTranslatedValues = function(oConfig) {
 		var aOriginTranslatedValues = [];
+		var aEditorResourceBundles = this._oEditorResourceBundles.getResourceBundles();
 		//get translation key of the value
 		var sKey;
 		if (oConfig._translatedDefaultPlaceholder && oConfig._translatedDefaultPlaceholder.startsWith("{i18n>") && oConfig._translatedDefaultPlaceholder.endsWith("}")) {
@@ -341,8 +354,8 @@ sap.ui.define([
 		} else if (oConfig._translatedDefaultPlaceholder && oConfig._translatedDefaultPlaceholder.startsWith("{{") && oConfig._translatedDefaultPlaceholder.endsWith("}}")) {
 			sKey = oConfig._translatedDefaultPlaceholder.substring(2, oConfig._translatedDefaultPlaceholder.length - 2);
 		}
-		for (var p in this._aResourceBundles) {
-			var oResourceBundleTemp = this._aResourceBundles[p];
+		for (var p in aEditorResourceBundles) {
+			var oResourceBundleTemp = aEditorResourceBundles[p];
 			var sTranslatedValue = "";
 			var sOriginValue = "";
 			if (sKey && oResourceBundleTemp) {
@@ -363,7 +376,7 @@ sap.ui.define([
 			}
 			var oLanguage = {
 				"key": p,
-				"desription": oResourceBundleTemp.language,
+				"description": oResourceBundleTemp.language,
 				"value": sTranslatedValue,
 				"originValue": sOriginValue,
 				"editable": true
@@ -408,8 +421,93 @@ sap.ui.define([
 		var that = this;
 		var oControl = oEvent.getSource();
 		var oField = oControl.getParent();
+		var sParameterId = oField.getParameterId();
 		var oConfig = oField.getConfiguration();
+		var oResourceBundle = oField.getResourceBundle();
+		var oTranslatedValues = that.buildTranslationsData(oField, oControl);
+		var oTranslatonsModel;
+		var sPlacement = oField.getPopoverPlacement(oControl._oValueHelpIcon);
+		if (!that._oTranslationPopover) {
+			var oList = that.buildTranslationsList(sParameterId + "_translation_popover_value_list");
+			that._oTranslationPopover = new Popover(sParameterId + "_translation_popover", {
+				placement: sPlacement,
+				contentWidth: "300px",
+				contentHeight: "345px",
+				customHeader: new VBox({
+					items: [
+						new Title({
+							text: oResourceBundle.getText("EDITOR_FIELD_TRANSLATION_LIST_POPOVER_TITLE")
+						}).addStyleClass("sapMPopoverTitle"),
+						new Title({
+							text: oResourceBundle.getText("EDITOR_FIELD_TRANSLATION_LIST_POPOVER_CURRENTLANGUAGE")
+						}).addStyleClass("sapMHeaderTitle"),
+						new VBox({
+							items: [
+								new Text(sParameterId + "_translation_popover_currentlanguage_description_label", {
+									text: "{languages>/currentLanguage/description}"
+								}),
+								new Input(sParameterId + "_translation_popover_currentlanguage_value_input", {
+									value: "{languages>/currentLanguage/value}",
+									editable: false
+								})
+							]
+						}).addStyleClass("sapMCurrentLanguageVBox"),
+						new Title({
+							text: oResourceBundle.getText("EDITOR_FIELD_TRANSLATION_LIST_POPOVER_OTHERLANGUAGES")
+						}).addStyleClass("sapMHeaderTitle")
+					]
+				}),
+				content: oList,
+				footer: new OverflowToolbar({
+					content: [
+						new ToolbarSpacer(),
+						new Button(sParameterId + "_translation_popover_save_btn", {
+							type: "Emphasized",
+							text: oResourceBundle.getText("EDITOR_FIELD_TRANSLATION_LIST_POPOVER_BUTTON_SAVE"),
+							enabled: "{languages>/isUpdated}",
+							press: function () {
+								var aLanguages = that._oTranslationPopover.getModel("languages").getData();
+								//get changes in the popup
+								var aUpdatedLanguages = [];
+								aLanguages.translatedLanguages.forEach(function(oLanguage) {
+									if (oLanguage.value !== oLanguage.originValue) {
+										oField.setTranslationValueInTexts(oLanguage.key, oConfig.manifestpath, oLanguage.value);
+										aUpdatedLanguages.push(oLanguage.key);
+									}
+								});
+								if (aLanguages.currentLanguage.value != aLanguages.currentLanguage.originValue) {
+									oField.setTranslationValueInTexts(aLanguages.currentLanguage.key, oConfig.manifestpath, aLanguages.currentLanguage.value);
+									aUpdatedLanguages.push(aLanguages.currentLanguage.key);
+								}
+								if (aUpdatedLanguages.length > 0) {
+									that._aUpdatedLanguages = aUpdatedLanguages;
+								}
+								that._oTranslationPopover.close();
+							}
+						}),
+						new Button(sParameterId + "_translation_popover_cancel_btn", {
+							text: oResourceBundle.getText("EDITOR_FIELD_TRANSLATION_LIST_POPOVER_BUTTON_CANCEL"),
+							press: function () {
+								that._oTranslationPopover.close();
+							}
+						})
+					]
+				})
+			}).addStyleClass("sapUiIntegrationFieldTranslation");
+			oTranslatonsModel = that.buildTranslationsModel(oTranslatedValues);
+			that._oTranslationPopover.setModel(oTranslatonsModel, "languages");
+		} else {
+			that._oTranslationPopover.setPlacement(sPlacement);
+			oTranslatonsModel = that._oTranslationPopover.getModel("languages");
+			oTranslatonsModel.setData(oTranslatedValues);
+			oTranslatonsModel.checkUpdate(true);
+		}
+		that._oTranslationPopover.openBy(oControl._oValueHelpIcon);
+	};
 
+	StringField.prototype.buildTranslationsData = function(oField, oControl) {
+		var that = this;
+		var oConfig = oField.getConfiguration();
 		if (!that._aOriginTranslatedValues) {
 			//init the origin translation value list in card i18n files
 			that._aOriginTranslatedValues = oField.getOriginTranslatedValues(oConfig);
@@ -436,12 +534,11 @@ sap.ui.define([
 			}
 		});
 
-		var aTranslatedValues = {
+		var oTranslatedValues = {
 			"currentLanguage": {},
 			"isUpdated": false,
 			"translatedLanguages": []
 		};
-		var oModel;
 		if (aTempTranslatedLanguages) {
 			//check the updated language list, update the data model
 			aTempTranslatedLanguages.forEach(function (translatedValue) {
@@ -451,147 +548,13 @@ sap.ui.define([
 				}
 				if (translatedValue.key === oResourceBundle.sLocale.replaceAll('_', '-')) {
 					translatedValue.value = oControl.getValue();
-					aTranslatedValues.currentLanguage = translatedValue;
+					oTranslatedValues.currentLanguage = translatedValue;
 				} else {
-					aTranslatedValues.translatedLanguages.push(translatedValue);
+					oTranslatedValues.translatedLanguages.push(translatedValue);
 				}
 			});
 		}
-		var sPlacement = oField.getPopoverPlacement(oControl._oValueHelpIcon);
-		if (!that._oTranslationPopover) {
-			var oList = new List({
-				//mode: "Delete",
-				items: {
-					path: "languages>/translatedLanguages",
-					template: new CustomListItem({
-						content: [
-							new VBox({
-								items: [
-									new Text({
-										text: "{languages>desription}"
-									}),
-									new Input({
-										value: "{languages>value}",
-										editable: "{languages>editable}"
-									})
-								]
-							})
-						],
-						customData: [
-							new CustomData({
-								key: "{languages>key}",
-								value: "{languages>desription}"
-							})
-						]
-					}),
-					sorter: [new Sorter({
-						path: 'status',
-						descending: true,
-						group: true
-					})],
-					groupHeaderFactory: oField.getGroupHeader
-				}
-			});
-			that._oTranslationPopover = new Popover({
-				placement: sPlacement,
-				contentWidth: "300px",
-				contentHeight: "345px",
-				customHeader: new VBox({
-					items: [
-						new Title({
-							text: oResourceBundle.getText("EDITOR_FIELD_TRANSLATION_LIST_POPOVER_TITLE")
-						}).addStyleClass("sapMPopoverTitle"),
-						new Title({
-							text: oResourceBundle.getText("EDITOR_FIELD_TRANSLATION_LIST_POPOVER_CURRENTLANGUAGE")
-						}).addStyleClass("sapMHeaderTitle"),
-						new VBox({
-							items: [
-								new Text({
-									text: "{languages>/currentLanguage/desription}"
-								}),
-								new Input({
-									value: "{languages>/currentLanguage/value}",
-									editable: false
-								})
-							]
-						}).addStyleClass("sapMCurrentLanguageVBox"),
-						new Title({
-							text: oResourceBundle.getText("EDITOR_FIELD_TRANSLATION_LIST_POPOVER_OTHERLANGUAGES")
-						}).addStyleClass("sapMHeaderTitle")
-					]
-				}),
-				content: oList,
-				footer: new OverflowToolbar({
-					content: [
-						new ToolbarSpacer(),
-						new Button({
-							type: "Emphasized",
-							text: oResourceBundle.getText("EDITOR_FIELD_TRANSLATION_LIST_POPOVER_BUTTON_SAVE"),
-							enabled: "{languages>/isUpdated}",
-							press: function () {
-								var aLanguages = that._oTranslationPopover.getModel("languages").getData();
-								//get changes in the popup
-								var aUpdatedLanguages = [];
-								aLanguages.translatedLanguages.forEach(function(oLanguage) {
-									if (oLanguage.value !== oLanguage.originValue) {
-										oField.setTranslationValueInTexts(oLanguage.key, oConfig.manifestpath, oLanguage.value);
-										aUpdatedLanguages.push(oLanguage.key);
-									}
-								});
-								if (aLanguages.currentLanguage.value != aLanguages.currentLanguage.originValue) {
-									oField.setTranslationValueInTexts(aLanguages.currentLanguage.key, oConfig.manifestpath, aLanguages.currentLanguage.value);
-									aUpdatedLanguages.push(aLanguages.currentLanguage.key);
-								}
-								if (aUpdatedLanguages.length > 0) {
-									that._aUpdatedLanguages = aUpdatedLanguages;
-								}
-								that._oTranslationPopover.close();
-							}
-						}),
-						new Button({
-							text: oResourceBundle.getText("EDITOR_FIELD_TRANSLATION_LIST_POPOVER_BUTTON_CANCEL"),
-							press: function () {
-								that._oTranslationPopover.close();
-							}
-						})
-					]
-				})
-			}).addStyleClass("sapUiIntegrationFieldTranslation");
-			oModel = new JSONModel(aTranslatedValues);
-			oModel.attachPropertyChange(function(oEvent) {
-				//update the status of each translation for grouping
-				//update the isUpdated property
-				var oData = oModel.getData();
-				var sUpdatedStr = oResourceBundle.getText("EDITOR_FIELD_TRANSLATION_LIST_POPOVER_LISTITEM_GROUP_UPDATED");
-				var sNotUpdatedStr = oResourceBundle.getText("EDITOR_FIELD_TRANSLATION_LIST_POPOVER_LISTITEM_GROUP_NOTUPDATED");
-				var bIsUpdated = false;
-				oData.translatedLanguages.forEach(function(oLanguage) {
-					if (oLanguage.value !== oLanguage.originValue) {
-						oLanguage.status = sUpdatedStr;
-						bIsUpdated = true;
-					} else {
-						oLanguage.status = sNotUpdatedStr;
-					}
-				});
-				oData.isUpdated = bIsUpdated;
-				oModel.setData(oData);
-				oModel.checkUpdate(true);
-			});
-			that._oTranslationPopover.setModel(oModel, "languages");
-		} else {
-			that._oTranslationPopover.setPlacement(sPlacement);
-			oModel = that._oTranslationPopover.getModel("languages");
-			oModel.setData(aTranslatedValues);
-			oModel.checkUpdate(true);
-		}
-		that._oTranslationPopover.openBy(oControl._oValueHelpIcon);
-	};
-
-	StringField.prototype.getGroupHeader = function(oGroup) {
-		return new GroupHeaderListItem({
-			title: oGroup.key,
-			upperCase: false
-		});
+		return oTranslatedValues;
 	};
 
 	return StringField;

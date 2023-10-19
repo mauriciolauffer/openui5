@@ -7,15 +7,14 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/T
   _exports.default = void 0;
   _parametersBundle = _interopRequireDefault(_parametersBundle);
   _parametersBundle2 = _interopRequireDefault(_parametersBundle2);
-
   function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-  (0, _Themes.registerThemePropertiesLoader)("@ui5/webcomponents-theming", "sap_fiori_3", () => _parametersBundle.default);
-  (0, _Themes.registerThemePropertiesLoader)("@ui5/webcomponents", "sap_fiori_3", () => _parametersBundle2.default);
-  var _default = {
+  (0, _Themes.registerThemePropertiesLoader)("@ui5/webcomponents-theming", "sap_fiori_3", async () => _parametersBundle.default);
+  (0, _Themes.registerThemePropertiesLoader)("@ui5/webcomponents", "sap_fiori_3", async () => _parametersBundle2.default);
+  const styleData = {
     packageName: "@ui5/webcomponents",
     fileName: "themes/Tab.css",
-    content: ":host{display:inline-block;width:100%}.ui5-tab-root{width:100%;height:100%}"
+    content: ":host{display:inline-block;width:100%}.ui5-tab-root{height:100%;width:100%}"
   };
+  var _default = styleData;
   _exports.default = _default;
 });

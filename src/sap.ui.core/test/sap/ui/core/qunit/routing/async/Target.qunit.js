@@ -1,6 +1,5 @@
 /*global QUnit, sinon */
 sap.ui.define([
-	"sap/ui/base/EventProvider",
 	"sap/base/strings/formatMessage",
 	"sap/ui/core/mvc/XMLView",
 	"sap/ui/core/routing/Target",
@@ -12,7 +11,7 @@ sap.ui.define([
 	"sap/ui/core/UIComponent",
 	"sap/ui/core/ComponentContainer",
 	"sap/ui/thirdparty/hasher"
-], function(EventProvider, formatMessage, XMLView, Target, Views, JSONModel, App, Panel, Component, UIComponent, ComponentContainer, hasher) {
+], function(formatMessage, XMLView, Target, Views, JSONModel, App, Panel, Component, UIComponent, ComponentContainer, hasher) {
 	"use strict";
 
 	// use sap.m.Panel as a lightweight drop-in replacement for the ux3.Shell
@@ -334,22 +333,24 @@ sap.ui.define([
 			this.oViews = new Views({async: true});
 
 			// System under test + Arrange
-			this.createTarget = function(name) {
-				this.oTarget = new Target(
-					{
-						_name: "componentTarget",
-						name: name,
-						controlAggregation: "content",
-						controlId: this.oShell.getId(),
-						type: "Component",
-						id: "baz",
-						_async: true,
-						options: {
-							manifest: false
-						}
-					},
-					this.oViews
-				);
+			this.createTarget = function(name, noManifest) {
+				var oConfig = {
+					_name: "componentTarget",
+					name: name,
+					controlAggregation: "content",
+					controlId: this.oShell.getId(),
+					type: "Component",
+					id: "baz",
+					_async: true
+				};
+
+				if (noManifest) {
+					oConfig.options =  {
+						manifest: false
+					};
+				}
+
+				this.oTarget = new Target(oConfig, this.oViews);
 			};
 
 			this.sandbox = sinon.sandbox.create();
@@ -373,7 +374,7 @@ sap.ui.define([
 			bComponentCreated,
 			oCreatedComponent;
 
-		this.createTarget("test.routing.target");
+		this.createTarget("test.routing.target", true);
 
 		// Act
 		oDisplayed = this.oTarget.display();
@@ -412,7 +413,7 @@ sap.ui.define([
 	});
 
 	QUnit.test("Should destroy the component container once the component is destroyed", function (assert) {
-		this.createTarget("test.routing.target");
+		this.createTarget("test.routing.target", true);
 		var oDisplayed = this.oTarget.display();
 
 		return oDisplayed.then(function (oInfo) {
@@ -445,7 +446,6 @@ sap.ui.define([
 
 	QUnit.test("pass settings to component container", function(assert) {
 		this.oContainerOptions = undefined;
-		var oEventProviderStub = sinon.stub(EventProvider.prototype.oEventPool, "returnObject");
 		var oComponentContainerSettingsSpy = this.spy(ComponentContainer.prototype, "applySettings");
 		var oComponent = this.rootComponent;
 		var oRouter = oComponent.getRouter();
@@ -471,7 +471,6 @@ sap.ui.define([
 			assert.equal(oNestedComponent.getId(), "rootComponent---nestedComponent", "Nested component should have the correct id");
 			assert.equal(oComponentContainer.getId(), "rootComponent---nestedComponent-container", "Component container should have its component id as prefix");
 
-			oEventProviderStub.restore();
 			oComponent.destroy();
 		});
 	});

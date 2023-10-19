@@ -4,7 +4,7 @@
 
 sap.ui.define([
 	'delegates/odata/TypeUtil',
-	'sap/ui/mdc/enum/BaseType',
+	'sap/ui/mdc/enums/BaseType',
 	'sap/base/util/merge'
 ], function(ODataTypeUtil, BaseType, merge) {
 	"use strict";
@@ -18,6 +18,7 @@ sap.ui.define([
 	 * @private
 	 * @experimental As of version 1.79
 	 * @since 1.79.0
+ 	 * @deprecated since 1.115.0 - please see {@link module:sap/ui/mdc/BaseDelegate.getTypeMap}
 	 * @alias sap.ui.mdc.odata.v4.TypeUtil
 	 */
 	var ODataV4TypeUtil = Object.assign({}, ODataTypeUtil);

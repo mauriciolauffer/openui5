@@ -28,6 +28,8 @@ sap.ui.define([
 	"sap/ui/core/mvc/XMLView",
 	"sap/ui/events/KeyCodes",
 	"sap/ui/core/Core",
+	"sap/ui/core/date/UI5Date",
+	"sap/ui/core/Configuration",
 	"sap/ui/core/Element",
 	"sap/ui/dom/jquery/cursorPos" // provides jQuery.fn.cursorPos
 ], function(
@@ -59,6 +61,8 @@ sap.ui.define([
 	XMLView,
 	KeyCodes,
 	oCore,
+	UI5Date,
+	Configuration,
 	Element
 ) {
 	"use strict";
@@ -303,7 +307,8 @@ sap.ui.define([
 	});
 
 	QUnit.test("After creating new timePicker, the format property is initialized with its default value", function(assert) {
-		assert.strictEqual(this.oTimePicker.getDisplayFormat(), "h:mm:ss a", "the default value is h:mm:ss a");
+		//\u202f is a Narrow No-Break Space which has been introduced with CLDR version 43
+		assert.strictEqual(this.oTimePicker.getDisplayFormat(), "h:mm:ss\u202fa", "the default value is h:mm:ss a");
 	});
 
 	QUnit.test("After changing the displayFormat property, the getDisplayFormat function returns the new value", function(assert) {
@@ -391,22 +396,24 @@ sap.ui.define([
 	QUnit.test("Set displayFormat to 'HH:mm'", function (assert) {
 		// Act
 		this.oTimePicker.setDisplayFormat("HH:mm");
+		var sPlaceholderPrefix = oCore.getLibraryResourceBundle("sap.ui.core").getText("date.placeholder").split("{")[0];
 		// Assert
-		assert.equal(this.oTimePicker._getPlaceholder(), "HH:mm", "The placeholder is 'HH:mm'");
+		assert.ok(this.oTimePicker._getPlaceholder().includes(sPlaceholderPrefix), "The placeholder is correct");
 	});
 
 	QUnit.test("Set displayFormat to 'short'", function (assert) {
 		// Act
 		this.oTimePicker.setDisplayFormat("short");
+		var sPlaceholderPrefix = oCore.getLibraryResourceBundle("sap.ui.core").getText("date.placeholder").split("{")[0];
 		// Assert
-		assert.equal(this.oTimePicker._getPlaceholder(), "h:mm a", "The placeholder is 'h:mm a'");
+		assert.ok(this.oTimePicker._getPlaceholder().includes(sPlaceholderPrefix), "The placeholder is correct");
 	});
 
 	QUnit.module("Display format", {
 		beforeEach: function () {
 			// SUT
 			this.oTimePicker = new TimePicker({
-				dateValue: new Date(2016, 1, 17, 10, 11, 12)
+				dateValue: UI5Date.getInstance(2016, 1, 17, 10, 11, 12)
 			});
 			this.oTimePicker.placeAt("qunit-fixture");
 			oCore.applyChanges();
@@ -419,15 +426,15 @@ sap.ui.define([
 	});
 
 	QUnit.test("Default", function (assert) {
-		// Assert
-		assert.equal(this.oTimePicker._$input.val(), "10:11:12 AM", "Display format is correct");
+		// Assert; \u202f is a Narrow No-Break Space which has been introduced with CLDR version 43
+		assert.equal(this.oTimePicker._$input.val(), "10:11:12\u202fAM", "Display format is correct");
 	});
 
 	QUnit.test("Empty", function (assert) {
 		// Act
 		this.oTimePicker.setDisplayFormat();
-		// Assert
-		assert.equal(this.oTimePicker._$input.val(), "10:11:12 AM", "Display format is correct");
+		// Assert; \u202f is a Narrow No-Break Space which has been introduced with CLDR version 43
+		assert.equal(this.oTimePicker._$input.val(), "10:11:12\u202fAM", "Display format is correct");
 	});
 
 	QUnit.test("Custom", function (assert) {
@@ -454,15 +461,15 @@ sap.ui.define([
 	QUnit.test("short", function (assert) {
 		// Act
 		this.oTimePicker.setDisplayFormat("short");
-		// Assert
-		assert.equal(this.oTimePicker._$input.val(), "10:11 AM", "Display format is correct");
+		// Assert; \u202f is a Narrow No-Break Space which has been introduced with CLDR version 43
+		assert.equal(this.oTimePicker._$input.val(), "10:11\u202fAM", "Display format is correct");
 	});
 
 	QUnit.test("medium", function (assert) {
 		// Act
 		this.oTimePicker.setDisplayFormat("medium");
-		// Assert
-		assert.equal(this.oTimePicker._$input.val(), "10:11:12 AM", "Display format is correct");
+		// Assert; \u202f is a Narrow No-Break Space which has been introduced with CLDR version 43
+		assert.equal(this.oTimePicker._$input.val(), "10:11:12\u202fAM", "Display format is correct");
 	});
 
 	QUnit.module("Input formats, display formats and values", {
@@ -478,7 +485,7 @@ sap.ui.define([
 	}
 
 	function getDate(hours, minutes, seconds) {
-		return new Date("2000", "1", "1", hours, minutes, seconds);
+		return UI5Date.getInstance("2000", "1", "1", hours, minutes, seconds);
 	}
 
 	//test the final result after setting some properties in order
@@ -749,7 +756,7 @@ sap.ui.define([
 
 		// assert
 		assert.ok(!oTP.getLocaleId(), "there is no localeId specified");
-		assert.strictEqual(oLocale, oSystemLocale, "'_getLocale' returns system configuration, if the user haven't specified localeId");
+		assert.strictEqual(oLocale.toString(), oSystemLocale.toString(), "'_getLocale' returns system configuration, if the user haven't specified localeId");
 
 		//cleanup
 		oTP.destroy();
@@ -794,7 +801,7 @@ sap.ui.define([
 		//arrange
 		var iHours = 4,
 			oTP = new TimePicker({
-				dateValue: new Date(2000, 10, 10, iHours, 10, 10)
+				dateValue: UI5Date.getInstance(2000, 10, 10, iHours, 10, 10)
 			}),
 			oFakePageupEventObject = {
 				preventDefault: function() {}
@@ -814,7 +821,7 @@ sap.ui.define([
 		//arrange
 		var iHours = 4,
 			oTP = new TimePicker({
-				dateValue: new Date(2000, 10, 10, iHours, 10, 10)
+				dateValue: UI5Date.getInstance(2000, 10, 10, iHours, 10, 10)
 			}),
 			oFakePagedownEventObject = {
 				preventDefault: function() {}
@@ -835,7 +842,7 @@ sap.ui.define([
 		var iSeconds = 21,
 			iMinutes = 20,
 			oTP = new TimePicker({
-				dateValue: new Date(2000, 10, 10, 10, iMinutes, iSeconds)
+				dateValue: UI5Date.getInstance(2000, 10, 10, 10, iMinutes, iSeconds)
 			}),
 			oFakePageupEventObject = {
 				preventDefault: function() {}
@@ -857,7 +864,7 @@ sap.ui.define([
 		//arrange
 		var iMinutes = 15,
 			oTP = new TimePicker({
-				dateValue: new Date(2000, 10, 10, 10, iMinutes, 10)
+				dateValue: UI5Date.getInstance(2000, 10, 10, 10, iMinutes, 10)
 			}),
 			oFakePageupEventObject = {
 				ctrlKey: false,
@@ -881,7 +888,7 @@ sap.ui.define([
 		//arrange
 		var iMinutes = 13,
 			oTP = new TimePicker({
-				dateValue: new Date(2000, 10, 10, 10, iMinutes, 10)
+				dateValue: UI5Date.getInstance(2000, 10, 10, 10, iMinutes, 10)
 			}),
 			oFakePagedownEventObject = {
 				ctrlKey: false,
@@ -906,7 +913,7 @@ sap.ui.define([
 		var iHours = 5,
 			iSeconds = 21,
 			oTP = new TimePicker({
-				dateValue: new Date(2000, 10, 10, iHours, 10, iSeconds)
+				dateValue: UI5Date.getInstance(2000, 10, 10, iHours, 10, iSeconds)
 			}),
 			oFakePageupEventObject = {
 				ctrlKey: false,
@@ -932,7 +939,7 @@ sap.ui.define([
 		//arrange
 		var iSeconds = 11,
 			oTP = new TimePicker({
-				dateValue: new Date(2000, 10, 10, 10, 10, iSeconds)
+				dateValue: UI5Date.getInstance(2000, 10, 10, 10, 10, iSeconds)
 			}),
 			oFakePageupEventObject = {
 				ctrlKey: true,
@@ -956,7 +963,7 @@ sap.ui.define([
 		//arrange
 		var iSeconds = 4,
 			oTP = new TimePicker({
-				dateValue: new Date(2000, 10, 10, 10, 10, iSeconds)
+				dateValue: UI5Date.getInstance(2000, 10, 10, 10, 10, iSeconds)
 			}),
 			oFakePagedownEventObject = {
 				ctrlKey: true,
@@ -981,7 +988,7 @@ sap.ui.define([
 		var iHours = 5,
 			iMinutes = 38,
 			oTP = new TimePicker({
-				dateValue: new Date(2000, 10, 10, iHours, iMinutes, 10)
+				dateValue: UI5Date.getInstance(2000, 10, 10, iHours, iMinutes, 10)
 			}),
 			oFakePageupEventObject = {
 				ctrlKey: true,
@@ -1049,7 +1056,7 @@ sap.ui.define([
 
 	QUnit.test("right moves the cursor but jumps over the immutable chars", function(assert) {
 		//arrange
-		var oDate = new Date();
+		var oDate = UI5Date.getInstance();
 		oDate.setHours(5);
 		oDate.setMinutes(38);
 
@@ -1078,7 +1085,7 @@ sap.ui.define([
 
 	QUnit.test("left moves the cursor but jumps over the immutable chars", function(assert) {
 		//arrange
-		var oDate = new Date();
+		var oDate = UI5Date.getInstance();
 		oDate.setHours(5);
 		oDate.setMinutes(38);
 
@@ -1158,14 +1165,26 @@ sap.ui.define([
 
 	QUnit.test("icon is properly configured", function (assert) {
 		// arrange
-		var oIcon = new TimePicker().getAggregation("_endIcon")[0];
+		var oIconOne = new TimePicker().getAggregation("_endIcon")[0];
 
 		// act
 		// assert
-		assert.notOk(oIcon.getTooltip(), "icon has no tooltip");
-		assert.notOk(oIcon.getDecorative(), "icon isn't decorative");
-		assert.notOk(oIcon.getUseIconTooltip(), "icon doesn't have default tooltip");
-		assert.strictEqual(oIcon.getAlt(), oCore.getLibraryResourceBundle("sap.m").getText("OPEN_PICKER_TEXT") , "icon alt is present");
+		assert.notOk(oIconOne.getTooltip(), "icon has no tooltip");
+		assert.ok(oIconOne.getDecorative(), "icon is decorative");
+		assert.notOk(oIconOne.getUseIconTooltip(), "icon doesn't have default tooltip");
+		assert.strictEqual(oIconOne.getAlt(), oCore.getLibraryResourceBundle("sap.m").getText("OPEN_PICKER_TEXT") , "icon alt is present");
+
+		// arrange
+		var oTouchStub = this.stub(Device, "support").value({touch: true});
+		var oDeviceStub = this.stub(Device, "system").value({phone: true});
+		var oIconTwo = new TimePicker().getAggregation("_endIcon")[0];
+
+		// assert
+		assert.notOk(oIconTwo.getDecorative(), "icon is not decorative");
+
+		// clean
+		oTouchStub.restore();
+		oDeviceStub.restore();
 	});
 
 	QUnit.module("data binding");
@@ -1181,8 +1200,8 @@ sap.ui.define([
 
 		//arrange
 		var oModel = new JSONModel();
-		var oDate = new Date(2000, 1, 2, 16, 35, 54);
-		var oDate2 = new Date(2000, 1, 2, 20, 10, 11);
+		var oDate = UI5Date.getInstance(2000, 1, 2, 16, 35, 54);
+		var oDate2 = UI5Date.getInstance(2000, 1, 2, 20, 10, 11);
 		oModel.setData({
 			timeValue: oDate
 		});
@@ -1224,20 +1243,20 @@ sap.ui.define([
 		//arrange
 		var oModel = new JSONModel();
 		oModel.setData({
-			timeValue: new Date(2000, 1, 2, 16, 35, 54)
+			timeValue: UI5Date.getInstance(2000, 1, 2, 16, 35, 54)
 		});
 		tp.setModel(oModel);
 
 		tp.placeAt("qunit-fixture");
 		oCore.applyChanges();
 
-		//assert
-		assert.equal(tp.getValue(), "4:35 PM", "the value property is set in and formatted correctly");
+		//assert; \u202f is a Narrow No-Break Space which has been introduced with CLDR version 43
+		assert.equal(tp.getValue(), "4:35\u202fPM", "the value property is set in and formatted correctly");
 
 		//act
 		qutils.triggerEvent("focusin", tp.getDomRef());
-		//assert
-		assert.equal(tp._getInputValue(), " 4:35 PM", "the value property is formatted correctly (with leading space)");
+		//assert; \u202f is a Narrow No-Break Space which has been introduced with CLDR version 43
+		assert.equal(tp._getInputValue(), " 4:35\u202fPM", "the value property is formatted correctly (with leading space)");
 
 		//act
 		tp._openPicker();
@@ -1275,9 +1294,10 @@ sap.ui.define([
 			.placeAt("qunit-fixture");
 
 			oModelV2.attachRequestCompleted(function () {
-				assert.equal(view.byId("tp1")._$input.val(), "11:33:55 AM", "TP1 has coorect value!");
-				assert.equal(view.byId("tp2")._$input.val(), "11:33:55 AM", "TP2 has coorect value!");
-				assert.equal(view.byId("tp3")._$input.val(), "11:33 AM", "TP3 has coorect value!");
+				// \u202f is a Narrow No-Break Space which has been introduced with CLDR version 43
+				assert.equal(view.byId("tp1")._$input.val(), "11:33:55\u202fAM", "TP1 has coorect value!");
+				assert.equal(view.byId("tp2")._$input.val(), "11:33:55\u202fAM", "TP2 has coorect value!");
+				assert.equal(view.byId("tp3")._$input.val(), "11:33\u202fAM", "TP3 has coorect value!");
 				assert.equal(view.byId("tp4")._$input.val(), "11:33", "TP4 has coorect value!");
 				done();
 			});
@@ -1345,24 +1365,27 @@ sap.ui.define([
 		tp.setValue("10:55:13 AM");
 		var result = tp._getInputValue();
 
-		assert.strictEqual(result, "10:55:13 AM", "_getInputValue returns the correct time");
+		// \u202f is a Narrow No-Break Space which has been introduced with CLDR version 43
+		assert.strictEqual(result, "10:55:13\u202fAM", "_getInputValue returns the correct time");
 
 		tp.destroy();
 	});
 
-	/* Temporary disabled until robust solution (across all timezones is implemented) QUnit.test("decrease time when daylight saving begins", function(assert) {
-	 var tp = new TimePicker();
-	 tp.placeAt("qunit-fixture");
-	 sap.ui.getCore().applyChanges();
+	QUnit.test("decrease time", function(assert) {
+		var oGetTimezoneStub = this.stub(Configuration, "getTimezone").callsFake(function () { return "Europe/Sofia"; });
 
-	 tp.setDateValue(new Date(2015, 2, 29, 3, 12, 15));
-	 tp._increaseTime(-1, "hour");
+		var oTp = new TimePicker();
+		oTp.placeAt("qunit-fixture");
+		sap.ui.getCore().applyChanges();
 
-	 assert.equal(tp.getDateValue().toString(), new Date(2015, 2, 29, 1, 12, 15).toString(), "_increaseTime works as expected when decreasing in daylight saving");
+		oTp.setDateValue(UI5Date.getInstance(2015, 11, 1, 3, 12, 15));
+		oTp._increaseTime(-1, "hour");
 
-	 tp.destroy();
-	 });*/
+		assert.equal(oTp.getDateValue().toString(), UI5Date.getInstance(2015, 11, 1, 2, 12, 15).toString(), "_increaseTime works as expected when decreasing in standart time");
 
+		oTp.destroy();
+		oGetTimezoneStub.restore();
+	 });
 
 	QUnit.module("support2400");
 
@@ -1371,7 +1394,7 @@ sap.ui.define([
 		var oTP = new TimePicker({
 			displayFormat: "HH:mm:ss",
 			valueFormat: "HH:mm:ss",
-			dateValue: new Date(2000, 1, 2, 23, 35, 54),
+			dateValue: UI5Date.getInstance(2000, 1, 2, 23, 35, 54),
 			support2400: true
 		});
 
@@ -1437,7 +1460,7 @@ sap.ui.define([
 		assert.equal(jQuery("#" + tpId + "-inner").val(), '24:00:00', "input value is correct");
 
 		//act
-		oTP._formatValue(new Date(2022, 4, 1));
+		oTP._formatValue(UI5Date.getInstance(2022, 4, 1));
 
 		//assert
 		assert.equal(oTP.getValue(), "24:00:00", "Value is set to 24:00:00");
@@ -1448,7 +1471,7 @@ sap.ui.define([
 		oTP.onBeforeOpen();
 
 		//assert
-		assert.ok(oClocksSpy.calledWithExactly(new Date(1970, 0, 1), true), "The set value is passed to the clocks");
+		assert.ok(oClocksSpy.calledWithExactly(UI5Date.getInstance(1970, 0, 1), true), "The set value is passed to the clocks");
 
 		//cleanup
 		oClocksSpy.restore();
@@ -1688,7 +1711,7 @@ sap.ui.define([
 		oInfo = this.oTP.getAccessibilityInfo();
 		assert.ok(!!oInfo, "getAccessibilityInfo returns a info object");
 		assert.strictEqual(oInfo.type, oCore.getLibraryResourceBundle("sap.m").getText("ACC_CTR_TYPE_TIMEINPUT"), "Type");
-		assert.strictEqual(oInfo.description, "Value Placeholder", "Description");
+		assert.strictEqual(oInfo.description, "Value", "Description");
 		assert.strictEqual(oInfo.focusable, true, "Focusable");
 		assert.strictEqual(oInfo.enabled, true, "Enabled");
 		assert.strictEqual(oInfo.editable, true, "Editable");
@@ -1709,7 +1732,7 @@ sap.ui.define([
 		this.oTP.setDisplayFormat("HH-mm-ss");
 		this.oTP.setValue("10.32.30");
 		oInfo = this.oTP.getAccessibilityInfo();
-		assert.strictEqual(oInfo.description, "10-32-30 Placeholder", "Description");
+		assert.strictEqual(oInfo.description, "10-32-30", "Description");
 	});
 
 	/*
@@ -1761,6 +1784,14 @@ sap.ui.define([
 		assert.ok(oPicker.$().attr("aria-labelledby").indexOf(sPlaceholderId) !== -1, "Placeholder reference can be found in the DOM");
 	});
 
+	QUnit.test("Default senatic accessible role gets used", function(assert) {
+		// Prepare
+		var oTP = new TimePicker();
+
+		// Assert
+		assert.strictEqual(oTP.getRenderer().getAriaRole() , "", "The role attribute is empty");
+	});
+
 	QUnit.module("MaskInput integration", {
 		beforeEach : function() {
 			this.clock = sinon.useFakeTimers();
@@ -1810,11 +1841,13 @@ sap.ui.define([
 	});
 
 	QUnit.test("allows input of valid time string - style short", function(assert) {
-		this.typeAndCheckValueForDisplayFormat("short", "1215a", "12:15 AM");
+		// \u202f is a Narrow No-Break Space which has been introduced with CLDR version 43
+		this.typeAndCheckValueForDisplayFormat("short", "1215a", "12:15\u202fAM");
 	});
 
 	QUnit.test("allows input of valid time string - style medium", function(assert) {
-		this.typeAndCheckValueForDisplayFormat("medium", "12159a", "12:15:09 AM");
+		// \u202f is a Narrow No-Break Space which has been introduced with CLDR version 43
+		this.typeAndCheckValueForDisplayFormat("medium", "12159a", "12:15:09\u202fAM");
 	});
 
 
@@ -1989,7 +2022,7 @@ sap.ui.define([
 	QUnit.test("entering incomplete value updates the model only once", function(assert) {
 		// arrange
 		var oModel = new JSONModel({
-				timeValue: new Date(2000, 1, 2, 16, 35, 54)
+				timeValue: UI5Date.getInstance(2000, 1, 2, 16, 35, 54)
 			}),
 			oTp = new TimePicker({
 				value: {
@@ -2407,8 +2440,8 @@ sap.ui.define([
 		oTp.focus();
 		this.clock.tick(1000);
 
-		//assert
-		assert.equal(oTp._oTempValue.toString(), "--:--:-- --", "the mask is the correct one");
+		//assert; \u202f is a Narrow No-Break Space which has been introduced with CLDR version 43
+		assert.equal(oTp._oTempValue.toString(), "--:--:--\u202f--", "the mask is the correct one");
 
 	});
 
@@ -2968,7 +3001,7 @@ sap.ui.define([
 
 	QUnit.test("_shouldSetInitialFocusedDateValue should return false if TimePicker has value and initialFocusedDate", function (assert) {
 		// prepare
-		var oGetInitialFocusedDateValueStub = this.stub(this.oTp, "getInitialFocusedDateValue").callsFake(function () { return new Date(2017, 10, 10, 10, 11, 12, 13); }),
+		var oGetInitialFocusedDateValueStub = this.stub(this.oTp, "getInitialFocusedDateValue").callsFake(function () { return UI5Date.getInstance(2017, 10, 10, 10, 11, 12, 13); }),
 			oIsValidValue = this.stub(this.oTp, "_isValidValue").callsFake(function () { return true; });
 		this.oTp.setValue("12:11:10");
 
@@ -3001,7 +3034,7 @@ sap.ui.define([
 
 	QUnit.test("_shouldSetInitialFocusedDateValue should return true if TimePicker has initialFocusedDate and no value", function (assert) {
 		// prepare
-		var oGetInitialFocusedDateValueStub = this.stub(this.oTp, "getInitialFocusedDateValue").callsFake(function () { return new Date(2017, 10, 10, 10, 11, 12, 13); }),
+		var oGetInitialFocusedDateValueStub = this.stub(this.oTp, "getInitialFocusedDateValue").callsFake(function () { return UI5Date.getInstance(2017, 10, 10, 10, 11, 12, 13); }),
 				oIsValidValue = this.stub(this.oTp, "_isValidValue").callsFake(function () { return true; });
 
 		// assert
@@ -3025,8 +3058,8 @@ sap.ui.define([
 
 	QUnit.test("onBeforeOpen should call _setTimeValues with provided dateValue not initialFocusedDateValue", function (assert) {
 		// prepare
-		var oExpectedDateValue = new Date(2017, 8, 9, 10, 11, 12, 13),
-			oInitialFocusedDateValue = new Date(2017, 2, 3, 4, 5, 6, 7),
+		var oExpectedDateValue = UI5Date.getInstance(2017, 8, 9, 10, 11, 12, 13),
+			oInitialFocusedDateValue = UI5Date.getInstance(2017, 2, 3, 4, 5, 6, 7),
 			oTimePickerClocks = new TimePickerClocks(this.oTp.getId() + "-clocks", {
 				displayFormat: "hh:mm",
 				labelText: "",
@@ -3059,7 +3092,7 @@ sap.ui.define([
 
 	QUnit.test("onBeforeOpen should call _setTimeValues with provided initialFocusedDateValue if there is no value", function (assert) {
 		// prepare
-		var oExpectedDateValue = new Date(2017, 8, 9, 10, 11, 12, 13),
+		var oExpectedDateValue = UI5Date.getInstance(2017, 8, 9, 10, 11, 12, 13),
 			oTimePickerClocks = new TimePickerClocks(this.oTp.getId() + "-clocks", {
 				displayFormat: "hh:mm",
 				labelText: "",
@@ -3511,6 +3544,21 @@ sap.ui.define([
 
 		// Assert
 		assert.ok(oFocusInSpy.calledOnce, "sap.m.DateTimeField.prototype.onfocusin method is called");
+	});
+
+	QUnit.test("_inPreferredUserInteraction", function (assert) {
+		// Prepare
+		var oTP = new TimePicker(),
+			oInPreferredUserInteractionSpy = this.spy(oTP, "_inPreferredUserInteraction");
+
+			oTP.placeAt("qunit-fixture");
+		oCore.applyChanges();
+
+		// Assert
+		assert.ok(oInPreferredUserInteractionSpy.calledOnce, "Preferred interaction is handled during rendering");
+
+		// Clean
+		oTP.destroy();
 	});
 
 	function triggerMultipleKeypress(timePicker, sFeed) {

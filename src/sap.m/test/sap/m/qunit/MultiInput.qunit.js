@@ -436,6 +436,55 @@ sap.ui.define([
 		assert.ok(!aSecondToken.getDomRef('icon'), 'Second token icon does not exist');
 	});
 
+	QUnit.test("Tests if creating tokens escapes text value", function(assert) {
+		var oMI = new MultiInput({
+			tokens: [
+				new Token({ text: "Token 1" })
+			]
+		}).placeAt("content");
+		var sText = '{"test":"abc"}';
+		var fnValidator = function(args){
+			return new Token({ text: args.text });
+		};
+
+		oMI.setValue(sText);
+		oMI.addValidator(fnValidator);
+		Core.applyChanges();
+
+		oMI.onsapenter();
+		Core.applyChanges();
+
+		assert.strictEqual(oMI.getTokens()[1].getText(), sText, "Token is created with escaped text");
+
+		oMI.destroy();
+	});
+
+	QUnit.test("Text validation on focus leave", function(assert) {
+		var oMI = new MultiInput({
+			tokens: [
+				new Token({text: "Long text"}),
+				new Token({text: "Very long text"}),
+				new Token({text: "Very, very long text"}),
+				new Token({text: "Very, very, very long text"})
+			]
+		}).placeAt( "qunit-fixture");
+		Core.applyChanges();
+
+		var oValidationSpy = this.spy(oMI, "_validateCurrentText");
+		var oFocusOutSpy = this.spy(oMI, "onsapfocusleave");
+
+		oMI.focus();
+		qutils.triggerKeydown(oMI.getFocusDomRef(), KeyCodes.ARROW_LEFT);
+		Core.applyChanges();
+
+		assert.strictEqual(oValidationSpy.callCount, 0, "_validateCurrentText not invoked when focused is moved to the tokenizer");
+		assert.strictEqual(oFocusOutSpy.callCount, 1, "onsapfocusleave is called");
+
+		oValidationSpy.restore();
+		oFocusOutSpy.restore();
+		oMI.destroy();
+	});
+
 	QUnit.test("test text validation on focus leave", function(assert) {
 		//arrange
 		var testTokenText = "C-Item";
@@ -683,10 +732,11 @@ sap.ui.define([
 		assert.equal(isValidated, false, "token not validated");
 
 		var fAsyncValidateCallback;
+		var that = this.multiInput1;
 		this.multiInput1.removeAllValidators();
 		this.multiInput1.addValidator(function(args) {
 			fAsyncValidateCallback = args.asyncCallback;
-			return MultiInput.WaitForAsyncValidation;
+			return that.getWaitForAsyncValidation();
 		});
 
 		tokenText = "TestToken4";
@@ -781,10 +831,12 @@ sap.ui.define([
 
 
 		var fAsyncValidateCallback;
+		var that = this.multiInput1;
+
 		this.multiInput1.removeAllValidators();
 		this.multiInput1.addValidator(function(args){
 			fAsyncValidateCallback = args.asyncCallback;
-			return MultiInput.WaitForAsyncValidation;
+			return that.getWaitForAsyncValidation();
 		});
 		tokenText = "TestToken4";
 		this.multiInput1.setValue(tokenText);
@@ -938,6 +990,7 @@ sap.ui.define([
 				var removed = oEvent.getParameter("removedTokens");
 				var data = removed[0].data("my-extra-data");
 				assert.strictEqual(data, "data1", "Custom data is correct");
+				oMI.destroy();
 				fnDone();
 			}
 		});
@@ -952,7 +1005,6 @@ sap.ui.define([
 		});
 
 		Core.applyChanges();
-		oMI.destroy();
 	});
 
 	QUnit.test("test keyboard navigation", function(assert){
@@ -1734,7 +1786,7 @@ sap.ui.define([
 			text: {path: "text"}
 		});
 
-		var oMI = new sap.m.MultiInput({
+		var oMI = new MultiInput({
 			tokens: {path: "/items", template: oTokenTemplate},
 			tokenUpdate: function(oEvent){
 				if (oEvent.getParameter("type") === "removed") {
@@ -1802,6 +1854,38 @@ sap.ui.define([
 		this.clock.tick(nPopoverAnimationTick);
 
 		assert.strictEqual(oMultiInput.getAggregation("tokenizer").getTokens().length, 1, "Just a single token gets created");
+
+		// Cleanup
+		oMultiInput.destroy();
+	});
+
+	QUnit.test("Add tokens on mobile when there are no suggestions available", function(assert) {
+		// System under test
+		this.stub(Device, "system", {
+			desktop: false,
+			phone: true,
+			tablet: false
+		});
+
+		// Arrange
+		var oMultiInput = new MultiInput({
+			showSuggestion: false,
+			showValueHelp: false
+		}).placeAt("qunit-fixture");
+
+		oMultiInput.addValidator(function(args){
+			var text = args.text;
+			return new Token({text: text});
+		});
+		Core.applyChanges();
+
+		// Act
+		oMultiInput.setValue("test");
+		oMultiInput.onsapfocusleave({});
+		Core.applyChanges();
+
+		// Assert
+		assert.strictEqual(oMultiInput.getAggregation("tokenizer").getTokens().length, 1, "A token is created");
 
 		// Cleanup
 		oMultiInput.destroy();
@@ -2486,6 +2570,9 @@ sap.ui.define([
 		oMultiInput.destroy();
 	});
 
+	/**
+	* @deprecated Since 1.119.
+	*/
 	QUnit.test("Clicking on a Token should not trigger Input.prototype._fireValueHelpRequestForValueHelpOnly", function(assert) {
 		var oSpy = this.spy(Input.prototype, "_fireValueHelpRequestForValueHelpOnly"),
 			oToken = new Token();
@@ -2507,6 +2594,9 @@ sap.ui.define([
 		oSpy.restore();
 	});
 
+	/**
+	* @deprecated Since 1.119.
+	*/
 	QUnit.test("Clicking on nMore should not trigger Input.prototype._fireValueHelpRequestForValueHelpOnly", function(assert) {
 		var oSpy = this.spy(Input.prototype, "_fireValueHelpRequestForValueHelpOnly");
 
@@ -2915,29 +3005,6 @@ sap.ui.define([
 
 		// assert
 		assert.strictEqual(result.getText(), "token", "then the return value is correct");
-	});
-
-	QUnit.test("_shouldSkipTokenCreationOnPaste", function (assert) {
-		// arrange
-		var bResult;
-
-		// act
-		bResult = this.multiInput1._shouldSkipTokenCreationOnPaste([]);
-
-		// assert
-		assert.ok(bResult, "should return 'true' and skip token creation if is called with empty array");
-
-		// act
-		bResult = this.multiInput1._shouldSkipTokenCreationOnPaste(["val1"]);
-
-		// assert
-		assert.ok(bResult, "should return 'true' and skip token creation if is called with array with one value");
-
-		// act
-		bResult = this.multiInput1._shouldSkipTokenCreationOnPaste(["val1", "val2"]);
-
-		// assert
-		assert.notOk(bResult, "should return 'false' and NOT skip token creation if is called with array with more than 1 value");
 	});
 
 	QUnit.module("Collapsed state (N-more)", {

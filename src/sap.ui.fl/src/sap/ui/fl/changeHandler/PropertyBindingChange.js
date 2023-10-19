@@ -19,7 +19,6 @@ sap.ui.define([
 	 * @version ${version}
 	 * @since 1.38
 	 * @private
-	 * @experimental Since 1.38. This class is experimental and provides only limited functionality. Also the API might be changed in future.
 	 */
 	var PropertyBindingChange = {};
 
@@ -51,13 +50,13 @@ sap.ui.define([
 		// }
 
 		return Promise.resolve()
-			.then(oModifier.getPropertyBindingOrProperty.bind(oModifier, oControl, sPropertyName))
-			.then(function(vOriginalValue) {
-				oChange.setRevertData({
-					originalValue: vOriginalValue
-				});
-				oModifier.setPropertyBinding(oControl, sPropertyName, vPropertyValue);
+		.then(oModifier.getPropertyBindingOrProperty.bind(oModifier, oControl, sPropertyName))
+		.then(function(vOriginalValue) {
+			oChange.setRevertData({
+				originalValue: vOriginalValue
 			});
+			oModifier.setPropertyBinding(oControl, sPropertyName, vPropertyValue);
+		});
 	};
 
 	/**

@@ -5,12 +5,14 @@
 sap.ui.define([
 	"sap/ui/integration/cards/BaseContent",
 	"sap/ui/integration/util/BindingResolver",
+	"sap/m/IllustratedMessageType",
 	"sap/ui/integration/library",
 	"sap/base/Log",
 	"sap/ui/model/Sorter"
 ], function (
 	BaseContent,
 	BindingResolver,
+	IllustratedMessageType,
 	library,
 	Log,
 	Sorter
@@ -72,6 +74,17 @@ sap.ui.define([
 		this._bIsFirstRendering = false;
 	};
 
+	BaseListContent.prototype.onDataChanged = function () {
+		if (this.hasData()) {
+			this.hideNoDataMessage();
+		} else {
+			this.showNoDataMessage({
+				illustrationType: IllustratedMessageType.NoEntries,
+				title: this.getCardInstance().getTranslatedText("CARD_NO_ITEMS_ERROR_LISTS")
+			});
+		}
+	};
+
 	BaseListContent.prototype._keepHeight = function () {
 		if (!this.getDomRef()) {
 			return;
@@ -100,12 +113,7 @@ sap.ui.define([
 			return;
 		}
 
-		if (this.getInnerList().getItems) {
-			iNumberOfItems = this.getInnerList().getItems().length; // for the List and Table cards
-		} else {
-			iNumberOfItems = this.getInnerList().getContent().length; // for the Timeline card
-		}
-
+		iNumberOfItems = this.getItemsLength();
 		iNewMinItems = Math.max(oLoadingPlaceholder.getMinItems(), iNumberOfItems);
 		oLoadingPlaceholder.setMinItems(iNewMinItems);
 	};
@@ -113,12 +121,11 @@ sap.ui.define([
 	/**
 	 * @override
 	 */
-	BaseListContent.prototype.setConfiguration = function (oConfiguration) {
-		BaseContent.prototype.setConfiguration.apply(this, arguments);
-		oConfiguration = this.getConfiguration();
+	BaseListContent.prototype.applyConfiguration = function () {
+		var oConfiguration = this.getConfiguration();
 
 		if (!oConfiguration) {
-			return this;
+			return;
 		}
 
 		var oList = this.getInnerList(),
@@ -138,8 +145,6 @@ sap.ui.define([
 		}
 
 		this._fMinHeight = 0;
-
-		return this;
 	};
 
 	/**
@@ -151,6 +156,14 @@ sap.ui.define([
 	 */
 	BaseListContent.prototype.getInnerList = function () {
 		return null;
+	};
+
+	/**
+	 * @protected
+	 * @returns {int} Number of items
+	 */
+	BaseListContent.prototype.getItemsLength = function () {
+		return 0;
 	};
 
 	/**
@@ -227,27 +240,18 @@ sap.ui.define([
 			}.bind(this));
 	};
 
-	/**
-	 * Used to show the illustrated message for no data retrieved from server.
-	 *
-	 * @protected
-	 * @param {Object} mItemConfig The item template.
-	 */
-	BaseListContent.prototype._handleNoItemsError = function (mItemConfig) {
-
-		if (!this.getInnerList()) {
-			return;
-		}
-
+	BaseListContent.prototype.hasData = function () {
 		var oInnerList = this.getInnerList(),
 			oBindingInfo = oInnerList.getBinding(oInnerList.getMetadata().getDefaultAggregationName()),
 			oModel = oBindingInfo.getModel(),
 			sPath = oBindingInfo.getPath(),
 			aItems = oModel.getProperty(sPath);
 
-		if (aItems && aItems.length === 0){
-			this.getParent()._handleError("No items available", true);
+		if (aItems && aItems.length) {
+			return true;
 		}
+
+		return false;
 	};
 
 	/**

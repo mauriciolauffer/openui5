@@ -3,11 +3,9 @@
  */
 
 sap.ui.define([
-	"sap/ui/base/ManagedObject",
-	"sap/base/util/ObjectPath"
-], function (
-	ManagedObject,
-	ObjectPath
+	"sap/ui/base/ManagedObject"
+], function(
+	ManagedObject
 ) {
 	"use strict";
 
@@ -69,7 +67,6 @@ sap.ui.define([
 		});
 	};
 
-
 	/**
 	 * @returns {Promise} Resolves when the design time is loaded
 	 * @private
@@ -78,16 +75,25 @@ sap.ui.define([
 		window.clearTimeout(this._iTimeout);
 		this._bNotSupported = false;
 		this._bError = false;
-
-		var oElement = ObjectPath.get(this.getType() || "");
-		try {
+		return new Promise(function(fnResolve, fnReject) {
+			sap.ui.require(
+				[this.getType().replaceAll(".", "/")],
+				function(oModule) {
+					fnResolve(oModule);
+				},
+				function(oError) {
+					fnReject(oError);
+				}
+			);
+		}.bind(this))
+		.then(function(oElement) {
 			return oElement.getMetadata().loadDesignTime();
-		} catch (e) {
+		})
+		.catch(function(oError) {
 			this._bError = true;
-			return Promise.reject(e);
-		}
+			return Promise.reject(oError);
+		});
 	};
-
 
 	/**
 	 * @param {object} oData - Design time data
@@ -122,7 +128,7 @@ sap.ui.define([
 				for (var sAggregation in oData.aggregations) {
 					var oAggr = oData.aggregations[sAggregation];
 					if (oAggr.propagateMetadata) {
-						sPropagate = (sPropagate) ? sPropagate + ", " + sAggregation : "propagate (" + sAggregation;
+						sPropagate = (sPropagate) ? `${sPropagate}, ${sAggregation}` : `propagate (${sAggregation}`;
 					}
 					for (var sAggregationAction in oAggr.actions) {
 						i = aActions.indexOf(sAggregationAction);
@@ -134,7 +140,7 @@ sap.ui.define([
 								aggregation: sAggregation
 							};
 						} else {
-							mActions[i].aggregation = mActions[i].aggregation + ", " + sAggregation;
+							mActions[i].aggregation = `${mActions[i].aggregation}, ${sAggregation}`;
 						}
 						bAggregations = true;
 					}
@@ -147,13 +153,13 @@ sap.ui.define([
 			}
 
 			mActions.forEach(function(oAction) {
-				sActionsResult = (sActionsResult) ? sActionsResult + ", " : "";
-				sActionsResult = sActionsResult + oAction.action + " (" + oAction.aggregation + ")";
+				sActionsResult = (sActionsResult) ? `${sActionsResult}, ` : "";
+				sActionsResult = `${sActionsResult + oAction.action} (${oAction.aggregation})`;
 			});
 
 			if (sPropagate) {
-				sPropagate = sPropagate + ")";
-				sActionsResult = sActionsResult + " + " + sPropagate;
+				sPropagate = `${sPropagate})`;
+				sActionsResult = `${sActionsResult} + ${sPropagate}`;
 			}
 
 			return sActionsResult;

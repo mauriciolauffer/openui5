@@ -163,7 +163,7 @@ sap.ui.define([
 		myAfter: function() {
 			this.base.overrideCalledAfter = true;
 		},
-		override: {
+		overrides: {
 			callbackMethod: function() {
 				return "callbackOfControllerExt1";
 			}
@@ -227,6 +227,10 @@ sap.ui.define([
 			}
 		})
 	});
+	sap.ui.define("example/BaseController.controller", [], function() {
+		return BaseController;
+	});
+
 	//Provider extensions
 	sap.ui.define("example/ProviderExt1",
 		["sap/ui/core/mvc/ControllerExtension"], function(ControllerExtension) {
@@ -286,7 +290,7 @@ sap.ui.define([
 			},
 			myAfter: function() {
 			},
-			override: {
+			overrides: {
 				extHookLegacy: function() {
 					return "extHookLegacy App implementation";
 				},
@@ -360,7 +364,7 @@ sap.ui.define([
 			},
 			myAfter: function() {
 			},
-			override: {
+			overrides: {
 				extension: {
 					"example.ProviderExt1": {
 						publicMethodToOverride: function() {
@@ -462,7 +466,7 @@ sap.ui.define([
 		//private methods not exposed
 		assert.ok(!oExtension.getBase()._increaseLifecycleCall, "extension1.getBase()._increaseLifecycleCall cannot be accessed");
 
-		aPublicExpected.filter(
+		aPublicExpected.forEach(
 			function(sName) {
 				assert.strictEqual(typeof oExtension[sName], "function", "extension: function " + sName + " available");
 			}
@@ -575,7 +579,7 @@ sap.ui.define([
 		assert.ok(!oProviderExt1.getBase()._increaseLifecycleCall, "ext.example.ProviderExt1.getBase()._increaseLifecycleCall cannot be accessed");
 		assert.ok(!oProviderExt2.getBase()._increaseLifecycleCall, "ext.example.ProviderExt2.getBase()._increaseLifecycleCall cannot be accessed");
 
-		aPublicExpected.filter(
+		aPublicExpected.forEach(
 			function(sName) {
 				assert.strictEqual(typeof oExtension[sName], "function", "extension: function " + sName + " available");
 				assert.strictEqual(typeof oProviderExt1[sName], "function", "ext.example.ProviderExt1: function " + sName + " available");
@@ -664,7 +668,7 @@ sap.ui.define([
 				//private methods not exposed
 				assert.ok(!oExtension.getBase()._increaseLifecycleCall, "extension1.getBase()._increaseLifecycleCall cannot be accessed");
 
-				aPublicExpected.filter(
+				aPublicExpected.forEach(
 					function(sName) {
 						assert.strictEqual(typeof oExtension[sName], "function", "extension: function " + sName + " available");
 					}
@@ -768,7 +772,7 @@ sap.ui.define([
 				assert.ok(!oProviderExt1.getBase()._increaseLifecycleCall, "ext.example.ProviderExt1.getBase()._increaseLifecycleCall cannot be accessed");
 				assert.ok(!oProviderExt2.getBase()._increaseLifecycleCall, "ext.example.ProviderExt2.getBase()._increaseLifecycleCall cannot be accessed");
 
-				aPublicExpected.filter(
+				aPublicExpected.forEach(
 					function(sName) {
 						assert.strictEqual(typeof oExtension[sName], "function", "extension: function " + sName + " available");
 						assert.strictEqual(typeof oProviderExt1[sName], "function", "ext.example.ProviderExt1: function " + sName + " available");

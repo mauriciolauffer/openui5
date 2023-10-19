@@ -24,7 +24,6 @@ sap.ui.define([
 	 *
 	 * @namespace
 	 * @alias sap.ui.fl.apply._internal.changes.descriptor.app.ChangeDataSource
-	 * @experimental
 	 * @version ${version}
 	 * @private
 	 * @ui5-restricted sap.ui.fl.apply._internal
@@ -35,7 +34,8 @@ sap.ui.define([
 		 * Method to apply the  <code>appdescr_app_changeDataSource</code> change to the manifest.
 		 *
 		 * @param {object} oManifest - Original manifest
-		 * @param {object} oChange - Change with type <code>appdescr_app_changeDataSource</code>
+		 * @param {sap.ui.fl.apply._internal.flexObjects.AppDescriptorChange} oChange - Change with type <code>appdescr_app_changeDataSource</code>
+		 * @param {object} oChange.content - Details of the change
 		 * @param {string} oChange.content.dataSourceId - ID of <code>sap.app/dataSource</code> that is being changed
 		 * @param {object|array} oChange.content.entityPropertyChange - Entity property change or an array of multiple entity property changes
 		 * @param {string} oChange.content.entityPropertyChange.propertyPath - Path to the property which should be changed (allowed values: <code>uri</code> and <code>settings/maxAge</code>)
@@ -46,7 +46,7 @@ sap.ui.define([
 		 * @private
 		 * @ui5-restricted sap.ui.fl.apply._internal
 		 */
-		applyChange: function(oManifest, oChange) {
+		applyChange(oManifest, oChange) {
 			var oDataSources = oManifest["sap.app"].dataSources;
 			var oChangeContent = oChange.getContent();
 			DescriptorChangeCheck.checkEntityPropertyChange(oChangeContent, SUPPORTED_PROPERTIES, SUPPORTED_OPERATIONS);
@@ -55,7 +55,7 @@ sap.ui.define([
 				if (oDataSource) {
 					changePropertyValueByPath(oChangeContent.entityPropertyChange, oDataSource);
 				} else {
-					throw new Error("Nothing to update. DataSource with ID \"" + oChangeContent.dataSourceId + "\" does not exist.");
+					throw new Error(`Nothing to update. DataSource with ID "${oChangeContent.dataSourceId}" does not exist.`);
 				}
 			} else {
 				throw Error("No sap.app/dataSource found in manifest.json");

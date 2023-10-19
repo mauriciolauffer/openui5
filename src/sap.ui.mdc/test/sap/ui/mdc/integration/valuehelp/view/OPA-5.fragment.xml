@@ -126,7 +126,6 @@
 								id="mdcTable-Divisions-1"
 								type="ResponsiveTable"
 								width="100%"
-								height="100%"
 								headerVisible="true"
 								selectionMode="{= ${settings>/maxConditions} === -1 ? 'Multi' : 'SingleMaster'}"
 								p13nMode="Column,Sort"
@@ -136,10 +135,10 @@
 									<mdc:table.ResponsiveTableType growingMode="Scroll" />
 								</mdc:type>
 								<mdc:columns>
-									<mdc:table.Column id="mdcTable-Divisions-1-col-1" header="key" dataProperty="key">
+									<mdc:table.Column id="mdcTable-Divisions-1-col-1" header="key" propertyKey="key">
 										<Text text="{path: 'settings>key', type: 'sap.ui.model.type.String'}"/>
 									</mdc:table.Column>
-									<mdc:table.Column id="mdcTable-Divisions-1-col-2" header="text" dataProperty="text">
+									<mdc:table.Column id="mdcTable-Divisions-1-col-2" header="text" propertyKey="text">
 										<Text text="{path: 'settings>text', type: 'sap.ui.model.type.String'}"/>
 									</mdc:table.Column>
 								</mdc:columns>
@@ -150,7 +149,7 @@
 							<mdcvc:filterBar>
 								<vhfb:FilterBar id="fb1" liveMode="false" delegate='\{"name": "sap/ui/v4demo/delegate/salesorganization/FilterBar.delegate", "payload": \{"modelName": "settings", "collectionName": "divisions"\}\}'>
 									<vhfb:filterItems>
-										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="SalesOrganization" conditions="{$filters>/conditions/salesOrganization}"/>
+										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="SalesOrganization" conditions="{$filters>/conditions/salesOrganization}" propertyKey="salesOrganization"/>
 									</vhfb:filterItems>
 								</vhfb:FilterBar>
 							</mdcvc:filterBar>
@@ -160,7 +159,6 @@
 								id="mdcTable-Divisions-2"
 								type="ResponsiveTable"
 								width="100%"
-								height="100%"
 								headerVisible="true"
 								selectionMode="{= ${settings>/maxConditions} === -1 ? 'Multi' : 'SingleMaster'}"
 								p13nMode="Column,Sort"
@@ -170,13 +168,13 @@
 									<mdc:table.ResponsiveTableType growingMode="Scroll" />
 								</mdc:type>
 								<mdc:columns>
-									<mdc:table.Column id="mdcTable-Divisions-2-col-1" header="key" dataProperty="key">
+									<mdc:table.Column id="mdcTable-Divisions-2-col-1" header="key" propertyKey="key">
 										<Text text="{path: 'settings>key', type: 'sap.ui.model.type.String'}"/>
 									</mdc:table.Column>
-									<mdc:table.Column id="mdcTable-Divisions-2-col-2" header="text" dataProperty="text">
+									<mdc:table.Column id="mdcTable-Divisions-2-col-2" header="text" propertyKey="text">
 										<Text text="{path: 'settings>text', type: 'sap.ui.model.type.String'}"/>
 									</mdc:table.Column>
-									<mdc:table.Column id="mdcTable-Divisions-2-col-3" header="salesOrganization" dataProperty="salesOrganization">
+									<mdc:table.Column id="mdcTable-Divisions-2-col-3" header="salesOrganization" propertyKey="salesOrganization">
 										<Text text="{settings>salesOrganization}"/>
 									</mdc:table.Column>
 								</mdc:columns>
@@ -189,7 +187,6 @@
 								id="mdcTable-Divisions-3"
 								type="ResponsiveTable"
 								width="100%"
-								height="100%"
 								headerVisible="true"
 								selectionMode="{= ${settings>/maxConditions} === -1 ? 'Multi' : 'SingleMaster'}"
 								p13nMode="Column,Sort"
@@ -199,10 +196,10 @@
 									<mdc:table.ResponsiveTableType growingMode="Scroll" />
 								</mdc:type>
 								<mdc:columns>
-									<mdc:table.Column id="mdcTable-Divisions-3-col-1" header="key" dataProperty="key">
+									<mdc:table.Column id="mdcTable-Divisions-3-col-1" header="key" propertyKey="key">
 										<Text text="{path: 'settings>key', type: 'sap.ui.model.type.String'}"/>
 									</mdc:table.Column>
-									<mdc:table.Column id="mdcTable-Divisions-3-col-2" header="text" dataProperty="text">
+									<mdc:table.Column id="mdcTable-Divisions-3-col-2" header="text" propertyKey="text">
 										<Text text="{path: 'settings>text', type: 'sap.ui.model.type.String'}"/>
 									</mdc:table.Column>
 								</mdc:columns>
@@ -213,7 +210,7 @@
 							<mdcvc:filterBar>
 								<vhfb:FilterBar id="fb2" liveMode="false" delegate='\{"name": "sap/ui/v4demo/delegate/salesorganization/FilterBar.delegate", "payload": \{"modelName": "settings", "collectionName": "divisions"\}\}'>
 									<vhfb:filterItems>
-										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="SalesOrganization" conditions="{$filters>/conditions/salesOrganization}"/>
+										<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="SalesOrganization" conditions="{$filters>/conditions/salesOrganization}" propertyKey="salesOrganization"/>
 									</vhfb:filterItems>
 								</vhfb:FilterBar>
 							</mdcvc:filterBar>
@@ -223,7 +220,6 @@
 									id="mdcTable-Divisions-4"
 									type="ResponsiveTable"
 									width="100%"
-									height="100%"
 									headerVisible="true"
 									selectionMode="{= ${settings>/maxConditions} === -1 ? 'Multi' : 'SingleMaster'}"
 									p13nMode="Column,Sort"
@@ -233,13 +229,13 @@
 										<mdc:table.ResponsiveTableType growingMode="Scroll" />
 									</mdc:type>
 									<mdc:columns>
-										<mdc:table.Column id="mdcTable-Divisions-4-col-1" header="key" dataProperty="key">
+										<mdc:table.Column id="mdcTable-Divisions-4-col-1" header="key" propertyKey="key">
 											<Text text="{path: 'settings>key', type: 'sap.ui.model.type.String'}"/>
 										</mdc:table.Column>
-										<mdc:table.Column id="mdcTable-Divisions-4-col-2" header="text" dataProperty="text">
+										<mdc:table.Column id="mdcTable-Divisions-4-col-2" header="text" propertyKey="text">
 											<Text text="{path: 'settings>text', type: 'sap.ui.model.type.String'}"/>
 										</mdc:table.Column>
-										<mdc:table.Column id="mdcTable-Divisions-4-col-3" header="distributionChannel" dataProperty="distributionChannel">
+										<mdc:table.Column id="mdcTable-Divisions-4-col-3" header="distributionChannel" propertyKey="distributionChannel">
 											<Text text="{settings>distributionChannel}"/>
 										</mdc:table.Column>
 									</mdc:columns>
@@ -259,7 +255,8 @@
 				id="FB0-SO"
 				label="Sales Organization"
 				conditions="{$filters>/conditions/salesOrganization}"
-				fieldHelp="FB0-FH-SO"
+				propertyKey="salesOrganization"
+				valueHelp="FB0-FH-SO"
 				maxConditions="{settings>/maxConditions}"
 				display="DescriptionValue"
 				/>
@@ -267,7 +264,8 @@
 				id="FB0-DC"
 				label="Distribution Channel"
 				conditions="{$filters>/conditions/distributionChannel}"
-				fieldHelp="FB0-FH-DC"
+				propertyKey="distributionChannel"
+				valueHelp="FB0-FH-DC"
 				maxConditions="{settings>/maxConditions}"
 				display="DescriptionValue"
 				/>
@@ -275,7 +273,8 @@
 				id="FB0-D"
 				label="Division"
 				conditions="{$filters>/conditions/division}"
-				fieldHelp="FB0-FH-D"
+				propertyKey="division"
+				valueHelp="FB0-FH-D"
 				maxConditions="{settings>/maxConditions}"
 				display="DescriptionValue"
 				/>

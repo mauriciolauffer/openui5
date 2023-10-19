@@ -4,15 +4,16 @@ sap.ui.define([
 	"sap/f/CalendarInCard",
 	"sap/ui/unified/calendar/CalendarDate",
 	"sap/ui/unified/DateTypeRange",
-	"sap/ui/core/Core"
-], function(CalendarInCard, CalendarDate, DateTypeRange, oCore) {
+	"sap/ui/core/Core",
+	"sap/ui/core/date/UI5Date"
+], function(CalendarInCard, CalendarDate, DateTypeRange, oCore, UI5Date) {
 	"use strict";
 
 	QUnit.module("Interaction", {
 		beforeEach: function () {
 			this.oCal = new CalendarInCard("PC", {
 				selectedDates: [ new DateTypeRange({
-					startDate: new Date(2019, 8, 2)
+					startDate: UI5Date.getInstance(2019, 8, 2)
 				})]
 			}).placeAt("qunit-fixture");
 			oCore.applyChanges();
@@ -73,10 +74,11 @@ sap.ui.define([
 		oCore.applyChanges();
 
 		// Act
-		oYearRangePicker.setYear(1999);
+		oYearRangePicker.getDate().setFullYear(1999);
 		oCore.applyChanges();
 		oYearRangePicker.fireSelect();
 		oCore.applyChanges();
+
 		// Assert
 		assert.notOk(oMonthPicker.getDomRef(), "MonthPicker is not visible after selecting year range");
 		assert.ok(oYearPicker.getDomRef(), "YearPicker is visible after selecting year range");
@@ -85,10 +87,11 @@ sap.ui.define([
 		assert.strictEqual(oPickerBtn.getText(), "1999 - 2018", "picker text is correct");
 
 		// Act
-		oYearPicker.setYear(2018);
+		oYearPicker.getDate().setFullYear(2018);
 		oCore.applyChanges();
 		oYearPicker.fireSelect();
 		oCore.applyChanges();
+
 		// Assert
 		assert.ok(oMonthPicker.getDomRef(),"MonthPicker is visible after selecting year");
 		assert.notOk(oYearPicker.getDomRef(), "YearPicker is not visible after selecting year");
@@ -100,6 +103,7 @@ sap.ui.define([
 		oCore.applyChanges();
 		oMonthPicker.fireSelect();
 		oCore.applyChanges();
+
 		// Assert
 		assert.notOk(oMonthPicker.getDomRef(), "MonthPicker is not visible after selecting month");
 		assert.notOk(oYearPicker.getDomRef(), "YearPicker is not visible after selecting month");
@@ -110,6 +114,7 @@ sap.ui.define([
 		oCore.applyChanges();
 		oMonthPicker.fireSelect();
 		oCore.applyChanges();
+
 		// Assert
 		assert.strictEqual(oCalendar.getSelectedDates()[0].getStartDate().getFullYear(), 2018, "the year is correctly set");
 		assert.strictEqual(oCalendar.getSelectedDates()[0].getStartDate().getMonth(), 10, "the month is correctly set");
@@ -128,14 +133,14 @@ sap.ui.define([
 		oCalendar._handleNext();
 		oCore.applyChanges();
 		// Assert
-		assert.equal(oCalendar.getStartDate().getTime(), new Date(2020, 8, 1).getTime(), "startDate set correct");
+		assert.equal(oCalendar.getStartDate().getTime(), UI5Date.getInstance(2020, 8, 1).getTime(), "startDate is correct");
 		assert.equal(oPickerBtn.getText(), "2020", "picker text is correct");
 
 		// Act
 		oCalendar._handlePrevious();
 		oCore.applyChanges();
 		// Assert
-		assert.equal(oCalendar.getStartDate().getTime(), new Date(2019, 8, 1).getTime(), "startDate set correct");
+		assert.equal(oCalendar.getStartDate().getTime(), UI5Date.getInstance(2019, 8, 1).getTime(), "startDate is correct");
 		assert.equal(oPickerBtn.getText(), "2019", "picker text is correct");
 
 		// Act
@@ -144,14 +149,14 @@ sap.ui.define([
 		oCalendar._handleNext();
 		oCore.applyChanges();
 		// Assert
-		assert.equal(oYearPicker.getFirstRenderedDate().getFullYear(), 2029, "year set correct");
+		assert.equal(oYearPicker.getFirstRenderedDate().getFullYear(), 2029, "year is correct");
 		assert.equal(oPickerBtn.getText(), "2029 - 2048", "picker text is correct");
 
 		// Act
 		oCalendar._handlePrevious();
 		oCore.applyChanges();
 		// Assert
-		assert.equal(oYearPicker.getFirstRenderedDate().getFullYear(), 2009, "year set correct");
+		assert.equal(oYearPicker.getFirstRenderedDate().getFullYear(), 2009, "year is correct");
 		assert.equal(oPickerBtn.getText(), "2009 - 2028", "picker text is correct");
 
 		// Act
@@ -160,7 +165,7 @@ sap.ui.define([
 		oCalendar._handleNext();
 		oCore.applyChanges();
 		// Assert
-		assert.equal(oYearRangePicker.getFirstRenderedDate().getFullYear(), 2109, "year range set correct");
+		assert.equal(oYearRangePicker.getFirstRenderedDate().getFullYear(), 2109, "year range is correct");
 
 		// Act
 		oCalendar._handlePickerButtonPress();
@@ -168,12 +173,12 @@ sap.ui.define([
 		oCalendar._handlePrevious();
 		oCore.applyChanges();
 		// Assert
-		assert.equal(oYearRangePicker.getFirstRenderedDate().getFullYear(), 1929, "year range set correct");
+		assert.equal(oYearRangePicker.getFirstRenderedDate().getFullYear(), 1929, "year range is correct");
 	});
 
 	QUnit.test("Today button", function(assert) {
-		var oFakeNow = new Date(2020, 0, 1),
-			oOldDate = new Date(2019, 11, 1),
+		var oFakeNow = UI5Date.getInstance(2020, 0, 1),
+			oOldDate = UI5Date.getInstance(2019, 11, 1),
 			clock = sinon.useFakeTimers(oFakeNow.getTime()),
 			oCalendar = this.oCal,
 			oPickerBtn = oCalendar._oPickerBtn,
@@ -186,7 +191,7 @@ sap.ui.define([
 		oCalendar._handleTodayPress();
 		oCore.applyChanges();
 		// Assert
-		assert.equal(oCalendar.getSelectedDates()[0].getStartDate().getTime(), oFakeNow.getTime(), "startDate set correct");
+		assert.equal(oCalendar.getSelectedDates()[0].getStartDate().getTime(), oFakeNow.getTime(), "startDate is correct");
 		assert.equal(oPickerBtn.getText(), "January 2020", "picker text is correct");
 
 		// Arrange
@@ -198,7 +203,7 @@ sap.ui.define([
 		oCalendar._handleTodayPress();
 		oCore.applyChanges();
 		// Assert
-		assert.equal(oMonthPicker.getMonth(), 0, "month set correct");
+		assert.equal(oMonthPicker.getMonth(), 0, "month is correct");
 		assert.equal(oPickerBtn.getText(), "2020", "picker text is correct");
 
 		// Arrange
@@ -209,7 +214,11 @@ sap.ui.define([
 		oCalendar._handleTodayPress();
 		oCore.applyChanges();
 		// Assert
-		assert.equal(oYearPicker.getYear(), 2020, "year set correct");
+		/**
+		 * @deprecated As of version 1.34
+		 */
+		assert.equal(oYearPicker.getYear(), 2020, "year is correct");
+		assert.equal(oYearPicker.getDate().getFullYear(), 2020, "year is correct");
 		assert.equal(oPickerBtn.getText(), "2010 - 2029", "picker text is correct");
 
 		// Arrange
@@ -220,7 +229,11 @@ sap.ui.define([
 		oCalendar._handleTodayPress();
 		oCore.applyChanges();
 		// Assert
-		assert.equal(oYearRangePicker.getYear(), 2010, "year range set correct");
+		/**
+		 * @deprecated As of version 1.34
+		 */
+		assert.equal(oYearRangePicker.getYear(), 2010, "year range is correct");
+		assert.equal(oYearRangePicker.getDate().getFullYear(), 2010, "year range is correct");
 		assert.notOk(oPickerBtn.getVisible(), "picker button is not visible");
 		assert.strictEqual(oAddMonthDelegateSpy.callCount, 4, "Month focus delegate is added");
 

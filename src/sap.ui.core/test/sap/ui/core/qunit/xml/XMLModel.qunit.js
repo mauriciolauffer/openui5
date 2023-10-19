@@ -10,23 +10,13 @@ sap.ui.define([
 ], function(Label, List, StandardListItem, VerticalLayout, XMLModel, Context, jQuery) {
 	"use strict";
 
-	var oLabel, oLayout, oModel, oModelChild, oTarget1, oTarget2, aTestData, aTestDataChild;
+	var oLabel, oLayout, oModel, oModelChild, aTestData, aTestDataChild;
 
 	function cleanUp(){
-		document.body.removeChild(oTarget1);
-		document.body.removeChild(oTarget2);
 		oLabel.destroy();
 	}
 
 	function setup(){
-		// add divs for control tests
-		oTarget1 = document.createElement("div");
-		oTarget1.id = "target1";
-		document.body.appendChild(oTarget1);
-		oTarget2 = document.createElement("div");
-		oTarget2.id = "target2";
-		document.body.appendChild(oTarget2);
-
 		aTestData =
 			"<teamMembers>" +
 				"<member firstName=\"Andreas\" lastName=\"Klark\"></member>" +
@@ -57,10 +47,13 @@ sap.ui.define([
 		oLayout = new VerticalLayout();
 		oLabel = new Label("myLabel");
 		oLabel.setText("testText");
-		oLabel.placeAt("target1");
+		oLabel.placeAt("qunit-fixture");
 	}
 
 	QUnit.module("sap.ui.model.xml.XMLModel", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		afterEach: function() {
 			cleanUp();
 		},
@@ -195,7 +188,7 @@ sap.ui.define([
 		var oLB = new List("myLb"),
 			oItemTemplate = new StandardListItem();
 
-		oLB.placeAt("target2");
+		oLB.placeAt("qunit-fixture");
 		oItemTemplate.bindProperty("title", "@firstName").bindProperty("description", "@lastName");
 		oLB.bindAggregation("items", "/member", oItemTemplate);
 
@@ -212,7 +205,7 @@ sap.ui.define([
 			assert.equal(item.getDescription(), oModel.getProperty("/member/" + i + "/@lastName"),
 				"lastname check");
 		});
-
+		oLB.destroy();
 	});
 
 	QUnit.test("test XMLModel XML constructor", function(assert) {

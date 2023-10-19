@@ -25,11 +25,10 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
   _sapIllusDialogEmptyPlanningCalendar = _interopRequireDefault(_sapIllusDialogEmptyPlanningCalendar);
   _sapIllusSceneEmptyPlanningCalendar = _interopRequireDefault(_sapIllusSceneEmptyPlanningCalendar);
   _sapIllusSpotEmptyPlanningCalendar = _interopRequireDefault(_sapIllusSpotEmptyPlanningCalendar);
-
   function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
   const name = "EmptyPlanningCalendar";
   const set = "fiori";
+  const collection = "V4";
   const title = _i18nDefaults.IM_TITLE_EMPTYPLANNINGCALENDAR;
   const subtitle = _i18nDefaults.IM_SUBTITLE_EMPTYPLANNINGCALENDAR;
   (0, _Illustrations.registerIllustration)(name, {
@@ -38,6 +37,7 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
     spotSvg: _sapIllusSpotEmptyPlanningCalendar.default,
     title,
     subtitle,
-    set
+    set,
+    collection
   });
 });

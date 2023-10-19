@@ -10,12 +10,12 @@ sap.ui.define([],
 		 * FilterBar renderer.
 		 * @namespace
 		 */
-		var FilterBarBaseRenderer = {
+		const FilterBarBaseRenderer = {
 			apiVersion: 2
 		};
 
 		/**
-		 * CSS class to be applied to the HTML root element of the FilterBar control.
+		 * CSS class to be applied to the HTML root element of the {@link sap.ui.mdc.FilterBar FilterBar} control.
 		 *
 		 * @readonly
 		 * @const {string}
@@ -31,8 +31,11 @@ sap.ui.define([],
 		FilterBarBaseRenderer.render = function (oRm, oControl) {
 			oRm.openStart("div", oControl);
 			oRm.class(FilterBarBaseRenderer.CSS_CLASS);
+			if (oControl.isA("sap.ui.mdc.filterbar.p13n.AdaptationFilterBar") && oControl.getProperty("_useFixedWidth")) {
+				oRm.style("width", oControl.getWidth());
+			}
 			oRm.openEnd();
-			var oInnerLayout = oControl.getAggregation("layout") ? oControl.getAggregation("layout").getInner() : null;
+			const oInnerLayout = oControl.getAggregation("layout") ? oControl.getAggregation("layout").getInner() : null;
 			oRm.renderControl(oInnerLayout);
 			oRm.close("div");
 		};

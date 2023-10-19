@@ -1,4 +1,4 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/ui/fl/registry/Settings",
@@ -16,7 +16,7 @@ sap.ui.define([
 	var sandbox = sinon.createSandbox();
 
 	QUnit.module("sap.ui.fl.registry.Settings", {
-		beforeEach: function() {
+		beforeEach() {
 			var oSettings = {
 				isKeyUser: false,
 				isAtoAvailable: false,
@@ -36,7 +36,7 @@ sap.ui.define([
 			};
 			this.cut = new Settings(oSettings);
 		},
-		afterEach: function() {
+		afterEach() {
 			Settings._instance = undefined;
 			Settings._oLoadSettingsPromise = undefined;
 
@@ -218,6 +218,18 @@ sap.ui.define([
 			assert.ok(this.cut.isSystemWithTransports(), "then it returns true");
 		});
 
+		QUnit.test("when isPublishAvailable is called without information info being maintained in the settings", function(assert) {
+			assert.notOk(this.cut.isPublishAvailable(), "then it returns false");
+		});
+
+		QUnit.test("when isPublishAvailable is called with info being maintained in the settings", function(assert) {
+			var oSettings = {
+				isPublishAvailable: true
+			};
+			this.cut = new Settings(oSettings);
+			assert.ok(this.cut.isPublishAvailable(), "then it returns true");
+		});
+
 		QUnit.test("isVersioningEnabled returns a 'true' flag if it is maintained in the settings for the passed layer", function(assert) {
 			var sLayer = Layer.CUSTOMER;
 			var oSettings = {
@@ -263,41 +275,35 @@ sap.ui.define([
 			assert.equal(this.cut.isVersioningEnabled(sLayer), false);
 		});
 
-		QUnit.test("when systemType is CUSTOMER", function (assert) {
+		QUnit.test("when systemType is CUSTOMER", function(assert) {
 			var oSettings = new Settings({
-				systemType: 'CUSTOMER'
+				systemType: "CUSTOMER"
 			});
 			assert.ok(oSettings.isCustomerSystem(), "then isCustomerSystem returns true");
 		});
 
-		QUnit.test("when systemType is SAP", function (assert) {
+		QUnit.test("when systemType is SAP", function(assert) {
 			var oSettings = new Settings({
-				systemType: 'SAP'
+				systemType: "SAP"
 			});
 			assert.notOk(oSettings.isCustomerSystem(), "then isCustomerSystem returns false");
 		});
 
-		QUnit.test("when systemType is set and hostname includes localhost", function (assert) {
+		QUnit.test("when systemType is set and hostname includes localhost", function(assert) {
 			var oSettings = new Settings({
-				systemType: 'CUSTOMER'
+				systemType: "CUSTOMER"
 			});
 			sandbox.stub(oSettings, "_getHostname").returns("localhost");
 			assert.ok(oSettings.isCustomerSystem(), "then systemType wins over hostname");
 		});
 
-		QUnit.test("when systemType is not set and hostname includes localhost", function (assert) {
+		QUnit.test("when systemType is not set and hostname includes localhost", function(assert) {
 			var oSettings = new Settings({});
 			sandbox.stub(oSettings, "_getHostname").returns("localhost");
 			assert.notOk(oSettings.isCustomerSystem(), "then isCustomerSystem returns false");
 		});
 
-		QUnit.test("when systemType is not set and hostname includes .sap .corp", function (assert) {
-			var oSettings = new Settings({});
-			sandbox.stub(oSettings, "_getHostname").returns("someSystem.wdf.sap" + ".corp");
-			assert.notOk(oSettings.isCustomerSystem(), "then isCustomerSystem returns false");
-		});
-
-		QUnit.test("when systemType is not set and hostname is not a SAP system", function (assert) {
+		QUnit.test("when systemType is not set and hostname is not a SAP system", function(assert) {
 			var oSettings = new Settings({});
 			sandbox.stub(oSettings, "_getHostname").returns("example.com");
 			assert.ok(oSettings.isCustomerSystem(), "then isCustomerSystem returns true");
@@ -378,14 +384,14 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given that Settings loading failed", {
-		afterEach: function() {
+		afterEach() {
 			delete Settings._instance;
 			sandbox.restore();
 		}
 	}, function() {
 		QUnit.test("a default response is resolving the request", function(assert) {
 			sandbox.stub(Storage, "loadFeatures").resolves();
-			return Settings.getInstance().then(function (oSettings) {
+			return Settings.getInstance().then(function(oSettings) {
 				assert.ok(oSettings, "the settings instance is available");
 				assert.equal(oSettings.isKeyUser(), false);
 				assert.equal(oSettings.isAppVariantSaveAsEnabled(), false);
@@ -419,7 +425,7 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

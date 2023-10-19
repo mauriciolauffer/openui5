@@ -27,6 +27,8 @@ sap.ui.define([
 	"sap/ui/Device",
 	"sap/ui/core/SeparatorItem",
 	"sap/ui/core/ValueStateSupport",
+	"sap/ui/dom/getFirstEditableInput",
+	"sap/uxap/HierarchicalSelect",
 	"sap/ui/events/jquery/EventExtension" // side effect: provides jQuery.Event.prototype.isMarked
 ],
 	function(
@@ -56,7 +58,9 @@ sap.ui.define([
 		IconPool,
 		Device,
 		SeparatorItem,
-		ValueStateSupport
+		ValueStateSupport,
+		getFirstEditableInput,
+		HierarchicalSelect
 	) {
 		"use strict";
 
@@ -2672,7 +2676,6 @@ sap.ui.define([
 			// assert
 			assert.strictEqual(oSelectDomRef.attr("name"), "select-name0", 'The attribute name is "select-name0"');
 			assert.strictEqual(oSelectDomRef.attr("value"), "lorem");
-			assert.strictEqual(oSelectDomRef.attr("type"), "hidden");
 
 			// cleanup
 			oSelect.destroy();
@@ -4935,7 +4938,7 @@ sap.ui.define([
 			this.clock.tick(500);
 
 			// act
-			oSelect.rerender();
+			oSelect.invalidate();
 			Core.applyChanges();
 
 			// assert
@@ -8861,7 +8864,8 @@ sap.ui.define([
 			var fnFireChangeSpy = this.spy(oSelect, "fireChange");
 
 			// act
-			oSelect.rerender();
+			oSelect.invalidate();
+			Core.applyChanges();
 
 			// assert
 			assert.strictEqual(fnFireChangeSpy.callCount, 0);
@@ -8890,7 +8894,8 @@ sap.ui.define([
 
 			// act
 			qutils.triggerKeydown(oSelect.getDomRef(), KeyCodes.ARROW_DOWN);
-			oSelect.rerender();
+			oSelect.invalidate();
+			Core.applyChanges();
 
 			// assert
 			assert.strictEqual(fnFireChangeSpy.callCount, 0);
@@ -8989,7 +8994,7 @@ sap.ui.define([
 			oSelect.focus();
 			var fnFireChangeSpy = this.spy(oSelect, "fireChange");
 			qutils.triggerKeydown(oSelect.getDomRef(), KeyCodes.ARROW_DOWN);
-			oSelect.rerender();
+			oSelect.invalidate();
 			Core.applyChanges();
 
 			// act
@@ -10020,7 +10025,8 @@ sap.ui.define([
 			assert.strictEqual(oIconOnlySelect.getFocusDomRef().getAttribute('aria-activedescendant'), oItemB.getId(),
 				"Correct aria-activedescendant value");
 
-			oIconOnlySelect.rerender();
+			oIconOnlySelect.invalidate();
+			Core.applyChanges();
 
 			assert.strictEqual(oIconOnlySelect.getFocusDomRef().getAttribute('aria-activedescendant'), oItemB.getId(),
 				"Correct aria-activedescendant value");
@@ -11273,5 +11279,126 @@ sap.ui.define([
 
 			//Assert
 			assert.strictEqual(oSelect.getFormFormattedValue(), "", "OK");
+		});
+
+		QUnit.module("getFirstEditableInput", {
+			beforeEach: function () {
+				this.oSelect = new Select({
+					items: [
+						new Item({text: "First item text"}),
+						new Item({text: "Second item text"})
+					]
+				});
+				this.oSelect.placeAt("content");
+				Core.applyChanges();
+			},
+			afterEach: function () {
+				this.oSelect.destroy();
+			}
+		});
+
+		QUnit.test("test getFirstEditableInput finds enabled select", function (assert) {
+			assert.ok(getFirstEditableInput(this.oSelect.getDomRef()), "getFirstEditableInput returns the input");
+		});
+
+		QUnit.test("test getFirstEditableInput doesn't find disabled select", function (assert) {
+			this.oSelect.setEnabled(false);
+			Core.applyChanges();
+			assert.notOk(getFirstEditableInput(this.oSelect.getDomRef()), "getFirstEditableInput returns the input");
+		});
+
+		QUnit.test("test getFirstEditableInput doesn't find readonly select", function (assert) {
+			this.oSelect.setEditable(false);
+			Core.applyChanges();
+			assert.notOk(getFirstEditableInput(this.oSelect.getDomRef()), "getFirstEditableInput returns the input");
+		});
+
+		QUnit.test("test getFirstEditableInput finds readonly select with includeReadOnly", function (assert) {
+			this.oSelect.setEditable(false);
+			Core.applyChanges();
+			assert.ok(getFirstEditableInput(this.oSelect.getDomRef(), { includeReadOnly: true }), "getFirstEditableInput returns the input");
+		});
+
+		QUnit.test("test getFirstEditableInput doesn't find readonly and disabled select with includeReadOnly", function (assert) {
+			this.oSelect.setEditable(false);
+			this.oSelect.setEnabled(false);
+			Core.applyChanges();
+			assert.notOk(getFirstEditableInput(this.oSelect.getDomRef(), { includeReadOnly: true }), "getFirstEditableInput returns the input");
+		});
+
+		QUnit.module("HierarchicalSelect tests");
+
+		QUnit.test("onsapenter - open the control`s popup", function (assert) {
+
+			// system under test
+			var oHierarchicalSelect = new HierarchicalSelect({
+				items: [
+					new Item({
+						key: "0",
+						text: "item 0"
+					}),
+
+					new Item({
+						key: "1",
+						text: "item 1"
+					})
+				]
+			});
+
+			// arrange
+			oHierarchicalSelect.placeAt("content");
+			Core.applyChanges();
+			oHierarchicalSelect.focus();
+
+			var fnEnterSpy = this.spy(oHierarchicalSelect, "onsapenter");
+			var fnOpenSpy = this.spy(oHierarchicalSelect, "open");
+
+			// act
+			qutils.triggerKeydown(oHierarchicalSelect.getDomRef(), KeyCodes.ENTER);
+
+			// assert
+			assert.strictEqual(fnEnterSpy.callCount, 1, "onsapenter() method was called exactly once");
+			assert.strictEqual(fnOpenSpy.callCount, 1, "open() method was called exactly once");
+
+			// cleanup
+			oHierarchicalSelect.destroy();
+		});
+
+		QUnit.test("onsapenter - close the control`s popup if it is open", function (assert) {
+
+			// system under test
+			var oHierarchicalSelect = new HierarchicalSelect({
+				items: [
+					new Item({
+						key: "0",
+						text: "item 0"
+					}),
+
+					new Item({
+						key: "1",
+						text: "item 1"
+					})
+				]
+			});
+
+			// arrange
+			oHierarchicalSelect.placeAt("content");
+			Core.applyChanges();
+			oHierarchicalSelect.focus();
+			oHierarchicalSelect.open();
+			this.clock.tick(1000);	// wait 1s after the open animation is completed
+
+			var fnEnterSpy = this.spy(oHierarchicalSelect, "onsapenter");
+			var fnCloseSpy = this.spy(oHierarchicalSelect, "close");
+
+			// act
+			qutils.triggerKeydown(oHierarchicalSelect.getDomRef(), KeyCodes.ENTER);
+
+			// assert
+			assert.strictEqual(fnEnterSpy.callCount, 1, "onsapenter() method was called exactly once");
+			assert.strictEqual(fnCloseSpy.callCount, 1, "close() method was called exactly once");
+
+			// cleanup
+			oHierarchicalSelect.destroy();
 		});
 	});

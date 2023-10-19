@@ -31,6 +31,7 @@ sap.ui.define([
 				"data": {
 					"json": [
 						{
+							"product": "Beam Breaker B-1",
 							"salesOrder": "5000010050",
 							"customer": "Robert Brown Entertainment",
 							"status": "Delivered",
@@ -42,6 +43,7 @@ sap.ui.define([
 							"iconSrc": "sap-icon://help"
 						},
 						{
+							"product": "Beam Breaker B-2",
 							"salesOrder": "5000010051",
 							"customer": "Entertainment Argentinia",
 							"status": "Canceled",
@@ -50,9 +52,12 @@ sap.ui.define([
 							"percent": 70,
 							"percentValue": "70 of 100",
 							"progressState": "Success",
-							"iconSrc": "sap-icon://help"
+							"iconSrc": "sap-icon://help",
+							"showStateIcon": true,
+							"customStateIcon": "sap-icon://bbyd-active-sales"
 						},
 						{
+							"product": "Beam Breaker B-3",
 							"salesOrder": "5000010052",
 							"customer": "Brazil Technologies",
 							"status": "In Progress",
@@ -61,15 +66,19 @@ sap.ui.define([
 							"percent": 55,
 							"percentValue": "55GB of 100",
 							"progressState": "Warning",
-							"iconSrc": "sap-icon://help"
+							"iconSrc": "sap-icon://help",
+							"showStateIcon": true
 						}
 					]
 				},
 				"row": {
+					"highlight": "{progressState}",
+					"highlightText": "{progressState}",
 					"columns": [
 						{
 							"title": "Sales Order",
-							"value": "{salesOrder}",
+							"value": "{product}",
+							"additionalText": "{salesOrder}",
 							"identifier": true
 						},
 						{
@@ -80,7 +89,9 @@ sap.ui.define([
 							"title": "Status",
 							"value": "{status}",
 							"state": "{statusState}",
-							"hAlign": "End"
+							"hAlign": "End",
+							"showStateIcon": "{showStateIcon}",
+							"customStateIcon": "{customStateIcon}"
 						},
 						{
 							"title": "Order ID",
@@ -494,6 +505,72 @@ sap.ui.define([
 		}
 	};
 
+	var oManifest_TableCardColumnsFromParams = {
+		"sap.app": {
+			"id": "test.cards.table.card6"
+		},
+		"sap.card": {
+			"type": "Table",
+			"configuration": {
+				"parameters": {
+					"column1Name": {
+						"value": "salesOrder"
+					},
+					"column2Name": {
+						"value": "status"
+					}
+				}
+			},
+			"header": {
+				"title": "Columns from parameters"
+			},
+			"content": {
+				"data": {
+					"json": [
+						{
+							"product": "Beam Breaker B-1",
+							"salesOrder": "5000010050",
+							"customer": "Robert Brown Entertainment",
+							"status": "Delivered",
+							"statusState": "Success",
+							"orderUrl": "http://www.sap.com",
+							"percent": 30,
+							"percentValue": "30%",
+							"progressState": "Error",
+							"iconSrc": "sap-icon://help"
+						},
+						{
+							"product": "Beam Breaker B-2",
+							"salesOrder": "5000010051",
+							"customer": "Entertainment Argentinia",
+							"status": "Canceled",
+							"statusState": "Error",
+							"orderUrl": "http://www.sap.com",
+							"percent": 70,
+							"percentValue": "70 of 100",
+							"progressState": "Success",
+							"iconSrc": "sap-icon://help",
+							"showStateIcon": true,
+							"customStateIcon": "sap-icon://bbyd-active-sales"
+						}
+					]
+				},
+				"row": {
+					"columns": [
+						{
+							"title": "Column 1",
+							"value": "{= ${}[${parameters>/column1Name/value}]}"
+						},
+						{
+							"title": "Column 2",
+							"value": "{= ${}[${parameters>/column2Name/value}]}"
+						}
+					]
+				}
+			}
+		}
+	};
+
 	QUnit.module("Table Card", {
 		beforeEach: function () {
 			this.oCard = new Card({
@@ -520,12 +597,28 @@ sap.ui.define([
 			var oCardContent = this.oCard.getAggregation("_content");
 			var oTable = oCardContent.getAggregation("_content");
 			var aColumns = oTable.getColumns();
-			var aCells = oTable.getItems()[0].getCells();
+			var aRows = oTable.getItems();
+			var aCells = aRows[0].getCells();
+			var aCellsSecondRow = aRows[1].getCells();
+			var aCellsThirdRow = aRows[2].getCells();
+
 
 			Core.applyChanges();
 
+			// row highlight
+			assert.equal(aRows[0].getHighlight(), oManifestData[0].progressState, "Should have correct highlight value");
+			assert.equal(aRows[1].getHighlight(), oManifestData[1].progressState, "Should have correct highlight value");
+			assert.equal(aRows[2].getHighlight(), oManifestData[2].progressState, "Should have correct highlight value");
+
+			assert.equal(aRows[0].getHighlightText(), oManifestData[0].progressState, "Should have correct highlight text");
+			assert.equal(aRows[1].getHighlightText(), oManifestData[1].progressState, "Should have correct highlight text");
+			assert.equal(aRows[2].getHighlightText(), oManifestData[2].progressState, "Should have correct highlight text");
+
 			// Assert
 			assert.equal(aColumns.length, 7, "Should have 7 columns.");
+
+			// Assert
+			assert.equal(oTable.getAriaLabelledBy()[0], this.oCard.getCardHeader().getAggregation("_title").getId() + "-inner", "Should have correct table aria label");
 
 			// Columns titles
 			assert.equal(aColumns[0].getHeader().getText(), oManifestContent.row.columns[0].title, "Should have correct column title");
@@ -550,7 +643,7 @@ sap.ui.define([
 			assert.equal(aColumns[2].getHAlign(), "End", "The status column is aligned at 'End'");
 
 			// Column values
-			assert.equal(aCells[0].getTitle(), oManifestData[0].salesOrder, "Should have correct identifier value.");
+			assert.equal(aCells[0].getTitle(), oManifestData[0].product, "Should have correct identifier value.");
 			assert.equal(aCells[1].getText(), oManifestData[0].customer, "Should have correct text value.");
 			assert.equal(aCells[2].getText(), oManifestData[0].status, "Should have correct text value.");
 			assert.equal(aCells[2].getState(), oManifestData[0].statusState, "Should have correct state.");
@@ -560,6 +653,15 @@ sap.ui.define([
 			assert.equal(aCells[4].getState(), oManifestData[0].progressState, "Should have correct progress state.");
 			assert.equal(aCells[5].getSrc(), oManifestData[0].iconSrc, "Should have correct icon src.");
 			assert.ok(aCells[6].getTitleActive(), "Should be active identifier.");
+
+			// Second and third row - Object Status
+			assert.ok(aCellsSecondRow[2].getShowStateIcon(), "Should have 'showStateIcon' correctly set to true.");
+			assert.equal(aCellsSecondRow[2].getIcon(), oManifestData[1].customStateIcon, "Should have custom icon with src '" + oManifestData[1].customStateIcon + "'");
+			assert.notOk(aCellsSecondRow[2].hasStyleClass("sapMObjStatusShowIcon"),  "Default State Icon is not shown");
+			assert.ok(aCellsSecondRow[2].hasStyleClass("sapMObjStatusShowCustomIcon"),  "Custom State Icon is shown");
+			assert.equal(aCellsThirdRow[2].getShowStateIcon(), oManifestData[2].showStateIcon, "Should have 'showStateIcon' correctly set to " + oManifestData[2].showStateIcon);
+			assert.ok(aCellsThirdRow[2].hasStyleClass("sapMObjStatusShowIcon"),  "Default State Icon is shown");
+			assert.notOk(aCellsThirdRow[2].hasStyleClass("sapMObjStatusShowCustomIcon"),  "Custom State Icon is not shown");
 
 			done();
 		}.bind(this));
@@ -655,6 +757,35 @@ sap.ui.define([
 
 		// Act
 		this.oCard.setManifest(oManifest_TableCard_MaxItems);
+	});
+
+	QUnit.test("Using columns defined by parameters", function (assert) {
+
+		// Arrange
+		var done = assert.async();
+
+		this.oCard.attachEvent("_ready", function () {
+			var oCardContent = this.oCard.getAggregation("_content");
+			var oTable = oCardContent.getAggregation("_content");
+			var aRows = oTable.getItems();
+			var aCellsFirstRow = aRows[0].getCells();
+			var aCellsSecondRow = aRows[1].getCells();
+
+
+			Core.applyChanges();
+
+			// Assert column values
+			assert.equal(aCellsFirstRow[0].getText(), "5000010050", "First row should have correct value for first column.");
+			assert.equal(aCellsFirstRow[1].getText(), "Delivered", "First row should have correct value for second column.");
+
+			assert.equal(aCellsSecondRow[0].getText(), "5000010051", "Second row should have correct value for first column.");
+			assert.equal(aCellsSecondRow[1].getText(), "Canceled", "Second row should have correct value for second column.");
+
+			done();
+		}.bind(this));
+
+		// Act
+		this.oCard.setManifest(oManifest_TableCardColumnsFromParams);
 	});
 
 	QUnit.module("Manifest properties", {
@@ -956,6 +1087,199 @@ sap.ui.define([
 
 		// Act
 		this.oCard.setManifest(oManifest_TableCard);
+	});
+
+	QUnit.module("Data and items length", {
+		beforeEach: function () {
+			this.oCard = new Card({
+				baseUrl: "test-resources/sap/ui/integration/qunit/testResources/"
+			});
+
+			this.oCard.placeAt(DOM_RENDER_LOCATION);
+		},
+		afterEach: function () {
+			this.oCard.destroy();
+			this.oCard = null;
+		}
+	});
+
+	QUnit.test("Data and items length when there is grouping", function (assert) {
+		// Arrange
+		var done = assert.async(),
+			oManifest = {
+				"sap.app": {
+					"id": "testTableCardItemsLength"
+				},
+				"sap.card": {
+					"type": "Table",
+					"header": {
+						"title": "Items Length"
+					},
+					"data": {
+						"json": [
+							{
+								"salesOrder": "5000010050",
+								"deliveryProgress": 100
+							},
+							{
+								"salesOrder": "5000010051",
+								"deliveryProgress": 0
+							},
+							{
+								"salesOrder": "5000010052",
+								"deliveryProgress": 33
+							}
+						]
+					},
+					"content": {
+						"row": {
+							"columns": [
+								{
+									"title": "Sales Order",
+									"value": "{salesOrder}"
+								}
+							]
+						},
+						"group": {
+							"title": "{= ${deliveryProgress} > 10 ? 'In Delivery' : 'Not in Delivery'}",
+							"order": {
+								"path": "statusState"
+							}
+						}
+					}
+				}
+			};
+
+		this.oCard.attachEvent("_ready", function () {
+			assert.strictEqual(this.oCard.getCardContent().getItemsLength(), 3, "#getItemsLength result should be correct");
+			assert.strictEqual(this.oCard.getCardContent().getDataLength(), 3, "#getDataLength result should be correct");
+
+			done();
+		}.bind(this));
+
+		// Act
+		this.oCard.setManifest(oManifest);
+	});
+
+	QUnit.test("Data and items length when maxItems property is set", function (assert) {
+		// Arrange
+		var done = assert.async(),
+			oManifest = {
+				"sap.app": {
+					"id": "testTableCardItemsLength"
+				},
+				"sap.card": {
+					"type": "Table",
+					"header": {
+						"title": "Items Length"
+					},
+					"data": {
+						"json": [
+							{
+								"salesOrder": "5000010050"
+							},
+							{
+								"salesOrder": "5000010051"
+							},
+							{
+								"salesOrder": "5000010052"
+							}
+						]
+					},
+					"content": {
+						"row": {
+							"columns": [
+								{
+									"title": "Sales Order",
+									"value": "{salesOrder}"
+								}
+							]
+						},
+						"maxItems": 2
+					}
+				}
+			};
+
+		this.oCard.attachEvent("_ready", function () {
+			assert.strictEqual(this.oCard.getCardContent().getItemsLength(), 2, "#getItemsLength result should be correct");
+			assert.strictEqual(this.oCard.getCardContent().getDataLength(), 3, "#getDataLength result should be correct");
+
+			done();
+		}.bind(this));
+
+		// Act
+		this.oCard.setManifest(oManifest);
+	});
+
+	QUnit.module("Table card grouping", {
+		beforeEach: function () {
+			this.oCard = new Card();
+		},
+		afterEach: function () {
+			this.oCard.destroy();
+			this.oCard = null;
+		}
+	});
+
+	QUnit.test("Table card grouping", function (assert) {
+		// Arrange
+		const done = assert.async();
+
+		this.oCard.attachEvent("_ready", () => {
+			const aItems = this.oCard.getCardContent().getInnerList().getItems();
+
+			// Assert
+			assert.strictEqual(aItems.length, 4, "There are two list items and two group titles in the list.");
+			assert.ok(aItems[0].isA("sap.m.GroupHeaderListItem"), "The first item of the list is the group title");
+			assert.strictEqual(aItems[0].getTitle(), "Cheap", "The group title is correct");
+
+			done();
+		});
+
+		// Act
+		this.oCard.setManifest({
+			"sap.app": {
+				"id": "test.card.tableGrouping.card"
+			},
+			"sap.card": {
+				"type": "Table",
+				"data": {
+					"json":[{
+						"Name": "Product 1",
+						"Price": "100"
+					},
+					{
+						"Name": "Product 2",
+						"Price": "200"
+					}
+				]
+				},
+				"header": {
+					"title": "L3 Request list content Card"
+				},
+				"content": {
+					"row": {
+						"columns": [{
+								"title": "Name",
+								"value": "{Name}"
+							},
+							{
+								"title": "Price",
+								"value": "{Price}"
+							}
+						]
+					},
+					"group": {
+						"title": "{= ${Price} > 150 ? 'Expensive' : 'Cheap'}",
+						"order": {
+							"path": "Price",
+							"dir": "ASC"
+						}
+					}
+				}
+			}
+		});
+		this.oCard.startManifestProcessing();
 	});
 
 });

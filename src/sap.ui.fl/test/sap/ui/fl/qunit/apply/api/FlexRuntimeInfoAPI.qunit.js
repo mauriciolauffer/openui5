@@ -4,52 +4,55 @@ sap.ui.define([
 	"sap/ui/core/Control",
 	"sap/ui/core/UIComponent",
 	"sap/ui/fl/apply/_internal/controlVariants/Utils",
-	"sap/ui/fl/apply/_internal/flexState/controlVariants/VariantManagementState",
 	"sap/ui/fl/apply/_internal/flexState/FlexState",
-	"sap/ui/fl/apply/_internal/ChangesController",
+	"sap/ui/fl/apply/_internal/flexState/ManifestUtils",
 	"sap/ui/fl/apply/api/FlexRuntimeInfoAPI",
-	"sap/ui/fl/Cache",
+	"sap/ui/fl/initial/_internal/FlexConfiguration",
+	"sap/ui/fl/FlexControllerFactory",
 	"sap/ui/fl/Layer",
 	"sap/ui/fl/Utils",
-	"sap/ui/thirdparty/sinon-4"
+	"sap/ui/thirdparty/sinon-4",
+	"test-resources/sap/ui/fl/qunit/FlQUnitUtils"
 ], function(
 	Control,
 	UIComponent,
 	VariantUtils,
-	VariantManagementState,
 	FlexState,
-	ChangesController,
+	ManifestUtils,
 	FlexRuntimeInfoAPI,
-	Cache,
+	FlexConfiguration,
+	FlexControllerFactory,
 	Layer,
 	Utils,
-	sinon
+	sinon,
+	FlQUnitUtils
 ) {
 	"use strict";
 
 	var sandbox = sinon.createSandbox();
 
 	function mockFlexController(oControl, oReturn) {
-		sandbox.stub(ChangesController, "getFlexControllerInstance")
-			.withArgs(oControl)
-			.returns(oReturn);
+		sandbox.stub(FlexControllerFactory, "createForSelector")
+		.withArgs(oControl)
+		.returns(oReturn);
 	}
 
 	QUnit.module("isPersonalized", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oAppComponent = new UIComponent("AppComponent21");
 			this.oGetAppComponentStub = sandbox.stub(Utils, "getAppComponentForControl").returns(this.oAppComponent);
+			sandbox.stub(ManifestUtils, "getFlexReferenceForControl").returns("AppComponent21");
 		},
-		afterEach: function() {
+		afterEach() {
 			if (this.oControl) {
 				this.oControl.destroy();
 			}
 			this.oAppComponent.destroy();
+			FlexState.clearState();
 			sandbox.restore();
 		}
 	}, function() {
 		QUnit.test("When isPersonalized() is called with controls of type sap.ui.core.Element and no change type", function(assert) {
-			sandbox.stub(Cache, "getChangesFillingCache").resolves({});
 			this.aChangeTypes = ["changeType1", "changeType2"];
 			this.oControl = new Control("controlId1");
 			var aControls = [this.oControl, {id: "controlId2", appComponent: this.oAppComponent}];
@@ -62,7 +65,6 @@ sap.ui.define([
 		});
 
 		QUnit.test("When isPersonalized() is called with controls as a map and no change type", function(assert) {
-			sandbox.stub(Cache, "getChangesFillingCache").returns(Promise.resolve({}));
 			this.aChangeTypes = ["changeType1", "changeType2"];
 			var aControls = [{id: "controlId1", appComponent: this.oAppComponent}];
 			return FlexRuntimeInfoAPI.isPersonalized({
@@ -73,7 +75,7 @@ sap.ui.define([
 			});
 		});
 
-		QUnit.test("When isPersonalized() is called with an array of control ids and change type", function(assert) {
+		QUnit.test("When isPersonalized() is called with an array of control ids and change type", async function(assert) {
 			this.aChangeTypes = ["changeType1", "changeType2"];
 			this.oControl = new Control("controlId1");
 			var aControls = [this.oControl];
@@ -85,47 +87,30 @@ sap.ui.define([
 			var oVariantChangeContent0 = {fileName: "variantChange0", fileType: "ctrl_variant_change", layer: Layer.USER, selector: {id: "variantManagementId"}, changeType: "changeType1"};
 			var oVariantManagementChangeContent0 = {fileName: "variantManagementChange0", fileType: "ctrl_variant_management_change", layer: Layer.USER, changeType: "changeType1", selector: {id: "variantManagementId"}, content: {defaultVariant: "defaultVariant0"}};
 
-
 			var oMockedWrappedContent = {
-				changes: {
-					changes: [oChangeContent0],
-					variantSection: {
-						variantManagementId: {
-							variants: [{
-								content: {
-									fileName: "variantManagementId",
-									fileType: "ctrl_variant",
-									content: {
-										title: "variant 0"
-									}
-								},
-								controlChanges: [oChangeContent1, oChangeContent2],
-								variantChanges: {
-									setTitle: [oVariantChangeContent0]
-								}
-							},
-							{
-								content: {
-									fileName: "variant1",
-									fileType: "ctrl_variant",
-									variantReference: "variantManagementId",
-									content: {
-										title: "variant 1"
-									}
-								},
-								controlChanges: [oChangeContent3],
-								variantChanges: {}
-							}],
-							variantManagementChanges: {
-								setDefault: [oVariantManagementChangeContent0]
-							}
+				changes: [oChangeContent0],
+				variants: [
+					{
+						fileName: "variantManagementId",
+						fileType: "ctrl_variant",
+						content: {
+							title: "variant 0"
+						}
+					}, {
+						fileName: "variant1",
+						fileType: "ctrl_variant",
+						variantReference: "variantManagementId",
+						content: {
+							title: "variant 1"
 						}
 					}
-				}
+				],
+				variantChanges: [oVariantChangeContent0],
+				variantManagementChanges: [oVariantManagementChangeContent0],
+				variantDependentControlChanges: [oChangeContent1, oChangeContent2, oChangeContent3]
 			};
 
-			sandbox.stub(VariantManagementState, "updateVariantsState");
-			sandbox.stub(Cache, "getChangesFillingCache").returns(Promise.resolve(oMockedWrappedContent));
+			await FlQUnitUtils.initializeFlexStateWithData(sandbox, "AppComponent21", oMockedWrappedContent);
 			return FlexRuntimeInfoAPI.isPersonalized({
 				selectors: aControls,
 				changeTypes: this.aChangeTypes
@@ -157,16 +142,13 @@ sap.ui.define([
 			);
 		});
 
-		QUnit.test("When isPersonalized() is called with undefined change types", function(assert) {
+		QUnit.test("When isPersonalized() is called with undefined change types", async function(assert) {
 			var oChangeContent0 = {fileName: "change0", fileType: "change", variantReference: "", selector: {id: "controlId1", idIsLocal: false}, changeType: "changeType1", layer: Layer.USER};
 			var aControls = [{id: "controlId1", appComponent: this.oAppComponent}];
 			var oMockedWrappedContent = {
-				changes: {
-					changes: [oChangeContent0]
-				}
+				changes: [oChangeContent0]
 			};
-			sandbox.stub(FlexState, "getFlexObjectsFromStorageResponse").returns(oMockedWrappedContent.changes);
-			sandbox.stub(Cache, "getChangesFillingCache").returns(Promise.resolve(oMockedWrappedContent));
+			await FlQUnitUtils.initializeFlexStateWithData(sandbox, "AppComponent21", oMockedWrappedContent);
 			return FlexRuntimeInfoAPI.isPersonalized({
 				selectors: aControls
 			}).then(function(bIsPersonalized) {
@@ -174,15 +156,13 @@ sap.ui.define([
 			});
 		});
 
-		QUnit.test("When isPersonalized() is called with an empty array of change types", function(assert) {
+		QUnit.test("When isPersonalized() is called with an empty array of change types", async function(assert) {
 			var oChangeContent0 = {fileName: "change0", fileType: "change", variantReference: "", selector: {id: "controlId1", idIsLocal: false}, changeType: "changeType1", layer: Layer.USER};
 			var aControls = [{id: "controlId1", appComponent: this.oAppComponent}];
 			var oMockedWrappedContent = {
-				changes: {
-					changes: [oChangeContent0]
-				}
+				changes: [oChangeContent0]
 			};
-			sandbox.stub(Cache, "getChangesFillingCache").returns(Promise.resolve(oMockedWrappedContent));
+			await FlQUnitUtils.initializeFlexStateWithData(sandbox, "AppComponent21", oMockedWrappedContent);
 			return FlexRuntimeInfoAPI.isPersonalized({
 				selectors: aControls,
 				changeTypes: []
@@ -191,7 +171,7 @@ sap.ui.define([
 			});
 		});
 
-		QUnit.test("When isPersonalized() is called with variant control changes", function(assert) {
+		QUnit.test("When isPersonalized() is called with variant control changes", async function(assert) {
 			this.aChangeTypes = ["change0", "changeType2"];
 			this.oControl = new Control("controlId1");
 
@@ -202,37 +182,27 @@ sap.ui.define([
 			var oChangeContent4 = {fileName: "change4", variantReference: "variant1"};
 
 			var oMockedWrappedContent = {
-				changes: {
-					changes: [oChangeContent0],
-					variantSection: {
-						variantManagementId: {
-							variants: [{
-								content: {
-									fileName: "variantManagementId",
-									content: {
-										title: "variant 0"
-									}
-								},
-								controlChanges: [oChangeContent1, oChangeContent2],
-								variantChanges: {}
-							},
-							{
-								content: {
-									fileName: "variant1",
-									variantReference: "variant0",
-									content: {
-										title: "variant 1"
-									}
-								},
-								controlChanges: [oChangeContent3, oChangeContent4],
-								variantChanges: {}
-							}],
-							variantManagementChanges: {}
+				changes: [oChangeContent0],
+				variants: [
+					{
+						fileName: "variantManagementId",
+						content: {
+							title: "variant 0"
+						}
+					},
+					{
+						fileName: "variant1",
+						variantReference: "variant0",
+						content: {
+							title: "variant 1"
 						}
 					}
-				}
+				],
+				variantChanges: [],
+				variantManagementChanges: [],
+				variantDependentControlChanges: [oChangeContent1, oChangeContent2, oChangeContent3, oChangeContent4]
 			};
-			sandbox.stub(Cache, "getChangesFillingCache").returns(Promise.resolve(oMockedWrappedContent));
+			await FlQUnitUtils.initializeFlexStateWithData(sandbox, "AppComponent21", oMockedWrappedContent);
 			return FlexRuntimeInfoAPI.isPersonalized({
 				selectors: [this.oControl],
 				changeTypes: this.aChangeTypes
@@ -243,10 +213,10 @@ sap.ui.define([
 	});
 
 	QUnit.module("waitForChanges", {
-		beforeEach: function () {
+		beforeEach() {
 			this.aObjectsToDestroy = [];
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 			this.aObjectsToDestroy.forEach(function(oObject) {oObject.destroy();});
 		}
@@ -320,7 +290,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("isFlexSupported", {
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
@@ -336,7 +306,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("hasVariantManagement", {
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
@@ -350,7 +320,19 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.module("getConfiguredFlexServices", {
+		afterEach() {
+			sandbox.restore();
+		}
+	}, function() {
+		QUnit.test("when called", function(assert) {
+			const aReturnValue = [{foo: "bar"}];
+			sandbox.stub(FlexConfiguration, "getFlexibilityServices").returns(aReturnValue);
+			assert.deepEqual(FlexRuntimeInfoAPI.getConfiguredFlexServices(), aReturnValue, "the function returns the configured value");
+		});
+	});
+
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

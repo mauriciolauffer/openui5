@@ -974,8 +974,7 @@ sap.ui.define([
 		oRequestor.doConvertSystemQueryOptions("/Foo", {$filter : sFilter},
 			fnResultHandlerSpy);
 
-		sinon.assert.calledOnce(fnResultHandlerSpy);
-		sinon.assert.calledWithExactly(fnResultHandlerSpy, "$filter", "~");
+		sinon.assert.calledOnceWithExactly(fnResultHandlerSpy, "$filter", "~");
 	});
 
 	//*********************************************************************************************
@@ -1736,7 +1735,7 @@ sap.ui.define([
 			oRequestor = _Requestor.create("/", oModelInterface, undefined, undefined, "2.0");
 
 		// code under test
-		oRequestor.reportHeaderMessages("[]");
+		oRequestor.reportHeaderMessages("resource/path", "[]");
 
 		assert.notOk(fnreportTransitionMessages.called);
 	});

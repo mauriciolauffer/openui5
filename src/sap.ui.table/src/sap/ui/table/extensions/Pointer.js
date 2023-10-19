@@ -96,42 +96,16 @@ sap.ui.define([
 		 * Changes the selection based on the given click event on the given row selector, data cell or row action cell.
 		 */
 		_handleClickSelection: function(oEvent, $Cell, oTable) {
-			TableUtils.toggleRowSelection(oTable, $Cell, null, function(iRowIndex) {
+			TableUtils.toggleRowSelection(oTable, $Cell, null, function(oRow) {
 				var oSelectionPlugin = oTable._getSelectionPlugin();
-				var oSelMode = oTable.getSelectionMode();
 
-				// Single selection
-				if (oSelMode === SelectionMode.Single) {
-					if (!oSelectionPlugin.isIndexSelected(iRowIndex)) {
-						oSelectionPlugin.setSelectedIndex(iRowIndex);
-					} else {
-						oSelectionPlugin.clearSelection();
-					}
-
-				// Multi selection (range)
-				} else if (oEvent.shiftKey) {
-					// If no row is selected, getSelectedIndex returns -1. Then we simply select the clicked row.
-					var iSelectedIndex = oSelectionPlugin.getSelectedIndex();
-					if (iSelectedIndex >= 0) {
-						oSelectionPlugin.addSelectionInterval(iSelectedIndex, iRowIndex);
-					} else if (oSelectionPlugin.getSelectedCount() === 0) {
-						oSelectionPlugin.setSelectedIndex(iRowIndex);
-					}
-
-				// Multi selection (toggle)
-				} else if (!oTable._legacyMultiSelection) {
-					if (!oSelectionPlugin.isIndexSelected(iRowIndex)) {
-						oSelectionPlugin.addSelectionInterval(iRowIndex, iRowIndex);
-					} else {
-						oSelectionPlugin.removeSelectionInterval(iRowIndex, iRowIndex);
-					}
-
-				// Multi selection (legacy)
+				if (oEvent.shiftKey) { // Range
+					oSelectionPlugin.setSelected(oRow, true, {range: true});
+				} else if (oTable._legacyMultiSelection) {
+					oTable._legacyMultiSelection(oRow.getIndex(), oEvent);
 				} else {
-					oTable._legacyMultiSelection(iRowIndex, oEvent);
+					oSelectionPlugin.setSelected(oRow, !oSelectionPlugin.isSelected(oRow));
 				}
-
-				return true;
 			});
 		}
 	};
@@ -301,7 +275,7 @@ sap.ui.define([
 		initColumnTracking: function(oTable) {
 			// attach mousemove listener to update resizer position
 			oTable.$().find(".sapUiTableCtrlScr, .sapUiTableCtrlScrFixed").on("mousemove", function(oEvent) {
-				var oDomRef = this.getDomRef();
+				var oDomRef = this.getDomRef("sapUiTableCnt");
 				if (!oDomRef || this._bIsColumnResizerMoving) {
 					return;
 				}
@@ -642,7 +616,7 @@ sap.ui.define([
 				} else if (oCellInfo.isOfType(TableUtils.CELLTYPE.COLUMNHEADER)) {
 					oColumn = this.getColumns()[oCellInfo.columnIndex];
 					oMenu = oColumn.getAggregation("menu");
-					bMenuOpen = oMenu && oMenu.bOpen;
+					bMenuOpen = oMenu && oMenu.isOpen();
 
 					if (!bMenuOpen) {
 						// A long click starts column reordering, so it should not also open the menu in the onclick event handler.
@@ -680,7 +654,7 @@ sap.ui.define([
 				if (oCellInfo.isOfType(TableUtils.CELLTYPE.COLUMNHEADER)) {
 					oColumn = this.getColumns()[oCellInfo.columnIndex];
 					oMenu = oColumn.getAggregation("menu");
-					bMenuOpen = oMenu && oMenu.bOpen;
+					bMenuOpen = oMenu && oMenu.isOpen();
 
 					if (!bMenuOpen) {
 						oPointerExtension._bShowMenu = true;
@@ -707,7 +681,7 @@ sap.ui.define([
 			}
 		},
 
-		onclick: function(oEvent) {
+		ontap: function(oEvent) {
 			// clean up the timer
 			clearTimeout(this._mTimeouts.delayedColumnReorderTimerId);
 
@@ -729,15 +703,17 @@ sap.ui.define([
 				var oPointerExtension = this._getPointerExtension();
 
 				if (oPointerExtension._bShowMenu) {
-					TableUtils.Menu.openContextMenu(this, oEvent.target);
+					TableUtils.Menu.openContextMenu(this, oEvent);
 					delete oPointerExtension._bShowMenu;
 				}
+			} else if (oCellInfo.isOfType(TableUtils.CELLTYPE.COLUMNROWHEADER)) {
+				this._getSelectionPlugin().onHeaderSelectorPress();
 			} else if (oRow && oRow.isSummary()) {
 				// Sum row cannot be selected
 				oEvent.preventDefault();
 			} else if ($Target.hasClass("sapUiTableGroupMenuButton")) {
 				// Analytical Table: Mobile group menu button in group header rows.
-				TableUtils.Menu.openContextMenu(this, oEvent.target, oEvent);
+				TableUtils.Menu.openContextMenu(this, oEvent);
 			} else if ($Target.hasClass("sapUiTableGroupIcon") || $Target.hasClass("sapUiTableTreeIcon")) {
 				// Expand/Collapse icon
 				oRow.toggleExpandedState();
@@ -746,23 +722,14 @@ sap.ui.define([
 					return;
 				}
 
-				if (oCellInfo.isOfType(TableUtils.CELLTYPE.COLUMNROWHEADER)) {
-					window.getSelection().empty();
-				}
-
 				var sSelectedText = window.getSelection().toString();
 				if (!oEvent.shiftKey && sSelectedText.length > 0 && sSelectedText !== "\n") {
 					Log.debug("DOM Selection detected -> Click event on table skipped, Target: " + oEvent.target);
 					return;
 				}
 
-				// forward the event
 				if (!this._findAndfireCellEvent(this.fireCellClick, oEvent)) {
-					if (oCellInfo.isOfType(TableUtils.CELLTYPE.COLUMNROWHEADER)) {
-						this._getSelectionPlugin().onHeaderSelectorPress();
-					} else {
-						ExtensionHelper._handleClickSelection(oEvent, $Cell, this);
-					}
+					ExtensionHelper._handleClickSelection(oEvent, $Cell, this);
 				} else {
 					oEvent.preventDefault();
 				}
@@ -777,7 +744,7 @@ sap.ui.define([
 				delete oPointerExtension._bShowDefaultMenu;
 
 			} else if (oPointerExtension._bShowMenu) {
-				var bContextMenuOpened = TableUtils.Menu.openContextMenu(this, oEvent.target, oEvent);
+				var bContextMenuOpened = TableUtils.Menu.openContextMenu(this, oEvent);
 
 				if (bContextMenuOpened) {
 					oEvent.preventDefault(); // To prevent opening the default browser context menu.

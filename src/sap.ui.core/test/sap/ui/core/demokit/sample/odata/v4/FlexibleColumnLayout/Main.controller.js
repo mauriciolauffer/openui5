@@ -6,6 +6,7 @@ sap.ui.define([
 	"sap/f/library",
 	"sap/m/MessageBox",
 	"sap/m/MessageToast",
+	"sap/ui/core/Messaging",
 	"sap/ui/core/date/UI5Date",
 	"sap/ui/core/sample/common/Controller",
 	"sap/ui/model/Filter",
@@ -13,7 +14,7 @@ sap.ui.define([
 	"sap/ui/model/Sorter",
 	"sap/ui/model/json/JSONModel",
 	"sap/ui/test/TestUtils"
-], function (_Formatter, library, MessageBox, MessageToast, UI5Date, Controller, Filter,
+], function (_Formatter, library, MessageBox, MessageToast, Messaging, UI5Date, Controller, Filter,
 		FilterOperator, Sorter, JSONModel, TestUtils) {
 	"use strict";
 
@@ -45,36 +46,70 @@ sap.ui.define([
 			return false;
 		},
 
-		onCancel : function () {
-			this.getView().getModel().resetChanges("UpdateGroup");
-			this.setSelectionMode("SingleSelectMaster");
-			this.mChangedSalesOrders = {};
-		},
-
-		onCreateLineItem : function () {
-			var oContext,
-				oDeliveryDate = UI5Date.getInstance(),
-				oListBinding = this.byId("SO_2_SOITEM").getBinding("items"),
-				sPath = oListBinding.getHeaderContext().getPath() + "/DeliveryDate",
-				oType = oListBinding.getModel().getMetaModel().getUI5Type(sPath);
+		newLineItem : function () {
+			var oDeliveryDate = UI5Date.getInstance(),
+				oType = this.getView().getModel().getMetaModel()
+					.getUI5Type("/SalesOrderList/SO_2_SOITEM/DeliveryDate");
 
 			oDeliveryDate.setFullYear(oDeliveryDate.getFullYear() + 1);
-			oListBinding.create({
+
+			return {
 				CurrencyCode : "EUR",
 				DeliveryDate : oType.getModelValue(oDeliveryDate),
 				GrossAmount : "42.0",
 				ProductID : "HT-1000",
 				Quantity : "2.000",
 				QuantityUnit : "EA"
-			}, false).created().then(function () {
-				MessageToast.show("Line item created: " + oContext.getProperty("ItemPosition"));
+			};
+		},
+
+		onCancel : function () {
+			this.getView().getModel().resetChanges("UpdateGroup");
+			this.mChangedSalesOrders = {};
+		},
+
+		onCreateLineItem : function () {
+			var oContext,
+				oListBinding = this.byId("SO_2_SOITEM").getBinding("items"),
+				bDeepCreate = oListBinding.getContext().isTransient();
+
+			oListBinding.create(this.newLineItem(), false).created().then(function () {
+				if (!bDeepCreate) {
+					MessageToast.show("Line item created: " + oContext.getProperty("ItemPosition"));
+				}
 			}, function (oError) {
 				if (!oError.canceled) {
 					throw oError; // unexpected error
 				}
 			});
 			this.rememberChangedSalesOrderContext();
-			this.setSelectionMode("None");
+		},
+
+		onCreateSalesOrder : function () {
+			var oContext = this.byId("SalesOrderList").getBinding("items").create({
+					BuyerID : "0100000000",
+					LifecycleStatus : "N",
+					SO_2_SOITEM : [this.newLineItem()]
+				}, true),
+				that = this;
+
+			oContext.created().then(function () {
+				that.oUIModel.setProperty("/sLayout", LayoutType.TwoColumnsMidExpanded);
+				MessageToast.show("Sales Order with "
+					+ that.byId("SO_2_SOITEM").getBinding("items").getLength() + " items created: "
+					+ oContext.getProperty("SalesOrderID"));
+			}, function (oError) {
+				if (!oError.canceled) {
+					throw oError; // unexpected error
+				}
+				if (that.byId("objectPage").getBindingContext() === oContext) {
+					that.oUIModel.setProperty("/sLayout", LayoutType.OneColumn);
+					that.oUIModel.setProperty("/bSalesOrderSelected", false);
+				}
+			});
+			this.byId("SalesOrderList").setSelectedItem(
+				this.byId("SalesOrderList").getItems()[oContext.getIndex()]);
+			this.selectSalesOrder(oContext);
 		},
 
 		onDeleteSalesOrder : function (oEvent) {
@@ -84,8 +119,12 @@ sap.ui.define([
 		},
 
 		onDeleteSalesOrderItem : function (oEvent) {
-			this.byId("objectPage").getBindingContext().requestSideEffects(["GrossAmount"], "$auto")
+			var oOrderContext = this.byId("objectPage").getBindingContext();
+
+			if (!oOrderContext.isTransient()) {
+				oOrderContext.requestSideEffects(["GrossAmount"], "$auto")
 					.catch(function () { /*may fail because of previous request*/ });
+			}
 
 			oEvent.getSource().getBindingContext().delete("$auto").then(function () {
 				MessageBox.success("Sales order line item deleted");
@@ -154,8 +193,7 @@ sap.ui.define([
 			this.getView().setModel(this.oUIModel, "ui");
 			this.getView().setModel(this.getView().getModel(), "headerContext");
 			// TODO initMessagePopover should expose its "messages" model to the complete view
-			this.getView().setModel(sap.ui.getCore().getMessageManager().getMessageModel(),
-				"messages");
+			this.getView().setModel(Messaging.getMessageModel(), "messages");
 			this.byId("salesOrderListTitle").setBindingContext(
 				this.byId("SalesOrderList").getBinding("items").getHeaderContext(),
 				"headerContext");
@@ -179,30 +217,17 @@ sap.ui.define([
 			oBinding.refresh();
 		},
 
+		onResetContext : function (oEvent) {
+			oEvent.getSource().getBindingContext().resetChanges();
+		},
+
 		onSalesOrderLineItemSelect : function (oEvent) {
 			this.setSalesOrderLineItemBindingContext(
 				oEvent.getParameters().listItem.getBindingContext());
 		},
 
 		onSalesOrderSelect : function (oEvent) {
-			var oObjectPage = this.byId("objectPage"),
-				oContext = oEvent.getParameters().listItem.getBindingContext(),
-				that = this;
-
-			oContext.setKeepAlive(true, function () {
-				// Handle destruction of a kept-alive context
-				that.oUIModel.setProperty("/sLayout", LayoutType.OneColumn);
-				that.oUIModel.setProperty("/bSalesOrderSelected", false);
-			}, /*bRequestMessages*/true);
-			if (oObjectPage.getBindingContext()) {
-				oObjectPage.getBindingContext().setKeepAlive(false);
-			}
-			oObjectPage.setBindingContext(oContext);
-			this.byId("lineItemsTitle").setBindingContext(
-				this.byId("SO_2_SOITEM").getBinding("items").getHeaderContext(), "headerContext");
-
-			this.oUIModel.setProperty("/sLayout", LayoutType.TwoColumnsMidExpanded);
-			this.oUIModel.setProperty("/bSalesOrderSelected", true);
+			this.selectSalesOrder(oEvent.getParameters().listItem.getBindingContext());
 		},
 
 		onSave : function () {
@@ -250,7 +275,33 @@ sap.ui.define([
 		rememberChangedSalesOrderContext : function () {
 			var oContext = this.byId("objectPage").getBindingContext();
 
-			this.mChangedSalesOrders[oContext.getPath()] = oContext;
+			if (!oContext.isTransient()) {
+				this.mChangedSalesOrders[oContext.getPath()] = oContext;
+			}
+		},
+
+		selectSalesOrder : function (oContext) {
+			var oObjectPage = this.byId("objectPage"),
+				oOldPageContext,
+				that = this;
+
+			if (!oContext.isTransient()) {
+				oContext.setKeepAlive(true, function () {
+					// Handle destruction of a kept-alive context
+					that.oUIModel.setProperty("/sLayout", LayoutType.OneColumn);
+					that.oUIModel.setProperty("/bSalesOrderSelected", false);
+				}, /*bRequestMessages*/true);
+			}
+			oOldPageContext = oObjectPage.getBindingContext();
+			if (oOldPageContext && !oOldPageContext.isTransient()) {
+				oOldPageContext.setKeepAlive(false);
+			}
+			oObjectPage.setBindingContext(oContext);
+			this.byId("lineItemsTitle").setBindingContext(
+				this.byId("SO_2_SOITEM").getBinding("items").getHeaderContext(), "headerContext");
+
+			this.oUIModel.setProperty("/sLayout", LayoutType.TwoColumnsMidExpanded);
+			this.oUIModel.setProperty("/bSalesOrderSelected", true);
 		},
 
 		setSalesOrderLineItemBindingContext : function (oContext) {
@@ -280,33 +331,18 @@ sap.ui.define([
 			this.oUIModel.setProperty("/bSalesOrderItemSelected", !!oContext);
 		},
 
-		setSelectionMode : function (sMode) {
-			var oTable = this.getView().byId("SalesOrderList");
-
-			if (sMode === "SingleSelectMaster") {
-				oTable.setMode(sMode);
-				oTable.setSelectedItem(oTable.getItems()[this.iSelectedSalesOrder]);
-				this.iSelectedSalesOrder = undefined;
-			} else {
-				this.iSelectedSalesOrder = this.iSelectedSalesOrder
-					|| oTable.getSelectedItem().getBindingContext().getIndex();
-				oTable.setMode("None");
-			}
-		},
-
 		submitBatch : function (sGroupId) {
-			var oView = this.getView(),
-				that = this;
+			var oView = this.getView();
 
 			oView.setBusy(true);
 			// request new ETag for each sales order touched by changes on item level (containment)
-			Object.keys(this.mChangedSalesOrders).forEach(function (sPath) {
-				that.mChangedSalesOrders[sPath].requestSideEffects(["GrossAmount"])
+			Object.values(this.mChangedSalesOrders).forEach(function (oSalesOrderContext) {
+				oSalesOrderContext.requestSideEffects(["GrossAmount"])
 					.catch(function () { /*may fail because of previous request*/ });
 			});
+			this.mChangedSalesOrders = {};
 			return oView.getModel().submitBatch(sGroupId).finally(function () {
 				oView.setBusy(false);
-				that.setSelectionMode("SingleSelectMaster");
 			});
 		}
 	});

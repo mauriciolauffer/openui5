@@ -12,15 +12,15 @@ sap.ui.define([
 	"sap/m/Column",
 	"sap/m/ColumnListItem",
 	"sap/m/Text",
-	"sap/base/util/UriParameters",
 	"sap/ui/mdc/condition/FilterOperatorUtil",
 	"sap/ui/core/Core",
 	'sap/ui/mdc/condition/Condition',
 	'sap/base/util/merge',
-	'sap/ui/mdc/enum/ConditionValidated',
+	'sap/ui/mdc/enums/ConditionValidated',
+	'sap/ui/mdc/enums/OperatorName',
 	'sap/ui/mdc/p13n/StateUtil',
 	'sap/base/util/deepEqual',
-	'sap/ui/model/odata/v4/ODataPropertyBinding'
+	'sap/ui/model/odata/v4/OPropertyKeyBinding'
 ], function(
 	ODataV4ValueHelpDelegate,
 	MTable,
@@ -31,34 +31,32 @@ sap.ui.define([
 	Column,
 	ColumnListItem,
 	Text,
-	UriParameters,
 	FilterOperatorUtil,
 	Core,
 	Condition,
 	merge,
 	ConditionValidated,
+	OperatorName,
 	StateUtil,
 	deepEqual,
-	ODataPropertyBinding
+	OPropertyKeyBinding
 ) {
 	"use strict";
 
-	var ValueHelpDelegate = Object.assign({}, ODataV4ValueHelpDelegate);
+	const ValueHelpDelegate = Object.assign({}, ODataV4ValueHelpDelegate);
 
-	ValueHelpDelegate.retrieveContent = function (oPayload, oContainer) {
+	ValueHelpDelegate.retrieveContent = function (oValueHelp, oContainer) {
 
-		var oValueHelp = oContainer && oContainer.getParent();
+		const oParams = new URLSearchParams(window.location.search);
+		const oParamSuspended = oParams.get("suspended");
+		const bSuspended = oParamSuspended ? oParamSuspended === "true" : false;
 
-		var oParams = UriParameters.fromQuery(window.location.search);
-		var oParamSuspended = oParams.get("suspended");
-		var bSuspended = oParamSuspended ? oParamSuspended === "true" : false;
+		const aCurrentContent = oContainer && oContainer.getContent();
+		let oCurrentContent = aCurrentContent && aCurrentContent[0];
 
-		var aCurrentContent = oContainer && oContainer.getContent();
-		var oCurrentContent = aCurrentContent && aCurrentContent[0];
+		const bMultiSelect = oValueHelp.getMaxConditions() === -1;
 
-		var bMultiSelect = oValueHelp.getMaxConditions() === -1;
-
-		var oCurrentTable = oCurrentContent && oCurrentContent.getTable();
+		let oCurrentTable = oCurrentContent && oCurrentContent.getTable();
 
 		if (oContainer.isA("sap.ui.mdc.valuehelp.Popover")) {
 
@@ -174,7 +172,7 @@ sap.ui.define([
 
 	/* function _resolveODataModelValue (sPath, oContent) {
 		var oModel = oContent.getModel();
-		var oPropertyBinding = new ODataPropertyBinding(oModel, sPath, "");
+		var oPropertyBinding = new OPropertyKeyBinding(oModel, sPath, "");
 		return oPropertyBinding.requestValue();
 	}
 
@@ -184,7 +182,7 @@ sap.ui.define([
 	} */
 
 
-	ValueHelpDelegate.getInitialFilterConditions = function (oPayload, oContent, oControl) {
+	ValueHelpDelegate.getFilterConditions = function (oValueHelp, oContent, oConfig) {
 
 		// Tooling experiments BEG
 		/* var sConditionModelCountry = _resolveConditionModelValue('$filters', '/conditions/country_code', oContent);
@@ -196,10 +194,10 @@ sap.ui.define([
 		// Tooling experiments END
 
 
-		var oConditions = ODataV4ValueHelpDelegate.getInitialFilterConditions(oPayload, oContent, oControl);
+		const oConditions = ODataV4ValueHelpDelegate.getFilterConditions(arguments);
 
-		var oCountry = Core.byId("FB0-FF6");
-		var aCountryConditions = oCountry && oCountry.getConditions();
+		const oCountry = Core.byId("FB0-FF6");
+		const aCountryConditions = oCountry && oCountry.getConditions();
 		if (aCountryConditions && aCountryConditions.length) {
 			oConditions["country_code"] = aCountryConditions;
 			return oConditions;
@@ -207,17 +205,17 @@ sap.ui.define([
 	};
 
 	// Exemplatory implementation of a condition payload
-	ValueHelpDelegate.createConditionPayload = function (oPayload, oContent, aValues, vContext) {
-		var sIdentifier = oContent.getId();
-		var oConditionPayload = {};
+	ValueHelpDelegate.createConditionPayload = function (oValueHelp, oContent, aValues, vContext) {
+		const sIdentifier = oContent.getId();
+		const oConditionPayload = {};
 		oConditionPayload[sIdentifier] = {};
 
-		var oListBinding = oContent.getListBinding();
-			var oContext = oListBinding && oListBinding.aContexts && oListBinding.aContexts.find(function (oContext) {
+		const oListBinding = oContent.getListBinding();
+			const oContext = oListBinding && oListBinding.aContexts && oListBinding.aContexts.find(function (oContext) {
 				return oContext.getObject(oContent.getKeyPath()) === aValues[0];
 			});
 			if (oContext) {
-				var aDataProperties = oContent.getTable().getBindingInfo("items").template.getCells().map(function (oCell) {
+				const aDataProperties = oContent.getTable().getBindingInfo("items").template.getCells().map(function (oCell) {
 					return oCell.getBindingInfo("text").parts[0].path;
 				});
 
@@ -229,9 +227,9 @@ sap.ui.define([
 	};
 
 	// Exemplatory implementation of outparameter update
-	ValueHelpDelegate.onConditionPropagation = function (oPayload, oValueHelp, sReason, oConfig) {
+	ValueHelpDelegate.onConditionPropagation = function (oValueHelp, sReason, oConfig) {
 		// find all conditions carrying country information
-		var aAllConditionCountries = oValueHelp.getConditions().reduce(function (aResult, oCondition) {
+		const aAllConditionCountries = oValueHelp.getConditions().reduce(function (aResult, oCondition) {
 			if (oCondition.payload) {
 				Object.values(oCondition.payload).forEach(function (oSegment) {
 					if (oSegment["country_code"] && aResult.indexOf(oSegment["country_code"]) === -1) {
@@ -243,14 +241,14 @@ sap.ui.define([
 		}, []);
 
 		if (aAllConditionCountries && aAllConditionCountries.length) {
-			var oFilterBar = Core.byId("FB0");
+			const oFilterBar = Core.byId("FB0");
 			StateUtil.retrieveExternalState(oFilterBar).then(function (oState) {
 				aAllConditionCountries.forEach(function(sCountry) {
-					var bExists = oState.filter && oState.filter['countryOfOrigin_code'] && oState.filter['countryOfOrigin_code'].find(function (oCondition) {
+					const bExists = oState.filter && oState.filter['countryOfOrigin_code'] && oState.filter['countryOfOrigin_code'].find(function (oCondition) {
 						return oCondition.values[0] === sCountry;
 					});
 					if (!bExists) {
-						var oNewCondition = Condition.createCondition("EQ", [sCountry], undefined, undefined, ConditionValidated.Validated);
+						const oNewCondition = Condition.createCondition(OperatorName.EQ, [sCountry], undefined, undefined, ConditionValidated.Validated);
 						oState.filter['countryOfOrigin_code'] = oState.filter && oState.filter['countryOfOrigin_code'] || [];
 						oState.filter['countryOfOrigin_code'].push(oNewCondition);
 					}

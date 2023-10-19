@@ -11,36 +11,32 @@ sap.ui.define([
 	"./TableRenderer",
 	'./library',
 	'sap/ui/model/analytics/ODataModelAdapter',
-	'sap/ui/model/Sorter',
 	'sap/ui/unified/MenuItem',
 	'./utils/TableUtils',
 	"./plugins/BindingSelection",
 	"sap/base/Log",
-	"sap/base/assert",
 	"sap/ui/thirdparty/jquery",
-	"sap/ui/model/controlhelper/TreeBindingProxy"
-],
-	function(
-		AnalyticalColumn,
-		Column,
-		Table,
-		TreeTable,
-		TableRenderer,
-		library,
-		ODataModelAdapter,
-		Sorter,
-		MenuItem,
-		TableUtils,
-		BindingSelectionPlugin,
-		Log,
-		assert,
-		jQuery,
-		TreeBindingProxy
-	) {
+	"sap/ui/model/controlhelper/TreeBindingProxy",
+	"sap/ui/core/library"
+], function(
+	AnalyticalColumn,
+	Column,
+	Table,
+	TreeTable,
+	TableRenderer,
+	library,
+	ODataModelAdapter,
+	MenuItem,
+	TableUtils,
+	BindingSelectionPlugin,
+	Log,
+	jQuery,
+	TreeBindingProxy,
+	CoreLibrary
+) {
 	"use strict";
 
 	var GroupEventType = library.GroupEventType;
-	var SortOrder = library.SortOrder;
 	var TreeAutoExpandMode = library.TreeAutoExpandMode;
 	var _private = TableUtils.createWeakMapFacade();
 
@@ -133,6 +129,7 @@ sap.ui.define([
 			/**
 			 * Functions which is used to sort the column visibility menu entries e.g.: function(ColumnA, ColumnB) { return 0 = equals, <0 lower, >0
 			 * greater }; Other values than functions will be ignored.
+			 * @deprecated As of Version 1.117
 			 */
 			columnVisibilityMenuSorter: {type: "any", group: "Appearance", defaultValue: null},
 
@@ -161,6 +158,21 @@ sap.ui.define([
 			 * @deprecated As of version 1.21.2, replaced by {@link sap.ui.table.Table#setShowOverlay}
 			 */
 			dirty: {type: "boolean", group: "Appearance", defaultValue: null, deprecated: true}
+		},
+		events: {
+			/**
+			 * Fired when the table is grouped.
+			 * @since 1.118
+			 */
+			group: {
+				allowPreventDefault: true,
+				parameters: {
+					/**
+					 * grouped column.
+					 */
+					column: {type: "sap.ui.table.AnalyticalColumn"}
+				}
+			}
 		},
 		designtime: "sap/ui/table/designtime/AnalyticalTable.designtime"
 	}, renderer: TableRenderer});
@@ -195,6 +207,9 @@ sap.ui.define([
 		this.addStyleClass("sapUiAnalyticalTable");
 
 		// defaulting properties
+		/**
+		 * @deprecated As of Version 1.117
+		 */
 		this.setShowColumnVisibilityMenu(true);
 		this.setEnableColumnFreeze(true);
 		this.setEnableCellFilter(true);
@@ -300,11 +315,15 @@ sap.ui.define([
 		return oModel;
 	};
 
+	/**
+	 * @deprecated As of Version 1.117
+	 * sap.ui.table.ColumnMenu is deprecated.
+	 */
 	AnalyticalTable.prototype.updateRows = function(sReason) {
 		Table.prototype.updateRows.apply(this, arguments);
 
 		if (sReason !== "sort") {
-			this._invalidateColumnMenus(); // TODO: Is this needed?
+			this._invalidateColumnMenus();
 		}
 	};
 
@@ -324,6 +343,10 @@ sap.ui.define([
 	 */
 	AnalyticalTable.prototype._bindAggregation = function(sName, oBindingInfo) {
 		if (sName === "rows") {
+			/**
+			 * @deprecated As of Version 1.117
+			 * sap.ui.table.ColumnMenu is deprecated.
+			 */
 			this._invalidateColumnMenus(); // Metadata might change.
 			this._applyODataModelAnalyticalAdapter(oBindingInfo.model);
 
@@ -344,15 +367,6 @@ sap.ui.define([
 	};
 
 	AnalyticalTable.prototype._applyAnalyticalBindingInfo = function(oBindingInfo) {
-		// extract the sorters from the columns (TODO: reconsider this!)
-		var aColumns = this.getColumns();
-		for (var i = 0, l = aColumns.length; i < l; i++) {
-			if (aColumns[i].getSorted()) {
-				oBindingInfo.sorter = oBindingInfo.sorter || [];
-				oBindingInfo.sorter.push(new Sorter(aColumns[i].getSortProperty() || aColumns[i].getLeadingProperty(), aColumns[i].getSortOrder() === SortOrder.Descending));
-			}
-		}
-
 		// Make sure all necessary parameters are given.
 		// The ODataModelAdapter (via bindList) needs these properties to determine if an AnalyticalBinding should be instantiated.
 		// This is the default for the AnalyticalTable.
@@ -403,8 +417,6 @@ sap.ui.define([
 				visible: oColumn.getVisible(),
 				grouped: oColumn.getGrouped(),
 				total: oColumn.getSummed(),
-				sorted: oColumn.getSorted(),
-				sortOrder: oColumn.getSortOrder(),
 				inResult: oColumn.getInResult(),
 				formatter: oColumn.getGroupHeaderFormatter()
 			});
@@ -426,8 +438,6 @@ sap.ui.define([
 				visible: oColumn.getVisible(),
 				grouped: oColumn.getGrouped(),
 				total: oColumn.getSummed(),
-				sorted: oColumn.getSorted(),
-				sortOrder: oColumn.getSortOrder(),
 				inResult: oColumn.getInResult(),
 				formatter: oColumn.getGroupHeaderFormatter()
 			});
@@ -636,12 +646,7 @@ sap.ui.define([
 			this._mGroupHeaderMenuItems["sortasc"] = new MenuItem({
 				text: TableUtils.getResourceText("TBL_SORT_ASC"),
 				select: function() {
-					var oGroupColumnInfo = getGroupColumnInfo();
-
-					if (oGroupColumnInfo) {
-						var oColumn = oGroupColumnInfo.column;
-						oColumn.sort(false); //update Analytical Info triggered by aftersort in column
-					}
+					getGroupColumnInfo()?.column._sort(CoreLibrary.SortOrder.Ascending);
 				},
 				icon: "sap-icon://up"
 			});
@@ -652,12 +657,7 @@ sap.ui.define([
 			this._mGroupHeaderMenuItems["sortdesc"] = new MenuItem({
 				text: TableUtils.getResourceText("TBL_SORT_DESC"),
 				select: function() {
-					var oGroupColumnInfo = getGroupColumnInfo();
-
-					if (oGroupColumnInfo) {
-						var oColumn = oGroupColumnInfo.column;
-						oColumn.sort(true); //update Analytical Info triggered by aftersort in column
-					}
+					getGroupColumnInfo()?.column._sort(CoreLibrary.SortOrder.Descending);
 				},
 				icon: "sap-icon://down"
 			});
@@ -747,19 +747,21 @@ sap.ui.define([
 	};
 
 	/**
-	 * Returns the context of a row by its index.
-	 *
-	 * @param {int} iIndex
-	 *         Index of the row to return the context from.
-	 * @returns {sap.ui.model.Context} The context of a row by its index
-	 * @public
+	 * @inheritDoc
 	 */
 	AnalyticalTable.prototype.getContextByIndex = function(iIndex) {
-		return iIndex >= 0 && this._oProxy.getContextByIndex(iIndex);
+		return this._oProxy.getContextByIndex(iIndex);
 	};
 
+	/**
+	 * Gets a node object by an index.
+	 *
+	 * @param {int} iIndex Index of the node
+	 * @returns {undefined | object} Returns a node object if available.
+	 * @private
+	 */
 	AnalyticalTable.prototype.getContextInfoByIndex = function(iIndex) {
-		return iIndex >= 0 && this._oProxy.getNodeByIndex(iIndex);
+		return this._oProxy.getNodeByIndex(iIndex);
 	};
 
 	/**
@@ -1009,6 +1011,21 @@ sap.ui.define([
 		}
 	};
 
+	AnalyticalTable.prototype._getTotalRowCount = function() {
+		var iTotalRowCount = Table.prototype._getTotalRowCount.apply(this, arguments);
+
+		if (iTotalRowCount === 1) {
+			var oBinding = this.getBinding();
+			var bHasGrandTotal = oBinding ? oBinding.providesGrandTotal() && oBinding.hasTotaledMeasures() : false;
+
+			if (bHasGrandTotal) {
+				iTotalRowCount = 0; // If there's only the grand total, the table has to act as if it's empty.
+			}
+		}
+
+		return iTotalRowCount;
+	};
+
 	/**
 	 * Returns the total size of the data entries.
 	 *
@@ -1023,6 +1040,10 @@ sap.ui.define([
 		return 0;
 	};
 
+	/**
+	 * @deprecated As of version 1.115
+	 * @private
+	 */
 	AnalyticalTable.prototype._onPersoApplied = function() {
 		Table.prototype._onPersoApplied.apply(this, arguments);
 		this._aGroupedColumns = [];

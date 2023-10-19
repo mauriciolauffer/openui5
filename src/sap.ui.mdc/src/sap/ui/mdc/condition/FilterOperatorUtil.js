@@ -6,16 +6,18 @@ sap.ui.define([
 	'sap/ui/model/Filter',
 	'sap/ui/model/ValidateException',
 	'sap/base/Log',
-	'sap/base/util/merge',
-	'sap/ui/mdc/enum/FieldDisplay',
+	'sap/ui/mdc/enums/FieldDisplay',
+	'sap/ui/mdc/enums/OperatorName',
 	'./Operator',
 	'./RangeOperator',
-	'sap/ui/mdc/enum/BaseType',
-	'sap/ui/mdc/enum/ConditionValidated',
+	'sap/ui/mdc/enums/BaseType',
+	'sap/ui/mdc/enums/ConditionValidated',
+	'sap/ui/mdc/enums/OperatorValueType',
 	'sap/ui/mdc/util/loadModules',
 	'sap/ui/core/date/UniversalDate',
 	'sap/ui/core/date/UniversalDateUtils',
 	'sap/ui/core/format/DateFormat',
+	'sap/ui/core/StaticArea',
 	'sap/ui/model/json/JSONModel',
 	'sap/ui/model/type/Integer'
 ],
@@ -25,27 +27,28 @@ function(
 		Filter,
 		ValidateException,
 		Log,
-		merge,
 		FieldDisplay,
+		OperatorName,
 		Operator,
 		RangeOperator,
 		BaseType,
 		ConditionValidated,
+		OperatorValueType,
 		loadModules,
 		UniversalDate,
 		UniversalDateUtils,
 		DateFormat,
+		StaticArea,
 		JSONModel,
 		Integer	// the Integer type must be  available for some of the RangeOperators
 	) {
 		"use strict";
 
 		// translation utils
-		var oMessageBundle = sap.ui.getCore().getLibraryResourceBundle("sap.ui.mdc");
+		let oMessageBundle = sap.ui.getCore().getLibraryResourceBundle("sap.ui.mdc");
 		sap.ui.getCore().attachLocalizationChanged(function() {
 			oMessageBundle = sap.ui.getCore().getLibraryResourceBundle("sap.ui.mdc");
 		});
-
 
 		/**
 		 * Utilities to handle {@link sap.ui.mdc.condition.Operator Operators} and {@link sap.ui.mdc.condition.ConditionObject conditions}.
@@ -56,70 +59,72 @@ function(
 		 * @since 1.73.0
 		 * @alias sap.ui.mdc.condition.FilterOperatorUtil
 		 *
-		 * @private
-		 * @ui5-restricted sap.fe
-		 * @MDC_PUBLIC_CANDIDATE
-		 * @experimental As of version 1.73
+		 * @public
 		 */
-		var FilterOperatorUtil = {
+		const FilterOperatorUtil = {
 
 				_mOperators: {
+					/*
+					 * "Equal to" operator
+					 */
 					equal: new Operator({
-						name: "EQ",
+						name: OperatorName.EQ,
 						alias: {Date: "DATE", DateTime: "DATETIME"},
 						filterOperator: ModelOperator.EQ,
 						tokenParse: "^=([^=].*)$",
-						tokenFormat: "{1} ({0})", // all placeholder should use the {x} format - the text could be store in the resourcebundel file.
-						valueTypes: [Operator.ValueType.Self, null],
+						tokenFormat: "{1} ({0})", // all placeholder should use the {x} format - the text could be store in the resourcebundle file.
+						valueTypes: [OperatorValueType.Self, null],
 						displayFormats: {
 							DescriptionValue: "{1} ({0})",
 							ValueDescription: "{0} ({1})",
 							Description: "{1}",
 							Value: "{0}"
 						},
-						format: function(oCondition, oType, sDisplayFormat, bHideOperator, aCompositeTypes) {
+						format: function(oCondition, oType, sDisplayFormat, bHideOperator, aCompositeTypes, oAdditionalType, aAdditionalCompositeTypes) {
 							sDisplayFormat = sDisplayFormat || FieldDisplay.DescriptionValue;
-							var iCount = this.valueTypes.length;
-							var aValues = oCondition.values;
-							var sTokenPrefix = (oCondition && oCondition.validated === ConditionValidated.Validated) || aValues.length === 2 || bHideOperator ? "" : "=";
-							var sTokenText = sTokenPrefix + this.displayFormats[sDisplayFormat];
+							let iCount = this.valueTypes.length;
+							const aValues = oCondition.values;
+							const sTokenPrefix = (oCondition && oCondition.validated === ConditionValidated.Validated) || aValues.length === 2 || bHideOperator ? "" : "=";
+							let sTokenText = sTokenPrefix + this.displayFormats[sDisplayFormat];
 
 							if (!aValues[1]) {
 								sTokenText = sTokenPrefix + this.displayFormats["Value"];
 								iCount = 1;
 							}
 
-							for (var i = 0; i < iCount; i++) {
-								var sReplace, vValue = aValues[i];
+							for (let i = 0; i < iCount; i++) {
+								let sReplace, vValue = aValues[i];
 
 								if (vValue === null || vValue === undefined) { // support boolean
 									vValue = "";
 								}
 
-								if (i == 0) {
-									// only the first value can be formatted. second value is the description string
+								if (i === 0) {
 									sReplace = this._formatValue(vValue, oType, aCompositeTypes);
-								} else {
-									sReplace = vValue;
+								} else { // canot have more that 2 entries
+									sReplace = this._formatValue(vValue, oAdditionalType, aAdditionalCompositeTypes);
 								}
 
 								if (sReplace === null) {
 									sTokenText = null; // some types (like Unit) return null if no value is given, in this case stop formating and return null
 									break;
 								}
+								if (typeof sReplace === "string") {
+									sReplace = sReplace.replace(/\$/g, '$$$'); // as "$$" has a special handling in replace, it will be transformed into "$"
+								}
 								sTokenText = sTokenText.replace(new RegExp("\\$" + i + "|" + i + "\\$" + "|" + "\\{" + i + "\\}", "g"), sReplace);
 							}
 
 							return sTokenText;
 						},
-						parse: function(sText, oType, sDisplayFormat, bDefaultOperator, aCompositeTypes) {
+						parse: function(sText, oType, sDisplayFormat, bDefaultOperator, aCompositeTypes, oAdditionalType, aAdditionalCompositeTypes) {
 							sDisplayFormat = sDisplayFormat || FieldDisplay.DescriptionValue;
-							var aResult = Operator.prototype.parse.apply(this, [sText, oType, sDisplayFormat, bDefaultOperator, aCompositeTypes]);
+							let aResult = Operator.prototype.parse.apply(this, [sText, oType, sDisplayFormat, bDefaultOperator, aCompositeTypes, oAdditionalType, aAdditionalCompositeTypes]);
 
 							if (bDefaultOperator && (!aResult || aResult[0] === null || aResult[0] === undefined) && sDisplayFormat !== FieldDisplay.Value) {
 								// in default case and no key determined (simple-EQ case)-> use text as key (parse again to use type)
 								sDisplayFormat = FieldDisplay.Value;
-								aResult = Operator.prototype.parse.apply(this, [sText, oType, sDisplayFormat, bDefaultOperator, aCompositeTypes]);
+								aResult = Operator.prototype.parse.apply(this, [sText, oType, sDisplayFormat, bDefaultOperator, aCompositeTypes, oAdditionalType, aAdditionalCompositeTypes]);
 							}
 							if (aResult && (aResult[1] === null || aResult[1] === undefined) && sDisplayFormat === FieldDisplay.Value) {
 								aResult = [aResult[0]]; // only key
@@ -128,15 +133,15 @@ function(
 							return aResult;
 						},
 						getValues: function(sText, sDisplayFormat, bDefaultOperator) {
-							var aMatch = sText.match(this.tokenParseRegExp);
-							var aValues;
+							const aMatch = sText.match(this.tokenParseRegExp);
+							let aValues;
 							if (aMatch || (bDefaultOperator && sText)) {
-								var sValue;
-								var sTokenText = this.displayFormats[sDisplayFormat];
-								var iKeyIndex = sTokenText.indexOf("{0}");
-								var iDescriptionIndex = sTokenText.indexOf("{1}");
-								var sKey;
-								var sDescription;
+								let sValue;
+								const sTokenText = this.displayFormats[sDisplayFormat];
+								const iKeyIndex = sTokenText.indexOf("{0}");
+								const iDescriptionIndex = sTokenText.indexOf("{1}");
+								let sKey;
+								let sDescription;
 
 								if (aMatch) {
 									sValue = aMatch[1];
@@ -147,15 +152,15 @@ function(
 								if (iKeyIndex >= 0 && iDescriptionIndex >= 0) {
 									// split string
 									if (sValue.lastIndexOf("(") > 0 && (sValue.lastIndexOf(")") === sValue.length - 1 || sValue.lastIndexOf(")") === -1)) {
-										var iEnd = sValue.length;
+										let iEnd = sValue.length;
 										if (sValue[iEnd - 1] === ")") {
 											iEnd--;
 										}
-										var sValue1 = sValue.substring(0, sValue.lastIndexOf("("));
+										let sValue1 = sValue.substring(0, sValue.lastIndexOf("("));
 										if (sValue1[sValue1.length - 1] === " ") {
 											sValue1 = sValue1.substring(0, sValue1.length - 1);
 										}
-										var sValue2 = sValue.substring(sValue.lastIndexOf("(") + 1, iEnd);
+										const sValue2 = sValue.substring(sValue.lastIndexOf("(") + 1, iEnd);
 										if (iKeyIndex < iDescriptionIndex) {
 											sKey = sValue1;
 											sDescription = sValue2;
@@ -184,8 +189,8 @@ function(
 							return aValues;
 						},
 						isEmpty: function(oCondition, oType) {
-							var isEmpty = false;
-							var v = oCondition.values[0];
+							let isEmpty = false;
+							const v = oCondition.values[0];
 							if ((v === null || v === undefined || v === "") && !oCondition.values[1]) { // empty has to use the oType information
 								// if key is empty but description set, condition is not empty (empty key possible)
 								isEmpty = true;
@@ -205,13 +210,16 @@ function(
 						},
 						validateInput: true
 					}),
+					/*
+					 * "Between" operator
+					 */
 					between: new Operator({
-						name: "BT",
+						name: OperatorName.BT,
 						alias: {Date: "DATERANGE", DateTime:"DATETIMERANGE"},
 						filterOperator: ModelOperator.BT,
 						tokenParse: "^([^!].*)\\.\\.\\.(.+)$", // TODO: does this work?? At least also matches crap like ".....". I guess validation of value types needs to get rid of those.
 						tokenFormat: "{0}...{1}",
-						valueTypes: [Operator.ValueType.Self, Operator.ValueType.Self],
+						valueTypes: [OperatorValueType.Self, OperatorValueType.Self],
 						validate: function(aValues, oType) {
 							// in Between 2 different Values must be defined
 							if (aValues.length === 2) { // if aValues has wrong length this is checked in default logic
@@ -233,142 +241,193 @@ function(
 							Operator.prototype.validate.apply(this, [aValues, oType]);
 						}
 					}),
+					/*
+					 * "Not Between" operator
+					 */
 					notBetween: new Operator({
-						name: "NOTBT",
+						name: OperatorName.NOTBT,
 						filterOperator: ModelOperator.NB,
 						tokenParse: "^!(.+)\\.\\.\\.(.+)$",
 						tokenFormat: "!({0}...{1})",
-						valueTypes: [Operator.ValueType.Self, Operator.ValueType.Self],
+						valueTypes: [OperatorValueType.Self, OperatorValueType.Self],
 						exclude: true,
 						validate: function(aValues, oType) {
 							FilterOperatorUtil._mOperators.between.validate(aValues, oType);
 						}
 					}),
+					/*
+					 * "Less Than" operator
+					 */
 					lessThan: new Operator({
-						name: "LT",
+						name: OperatorName.LT,
 						filterOperator: ModelOperator.LT,
 						tokenParse: "^<([^=].*)$",
 						tokenFormat: "<{0}",
-						valueTypes: [Operator.ValueType.Self]
+						valueTypes: [OperatorValueType.Self]
 					}),
+					/*
+					 * "Not Less Than" operator
+					 */
 					notLessThan: new Operator({
-						name: "NOTLT",
+						name: OperatorName.NOTLT,
 						filterOperator: ModelOperator.GE,
 						tokenParse: "^!<([^=].*)$",
 						tokenFormat: "!(<{0})",
-						valueTypes: [Operator.ValueType.Self],
+						valueTypes: [OperatorValueType.Self],
 						exclude: true
 					}),
+					/*
+					 * "Greater Than" operator
+					 */
 					greaterThan: new Operator({
-						name: "GT",
+						name: OperatorName.GT,
 						filterOperator: ModelOperator.GT,
 						tokenParse: "^>([^=].*)$",
 						tokenFormat: ">{0}",
-						valueTypes: [Operator.ValueType.Self]
+						valueTypes: [OperatorValueType.Self]
 					}),
+					/*
+					 * "Not Greater Than" operator
+					 */
 					notGreaterThan: new Operator({
-						name: "NOTGT",
+						name: OperatorName.NOTGT,
 						filterOperator: ModelOperator.LE,
 						tokenParse: "^!>([^=].*)$",
 						tokenFormat: "!(>{0})",
-						valueTypes: [Operator.ValueType.Self],
+						valueTypes: [OperatorValueType.Self],
 						exclude: true
 					}),
+					/*
+					 * "Less Than Or Equal To" operator
+					 */
 					lessEqual: new Operator({
-						name: "LE",
+						name: OperatorName.LE,
 						alias: {Date: "TO", DateTime: "TODATETIME"},
 						filterOperator: ModelOperator.LE,
 						tokenParse: "^<=(.+)$",
 						tokenFormat: "<={0}",
-						valueTypes: [Operator.ValueType.Self]
+						valueTypes: [OperatorValueType.Self]
 					}),
+					/*
+					 * "Not Less Than Or Equal To" operator
+					 */
 					notLessEqual: new Operator({
-						name: "NOTLE",
+						name: OperatorName.NOTLE,
 						filterOperator: ModelOperator.GT,
 						tokenParse: "^!<=(.+)$",
 						tokenFormat: "!(<={0})",
-						valueTypes: [Operator.ValueType.Self],
+						valueTypes: [OperatorValueType.Self],
 						exclude: true
 					}),
+					/*
+					 * "Greater Than Or Equal To" operator
+					 */
 					greaterEqual: new Operator({
-						name: "GE",
+						name: OperatorName.GE,
 						alias: {Date: "FROM", DateTime: "FROMDATETIME"},
 						filterOperator: ModelOperator.GE,
 						tokenParse: "^>=(.+)$",
 						tokenFormat: ">={0}",
-						valueTypes: [Operator.ValueType.Self]
+						valueTypes: [OperatorValueType.Self]
 					}),
+					/*
+					 * "Not Greater Than Or Equal To" operator
+					 */
 					notGreaterEqual: new Operator({
-						name: "NOTGE",
+						name: OperatorName.NOTGE,
 						filterOperator: ModelOperator.LT,
 						tokenParse: "^!>=(.+)$",
 						tokenFormat: "!(>={0})",
-						valueTypes: [Operator.ValueType.Self],
+						valueTypes: [OperatorValueType.Self],
 						exclude: true
 					}),
+					/*
+					 * "Starts With" operator
+					 */
 					startsWith: new Operator({
-						name: "StartsWith",
+						name: OperatorName.StartsWith,
 						filterOperator: ModelOperator.StartsWith,
 						tokenParse: "^([^!\\*]+.*)\\*$",
 						tokenFormat: "{0}*",
-						valueTypes: [Operator.ValueType.SelfNoParse]
+						valueTypes: [OperatorValueType.SelfNoParse]
 					}),
+					/*
+					 * "Does Not Start With" operator
+					 */
 					notStartsWith: new Operator({
-						name: "NotStartsWith",
+						name: OperatorName.NotStartsWith,
 						filterOperator: ModelOperator.NotStartsWith,
 						tokenParse: "^!([^\\*].*)\\*$",
 						tokenFormat: "!({0}*)",
-						valueTypes: [Operator.ValueType.SelfNoParse],
+						valueTypes: [OperatorValueType.SelfNoParse],
 						exclude: true
 					}),
+					/*
+					 * "Ends With" operator
+					 */
 					endsWith: new Operator({
-						name: "EndsWith",
+						name: OperatorName.EndsWith,
 						filterOperator: ModelOperator.EndsWith,
 						tokenParse: "^\\*(.*[^\\*])$",
 						tokenFormat: "*{0}",
-						valueTypes: [Operator.ValueType.SelfNoParse]
+						valueTypes: [OperatorValueType.SelfNoParse]
 					}),
+					/*
+					 * "Does Not End With" operator
+					 */
 					notEndsWith: new Operator({
-						name: "NotEndsWith",
+						name: OperatorName.NotEndsWith,
 						filterOperator: ModelOperator.NotEndsWith,
 						tokenParse: "^!\\*(.*[^\\*])$",
 						tokenFormat: "!(*{0})",
-						valueTypes: [Operator.ValueType.SelfNoParse],
+						valueTypes: [OperatorValueType.SelfNoParse],
 						exclude: true
 					}),
+					/*
+					 * "Contains" operator
+					 */
 					contains: new Operator({
-						name: "Contains",
+						name: OperatorName.Contains,
 						filterOperator: ModelOperator.Contains,
 						tokenParse: "^\\*(.*)\\*$",
 						tokenFormat: "*{0}*",
-						valueTypes: [Operator.ValueType.SelfNoParse]
+						valueTypes: [OperatorValueType.SelfNoParse]
 					}),
+					/*
+					 * "Does Not Contain" operator
+					 */
 					notContains: new Operator({
-						name: "NotContains",
+						name: OperatorName.NotContains,
 						filterOperator: ModelOperator.NotContains,
 						tokenParse: "^!\\*(.*)\\*$",
 						tokenFormat: "!(*{0}*)",
-						valueTypes: [Operator.ValueType.SelfNoParse],
+						valueTypes: [OperatorValueType.SelfNoParse],
 						exclude: true
 					}),
+					/*
+					 * "Not Equal To" operator
+					 */
 					notEqual: new Operator({
-						name: "NE",
+						name: OperatorName.NE,
 						filterOperator: ModelOperator.NE,
 						tokenParse: "^!=(.+)$",
 						tokenFormat: "!(={0})",
-						valueTypes: [Operator.ValueType.Self],
+						valueTypes: [OperatorValueType.Self],
 						exclude: true
 					}),
+					/*
+					 * "Empty" operator
+					 */
 					empty: new Operator({
-						name: "Empty",
+						name: OperatorName.Empty,
 						filterOperator: ModelOperator.EQ,
 						tokenParse: "^<#tokenText#>$",
 						tokenFormat: "<#tokenText#>",
 						valueTypes: [],
 						getModelFilter: function(oCondition, sFieldPath, oType, bCaseSensitive, sBaseType) {
-							var isNullable = false;
+							let isNullable = false;
 							if (oType) {
-								var vResult = oType.parseValue("", "string");
+								const vResult = oType.parseValue("", "string");
 								try {
 									oType.validateValue(vResult);
 									isNullable = vResult === null;
@@ -385,17 +444,20 @@ function(
 							}
 						}
 					}),
+					/*
+					 * "Not Empty" operator
+					 */
 					notEmpty: new Operator({
-						name: "NotEmpty",
+						name: OperatorName.NotEmpty,
 						filterOperator: ModelOperator.NE,
 						tokenParse: "^!<#tokenText#>$",
 						tokenFormat: "!(<#tokenText#>)",
 						valueTypes: [],
 						exclude: true,
 						getModelFilter: function(oCondition, sFieldPath, oType, bCaseSensitive, sBaseType) {
-							var isNullable = false;
+							let isNullable = false;
 							if (oType) {
-								var vResult = oType.parseValue("", "string");
+								const vResult = oType.parseValue("", "string");
 								try {
 									oType.validateValue(vResult);
 									isNullable = vResult === null;
@@ -412,9 +474,12 @@ function(
 							}
 						}
 					}),
+					/*
+					 * "Yesterday" operator
+					 */
 					yesterday: new RangeOperator({
-						name: "YESTERDAY",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.YESTERDAY,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.yesterday();
 						},
@@ -422,21 +487,25 @@ function(
 							return oDataType.formatValue(aRange[0], "string");
 						}
 					}),
+					/*
+					 * "Today" operator
+					 */
 					today: new RangeOperator({
-						name: "TODAY",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.TODAY,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
-							//TODO how to convert the UniversalDate back into an odata.type.Date value (or the correct type )?
-							// we need the oType instance in this function
 							return UniversalDateUtils.ranges.today();
 						},
 						formatRange: function(aRange, oDataType) {
 							return oDataType.formatValue(aRange[0], "string");
 						}
 					}),
+					/*
+					 * "Tomorrow" operator
+					 */
 					tomorrow: new RangeOperator({
-						name: "TOMORROW",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.TOMORROW,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.tomorrow();
 						},
@@ -444,8 +513,11 @@ function(
 							return oDataType.formatValue(aRange[0], "string");
 						}
 					}),
+					/*
+					 * "Last X Days" operator
+					 */
 					lastDays: new RangeOperator({
-						name: "LASTDAYS",
+						name: OperatorName.LASTDAYS,
 						valueTypes: [{name: "sap.ui.model.type.Integer", formatOptions: {emptyString: null}, constraints: { minimum: 0 }}],
 						paramTypes: ["(\\d+)"],
 						additionalInfo: "",
@@ -453,9 +525,12 @@ function(
 							return UniversalDateUtils.ranges.lastDays(iDuration);
 						}
 					}),
+					/*
+					 * "First Date In This Week" operator
+					 */
 					firstDayWeek: new RangeOperator({
-						name: "FIRSTDAYWEEK",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.FIRSTDAYWEEK,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.firstDayOfWeek();
 						},
@@ -463,9 +538,12 @@ function(
 							return oDataType.formatValue(aRange[0], "string");
 						}
 					}),
+					/*
+					 * "Last Date In This Week" operator
+					 */
 					lastDayWeek: new RangeOperator({
-						name: "LASTDAYWEEK",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.LASTDAYWEEK,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.lastDayOfWeek();
 						},
@@ -473,9 +551,12 @@ function(
 							return oDataType.formatValue(aRange[0], "string");
 						}
 					}),
+					/*
+					 * "First Date In This Month" operator
+					 */
 					firstDayMonth: new RangeOperator({
-						name: "FIRSTDAYMONTH",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.FIRSTDAYMONTH,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.firstDayOfMonth();
 						},
@@ -483,9 +564,12 @@ function(
 							return oDataType.formatValue(aRange[0], "string");
 						}
 					}),
+					/*
+					 * "Last Date In This Month" operator
+					 */
 					lastDayMonth: new RangeOperator({
-						name: "LASTDAYMONTH",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.LASTDAYMONTH,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.lastDayOfMonth();
 						},
@@ -493,9 +577,12 @@ function(
 							return oDataType.formatValue(aRange[0], "string");
 						}
 					}),
+					/*
+					 * "First Date In This Quarter" operator
+					 */
 					firstDayQuarter: new RangeOperator({
-						name: "FIRSTDAYQUARTER",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.FIRSTDAYQUARTER,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.firstDayOfQuarter();
 						},
@@ -503,9 +590,12 @@ function(
 							return oDataType.formatValue(aRange[0], "string");
 						}
 					}),
+					/*
+					 * "Last Date In This Quarter" operator
+					 */
 					lastDayQuarter: new RangeOperator({
-						name: "LASTDAYQUARTER",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.LASTDAYQUARTER,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.lastDayOfQuarter();
 						},
@@ -513,9 +603,12 @@ function(
 							return oDataType.formatValue(aRange[0], "string");
 						}
 					}),
+					/*
+					 * "First Date In This Year" operator
+					 */
 					firstDayYear: new RangeOperator({
-						name: "FIRSTDAYYEAR",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.FIRSTDAYYEAR,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.firstDayOfYear();
 						},
@@ -523,9 +616,12 @@ function(
 							return oDataType.formatValue(aRange[0], "string");
 						}
 					}),
+					/*
+					 * "Last Date In This Year" operator
+					 */
 					lastDayYear: new RangeOperator({
-						name: "LASTDAYYEAR",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.LASTDAYYEAR,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.lastDayOfYear();
 						},
@@ -533,8 +629,11 @@ function(
 							return oDataType.formatValue(aRange[0], "string");
 						}
 					}),
+					/*
+					 * "Today -X/ +Y days" operator
+					 */
 					todayFromTo: new RangeOperator({
-						name: "TODAYFROMTO",
+						name: OperatorName.TODAYFROMTO,
 						valueTypes: [
 							{name: "sap.ui.model.type.Integer", formatOptions: { emptyString: null }},
 							{name: "sap.ui.model.type.Integer", formatOptions: { emptyString: null }}
@@ -543,8 +642,8 @@ function(
 						//label:["x", "y"],
 						additionalInfo: "",
 						calcRange: function (xDays, yDays) {
-							var oStart = xDays >= 0 ?  UniversalDateUtils.ranges.lastDays(xDays)[0] : UniversalDateUtils.ranges.nextDays(-xDays)[1];
-							var oEnd = yDays >= 0 ? UniversalDateUtils.ranges.nextDays(yDays)[1] : UniversalDateUtils.ranges.lastDays(-yDays)[0];
+							let oStart = xDays >= 0 ?  UniversalDateUtils.ranges.lastDays(xDays)[0] : UniversalDateUtils.ranges.nextDays(-xDays)[1];
+							let oEnd = yDays >= 0 ? UniversalDateUtils.ranges.nextDays(yDays)[1] : UniversalDateUtils.ranges.lastDays(-yDays)[0];
 
 							if (oStart.oDate.getTime() > oEnd.oDate.getTime()) {
 								oEnd = [oStart, oStart = oEnd][0];
@@ -553,8 +652,11 @@ function(
 							return [UniversalDateUtils.resetStartTime(oStart), UniversalDateUtils.resetEndTime(oEnd)];
 						}
 					}),
+					/*
+					 * "Next X Days" operator
+					 */
 					nextDays: new RangeOperator({
-						name: "NEXTDAYS",
+						name: OperatorName.NEXTDAYS,
 						valueTypes: [{name: "sap.ui.model.type.Integer", formatOptions: {emptyString: null}, constraints: { minimum: 0 }}],
 						paramTypes: ["(\\d+)"],
 						additionalInfo: "",
@@ -562,29 +664,41 @@ function(
 							return UniversalDateUtils.ranges.nextDays(iDuration);
 						}
 					}),
+					/*
+					 * "Last Week" operator
+					 */
 					lastWeek: new RangeOperator({
-						name: "LASTWEEK",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.LASTWEEK,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.lastWeek();
 						}
 					}),
+					/*
+					 * "This Week" operator
+					 */
 					thisWeek: new RangeOperator({
-						name: "THISWEEK",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.THISWEEK,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.currentWeek();
 						}
 					}),
+					/*
+					 * "Next Week" operator
+					 */
 					nextWeek: new RangeOperator({
-						name: "NEXTWEEK",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.NEXTWEEK,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.nextWeek();
 						}
 					}),
+					/*
+					 * "Last X Weeks" operator
+					 */
 					lastWeeks: new RangeOperator({
-						name: "LASTWEEKS",
+						name: OperatorName.LASTWEEKS,
 						valueTypes: [{name: "sap.ui.model.type.Integer", formatOptions: {emptyString: null}, constraints: { minimum: 0 }}],
 						paramTypes: ["(\\d+)"],
 						additionalInfo: "",
@@ -592,8 +706,11 @@ function(
 							return UniversalDateUtils.ranges.lastWeeks(iDuration);
 						}
 					}),
+					/*
+					 * "Next X Weeks" operator
+					 */
 					nextWeeks: new RangeOperator({
-						name: "NEXTWEEKS",
+						name: OperatorName.NEXTWEEKS,
 						valueTypes: [{name: "sap.ui.model.type.Integer", formatOptions: {emptyString: null}, constraints: { minimum: 0 }}],
 						paramTypes: ["(\\d+)"],
 						additionalInfo: "",
@@ -601,29 +718,41 @@ function(
 							return UniversalDateUtils.ranges.nextWeeks(iDuration);
 						}
 					}),
+					/*
+					 * "Last Month" operator
+					 */
 					lastMonth: new RangeOperator({
-						name: "LASTMONTH",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.LASTMONTH,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.lastMonth();
 						}
 					}),
+					/*
+					 * "This Month" operator
+					 */
 					thisMonth: new RangeOperator({
-						name: "THISMONTH",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.THISMONTH,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.currentMonth();
 						}
 					}),
+					/*
+					 * "Next Month" operator
+					 */
 					nextMonth: new RangeOperator({
-						name: "NEXTMONTH",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.NEXTMONTH,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.nextMonth();
 						}
 					}),
+					/*
+					 * "Last X Months" operator
+					 */
 					lastMonths: new RangeOperator({
-						name: "LASTMONTHS",
+						name: OperatorName.LASTMONTHS,
 						valueTypes: [{name: "sap.ui.model.type.Integer", formatOptions: {emptyString: null}, constraints: { minimum: 0 }}],
 						paramTypes: ["(\\d+)"],
 						additionalInfo: "",
@@ -631,8 +760,11 @@ function(
 							return UniversalDateUtils.ranges.lastMonths(iDuration);
 						}
 					}),
+					/*
+					 * "Next X Months" operator
+					 */
 					nextMonths: new RangeOperator({
-						name: "NEXTMONTHS",
+						name: OperatorName.NEXTMONTHS,
 						valueTypes: [{name: "sap.ui.model.type.Integer", formatOptions: {emptyString: null}, constraints: { minimum: 0 }}],
 						paramTypes: ["(\\d+)"],
 						additionalInfo: "",
@@ -640,29 +772,41 @@ function(
 							return UniversalDateUtils.ranges.nextMonths(iDuration);
 						}
 					}),
+					/*
+					 * "Last Quarter" operator
+					 */
 					lastQuarter: new RangeOperator({
-						name: "LASTQUARTER",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.LASTQUARTER,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.lastQuarter();
 						}
 					}),
+					/*
+					 * "This Quarter" operator
+					 */
 					thisQuarter: new RangeOperator({
-						name: "THISQUARTER",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.THISQUARTER,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.currentQuarter();
 						}
 					}),
+					/*
+					 * "Next Quarter" operator
+					 */
 					nextQuarter: new RangeOperator({
-						name: "NEXTQUARTER",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.NEXTQUARTER,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.nextQuarter();
 						}
 					}),
+					/*
+					 * "Last X Quarters" operator
+					 */
 					lastQuarters: new RangeOperator({
-						name: "LASTQUARTERS",
+						name: OperatorName.LASTQUARTERS,
 						valueTypes: [{name: "sap.ui.model.type.Integer", formatOptions: {emptyString: null}, constraints: { minimum: 0 }}],
 						paramTypes: ["(\\d+)"],
 						additionalInfo: "",
@@ -670,8 +814,11 @@ function(
 							return UniversalDateUtils.ranges.lastQuarters(iDuration);
 						}
 					}),
+					/*
+					 * "Next X Quarters" operator
+					 */
 					nextQuarters: new RangeOperator({
-						name: "NEXTQUARTERS",
+						name: OperatorName.NEXTQUARTERS,
 						valueTypes: [{name: "sap.ui.model.type.Integer", formatOptions: {emptyString: null}, constraints: { minimum: 0 }}],
 						paramTypes: ["(\\d+)"],
 						additionalInfo: "",
@@ -679,57 +826,81 @@ function(
 							return UniversalDateUtils.ranges.nextQuarters(iDuration);
 						}
 					}),
+					/*
+					 * "First Quarter" operator
+					 */
 					quarter1: new RangeOperator({
-						name: "QUARTER1",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.QUARTER1,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.quarter(1);
 						}
 					}),
+					/*
+					 * "Second Quarter" operator
+					 */
 					quarter2: new RangeOperator({
-						name: "QUARTER2",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.QUARTER2,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.quarter(2);
 						}
 					}),
+					/*
+					 * "Third Quarter" operator
+					 */
 					quarter3: new RangeOperator({
-						name: "QUARTER3",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.QUARTER3,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.quarter(3);
 						}
 					}),
+					/*
+					 * "Fourth Quarter" operator
+					 */
 					quarter4: new RangeOperator({
-						name: "QUARTER4",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.QUARTER4,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.quarter(4);
 						}
 					}),
+					/*
+					 * "Last Year" operator
+					 */
 					lastYear: new RangeOperator({
-						name: "LASTYEAR",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.LASTYEAR,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.lastYear();
 						}
 					}),
+					/*
+					 * "This Year" operator
+					 */
 					thisYear: new RangeOperator({
-						name: "THISYEAR",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.THISYEAR,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.currentYear();
 						}
 					}),
+					/*
+					 * "Next Year" operator
+					 */
 					nextYear: new RangeOperator({
-						name: "NEXTYEAR",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.NEXTYEAR,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.nextYear();
 						}
 					}),
+					/*
+					 * "Last X Years" operator
+					 */
 					lastYears: new RangeOperator({
-						name: "LASTYEARS",
+						name: OperatorName.LASTYEARS,
 						valueTypes: [{name: "sap.ui.model.type.Integer", formatOptions: {emptyString: null}, constraints: { minimum: 0 }}],
 						paramTypes: ["(\\d+)"],
 						additionalInfo: "",
@@ -737,8 +908,11 @@ function(
 							return UniversalDateUtils.ranges.lastYears(iDuration);
 						}
 					}),
+					/*
+					 * "Next X Years" operator
+					 */
 					nextYears: new RangeOperator({
-						name: "NEXTYEARS",
+						name: OperatorName.NEXTYEARS,
 						valueTypes: [{name: "sap.ui.model.type.Integer", formatOptions: {emptyString: null}, constraints: { minimum: 0 }}],
 						paramTypes: ["(\\d+)"],
 						additionalInfo: "",
@@ -746,28 +920,31 @@ function(
 							return UniversalDateUtils.ranges.nextYears(iDuration);
 						}
 					}),
+					/*
+					 * "Month" operator
+					 */
 					specificMonth: new RangeOperator({
-						name: "SPECIFICMONTH",
+						name: OperatorName.SPECIFICMONTH,
 						valueTypes: [{ name: "sap.ui.model.type.Integer", constraints: { minimum: 0, maximum: 11 }}],
 						paramTypes: ["(.+)"],
 						additionalInfo: "",
 						label: [oMessageBundle.getText("operators.SPECIFICMONTH_MONTH.label")],
 						defaultValues: function() {
-							var oDate = new UniversalDate();
+							const oDate = new UniversalDate();
 							return [
 								oDate.getMonth()
 							];
 						},
 						calcRange: function(iDuration) {
-							var oDate = new UniversalDate();
+							let oDate = new UniversalDate();
 							oDate.setMonth(iDuration);
 							oDate = UniversalDateUtils.getMonthStartDate(oDate);
 							return UniversalDateUtils.getRange(0, "MONTH", oDate);
 						},
-						format: function(oCondition, oType, sDisplayFormat, bHideOperator, aCompositeTypes) {
-							var iValue = oCondition.values[0];
-							var sTokenText = this.tokenFormat;
-							var sReplace = _getMonths.apply(this)[iValue];
+						format: function(oCondition, oType, sDisplayFormat, bHideOperator, aCompositeTypes, oAdditionalType, aAdditionalCompositeTypes) {
+							const iValue = oCondition.values[0];
+							const sTokenText = this.tokenFormat;
+							const sReplace = _getMonths.apply(this)[iValue];
 
 							if (bHideOperator) {
 								return sReplace;
@@ -776,12 +953,12 @@ function(
 							}
 						},
 						getValues: function(sText, sDisplayFormat, bDefaultOperator) {
-							var aMatch = sText.match(this.tokenParseRegExp);
-							var aValues;
+							const aMatch = sText.match(this.tokenParseRegExp);
+							let aValues;
 							if (aMatch || (bDefaultOperator && sText)) {
 								aValues = [];
-								for (var i = 0; i < this.valueTypes.length; i++) {
-									var sValue;
+								for (let i = 0; i < this.valueTypes.length; i++) {
+									let sValue;
 									if (aMatch) {
 										sValue = aMatch[i + 1];
 									} else if ((bDefaultOperator && sText)) { // only month provided
@@ -795,15 +972,15 @@ function(
 							return null;
 						},
 						createControl: function(oType, sPath, iIndex, sId)  {
-							var Field = sap.ui.require("sap/ui/mdc/Field");
-							var sValueHelp = _getMonthFieldHelp.call(this);
+							const Field = sap.ui.require("sap/ui/mdc/Field");
+							const sValueHelp = _getMonthValueHelp.call(this);
 							if (Field && sValueHelp) {
 
-								var oField = new Field(sId, {
+								const oField = new Field(sId, {
 									value: { path: sPath, type: oType, mode: 'TwoWay', targetType: 'raw' },
 									display: 'Description',
 									width: "100%",
-									fieldHelp: sValueHelp
+									valueHelp: sValueHelp
 								});
 
 								return oField;
@@ -813,49 +990,52 @@ function(
 							}
 						}
 					}),
+					/*
+					 * "Month In Year" operator
+					 */
 					specificMonthInYear: new RangeOperator({
-						name: "SPECIFICMONTHINYEAR",
+						name: OperatorName.SPECIFICMONTHINYEAR,
 						valueTypes: [{ name: "sap.ui.model.type.Integer", constraints: { minimum: 0, maximum: 11 }},
 									{ name: "sap.ui.model.type.Integer", constraints: { minimum: 1, maximum: 9999 }}],
 						paramTypes: ["(.+)", "(.+)"],
 						additionalInfo: "",
 						label: [oMessageBundle.getText("operators.SPECIFICMONTHINYEAR_MONTH.label"), oMessageBundle.getText("operators.SPECIFICMONTHINYEAR_YEAR.label")],
 						defaultValues: function() {
-							var oDate = new UniversalDate();
+							const oDate = new UniversalDate();
 							return [
 								oDate.getMonth(),
 								oDate.getFullYear()
 							];
 						},
 						calcRange: function(iMonth, iYear) {
-							var oDate = new UniversalDate();
+							let oDate = new UniversalDate();
 							oDate.setMonth(iMonth);
 							oDate.setYear(iYear);
 							oDate = UniversalDateUtils.getMonthStartDate(oDate);
 							return UniversalDateUtils.getRange(0, "MONTH", oDate);
 						},
-						format: function(oCondition, oType, sDisplayFormat, bHideOperator, aCompositeTypes) {
-							var iValue = oCondition.values[0];
-							var iYear = oCondition.values[1];
-							var sTokenText = this.tokenFormat;
-							var sReplace = _getMonths.apply(this)[iValue];
+						format: function(oCondition, oType, sDisplayFormat, bHideOperator, aCompositeTypes, oAdditionalType, aAdditionalCompositeTypes) {
+							const iValue = oCondition.values[0];
+							const iYear = oCondition.values[1];
+							let sTokenText = this.tokenFormat;
+							const sReplace = _getMonths.apply(this)[iValue];
 
 							if (bHideOperator) {
 								return sReplace + "," + iYear;
 							} else {
-								var replaceRegExp0 = new RegExp("\\$" + 0 + "|" + 0 + "\\$" + "|" + "\\{" + 0 + "\\}", "g");
-								var replaceRegExp1 = new RegExp("\\$" + 1 + "|" + 1 + "\\$" + "|" + "\\{" + 1 + "\\}", "g");
+								const replaceRegExp0 = new RegExp("\\$" + 0 + "|" + 0 + "\\$" + "|" + "\\{" + 0 + "\\}", "g");
+								const replaceRegExp1 = new RegExp("\\$" + 1 + "|" + 1 + "\\$" + "|" + "\\{" + 1 + "\\}", "g");
 								sTokenText = sReplace == null ? null : sTokenText.replace(replaceRegExp0, sReplace);
 								return sTokenText.replace(replaceRegExp1, iYear);
 							}
 						},
 						getValues: function(sText, sDisplayFormat, bDefaultOperator) {
-							var aMatch = sText.match(this.tokenParseRegExp);
-							var aValues;
+							const aMatch = sText.match(this.tokenParseRegExp);
+							let aValues;
 							if (aMatch || (bDefaultOperator && sText)) {
 								aValues = [];
-								for (var i = 0; i < this.valueTypes.length; i++) {
-									var sValue;
+								for (let i = 0; i < this.valueTypes.length; i++) {
+									let sValue;
 									if (aMatch) {
 										sValue = aMatch[i + 1];
 									} else if ((bDefaultOperator && sText)) { // only month provided
@@ -869,15 +1049,15 @@ function(
 							return null;
 						},
 						createControl: function(oType, sPath, iIndex, sId)  {
-							var oField;
-							var Field = sap.ui.require("sap/ui/mdc/Field");
+							let oField;
+							const Field = sap.ui.require("sap/ui/mdc/Field");
 							if (!Field) {
 								Log.warning("Operator.createControl", "not able to create the control for the operator " + this.name);
 								return null;
 							}
 
 							if (iIndex == 0) {
-								var sValueHelp = _getMonthFieldHelp.call(this);
+								const sValueHelp = _getMonthValueHelp.call(this);
 
 								if (sValueHelp) {
 
@@ -885,7 +1065,7 @@ function(
 										value: { path: sPath, type: oType, mode: 'TwoWay', targetType: 'raw' },
 										display: 'Description',
 										width: "100%",
-										fieldHelp: sValueHelp
+										valueHelp: sValueHelp
 									});
 								} else {
 									Log.warning("Operator.createControl", "not able to create the control for the operator " + this.name);
@@ -902,22 +1082,31 @@ function(
 							return oField;
 						}
 					}),
+					/*
+					 * "Year To Date" operator
+					 */
 					yearToDate: new RangeOperator({
-						name: "YEARTODATE",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.YEARTODATE,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.yearToDate();
 						}
 					}),
+					/*
+					 * "Date To Year" operator
+					 */
 					dateToYear: new RangeOperator({
-						name: "DATETOYEAR",
-						valueTypes: [Operator.ValueType.Static],
+						name: OperatorName.DATETOYEAR,
+						valueTypes: [OperatorValueType.Static],
 						calcRange: function() {
 							return UniversalDateUtils.ranges.dateToYear();
 						}
 					}),
+					/*
+					 * "Last X Minutes" operator
+					 */
 					lastMinutes: new RangeOperator({
-						name: "LASTMINUTES",
+						name: OperatorName.LASTMINUTES,
 						valueTypes: [{name: "sap.ui.model.type.Integer", formatOptions: {emptyString: null}, constraints: { minimum: 0 }}],
 						paramTypes: ["(\\d+)"],
 						additionalInfo: "",
@@ -925,8 +1114,11 @@ function(
 							return UniversalDateUtils.ranges.lastMinutes(iDuration);
 						}
 					}),
+					/*
+					 * "Next X Minutes" operator
+					 */
 					nextMinutes: new RangeOperator({
-						name: "NEXTMINUTES",
+						name: OperatorName.NEXTMINUTES,
 						valueTypes: [{name: "sap.ui.model.type.Integer", formatOptions: {emptyString: null}, constraints: { minimum: 0 }}],
 						paramTypes: ["(\\d+)"],
 						additionalInfo: "",
@@ -934,8 +1126,11 @@ function(
 							return UniversalDateUtils.ranges.nextMinutes(iDuration);
 						}
 					}),
+					/*
+					 * "Last X Hours" operator
+					 */
 					lastHours: new RangeOperator({
-						name: "LASTHOURS",
+						name: OperatorName.LASTHOURS,
 						valueTypes: [{name: "sap.ui.model.type.Integer", formatOptions: {emptyString: null}, constraints: { minimum: 0 }}],
 						paramTypes: ["(\\d+)"],
 						additionalInfo: "",
@@ -943,8 +1138,11 @@ function(
 							return UniversalDateUtils.ranges.lastHours(iDuration);
 						}
 					}),
+					/*
+					 * "Next X Hours" operator
+					 */
 					nextHours: new RangeOperator({
-						name: "NEXTHOURS",
+						name: OperatorName.NEXTHOURS,
 						valueTypes: [{name: "sap.ui.model.type.Integer", formatOptions: {emptyString: null}, constraints: { minimum: 0 }}],
 						paramTypes: ["(\\d+)"],
 						additionalInfo: "",
@@ -962,9 +1160,7 @@ function(
 				 *
 				 * @param {sap.ui.mdc.condition.Operator} oOperator Operator
 				 *
-				 * @private
-				 * @ui5-restricted sap.fe
-				 * @MDC_PUBLIC_CANDIDATE
+				 * @public
 				 */
 				addOperator: function(oOperator) {
 
@@ -978,9 +1174,7 @@ function(
 				 * @param {sap.ui.mdc.condition.Operator[]} aOperators Array of operators
 				 *
 				 * @since: 1.88.0
-				 * @private
-				 * @ui5-restricted sap.fe
-				 * @MDC_PUBLIC_CANDIDATE
+				 * @public
 				 */
 				addOperators: function(aOperators) {
 					if (!Array.isArray(aOperators)) {
@@ -1000,9 +1194,7 @@ function(
  				 * <b>Note</b>: <code>aOperators</code> can be the name of an {@link sap.ui.mdc.condition.Operator Operator}, the instance itself, or multiple operators inside an array.
 				 *
 				 * @since: 1.88.0
-				 * @private
-				 * @ui5-restricted sap.fe
-				 * @MDC_PUBLIC_CANDIDATE
+				 * @public
 				 */
 				removeOperators: function(aOperators) {
 					if (!Array.isArray(aOperators)) {
@@ -1020,9 +1212,7 @@ function(
 				 * @param {sap.ui.mdc.condition.Operator|string} vOperator The operator instance or operator name
 				 *
 				 * @since: 1.88.0
-				 * @private
-				 * @ui5-restricted sap.fe
-				 * @MDC_PUBLIC_CANDIDATE
+				 * @public
 				 */
 				 removeOperator: function(vOperator) {
 					if (typeof vOperator  === "string") {
@@ -1040,16 +1230,14 @@ function(
 				/**
 				 * Adds operators to the list of valid operators for a type.
 				 *
-				 * @param {sap.ui.mdc.enum.BaseType} sType Basic type
+				 * @param {sap.ui.mdc.enums.BaseType} sType Basic type
 				 * @param {sap.ui.mdc.condition.Operator[]} aOperators Operators
 				 * @param {sap.ui.mdc.condition.Operator|string} vDefaultOperator The default operator instance or default operator name
 				 *
  				 * <b>Note</b>: <code>aOperators</code> can be the name of an {@link sap.ui.mdc.condition.Operator Operator}, the instance itself, or multiple operators inside an array.
  				 * <b>Note</b>: <code>vDefaultOperator</code> must exist as a valid operator for the type.
 				 *
-				 * @private
-				 * @ui5-restricted sap.fe
-				 * @MDC_PUBLIC_CANDIDATE
+				 * @public
 				 */
 				setOperatorsForType: function(sType, aOperators, vDefaultOperator) {
 					if (!Array.isArray(aOperators)) {
@@ -1074,15 +1262,13 @@ function(
 				/**
 				 * Sets the default operator for the list of operators for a type.
 				 *
-				 * @param {sap.ui.mdc.enum.BaseType} sType Basic type
+				 * @param {sap.ui.mdc.enums.BaseType} sType Basic type
 				 * @param {sap.ui.mdc.condition.Operator|string} vDefaultOperator The default operator instance or default operator name
 				 *
  				 * <b>Note</b>: <code>vDefaultOperator</code> must exist as a valid operator for the type.
 				 *
 				 * @since: 1.88.0
-				 * @private
-				 * @ui5-restricted sap.fe
-				 * @MDC_PUBLIC_CANDIDATE
+				 * @public
 				 */
 				setDefaultOperatorForType: function(sType, vDefaultOperator) {
 					if (!FilterOperatorUtil._mDefaultOpsForType[sType]) {
@@ -1100,13 +1286,11 @@ function(
 				/**
 				 * Adds an operator to the list of valid operators for a type.
 				 *
-				 * @param {sap.ui.mdc.enum.BaseType} sType Basic type
+				 * @param {sap.ui.mdc.enums.BaseType} sType Basic type
 				 * @param {sap.ui.mdc.condition.Operator|string} vOperator The operator instance or operator name
 				 *
 				 * @since: 1.88.0
-				 * @private
-				 * @ui5-restricted sap.fe
-				 * @MDC_PUBLIC_CANDIDATE
+				 * @public
 				 */
 				addOperatorForType: function(sType, vOperator) {
 					FilterOperatorUtil.insertOperatorForType(sType, vOperator);
@@ -1115,14 +1299,12 @@ function(
 				/**
 				 * Inserts an operator into the list of valid operators for a type.
 				 *
-				 * @param {sap.ui.mdc.enum.BaseType} sType Basic type
+				 * @param {sap.ui.mdc.enums.BaseType} sType Basic type
 				 * @param {sap.ui.mdc.condition.Operator|string} vOperator The operator instance or operator name
 				 * @param {int} idx Index of the operator in the list of operators for this type
 				 *
 				 * @since: 1.88.0
-				 * @private
-				 * @ui5-restricted sap.fe
-				 * @MDC_PUBLIC_CANDIDATE
+				 * @public
 				 */
 				insertOperatorForType: function(sType, vOperator, idx) {
 					if (!FilterOperatorUtil._mDefaultOpsForType[sType]) {
@@ -1139,22 +1321,20 @@ function(
 				/**
 				 * Removes an operator from the list of valid operators for a type.
 				 *
-				 * @param {sap.ui.mdc.enum.BaseType} sType Basic type
+				 * @param {sap.ui.mdc.enums.BaseType} sType Basic type
 				 * @param {sap.ui.mdc.condition.Operator|string} vOperator The operator instance or operator name
 				 *
 				 * @since: 1.88.0
-				 * @private
-				 * @ui5-restricted sap.fe
-				 * @MDC_PUBLIC_CANDIDATE
+				 * @public
 				 */
 				removeOperatorForType: function(sType, vOperator) {
-					var sName;
+					let sName;
 					if (typeof vOperator  === "string") {
 						sName = vOperator;
 					} else {
 						sName = vOperator.name;
 					}
-					for (var i = 0; i < FilterOperatorUtil._mDefaultOpsForType[sType].operators.length; i++) {
+					for (let i = 0; i < FilterOperatorUtil._mDefaultOpsForType[sType].operators.length; i++) {
 						if (FilterOperatorUtil._mDefaultOpsForType[sType].operators[i].name === sName) {
 							FilterOperatorUtil._mDefaultOpsForType[sType].operators.splice(i, 1);
 							return;
@@ -1165,18 +1345,16 @@ function(
 				/**
 				 * Returns all available default operators for the given type.
 				 *
-				 * @param {sap.ui.mdc.enum.BaseType} sType Basic type
+				 * @param {sap.ui.mdc.enums.BaseType} sType Basic type
 				 * @returns {string[]} an array with the supported filter operator names
 				 *
-				 * @private
-				 * @ui5-restricted sap.fe
-				 * @MDC_PUBLIC_CANDIDATE
+				 * @public
 				 */
 				getOperatorsForType: function(sType) {
 
-					var aOperators = [];
+					const aOperators = [];
 
-					for (var i = 0; i < FilterOperatorUtil._mDefaultOpsForType[sType].operators.length; i++) {
+					for (let i = 0; i < FilterOperatorUtil._mDefaultOpsForType[sType].operators.length; i++) {
 						aOperators.push(FilterOperatorUtil._mDefaultOpsForType[sType].operators[i].name);
 
 					}
@@ -1188,12 +1366,10 @@ function(
 				/**
 				 * Returns the default operator for the given basic type.
 				 *
-				 * @param {sap.ui.mdc.enum.BaseType} sType Basic type
+				 * @param {sap.ui.mdc.enums.BaseType} sType Basic type
 				 * @returns {sap.ui.mdc.condition.Operator} the default operator for the given type
 				 *
-				 * @private
-				 * @ui5-restricted sap.fe
-				 * @MDC_PUBLIC_CANDIDATE
+				 * @public
 				 */
 				getDefaultOperator: function(sType) {
 
@@ -1216,10 +1392,10 @@ function(
 				 */
 				getMatchingOperators: function(aOperators, sValue) {
 
-					var aMyOperators = [];
+					const aMyOperators = [];
 
-					for (var i = 0; i < aOperators.length; i++) {
-						var oOperator = this.getOperator(aOperators[i]);
+					for (let i = 0; i < aOperators.length; i++) {
+						const oOperator = this.getOperator(aOperators[i]);
 						if (oOperator) {
 							aMyOperators.push(oOperator);
 						}
@@ -1231,17 +1407,15 @@ function(
 
 				/**
 				 * Returns the operator object for the given operator name.
-				 * @param {string} sOperator Name of the operator
+				 * @param {sap.ui.mdc.enums.OperatorName|string} sOperator Name of the operator
 				 * @returns {sap.ui.mdc.condition.Operator|undefined} the operator object, or <code>undefined<code> if the operator with the requested name does not exist
 				 *
-				 * @private
-				 * @ui5-restricted sap.fe
-				 * @MDC_PUBLIC_CANDIDATE
+				 * @public
 				 */
 				getOperator: function(sOperator) {
 
-					for (var sName in FilterOperatorUtil._mOperators) {
-						var oOperator = FilterOperatorUtil._mOperators[sName];
+					for (const sName in FilterOperatorUtil._mOperators) {
+						const oOperator = FilterOperatorUtil._mOperators[sName];
 						if (oOperator.name === sOperator) {
 							return oOperator;
 						}
@@ -1267,9 +1441,9 @@ function(
 				getEQOperator: function(aOperators) {
 
 					if (aOperators) {
-						for (var i = 0; i < aOperators.length; i++) {
-							var oOperator = this.getOperator(aOperators[i]);
-							if (oOperator && oOperator.validateInput && !oOperator.exclude && oOperator.valueTypes[0] && oOperator.valueTypes[0] !== Operator.ValueType.Static) {
+						for (let i = 0; i < aOperators.length; i++) {
+							const oOperator = this.getOperator(aOperators[i]);
+							if (oOperator && oOperator.validateInput && !oOperator.exclude && oOperator.valueTypes[0] && oOperator.valueTypes[0] !== OperatorValueType.Static) {
 								return oOperator;
 							}
 						}
@@ -1290,7 +1464,7 @@ function(
 				 */
 				onlyEQ: function(aOperators) {
 
-					if (aOperators.length === 1 && aOperators[0] === "EQ") {
+					if (aOperators.length === 1 && aOperators[0] === OperatorName.EQ) {
 						return true;
 					} else {
 						return false;
@@ -1315,7 +1489,7 @@ function(
 					}
 
 					aConditions.forEach(function(oCondition) {
-						var oOperator = this.getOperator(oCondition.operator);
+						const oOperator = this.getOperator(oCondition.operator);
 						if (oOperator) {
 							oCondition.isEmpty = oOperator.isEmpty(oCondition);
 						}
@@ -1337,7 +1511,7 @@ function(
 						aConditions = [aConditions];
 					}
 
-					for (var i = 0; i < aConditions.length; i++) {
+					for (let i = 0; i < aConditions.length; i++) {
 						this.updateConditionValues(aConditions[i]);
 					}
 
@@ -1353,11 +1527,11 @@ function(
 				 */
 				updateConditionValues: function(oCondition) {
 
-					var oOperator = this.getOperator(oCondition.operator);
+					const oOperator = this.getOperator(oCondition.operator);
 
 					//update the values array length (Validated conditions are seen as OK)
 					if (oOperator && oCondition.validated !== ConditionValidated.Validated) {
-						var iValueTypesLength = oOperator.valueTypes.length;
+						let iValueTypesLength = oOperator.valueTypes.length;
 
 						if (oOperator.valueTypes.length === 2 && oOperator.valueTypes[1] === null
 								&& (oCondition.values.length < 2 || oCondition.values[1] === null || oCondition.values[1] === undefined)) {
@@ -1398,10 +1572,10 @@ function(
 				 */
 				indexOfCondition: function(oCondition, aConditions) {
 
-					var iIndex = -1;
+					let iIndex = -1;
 
 					// compare operator and value. in EQ case, compare only key
-					for (var i = 0; i < aConditions.length; i++) {
+					for (let i = 0; i < aConditions.length; i++) {
 						if (this.compareConditions(oCondition, aConditions[i])) {
 							iIndex = i;
 							break;
@@ -1427,11 +1601,11 @@ function(
 				 */
 				compareConditions: function(oCondition1, oCondition2) {
 
-					var bEqual = false;
+					let bEqual = false;
 
 					// compare operator and value. in EQ case, compare only key
 					if (oCondition1.operator === oCondition2.operator) {
-						var oOperator = this.getOperator(oCondition1.operator);
+						const oOperator = this.getOperator(oCondition1.operator);
 						if (oOperator) {
 							bEqual = oOperator.compareConditions(oCondition1, oCondition2);
 						}
@@ -1456,11 +1630,11 @@ function(
 				 */
 				compareConditionsArray: function(aConditions1, aConditions2) {
 
-					var bEqual = false;
+					let bEqual = false;
 
 					if (aConditions1.length === aConditions2.length) {
 						bEqual = true;
-						for (var i = 0; i < aConditions1.length; i++) {
+						for (let i = 0; i < aConditions1.length; i++) {
 							if (!this.compareConditions(aConditions1[i], aConditions2[i])) {
 								bEqual = false;
 								break;
@@ -1483,7 +1657,7 @@ function(
 				 */
 				checkConditionValidated: function(oCondition) {
 
-					var oOperator = this.getOperator(oCondition.operator);
+					const oOperator = this.getOperator(oCondition.operator);
 					if (!oCondition.validated && oOperator && oOperator.checkValidated) {
 						// only check if not already validated, keep already validated conditions validated (description might be missing before loaded)
 						oOperator.checkValidated(oCondition);
@@ -1494,15 +1668,16 @@ function(
 				/**
 				 * Returns the operator object for the given <code>DynamicDateOption</code> name.
 				 * @param {string} sOption Name of the operator
-				 * @param {sap.ui.mdc.enum.BaseType} [sBaseType] Basic type
+				 * @param {sap.ui.mdc.enums.BaseType} [sBaseType] Basic type
 				 * @returns {sap.ui.mdc.condition.Operator|undefined} the operator object, or <code>undefined</code> if the operator with the requested name does not exist
 				 *
-				 * @protected
+				 * @private
+				 * @ui5-restricted sap.ui.mdc
 				 * @since: 1.100.0
 				 */
 				 getOperatorForDynamicDateOption: function(sOption, sBaseType) {
 
-					var oOperator;
+					let oOperator;
 
 					// determine operator name if used as custom DynamicDateOption created in DateContent using getCustomDynamicDateOptionForOperator
 					if (sBaseType && sOption.startsWith(sBaseType)) {
@@ -1512,8 +1687,8 @@ function(
 					}
 
 					if (!oOperator && sBaseType) {
-						for (var sName in FilterOperatorUtil._mOperators) {
-							var oCheckOperator = FilterOperatorUtil._mOperators[sName];
+						for (const sName in FilterOperatorUtil._mOperators) {
+							const oCheckOperator = FilterOperatorUtil._mOperators[sName];
 							if (oCheckOperator.alias && oCheckOperator.alias[sBaseType] === sOption) {
 								oOperator = oCheckOperator;
 								break;
@@ -1531,14 +1706,15 @@ function(
 				 *
 				 * @param {sap.ui.mdc.condition.Operator} oOperator Condition to check
 				 * @param {object} oDynamicDateRangeKeys Keys for <code>DynamicDateOption</code>
-				 * @param {sap.ui.mdc.enum.BaseType} sBaseType Basic type
+				 * @param {sap.ui.mdc.enums.BaseType} sBaseType Basic type
 				 * @returns {string} <code>DynamicDateOption</code>
-				 * @protected
+				 * @private
+				 * @ui5-restricted sap.ui.mdc
 				 * @since: 1.100.0
 				 */
 				 getDynamicDateOptionForOperator: function(oOperator, oDynamicDateRangeKeys, sBaseType) {
 
-					var sOption;
+					let sOption;
 					if (oOperator) {
 						if (oDynamicDateRangeKeys[oOperator.name]) {
 							sOption = oOperator.name;
@@ -1555,9 +1731,10 @@ function(
 				 * Determines the corresponding custom <code>DynamicDateOption</code> for an <code>Operator</code>
 				 *
 				 * @param {sap.ui.mdc.condition.Operator} oOperator Condition to check
-				 * @param {sap.ui.mdc.enum.BaseType} sBaseType Basic type
+				 * @param {sap.ui.mdc.enums.BaseType} sBaseType Basic type
 				 * @returns {string} <code>DynamicDateOption</code>
-				 * @protected
+				 * @private
+				 * @ui5-restricted sap.ui.mdc
 				 * @since: 1.100.0
 				 */
 				 getCustomDynamicDateOptionForOperator: function(oOperator, sBaseType) {
@@ -1791,10 +1968,10 @@ function(
 		 */
 		function _getMatchingOperators(aOperators, sValue) {
 			// TODO: sType will be needed for checking the value content:   "=5" matches the EQ operator, but should only match when type is e.g. number, not for e.g. boolean
-			var aResult = [];
+			const aResult = [];
 
-			for (var i = 0; i < aOperators.length; i++) {
-				var oOperator = aOperators[i];
+			for (let i = 0; i < aOperators.length; i++) {
+				const oOperator = aOperators[i];
 				if (oOperator && oOperator.test && oOperator.test(sValue)) {
 					aResult.push(oOperator);
 				}
@@ -1813,16 +1990,16 @@ function(
 
 		function _getMonths() {
 			if (!this._aMonths) {
-				var oDate = new UniversalDate(),
+				const oDate = new UniversalDate(),
 					oFormatter = DateFormat.getDateInstance({
 						pattern: "LLLL"
 					});
 				oDate.setDate(15);
 				oDate.setMonth(0);
 
-				var aMonths = [];
+				const aMonths = [];
 
-				for (var i = 0; i < 12; i++) {
+				for (let i = 0; i < 12; i++) {
 					aMonths.push(oFormatter.format(oDate));
 					oDate.setMonth(oDate.getMonth() + 1);
 				}
@@ -1834,9 +2011,9 @@ function(
 		}
 
 		function _getIndexOfMonth(sMonth) {
-			var sLowerCaseMonth = sMonth.toLowerCase();
-			var aMonths = _getMonths.apply(this);
-			var iIndex = -1;
+			const sLowerCaseMonth = sMonth.toLowerCase();
+			const aMonths = _getMonths.apply(this);
+			let iIndex = -1;
 			aMonths.some(function(sElement, i) {
 				if (sElement.toLowerCase() == sLowerCaseMonth) {
 					iIndex = i;
@@ -1847,34 +2024,34 @@ function(
 		}
 
 
-		var bCreatingMonthFieldHelp = false;
+		let bCreatingMonthValueHelp = false;
 
-		function _getMonthFieldHelp() {
+		function _getMonthValueHelp() {
 
-			var sId = "LFHForSpecificMonth";
+			const sId = "LFHForSpecificMonth";
 
-			if (!bCreatingMonthFieldHelp) {
-				bCreatingMonthFieldHelp = true;
+			if (!bCreatingMonthValueHelp) {
+				bCreatingMonthValueHelp = true;
 
 				loadModules([
 					"sap/ui/mdc/valuehelp/content/FixedList",
-					"sap/ui/mdc/field/ListFieldHelpItem",
+					"sap/ui/mdc/valuehelp/content/FixedListItem",
 					"sap/ui/mdc/ValueHelp",
 					"sap/ui/mdc/valuehelp/Popover",
 					"sap/ui/core/Control"
 				]).then(function (aLoaded) {
-					var FixedList = aLoaded[0];
-					var ListFieldHelpItem = aLoaded[1];
-					var ValueHelp = aLoaded[2];
-					var Popover = aLoaded[3];
-					var Control = aLoaded[4];
+					const FixedList = aLoaded[0];
+					const FixedListItem = aLoaded[1];
+					const ValueHelp = aLoaded[2];
+					const Popover = aLoaded[3];
+					const Control = aLoaded[4];
 
-					var getMonthItems = function() {
+					const getMonthItems = function() {
 						if (!this._aMonthsItems) {
-							var aMonths = _getMonths.apply(this);
+							const aMonths = _getMonths.apply(this);
 							this._aMonthsItems = [];
 
-							for (var i = 0; i < 12; i++) {
+							for (let i = 0; i < 12; i++) {
 								this._aMonthsItems.push({
 									text: aMonths[i],
 									key: i
@@ -1885,15 +2062,14 @@ function(
 						return this._aMonthsItems;
 					}.bind(this);
 
-					var oMonthFieldHelp = new ValueHelp({
-						id: sId,
-						typeahead: new Popover({
-							content: [new FixedList({
+					const oMonthValueHelp = new ValueHelp(sId, {
+						typeahead: new Popover(sId + "-pop", {
+							content: [new FixedList(sId + "-FL", {
 								filterList: false,
 								useFirstMatch: true,
 								items: {
 									path: "$items>/",
-									template: new ListFieldHelpItem({
+									template: new FixedListItem({
 										text: "{$items>text}",
 										key: "{$items>key}"
 									}),
@@ -1905,14 +2081,12 @@ function(
 
 					// put in static UIArea to have only one instance. As in UIArea only controls are alloweg we need a dummy Control
 					try {
-						var oStaticAreaRef = sap.ui.getCore().getStaticAreaRef();
-						// only a facade of the static UIArea is returned that contains only the public methods
-						var oStaticUIArea = sap.ui.getCore().getUIArea(oStaticAreaRef);
-						var oControl = new Control(sId + "-parent", {dependents: [oMonthFieldHelp]});
+						const oStaticUIArea = StaticArea.getUIArea();
+						const oControl = new Control(sId + "-parent", {dependents: [oMonthValueHelp]});
 						oStaticUIArea.addContent(oControl, true); // do not invalidate UIArea
 					} catch (e) {
 						Log.error(e);
-						throw new Error("MonthFieldHelp cannot be assigned because static UIArea cannot be determined.");
+						throw new Error("MonthValueHelp cannot be assigned because static UIArea cannot be determined.");
 					}
 
 				}.bind(this));

@@ -3,19 +3,21 @@
  */
 
 sap.ui.define([
-	"sap/ui/core/Core",
+	"sap/ui/core/Element",
+	"sap/ui/core/Lib",
 	"sap/ui/core/util/reflection/JsControlTreeModifier",
 	"sap/ui/dt/ElementUtil",
 	"sap/ui/rta/util/changeVisualization/ChangeVisualizationUtils"
 ], function(
-	Core,
+	Element,
+	Lib,
 	JsControlTreeModifier,
 	ElementUtil,
 	ChangeVisualizationUtils
 ) {
 	"use strict";
 
-	var oRtaResourceBundle = Core.getLibraryResourceBundle("sap.ui.rta");
+	var oRtaResourceBundle = Lib.getResourceBundleFor("sap.ui.rta");
 
 	var CombineVisualization = {};
 
@@ -30,7 +32,7 @@ sap.ui.define([
 	 * @param {sap.ui.core.Component} mPropertyBag.appComponent - Application component
 	 * @returns {object} Map containing localized description text and tooltip
 	 */
-	CombineVisualization.getDescription = function (mPayload, sLabel, mPropertyBag) {
+	CombineVisualization.getDescription = function(mPayload, sLabel, mPropertyBag) {
 		var iOriginalSelectorCount = (mPayload.originalSelectors || []).length;
 		if (iOriginalSelectorCount < 2) {
 			// Fallback if no payload was provided
@@ -48,9 +50,9 @@ sap.ui.define([
 
 		var oAppComponent = mPropertyBag.appComponent;
 		var aOriginalSelectors = mPayload.originalSelectors;
-		var aLabels = aOriginalSelectors.map(function (oSelector) {
+		var aLabels = aOriginalSelectors.map(function(oSelector) {
 			var sId = JsControlTreeModifier.getControlIdBySelector(oSelector, oAppComponent);
-			var oControl = Core.byId(sId);
+			var oControl = Element.getElementById(sId);
 			return oControl ? ElementUtil.getLabelForElement(oControl) : sId;
 		});
 		var aShortLabels = aLabels.map(ChangeVisualizationUtils.shortenString);
@@ -74,10 +76,10 @@ sap.ui.define([
 				[aLabels.length]
 			),
 			descriptionTooltip: aLabels
-				.map(function(sLabel) {
-					return "\"" + sLabel + "\"";
-				})
-				.join(",\n")
+			.map(function(sLabel) {
+				return `"${sLabel}"`;
+			})
+			.join(",\n")
 		};
 	};
 

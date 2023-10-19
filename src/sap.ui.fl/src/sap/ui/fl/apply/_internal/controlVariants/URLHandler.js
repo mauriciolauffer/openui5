@@ -4,7 +4,6 @@
 
 sap.ui.define([
 	"sap/ui/core/Component",
-	"sap/ui/fl/Utils",
 	"sap/base/Log",
 	"sap/base/util/deepEqual",
 	"sap/base/util/merge",
@@ -13,11 +12,9 @@ sap.ui.define([
 	"sap/ui/base/ManagedObjectObserver",
 	"sap/ui/thirdparty/hasher",
 	"sap/base/util/includes",
-	"sap/ui/fl/apply/_internal/controlVariants/Utils",
-	"sap/ui/fl/apply/_internal/flexState/controlVariants/VariantManagementState"
+	"sap/ui/fl/apply/_internal/controlVariants/Utils"
 ], function(
 	Component,
-	Utils,
 	Log,
 	deepEqual,
 	merge,
@@ -26,15 +23,14 @@ sap.ui.define([
 	ManagedObjectObserver,
 	hasher,
 	includes,
-	VariantUtil,
-	VariantManagementState
+	VariantUtil
 ) {
 	"use strict";
 
 	var _mVariantIdChangeHandlers = {};
 
 	/**
-	 * URL handler utility for <code>sap.ui.fl variants</code> (@see sap.ui.fl.variants.VariantManagement}
+	 * URL handler utility for <code>sap.ui.fl variants</code> (see {@link sap.ui.fl.variants.VariantManagement})
 	 *
 	 * @namespace
 	 * @alias sap.ui.fl.apply._internal.controlVariants.URLHandler
@@ -107,12 +103,11 @@ sap.ui.define([
 	 * @param {string} sNewHash - New hash
 	 *
 	 * @returns {string} Value that signifies "Continue" navigation in the "ShellNavigation" service of ushell
-	 * {@see sap.ushell.services.ShellNavigation}
+	 * (see {@link sap.ushell.services.ShellNavigation})
 	 *
 	 * @private
 	 */
 	function _handleVariantIdChangeInURL(oModel, sNewHash) {
-		//TODO: Check if this is really necessary, as the method is never called with a new hash and in the test the parameter is not a string
 		try {
 			var oURLParsingService = oModel.getUShellService("URLParsing");
 			if (oURLParsingService) {
@@ -245,15 +240,11 @@ sap.ui.define([
 			if (Array.isArray(mURLParameters[VariantUtil.VARIANT_TECHNICAL_PARAMETER])) {
 				mURLParameters[VariantUtil.VARIANT_TECHNICAL_PARAMETER] = mURLParameters[VariantUtil.VARIANT_TECHNICAL_PARAMETER].map(decodeURIComponent);
 				mURLParameters[VariantUtil.VARIANT_TECHNICAL_PARAMETER].some(function(sParamDecoded, iIndex) {
-					var bVariantExistsForParameter = VariantManagementState.getVariant({
-						vmReference: mPropertyBag.vmReference,
-						vReference: sParamDecoded,
-						reference: oModel.oChangePersistence.getComponentName()
-					});
-					if (bVariantExistsForParameter) {
+					if (!isEmptyObject(oModel.getVariant(sParamDecoded, mPropertyBag.vmReference))) {
 						mReturnObject.index = iIndex;
 						return true;
 					}
+					return false;
 				});
 			}
 		}
@@ -269,12 +260,11 @@ sap.ui.define([
 		return oParsedHash && oParsedHash.params && oParsedHash.params[VariantUtil.VARIANT_TECHNICAL_PARAMETER];
 	}
 
-
 	URLHandler.variantTechnicalParameterName = "sap-ui-fl-control-variant-id";
 
 	/**
-	 * Initializes hash data for the passed variant model.
-	 * {@see sap.ui.fl.variants.VariantModel}
+	 * Initializes hash data for the passed variant model
+	 * (see {@link sap.ui.fl.variants.VariantModel}).
 	 *
 	 * @param {object} mPropertyBag - Property bag
 	 * @param {sap.ui.fl.variants.VariantModel} mPropertyBag.model - Variant model
@@ -439,13 +429,11 @@ sap.ui.define([
 	 * @ui5-restricted sap.ui.fl.variants.VariantModel
 	 */
 	 URLHandler.update = function(mPropertyBag) {
-		if (!mPropertyBag.model._oHashData) {
-			mPropertyBag.model._oHashData = {
-				hashParams: [],
-				controlPropertyObservers: [],
-				variantControlIds: []
-			};
-		}
+		mPropertyBag.model._oHashData ||= {
+			hashParams: [],
+			controlPropertyObservers: [],
+			variantControlIds: []
+		};
 		if (!mPropertyBag || !Array.isArray(mPropertyBag.parameters)) {
 			Log.info("Variant URL parameters could not be updated since invalid parameters were received");
 			return;
@@ -459,8 +447,8 @@ sap.ui.define([
 	};
 
 	/**
-	 * Returns the current hash parameters from the variant model's hash data.
-	 * {@see sap.ui.fl.variants.VariantModel}
+	 * Returns the current hash parameters from the variant model's hash data
+	 * (see {@link sap.ui.fl.variants.VariantModel}).
 	 *
 	 * @param {object} mPropertyBag - Property bag
 	 * @param {sap.ui.fl.variants.VariantModel} mPropertyBag.model - Variant model

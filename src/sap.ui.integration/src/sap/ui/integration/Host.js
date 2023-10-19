@@ -4,12 +4,15 @@
 sap.ui.define([
 	"sap/ui/integration/library",
 	"sap/ui/core/Element",
-	"sap/ui/core/Configuration"
-], function (library,
-			 Element,
-			 Configuration) {
+	"sap/ui/core/Supportability",
+	"sap/base/util/fetch"
+], function (
+	library,
+	Element,
+	Supportability,
+	fetch
+) {
 		"use strict";
-		/*global navigator, URL*/
 
 		/**
 		 * Constructor for a new <code>Host</code>.
@@ -139,8 +142,8 @@ sap.ui.define([
 							 * Example:
 							 * <pre>
 							 *  {
-							 *  	"/sap.card/configuration/filters/shipper/value": "key3",
-							 *  	"/sap.card/configuration/filters/item/value": "key2"
+							 *     "/sap.card/configuration/filters/shipper/value": "key3",
+							 *     "/sap.card/configuration/filters/item/value": "key2"
 							 *  }
 							 * </pre>
 							 */
@@ -159,6 +162,20 @@ sap.ui.define([
 						parameters: {
 							/**
 							 * The card the changes are fired from.
+							 */
+							card: { type: "sap.ui.core.Control" }
+						}
+					},
+
+					/**
+					 * Fired when the card is initially ready for the first time.
+					 * Will not be fired for consecutive refreshes or data changes.
+					 * @experimental since 1.116
+					 */
+					cardInitialized: {
+						parameters: {
+							/**
+							 * The card.
 							 */
 							card: { type: "sap.ui.core.Control" }
 						}
@@ -401,49 +418,70 @@ sap.ui.define([
 		 * @returns {map} Map of http headers.
 		 * @private
 		 * @ui5-restricted
-	 	 * @experimental Since 1.91. The API might change.
+	 	 * @deprecated Since 1.113 Use Host.prototype.fetch instead.
 		 */
 		Host.prototype.modifyRequestHeaders = function (mHeaders, mSettings, oCard) {
-			if (this.bUseExperimentalCaching) {
-				return this._prepareCacheHeaders(mHeaders, mSettings);
-			}
-
 			return mHeaders;
 		};
 
 		/**
 		 * Modifies the card HTTP data request before sending.
 		 * Override if you need to change the default data request behavior.
-		 * @param {map} mRequest The current request. In format for jQuery.ajax function.
+		 * @param {map} mRequest The current request.
+		 * @param {string} mRequest.url The request url.
+		 * @param {object} mRequest.options The request options in the same format as for the native Request object.
 		 * @param {map} mSettings The map of request settings defined in the card manifest.
 		 * @param {sap.ui.integration.widgets.Card} [oCard] Optional. The card for which the request is made.
 		 * @returns {map} The modified request.
 		 * @private
 		 * @ui5-restricted
-	 	 * @experimental Since 1.109. The API might change.
+		 * @deprecated Since 1.113 Use Host.prototype.fetch instead.
 		 */
 		Host.prototype.modifyRequest = function (mRequest, mSettings, oCard) {
-			var oUrl;
-
-			if (Configuration.getStatisticsEnabled()) {
-				oUrl = new URL(mRequest.url, window.location.href);
-
-				// add statistics parameter to every request (supported only on Gateway servers)
-				oUrl.searchParams.set("sap-statistics", "true");
-				mRequest.url = oUrl.href;
-			}
-
 			return mRequest;
 		};
 
 		/**
+		 * Starts the process of fetching a resource from the network, returning a promise that is fulfilled once the response is available.
+		 * Use this method to override the default behavior when fetching network resources.
+		 * Mimics the browser native Fetch API.
 		 * @private
-		 * @param {map} mHeaders The current map of headers.
-		 * @param {map} mSettings The map of request settings defined in the card manifest.
-		 * @returns {map} Map of http headers.
+		 * @ui5-restricted
+		 * @experimental Since 1.113. The API might change.
+		 * @param {string} sResource This defines the resource that you wish to fetch.
+		 * @param {object} mOptions An object containing any custom settings that you want to apply to the request.
+		 * @param {object} mRequestSettings The map of request settings defined in the card manifest. Use this only for reading, they can not be modified.
+		 * @param {sap.ui.integration.widgets.Card} oCard The card which initiated the request.
+		 * @returns {Promise<Response>} A <code>Promise</code> that resolves to a <code>Response</code> object.
 		 */
-		Host.prototype._prepareCacheHeaders = function (mHeaders, mSettings) {
-			var oCacheSettings = mSettings.request.cache,
+		Host.prototype.fetch = function (sResource, mOptions, mRequestSettings, oCard) {
+			if (Supportability.isStatisticsEnabled()) {
+				sResource = this._addStatisticsParameter(sResource);
+			}
+
+			if (this.bUseExperimentalCaching) {
+				this._addCacheHeaders(mOptions.headers, mRequestSettings);
+			}
+
+			return fetch(sResource, mOptions);
+		};
+
+		Host.prototype._addStatisticsParameter = function (sUrl) {
+			var oUrl = new URL(sUrl, window.location.href);
+
+			// add statistics parameter to every request (supported only on Gateway servers)
+			oUrl.searchParams.set("sap-statistics", "true");
+
+			return oUrl.href;
+		};
+
+		/**
+		 * @private
+		 * @param {Headers} mHeaders The current map of headers.
+		 * @param {map} mRequestSettings The map of request settings defined in the card manifest.
+		 */
+		Host.prototype._addCacheHeaders = function (mHeaders, mRequestSettings) {
+			var oCacheSettings = mRequestSettings.cache,
 				aCacheControl = [];
 
 			if (oCacheSettings.enabled === false) {
@@ -459,13 +497,11 @@ sap.ui.define([
 			}
 
 			if (aCacheControl.length) {
-				mHeaders["Cache-Control"] = aCacheControl.join(", ");
+				mHeaders.set("Cache-Control", aCacheControl.join(", "));
 			}
 
-			mHeaders["x-sap-card"] = "true";
-			mHeaders["x-use-cryptocache"] = "true";
-
-			return mHeaders;
+			mHeaders.set("x-sap-card", "true");
+			mHeaders.set("x-use-cryptocache", "true");
 		};
 
 		/**

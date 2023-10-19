@@ -14,6 +14,7 @@ sap.ui.define([
 	"sap/m/Input",
 	"sap/m/Panel",
 	"sap/m/Text",
+	"sap/m/VBox",
 	"sap/m/library",
 	"sap/f/DynamicPageAccessibleLandmarkInfo",
 	"sap/ui/core/mvc/XMLView",
@@ -37,6 +38,7 @@ function (
 	Input,
 	Panel,
 	Text,
+	Vbox,
 	mLibrary,
 	DynamicPageAccessibleLandmarkInfo,
 	XMLView,
@@ -373,7 +375,7 @@ function (
 	QUnit.test("DynamicPage headerExpanded=false and no content renders header correctly snapped", function (assert) {
 		// setup
 		var oHeaderElement;
-		this.oDynamicPage.rerender();
+		this.oDynamicPage.invalidate();
 		Core.applyChanges();
 		// assert
 
@@ -442,6 +444,23 @@ function (
 		}, 0);
 	});
 
+	QUnit.test("'sapFDynamicPageContentFitContainer' is not added, when scrollbar is needed", function (assert) {
+		// Arrange
+		var oStub = this.stub(this.oDynamicPage, "_needsVerticalScrollBar").returns(true);
+
+		//Act
+		this.oDynamicPage.setFitContent(true);
+		Core.applyChanges();
+		this.oDynamicPage._updateFitContainer();
+
+		// Assert
+		assert.strictEqual(this.oDynamicPage.$contentFitContainer.hasClass("sapFDynamicPageContentFitContainer"), false,
+		"'sapFDynamicPageContentFitContainer' class is not added");
+
+		// Clean up
+		oStub.restore();
+	});
+
 	QUnit.test("BCP: 1870261908 Header title cursor CSS reset is applied", function (assert) {
 		// Arrange
 		var $MainHeading = this.oDynamicPage.$().find(".sapFDynamicPageTitleMainHeading"),
@@ -476,6 +495,33 @@ function (
 			"The expanded header in content does not have solid background");
 	});
 
+
+	QUnit.test("Visibility of DynamicPageTitle taken in account by parent", function (assert) {
+
+		// Arrange
+		var done = assert.async(),
+			oDynamicPage = this.oDynamicPage,
+			oDynamicPageTitle = oDynamicPage.getTitle(),
+			oStub = sinon.spy(this.oDynamicPage, "invalidate");
+
+
+		//Act
+
+		this.oDynamicPage._snapHeader(true);
+		oDynamicPageTitle.setVisible(false);
+		Core.applyChanges();
+		setTimeout(function() {
+
+			// Assert
+			assert.equal(this.oDynamicPage.$().find(".sapFDynamicPageContentWrapper").css("paddingTop"), "0px");
+
+			// Clean up
+			oStub.restore();
+			oDynamicPageTitle.setVisible(true);
+			done();
+		}.bind(this));
+	});
+
 	QUnit.module("DynamicPage - Rendering - No Title", {
 		beforeEach: function () {
 			this.oDynamicPageNoTitle = oFactory.getDynamicPageNoTitle();
@@ -500,7 +546,8 @@ function (
 			});
 		this.stub(this.oDynamicPageNoTitle, "getHeaderExpanded").returns(false);
 
-		this.oDynamicPageNoTitle.rerender();
+		this.oDynamicPageNoTitle.invalidate();
+		Core.applyChanges();
 
 		assert.ok(true, "No error is thrown");
 	});
@@ -718,7 +765,9 @@ function (
 			done = assert.async(),
 			DummyControl = Control.extend("sap.m.DummyControl", {
 				renderer: function(oRm) {
-					oRm.write("<div></div>");
+					oRm.openStart("div");
+					oRm.openEnd();
+					oRm.close("div");
 				}
 			});
 
@@ -746,7 +795,6 @@ function (
 				oDynamicPage.getDomRef().style.height = (iHeightBeforeResize / 2) + "px";
 				oSpy.resetHistory();
 				oDynamicPage.invalidate();
-				oDynamicPage.rerender();
 				oDynamicPage.removeEventDelegate(this);
 			}
 		});
@@ -1463,7 +1511,7 @@ function (
 
 		// Check
 		assert.ok(isHeaderSnappedWithScroll(), "header is still snapped with scroll");
-		assert.ok(oScrollPositionSpy.calledOnce, "Called only once (from adjustSnap function)");
+		assert.strictEqual(oScrollPositionSpy.callCount, 0, "no adjusting of the scroll position when the modified header content is hidden");
 	});
 
 	QUnit.test("DynamicPage header resize with invalidation", function (assert) {
@@ -1498,7 +1546,8 @@ function (
 		oUtil.renderObject(this.oDynamicPage);
 
 		//Act - simulating invalidation of DynamicPage and rerendering
-		this.oDynamicPage.rerender();
+		this.oDynamicPage.invalidate();
+		Core.applyChanges();
 
 		oTogglePinButtonVisibilitySpy = this.spy(this.oDynamicPage, "_togglePinButtonVisibility");
 
@@ -1971,7 +2020,8 @@ function (
 
 		// Act
 		this.oDynamicPage._pin(true); // forcing user interaction in order to change the headerPinned property
-		this.oDynamicPage.rerender(); //rerender while header is pinned
+		this.oDynamicPage.invalidate(); //rerender while header is pinned
+		Core.applyChanges();
 
 		// Assert
 		assert.equal($headerWrapper.find("#" + sHeaderId).length, 1, "The header is in the Header wrapper when pinned");
@@ -2033,7 +2083,8 @@ function (
 		oDynamicPage.setHeaderExpanded(false);
 		oDynamicPage.$wrapper.scrollTop(iExpectedScrollPosition);
 		//act
-		oDynamicPage.rerender();
+		oDynamicPage.invalidate();
+		Core.applyChanges();
 
 		//assert
 		assert.ok(oDynamicPage.$wrapper.scrollTop, iExpectedScrollPosition,
@@ -2050,7 +2101,8 @@ function (
 
 		//act
 		oDynamicPage.toggleStyleClass("sapMNavItemHidden", true);
-		oDynamicPage.rerender();
+		oDynamicPage.invalidate();
+		Core.applyChanges();
 		oDynamicPage.toggleStyleClass("sapMNavItemHidden", false);
 
 		//assert
@@ -2366,7 +2418,8 @@ function (
 			done = assert.async();
 
 		// Act
-		this.oDynamicPage.rerender();
+		this.oDynamicPage.invalidate();
+		Core.applyChanges();
 
 		//Assert
 		setTimeout(function() {
@@ -2931,7 +2984,7 @@ function (
 
 			var oXmlString = [
 				'<mvc:View xmlns:mvc="sap.ui.core.mvc" xmlns="sap.uxap" xmlns:m="sap.m" xmlns:f="sap.f" displayBlock="true" height="100%">',
-					'<f:DynamicPageTitle id="DynamicPageTitle" primaryArea="Begin">',
+					'<f:DynamicPageTitle id="DynamicPageTitle">',
 						'<f:expandedHeading>',
 							'<m:FlexBox wrap="Wrap" fitContainer="true" alignItems="Center">',
 								'<m:Title text="Denise Smith" wrapping="true" class="sapUiTinyMarginEnd"/>',
@@ -2946,7 +2999,7 @@ function (
 						'<f:snappedHeading>',
 							'<m:FlexBox wrap="Wrap" fitContainer="true" alignItems="Center">',
 								'<m:FlexBox wrap="NoWrap" fitContainer="true" alignItems="Center" class="sapUiTinyMarginEnd">',
-									'<f:Avatar src="../../sap/f/images/Woman_avatar_02.png" displaySize="S" class="sapUiTinyMarginEnd"/>',
+									'<m:Avatar src="../../sap/f/images/Woman_avatar_02.png" displaySize="S" class="sapUiTinyMarginEnd"/>',
 									'<m:Title text="Denise Smith" wrapping="true" class="sapUiTinyMarginEnd"/>',
 								'</m:FlexBox>',
 								'<m:FlexBox wrap="NoWrap" fitContainer="true" alignItems="Center" class="sapUiTinyMarginEnd">',
@@ -3044,7 +3097,7 @@ function (
 						'<f:snappedHeading>',
 							'<m:FlexBox wrap="Wrap" fitContainer="true" alignItems="Center">',
 								'<m:FlexBox wrap="NoWrap" fitContainer="true" alignItems="Center" class="sapUiTinyMarginEnd">',
-									'<f:Avatar src="../../sap/f/images/Woman_avatar_02.png" displaySize="S" class="sapUiTinyMarginEnd"/>',
+									'<m:Avatar src="../../sap/f/images/Woman_avatar_02.png" displaySize="S" class="sapUiTinyMarginEnd"/>',
 									'<m:Title text="Denise Smith" wrapping="true" class="sapUiTinyMarginEnd"/>',
 								'</m:FlexBox>',
 								'<m:FlexBox wrap="NoWrap" fitContainer="true" alignItems="Center" class="sapUiTinyMarginEnd">',
@@ -3121,6 +3174,9 @@ function (
 		}
 	});
 
+	/**
+	 * @deprecated since 1.58
+	 */
 	QUnit.test("Test flex-basis styles when primaryArea=Middle", function(assert) {
 		// arrange
 		var oTitle = Core.byId("comp---view--DynamicPageTitle"),
@@ -3139,7 +3195,7 @@ function (
 		assert.equal(parseFloat(oActions.css("flex-shrink")).toFixed(1), 1.6, "Actions shrink factor is correct");
 	});
 
-	QUnit.test("Test flex-basis styles when primaryArea=Begin and areaShrinkRatio is set", function(assert) {
+	QUnit.test("Test flex-basis styles when areaShrinkRatio is set", function(assert) {
 		// arrange
 		var oTitle = Core.byId("comp---view--DynamicPageTitle"),
 			oHeading = oTitle.$("left-inner"),
@@ -3157,6 +3213,9 @@ function (
 		assert.equal(parseFloat(oActions.css("flex-shrink")).toFixed(1), 4, "Actions shrink factor is correct");
 	});
 
+	/**
+	 * @deprecated since 1.58
+	 */
 	QUnit.test("Test flex-basis styles when primaryArea=Middle and areaShrinkRatio is set", function(assert) {
 		// arrange
 		var oTitle = Core.byId("comp---view--DynamicPageTitle"),
@@ -3258,6 +3317,28 @@ function (
 
 		assert.ok(iOffsetDiff >= iStrickyAreaHight, "the element is in the visible area");
 	});
+
+	QUnit.test("Back tab navigaton triggers Dynamic Page scroll accordingly", function(assert) {
+		//Arrange
+		var oVbox = new Vbox(),
+			oDynamicPage = this.oDynamicPage,
+			oContent = oDynamicPage.getContent();
+
+		for (let i = 0; i < 100; i++) {
+			oVbox.addItem(new Input({id: "input_" + i}));
+		}
+		oDynamicPage.removeAggregation("content");
+		oDynamicPage.setContent(oVbox);
+
+		Core.applyChanges();
+
+		//Act
+		assert.equal(oDynamicPage.$wrapper.css("scroll-padding-top"), oDynamicPage.$wrapper.css("padding-top"),
+		"Scroll padding is equal to visual padding of scrolling wrapper");
+		//Clean up
+		oDynamicPage.setContent(oContent);
+	});
+
 
 	/* --------------------------- Accessibility -------------------------------------- */
 	QUnit.module("Accessibility", {

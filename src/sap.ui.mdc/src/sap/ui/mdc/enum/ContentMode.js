@@ -6,15 +6,16 @@ sap.ui.define(function() {
 	"use strict";
 
 	/**
-	 * Defines in which mode the content of a <code>Field</code>, <code>FilterField</code> or <code>MultiValueField</code> is rendered.
+	 * Defines in which mode the content of a {@link sap.ui.mdc.Field Field}, {@link sap.ui.mdc.FilterField FilterField} or {@link sap.ui.mdc.MultiValueField MultiValueField} is rendered.
 	 *
 	 * @enum {string}
 	 * @private
 	 * @ui5-restricted sap.ui.mdc
 	 * @since 1.87
 	 * @alias sap.ui.mdc.enum.ContentMode
+	 * @deprecated since 1.115.0 - please see {@link sap.ui.mdc.enums.ContentMode}
 	 */
-	var ContentMode = {
+	const ContentMode = {
 		/**
 		 * Display mode for single value
 		 * @private

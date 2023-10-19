@@ -147,7 +147,7 @@ sap.ui.define([
 		this.setSettings(JSON.parse(sSettingsJson));
 
 		if (this._bActive) {
-			this._scheduleDataUpdate();
+			this._scheduleDataUpdate(0);
 		}
 	};
 
@@ -198,7 +198,7 @@ sap.ui.define([
 		this._iCurrentRequestNumber++;
 
 		if (oCard) {
-			sMeasureId = "UI5 Integration Cards " + oCard +  " " + this.getId() + " getData#" + this._iCurrentRequestNumber;
+			sMeasureId = "UI5 Integration Cards " + oCard + " " + this.getId() + " getData#" + this._iCurrentRequestNumber;
 			Measurement.start(sMeasureId, this.getDetails());
 		}
 
@@ -217,7 +217,12 @@ sap.ui.define([
 				}
 
 				if (Array.isArray(oResult) && oResult.length > 0) {
-					this.fireError({message: oResult[0], jqXHR: oResult[1]});
+					this.fireError({
+						message: oResult[0],
+						response: oResult[1],
+						responseText: oResult[2],
+						settings: oResult[3]
+					});
 				} else {
 					this.fireError({message: oResult});
 				}
@@ -274,22 +279,20 @@ sap.ui.define([
 			return;
 		}
 
-		setTimeout(function () {
-			this.triggerDataUpdate();
-		}.bind(this), iInterval * 1000);
+		this._scheduleDataUpdate(iInterval * 1000);
 	};
-
 
 	/**
 	 * Schedules the call to triggerDataUpdate.
+	 * @param {int} iTimeout timeout in ms
 	 * @private
 	 */
-	DataProvider.prototype._scheduleDataUpdate = function () {
+	DataProvider.prototype._scheduleDataUpdate = function (iTimeout) {
 		if (this._iDataUpdateCallId) {
 			clearTimeout(this._iDataUpdateCallId);
 		}
 
-		this._iDataUpdateCallId = setTimeout(this.triggerDataUpdate.bind(this), 0);
+		this._iDataUpdateCallId = setTimeout(this.triggerDataUpdate.bind(this), iTimeout);
 	};
 
 	/**

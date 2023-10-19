@@ -1,15 +1,18 @@
 /*global QUnit, sinon */
 sap.ui.define([
+	"sap/ui/core/mvc/XMLView",
 	"sap/ui/test/Opa",
 	"sap/ui/test/Opa5",
 	"sap/ui/test/opaQunit",
 	"sap/ui/thirdparty/jquery",
 	"sap/m/Button",
 	"sap/ui/thirdparty/URI",
+	"sap/ui/test/_OpaLogger",
 	"sap/ui/test/_OpaUriParameterParser",
 	"sap/ui/test/autowaiter/_autoWaiter",
-	"../utils/sinon"
-], function (Opa, Opa5, opaTest, $, Button, URI, _OpaUriParameterParser, _autoWaiter, sinonUtils) {
+	"../utils/sinon",
+	"sap/ui/qunit/utils/nextUIUpdate"
+], function (XMLView, Opa, Opa5, opaTest, $, Button, URI, _OpaLogger, _OpaUriParameterParser, _autoWaiter, sinonUtils, nextUIUpdate) {
 	"use strict";
 
 	QUnit.test("Should not execute the test in debug mode", function (assert) {
@@ -166,7 +169,7 @@ sap.ui.define([
 	});
 
 	QUnit.test("Should change the max log level with OPA extendConfig", function (assert) {
-		var fnLogLevelSpy = sinon.spy(sap.ui.test._OpaLogger, "setLevel");
+		var fnLogLevelSpy = sinon.spy(_OpaLogger, "setLevel");
 		Opa5.extendConfig({logLevel: "trace"});
 		assert.strictEqual(Opa.config.logLevel, "trace");
 		sinon.assert.calledWith(fnLogLevelSpy, "trace");
@@ -190,30 +193,40 @@ sap.ui.define([
 			'<Image id="boo"></Image>',
 			'</mvc:View>'
 		].join('');
-		var oView;
 
-		oView = sap.ui.xmlview({ viewContent: sView});
-		oView.setViewName(sViewName);
-		return oView;
+		return XMLView.create({
+			definition: sView
+		}).then(function(oView) {
+			oView.setViewName(sViewName);
+			return oView;
+		});
 	}
 
 	QUnit.module("Config and waitFors", {
-		beforeEach: function () {
-			this.oView = createXmlView("my.namespace.View");
-			this.oView2 = createXmlView("my.namespace2.View");
-			this.oButton = new Button("foo");
+		beforeEach: function (assert) {
+			// Note: This test is executed with QUnit 1 and QUnit 2.
+			//       We therefore cannot rely on the built-in promise handling of QUnit 2.
+			return Promise.all([
+				createXmlView("my.namespace.View"),
+				createXmlView("my.namespace2.View")
+			]).then(function(aViews) {
+				this.oView = aViews[0];
+				this.oView2 = aViews[1];
+				this.oButton = new Button("foo");
 
-			this.oButton.placeAt("qunit-fixture");
-			this.oView.placeAt("qunit-fixture");
-			this.oView2.placeAt("qunit-fixture");
-			sap.ui.getCore().applyChanges();
+				this.oButton.placeAt("qunit-fixture");
+				this.oView.placeAt("qunit-fixture");
+				this.oView2.placeAt("qunit-fixture");
+
+				return nextUIUpdate();
+			}.bind(this));
 		},
 		afterEach: function () {
 			this.oView.destroy();
 			this.oView2.destroy();
 			this.oButton.destroy();
 			Opa5.resetConfig();
-			sap.ui.getCore().applyChanges();
+			return nextUIUpdate();
 		}
 	});
 
@@ -304,22 +317,29 @@ sap.ui.define([
 	});
 
 	QUnit.module("waitFor", {
-		beforeEach: function () {
+		beforeEach: function (assert) {
+			// Note: This test is executed with QUnit 1 and QUnit 2.
+			//       We therefore cannot rely on the built-in promise handling of QUnit 2.
 			var sView = [
 				'<mvc:View xmlns:mvc="sap.ui.core.mvc" xmlns="sap.m">',
 				'<Button id="foo"/>',
 				'</mvc:View>'
 			].join('');
 
-			this.oView = sap.ui.xmlview({id: "globalId", viewContent: sView});
-			this.oView.setViewName("myViewName");
-			this.oView.placeAt("qunit-fixture");
-			sap.ui.getCore().applyChanges();
+			return XMLView.create({
+				id: "globalId",
+				definition: sView
+			}).then(function(oView) {
+				this.oView = oView;
+				this.oView.setViewName("myViewName");
+				this.oView.placeAt("qunit-fixture");
+				return nextUIUpdate();
+			}.bind(this));
 		},
 		afterEach: function () {
 			this.oView.destroy();
-			sap.ui.getCore().applyChanges();
 			Opa5.resetConfig();
+			return nextUIUpdate();
 		}
 	});
 
@@ -393,26 +413,33 @@ sap.ui.define([
 	});
 
 	QUnit.module("Config and waitFor",{
-		beforeEach: function () {
+		beforeEach: function (assert) {
+			// Note: This test is executed with QUnit 1 and QUnit 2.
+			//       We therefore cannot rely on the built-in promise handling of QUnit 2.
 			var sView = [
 				'<mvc:View xmlns:mvc="sap.ui.core.mvc" xmlns="sap.m">',
 					'<Button id="foo"/>',
 				'</mvc:View>'
 			].join('');
 
-			this.oView = sap.ui.xmlview({id: "myView", viewContent: sView});
-			sap.ui.getCore().applyChanges();
-			Opa5.extendConfig({
-				// make the test fast
-				pollingInterval: 50,
-				viewNamespace: "namespace.",
-				viewName: "viewName"
-			});
+			return XMLView.create({
+				id: "myView",
+				definition: sView
+			}).then(function(oView) {
+				this.oView = oView;
+				Opa5.extendConfig({
+					// make the test fast
+					pollingInterval: 50,
+					viewNamespace: "namespace.",
+					viewName: "viewName"
+				});
+				return nextUIUpdate();
+			}.bind(this));
 		},
 		afterEach: function () {
 			this.oView.destroy();
-			sap.ui.getCore().applyChanges();
 			Opa5.resetConfig();
+			return nextUIUpdate();
 		}
 	});
 

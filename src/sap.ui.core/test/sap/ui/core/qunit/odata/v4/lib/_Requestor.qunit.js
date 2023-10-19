@@ -2,24 +2,24 @@
  * ${copyright}
  */
 sap.ui.define([
-	"jquery.sap.global",
 	"sap/base/Log",
 	"sap/ui/base/SyncPromise",
-	"sap/ui/core/Configuration",
 	"sap/ui/core/cache/CacheManager",
 	"sap/ui/model/odata/v4/lib/_Batch",
 	"sap/ui/model/odata/v4/lib/_GroupLock",
 	"sap/ui/model/odata/v4/lib/_Helper",
 	"sap/ui/model/odata/v4/lib/_Requestor",
-	"sap/ui/test/TestUtils"
-], function (jQuery, Log, SyncPromise, Configuration, CacheManager, _Batch, _GroupLock, _Helper,
-		_Requestor, TestUtils) {
+	"sap/ui/security/Security",
+	"sap/ui/test/TestUtils",
+	"sap/ui/thirdparty/jquery"
+], function (Log, SyncPromise, CacheManager, _Batch, _GroupLock, _Helper, _Requestor, Security,
+	TestUtils, jQuery) {
 	"use strict";
 
 	var sClassName = "sap.ui.model.odata.v4.lib._Requestor",
 		oModelInterface = {
 			fetchMetadata : function () {
-				throw new Error("Do not call me!");
+				throw new Error("Must be mocked");
 			},
 			fireSessionTimeout : function () {},
 			getGroupProperty : defaultGetGroupProperty,
@@ -239,7 +239,8 @@ sap.ui.define([
 			oHelperMock = this.mock(_Helper),
 			mQueryParams = {},
 			oRequestor,
-			vStatistics = {};
+			vStatistics = {},
+			bWithCredentials = bStatistics; //do not increase the number of tests unnecessarily
 
 		if (bStatistics) {
 			mQueryParams["sap-statistics"] = vStatistics;
@@ -248,7 +249,8 @@ sap.ui.define([
 			.withExactArgs(sinon.match.same(mQueryParams)).returns("?~");
 
 		// code under test
-		oRequestor = _Requestor.create(sServiceUrl, oModelInterface, mHeaders, mQueryParams);
+		oRequestor = _Requestor.create(sServiceUrl, oModelInterface, mHeaders, mQueryParams,
+			/*sODataVersion*/undefined, bWithCredentials);
 
 		assert.deepEqual(oRequestor.mBatchQueue, {});
 		assert.strictEqual(oRequestor.mHeaders, mHeaders);
@@ -264,6 +266,7 @@ sap.ui.define([
 		assert.strictEqual(oRequestor.oOptimisticBatch, null);
 		assert.strictEqual(oRequestor.isBatchSent(), false);
 		assert.ok("vStatistics" in oRequestor);
+		assert.strictEqual(oRequestor.bWithCredentials, bWithCredentials);
 
 		oHelperMock.expects("buildQuery").withExactArgs(undefined).returns("");
 
@@ -854,6 +857,20 @@ sap.ui.define([
 	});
 
 	//*********************************************************************************************
+	QUnit.test("sendRequest(), withCredentials for CORS", function (assert) {
+		var oRequestor = _Requestor.create("/", oModelInterface, /*mHeaders*/undefined,
+				/*mQueryParams*/undefined, /*sODataVersion*/undefined,
+				/*bWithCredentials*/true);
+
+		this.mock(jQuery).expects("ajax")
+			.withExactArgs("/", sinon.match({
+				xhrFields : {withCredentials : true}
+			})).returns(createMock(assert, {/*oPayload*/}, "OK"));
+
+		return oRequestor.sendRequest("GET", "");
+	});
+
+	//*********************************************************************************************
 [undefined, "false"].forEach(function (vStatistics) {
 	[undefined, "$direct"].forEach(function (sGroupId) {
 		var sTitle = "request: sGroupId=" + sGroupId + ", sap-statistics=" + vStatistics;
@@ -902,8 +919,8 @@ sap.ui.define([
 			return oPromise.then(function (oResult) {
 				assert.strictEqual(oResult, oConvertedResponse);
 
-				sinon.assert.calledOnce(fnSubmit);
-				sinon.assert.notCalled(fnCancel);
+				sinon.assert.calledOnceWithExactly(fnSubmit);
+				assert.notOk(fnCancel.called);
 			});
 		});
 	});
@@ -1361,7 +1378,11 @@ sap.ui.define([
 			}), "Products", true)
 			.throws(oError);
 
-		return Promise.all([oGetProductsPromise, oRequestor.processBatch("groupId")]);
+		return Promise.all([
+			oGetProductsPromise,
+			// code under test
+			oRequestor.processBatch("groupId")
+		]);
 	});
 
 	//*********************************************************************************************
@@ -1517,7 +1538,7 @@ sap.ui.define([
 			return Promise.resolve({"This should change" : "nothing!"});
 		}
 
-		this.mock(Configuration).expects("getSecurityTokenHandlers")
+		this.mock(Security).expects("getSecurityTokenHandlers")
 			.withExactArgs()
 			.returns([securityTokenHandler0, securityTokenHandler1, securityTokenHandler2]);
 		this.mock(_Requestor.prototype).expects("checkHeaderNames")
@@ -1544,7 +1565,7 @@ sap.ui.define([
 			return Promise.reject("foo");
 		}
 
-		this.mock(Configuration).expects("getSecurityTokenHandlers")
+		this.mock(Security).expects("getSecurityTokenHandlers")
 			.withExactArgs()
 			.returns([securityTokenHandler]);
 		this.oLogMock.expects("error")
@@ -1572,7 +1593,7 @@ sap.ui.define([
 			return Promise.resolve(mNotAllowedHeaders);
 		}
 
-		this.mock(Configuration).expects("getSecurityTokenHandlers")
+		this.mock(Security).expects("getSecurityTokenHandlers")
 			.withExactArgs()
 			.returns([securityTokenHandler]);
 
@@ -1992,35 +2013,25 @@ sap.ui.define([
 		// code under test
 		aPromises.push(oRequestor.processBatch("groupId"));
 
-		sinon.assert.calledOnce(fnSubmit0);
-		sinon.assert.calledWithExactly(fnSubmit0);
-		sinon.assert.calledOnce(fnSubmit1);
-		sinon.assert.calledWithExactly(fnSubmit1);
-		sinon.assert.calledOnce(fnSubmit2);
-		sinon.assert.calledWithExactly(fnSubmit2);
-		sinon.assert.calledOnce(fnSubmit3);
-		sinon.assert.calledWithExactly(fnSubmit3);
-		sinon.assert.calledOnce(fnSubmit4);
-		sinon.assert.calledWithExactly(fnSubmit4);
+		sinon.assert.calledOnceWithExactly(fnSubmit0);
+		sinon.assert.calledOnceWithExactly(fnSubmit1);
+		sinon.assert.calledOnceWithExactly(fnSubmit2);
+		sinon.assert.calledOnceWithExactly(fnSubmit3);
+		sinon.assert.calledOnceWithExactly(fnSubmit4);
 
 		sinon.assert.calledThrice(fnMergePatch0);
 		sinon.assert.calledWithExactly(fnMergePatch0, "~oOldValue02~");
 		sinon.assert.calledWithExactly(fnMergePatch0, "~oOldValue03~");
 		sinon.assert.calledWithExactly(fnMergePatch0, "~oOldValue05~");
-		sinon.assert.calledOnce(fnMergePatch2);
-		sinon.assert.calledWithExactly(fnMergePatch2);
-		sinon.assert.calledOnce(fnMergePatch3);
-		sinon.assert.calledWithExactly(fnMergePatch3);
-		sinon.assert.notCalled(fnMergePatch4);
-		sinon.assert.calledOnce(fnMergePatch5);
-		sinon.assert.calledWithExactly(fnMergePatch5);
+		sinon.assert.calledOnceWithExactly(fnMergePatch2);
+		sinon.assert.calledOnceWithExactly(fnMergePatch3);
+		assert.notOk(fnMergePatch4.called);
+		sinon.assert.calledOnceWithExactly(fnMergePatch5);
 		sinon.assert.calledTwice(fnMergePatch6);
 		sinon.assert.calledWithExactly(fnMergePatch6, "~oOldValue07~");
 		sinon.assert.calledWithExactly(fnMergePatch6, "~oOldValue08~");
-		sinon.assert.calledOnce(fnMergePatch7);
-		sinon.assert.calledWithExactly(fnMergePatch7);
-		sinon.assert.calledOnce(fnMergePatch8);
-		sinon.assert.calledWithExactly(fnMergePatch8);
+		sinon.assert.calledOnceWithExactly(fnMergePatch7);
+		sinon.assert.calledOnceWithExactly(fnMergePatch8);
 		return Promise.all(aPromises).then(function (aResults) {
 			assert.deepEqual(aResults, [
 				{Name : "bar2", Note : "hello, world"}, // 1st PATCH
@@ -2097,7 +2108,11 @@ sap.ui.define([
 				.withExactArgs(aExpectedRequests, "groupId")
 				.resolves([createResponse(oFixture.mProductsResponse)]);
 
-			return Promise.all([oGetProductsPromise, oRequestor.processBatch("groupId")]);
+			return Promise.all([
+				oGetProductsPromise,
+				// code under test
+				oRequestor.processBatch("groupId")
+			]);
 		});
 	});
 
@@ -2121,7 +2136,11 @@ sap.ui.define([
 		this.mock(oRequestor).expects("sendBatch") // arguments don't matter
 			.resolves([createResponse(oResponse)]);
 
-		return Promise.all([oGetProductsPromise, oRequestor.processBatch("groupId")]);
+		return Promise.all([
+			oGetProductsPromise,
+			// code under test
+			oRequestor.processBatch("groupId")
+		]);
 	});
 
 	//*********************************************************************************************
@@ -2135,7 +2154,11 @@ sap.ui.define([
 		this.mock(oRequestor).expects("reportHeaderMessages")
 			.withExactArgs("Products(42)", sinon.match.same(mHeaders["SAP-Messages"]));
 
-		return Promise.all([oRequestPromise, oRequestor.processBatch("groupId")]);
+		return Promise.all([
+			oRequestPromise,
+			// code under test
+			oRequestor.processBatch("groupId")
+		]);
 	});
 
 	//*********************************************************************************************
@@ -2149,8 +2172,11 @@ sap.ui.define([
 		this.mock(oRequestor).expects("reportHeaderMessages")
 			.withExactArgs("Products(42)", sinon.match.same(mHeaders["SAP-Messages"]));
 
-		return Promise.all([oRequestPromise, oRequestor.processBatch("groupId")])
-			.then(function (aResults) {
+		return Promise.all([
+			oRequestPromise,
+			// code under test
+			oRequestor.processBatch("groupId")
+		]).then(function (aResults) {
 				assert.deepEqual(aResults[0], {"@odata.etag" : "ETag"});
 			});
 	});
@@ -2166,8 +2192,11 @@ sap.ui.define([
 		this.mock(oRequestor).expects("reportHeaderMessages")
 			.withExactArgs("Products(42)", sinon.match.same(mHeaders["SAP-Messages"]));
 
-		return Promise.all([oRequestPromise, oRequestor.processBatch("groupId")])
-			.then(function (aResults) {
+		return Promise.all([
+			oRequestPromise,
+			// code under test
+			oRequestor.processBatch("groupId")
+		]).then(function (aResults) {
 				assert.deepEqual(aResults[0], {});
 			});
 	});
@@ -2277,7 +2306,7 @@ sap.ui.define([
 
 		aPromises.push(oRequestor.request("GET", "fail", this.createGroupLock())
 			.then(unexpected, function (oResultError) {
-				assertError(oResultError, oError.error.message);
+				assertError(oResultError);
 			}));
 
 		aPromises.push(oRequestor.request("GET", "ok", this.createGroupLock())
@@ -2291,6 +2320,70 @@ sap.ui.define([
 
 		this.mock(oRequestor).expects("sendBatch").resolves(aBatchResult); // arguments don't matter
 
+		// code under test
+		aPromises.push(oRequestor.processBatch("groupId").then(function (oResult) {
+			assert.deepEqual(oResult, undefined);
+		}));
+
+		return Promise.all(aPromises);
+	});
+
+	//*********************************************************************************************
+	QUnit.test("processBatch(...): failure followed by another change set", function (assert) {
+		var oError = {error : {message : "404 Not found"}},
+			aBatchResult = [{
+				getResponseHeader : function () {
+					return "application/json";
+				},
+				headers : {"Content-Type" : "application/json"},
+				responseText : JSON.stringify(oError),
+				status : 404,
+				statusText : "Not found"
+			}],
+			aPromises = [],
+			oRequestor = _Requestor.create("/", oModelInterface);
+
+		function unexpected() {
+			assert.ok(false);
+		}
+
+		function assertError(oResultError) {
+			assert.ok(oResultError instanceof Error);
+			assert.deepEqual(oResultError.error, oError.error);
+			assert.strictEqual(oResultError.message, oError.error.message);
+			assert.strictEqual(oResultError.status, 404);
+			assert.strictEqual(oResultError.statusText, "Not found");
+		}
+
+		aPromises.push(oRequestor.request("PATCH", "fail", this.createGroupLock())
+			.then(unexpected, function (oResultError) {
+				assertError(oResultError);
+			}));
+
+		oRequestor.addChangeSet("groupId");
+
+		// Note: "If-Match" : {} prevents merging of PATCH requests
+		aPromises.push(oRequestor.request("PATCH", "n/a", this.createGroupLock(), {"If-Match" : {}})
+			.then(unexpected, function (oResultError) {
+				assert.ok(oResultError instanceof Error);
+				assert.strictEqual(oResultError.message,
+					"HTTP request was not processed because the previous request failed");
+				assert.strictEqual(oResultError.$reported, true);
+				assertError(oResultError.cause);
+			}));
+
+		aPromises.push(oRequestor.request("PATCH", "n/a", this.createGroupLock(), {"If-Match" : {}})
+			.then(unexpected, function (oResultError) {
+				assert.ok(oResultError instanceof Error);
+				assert.strictEqual(oResultError.message,
+					"HTTP request was not processed because the previous request failed");
+				assert.strictEqual(oResultError.$reported, true);
+				assertError(oResultError.cause);
+			}));
+
+		this.mock(oRequestor).expects("sendBatch").resolves(aBatchResult); // arguments don't matter
+
+		// code under test
 		aPromises.push(oRequestor.processBatch("groupId").then(function (oResult) {
 			assert.deepEqual(oResult, undefined);
 		}));
@@ -2377,10 +2470,8 @@ sap.ui.define([
 			assert.deepEqual(oResult, undefined);
 		}));
 
-		sinon.assert.calledOnce(fnMergePatch0);
-		sinon.assert.calledWithExactly(fnMergePatch0, "~oOldData~");
-		sinon.assert.calledOnce(fnMergePatch1);
-		sinon.assert.calledWithExactly(fnMergePatch1);
+		sinon.assert.calledOnceWithExactly(fnMergePatch0, "~oOldData~");
+		sinon.assert.calledOnceWithExactly(fnMergePatch1);
 
 		return Promise.all(aPromises);
 	});
@@ -2834,11 +2925,10 @@ sap.ui.define([
 		// code under test
 		oRequestor.cancelChanges("groupId", bResetInactive);
 
-		sinon.assert.calledOnce(fnCancel1);
-		sinon.assert.calledWithExactly(fnCancel1, sinon.match.same(bResetInactive));
-		sinon.assert.calledOnce(fnCancel2);
-		sinon.assert.calledOnce(fnCancel3);
-		sinon.assert.calledOnce(fnCancelPost1);
+		sinon.assert.calledOnceWithExactly(fnCancel1, sinon.match.same(bResetInactive));
+		sinon.assert.calledOnceWithExactly(fnCancel2, {});
+		sinon.assert.calledOnceWithExactly(fnCancel3, {});
+		sinon.assert.calledOnceWithExactly(fnCancelPost1, {});
 
 		// code under test
 		assert.strictEqual(oRequestor.hasPendingChanges(), false);
@@ -2859,8 +2949,7 @@ sap.ui.define([
 		oRequestor.cancelChanges("groupId", bResetInactive);
 
 		assert.strictEqual(oRequestor.mBatchQueue.groupId.length, 3);
-		sinon.assert.calledOnce(fnCancelPost2);
-		sinon.assert.calledWithExactly(fnCancelPost2, sinon.match.same(bResetInactive));
+		sinon.assert.calledOnceWithExactly(fnCancelPost2, sinon.match.same(bResetInactive));
 
 		aExpectedRequests.iChangeSet = 1;
 		this.mock(oRequestor).expects("sendBatch")
@@ -3030,7 +3119,7 @@ sap.ui.define([
 		// code under test
 		oRequestor.removeChangeRequest(oPromise);
 
-		sinon.assert.calledOnce(fnCancel);
+		sinon.assert.calledOnceWithExactly(fnCancel, undefined);
 		this.mock(oRequestor).expects("request").never();
 		oRequestor.processBatch("groupId");
 		return oTestPromise;
@@ -3084,7 +3173,7 @@ sap.ui.define([
 		oRequestor.removeChangeRequest(oPromise);
 		oRequestor.processBatch("groupId");
 
-		sinon.assert.calledOnce(fnCancel);
+		sinon.assert.calledOnceWithExactly(fnCancel, undefined);
 
 		return Promise.all(aPromises);
 	});
@@ -3152,8 +3241,8 @@ sap.ui.define([
 		// code under test
 		oRequestor.processBatch("groupId");
 
-		sinon.assert.calledOnce(fnCancel1);
-		sinon.assert.notCalled(fnCancel2);
+		sinon.assert.calledOnceWithExactly(fnCancel1, undefined);
+		assert.notOk(fnCancel2.called);
 		return oTestPromise;
 	});
 
@@ -3179,7 +3268,7 @@ sap.ui.define([
 
 		// code under test
 		oRequestor.removePost("groupId", oEntity);
-		sinon.assert.calledOnce(fnCancel);
+		sinon.assert.calledOnceWithExactly(fnCancel, undefined);
 
 		this.mock(oRequestor).expects("request").never();
 		oRequestor.processBatch("groupId");
@@ -4756,7 +4845,10 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.test("mergeGetRequests", function (assert) {
-		var oHelperMock = this.mock(_Helper),
+		var oClone1 = {},
+			oClone6 = {},
+			oClone9 = {$expand : {np2 : null}},
+			oHelperMock = this.mock(_Helper),
 			aMergedRequests,
 			oRequestor = _Requestor.create(sServiceUrl, oModelInterface),
 			oRequestorMock = this.mock(oRequestor),
@@ -4793,7 +4885,7 @@ sap.ui.define([
 				$resolve : function () {}
 			}, { // [8] different owner -> no merge
 				url : "EntitySet1('42')?foo=bar",
-				$mergeRequests : function () { throw new Error("Do not call!"); },
+				// $mergeRequests : {}, // do not call
 				$metaPath : "/EntitySet1",
 				$owner : "different",
 				$queryOptions : {$select : ["p8"]}
@@ -4806,32 +4898,42 @@ sap.ui.define([
 				url : "EntitySet1('44')?foo=bar",
 				$queryOptions : {$select : [], $expand : {np1 : null}},
 				$resolve : function () {}
-			}];
+			}],
+			aRequestQueryOptions = aRequests.map(function (oRequest) {
+				// Note: the original query options may well contain "live" references
+				// => "copy on write" is needed!
+				return oRequest.$queryOptions;
+			}),
+			aRequestQueryOptionsJSON = aRequestQueryOptions.map(function (mQueryOptions) {
+				return JSON.stringify(mQueryOptions);
+			});
 
 		aRequests.iChangeSet = 1;
+		oHelperMock.expects("clone").withExactArgs(sinon.match.same(aRequests[1].$queryOptions))
+			.returns(oClone1);
 		oHelperMock.expects("aggregateExpandSelect")
-			.withExactArgs(sinon.match.same(aRequests[1].$queryOptions),
-				sinon.match.same(aRequests[3].$queryOptions))
+			.withExactArgs(sinon.match.same(oClone1), sinon.match.same(aRequests[3].$queryOptions))
 			.callThrough(); // -> {$select : ["p1", "p3"]}
 		this.mock(aRequests[3]).expects("$resolve")
 			.withExactArgs(sinon.match.same(aRequests[1].$promise));
+		oHelperMock.expects("clone").withExactArgs(sinon.match.same(aRequests[6].$queryOptions))
+			.returns(oClone6);
 		oHelperMock.expects("aggregateExpandSelect")
-			.withExactArgs(sinon.match.same(aRequests[6].$queryOptions),
-				sinon.match.same(aRequests[7].$queryOptions))
+			.withExactArgs(sinon.match.same(oClone6), sinon.match.same(aRequests[7].$queryOptions))
 			.callThrough(); // -> {$select : ["p6", "p7"]}
 		this.mock(aRequests[7]).expects("$mergeRequests").withExactArgs().returns("~aPaths~");
 		this.mock(aRequests[6]).expects("$mergeRequests").withExactArgs("~aPaths~");
 		this.mock(aRequests[7]).expects("$resolve")
 			.withExactArgs(sinon.match.same(aRequests[6].$promise));
+		oHelperMock.expects("clone").withExactArgs(sinon.match.same(aRequests[9].$queryOptions))
+			.returns(oClone9);
 		oHelperMock.expects("aggregateExpandSelect")
-			.withExactArgs(sinon.match.same(aRequests[9].$queryOptions),
-				sinon.match.same(aRequests[10].$queryOptions))
+			.withExactArgs(sinon.match.same(oClone9), sinon.match.same(aRequests[10].$queryOptions))
 			.callThrough(); // -> {$select : [], $expand : {np2 : null, np1 : null}}
 		this.mock(aRequests[10]).expects("$resolve")
 			.withExactArgs(sinon.match.same(aRequests[9].$promise));
 		oRequestorMock.expects("addQueryString")
-			.withExactArgs(aRequests[1].url, aRequests[1].$metaPath,
-				sinon.match.same(aRequests[1].$queryOptions))
+			.withExactArgs(aRequests[1].url, aRequests[1].$metaPath, sinon.match.same(oClone1))
 			.returns("EntitySet1('42')?$select=p1,p3");
 		oRequestorMock.expects("addQueryString")
 			.withExactArgs(aRequests[5].url, aRequests[5].$metaPath,
@@ -4839,8 +4941,7 @@ sap.ui.define([
 					.and(sinon.match({$select : ["p5"], $expand : {np5 : null}})))
 			.returns("EntitySet3('42')?$select=p5&expand=np5");
 		oRequestorMock.expects("addQueryString")
-			.withExactArgs(aRequests[6].url, aRequests[6].$metaPath,
-				sinon.match.same(aRequests[6].$queryOptions))
+			.withExactArgs(aRequests[6].url, aRequests[6].$metaPath, sinon.match.same(oClone6))
 			.returns("EntitySet2('42')?$select=p6,p7");
 		oRequestorMock.expects("addQueryString")
 			.withExactArgs(aRequests[8].url, aRequests[8].$metaPath,
@@ -4848,7 +4949,7 @@ sap.ui.define([
 			.returns("EntitySet1('42')?$select=p8");
 		oRequestorMock.expects("addQueryString")
 			.withExactArgs(aRequests[9].url, aRequests[9].$metaPath,
-				sinon.match.same(aRequests[9].$queryOptions)
+				sinon.match.same(oClone9)
 					.and(sinon.match({$select : ["np1"], $expand : {np1 : null, np2 : null}})))
 			.returns("EntitySet1('44')?$select=np1&$expand=np1,np2");
 
@@ -4870,6 +4971,10 @@ sap.ui.define([
 		assert.strictEqual(aMergedRequests[5].url, "EntitySet2('42')?$select=p6,p7");
 		assert.strictEqual(aMergedRequests[6].url, "EntitySet1('42')?$select=p8");
 		assert.strictEqual(aMergedRequests[7].url, "EntitySet1('44')?$select=np1&$expand=np1,np2");
+		aRequestQueryOptions.forEach(function (mQueryOptions, i) {
+			assert.strictEqual(JSON.stringify(mQueryOptions), aRequestQueryOptionsJSON[i],
+				"unchanged #" + i);
+		});
 	});
 
 	//*********************************************************************************************
@@ -5213,8 +5318,7 @@ sap.ui.define([
 		assert.strictEqual(oRequestor.processOptimisticBatch([{method : "GET"}], "n/a"), undefined);
 
 		assert.strictEqual(oRequestor.oOptimisticBatch, null);
-		sinon.assert.calledOnce(fnEnabler);
-		sinon.assert.calledWithExactly(fnEnabler, sKey);
+		sinon.assert.calledOnceWithExactly(fnEnabler, sKey);
 
 		// we have to wait for Promise.resolve() in productive code
 		return Promise.resolve(vEnablerResult);
@@ -5278,8 +5382,7 @@ sap.ui.define([
 		assert.strictEqual(oRequestor.processOptimisticBatch(aRequests, sGroupId), undefined);
 
 		assert.strictEqual(oRequestor.oOptimisticBatch, null);
-		sinon.assert.calledOnce(fnEnabler);
-		sinon.assert.calledWithExactly(fnEnabler, sKey);
+		sinon.assert.calledOnceWithExactly(fnEnabler, sKey);
 
 		return Promise.all(aPromises);
 	});
@@ -5362,8 +5465,15 @@ sap.ui.define([
 	});
 
 	//*****************************************************************************************
-	QUnit.test("processOptimisticBatch: n+1 start, optimistic batch matches", function (assert) {
-		var sKey = window.location.href,
+[false, true, undefined].forEach((bEnabled) => { // undefined -> no enabler assigned
+	[false, true].forEach((bCacheManagerRejects) => {
+	const sTitle = `processOptimisticBatch: n+1 start, optimistic batch matches,
+		enabler=${bEnabled}, del rejects=${bCacheManagerRejects}`;
+	QUnit.test(sTitle, function (assert) {
+		var done = assert.async(),
+			oError = new Error("CacheManager.del rejected"),
+			iGetReporterCount,
+			sKey = window.location.href,
 			oOptimisticBatch = {
 				firstBatch : {
 					requests : "~optimisticRequests~",
@@ -5372,26 +5482,108 @@ sap.ui.define([
 				key : sKey,
 				result : "~optimisticBatchResult~"
 			},
-			oRequestor = _Requestor.create("/", oModelInterface);
+			fnEnabler = bEnabled === undefined ? undefined : sinon.stub().resolves(bEnabled),
+			oRequestor = _Requestor.create("/", oModelInterface),
+			fnReporter = function (oError0) {
+				assert.strictEqual(oError0, oError);
+				done();
+			};
+
+		if (bEnabled) {
+			iGetReporterCount = 1;
+		} else {
+			iGetReporterCount = bEnabled !== undefined ? 1 : 0;
+		}
 
 		oRequestor.oOptimisticBatch = oOptimisticBatch;
+
 		this.mock(_Requestor).expects("matchesOptimisticBatch")
 			.withExactArgs("~requests~", "~group~", "~optimisticRequests~", "~optimisticGroup~")
 			.returns(true);
+
+		this.mock(oModelInterface).expects("getOptimisticBatchEnabler").returns(fnEnabler);
+		this.mock(oModelInterface).expects("getReporter").exactly(iGetReporterCount)
+			.withExactArgs().returns(fnReporter);
+		if (bEnabled === false) {
+			if (bCacheManagerRejects) {
+				this.mock(CacheManager).expects("del")
+					.withExactArgs("sap.ui.model.odata.v4.optimisticBatch:" + sKey).rejects(oError);
+			} else {
+				this.mock(CacheManager).expects("del")
+					.withExactArgs("sap.ui.model.odata.v4.optimisticBatch:" + sKey).resolves();
+				this.oLogMock.expects("info")
+					.withExactArgs("optimistic batch: disabled, response deleted", sKey,
+						sClassName);
+				done();
+			}
+		}
 		this.oLogMock.expects("info")
 			.withExactArgs("optimistic batch: success, response consumed", sKey, sClassName);
 		this.mock(CacheManager).expects("set").never();
-		this.mock(oModelInterface).expects("getOptimisticBatchEnabler").never();
 
 		// code under test
 		assert.strictEqual(oRequestor.processOptimisticBatch("~requests~", "~group~"),
 			"~optimisticBatchResult~");
 
 		assert.strictEqual(oRequestor.oOptimisticBatch, null);
+
+		if (bEnabled !== undefined) {
+			assert.strictEqual(fnEnabler.calledOnce, true);
+		}
+		if (bEnabled !== false) {
+			done();
+		}
+	});
+	});
+});
+
+	//*****************************************************************************************
+	const sTitle = "processOptimisticBatch: n+1 start, optimistic batch matches, enabler rejects";
+	QUnit.test(sTitle, function (assert) {
+		var oError = new Error("Enabler rejects"),
+			sKey = window.location.href,
+			oOptimisticBatch = {
+				firstBatch : {
+					requests : "~optimisticRequests~",
+					groupId : "~optimisticGroup~"
+				},
+				key : sKey,
+				result : "~optimisticBatchResult~"
+			},
+			fnEnabler = sinon.stub().rejects(oError),
+			oRequestor = _Requestor.create("/", oModelInterface),
+			fnReporter = function (oError0) {
+				assert.strictEqual(oError0, oError);
+			};
+
+		oRequestor.oOptimisticBatch = oOptimisticBatch;
+
+		this.mock(_Requestor).expects("matchesOptimisticBatch")
+			.withExactArgs("~requests~", "~group~", "~optimisticRequests~", "~optimisticGroup~")
+			.returns(true);
+
+		this.mock(oModelInterface).expects("getOptimisticBatchEnabler").returns(fnEnabler);
+		this.mock(oModelInterface).expects("getReporter").withExactArgs().returns(fnReporter);
+
+		this.oLogMock.expects("info")
+			.withExactArgs("optimistic batch: disabled, response deleted", sKey, sClassName)
+			.never();
+		this.oLogMock.expects("info")
+			.withExactArgs("optimistic batch: success, response consumed", sKey, sClassName);
+		this.mock(CacheManager).expects("set").never();
+		this.mock(CacheManager).expects("del").never();
+
+		// code under test
+		assert.strictEqual(oRequestor.processOptimisticBatch("~requests~", "~group~"),
+			"~optimisticBatchResult~");
+
+		assert.strictEqual(fnEnabler.calledOnce, true);
 	});
 
 	//*****************************************************************************************
-	QUnit.test("processOptimisticBatch: mismatch, CacheManager.del rejects", function (assert) {
+[false, true].forEach((bRejects) => {
+	const sTitle = `processOptimisticBatch: mismatch, CacheManager.del rejects=${bRejects}`;
+	QUnit.test(sTitle, function (assert) {
 		// Note: this test covers also the successful CacheManager.del case
 		var oCacheManagerMock = this.mock(CacheManager),
 			done = assert.async(),
@@ -5416,11 +5608,19 @@ sap.ui.define([
 		this.mock(_Requestor).expects("matchesOptimisticBatch")
 			.withExactArgs("~requests~", "~group~", "~optimisticRequests~", "~optimisticGroup~")
 			.returns(false);
-		this.oLogMock.expects("warning")
-			.withExactArgs("optimistic batch: mismatch, response skipped", sKey, sClassName);
-		oCacheManagerMock.expects("del")
-			.withExactArgs("sap.ui.model.odata.v4.optimisticBatch:" + sKey)
-			.rejects(oError);
+
+		if (bRejects) {
+			oCacheManagerMock.expects("del")
+				.withExactArgs("sap.ui.model.odata.v4.optimisticBatch:" + sKey)
+				.rejects(oError);
+		} else {
+			oCacheManagerMock.expects("del")
+				.withExactArgs("sap.ui.model.odata.v4.optimisticBatch:" + sKey)
+				.resolves();
+			this.oLogMock.expects("warning")
+				.withExactArgs("optimistic batch: mismatch, response skipped", sKey, sClassName);
+			done();
+		}
 		oModelInterfaceMock.expects("getReporter")
 			.withExactArgs()
 			.returns(fnReporter);
@@ -5434,6 +5634,7 @@ sap.ui.define([
 
 		assert.strictEqual(oRequestor.oOptimisticBatch, null);
 	});
+});
 
 	//*****************************************************************************************
 	QUnit.test("hasOnlyPatchesWithoutSideEffects", function (assert) {

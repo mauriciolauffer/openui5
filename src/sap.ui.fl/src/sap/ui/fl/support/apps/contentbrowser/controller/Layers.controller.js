@@ -6,7 +6,7 @@ sap.ui.define([
 	"sap/ui/core/mvc/Controller",
 	"sap/ui/fl/support/apps/contentbrowser/utils/ErrorUtils",
 	"sap/ui/core/UIComponent"
-], function (Controller, ErrorUtils, UIComponent) {
+], function(Controller, ErrorUtils, UIComponent) {
 	"use strict";
 
 	/**
@@ -16,7 +16,8 @@ sap.ui.define([
 	 * @alias sap.ui.fl.support.apps.contentbrowser.controller.Layers
 	 * @author SAP SE
 	 * @version ${version}
-	 * @experimental Since 1.45
+	 * @since 1.45
+	 * @private
 	 */
 	return Controller.extend("sap.ui.fl.support.apps.contentbrowser.controller.Layers", {
 		/**
@@ -24,7 +25,7 @@ sap.ui.define([
 		 * @param {object} oEvent - Event object
 		 * @public
 		 */
-		onLayerSelected: function (oEvent) {
+		onLayerSelected(oEvent) {
 			var oSource = oEvent.getSource();
 			var sLayerBindingPath = oSource.getBindingContextPath().substring(1);
 			var oLayerModelData = this.getView().getModel("layers").getData();
@@ -39,7 +40,7 @@ sap.ui.define([
 		 * @param {object} oEvent - Event object
 		 * @public
 		 */
-		handleMessagePopoverPress: function (oEvent) {
+		handleMessagePopoverPress(oEvent) {
 			var oSource = oEvent.getSource();
 			ErrorUtils.handleMessagePopoverPress(oSource);
 		}

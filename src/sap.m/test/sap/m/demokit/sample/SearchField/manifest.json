@@ -13,8 +13,8 @@
 		},
 		"dependencies": {
 			"libs": {
-				"sap.ui.core": {},
-				"sap.m": {}
+				"sap.m": {},
+				"sap.ui.core": {}
 			}
 		},
 		"config": {
@@ -22,6 +22,7 @@
 				"stretch": true,
 				"files": [
 					"Page.view.xml",
+					"Page.controller.js",
 					"manifest.json"
 				]
 			}

@@ -17,7 +17,6 @@ sap.ui.define([
 	"sap/ui/base/Object",
 	"sap/base/util/ObjectPath",
 	"sap/ui/base/SyncPromise",
-	"sap/ui/base/ManagedObject",
 	"sap/ui/base/ManagedObjectMetadata"
 ], function(
 	BindingMode,
@@ -32,7 +31,6 @@ sap.ui.define([
 	BaseObject,
 	ObjectPath,
 	SyncPromise,
-	ManagedObject,
 	ManagedObjectMetadata) {
 	"use strict";
 
@@ -332,8 +330,8 @@ sap.ui.define([
 			}
 
 			if (this.isBound(sName)) {
-				var oBindingInfo = this.mBindingInfos[sName],
-					oBinding = oBindingInfo.binding;
+				oBindingInfo = this.mBindingInfos[sName];
+				oBinding = oBindingInfo.binding;
 
 				// If property change was triggered by the model, don't update the model again
 				if (oBindingInfo.skipModelUpdate || (oBinding && oBinding.isSuspended())) {
@@ -474,7 +472,7 @@ sap.ui.define([
 				});
 			}
 
-			if (BaseObject.isA(oBinding, "sap.ui.model.ListBinding")) {
+			if (BaseObject.isObjectA(oBinding, "sap.ui.model.ListBinding")) {
 				aContexts = oBinding.getContexts(oBindingInfo.startIndex, oBindingInfo.length);
 				bGrouped = oBinding.isGrouped() && that[sGroupFunction];
 				if (bGrouped || oBinding.bWasGrouped) {
@@ -492,7 +490,7 @@ sap.ui.define([
 					update(this, aContexts);
 				}
 				oBinding.bWasGrouped = bGrouped;
-			} else if (BaseObject.isA(oBinding, "sap.ui.model.TreeBinding")) {
+			} else if (BaseObject.isObjectA(oBinding, "sap.ui.model.TreeBinding")) {
 				// Destroy all children in case a factory function is used
 				if (!oBindingInfo.template) {
 					this[oAggregationInfo._sDestructor]();
@@ -627,15 +625,15 @@ sap.ui.define([
 				aBindings = [],
 				fnModelChangeHandler = function(oEvent){
 					that.updateProperty(sName);
-					//clear Messages from messageManager
+					//clear Messages from Messaging
 					var oDataState = oBinding.getDataState();
 					if (oDataState) {
 						var oControlMessages = oDataState.getControlMessages();
 						if (oControlMessages && oControlMessages.length > 0) {
-							var oMessageManager = sap.ui.getCore().getMessageManager();
 							oDataState.setControlMessages([]); //remove the controlMessages before informing manager to avoid 'dataStateChange' event to fire
-							if (oControlMessages) {
-								oMessageManager.removeMessages(oControlMessages);
+							var Messaging = sap.ui.require("sap/ui/core/Messaging");
+							if (Messaging) {
+								Messaging.removeMessages(oControlMessages);
 							}
 						}
 						oDataState.setInvalidValue(undefined); //assume that the model always sends valid data
@@ -658,6 +656,23 @@ sap.ui.define([
 					if (that.refreshDataState) {
 						that.refreshDataState(sName, oDataState);
 					}
+				},
+				fnResolveTypeClass = function(sTypeName) {
+					var sModulePath = sTypeName.replace(/\./g, "/");
+					// 1. require probing
+					var TypeClass = sap.ui.require(sModulePath);
+					if (!TypeClass) {
+						// 2. Global lookup
+						TypeClass = ObjectPath.get(sTypeName);
+						if (typeof TypeClass === "function" && !TypeClass._sapUiLazyLoader) {
+							Log.error("[FUTURE] The type class '" + sTypeName + "' is exported to the global namespace without being set as an export value of a UI5 module. " +
+							"This scenario will not be supported in the future and a separate UI5 module needs to be created which exports this type class.");
+						} else {
+							// 3. requireSync fallback
+							TypeClass = sap.ui.requireSync(sModulePath); // legacy-relevant
+						}
+					}
+					return TypeClass;
 				};
 
 			oBindingInfo.parts.forEach(function(oPart) {
@@ -668,7 +683,7 @@ sap.ui.define([
 				// Create type instance if needed
 				oType = oPart.type;
 				if (typeof oType == "string") {
-					clType = ObjectPath.get(oType);
+					clType = fnResolveTypeClass(oType);
 					if (typeof clType !== "function") {
 						throw new Error("Cannot find type \"" + oType + "\" used in control \"" + that.getId() + "\"!");
 					}
@@ -702,7 +717,7 @@ sap.ui.define([
 				// Create type instance if needed
 				oType = oBindingInfo.type;
 				if (typeof oType == "string") {
-					clType = ObjectPath.get(oType);
+					clType = fnResolveTypeClass(oType);
 					oType = new clType(oBindingInfo.formatOptions, oBindingInfo.constraints);
 				}
 				oBinding = new CompositeBinding(aBindings, oBindingInfo.useRawValues, oBindingInfo.useInternalValues);

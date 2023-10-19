@@ -6,7 +6,7 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
   });
   _exports.pathData = _exports.ltr = _exports.default = _exports.accData = void 0;
   const name = "search";
-  const pathData = "M488 435q8 8 8 19 0 10-8 18-7 8-19 8-11 0-18-8l-91-90q-57 45-131 45-44 0-82.5-17T79 364t-46-67.5T16 214t17-83 46-68 67.5-46T229 0t83 17 68 46 46 68 17 83q0 73-46 130zM69 214q0 33 12.5 62t34.5 51 51 34.5 62 12.5 62-12.5 51-34.5 34.5-51 12.5-62-12.5-62-34.5-51-51-34.5T229 54t-62 12.5-51 34.5-34.5 51T69 214z";
+  const pathData = "M473 436q7 7 7 18t-7.5 18.5T454 480q-10 0-18-8l-95-95q-51 39-117 39-40 0-75-15t-61-41-41-61-15-75 15-75 41-61 61-41 75-15 75 15 61 41 41 61 15 75q0 64-39 117zM83 224q0 30 11 55.5t30 44.5 44.5 30 55.5 11 55.5-11 44.5-30 30-44.5 11-55.5-11-55.5-30-44.5-44.5-30T224 83t-55.5 11-44.5 30-30 44.5T83 224z";
   _exports.pathData = pathData;
   const ltr = true;
   _exports.ltr = ltr;
@@ -21,6 +21,6 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
     collection,
     packageName
   });
-  var _default = "search";
+  var _default = "SAP-icons-v5/search";
   _exports.default = _default;
 });

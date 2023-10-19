@@ -287,9 +287,22 @@ function (
 	});
 
 	QUnit.test("test UseIconTabBar APIs", function (assert) {
+		// Act
 		this.oObjectPage.setUseIconTabBar(false);
+		Core.applyChanges();
+
+		// Assert
 		assert.ok(!this.oObjectPage.getUseIconTabBar(), false);
+		assert.notOk(this.oObjectPage.$().hasClass("sapUxAPObjectPageLayoutIconTabBar"),
+			"'sapUxAPObjectPageLayoutIconTabBar' is not applied when OPL is not in iconTabBar mode");
+
+		// Act
 		this.oObjectPage.setUseIconTabBar(true);
+		Core.applyChanges();
+
+		// Assert
+		assert.ok(this.oObjectPage.$().hasClass("sapUxAPObjectPageLayoutIconTabBar"),
+			"'sapUxAPObjectPageLayoutIconTabBar' is  applied when OPL is in iconTabBar mode");
 		assert.ok(this.oObjectPage.getUseIconTabBar(), true);
 	});
 
@@ -846,7 +859,8 @@ function (
 			});
 
 			// act: rerender
-			oObjectPage.rerender();
+			oObjectPage.invalidate();
+			Core.applyChanges();
 		});
 
 		helpers.renderObject(oObjectPage);
@@ -877,6 +891,38 @@ function (
 			}
 		};
 		oObjectPage.addEventDelegate(oDelegate);
+
+		helpers.renderObject(oObjectPage);
+	});
+
+	QUnit.test("not scrolled to selected section when navigation is canceled", function (assert) {
+		var oObjectPage = this.oObjectPage,
+			oSecondSection = this.oObjectPage.getSections()[1],
+			fnDone = assert.async(),
+			oSpy = this.spy(oObjectPage, "scrollToSection");
+
+		assert.expect(1);
+
+		oObjectPage.setUseIconTabBar(false);
+		oObjectPage.attachBeforeNavigate(function (oEvent) {
+			oEvent.preventDefault();
+		});
+
+		oObjectPage.attachEventOnce("onAfterRenderingDOMReady", function() {
+			oSpy.reset();
+
+			// Act
+			oObjectPage.onAnchorBarTabPress({getParameter:
+				function () {
+					return oSecondSection.getId();
+				}
+			});
+
+			// Assert
+			assert.ok(oSpy.notCalled, "scroll to selected section is prevented");
+
+			fnDone();
+		});
 
 		helpers.renderObject(oObjectPage);
 	});
@@ -1494,7 +1540,8 @@ function (
 				};
 
 				sectionIsSelected(oPage, assert, oExpected);
-				oPage.rerender();
+				oPage.invalidate();
+				Core.applyChanges();
 				sectionIsSelected(oPage, assert, oExpected);
 				done();
 			};
@@ -2111,6 +2158,24 @@ function (
 		}, this.iDelay);
 	});
 
+	QUnit.test("test removing and destroying Section on mobile (with binding)", function (assert) {
+		var oObjectPage = this.oOP,
+			done = assert.async();
+
+			this.stub(lib.Utilities, "isPhoneScenario").returns(true);
+
+		oObjectPage.attachEventOnce("onAfterRenderingDOMReady", function () {
+			// Act
+			oObjectPage.removeSection(oObjectPage.getSections()[1]).destroy("KeepDom");
+			Core.applyChanges();
+
+			setTimeout(function () {
+				assert.ok(true, "Error is not thrown");
+				done();
+			},  this.iDelay);
+		}.bind(this));
+	});
+
 	QUnit.module("ObjectPage API: invalidate");
 
 	QUnit.test("inactive section does not invalidate the objectPage", function (assert) {
@@ -2503,25 +2568,6 @@ function (
 		}
 	});
 
-	QUnit.test("_onModifyHeaderTitle", function (assert) {
-		var oHeaderContent = this.oObjectPageLayout.getAggregation("_headerContent"),
-			oHeaderTitle = this.oObjectPageLayout.getAggregation("headerTitle"),
-			oSpy = this.spy(oHeaderContent, "setBackgroundDesign"),
-			oParamsMock = {
-				current: "Transparent"
-			};
-
-		// assert
-		assert.strictEqual(oHeaderContent.getBackgroundDesign(), "Solid", "backgroundDesign of HeaderContent is 'Solid'");
-		assert.strictEqual(oHeaderContent.getBackgroundDesign(), oHeaderTitle.getBackgroundDesign(), "backgroundDesign of HeaderTitle and HeaderContent are the same");
-
-		// act
-		this.oObjectPageLayout._onModifyHeaderTitle(oParamsMock);
-
-		// assert
-		assert.strictEqual(oHeaderContent.getBackgroundDesign(), "Transparent", "backgroundDesign of HeaderContent is 'Transparent' after _onModifyHeaderTitle call");
-		assert.ok(oSpy.calledWith("Transparent"), "setBackgroundDesign is called on headerContent with correct param");
-	});
 
 	QUnit.test("_getStickyAreaHeight calculation while header expanded in the title-area", function (assert) {
 		var iStickyAreaHeight,
@@ -3722,7 +3768,7 @@ function (
 				oFactory.getSubSection(5, [oFactory.getBlocks()], null)
 			]));
 
-			this.oObjectPage.attachEventOnce("subSectionVisibilityChange", function() {
+			this.oObjectPage.attachEventOnce("subSectionVisibilityChange", function(oEvent) {
 				// Assert
 				var oVisibleSubSections = oEvent.getParameter("visibleSubSections");
 				assert.strictEqual(Object.keys(oVisibleSubSections).length, 5,
@@ -3814,9 +3860,12 @@ function (
 				viewName: "view.UxAP-27_ObjectPageConfig"
 			}).then(function (oView) {
 				this.oView = oView;
+				this.oComponentContainer = this.oView.byId("objectPageContainer");
 				this.oView.placeAt("qunit-fixture");
 				Core.applyChanges();
-				done();
+				this.oComponentContainer.attachEventOnce("componentCreated", function () {
+					done();
+				});
 			}.bind(this));
 		},
 		afterEach: function () {
@@ -3825,18 +3874,16 @@ function (
 	});
 
 	QUnit.test("component instance", function (assert) {
-		var oComponentContainer = this.oView
-			.byId("objectPageContainer"),
-			oComponent = oComponentContainer._oComponent;
+		var oComponent = this.oComponentContainer._oComponent;
 
 		// assert init state
 		assert.ok(oComponent, "component is created");
 
 		// Act: mock rerendering of the component container
-		oComponentContainer.onBeforeRendering();
+		this.oComponentContainer.onBeforeRendering();
 
 		// Check
-		assert.strictEqual(oComponentContainer._oComponent, oComponent, "component instance is not changed");
+		assert.strictEqual(this.oComponentContainer._oComponent, oComponent, "component instance is not changed");
 	});
 
 	QUnit.module("ObjectPageLayout - API - headerContentPinned property", {

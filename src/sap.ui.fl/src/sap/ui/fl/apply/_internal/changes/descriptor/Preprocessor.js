@@ -24,7 +24,6 @@ sap.ui.define([
 	 * Flex hook for preprocessing manifest early. Merges descriptor changes if needed.
 	 *
 	 * @namespace sap.ui.fl.apply._internal.changes.descriptor.Preprocessor
-	 * @experimental
 	 * @since 1.74
 	 * @version ${version}
 	 * @private
@@ -41,7 +40,7 @@ sap.ui.define([
 		 * @param {object} oConfig.componentData - Component Data from the Component processing
 		 * @returns {Promise<object>} - Processed manifest
 		 */
-		preprocessManifest: function(oManifest, oConfig) {
+		preprocessManifest(oManifest, oConfig) {
 			// stop processing if the component is not of the type application or component ID is missing
 			if (!Utils.isApplication(oManifest, true) || !oConfig.id) {
 				return Promise.resolve(oManifest);

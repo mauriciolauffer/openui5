@@ -5,8 +5,9 @@ sap.ui.define([
 	"./PDFViewerTestUtils",
 	"sap/ui/model/json/JSONModel",
 	"sap/m/PDFViewerRenderer",
-	"sap/m/library"
-], function (jQuery, TestUtils, JSONModel, PDFViewerRenderer, library) {
+	"sap/m/library",
+	"sap/ui/Device"
+], function (jQuery, TestUtils, JSONModel, PDFViewerRenderer, library, Device) {
 	"use strict";
 
 	// shortcut for sap.m.PDFViewerDisplayType
@@ -177,7 +178,7 @@ sap.ui.define([
 		TestUtils.wait(2000)()
 			.then(function () {
 				oModel.setData({showDownloadButton: true}, true);
-				TestUtils.rerender();
+				TestUtils.triggerRerender();
 			})
 			.then(TestUtils.wait(2000))
 			.then(function () {
@@ -192,7 +193,7 @@ sap.ui.define([
 			})
 			.then(function () {
 				oModel.setData({showDownloadButton: false}, true);
-				TestUtils.rerender();
+				TestUtils.triggerRerender();
 			})
 			.then(TestUtils.wait(2000))
 			.then(function () {
@@ -209,7 +210,7 @@ sap.ui.define([
 	});
 
 	QUnit.test("DisplayTypes tests", function (assert) {
-		assert.expect(10);
+		assert.expect(11);
 		var done = assert.async();
 		var sTitle = "My Title";
 
@@ -221,18 +222,22 @@ sap.ui.define([
 			return jQuery(".sapMPDFViewerContent").length === 1 || jQuery(".sapMPDFViewerEmbeddedContent").length === 1;
 		};
 
+		var fnIsErrorContentDisplayed = function () {
+			return jQuery(".sapMPDFViewerEmbeddedContent").length === 1;
+		};
+
 		var fnCheckControlStructure = function () {
 			assert.equal(oPdfViewer.getDisplayType(), PDFViewerDisplayType.Auto, "Default value of displayType is Auto");
 			assert.ok(oPdfViewer.$("toolbarDownloadButton").length === 1, "Download button is displayed in Auto mode");
 			assert.ok(fnIsContentDisplayed(), "Content is displayed in Auto mode");
 
 			oPdfViewer.setDisplayType(PDFViewerDisplayType.Embedded);
-			TestUtils.rerender();
+			TestUtils.triggerRerender();
 			assert.equal(oPdfViewer.getDisplayType(), PDFViewerDisplayType.Embedded, "Set displayType to Embedded mode");
 			assert.ok(fnIsContentDisplayed(), "Content is displayed in Embedded mode");
 
 			oPdfViewer.setDisplayType(PDFViewerDisplayType.Link);
-			TestUtils.rerender();
+			TestUtils.triggerRerender();
 			assert.equal(oPdfViewer.getDisplayType(), PDFViewerDisplayType.Link, "Set displayType to Link mode");
 			assert.ok(oPdfViewer.$("toolbarDownloadButton").length === 1, "Download button is displayed in Link mode");
 			assert.notOk(fnIsContentDisplayed(), "Content is not displayed in Link mode");
@@ -244,6 +249,14 @@ sap.ui.define([
 			oPdfViewer.setDisplayType(PDFViewerDisplayType.Auto);
 			oPdfViewer.rerender();
 			assert.notOk(oPdfViewer.$("toolbarDownloadButton").length === 1, "Download button is not displayed in Auto mode");
+
+			Device.system.desktop = false;
+			Device.system.phone = true;
+			oPdfViewer.setDisplayType(PDFViewerDisplayType.Embedded);
+			TestUtils.triggerRerender();
+			assert.ok(!fnIsErrorContentDisplayed(), "Error Content is not displayed in Mobile and Embedded mode");
+			Device.system.desktop = true;
+			Device.system.phone = false;
 
 			done();
 		};

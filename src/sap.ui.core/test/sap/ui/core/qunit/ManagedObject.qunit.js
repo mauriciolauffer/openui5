@@ -2,6 +2,7 @@
 sap.ui.define([
 	"sap/ui/base/BindingInfo",
 	"sap/ui/base/BindingParser",
+	"sap/ui/base/DataType",
 	"sap/ui/base/ManagedObject",
 	"sap/ui/core/Element",
 	"sap/ui/model/json/JSONModel",
@@ -15,16 +16,18 @@ sap.ui.define([
 	"sap/ui/base/ManagedObjectMetadata",
 	"sap/base/strings/escapeRegExp",
 	"sap/base/util/isEmptyObject"
-], function(BindingInfo, BindingParser, ManagedObject, Element, JSONModel, Context, ManagedObjectModel, StringType, Control, Component, UIComponent, Sorter, ManagedObjectMetadata, escapeRegExp, isEmptyObject) {
+], function(BindingInfo, BindingParser, DataType, ManagedObject, Element, JSONModel, Context, ManagedObjectModel, StringType, Control, Component, UIComponent, Sorter, ManagedObjectMetadata, escapeRegExp, isEmptyObject) {
 	"use strict";
 	var mObjects = {};
 
-	var MyEnum = window.MyEnum = {
+	var MyEnum = {
 		Good: 'Good',
 		/* default */
 		Better: 'Better',
 		Best: 'Best'
 	};
+
+	DataType.registerEnum("MyEnum", MyEnum);
 
 	// define new types for testing
 	var TestManagedObject = ManagedObject.extend("sap.ui.core.TestManagedObject", {
@@ -87,7 +90,7 @@ sap.ui.define([
 		// needed for grouping test
 		addSubObjGroup : function(oGroup, oControl) {
 			if (!oControl) {
-				oControl = new sap.ui.core.TestManagedObject({value: oGroup.key, booleanValue: true});
+				oControl = new TestManagedObject({value: oGroup.key, booleanValue: true});
 			}
 			this.addSubObj(oControl);
 		}
@@ -2444,7 +2447,7 @@ sap.ui.define([
 
 
 		fnTestCase(true, false, true);
-		fnTestCase(false, true, true);
+		fnTestCase(false, true, false);
 		fnTestCase(true, true, true);
 
 		//only if child and all parents do not suppress invalidate, it should be false
@@ -2774,13 +2777,13 @@ sap.ui.define([
 			assert.ok(ex.stack.indexOf("failingNamedFunction" > -1), "contained the named function in the stack");
 		}
 
-		assert.ok(!sap.ui.getCore().byId("myId"), "object was deregistered");
+		assert.ok(!Element.getElementById("myId"), "object was deregistered");
 	});
 
 	QUnit.test("Registration of components: duplicate IDs", function(assert) {
 		assert.expect(3);
 		new Element("myId");
-		assert.ok(sap.ui.getCore().byId("myId"), "object should be initially registered");
+		assert.ok(Element.getElementById("myId"), "object should be initially registered");
 
 		try {
 			new Element("myId");
@@ -2788,7 +2791,7 @@ sap.ui.define([
 			assert.equal(ex.message, "Error: adding element with duplicate id 'myId'");
 		}
 
-		assert.ok(sap.ui.getCore().byId("myId"), "object should still be registered");
+		assert.ok(Element.getElementById("myId"), "object should still be registered");
 	});
 
 	QUnit.test("Registration of components: do not call unregister if register fails", function(assert) {
@@ -2981,10 +2984,12 @@ sap.ui.define([
 		this.obj1.bindProperty("value", "/value");
 		this.obj2.bindProperty("value", "/value");
 
-		var oSpy = sinon.spy(this.obj2, "invalidate");
+		var oSpy1 = sinon.spy(this.obj1, "invalidate");
+		var oSpy2 = sinon.spy(this.obj2, "invalidate");
 		this.obj1.addAggregation("subObjects", this.obj2);
 
-		assert.equal(oSpy.callCount, 0, 'invalidation on obj2 must not be called');
+		assert.equal(oSpy1.callCount, 0, 'invalidation on obj1 must not be called');
+		assert.equal(oSpy2.callCount, 1, 'invalidation on obj2 must be called');
 	});
 
 	QUnit.module("Events", {

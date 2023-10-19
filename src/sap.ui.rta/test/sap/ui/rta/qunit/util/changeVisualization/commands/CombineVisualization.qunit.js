@@ -1,25 +1,25 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/ui/thirdparty/sinon-4",
 	"sap/ui/rta/util/changeVisualization/commands/CombineVisualization",
-	"sap/ui/core/Core",
+	"sap/ui/core/Lib",
 	"sap/ui/dt/ElementUtil",
 	"sap/m/Button"
 ], function(
 	sinon,
 	CombineVisualization,
-	oCore,
+	Lib,
 	ElementUtil,
 	Button
 ) {
 	"use strict";
 
 	var sandbox = sinon.createSandbox();
-	var oResourceBundle = oCore.getLibraryResourceBundle("sap.ui.rta");
+	var oResourceBundle = Lib.getResourceBundleFor("sap.ui.rta");
 
 	QUnit.module("Base tests", {
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
@@ -109,13 +109,14 @@ sap.ui.define([
 		QUnit.test("when a payload with an existing element is provided", function(assert) {
 			var oButton = new Button("someId");
 			var oLabelStub = sandbox.stub(ElementUtil, "getLabelForElement")
-				.withArgs(oButton)
-				.callsFake(function(oElement) {
-					if (oElement === oButton) {
-						return "someLabel";
-					}
-					return oLabelStub.wrappedMethod.apply(this, arguments);
-				});
+			.withArgs(oButton)
+			.callsFake(function(...aArgs) {
+				const [oElement] = aArgs;
+				if (oElement === oButton) {
+					return "someLabel";
+				}
+				return oLabelStub.wrappedMethod.apply(this, aArgs);
+			});
 			var mDescription = CombineVisualization.getDescription(
 				{ originalSelectors: [oButton.getId(), "someOtherId"] },
 				"fallback",
@@ -132,7 +133,7 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

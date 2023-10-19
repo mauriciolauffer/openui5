@@ -5,13 +5,15 @@ sap.ui.define([
 	"sap/ui/integration/util/DataProviderFactory",
 	"sap/ui/integration/util/CacheAndRequestDataProvider",
 	"sap/ui/integration/Host",
-	"sap/ui/integration/widgets/Card"
+	"sap/ui/integration/widgets/Card",
+	"sap/ui/core/date/UI5Date"
 ], function (
 	Core,
 	DataProviderFactory,
 	CacheAndRequestDataProvider,
 	Host,
-	Card
+	Card,
+	UI5Date
 ) {
 	"use strict";
 
@@ -24,7 +26,7 @@ sap.ui.define([
 			200,
 			{
 				"Content-Type": "application/json",
-				"Date": (new Date()).toUTCString()
+				"Date": (UI5Date.getInstance()).toUTCString()
 			},
 			"{}"
 		);
@@ -92,10 +94,10 @@ sap.ui.define([
 			});
 
 		this.oServer.respondWith("GET", "/test/url", function (oXhr) {
-			var mHeaders = oXhr.requestHeaders,
-				mCacheHeader = parseHeaderList(mHeaders["Cache-Control"]);
+			var mHeaders = new Headers(oXhr.requestHeaders),
+				mCacheHeader = parseHeaderList(mHeaders.get("Cache-Control"));
 
-			assert.strictEqual(mHeaders["x-sap-card"], "true", "Header x-sap-card=true is sent");
+			assert.strictEqual(mHeaders.get("x-sap-card"), "true", "Header x-sap-card=true is sent");
 			assert.ok(mCacheHeader, "Cache-Control header is there");
 			assert.strictEqual(mCacheHeader["max-age"], "0", "Cache-Control: max-age is set to 0.");
 			assert.ok(mCacheHeader["x-stale-while-revalidate"], "Cache-Control: x-stale-while-revalidate is present.");
@@ -119,7 +121,7 @@ sap.ui.define([
 			});
 
 		this.oServer.respondWith("GET", "/test/url", function (oXhr) {
-			var mCacheHeader = parseHeaderList(oXhr.requestHeaders["Cache-Control"]);
+			var mCacheHeader = parseHeaderList(new Headers(oXhr.requestHeaders).get("Cache-Control"));
 
 			assert.ok(mCacheHeader, "Cache-Control header is there");
 			assert.ok(mCacheHeader["no-store"], "Cache-Control: no-store is present.");
@@ -143,7 +145,7 @@ sap.ui.define([
 			});
 
 		this.oServer.respondWith("GET", "/test/url", function (oXhr) {
-			var mCacheHeader = parseHeaderList(oXhr.requestHeaders["Cache-Control"]);
+			var mCacheHeader = parseHeaderList(new Headers(oXhr.requestHeaders).get("Cache-Control"));
 
 			assert.ok(mCacheHeader, "Cache-Control header is there");
 			assert.strictEqual(mCacheHeader["max-age"], "0", "Cache-Control: max-age is set to 0.");
@@ -168,7 +170,7 @@ sap.ui.define([
 			});
 
 		this.oServer.respondWith("GET", "/test/url", function (oXhr) {
-			var mCacheHeader = parseHeaderList(oXhr.requestHeaders["Cache-Control"]);
+			var mCacheHeader = parseHeaderList(new Headers(oXhr.requestHeaders).get("Cache-Control"));
 
 			assert.ok(mCacheHeader, "Cache-Control header is there");
 			assert.strictEqual(mCacheHeader["max-age"], "3600", "Cache-Control: max-age is set to 3600.");
@@ -194,7 +196,7 @@ sap.ui.define([
 			});
 
 		this.oServer.respondWith("POST", "/test/url", function (oXhr) {
-			var mCacheHeader = parseHeaderList(oXhr.requestHeaders["Cache-Control"]);
+			var mCacheHeader = parseHeaderList(new Headers(oXhr.requestHeaders).get("Cache-Control"));
 
 			assert.ok(mCacheHeader, "Cache-Control header is there");
 			assert.strictEqual(mCacheHeader["max-age"], "0", "Cache-Control: max-age is set to 0.");
@@ -220,7 +222,7 @@ sap.ui.define([
 			});
 
 		this.oServer.respondWith("GET", "/test/url", function (oXhr) {
-			var mCacheHeader = parseHeaderList(oXhr.requestHeaders["Cache-Control"]);
+			var mCacheHeader = parseHeaderList(new Headers(oXhr.requestHeaders).get("Cache-Control"));
 
 			assert.notOk(mCacheHeader, "Cache-Control header is not present");
 
@@ -244,7 +246,7 @@ sap.ui.define([
 		assert.expect(6);
 
 		this.oServer.respondWith("GET", "/test/url", function (oXhr) {
-			var mCacheHeader = parseHeaderList(oXhr.requestHeaders["Cache-Control"]);
+			var mCacheHeader = parseHeaderList(new Headers(oXhr.requestHeaders).get("Cache-Control"));
 
 			iRequests++;
 
@@ -282,7 +284,7 @@ sap.ui.define([
 		assert.expect(2);
 
 		this.oServer.respondWith("GET", "/test/url", function (oXhr) {
-			var mCacheHeader = parseHeaderList(oXhr.requestHeaders["Cache-Control"]);
+			var mCacheHeader = parseHeaderList(new Headers(oXhr.requestHeaders).get("Cache-Control"));
 
 			iRequests++;
 
@@ -388,10 +390,10 @@ sap.ui.define([
 			});
 
 		this.oServer.respondWith("GET", "/test/url", function (oXhr) {
-			var mHeaders = oXhr.requestHeaders,
-				mCacheHeader = parseHeaderList(mHeaders["Cache-Control"]);
+			var mHeaders = new Headers(oXhr.requestHeaders),
+				mCacheHeader = parseHeaderList(mHeaders.get("Cache-Control"));
 
-			assert.strictEqual(mHeaders["x-sap-card"], "true", "Header x-sap-card=true is sent");
+			assert.strictEqual(mHeaders.get("x-sap-card"), "true", "Header x-sap-card=true is sent");
 			assert.ok(mCacheHeader, "Cache-Control header is there");
 			assert.strictEqual(mCacheHeader["max-age"], "0", "Cache-Control: max-age is set to 0.");
 			assert.ok(mCacheHeader["x-stale-while-revalidate"], "Cache-Control: x-stale-while-revalidate is present.");

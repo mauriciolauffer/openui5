@@ -6,6 +6,7 @@
 sap.ui.define([
 	"sap/ui/base/ManagedObject",
 	"sap/ui/core/Fragment",
+	"sap/ui/core/Lib",
 	"sap/m/MessageToast",
 	"sap/ui/fl/write/_internal/fieldExtensibility/cap/editor/getEditorConfig",
 	"sap/base/util/ObjectPath",
@@ -15,6 +16,7 @@ sap.ui.define([
 ], function(
 	ManagedObject,
 	Fragment,
+	Lib,
 	MessageToast,
 	getEditorConfig,
 	ObjectPath,
@@ -24,7 +26,7 @@ sap.ui.define([
 ) {
 	"use strict";
 
-	var oTextBundle = sap.ui.getCore().getLibraryResourceBundle("sap.ui.fl");
+	var oTextBundle = Lib.getResourceBundleFor("sap.ui.fl");
 
 	function setupEditor(oDialog, oInitialJson, oCustomConfig) {
 		var oEditor = oDialog.getContent()[0];
@@ -51,7 +53,7 @@ sap.ui.define([
 			ObjectPath.get(["element", "type"], oJson) === "cds.String"
 			&& Array.isArray(vRange)
 		) {
-			ObjectPath.set(["element", "enum"], vRange.reduce(function (enumMap, enumOption) {
+			ObjectPath.set(["element", "enum"], vRange.reduce(function(enumMap, enumOption) {
 				enumMap[enumOption] = {};
 				return enumMap;
 			}, {}), oJson);
@@ -80,7 +82,6 @@ sap.ui.define([
 	 * @author SAP SE
 	 * @version ${version}
 	 * @since 1.93
-	 * @experimental Since 1.93
 	 * @private
 	 * @ui5-restricted
 	 */

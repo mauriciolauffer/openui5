@@ -1,20 +1,22 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/ui/fl/write/api/FieldExtensibility",
 	"sap/ui/rta/plugin/additionalElements/AddElementsDialog",
 	"sap/ui/thirdparty/sinon-4",
-	"sap/ui/core/Core"
+	"sap/ui/core/Element",
+	"sap/ui/core/Lib"
 ], function(
 	FieldExtensibility,
 	AddElementsDialog,
 	sinon,
-	oCore
+	Element,
+	Lib
 ) {
 	"use strict";
 
 	var sandbox = sinon.createSandbox();
-	var oTextResources = oCore.getLibraryResourceBundle("sap.ui.rta");
+	var oTextResources = Lib.getResourceBundleFor("sap.ui.rta");
 
 	function createDialog() {
 		var aElements = [
@@ -68,39 +70,39 @@ sap.ui.define([
 	}
 
 	QUnit.module("Given that a AddElementsDialog is available...", {
-		beforeEach: function() {
+		beforeEach() {
 			sandbox.stub(FieldExtensibility, "getTexts").resolves({
 				headerText: "extensibilityHeaderText",
 				tooltip: "extensibilityTooltip"
 			});
 			this.oAddElementsDialog = createDialog();
 		},
-		afterEach: function () {
+		afterEach() {
 			this.oAddElementsDialog.destroy();
 			sandbox.restore();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("when item is selected, focus should persist", function(assert) {
 			var done = assert.async();
 
 			function getItemByPath(aItems, sBindingPath) {
-				return aItems.filter(function (oItem) {
+				return aItems.filter(function(oItem) {
 					return oItem.getBindingContext().getPath() === sBindingPath;
 				})[0];
 			}
 
 			this.oAddElementsDialog._oDialogPromise.then(function() {
-				var oList = oCore.byId(this.oAddElementsDialog.getId() + "--" + "rta_addElementsDialogList");
+				var oList = Element.getElementById(`${this.oAddElementsDialog.getId()}--` + `rta_addElementsDialogList`);
 				var sBindingPath = oList.getItems()[0].getBindingContext().getPath();
 
 				this.oAddElementsDialog.attachOpened(function() {
 					var oTargetItem = getItemByPath(oList.getItems(), sBindingPath);
-					oTargetItem.$().trigger("focus");
+					oTargetItem.getDomRef().focus();
 					assert.strictEqual(document.activeElement, oTargetItem.getDomRef());
-					oTargetItem.$().trigger("tap");
+					oTargetItem.getDomRef().dispatchEvent(new Event("touchstart"));
 
 					// Wait until list is re-rendered
-					setTimeout(function () {
+					setTimeout(function() {
 						var oTargetItem = getItemByPath(oList.getItems(), sBindingPath);
 						assert.strictEqual(document.activeElement, oTargetItem.getDomRef());
 						done();
@@ -136,7 +138,7 @@ sap.ui.define([
 			});
 			this.oAddElementsDialog.attachOpened(function() {
 				assert.equal(this.getCustomFieldEnabled(), true, "then the button is enabled");
-				var oCustomFieldButton = oCore.byId(this.getId() + "--" + "rta_customFieldButton");
+				var oCustomFieldButton = Element.getElementById(`${this.getId()}--` + `rta_customFieldButton`);
 				oCustomFieldButton.firePress();
 			});
 			this.oAddElementsDialog.open();
@@ -147,7 +149,7 @@ sap.ui.define([
 
 			this.oAddElementsDialog.setCustomFieldEnabled(true);
 			this.oAddElementsDialog.attachOpened(function() {
-				var oBCContainer = oCore.byId(this.getId() + "--" + "rta_businessContextContainer");
+				var oBCContainer = Element.getElementById(`${this.getId()}--` + `rta_businessContextContainer`);
 				assert.ok(oBCContainer.getVisible(), "then the Business Context Container is visible");
 				assert.equal(oBCContainer.getContent().length, 2, "and the Business Context Container has two entries");
 				assert.equal(oBCContainer.getContent()[0].getText(), "extensibilityHeaderText", "and the first entry is the Title");
@@ -164,7 +166,7 @@ sap.ui.define([
 
 			this.oAddElementsDialog.setCustomFieldEnabled(true);
 			this.oAddElementsDialog.attachOpened(function() {
-				var oBCContainer = oCore.byId(this.getId() + "--" + "rta_businessContextContainer");
+				var oBCContainer = Element.getElementById(`${this.getId()}--` + `rta_businessContextContainer`);
 				assert.ok(oBCContainer.getVisible(), "then the Business Context Container is visible");
 				assert.equal(oBCContainer.getContent().length, 4, "and the Business Context Container has four entries");
 				assert.equal(oBCContainer.getContent()[0].getText(), "extensibilityHeaderText", "and the first entry is the Title");
@@ -190,7 +192,7 @@ sap.ui.define([
 				this.oAddElementsDialog.attachEventOnce("opened", fnOnOpen);
 			}
 			function fnOnOpen() {
-				var oBCContainer = oCore.byId(this.getId() + "--" + "rta_businessContextContainer");
+				var oBCContainer = Element.getElementById(`${this.getId()}--` + `rta_businessContextContainer`);
 				assert.ok(oBCContainer.getVisible(), "then the Business Context Container is visible");
 				assert.equal(oBCContainer.getContent().length, 4, "and the Business Context Container has four entries");
 				assert.equal(oBCContainer.getContent()[0].getText(), "extensibilityHeaderText", "and the first entry is the Title");
@@ -246,17 +248,17 @@ sap.ui.define([
 		QUnit.test("when on opened AddElementsDialog the list gets filtered via input", function(assert) {
 			var done = assert.async();
 
-			this.oAddElementsDialog.attachOpened(function () {
+			this.oAddElementsDialog.attachOpened(function() {
 				assert.equal(this._oList.getItems().length, 5, "then initially 5 entries are there");
-				this._updateModelFilter({getParameter: function() {return "2";}});
+				this._updateModelFilter({getParameter() {return "2";}});
 				assert.equal(this._oList.getItems().length, 1, "when filtering for '2' then 1 entry is shown");
-				this._updateModelFilter({getParameter: function() {return null;}});
+				this._updateModelFilter({getParameter() {return null;}});
 				assert.equal(this._oList.getItems().length, 5, "then after clearing 5 entries are there");
-				this._updateModelFilter({getParameter: function() {return "complex";}});
+				this._updateModelFilter({getParameter() {return "complex";}});
 				assert.equal(this._oList.getItems().length, 1, "when filtering for 'complex' then 1 entry is shown");
 				assert.equal(this._oList.getItems()[0].getContent()[0].getItems()[0].getText(), "label4 (duplicateComplexPropName)", "then only label4 where complex is part of the label (duplicateName)");
-				this._updateModelFilter({getParameter: function() {return null;}});
-				this._updateModelFilter({getParameter: function() {return "orig";}});
+				this._updateModelFilter({getParameter() {return null;}});
+				this._updateModelFilter({getParameter() {return "orig";}});
 				assert.equal(this._oList.getItems().length, 1, "when filtering for 'orig' then 1 entry is shown");
 				assert.equal(this._oList.getItems()[0].getContent()[0].getItems()[0].getText(), "label1", "then only label1 with original name");
 				done();
@@ -264,7 +266,7 @@ sap.ui.define([
 			this.oAddElementsDialog.open();
 		});
 
-		QUnit.test("when on opened AddElementsDialog the resort-button is pressed,", function (assert) {
+		QUnit.test("when on opened AddElementsDialog the resort-button is pressed,", function(assert) {
 			var done = assert.async();
 
 			this.oAddElementsDialog.attachOpened(function() {
@@ -277,7 +279,7 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

@@ -4,12 +4,12 @@
 
 // Provides control sap.ui.webc.main.CheckBox.
 sap.ui.define([
-	"sap/ui/webc/common/WebComponent",
+	"sap/ui/core/webc/WebComponent",
 	"./library",
 	"sap/ui/core/EnabledPropagator",
 	"sap/ui/core/library",
-	"./thirdparty/CheckBox",
-	"./thirdparty/features/InputElementsFormSupport"
+	"./thirdparty/features/InputElementsFormSupport",
+	"./thirdparty/CheckBox"
 ], function(WebComponent, library, EnabledPropagator, coreLibrary) {
 	"use strict";
 
@@ -22,7 +22,7 @@ sap.ui.define([
 	 * @param {string} [sId] ID for the new control, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new control
 	 *
-	 * @extends sap.ui.webc.common.WebComponent
+	 * @extends sap.ui.core.webc.WebComponent
 	 * @class
 	 *
 	 * <h3>Overview</h3>
@@ -38,6 +38,16 @@ sap.ui.define([
 	 * You can define the checkbox text with via the <code>text</code> property. If the text exceeds the available width, it is truncated by default. In case you prefer text to wrap, set the <code>wrappingType</code> property to "Normal". The touchable area for toggling the <code>sap.ui.webc.main.CheckBox</code> ends where the text ends. <br>
 	 * <br>
 	 * You can disable the <code>sap.ui.webc.main.CheckBox</code> by setting the <code>disabled</code> property to <code>true</code>, or use the <code>sap.ui.webc.main.CheckBox</code> in read-only mode by setting the <code>readonly</code> property to <code>true</code>.
+	 *
+	 * <br>
+	 * <br>
+	 * <h3>CSS Shadow Parts</h3>
+	 *
+	 * {@link https://developer.mozilla.org/en-US/docs/Web/CSS/::part CSS Shadow Parts} allow developers to style elements inside the Shadow DOM. <br>
+	 * The <code>sap.ui.webc.main.CheckBox</code> exposes the following CSS Shadow Parts:
+	 * <ul>
+	 *     <li>root - Used to style the outermost wrapper of the <code>sap.ui.webc.main.CheckBox</code></li>
+	 * </ul>
 	 *
 	 * <br>
 	 * <br>
@@ -69,7 +79,7 @@ sap.ui.define([
 			properties: {
 
 				/**
-				 * Defines the accessible aria name of the component.
+				 * Defines the accessible ARIA name of the component.
 				 */
 				accessibleName: {
 					type: "string",
@@ -93,7 +103,7 @@ sap.ui.define([
 					type: "boolean",
 					defaultValue: true,
 					mapping: {
-						type: "attribute",
+						type: "property",
 						to: "disabled",
 						formatter: "_mapEnabled"
 					}
@@ -102,7 +112,7 @@ sap.ui.define([
 				/**
 				 * Defines whether the component is displayed as partially checked. <br>
 				 * <br>
-				 * <b>Note:</b> The indeterminate state can be set only programatically and can’t be achieved by user interaction and the resulting visual state depends on the values of the <code>indeterminate</code> and <code>checked</code> properties:
+				 * <b>Note:</b> The indeterminate state can be set only programmatically and can’t be achieved by user interaction and the resulting visual state depends on the values of the <code>indeterminate</code> and <code>checked</code> properties:
 				 * <ul>
 				 *     <li> If the component is checked and indeterminate, it will be displayed as partially checked
 				 *     <li> If the component is checked and it is not indeterminate, it will be displayed as checked
@@ -130,7 +140,7 @@ sap.ui.define([
 				/**
 				 * Defines whether the component is read-only. <br>
 				 * <br>
-				 * <b>Note:</b> A red-only component is not editable, but still provides visual feedback upon user interaction.
+				 * <b>Note:</b> A read-only component is not editable, but still provides visual feedback upon user interaction.
 				 */
 				readonly: {
 					type: "boolean",
@@ -184,12 +194,7 @@ sap.ui.define([
 
 				/**
 				 * Defines whether the component text wraps when there is not enough space. <br>
-				 * <br>
-				 * Available options are:
-				 * <ul>
-				 *     <li><code>None</code> - The text will be truncated with an ellipsis.</li>
-				 *     <li><code>Normal</code> - The text will wrap. The words will not be broken based on hyphenation.</li>
-				 * </ul>
+				 * <b>Note:</b> for option "Normal" the text will wrap and the words will not be broken based on hyphenation.
 				 */
 				wrappingType: {
 					type: "sap.ui.webc.main.WrappingType",

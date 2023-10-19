@@ -22,14 +22,13 @@ sap.ui.define([
 	 * @extends sap.ui.mdc.valuehelp.content.FixedList
 	 * @version ${version}
 	 * @constructor
-	 * @abstract
 	 * @private
 	 * @ui5-restricted sap.ui.mdc
 	 * @since 1.95.0
 	 * @experimental As of version 1.95
 	 * @alias sap.ui.mdc.valuehelp.content.Bool
 	 */
-	var Bool = FixedList.extend("sap.ui.mdc.valuehelp.content.Bool", /** @lends sap.ui.mdc.valuehelp.content.Bool.prototype */
+	const Bool = FixedList.extend("sap.ui.mdc.valuehelp.content.Bool", /** @lends sap.ui.mdc.valuehelp.content.Bool.prototype */
 	{
 		metadata: {
 			library: "sap.ui.mdc",
@@ -67,11 +66,11 @@ sap.ui.define([
 	Bool.prototype.getContent = function () {
 		return this._retrievePromise("boolContent", function () {
 			return loadModules([
-				"sap/ui/mdc/field/ListFieldHelpItem",
+				"sap/ui/mdc/valuehelp/content/FixedListItem",
 				"sap/ui/model/json/JSONModel"
 			]).then(function (aModules) {
-				var ListFieldHelpItem = aModules[0];
-				var JSONModel = aModules[1];
+				const FixedListItem = aModules[0];
+				const JSONModel = aModules[1];
 				this._oModel = new JSONModel({
 					"type": "",
 					"items": [
@@ -87,7 +86,7 @@ sap.ui.define([
 				});
 				_updateModel.call(this, this.getConfig());
 
-				var oItem = new ListFieldHelpItem(this.getId() + "-Item", {
+				const oItem = new FixedListItem(this.getId() + "-Item", {
 					key: {path: "$Bool>key"},
 					text: {path: "$Bool>text"}
 				});
@@ -105,8 +104,8 @@ sap.ui.define([
 
 		return Promise.resolve().then(function () {
 			// don't need to create items for this, just use the type to check
-			var oGlobalConfig = this.getConfig();
-			var oType = oConfig.dataType || (oGlobalConfig && oGlobalConfig.dataType);
+			const oGlobalConfig = this.getConfig();
+			const oType = oConfig.dataType || (oGlobalConfig && oGlobalConfig.dataType);
 
 			if (oType) {
 				if (oConfig.checkKey) {
@@ -118,17 +117,17 @@ sap.ui.define([
 					}
 				}
 				if (oConfig.checkDescription && oConfig.value) {
-					var sTrue = oType.formatValue(true, "string");
+					const sTrue = oType.formatValue(true, "string");
 					if (sTrue.toLowerCase().startsWith(oConfig.value.toLowerCase())) {
 						return { key: true, description: sTrue };
 					}
-					var sFalse = oType.formatValue(false, "string");
+					const sFalse = oType.formatValue(false, "string");
 					if (sFalse.toLowerCase().startsWith(oConfig.value.toLowerCase())) {
 						return { key: false, description: sFalse };
 					}
 				}
-				var sError = this._oResourceBundle.getText("valuehelp.VALUE_NOT_EXIST", [oConfig.value]);
-				var Exception = oConfig.exception || ParseException;
+				const sError = this._oResourceBundle.getText("valuehelp.VALUE_NOT_EXIST", [oConfig.value]);
+				const Exception = oConfig.exception || ParseException;
 				throw new Exception(sError);
 			} else {
 				throw new Error("Type missing");
@@ -149,25 +148,25 @@ sap.ui.define([
 
 	};
 
-	Bool.prototype._observeChanges = function(oChanges) {
+	Bool.prototype.observeChanges = function(oChanges) {
 
 		if (oChanges.type === "property" && oChanges.name === "config") {
 			_updateModel.call(this, oChanges.current);
 		}
 
-		FixedList.prototype._observeChanges.apply(this, arguments);
+		FixedList.prototype.observeChanges.apply(this, arguments);
 	};
 
 	function _updateModel(oConfig) {
 		if (this._oModel && oConfig) {
 			// use texts of used type
-			var oType = oConfig.dataType;
-			var oData = this._oModel.getData();
+			const oType = oConfig.dataType;
+			const oData = this._oModel.getData();
 			if (oType && oData["type"] !== oType.getMetadata().getName()) {
 				oData["type"] = oType.getMetadata().getName();
-				var aItems = oData["items"];
-				for (var i = 0; i < aItems.length; i++) {
-					var oItem = aItems[i];
+				const aItems = oData["items"];
+				for (let i = 0; i < aItems.length; i++) {
+					const oItem = aItems[i];
 					oItem["text"] = oType.formatValue(oItem["key"], "string");
 				}
 				this._oModel.checkUpdate(true);
@@ -180,11 +179,10 @@ sap.ui.define([
 	 *
 	 * <b>Note:</b> Do not add items to the <code>Bool</code> content. The items will be filled by itself
 	 *
-	 * @param {sap.ui.mdc.field.ListFieldHelpItem} oItem The item to add; if empty, nothing is inserted
+	 * @param {sap.ui.mdc.valuehelp.content.FixedListItem} oItem The item to add; if empty, nothing is inserted
 	 * @returns {this} Reference to <code>this</code> to allow method chaining
 	 * @private
 	 * @ui5-restricted sap.fe
-	 * @MDC_PUBLIC_CANDIDATE
 	 * @deprecated Not supported, the items are automatically set.
 	 * @ui5-not-supported
 	 * @name sap.ui.mdc.valuehelp.content.Bool#addItem
@@ -196,12 +194,11 @@ sap.ui.define([
 	 *
 	 * <b>Note:</b> Do not add items to the <code>Bool</code> content. The items will be filled by itself
 	 *
-	 * @param {sap.ui.mdc.field.ListFieldHelpItem} oItem The item to add; if empty, nothing is inserted
+	 * @param {sap.ui.mdc.valuehelp.content.FixedListItem} oItem The item to add; if empty, nothing is inserted
 	 * @param {int} iIndex The 0-based index the item should be inserted at; for a negative value of iIndex, the item is inserted at position 0; for a value greater than the current size of the aggregation, the item is inserted at the last position
 	 * @returns {this} Reference to <code>this</code> to allow method chaining
 	 * @private
 	 * @ui5-restricted sap.fe
-	 * @MDC_PUBLIC_CANDIDATE
 	 * @deprecated Not supported, the items are automatically set.
 	 * @ui5-not-supported
 	 * @name sap.ui.mdc.valuehelp.content.Bool#insertItem
@@ -216,7 +213,6 @@ sap.ui.define([
 	 * @returns {this} Reference to <code>this</code> to allow method chaining
 	 * @private
 	 * @ui5-restricted sap.fe
-	 * @MDC_PUBLIC_CANDIDATE
 	 * @deprecated Not supported, the items are automatically set.
 	 * @ui5-not-supported
 	 * @name sap.ui.mdc.valuehelp.content.Bool#destroyItems
@@ -228,10 +224,9 @@ sap.ui.define([
 	 *
 	 * <b>Note:</b> Do not change items to the <code>Bool</code> content. The items will be filled by itself
 	 *
-	 * @returns {sap.ui.mdc.field.ListFieldHelpItem[]} An array of the removed elements (might be empty)
+	 * @returns {sap.ui.mdc.valuehelp.content.FixedListItem[]} An array of the removed elements (might be empty)
 	 * @private
 	 * @ui5-restricted sap.fe
-	 * @MDC_PUBLIC_CANDIDATE
 	 * @deprecated Not supported, the items are automatically set.
 	 * @ui5-not-supported
 	 * @name sap.ui.mdc.valuehelp.content.Bool#removeAllItems
@@ -243,11 +238,10 @@ sap.ui.define([
 	 *
 	 * <b>Note:</b> Do not change items to the <code>Bool</code> content. The items will be filled by itself
 	 *
-	 * @param {int|string|sap.ui.mdc.field.ListFieldHelpItem} vItem The item to remove or its index or ID
-	 * @returns {sap.ui.mdc.field.ListFieldHelpItem|null} The removed item or <code>null</code>
+	 * @param {int|string|sap.ui.mdc.valuehelp.content.FixedListItem} vItem The item to remove or its index or ID
+	 * @returns {sap.ui.mdc.valuehelp.content.FixedListItem|null} The removed item or <code>null</code>
 	 * @private
 	 * @ui5-restricted sap.fe
-	 * @MDC_PUBLIC_CANDIDATE
 	 * @deprecated Not supported, the items are automatically set.
 	 * @ui5-not-supported
 	 * @name sap.ui.mdc.valuehelp.content.Bool#removeItem
@@ -263,7 +257,6 @@ sap.ui.define([
 	 * @returns {this} Reference to <code>this</code> to allow method chaining
 	 * @private
 	 * @ui5-restricted sap.fe
-	 * @MDC_PUBLIC_CANDIDATE
 	 * @deprecated Not supported, the property is automatically set.
 	 * @ui5-not-supported
 	 * @name sap.ui.mdc.valuehelp.content.Bool#setUseFirstMatch
@@ -279,7 +272,6 @@ sap.ui.define([
 	 * @returns {this} Reference to <code>this</code> to allow method chaining
 	 * @private
 	 * @ui5-restricted sap.fe
-	 * @MDC_PUBLIC_CANDIDATE
 	 * @deprecated Not supported, the property is automatically set.
 	 * @ui5-not-supported
 	 * @name sap.ui.mdc.valuehelp.content.Bool#setUseAsValueHelp
@@ -295,7 +287,6 @@ sap.ui.define([
 	 * @returns {this} Reference to <code>this</code> to allow method chaining
 	 * @private
 	 * @ui5-restricted sap.fe
-	 * @MDC_PUBLIC_CANDIDATE
 	 * @deprecated Not supported, the property is automatically set.
 	 * @ui5-not-supported
 	 * @name sap.ui.mdc.valuehelp.content.Bool#setFilterList
@@ -311,7 +302,6 @@ sap.ui.define([
 	 * @returns {this} Reference to <code>this</code> to allow method chaining
 	 * @private
 	 * @ui5-restricted sap.fe
-	 * @MDC_PUBLIC_CANDIDATE
 	 * @deprecated Not supported, the property is automatically set.
 	 * @ui5-not-supported
 	 * @name sap.ui.mdc.valuehelp.content.Bool#setCaseSensitive

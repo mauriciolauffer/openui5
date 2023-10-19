@@ -1,14 +1,16 @@
 /*global sinon QUnit */
 sap.ui.define([
+	"sap/base/Log",
 	"sap/m/Button",
 	'sap/ui/core/Component',
 	'sap/ui/core/UIComponent',
 	"sap/ui/core/XMLTemplateProcessor",
 	"sap/ui/core/mvc/XMLProcessingMode",
 	"sap/ui/core/mvc/XMLView",
+	"sap/ui/model/json/JSONModel",
 	"sap/ui/thirdparty/jquery",
-	"sap/ui/core/Configuration"
-], function(Button, Component, UIComponent, XMLTemplateProcessor, XMLProcessingMode, XMLView, jQuery, Configuration) {
+	"sap/ui/base/DesignTime"
+], function(Log, Button, Component, UIComponent, XMLTemplateProcessor, XMLProcessingMode, XMLView, JSONModel, jQuery, DesignTime) {
 	"use strict";
 
 	QUnit.module("enrichTemplateIdsPromise", {
@@ -102,8 +104,7 @@ sap.ui.define([
 		assert.expect(7);
 
 		// Arrange
-		var oConfig = Configuration;
-		this.stub(oConfig, "getDesignMode").returns(true);
+		this.stub(DesignTime, "isDesignModeEnabled").returns(true);
 
 		// Act
 		return XMLView.create({
@@ -130,8 +131,7 @@ sap.ui.define([
 		assert.expect(3);
 
 		// Arrange
-		var oConfig = Configuration;
-		this.stub(oConfig, "getDesignMode").returns(false);
+		this.stub(DesignTime, "isDesignModeEnabled").returns(false);
 
 		// Act
 		return XMLView.create({
@@ -470,6 +470,79 @@ sap.ui.define([
 					done();
 				});
 			});
+		});
+	});
+
+	QUnit.module("Databinding", {
+		beforeEach: function() {
+			/**
+			 * @deprecated As of version 1.120
+			 */
+			this.syncLoadingSpy = sinon.spy(sap.ui, "requireSync");
+			this.logErrorSpy = sinon.spy(Log, "error");
+		},
+		afterEach: function() {
+			/**
+			 * @deprecated As of version 1.120
+			 */
+			this.syncLoadingSpy.restore();
+			this.logErrorSpy.restore();
+		}
+	});
+
+	QUnit.test("[Simple Binding] Async loading of data types", function(assert) {
+		var oModel = new JSONModel({
+			value: 1234,
+			customDataValue: "#FF06B5",
+			amount: 12.345,
+			date: 1682600768240
+		});
+
+		var oView;
+
+		return XMLView.create({
+			viewName: "testdata/mvc/XMLViewWithTypes",
+			models: {"undefined": oModel}
+		}).then(function (oFinishedView) {
+			oView = oFinishedView;
+			oFinishedView.placeAt("qunit-fixture");
+
+			/**
+			 * Sync call tests
+			 * @deprecated As of version 1.120
+			 */
+			(() => {
+				// check that no sync XHRs are sent
+				assert.equal(this.syncLoadingSpy.callCount, 0, "No sync XHR sent.");
+				assert.notOk(this.syncLoadingSpy.calledWith("sap/ui/model/type/Integer"), "No sync XHR sent for 'sap/ui/model/type/Integer'.");
+				assert.notOk(this.syncLoadingSpy.calledWith("sap/ui/model/type/String"), "No sync XHR sent for 'sap/ui/model/type/String'.");
+				assert.notOk(this.syncLoadingSpy.calledWith("sap/ui/model/type/Float"), "No sync XHR sent for 'sap/ui/model/type/Float'.");
+				assert.notOk(this.syncLoadingSpy.calledWith("sap/ui/model/type/Date"), "No sync XHR sent for 'sap/ui/model/type/Date'.");
+			})();
+
+			// test binding values
+			var oInput = oView.byId("inputField");
+			assert.equal(oInput.getValue(), "1.234", "Input field has correct value '1.234'");
+
+			var oInputInvalidType = oView.byId("inputField_invalidType");
+			assert.equal(oInputInvalidType.getValue(), "1234", "Input field has correct unformatted(!) value '1234'.");
+
+			// test error log for invalid/missing type
+			assert.ok(this.logErrorSpy.calledWith("Failed to resolve type 'sap.ui.non.existing.Type'. Maybe not loaded or a typo?"), "Error message for missing type is logged.");
+
+			// test CustomData binding values
+			var oPanel = oView.byId("panel");
+			var oCustomData = oPanel.getCustomData().find(function(oCustomData) {
+				return oCustomData.getKey() === "myColor";
+			});
+			assert.equal(oCustomData.getValue(), "#FF06B5", "CustomData is correctly bound: myColor value = #FF06B5.");
+
+			var oLabel = oView.byId("label");
+			assert.equal(oLabel.getText(), "12.3 EUR on 2023-04-27", "Composite binding is resolved correctly");
+		}.bind(this)).finally(function(){
+			if (oView) {
+				oView.destroy();
+			}
 		});
 	});
 });

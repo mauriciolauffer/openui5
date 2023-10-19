@@ -29,7 +29,7 @@ sap.ui.define([
 	var oMockedAppComponent = RtaQunitUtils.createAndStubAppComponent(sinon, "Dummy");
 
 	QUnit.module("FlVariant Save as", {
-		beforeEach: function() {
+		beforeEach() {
 			var oData = {
 				variantMgmtId1: {
 					defaultVariant: "variantMgmtId1",
@@ -55,14 +55,13 @@ sap.ui.define([
 				sandbox.spy(this.oVariantManagement, "detachCancel");
 				sandbox.spy(this.oVariantManagement, "detachSave");
 				sandbox.stub(oMockedAppComponent, "getModel").returns(this.oModel);
-				sandbox.stub(ContextSharingAPI, "createComponent").returns("myContextSharing");
 				sandbox.stub(Utils, "getRtaStyleClassName").returns("myRtaStyleClass");
 				this.oOpenDialogStub = sandbox.stub(this.oVariantManagement, "openSaveAsDialogForKeyUser");
 				// non-personalization mode
 				this.oModel._bDesignTimeMode = true;
 			}.bind(this));
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oModel.destroy();
 			this.oVariantManagement.destroy();
 			sandbox.restore();
@@ -72,9 +71,14 @@ sap.ui.define([
 			var oSaveAsCommand;
 			var mFlexSettings = {layer: Layer.CUSTOMER};
 			var oSourceVariantReference = "mySourceReference";
+			var oCreateComponentStub = sandbox.stub(ContextSharingAPI, "createComponent").returns("myContextSharing");
+			var oInvalidationStub = sandbox.stub(this.oModel, "invalidateMap");
 			this.oOpenDialogStub.callsFake(function(sStyleClass, oContextSharing) {
 				assert.strictEqual(sStyleClass, "myRtaStyleClass", "the style class was passed");
 				assert.strictEqual(oContextSharing, "myContextSharing", "the context sharing component was passed");
+				var oArgs = oCreateComponentStub.getCall(0).args[0];
+				assert.equal(oArgs.layer, Layer.CUSTOMER, "then the correct layer is used");
+				assert.ok(oArgs.variantManagementControl, "then the correct control is used");
 				this.oVariantManagement.fireSave({
 					name: "newName",
 					overwrite: false,
@@ -85,13 +89,13 @@ sap.ui.define([
 				new FlVariant("foo", {flexObjectMetadata: {reference: "myReference"}}),
 				RtaQunitUtils.createUIChange({
 					fileName: "change1",
-					reference: "Dummy.Component",
+					reference: "Dummy",
 					variantReference: "variantMgmtId1",
 					fileType: "change"
 				}),
 				RtaQunitUtils.createUIChange({
 					fileName: "change2",
-					reference: "Dummy.Component",
+					reference: "Dummy",
 					variantReference: "variantMgmtId1",
 					fileType: "ctrl_variant_management_change"
 				})
@@ -100,17 +104,13 @@ sap.ui.define([
 			sandbox.stub(this.oModel, "getVariant").returns({
 				controlChanges: [RtaQunitUtils.createUIChange({
 					fileName: "change0",
-					reference: "Dummy.Component",
+					reference: "Dummy",
 					variantReference: "variantMgmtId1",
 					fileType: "change"
 				})]
 			});
-			var oCheckStub = sandbox.stub(this.oModel, "checkDirtyStateForControlModels");
 			var oRemoveStub = sandbox.stub(this.oModel, "removeVariant").resolves();
-			var oCheckUpdateStub = sandbox.stub(this.oModel, "checkUpdate");
-			var oDeleteChangeStub = sandbox.stub(this.oModel.oFlexController, "deleteChange");
-			var oAddChangeStub = sandbox.stub(this.oModel.oFlexController, "addPreparedChange");
-			var oApplyChangeStub = sandbox.stub(this.oModel.oFlexController, "applyChange");
+			var oApplyChangeStub = sandbox.stub(this.oModel, "addAndApplyChangesOnVariant");
 
 			return CommandFactory.getCommandFor(this.oVariantManagement, "saveAs", {
 				sourceVariantReference: oSourceVariantReference,
@@ -142,15 +142,16 @@ sap.ui.define([
 					newVariantReference: undefined
 				};
 				assert.strictEqual(this.oHandleSaveStub.callCount, 1, "the model was called");
-				assert.strictEqual(this.oHandleSaveStub.firstCall.args[0].getId(), "variantMgmtId1", "the VM Control is the first argument");
+				assert.strictEqual(
+					this.oHandleSaveStub.firstCall.args[0].getId(),
+					"variantMgmtId1",
+					"the VM Control is the first argument"
+				);
 				assert.deepEqual(this.oHandleSaveStub.firstCall.args[1], mExpectedParams, "the property bag was enhanced");
-				assert.strictEqual(oCheckStub.callCount, 1, "the check dirty state function was called");
-				assert.deepEqual(oCheckStub.firstCall.args[0], ["variantMgmtId1"], "the variant management id was passed");
+				assert.strictEqual(oInvalidationStub.callCount, 1, "the invalidation function was called");
 
 				return oSaveAsCommand.undo();
 			}.bind(this)).then(function() {
-				assert.strictEqual(oDeleteChangeStub.callCount, 1, "one change got deleted");
-
 				var mExpectedProperties = {
 					variant: aChanges[0],
 					sourceVariantReference: "mySourceReference",
@@ -160,10 +161,7 @@ sap.ui.define([
 				assert.strictEqual(oRemoveStub.callCount, 1, "removeVariant was called");
 				assert.deepEqual(oRemoveStub.firstCall.args[0], mExpectedProperties, "the correct properties were passed-1");
 				assert.deepEqual(oRemoveStub.firstCall.args[1], true, "the correct properties were passed-2");
-				assert.strictEqual(oAddChangeStub.callCount, 1, "one change was added back");
 				assert.strictEqual(oApplyChangeStub.callCount, 1, "one change was applied again");
-				assert.strictEqual(oCheckUpdateStub.callCount, 1, "the check update function was called");
-				assert.strictEqual(oCheckUpdateStub.firstCall.args[0], true, "the correct properties were passed");
 			});
 		});
 

@@ -1,7 +1,7 @@
 sap.ui.define(['./util/EnvHelper', "sap/base/util/merge"], function (EnvHelper, merge) {
 	"use strict";
 
-	var mConfig =  {
+	let mConfig =  {
 		name: "Library 'sap.ui.mdc'", /* Just for a nice title on the pages */
 		defaults: {
 			group: "Library",
@@ -103,6 +103,22 @@ sap.ui.define(['./util/EnvHelper', "sap/base/util/merge"], function (EnvHelper, 
 					branchTracking: true
 				},
 				module: "./actiontoolbar/ActionToolbarAction.qunit"
+
+			},
+			"ActionToolbarActionCondenser": {
+				group: "ActionToolbar",
+				module: "./actiontoolbar/Condenser.qunit",
+				coverage: {
+					only: "[sap/ui/mdc]",
+					never: "[sap/ui/mdc/qunit]",
+					branchTracking: true
+				},
+				loader: {
+					paths: {
+						"sap/ui/mdc/qunit/table": "test-resources/sap/ui/mdc/qunit/table"
+					}
+				},
+				sinon: false
 			},
 			"Field Testsuite" : {
 				title: "Field Testsuite",
@@ -114,8 +130,8 @@ sap.ui.define(['./util/EnvHelper', "sap/base/util/merge"], function (EnvHelper, 
 				group: "Testsuite",
 				page: "test-resources/sap/ui/mdc/qunit/link/testsuite.link.qunit.html"
 			},
-			"MDCTable Testsuite": {
-				title: "MDCTable Testsuite",
+			"Table Testsuite": {
+				title: "Table Testsuite",
 				group: "Testsuite",
 				page: "test-resources/sap/ui/mdc/qunit/table/testsuite.table.qunit.html"
 			},
@@ -146,18 +162,6 @@ sap.ui.define(['./util/EnvHelper', "sap/base/util/merge"], function (EnvHelper, 
 					only: "[sap/ui/mdc/util]"
 				},
 				sinon: true
-			},
-			"MemoryLeak": {
-				group: "Basic",
-				module: "./MemoryLeak.qunit",
-				qunit: {
-					// MemoryLeakCheck loads qunit-1
-					version: 1,
-					// make sure results are consistent/stable and the "statistics" test in the end is actually run in the end
-					reorder: false
-				},
-				// tests are added asynchronously, hence autostart is disabled and QUnit.start is called later
-				autostart: false
 			},
 			"EnforceSemanticRendering": {
 				title: "QUnit Page for Semantic Rendering Coverage"
@@ -196,7 +200,9 @@ sap.ui.define(['./util/EnvHelper', "sap/base/util/merge"], function (EnvHelper, 
 				module: "./mixin/DelegateMixin.qunit",
 				sinon: true
 			},
-
+			/**
+			 * @deprecated since 1.114
+			 */
 			"TypeUtil": {
 				group: "Util",
 				module: "./util/TypeUtil.qunit",
@@ -205,6 +211,9 @@ sap.ui.define(['./util/EnvHelper', "sap/base/util/merge"], function (EnvHelper, 
 				},
 				sinon: false
 			},
+			/**
+			 * @deprecated since 1.114
+			 */
 			"ODataTypeUtil": {
 				group: "Util",
 				module: "./odata/TypeUtil.qunit",
@@ -213,6 +222,9 @@ sap.ui.define(['./util/EnvHelper', "sap/base/util/merge"], function (EnvHelper, 
 				},
 				sinon: true
 			},
+			/**
+			 * @deprecated since 1.114
+			 */
 			"ODataV4TypeUtil": {
 				group: "Util",
 				module: "./odata/v4/TypeUtil.qunit",
@@ -261,6 +273,10 @@ sap.ui.define(['./util/EnvHelper', "sap/base/util/merge"], function (EnvHelper, 
 			},
 			"Generic Testsuite": {
 				page: "test-resources/sap/ui/mdc/qunit/testsuite.generic.qunit.html"
+			},
+			"TypeMap Testsuite": {
+				group: "util",
+				page: "test-resources/sap/ui/mdc/qunit/typemap/testsuite.typemap.qunit.html"
 			}
 		}
 	};
@@ -313,6 +329,12 @@ sap.ui.define(['./util/EnvHelper', "sap/base/util/merge"], function (EnvHelper, 
 				"P13n Testsuite": {
 					group: "p13n",
 					page: "test-resources/sap/ui/mdc/qunit/p13n/testsuite.p13n.qunit.html"
+				},
+
+				"BaseDelegate": {
+					group: "Delegates",
+					module: "./BaseDelegate.qunit",
+					sinon: true
 				}
 			}
 		});

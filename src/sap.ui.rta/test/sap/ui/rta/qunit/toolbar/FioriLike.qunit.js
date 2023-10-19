@@ -1,39 +1,40 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/ui/rta/toolbar/FioriLike",
-	"sap/ui/core/Core"
-],
-function(
+	"sap/ui/qunit/utils/nextUIUpdate",
+	"sap/ui/core/Lib"
+], function(
 	FioriLike,
-	oCore
+	nextUIUpdate,
+	Lib
 ) {
-	'use strict';
+	"use strict";
 
-	QUnit.module('Given FioriLike toolbar is instantiated', {
-		beforeEach: function() {
-			oCore.applyChanges();
+	QUnit.module("Given FioriLike toolbar is instantiated", {
+		async beforeEach() {
+			await nextUIUpdate();
 			this.oToolbar = new FioriLike({
-				textResources: oCore.getLibraryResourceBundle("sap.ui.rta")
+				textResources: Lib.getResourceBundleFor("sap.ui.rta")
 			});
 			return this.oToolbar.onFragmentLoaded();
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oToolbar.destroy();
 		}
 	}, function() {
 		QUnit.test("when the toolbar gets opened", function(assert) {
 			return this.oToolbar.show()
-				.then(function () {
-					var $fioriLikeToolbar = this.oToolbar.getDomRef();
-					var $classList = $fioriLikeToolbar.classList;
-					assert.ok($classList.contains("sapUiRtaToolbar"), "then rta toolbar is shown");
-					assert.ok($classList.contains("type_fiori"), "then a fiori like styleclass is added to the toolbar");
-				}.bind(this));
+			.then(function() {
+				var $fioriLikeToolbar = this.oToolbar.getDomRef();
+				var $classList = $fioriLikeToolbar.classList;
+				assert.ok($classList.contains("sapUiRtaToolbar"), "then rta toolbar is shown");
+				assert.ok($classList.contains("type_fiori"), "then a fiori like styleclass is added to the toolbar");
+			}.bind(this));
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

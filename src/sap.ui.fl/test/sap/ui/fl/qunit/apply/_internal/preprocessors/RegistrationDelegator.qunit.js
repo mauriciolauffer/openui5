@@ -1,4 +1,4 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/ui/core/mvc/Controller",
@@ -12,7 +12,7 @@ sap.ui.define([
 	"sap/ui/fl/apply/api/DelegateMediatorAPI",
 	"sap/ui/fl/apply/_internal/DelegateMediator",
 	"sap/ui/thirdparty/sinon-4",
-	"sap/ui/core/Core"
+	"sap/ui/base/DesignTime"
 ], function(
 	MvcController,
 	XMLView,
@@ -25,14 +25,14 @@ sap.ui.define([
 	DelegateMediatorAPI,
 	DelegateMediator,
 	sinon,
-	oCore
+	DesignTime
 ) {
 	"use strict";
 
 	var sandbox = sinon.createSandbox();
 
 	QUnit.module("sap.ui.fl.apply._internal.preprocessors.RegistrationDelegator", {
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
@@ -70,40 +70,40 @@ sap.ui.define([
 	var sApplyProcessorPath = "sap/ui/fl/apply/_internal/extensionPoint/Processor";
 
 	QUnit.module("sap.ui.fl.RegistrationDelegator getExtensionPointProvider function", {
-		beforeEach: function () {
+		beforeEach() {
 			var oRegisterExtensionProviderStub = sandbox.stub(ExtensionPoint, "registerExtensionProvider");
 			DelegateMediator._mDefaultDelegateItems = [];
 			RegistrationDelegator.registerAll();
-			this.fnExtensionProvider = oRegisterExtensionProviderStub.firstCall.args[0];
+			[this.fnExtensionProvider] = oRegisterExtensionProviderStub.firstCall.args;
 		},
-		afterEach: function () {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
-		QUnit.test("When extension point handling is disabled", function (assert) {
+		QUnit.test("When extension point handling is disabled", function(assert) {
 			sandbox.stub(ManifestUtils, "isFlexExtensionPointHandlingEnabled").returns(false);
 			assert.notOk(this.fnExtensionProvider({}), "then 'undefined' is returned");
 		});
 
-		QUnit.test("When extension point handling is disabled and design mode (adaptation project) is enabled", function (assert) {
+		QUnit.test("When extension point handling is disabled and design mode (adaptation project) is enabled", function(assert) {
 			sandbox.stub(ManifestUtils, "isFlexExtensionPointHandlingEnabled").returns(false);
-			sandbox.stub(oCore.getConfiguration(), "getDesignMode").returns(true);
+			sandbox.stub(DesignTime, "isDesignModeEnabled").returns(true);
 			assert.strictEqual(this.fnExtensionProvider({}), sWriteProcessorPath, "then the base processor module path is returned");
 		});
 
-		QUnit.test("When extension point handling is enabled", function (assert) {
+		QUnit.test("When extension point handling is enabled", function(assert) {
 			sandbox.stub(ManifestUtils, "isFlexExtensionPointHandlingEnabled").returns(true);
 			assert.strictEqual(this.fnExtensionProvider({}), sApplyProcessorPath, "then the processor module path is returned");
 		});
 
-		QUnit.test("When extension point handling is enabled and design mode (adaptation project) is enabled", function (assert) {
-			sandbox.stub(oCore.getConfiguration(), "getDesignMode").returns(true);
+		QUnit.test("When extension point handling is enabled and design mode (adaptation project) is enabled", function(assert) {
+			sandbox.stub(DesignTime, "isDesignModeEnabled").returns(true);
 			sandbox.stub(ManifestUtils, "isFlexExtensionPointHandlingEnabled").returns(true);
 			assert.strictEqual(this.fnExtensionProvider({}), sApplyProcessorPath, "then the processor module path is returned");
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

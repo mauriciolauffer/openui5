@@ -18,7 +18,7 @@ sap.ui.define([
 	 * @alias sap.ui.fl.changeHandler.UnhideControl
 	 * @author SAP SE
 	 * @version ${version}
-	 * @experimental Since 1.27.0
+	 * @since 1.27.0
 	 */
 	var UnhideControl = {};
 
@@ -35,13 +35,13 @@ sap.ui.define([
 	UnhideControl.applyChange = function(oChange, oControl, mPropertyBag) {
 		var oModifier = mPropertyBag.modifier;
 		return Promise.resolve()
-			.then(oModifier.getProperty.bind(oModifier, oControl, PROPERTY_NAME))
-			.then(function(oOriginalValue) {
-				oChange.setRevertData({
-					originalValue: oOriginalValue
-				});
-				mPropertyBag.modifier.setVisible(oControl, true);
+		.then(oModifier.getProperty.bind(oModifier, oControl, PROPERTY_NAME))
+		.then(function(oOriginalValue) {
+			oChange.setRevertData({
+				originalValue: oOriginalValue
 			});
+			mPropertyBag.modifier.setVisible(oControl, true);
+		});
 	};
 
 	/**

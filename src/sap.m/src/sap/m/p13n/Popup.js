@@ -160,6 +160,12 @@ sap.ui.define([
 	 */
 	Popup.prototype.setReset = function(fnReset) {
 		if (this._oPopup) {
+			var oCustomHeader = this._oPopup.getCustomHeader();
+
+			if (oCustomHeader) {
+				oCustomHeader.destroy();
+			}
+
 			this._oPopup.setCustomHeader(this._createTitle());
 			this._oPopup.invalidate();
 		}
@@ -194,6 +200,12 @@ sap.ui.define([
 			this._oPopup.openBy(oSource);
 		}
 
+		var oResetBtn = this.getResetButton();
+
+		if (oResetBtn) {
+			oResetBtn.setEnabled(mSettings?.enableReset);
+		}
+
 		this._bIsOpen = true;
 	};
 
@@ -211,6 +223,11 @@ sap.ui.define([
 			oBindingInfo = {
 				parts: oPanelTitleBindingInfo.parts
 			};
+		}
+		if (oPanel.attachChange instanceof Function) {
+			oPanel.attachChange((oEvt) => {
+				this.getResetButton()?.setEnabled(true);
+			});
 		}
 		this._getContainer().addView(new AbstractContainerItem({
 			key: sKey || oPanel.getId(),
@@ -252,6 +269,17 @@ sap.ui.define([
 		return this._aPanels;
 	};
 
+	/**
+	 * Getter for the inner <code>Reset</code> button control.
+	 *
+	 * @private
+	 * @ui5-restricted sap.ui.mdc
+	 * @returns {sap.m.Button} The reset button instance
+	 */
+	Popup.prototype.getResetButton = function() {
+		return sap.ui.getCore().byId(this.getId() + "-resetBtn");
+	};
+
 	Popup.prototype._createContainer = function(mDialogSettings) {
 		mDialogSettings = mDialogSettings ? mDialogSettings : {};
 		var oPopup = this["_create" + this.getMode()].call(this, mDialogSettings);
@@ -268,7 +296,7 @@ sap.ui.define([
 		var oPopover = new ResponsivePopover(this.getId() + "-responsivePopover", {
 			title: this.getTitle(),
 			horizontalScrolling: mDialogSettings.hasOwnProperty("horizontalScrolling") ? mDialogSettings.horizontalScrolling : false,
-			verticalScrolling: !bUseContainer,
+			verticalScrolling: !bUseContainer && !(aPanels[0] && aPanels[0].getVerticalScrolling instanceof Function && aPanels[0].getVerticalScrolling()),
 			contentWidth: mDialogSettings.contentWidth ? mDialogSettings.contentWidth : "30rem",
 			resizable: mDialogSettings.hasOwnProperty("resizable") ? mDialogSettings.resizable : true,
 			contentHeight: mDialogSettings.contentHeight ? mDialogSettings.contentHeight : "35rem",
@@ -304,7 +332,7 @@ sap.ui.define([
 			initialFocus: oInitialFocusedControl,
 			title: this.getTitle(),
 			horizontalScrolling: mDialogSettings.hasOwnProperty("horizontalScrolling") ? mDialogSettings.horizontalScrolling : false,
-			verticalScrolling: !bUseContainer,
+			verticalScrolling: !bUseContainer && !(aPanels[0] && aPanels[0].getVerticalScrolling instanceof Function && aPanels[0].getVerticalScrolling()),
 			contentWidth: mDialogSettings.contentWidth ? mDialogSettings.contentWidth : "40rem",
 			contentHeight: mDialogSettings.contentHeight ? mDialogSettings.contentHeight : "55rem",
 			draggable: true,
@@ -315,14 +343,14 @@ sap.ui.define([
 				this._onClose(oContainer, "Escape");
 			}.bind(this),
 			buttons: [
-				new Button(this.getId() + "-confirmBtn", {
+				new Button(this.getId() + this._getIdPrefix() + "-confirmBtn", {
 					text:  mDialogSettings.confirm && mDialogSettings.confirm.text ?  mDialogSettings.confirm.text : oResourceBundle.getText("p13n.POPUP_OK"),
 					type: "Emphasized",
 					press: function() {
 						this._onClose(oContainer, "Ok");
 					}.bind(this)
 
-				}), new Button(this.getId() + "-cancelBtn", {
+				}), new Button(this.getId() + this._getIdPrefix() + "-cancelBtn", {
 					text: oResourceBundle.getText("p13n.POPUP_CANCEL"),
 					press: function () {
 						this._onClose(oContainer, "Cancel");
@@ -340,11 +368,16 @@ sap.ui.define([
 		return oContainer;
 	};
 
+	Popup.prototype._getIdPrefix = function() {
+		return "";
+	};
+
 	Popup.prototype._createTitle = function() {
 
 		var fnReset = this.getReset();
 		var sTitle = this.getTitle();
 		var sWarningText = this.getWarningText();
+        var oPopup = this;
 
 		var oBar;
 
@@ -370,10 +403,12 @@ sap.ui.define([
 					MessageBox.warning(sResetText, {
 						actions: [MessageBox.Action.OK, MessageBox.Action.CANCEL],
 						emphasizedAction: MessageBox.Action.OK,
-						onClose: function (sAction) {
+						onClose: (sAction) => {
 							if (sAction === MessageBox.Action.OK) {
 								// --> focus "OK" button after 'reset' has been triggered
 								oDialog.getButtons()[0].focus();
+								oEvt.getSource().setEnabled(false);
+								oPopup._resetPanels();
 								fnReset(oControl);
 							}
 						}
@@ -385,6 +420,19 @@ sap.ui.define([
 
 		return oBar;
 
+	};
+
+	/**
+	 * Trigger the <code>#onReset</code> method on the aggregated panels to apply certain updates such as clearing search values.
+	 *
+	 * @private
+	 */
+	Popup.prototype._resetPanels = function() {
+		this.getPanels().forEach((oPanel) => {
+			if (oPanel.onReset instanceof Function) {
+				oPanel.onReset();
+			}
+		});
 	};
 
 	Popup.prototype._getContainer = function(oSource) {
@@ -411,6 +459,7 @@ sap.ui.define([
 	};
 
 	Popup.prototype.exit = function() {
+		Control.prototype.exit.apply(this, arguments);
 		if (this._oPopup) {
 			this._oPopup.destroy();
 		}

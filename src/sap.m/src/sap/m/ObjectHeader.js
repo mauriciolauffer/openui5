@@ -16,7 +16,8 @@ sap.ui.define([
 	'./ObjectMarker',
 	'./ObjectNumber',
 	"sap/ui/thirdparty/jquery",
-	"sap/ui/core/Configuration"
+	"sap/ui/core/Configuration",
+	"sap/m/ImageHelper"
 ],
 	function(
 		library,
@@ -31,7 +32,8 @@ sap.ui.define([
     ObjectMarker,
     ObjectNumber,
 		jQuery,
-		Configuration
+		Configuration,
+		ImageHelper
 	) {
 	"use strict";
 
@@ -43,8 +45,6 @@ sap.ui.define([
 	// shortcut for sap.ui.core.TextAlign
 	var TextAlign = coreLibrary.TextAlign;
 
-	// shortcut for sap.m.ImageHelper
-	var ImageHelper = library.ImageHelper;
 
 	// shortcut for sap.m.ObjectMarkerType
 	var ObjectMarkerType = library.ObjectMarkerType;
@@ -672,6 +672,8 @@ sap.ui.define([
 	 * @public
 	 * @param {boolean} bMarked visibility of the marker
 	 * @returns {this} this pointer for chaining
+	 * @deprecated as of version 1.42.0, replaced by <code>markers</code> aggregation.
+	 * Add {@link sap.m.ObjectMarker} with type <code>sap.m.ObjectMarkerType.Favorite</code>.
 	 */
 	ObjectHeader.prototype.setMarkFavorite = function (bMarked) {
 		return this._setOldMarkers(ObjectMarkerType.Favorite, bMarked);
@@ -683,6 +685,8 @@ sap.ui.define([
 	 * @public
 	 * @param {boolean} bMarked visibility of the marker
 	 * @returns {this} this pointer for chaining
+	 * @deprecated as of version 1.42.0, replaced by <code>markers</code> aggregation.
+	 * Add {@link sap.m.ObjectMarker} with type <code>sap.m.ObjectMarkerType.Flagged</code>.
 	 */
 	ObjectHeader.prototype.setMarkFlagged = function (bMarked) {
 		return this._setOldMarkers(ObjectMarkerType.Flagged, bMarked);
@@ -694,6 +698,7 @@ sap.ui.define([
 	 * @public
 	 * @param {boolean} bMarked visibility of all markers
 	 * @returns {this} this pointer for chaining
+	 * @deprecated as of version 1.42.0, replaced by <code>markers</code> aggregationv.
 	 */
 	ObjectHeader.prototype.setShowMarkers = function (bMarked) {
 		var sMarkerType,
@@ -729,6 +734,7 @@ sap.ui.define([
 
 	/**
 	 * @private
+	 * @deprecated as of version 1.42.0, replaced by <code>markers</code> aggregation.
 	 * @param {string} markerType the type of the marker which should be created to updated
 	 * @param {boolean} bMarked visibility of the marker
 	 * @returns {this} this pointer for chaining
@@ -1247,7 +1253,13 @@ sap.ui.define([
 	 * @returns {boolean} IF there is status
 	 */
 	ObjectHeader.prototype._hasStatus = function() {
-		var bHasStatus = ((this.getFirstStatus() && !this.getFirstStatus()._isEmpty()) || (this.getSecondStatus() && !this.getSecondStatus()._isEmpty()));
+		var bHasStatus = false;
+
+		/**
+		 *  @deprecated as of version 1.16
+		 */
+		bHasStatus = ((this.getFirstStatus() && !this.getFirstStatus()._isEmpty()) || (this.getSecondStatus() && !this.getSecondStatus()._isEmpty()));
+
 
 		if (!bHasStatus && this.getStatuses() && this.getStatuses().length > 0) {
 			var statuses = this.getStatuses();
@@ -1270,8 +1282,13 @@ sap.ui.define([
 	 */
 	ObjectHeader.prototype._hasMarkers = function() {
 		var aMarkers = this.getMarkers(),
-			bHasOldMarkers = this.getShowMarkers() && (this.getMarkFavorite() || this.getMarkFlagged()),
+			bHasOldMarkers = false,
 			bHasMarkers = aMarkers && aMarkers.length;
+
+		/**
+		 * @deprecated as of version 1.42.0
+		 */
+		bHasOldMarkers = this.getShowMarkers() && (this.getMarkFavorite() || this.getMarkFlagged());
 
 		return (bHasOldMarkers || bHasMarkers);
 	};

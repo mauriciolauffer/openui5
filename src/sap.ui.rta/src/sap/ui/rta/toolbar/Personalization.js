@@ -26,7 +26,6 @@ function(
 	 * @private
 	 * @since 1.48
 	 * @alias sap.ui.rta.toolbar.Personalization
-	 * @experimental Since 1.48. This class is experimental. API might be changed in future.
 	 */
 	var Personalization = Base.extend("sap.ui.rta.toolbar.Personalization", {
 		renderer: "sap.ui.rta.toolbar.BaseRenderer",
@@ -41,8 +40,9 @@ function(
 				restore: {}
 			}
 		},
-		constructor: function() {
-			Base.apply(this, arguments);
+		// eslint-disable-next-line object-shorthand
+		constructor: function(...aArgs) {
+			Base.apply(this, aArgs);
 			this.setJustifyContent("End");
 		}
 	});
@@ -60,7 +60,7 @@ function(
 				text: "{i18n>BTN_DONE}",
 				press: this.eventHandler.bind(this, "Exit")
 			}).data("name", "exit")
-		].forEach(function (oControl) {
+		].forEach(function(oControl) {
 			this.addItem(oControl);
 		}.bind(this));
 

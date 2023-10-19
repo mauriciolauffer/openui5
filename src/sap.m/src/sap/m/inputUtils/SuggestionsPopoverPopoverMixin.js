@@ -8,8 +8,9 @@
 sap.ui.define([
 	"sap/m/library",
 	"sap/m/Popover",
-	"sap/m/ValueStateHeader"
-], function (library, Popover, ValueStateHeader) {
+	"sap/m/ValueStateHeader",
+	"sap/ui/core/Configuration"
+], function (library, Popover, ValueStateHeader, Configuration) {
 	"use strict";
 
 	// shortcut for sap.m.PlacementType
@@ -24,6 +25,7 @@ sap.ui.define([
 		 * @returns {sap.m.Popover} The newly created picker.
 		 */
 		this.createPopover = function (oInput) {
+			var bRTL = Configuration.getRTL();
 			var that = this,
 				oPopover = new Popover(oInput.getId() + "-popup", {
 					showArrow: false,
@@ -37,6 +39,17 @@ sap.ui.define([
 							that._getValueStateHeader().removeStyleClass("sapMPseudoFocus");
 							that.setValueStateActiveState(false);
 						}
+					},
+					afterOpen: function () {
+						if (!parseInt(this.getDomRef().style.right) && bRTL ) {
+							this.addStyleClass("sapUiSmallMarginBegin");
+						} else if (!parseInt(this.getDomRef().style.left) && !bRTL) {
+							this.addStyleClass("sapUiSmallMarginBegin");
+						} else {
+							this.removeStyleClass("sapUiSmallMarginBegin");
+						}
+
+						this.addStyleClass("sapUiSmallMarginEnd");
 					}
 				});
 
@@ -56,8 +69,6 @@ sap.ui.define([
 
 				if (this._sPopoverContentWidth) {
 					oPopover.setContentWidth(this._sPopoverContentWidth);
-				} else {
-					oPopover.setContentWidth((oInput.$().outerWidth()) + "px");
 				}
 
 				// resize suggestion popup to minimum size of the input field

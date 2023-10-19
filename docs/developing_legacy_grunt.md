@@ -4,6 +4,8 @@ Developing UI5
 
 This page explains the initial setup, development workflow, and how tests are executed.
 
+> The legacy Grunt-based setup will be discontinued in the near future. It is recommended to already switch to the [Standard Setup](developing.md#setting-up-the-openui5-development-environment) for working with the OpenUI5 repository.
+
 Setting up the UI5 development environment
 ------------------------------------------
 
@@ -37,7 +39,7 @@ npm install
 6. Point your browser to this server running UI5: [http://localhost:8080/testsuite/](http://localhost:8080/testsuite/)  - done!
 
 `grunt serve` has various configuration options, e.g. you can give the parameter `--port=9090` to use a different HTTP port.
- See the [documentation](tools.md) for more details.
+ See the [documentation](tools_legacy_grunt.md) for more details.
 
 
 The Development Process
@@ -61,7 +63,7 @@ Usage:
 grunt build
 ```
 
-Optionally, only selected libraries can be built or the copy of the test-resources folder can be skipped, see [the documentation](tools.md) for details.
+Optionally, only selected libraries can be built or the copy of the <code>test-resources</code> folder can be skipped; see [the documentation](tools_legacy_grunt.md) for details.
 
 The build is responsible for the following tasks:
 
@@ -95,93 +97,3 @@ To run an ESLint check, navigate to the root directory of the repository and exe
 grunt lint
 ```
 Optionally, only a selected library can be checked or just a single file or directory, see [the documentation](tools.md) for details.
-
-### Running the Unit Tests
-
-The UI5 unit tests are implemented using jQuery's QUnit testing framework and run by a Selenium-based infrastructure.
-
-To execute the unit tests, navigate to the root directory of the repository and execute:
-```
-grunt test
-```
-
-NOTE: by default this command runs tests for all libraries in the Chrome browser. But for all browsers except for Firefox, additional Selenium web drivers need to be installed (see the troubleshooting section below), so you may want to try first with Firefox.
-
-By giving parameters you can change this default behavior:
-
-```
-grunt test --browsers="safari,firefox"   # run tests of all libraries on Safari and Firefox
-```
-
-#### Running the Visual Tests
-
-__visualtesjs testing framework is not yet open source and is currently available only inside SAP__
-The UI5 visual tests are implemented using visualtestjs testing framework and run by a Selenium-based infrastructure.
-
-Please install visualtesjs by following the installation instructions at "ui5delivery/visualtestjs" project on the SAP GitHub
-
-To execute all available visual tests, navigate to the root of the repository and execute:
-
-```
-grunt visualtest
-```
-
-NOTE: by default this command executes all available visual tests for all libraries in Chrome browser.
-
-By giving parameters you can change this default behavior:
-
-```
-grunt test --browsers="firefox"   # run tests of all libraries on Firefox
-```
-
-##### Limitations
---browsers="" command with multiple browsers is not fully supported yet
-
-
-#### Troubleshooting proxy issues
-`grunt test` will download the "selenium-server-standalone" when run for the first time. If you are working behind a proxy and have no environment variables set for the proxy, this will fail for the first time:
-
-```
-selenium-server-standalone.jar not found. Downloading...
->> Error: getaddrinfo ENOTFOUND
-```
-
-To solve this issue, set the environment variables for the proxy as described above.
-
-
-#### Troubleshooting "browser not found" issues
-
-Selenium needs to find the browser executable on the PATH, otherwise you will see the following error message:
-
-```
-firefox
-Fatal error: Cannot find firefox binary in PATH. Make sure firefox is installed.
-```
-
-Solution: add the Firefox installation folder to the PATH environment variable.
-
-#### Troubleshooting "path to the driver executable" issues with browsers other than Firefox
-
-If you get the following error, remember that for browsers other than Firefox you need to install extra Selenium Web Drivers:
-
-```
-Fatal error: The path to the driver executable must be set by the webdriver.chrome.driver system property; for more information, see http://code.google.com/p/selenium/wiki/ChromeDriver. The latest version can be downloaded from http://chromedriver.storage.googleapis.com/index.html
-```
-
-Solution: download the Selenium driver for the respective browser and make sure the Selenium Web Driver finds it; for Chrome:
-
- * Download the current chromedriver_*.zip from  [http://chromedriver.storage.googleapis.com/index.html](http://chromedriver.storage.googleapis.com/index.html)
- * Extract the executable to a suitable location (e.g. C:\Program Files (x86)\Selenium Drivers)
- * Include the ChromeDriver location in your PATH environment variable
-
-For Internet Explorer (browser type "ie"), the download location is <http://selenium-release.storage.googleapis.com/index.html>. For other browsers, consult the respective driver documentation. In Internet Explorer you may have to adjust the "protected mode" settings in the Internet Options, tab "Security".
-
-
-
-#### Troubleshooting undeletable folders
-
-If you encounter source folders that cannot be deleted because a process is locking them, one possible cause are the Chrome/IE web drivers. Check whether they are among the active processes.
-
-#### Troubleshooting selenium server not starting issues
-
-If selenium server is reported to be started but tests could not connect to it, to you could try to directly provide the local host or IP to bind to with the --seleniumHost argument. By default selenium binds to port 4444 but you could supply another one with --seleniumPort argument.   

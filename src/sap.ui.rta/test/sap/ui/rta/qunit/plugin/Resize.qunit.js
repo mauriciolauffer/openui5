@@ -1,4 +1,4 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/ui/fl/write/api/ChangesWriteAPI",
@@ -16,6 +16,7 @@ sap.ui.define([
 	"sap/m/Text",
 	"sap/ui/layout/VerticalLayout",
 	"sap/ui/core/Core",
+	"sap/ui/core/Element",
 	"sap/ui/thirdparty/sinon-4"
 ], function(
 	ChangesWriteAPI,
@@ -33,6 +34,7 @@ sap.ui.define([
 	Text,
 	VerticalLayout,
 	Core,
+	Element,
 	sinon
 ) {
 	"use strict";
@@ -61,7 +63,7 @@ sap.ui.define([
 	}
 
 	QUnit.module("Given a table in Design Time with a Resize Plugin...", {
-		beforeEach: function(assert) {
+		beforeEach(assert) {
 			givenTableWithResizableColumns.call(this);
 			var fnDone = assert.async();
 
@@ -79,7 +81,7 @@ sap.ui.define([
 				fnDone();
 			}.bind(this));
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 			this.oDesignTime.destroy();
 			this.oResizePlugin.destroy();
@@ -96,9 +98,9 @@ sap.ui.define([
 
 			assert.notOk(this.oResizePlugin.isEnabled([this.oColumn0Overlay]), "then 'isEnabled' returns false");
 			return this.oResizePlugin._isEditable(this.oColumn0Overlay)
-				.then(function(bResult) {
-					assert.notOk(bResult, "then 'isEditable' returns false");
-				});
+			.then(function(bResult) {
+				assert.notOk(bResult, "then 'isEditable' returns false");
+			});
 		});
 
 		QUnit.test("if the action is disabled on the control designtime metadata of a column...", function(assert) {
@@ -125,9 +127,9 @@ sap.ui.define([
 			this.oResizePlugin.registerElementOverlay(this.oColumn0Overlay);
 
 			return this.oResizePlugin._isEditable(this.oColumn0Overlay)
-				.then(function(bResult) {
-					assert.notOk(bResult, "then 'isEditable' returns false");
-				});
+			.then(function(bResult) {
+				assert.notOk(bResult, "then 'isEditable' returns false");
+			});
 		});
 
 		QUnit.test("if the action has a valid change handler for a column...", function(assert) {
@@ -148,16 +150,16 @@ sap.ui.define([
 			this.oResizePlugin.registerElementOverlay(this.oColumn0Overlay);
 
 			return this.oResizePlugin._isEditable(this.oColumn0Overlay)
-				.then(function(bResult) {
-					assert.ok(bResult, "then 'isEditable' returns true");
-				});
+			.then(function(bResult) {
+				assert.ok(bResult, "then 'isEditable' returns true");
+			});
 		});
 
 		QUnit.test("if the action has a custom handler for a column...", function(assert) {
 			this.oColumn0Overlay.setDesignTimeMetadata({
 				actions: {
 					resize: {
-						handler: function () {
+						handler() {
 							return;
 						}
 					}
@@ -166,19 +168,19 @@ sap.ui.define([
 			this.oResizePlugin.registerElementOverlay(this.oColumn0Overlay);
 
 			return this.oResizePlugin._isEditable(this.oColumn0Overlay)
-				.then(function(bResult) {
-					assert.ok(bResult, "then 'isEditable' returns true");
-				});
+			.then(function(bResult) {
+				assert.ok(bResult, "then 'isEditable' returns true");
+			});
 		});
 
 		QUnit.test("when the Resize plugin is unregistered and registered again for an Overlay", function(assert) {
 			function checkEventHandlerCalled(sEventName, oStub, iCallCount) {
 				if (sEventName === "mouseleave") {
-					this.oColumn0Overlay.$().trigger(sEventName); // "mouseleave" event is not triggered using "dispatchEvent"
+					this.oColumn0Overlay.getDomRef().dispatchEvent(new Event("mouseout"));
 				} else {
 					this.oColumn0Overlay.getDomRef().dispatchEvent(new Event(sEventName));
 				}
-				assert.strictEqual(oStub.callCount, iCallCount, "then on " + sEventName + " event the method is called the correct number of times");
+				assert.strictEqual(oStub.callCount, iCallCount, `then on ${sEventName} event the method is called the correct number of times`);
 			}
 
 			sandbox.stub(this.oResizePlugin, "isEnabled").returns(true);
@@ -241,11 +243,11 @@ sap.ui.define([
 			assert.strictEqual(this.oResizePlugin.getHandle(), oHandle, "then the handle is properly set on the plugin");
 
 			var oRemoveHandleSpy = sandbox.spy(this.oResizePlugin.getHandle(), "remove");
-			this.oColumn0Overlay.$().trigger("mouseleave"); // "mouseleave" event is not triggered using "dispatchEvent"
+			this.oColumn0Overlay.getDomRef().dispatchEvent(new Event("mouseout"));
 			assert.ok(oRemoveHandleSpy.called, "on mouse leave, the handle is removed");
 			this.oColumn0OverlayDomElement.dispatchEvent(new Event("mousemove"));
 			aHandle = this.oColumn0OverlayDomElement.getElementsByClassName("sapUiRtaResizeHandle");
-			oHandle = aHandle[0];
+			[oHandle] = aHandle;
 			assert.strictEqual(aHandle.length, 1, "on new mousemove, handle is recreated on the overlay");
 			oRemoveHandleSpy = sandbox.spy(this.oResizePlugin.getHandle(), "remove");
 
@@ -307,7 +309,7 @@ sap.ui.define([
 
 	// Some tests need RTA as the calculations are dependent on the style class (handle position)
 	QUnit.module("Given a table in RTA...", {
-		beforeEach: function() {
+		beforeEach() {
 			givenTableWithResizableColumns.call(this);
 
 			this.oRta = new RuntimeAuthoring({
@@ -318,12 +320,12 @@ sap.ui.define([
 			});
 
 			return this.oRta.start()
-				.then(function() {
-					this.oColumn0Overlay = OverlayRegistry.getOverlay(this.oComponent.createId("column0"));
-					this.oResizePlugin = this.oRta.getPlugins()["resize"];
-				}.bind(this));
+			.then(function() {
+				this.oColumn0Overlay = OverlayRegistry.getOverlay(this.oComponent.createId("column0"));
+				this.oResizePlugin = this.oRta.getPlugins().resize;
+			}.bind(this));
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oRta.destroy();
 			this.oComponent.destroy();
 			this.oContainer.destroy();
@@ -408,36 +410,36 @@ sap.ui.define([
 			var iNewWidth = iColumn0OverlayOldWidth - 10;
 
 			return this.oResizePlugin._finalizeResize(this.oColumn0Overlay, iNewWidth)
-				.then(function() {
-					var oPluginOnGeometryChangedSpy = sandbox.spy(this.oResizePlugin, "_onOverlayGeometryChanged");
-					var oCreateHandleStub = sandbox.stub(this.oResizePlugin, "_createHandle");
+			.then(function() {
+				var oPluginOnGeometryChangedSpy = sandbox.spy(this.oResizePlugin, "_onOverlayGeometryChanged");
+				var oCreateHandleStub = sandbox.stub(this.oResizePlugin, "_createHandle");
 
-					function onGeometryChanged() {
-						assert.notOk(oPluginOnGeometryChangedSpy.called, "then _onOverlayGeometryChanged was not called");
+				function onGeometryChanged() {
+					assert.notOk(oPluginOnGeometryChangedSpy.called, "then _onOverlayGeometryChanged was not called");
 
-						assert.ok(this.oColumn0Overlay.getSelected(), "then the overlay is selected");
-						assert.ok(this.oColumn0Overlay.hasFocus(), "then the overlay is focused");
+					assert.ok(this.oColumn0Overlay.getSelected(), "then the overlay is selected");
+					assert.ok(this.oColumn0Overlay.hasFocus(), "then the overlay is focused");
 
-						assert.ok(oCreateCommandStub.calledWith(this.oColumn0Overlay, Math.round(iNewWidth)), "then _createCommand is called with the right parameters");
+					assert.ok(oCreateCommandStub.calledWith(this.oColumn0Overlay, Math.round(iNewWidth)), "then _createCommand is called with the right parameters");
 
-						function onGeometryChangedAgain() {
-							assert.ok(oPluginOnGeometryChangedSpy.called, "then _onOverlayGeometryChanged was called after the first geometryChanged event");
-							assert.ok(oCreateHandleStub.called, "then _createHandle is called");
-						}
-
-						this.oColumn0Overlay.attachEventOnce("geometryChanged", onGeometryChangedAgain, this);
-
-						this.oColumn0Overlay.fireGeometryChanged({ id: this.oColumn0Overlay.getId() });
+					function onGeometryChangedAgain() {
+						assert.ok(oPluginOnGeometryChangedSpy.called, "then _onOverlayGeometryChanged was called after the first geometryChanged event");
+						assert.ok(oCreateHandleStub.called, "then _createHandle is called");
 					}
-					this.oColumn0Overlay.attachEventOnce("geometryChanged", onGeometryChanged, this);
 
-					this.oColumn0Overlay.fireGeometryChanged();
-				}.bind(this));
+					this.oColumn0Overlay.attachEventOnce("geometryChanged", onGeometryChangedAgain, this);
+
+					this.oColumn0Overlay.fireGeometryChanged({ id: this.oColumn0Overlay.getId() });
+				}
+				this.oColumn0Overlay.attachEventOnce("geometryChanged", onGeometryChanged, this);
+
+				this.oColumn0Overlay.fireGeometryChanged();
+			}.bind(this));
 		});
 
 		QUnit.test("when _finalizeResize is called and the handler returns no changes... ", function(assert) {
 			sandbox.stub(this.oResizePlugin, "getAction").returns({
-				handler: function() {
+				handler() {
 					return Promise.resolve([]);
 				}
 			});
@@ -449,15 +451,15 @@ sap.ui.define([
 			var oFireElementModifiedSpy = sandbox.spy(this.oResizePlugin, "fireElementModified");
 
 			return this.oResizePlugin._finalizeResize(this.oColumn0Overlay, iNewWidth)
-				.then(function() {
-					assert.ok(oFireElementModifiedSpy.notCalled, "then no command is created and fireElementModified is not called");
-				});
+			.then(function() {
+				assert.ok(oFireElementModifiedSpy.notCalled, "then no command is created and fireElementModified is not called");
+			});
 		});
 
 		QUnit.test("when _finalizeResize is called with a change in width but the handler fails... ", function(assert) {
 			var sErrorMessage = "I failed!";
 			sandbox.stub(this.oResizePlugin, "getAction").returns({
-				handler: function() {
+				handler() {
 					return Promise.reject(sErrorMessage);
 				}
 			});
@@ -467,15 +469,15 @@ sap.ui.define([
 			var iNewWidth = iColumn0OverlayOldWidth - 10;
 
 			return this.oResizePlugin._finalizeResize(this.oColumn0Overlay, iNewWidth)
-				.catch(function(oError) {
-					assert.equal(
-						oError.message,
-						"Error occurred during handler execution. Original error: Error - " + sErrorMessage,
-						"then the proper error is raised"
-					);
-					assert.ok(this.oColumn0Overlay.isSelected(), "then the overlay is selected");
-					assert.ok(this.oColumn0Overlay.hasFocus(), "then the overlay is focused");
-				}.bind(this));
+			.catch(function(oError) {
+				assert.equal(
+					oError.message,
+					`Error occurred during handler execution. Original error: Error - ${sErrorMessage}`,
+					"then the proper error is raised"
+				);
+				assert.ok(this.oColumn0Overlay.isSelected(), "then the overlay is selected");
+				assert.ok(this.oColumn0Overlay.hasFocus(), "then the overlay is focused");
+			}.bind(this));
 		});
 
 		QUnit.test("when _finalizeResize is called with a change in width but the command creation fails... ", function(assert) {
@@ -488,15 +490,15 @@ sap.ui.define([
 			var iNewWidth = iColumn0OverlayOldWidth - 10;
 
 			return this.oResizePlugin._finalizeResize(this.oColumn0Overlay, iNewWidth)
-				.catch(function(oError) {
-					assert.equal(
-						oError.message,
-						"Error occurred during resize command creation. Original error: Error - " + sErrorMessage,
-						"then the proper error is raised"
-					);
-					assert.ok(this.oColumn0Overlay.isSelected(), "then the overlay is selected");
-					assert.ok(this.oColumn0Overlay.hasFocus(), "then the overlay is focused");
-				}.bind(this));
+			.catch(function(oError) {
+				assert.equal(
+					oError.message,
+					`Error occurred during resize command creation. Original error: Error - ${sErrorMessage}`,
+					"then the proper error is raised"
+				);
+				assert.ok(this.oColumn0Overlay.isSelected(), "then the overlay is selected");
+				assert.ok(this.oColumn0Overlay.hasFocus(), "then the overlay is focused");
+			}.bind(this));
 		});
 
 		QUnit.test("when _createCommand is called with a change in width... ", function(assert) {
@@ -531,24 +533,24 @@ sap.ui.define([
 			});
 
 			return this.oResizePlugin._createCommand(this.oColumn0Overlay, iNewWidth)
-				.then(function() {
-					assert.ok(oGetCommandForSpy.calledWith(oColumn0Element, "resize", {
-						changeType: "myChangeType",
-						content: {
-							resizedElementId: oColumn0Element.getId(),
-							newWidth: iNewWidth
-						}
-					}, undefined, sVariantManagementReference), "then getCommandFor is called with the right parameters for the resize command");
-				});
+			.then(function() {
+				assert.ok(oGetCommandForSpy.calledWith(oColumn0Element, "resize", {
+					changeType: "myChangeType",
+					content: {
+						resizedElementId: oColumn0Element.getId(),
+						newWidth: iNewWidth
+					}
+				}, undefined, sVariantManagementReference), "then getCommandFor is called with the right parameters for the resize command");
+			});
 		});
 
 		QUnit.test("when _createCommand is called with a handler in the DT Metadata... ", function(assert) {
 			var fnDone = assert.async();
 			var iNewWidth = this.oColumn0Overlay.getDomRef().offsetWidth - 10;
-			var oTable = Core.byId(this.oComponent.createId("myTable"));
-			var oColumn0 = Core.byId(this.oComponent.createId("column0"));
-			var oColumn1 = Core.byId(this.oComponent.createId("column1"));
-			var oColumn2 = Core.byId(this.oComponent.createId("column2"));
+			var oTable = Element.getElementById(this.oComponent.createId("myTable"));
+			var oColumn0 = Element.getElementById(this.oComponent.createId("column0"));
+			var oColumn1 = Element.getElementById(this.oComponent.createId("column1"));
+			var oColumn2 = Element.getElementById(this.oComponent.createId("column2"));
 
 			this.oColumn0Overlay.setDesignTimeMetadata({
 				actions: {
@@ -610,29 +612,29 @@ sap.ui.define([
 			});
 
 			return this.oResizePlugin._createCommand(this.oColumn0Overlay, iNewWidth)
-				.then(function() {
-					assert.ok(oGetCommandForSpy.calledWith(oTable, "resize", {
-						changeType: "myChangeType0",
-						content: {
-							resizedElement: oColumn0,
-							newWidth: 10
-						}
-					}, undefined, sVariantManagementReference), "then getCommandFor is called with the right parameters for the first resize command");
-					assert.ok(oGetCommandForSpy.calledWith(oTable, "resize", {
-						changeType: "myChangeType1",
-						content: {
-							resizedElement: oColumn1,
-							newWidth: 20
-						}
-					}, undefined, sVariantManagementReference), "then getCommandFor is called with the right parameters for the second resize command");
-					assert.ok(oGetCommandForSpy.calledWith(oTable, "resize", {
-						changeType: "myChangeType2",
-						content: {
-							resizedElement: oColumn2,
-							newWidth: 30
-						}
-					}, undefined, sVariantManagementReference), "then getCommandFor is called with the right parameters for the third resize command");
-				});
+			.then(function() {
+				assert.ok(oGetCommandForSpy.calledWith(oTable, "resize", {
+					changeType: "myChangeType0",
+					content: {
+						resizedElement: oColumn0,
+						newWidth: 10
+					}
+				}, undefined, sVariantManagementReference), "then getCommandFor is called with the right parameters for the first resize command");
+				assert.ok(oGetCommandForSpy.calledWith(oTable, "resize", {
+					changeType: "myChangeType1",
+					content: {
+						resizedElement: oColumn1,
+						newWidth: 20
+					}
+				}, undefined, sVariantManagementReference), "then getCommandFor is called with the right parameters for the second resize command");
+				assert.ok(oGetCommandForSpy.calledWith(oTable, "resize", {
+					changeType: "myChangeType2",
+					content: {
+						resizedElement: oColumn2,
+						newWidth: 30
+					}
+				}, undefined, sVariantManagementReference), "then getCommandFor is called with the right parameters for the third resize command");
+			});
 		});
 
 		QUnit.test("when the resize handle is dragged on the column header and there are size limits defined on the designtime metadata... ", function(assert) {
@@ -684,7 +686,7 @@ sap.ui.define([
 					iMouseInitialPosition = oHandle.getBoundingClientRect().left;
 
 					function onSecondMouseDown() {
-						oFullScreenDiv = document.getElementsByClassName("sapUiRtaFullScreenDiv")[0];
+						[oFullScreenDiv] = document.getElementsByClassName("sapUiRtaFullScreenDiv");
 						iMouseFinalPosition = iMouseInitialPosition - 60;
 						iExpectedHandlePosition = iMinWidth - oHandle.offsetWidth;
 						oFullScreenDiv.dispatchEvent(new MouseEvent("mousemove", { clientX: iMouseFinalPosition }));
@@ -756,7 +758,7 @@ sap.ui.define([
 					iMouseInitialPosition = oHandle.getBoundingClientRect().left;
 
 					function onSecondMouseDown() {
-						oFullScreenDiv = document.getElementsByClassName("sapUiRtaFullScreenDiv")[0];
+						[oFullScreenDiv] = document.getElementsByClassName("sapUiRtaFullScreenDiv");
 						// Move handle outside of the control border
 						iMouseFinalPosition = iMouseInitialPosition - 175;
 						iExpectedHandlePosition = 15 - oHandle.offsetWidth;
@@ -791,7 +793,7 @@ sap.ui.define([
 				actions: {
 					resize: {
 						changeType: "myChangeType",
-						getHandleExtensionHeight: function(oElement) {
+						getHandleExtensionHeight(oElement) {
 							return oElement.getParent().getDomRef().offsetHeight;
 						}
 					}
@@ -878,7 +880,7 @@ sap.ui.define([
 						actions: {
 							resize: {
 								changeType: "myChangeType",
-								getSizeLimits: function() {
+								getSizeLimits() {
 									return {
 										minimumWidth: iColumn0OverlayOldWidth
 									};
@@ -954,7 +956,6 @@ sap.ui.define([
 			oHandle.dispatchEvent(new MouseEvent("mousedown", { detail: 2 }));
 		});
 	});
-
 
 	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";

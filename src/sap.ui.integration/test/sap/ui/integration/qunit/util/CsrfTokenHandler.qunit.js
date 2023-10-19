@@ -263,11 +263,13 @@ sap.ui.define([
 				csrfTokensConfig: oCsrfConfig
 			});
 
+		assert.expect(3);
+
 		// make a request which uses a CSRF placeholder
 		var oDataProvider = oDataProviderFactory.create(oDataConfig);
 		// respond upon request for a token
 		this.oServer.respondWith("HEAD", "/fakeService/getToken", function (oXhr) {
-			var sCsrfHeader = oXhr.requestHeaders["X-CSRF-Token"];
+			var sCsrfHeader = new Headers(oXhr.requestHeaders).get("X-CSRF-Token");
 
 			assert.strictEqual(oXhr.method, oCsrfConfig.token1.data.request.method, "Correct method was used");
 			assert.strictEqual(sCsrfHeader, "Fetch", "Request to obtain a token was executed");
@@ -275,14 +277,14 @@ sap.ui.define([
 			oXhr.respond(200, {
 				"Content-Type": "application/json",
 				"X-CSRF-Token": "FAKETOKEN"
-			});
+			}, "{}");
 
 			done();
 		});
 
 		// respond to the actual data request
 		this.oServer.respondWith("/fakeService/Products", function (oXhr) {
-			assert.strictEqual(oXhr.requestHeaders["X-CSRF-Token"], "FAKETOKEN", "The data request headers contain the provided token");
+			assert.strictEqual(new Headers(oXhr.requestHeaders).get("X-CSRF-Token"), "FAKETOKEN", "The data request headers contain the provided token");
 
 			oXhr.respond(200, {
 				"Content-Type": "application/json"
@@ -317,7 +319,7 @@ sap.ui.define([
 
 		// respond to the actual data request
 		this.oServer.respondWith("/fakeService/Products", function (oXhr) {
-			assert.strictEqual(oXhr.requestHeaders["X-CSRF-Token"], "TokenValue", "The data request headers contain the provided token");
+			assert.strictEqual(new Headers(oXhr.requestHeaders).get("X-CSRF-Token"), "TokenValue", "The data request headers contain the provided token");
 
 			oXhr.respond(200, {
 				"Content-Type": "application/json"
@@ -349,7 +351,7 @@ sap.ui.define([
 
 		// respond to the actual data request
 		this.oServer.respondWith("/fakeService/Products", function (oXhr) {
-			assert.strictEqual(oXhr.requestHeaders["X-CSRF-Token"], "HostTokenValue", "The data request headers contain the provided token");
+			assert.strictEqual(new Headers(oXhr.requestHeaders).get("X-CSRF-Token"), "HostTokenValue", "The data request headers contain the provided token");
 
 			oXhr.respond(200, {
 				"Content-Type": "application/json"
@@ -373,7 +375,7 @@ sap.ui.define([
 		var oDataProvider = oDataProviderFactory.create(oDataConfig);
 		// respond upon request for a token
 		this.oServer.respondWith("HEAD", "/fakeService/getToken", function (oXhr) {
-			var sCsrfHeader = oXhr.requestHeaders["X-CSRF-Token"];
+			var sCsrfHeader = new Headers(oXhr.requestHeaders).get("X-CSRF-Token");
 
 			assert.strictEqual(oXhr.method, oCsrfConfig.token1.data.request.method, "Correct method was used");
 			assert.strictEqual(sCsrfHeader, "Fetch", "Request to obtain a token was executed");
@@ -381,14 +383,14 @@ sap.ui.define([
 			oXhr.respond(200, {
 				"Content-Type": "application/json",
 				"X-CSRF-Token": "FAKETOKEN"
-			});
+			}, "{}");
 
 			done();
 		});
 
 		// respond to the actual data request
 		this.oServer.respondWith("/fakeService/Products", function (oXhr) {
-			assert.strictEqual(oXhr.requestHeaders["X-CSRF-Token"], "FAKETOKEN", "The data request headers contain the provided token");
+			assert.strictEqual(new Headers(oXhr.requestHeaders).get("X-CSRF-Token"), "FAKETOKEN", "The data request headers contain the provided token");
 
 			oXhr.respond(200, {
 				"Content-Type": "application/json"
@@ -414,7 +416,7 @@ sap.ui.define([
 
 		// respond upon request for a token
 		this.oServer.respondWith("HEAD", "/fakeService/getToken", function (oXhr) {
-			var sCsrfHeader = oXhr.requestHeaders["X-CSRF-Token"];
+			var sCsrfHeader = new Headers(oXhr.requestHeaders).get("X-CSRF-Token");
 
 			assert.strictEqual(oXhr.method, oCsrfConfig.token1.data.request.method, "Correct method was used");
 			assert.strictEqual(sCsrfHeader, "Fetch", "Request to obtain a token was executed");
@@ -422,14 +424,14 @@ sap.ui.define([
 			oXhr.respond(200, {
 				"Content-Type": "application/json",
 				"X-CSRF-Token": "FAKETOKEN"
-			});
+			}, "{}");
 
 			done();
 		});
 
 		// respond to the actual data request
 		this.oServer.respondWith("/fakeService/Products", function (oXhr) {
-			assert.strictEqual(oXhr.requestHeaders["X-CSRF-Token"], "FAKETOKEN", "The data request headers contain the provided token");
+			assert.strictEqual(new Headers(oXhr.requestHeaders).get("X-CSRF-Token"), "FAKETOKEN", "The data request headers contain the provided token");
 
 			var headers = {
 					"Content-Type": "application/json"
@@ -465,7 +467,7 @@ sap.ui.define([
 		var oDataProvider = oDataProviderFactory.create(oDataConfig);
 		// respond upon request for a token
 		this.oServer.respondWith("HEAD", "/fakeService/getToken", function (oXhr) {
-			var sCsrfHeader = oXhr.requestHeaders["X-CSRF-Token"];
+			var sCsrfHeader = new Headers(oXhr.requestHeaders).get("X-CSRF-Token");
 
 			assert.strictEqual(oXhr.method, oCsrfConfig.token1.data.request.method, "Correct method was used");
 			assert.strictEqual(sCsrfHeader, "Fetch", "Request to obtain a token was executed");
@@ -473,14 +475,14 @@ sap.ui.define([
 			oXhr.respond(200, {
 				"Content-Type": "application/json",
 				"X-CSRF-Token": "FAKETOKEN"
-			});
+			}, "{}");
 
 			done();
 		});
 
 		// respond to the actual data request
 		this.oServer.respondWith("POST", "/fakeService/Products", function (oXhr) {
-			assert.strictEqual(oXhr.requestBody, "X-CSRF-Token=FAKETOKEN", "The data request body contains the provided token");
+			assert.strictEqual(oXhr.requestBody.get("X-CSRF-Token"), "FAKETOKEN", "The data request body contains the provided token");
 
 			oXhr.respond(200, {
 				"Content-Type": "application/json"
@@ -509,7 +511,7 @@ sap.ui.define([
 
 		// respond to the actual data request
 		this.oServer.respondWith("/fakeService/Products", function (oXhr) {
-			assert.strictEqual(oXhr.requestHeaders["X-CSRF-Token"], "HostTokenValue", "The data request headers contain the provided token");
+			assert.strictEqual(new Headers(oXhr.requestHeaders).get("X-CSRF-Token"), "HostTokenValue", "The data request headers contain the provided token");
 
 			oXhr.respond(200, {
 				"Content-Type": "application/json"
@@ -531,19 +533,19 @@ sap.ui.define([
 		assert.expect(2);
 
 		this.oServer.respondWith("HEAD", "/fakeService/getToken", function (oXhr) {
-			var sCsrfHeader = oXhr.requestHeaders["X-CSRF-Token"];
+			var sCsrfHeader = new Headers(oXhr.requestHeaders).get("X-CSRF-Token");
 
 			assert.strictEqual(sCsrfHeader, "Fetch", "Request to obtain a token was executed");
 
 			oXhr.respond(200, {
 				"Content-Type": "application/json",
 				"X-CSRF-Token": "FAKETOKEN"
-			});
+			}, "{}");
 		});
 
 		// respond to the actual data request
 		this.oServer.respondWith("POST", "/fakeService/Products", function (oXhr) {
-			assert.strictEqual(oXhr.requestHeaders["X-CSRF-Token"], "FAKETOKEN", "The data request header contains the provided token");
+			assert.strictEqual(new Headers(oXhr.requestHeaders).get("X-CSRF-Token"), "FAKETOKEN", "The data request header contains the provided token");
 
 			oXhr.respond(200, {
 				"Content-Type": "application/json"

@@ -25,15 +25,18 @@ sap.ui.define("test-resources/sap/ui/table/Settings", [
 	"sap/ui/model/json/JSONModel",
 	"sap/ui/table/Column",
 	"sap/ui/table/plugins/MultiSelectionPlugin",
+	"sap/ui/table/plugins/ODataV4Selection",
 	"sap/ui/table/RowAction",
 	"sap/ui/table/RowActionItem",
 	"sap/ui/table/RowSettings",
 	"sap/ui/table/Table",
+	"sap/ui/table/rowmodes/Type",
 	"sap/ui/table/utils/TableUtils",
 	"sap/ui/unified/Menu",
 	"sap/ui/unified/MenuItem",
 	"sap/ui/unified/MenuTextFieldItem",
-	"sap/m/plugins/CellSelector"
+	"sap/m/plugins/CellSelector",
+	"sap/ui/core/date/UI5Date"
 ], function(
 	Log,
 	deepExtend,
@@ -61,15 +64,18 @@ sap.ui.define("test-resources/sap/ui/table/Settings", [
 	JSONModel,
 	Column,
 	MultiSelectionPlugin,
+	ODataV4Selection,
 	RowAction,
 	RowActionItem,
 	RowSettings,
 	Table,
+	RowModeType,
 	TableUtils,
 	UnifiedMenu,
 	UnifiedMenuItem,
 	MenuTextFieldItem,
-	CellSelector
+	CellSelector,
+	UI5Date
 ) {
 	"use strict";
 
@@ -117,7 +123,7 @@ sap.ui.define("test-resources/sap/ui/table/Settings", [
 
 	for (i = 0, l = TABLESETTINGS.listTestData.length; i < l; i++) {
 		TABLESETTINGS.listTestData[i].lastName += " - " + (i + 1);
-		TABLESETTINGS.listTestData[i].birthdayDate = new Date(TABLESETTINGS.listTestData[i].birthday);
+		TABLESETTINGS.listTestData[i].birthdayDate = UI5Date.getInstance(TABLESETTINGS.listTestData[i].birthday);
 	}
 
 	TABLESETTINGS.treeTestData = {
@@ -304,6 +310,66 @@ sap.ui.define("test-resources/sap/ui/table/Settings", [
 
 	// Settings
 
+	const SETTING_TEMPLATE_ROWMODE_ROWCOUNT = {
+		hidden: true,
+		text: "Row count",
+		input: true,
+		value: function(oTable) {
+			if (TableUtils.isA(oTable.getRowMode(), "sap.ui.table.rowmodes.RowMode")
+				&& oTable.getRowMode().getMetadata().hasProperty("rowCount")) {
+				return oTable.getRowMode().getRowCount();
+			}
+		},
+		action: function(oTable, sValue) {
+			oTable.getRowMode().setRowCount(parseInt(sValue) || 0);
+		}
+	};
+
+	const SETTING_TEMPLATE_ROWMODE_FIXEDTOPROWS = {
+		hidden: true,
+		text: "Fixed Top Rows",
+		input: true,
+		value: function(oTable) {
+			if (TableUtils.isA(oTable.getRowMode(), "sap.ui.table.rowmodes.RowMode")
+				&& oTable.getRowMode().getMetadata().hasProperty("fixedTopRows")) {
+				return oTable.getRowMode().getFixedTopRowCount();
+			}
+		},
+		action: function(oTable, sValue) {
+			oTable.getRowMode().setFixedTopRowCount(parseInt(sValue) || 0);
+		}
+	};
+
+	const SETTING_TEMPLATE_ROWMODE_FIXEDBOTTOMROWS = {
+		hidden: true,
+		text: "Fixed Bottom Rows",
+		input: true,
+		value: function(oTable) {
+			if (TableUtils.isA(oTable.getRowMode(), "sap.ui.table.rowmodes.RowMode")
+				&& oTable.getRowMode().getMetadata().hasProperty("fixedBottomRows")) {
+				return oTable.getRowMode().getFixedBottomRowCount();
+			}
+		},
+		action: function(oTable, sValue) {
+			oTable.getRowMode().setFixedBottomRowCount(parseInt(sValue) || 0);
+		}
+	};
+
+	const SETTING_TEMPLATE_ROWMODE_HIDEEMPTYROWS = {
+		hidden: true,
+		text: "Hide empty rows",
+		input: "boolean",
+		value: function(oTable) {
+			if (TableUtils.isA(oTable.getRowMode(), "sap.ui.table.rowmodes.RowMode")
+				&& oTable.getRowMode().getMetadata().hasProperty("hideEmptyRows")) { // TODO: "hideEmptyRows" in oTable.getMetadata().getAllPrivateAggregations()
+				return oTable.getRowMode().getHideEmptyRows();
+			}
+		},
+		action: function(oTable, bValue) {
+			oTable.getRowMode().setHideEmptyRows(bValue);
+		}
+	};
+
 	var DEFAULTACTIONS = {
 		I18N: {
 			text: "Internationalization",
@@ -351,149 +417,69 @@ sap.ui.define("test-resources/sap/ui/table/Settings", [
 			group: {
 				ROWMODE: {
 					text: "Mode",
-					selectedKey: "NONE",
-					value: function() {
-						return TABLESETTINGS.actions.ROWMODES.group.ROWMODE.selectedKey;
-					},
-					choice: {
-						NONE: {
-							text: "None",
-							action: function(oTable) {
-								if (oTable.getRowMode()) {
-									oTable.getRowMode().destroy();
-								}
+					selectedKey: "FIXED_ENUM",
+					value: function(oTable) {
+						var vRowMode = oTable.getRowMode();
 
-								TABLESETTINGS.actions.ROWMODES.group.ROWMODE.selectedKey = "NONE";
+						if (typeof vRowMode === "string") {
+							return vRowMode.toUpperCase() + "_ENUM";
+						} else {
+							return vRowMode?.getMetadata().getName().split(".").pop().toUpperCase();
+						}
+					},
+					choice: (() => {
+						var mSettings = {};
+
+						Object.keys(RowModeType).forEach((sType) => {
+							function refreshUI(bIsEnum) {
+								TABLESETTINGS.actions.ROWMODES.group.ROWMODE.selectedKey = sType.toUpperCase() + (bIsEnum ? "_ENUM" : "");
 
 								for (var sKey in TABLESETTINGS.actions.ROWMODES.group) {
 									if (sKey.startsWith("SETTING")) {
 										TABLESETTINGS.actions.ROWMODES.group[sKey].hidden = true;
+									}
+									if (!bIsEnum && sKey.startsWith("SETTING_" + sType.toUpperCase())) {
+										TABLESETTINGS.actions.ROWMODES.group[sKey].hidden = false;
 									}
 								}
 
 								oSettingsMenu.removeAllContent();
 								oSettingsMenu.addContent(initForm(TABLESETTINGS.actions));
 							}
-						},
-						FIXED: {
-							text: "Fixed",
-							action: function(oTable) {
-								if (oTable.getRowMode()) {
-									oTable.getRowMode().destroy();
+
+							mSettings[sType.toUpperCase()] = {
+								text: sType,
+								action: (oTable) => {
+									sap.ui.require(["sap/ui/table/rowmodes/" + sType], function(RowMode) {
+										oTable.destroyRowMode();
+										oTable.setRowMode(new RowMode());
+										refreshUI();
+									});
 								}
-
-								sap.ui.require(["sap/ui/table/rowmodes/FixedRowMode"], function(FixedRowMode) {
-									oTable.setRowMode(new FixedRowMode());
-
-									TABLESETTINGS.actions.ROWMODES.group.ROWMODE.selectedKey = "FIXED";
-
-									for (var sKey in TABLESETTINGS.actions.ROWMODES.group) {
-										if (sKey.startsWith("SETTING")) {
-											TABLESETTINGS.actions.ROWMODES.group[sKey].hidden = true;
-										}
-										if (sKey.startsWith("SETTING_FIXED")) {
-											TABLESETTINGS.actions.ROWMODES.group[sKey].hidden = false;
-										}
-									}
-
-									oSettingsMenu.removeAllContent();
-									oSettingsMenu.addContent(initForm(TABLESETTINGS.actions));
-								});
-							}
-						},
-						INTERACTIVE: {
-							text: "Interactive",
-							action: function(oTable) {
-								if (oTable.getRowMode()) {
-									oTable.getRowMode().destroy();
+							};
+							mSettings[sType.toUpperCase() + "_ENUM"] = {
+								text: sType + " (enum)",
+								action: (oTable) => {
+									oTable.destroyRowMode();
+									oTable.setRowMode(sType);
+									refreshUI(true);
 								}
+							};
+						});
 
-								sap.ui.require(["sap/ui/table/rowmodes/InteractiveRowMode"], function(InteractiveRowMode) {
-									oTable.setRowMode(new InteractiveRowMode());
-
-									TABLESETTINGS.actions.ROWMODES.group.ROWMODE.selectedKey = "INTERACTIVE";
-
-									for (var sKey in TABLESETTINGS.actions.ROWMODES.group) {
-										if (sKey.startsWith("SETTING")) {
-											TABLESETTINGS.actions.ROWMODES.group[sKey].hidden = true;
-										}
-										if (sKey.startsWith("SETTING_INTERACTIVE")) {
-											TABLESETTINGS.actions.ROWMODES.group[sKey].hidden = false;
-										}
-									}
-
-									oSettingsMenu.removeAllContent();
-									oSettingsMenu.addContent(initForm(TABLESETTINGS.actions));
-								});
-							}
-						},
-						AUTO: {
-							text: "Auto",
-							action: function(oTable) {
-								if (oTable.getRowMode()) {
-									oTable.getRowMode().destroy();
-								}
-
-								sap.ui.require(["sap/ui/table/rowmodes/AutoRowMode"], function(AutoRowMode) {
-									oTable.setRowMode(new AutoRowMode());
-
-									TABLESETTINGS.actions.ROWMODES.group.ROWMODE.selectedKey = "AUTO";
-
-									for (var sKey in TABLESETTINGS.actions.ROWMODES.group) {
-										if (sKey.startsWith("SETTING")) {
-											TABLESETTINGS.actions.ROWMODES.group[sKey].hidden = true;
-										}
-										if (sKey.startsWith("SETTING_AUTO")) {
-											TABLESETTINGS.actions.ROWMODES.group[sKey].hidden = false;
-										}
-									}
-
-									oSettingsMenu.removeAllContent();
-									oSettingsMenu.addContent(initForm(TABLESETTINGS.actions));
-								});
-							}
-						}
-					}
+						return mSettings;
+					})()
 				},
-				SETTING_FIXED_ROWCOUNT: {
-					hidden: true,
-					text: "Row count",
-					input: true,
-					value: function(oTable) {
-						if (TableUtils.isA(oTable.getRowMode(), "sap.ui.table.rowmodes.FixedRowMode")) {
-							return oTable.getRowMode().getRowCount();
-						}
-					},
-					action: function(oTable, sValue) {
-						oTable.getRowMode().setRowCount(parseInt(sValue) || 0);
-					}
-				},
-				SETTING_FIXED_HIDEEMPTYROWS: {
-					hidden: true,
-					text: "Hide empty rows",
-					input: "boolean",
-					value: function(oTable) {
-						if (TableUtils.isA(oTable.getRowMode(), "sap.ui.table.rowmodes.FixedRowMode")) {
-							return oTable.getRowMode().getHideEmptyRows();
-						}
-					},
-					action: function(oTable, bValue) {
-						oTable.getRowMode().setHideEmptyRows(bValue);
-					}
-				},
-				SETTING_AUTO_HIDEEMPTYROWS: {
-					hidden: true,
-					text: "Hide empty rows",
-					input: "boolean",
-					value: function(oTable) {
-						if (TableUtils.isA(oTable.getRowMode(), "sap.ui.table.rowmodes.AutoRowMode")) {
-							return oTable.getRowMode().getHideEmptyRows();
-						}
-					},
-					action: function(oTable, bValue) {
-						oTable.getRowMode().setHideEmptyRows(bValue);
-					}
-				}
+				SETTING_FIXED_ROWCOUNT: Object.assign({}, SETTING_TEMPLATE_ROWMODE_ROWCOUNT),
+				SETTING_FIXED_FIXEDTOPROWS: Object.assign({}, SETTING_TEMPLATE_ROWMODE_FIXEDTOPROWS),
+				SETTING_FIXED_FIXEDBOTTOMROWS: Object.assign({}, SETTING_TEMPLATE_ROWMODE_FIXEDBOTTOMROWS),
+				SETTING_FIXED_HIDEEMPTYROWS: Object.assign({}, SETTING_TEMPLATE_ROWMODE_HIDEEMPTYROWS),
+				SETTING_INTERACTIVE_ROWCOUNT: Object.assign({}, SETTING_TEMPLATE_ROWMODE_ROWCOUNT),
+				SETTING_INTERACTIVE_FIXEDTOPROWS: Object.assign({}, SETTING_TEMPLATE_ROWMODE_FIXEDTOPROWS),
+				SETTING_INTERACTIVE_FIXEDBOTTOMROWS: Object.assign({}, SETTING_TEMPLATE_ROWMODE_FIXEDBOTTOMROWS),
+				SETTING_AUTO_FIXEDTOPROWS: Object.assign({}, SETTING_TEMPLATE_ROWMODE_FIXEDTOPROWS),
+				SETTING_AUTO_FIXEDBOTTOMROWS: Object.assign({}, SETTING_TEMPLATE_ROWMODE_FIXEDBOTTOMROWS),
+				SETTING_AUTO_HIDEEMPTYROWS: Object.assign({}, SETTING_TEMPLATE_ROWMODE_HIDEEMPTYROWS)
 			}
 		},
 		SELECTION: {
@@ -566,24 +552,34 @@ sap.ui.define("test-resources/sap/ui/table/Settings", [
 				SELECTIONPLUGIN: {
 					text: "Selection Plugin",
 					value: function(oTable) {
-						return (oTable._getSelectionPlugin().isA("sap.ui.table.plugins.MultiSelectionPlugin") ? "MULTISELECTION" : "NONE");
+						var oSelectionPlugin = oTable._getSelectionPlugin();
+						var sName = oSelectionPlugin ? oSelectionPlugin.getMetadata().getName().split(".").pop().toUpperCase() : "NONE";
+						return sName in this.choice ? sName : "NONE";
 					},
 					choice: {
 						NONE: {
 							text: "None",
 							action: function(oTable) {
-								oTable.removeAllPlugins();
+								oTable.destroyDependents();
 							}
 						},
-						MULTISELECTION: {
+						MULTISELECTIONPLUGIN: {
 							text: "MultiSelection",
 							action: function(oTable) {
+								oTable.destroyDependents();
 								var oPlugin = new MultiSelectionPlugin({
 									limit: 20,
 									enableNotification: true
 								});
-								oTable.addPlugin(oPlugin);
+								oTable.addDependent(oPlugin);
 								oCore.byId("__select5").setSelectedKey(oPlugin.getSelectionMode().toUpperCase());
+							}
+						},
+						ODATAV4SELECTION: {
+							text: "ODataV4Selection",
+							action: function(oTable) {
+								oTable.destroyDependents();
+								oTable.addDependent(new ODataV4Selection());
 							}
 						}
 					}
@@ -648,42 +644,6 @@ sap.ui.define("test-resources/sap/ui/table/Settings", [
 								setDensity("sapUiSizeCondensed", oTable);
 							}
 						}
-					}
-				},
-				ROWCOUNTMODE: {
-					text: "Visible Row Count Mode",
-					value: function(oTable) {
-						return oTable.getVisibleRowCountMode().toUpperCase();
-					},
-					choice: {
-						FIXED: {
-							text: "Fixed",
-							action: function(oTable) {
-								oTable.setVisibleRowCountMode("Fixed");
-							}
-						},
-						AUTO: {
-							text: "Auto",
-							action: function(oTable) {
-								oTable.setVisibleRowCountMode("Auto");
-							}
-						},
-						INTERACTIVE: {
-							text: "Interactive",
-							action: function(oTable) {
-								oTable.setVisibleRowCountMode("Interactive");
-							}
-						}
-					}
-				},
-				VISIBLEROWCOUNT: {
-					text: "Visible Row Count",
-					input: true,
-					value: function(oTable) {
-						return oTable.getVisibleRowCount();
-					},
-					action: function(oTable, sValue) {
-						oTable.setVisibleRowCount(parseInt(sValue) || 0);
 					}
 				}
 			}
@@ -902,26 +862,6 @@ sap.ui.define("test-resources/sap/ui/table/Settings", [
 						oTable.setFixedColumnCount(parseInt(sValue) || 0);
 					}
 				},
-				FIXEDROWS: {
-					text: "Fixed Top Rows",
-					input: true,
-					value: function(oTable) {
-						return oTable.getFixedRowCount();
-					},
-					action: function(oTable, sValue) {
-						oTable.setFixedRowCount(parseInt(sValue) || 0);
-					}
-				},
-				FIXEDBOTTOMROWS: {
-					text: "Fixed Bottom Rows",
-					input: true,
-					value: function(oTable) {
-						return oTable.getFixedBottomRowCount();
-					},
-					action: function(oTable, sValue) {
-						oTable.setFixedBottomRowCount(parseInt(sValue) || 0);
-					}
-				},
 				ROWACTIONS: {
 					text: "Row Actions",
 					value: function() {
@@ -1119,13 +1059,13 @@ sap.ui.define("test-resources/sap/ui/table/Settings", [
 			}
 		},
 		TOOLTIPS: {
-			text: "Standard Tooltips (private)",
+			text: "Hide Standard Tooltips (private)",
 			value: function(oTable) {
-				return oTable._getShowStandardTooltips();
+				return oTable._getHideStandardTooltips();
 			},
 			input: "boolean",
 			action: function(oTable, bValue) {
-				oTable._bHideStandardTooltips = !bValue;
+				oTable._setHideStandardTooltips(bValue);
 				oTable.invalidate();
 			}
 		},
@@ -1752,41 +1692,45 @@ sap.ui.define("test-resources/sap/ui/table/Settings", [
 		}
 	};
 
-	TABLESETTINGS.addServiceSettings = function(oTable, sKey, fnUpdate) {
-		var mServiceSettings = JSON.parse(window.localStorage.getItem(sKey));
-
-		oTable.addExtension(new Toolbar({
+	TABLESETTINGS.addServiceSettings = function(oTable, sKey, fnOnSettingsChange, fnInitToolbar) {
+		var mServiceSettings = JSON.parse(window.localStorage.getItem(sKey)) || {};
+		var oToolbar = new Toolbar({
 			content: [
 				new Input("TableSettings_ServiceUrl", {
-					value: mServiceSettings ? mServiceSettings.url : undefined,
+					value: mServiceSettings.url,
 					tooltip: "Service Url",
 					placeholder: "Enter Service Url"
 				}),
 				new Input("TableSettings_Collection", {
-					value: mServiceSettings ? mServiceSettings.collection : undefined,
+					value: mServiceSettings.collection,
 					tooltip: "Service Collection",
 					placeholder: "Enter Service Collection"
-				}),
-				new Button({
-					tooltip: "Go",
-					icon: "sap-icon://restart",
-					press: function() {
-						var mNewServiceSettings = {
-							url: oCore.byId("TableSettings_ServiceUrl").getValue(),
-							collection: oCore.byId("TableSettings_Collection").getValue()
-						};
-
-						mNewServiceSettings.defaultProxyUrl = "../../../../proxy/" + mNewServiceSettings.url.replace("://", "/");
-
-						window.localStorage.setItem(sKey, JSON.stringify(mNewServiceSettings));
-						fnUpdate(mNewServiceSettings);
-					}
 				})
 			]
-		}));
+		});
 
-		if (mServiceSettings) {
-			fnUpdate(mServiceSettings);
+		if (fnInitToolbar) {
+			fnInitToolbar(oToolbar, mServiceSettings);
+		}
+
+		oToolbar.addContent(new Button({
+			tooltip: "Go",
+			icon: "sap-icon://restart",
+			press: function() {
+				var mNewServiceSettings = {
+					url: oCore.byId("TableSettings_ServiceUrl").getValue(),
+					collection: oCore.byId("TableSettings_Collection").getValue()
+				};
+
+				mNewServiceSettings.defaultProxyUrl = "../../../../proxy/" + mNewServiceSettings.url.replace("://", "/");
+				fnOnSettingsChange(mNewServiceSettings);
+				window.localStorage.setItem(sKey, JSON.stringify(mNewServiceSettings));
+			}
+		}));
+		oTable.addExtension(oToolbar);
+
+		if (Object.keys(mServiceSettings).length > 0) {
+			fnOnSettingsChange(mServiceSettings);
 		}
 	};
 

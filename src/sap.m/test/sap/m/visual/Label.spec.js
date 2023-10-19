@@ -116,6 +116,34 @@ describe("sap.m.Label", function() {
 		element(by.id('requiredSwitch')).click();
 	});
 
+	it("should visualize truncation + colon", function(){
+		var oVL4 = element(by.id("oVL4"));
+		browser.executeScript("document.getElementById('oVL4').scrollIntoView()").then(function() {
+			// form factors
+			expect(takeScreenshot(oVL4)).toLookAs('truncation_colon_compact');
+			element(by.id('cozySwitch')).click();
+			expect(takeScreenshot(oVL4)).toLookAs('truncation_colon_cozy');
+			element(by.id('cozySwitch')).click();
+
+			// resize
+			element(by.id('resizeBtn')).click();
+			expect(takeScreenshot(oVL4)).toLookAs('truncation_colon_resized');
+
+			// languages
+			changeLanguage("fr");
+			expect(takeScreenshot(oVL4)).toLookAs('truncation_colon_fr');
+			changeLanguage("zh-CN");
+			expect(takeScreenshot(oVL4)).toLookAs('truncation_colon_zh-CN');
+			changeLanguage("zh-TW");
+			expect(takeScreenshot(oVL4)).toLookAs('truncation_colon_zh-TW');
+			changeLanguage("zh-Hans");
+			expect(takeScreenshot(oVL4)).toLookAs('truncation_colon_zh-Hans');
+			changeLanguage("zh-Hant");
+			expect(takeScreenshot(oVL4)).toLookAs('truncation_colon_zh-Hant');
+			changeLanguage("en");
+		});
+	});
+
 	it("should visualize the French language", function(){
 
 		var simpleForm = element(by.id("simpleForm"));
@@ -192,6 +220,9 @@ describe("sap.m.Label", function() {
 		});
 
 		element(by.id('cozySwitch')).click();
+
+		// clean up - reset language
+		changeLanguage("en");
 	});
 
 	it("should visualize the Chinese language (Traditional Chinese zh-Hant)", function () {
@@ -209,13 +240,16 @@ describe("sap.m.Label", function() {
 		});
 
 		element(by.id('cozySwitch')).click();
+
+		// clean up - reset language
+		changeLanguage("en");
 	});
 
 	it("should visualize label with fixed width, asterisk and colon", function () {
 		var lbl = element(by.id('lblcolonrequired'));
 
 		browser.executeScript("document.getElementById('lblcolonrequired').scrollIntoView()").then(function () {
-			expect(takeScreenshot(lbl)).toLookAs("28_label_required_colon");
+			expect(takeScreenshot(lbl)).toLookAs("32_label_required_colon");
 		});
 	});
 });

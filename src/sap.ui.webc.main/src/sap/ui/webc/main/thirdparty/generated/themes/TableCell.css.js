@@ -7,15 +7,14 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/T
   _exports.default = void 0;
   _parametersBundle = _interopRequireDefault(_parametersBundle);
   _parametersBundle2 = _interopRequireDefault(_parametersBundle2);
-
   function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-  (0, _Themes.registerThemePropertiesLoader)("@ui5/webcomponents-theming", "sap_fiori_3", () => _parametersBundle.default);
-  (0, _Themes.registerThemePropertiesLoader)("@ui5/webcomponents", "sap_fiori_3", () => _parametersBundle2.default);
-  var _default = {
+  (0, _Themes.registerThemePropertiesLoader)("@ui5/webcomponents-theming", "sap_fiori_3", async () => _parametersBundle.default);
+  (0, _Themes.registerThemePropertiesLoader)("@ui5/webcomponents", "sap_fiori_3", async () => _parametersBundle2.default);
+  const styleData = {
     packageName: "@ui5/webcomponents",
     fileName: "themes/TableCell.css",
-    content: ":host{display:table-cell;font-family:\"72override\",var(--sapFontFamily);font-size:.875rem;height:100%;box-sizing:border-box;overflow:hidden;color:var(--sapContent_LabelColor);word-break:break-word;vertical-align:middle}td{display:contents}:host([popined]){padding-left:0;padding-top:.25rem}::slotted([ui5-label]){color:inherit}"
+    content: ":host{box-sizing:border-box;color:var(--sapList_TextColor);display:table-cell;font-family:\"72override\",var(--sapFontFamily);font-size:.875rem;height:var(--ui5-v1-18-0_table_row_height);vertical-align:middle;word-break:break-word}td{display:contents}:host([popined]){padding-left:0;padding-top:.25rem}:host([_popined-inline]){padding-top:0}::slotted([ui5-label]){color:inherit}"
   };
+  var _default = styleData;
   _exports.default = _default;
 });

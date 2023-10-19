@@ -4,7 +4,6 @@
 
 sap.ui.define([
 	"../library",
-	"sap/m/library",
 	"sap/ui/base/EventProvider",
 	"sap/ui/core/Core",
 	"sap/ui/core/Control",
@@ -13,7 +12,6 @@ sap.ui.define([
 	"./PaginatorRenderer"
 ], function (
 	library,
-	mLibrary,
 	EventProvider,
 	Core,
 	Control,
@@ -25,7 +23,8 @@ sap.ui.define([
 
 	var sAnimationMode = Core.getConfiguration().getAnimationMode(),
 		bHasAnimations = sAnimationMode !== Configuration.AnimationMode.none && sAnimationMode !== Configuration.AnimationMode.minimal,
-		iServerSideAfterTransitionDelay = 200;
+		iServerSideAfterTransitionDelay = 200,
+		oResourceBundle = Core.getLibraryResourceBundle("sap.m");
 
 	/**
 	 * Constructor for a new Paginator.
@@ -53,7 +52,6 @@ sap.ui.define([
 				pageNumber: {type: "int", defaultValue: 0},
 				pageCount: {type: "int", defaultValue: 0},
 				pageSize: {type: "int", defaultValue: 0},
-
 				totalCount: {type: "int"},
 				skip: {type: "int"}
 			},
@@ -65,7 +63,6 @@ sap.ui.define([
 				animationComplete: {}
 			}
 		},
-
 		renderer: PaginatorRenderer
 	});
 
@@ -78,17 +75,20 @@ sap.ui.define([
 			card: oCard,
 			totalCount: oConfig.totalCount,
 			pageSize: oConfig.pageSize,
-			skip: oConfig.skip
+			skip: oConfig.skip,
+			visible: oConfig.visible
 		});
 	};
 
 	Paginator.prototype.init = function() {
 		this._listUpdateFinishedHandler = this._listUpdateFinished.bind(this);
+		this._dataChangedHandler = this._dataChanged.bind(this);
 
 		this.setAggregation("_prevIcon", new Icon({
 			src: "sap-icon://slim-arrow-left",
 			useIconTooltip: false,
 			decorative: false,
+			tooltip: oResourceBundle.getText("PAGINGBUTTON_PREVIOUS"),
 			press: this.previous.bind(this)
 		}));
 
@@ -96,6 +96,7 @@ sap.ui.define([
 			src: "sap-icon://slim-arrow-right",
 			useIconTooltip: false,
 			decorative: false,
+			tooltip: oResourceBundle.getText("PAGINGBUTTON_NEXT"),
 			press: this.next.bind(this)
 		}));
 	};
@@ -137,7 +138,7 @@ sap.ui.define([
 			iTotalCount,
 			bInitialized;
 
-		if (!oContent || !oContent.isA("sap.ui.integration.cards.BaseContent")) {
+		if (!oContent || !oContent.isA("sap.ui.integration.cards.BaseContent") || !oContent.hasData()) {
 			this.setPageCount(0);
 			return;
 		}
@@ -164,15 +165,13 @@ sap.ui.define([
 		iTotalCount = this.getTotalCount() || oContent.getDataLength();
 
 		this.setPageCount(Math.ceil(iTotalCount / this.getPageSize()));
-		this.setPageNumber(Math.min(Math.max(0, this.getPageNumber()), this.getPageCount() - 1));
+		this.setPageNumber(Math.min(Math.max(0, this.getPageNumber()), this._getLastPageNumber()));
 
 		this.sliceData();
 	};
 
 	Paginator.prototype.setCard = function(oCard) {
 		this.setProperty("card", oCard, true);
-
-		this._dataChangedHandler = this._dataChanged.bind(this);
 
 		if (oCard) {
 			oCard.attachEvent("_contentDataChange", this._dataChangedHandler);
@@ -181,37 +180,31 @@ sap.ui.define([
 	};
 
 	Paginator.prototype.sliceData = function() {
-		var oCard = this.getCard(),
-			oPaginatorModel = this.getModel("paginator"),
-			oContent,
-			oCardLoadingProvider,
-			oContentLoadingProvider,
-			iStartIndex,
-			bIsPageChanged,
-			bIsServerSide;
+		const oCard = this.getCard();
 
 		if (!oCard) {
 			return;
 		}
 
-		oContent = oCard.getCardContent();
-		oCardLoadingProvider = oCard.getAggregation("_loadingProvider");
-		oContentLoadingProvider = oContent.getAggregation("_loadingProvider");
-		iStartIndex = this.getPageNumber() * this.getPageSize();
-		bIsPageChanged =  this._iPreviousStartIndex !== undefined && this._iPreviousStartIndex !== iStartIndex;
-		bIsServerSide = this.isServerSide();
+		const oPaginatorModel = this.getModel("paginator"),
+			oContent = oCard.getCardContent(),
+			oCardLoadingProvider = oCard.getAggregation("_loadingProvider"),
+			oContentLoadingProvider = oContent.getAggregation("_loadingProvider"),
+			iStartIndex = this.getPageNumber() * this.getPageSize(),
+			bIsPageChanged =  this._iPreviousStartIndex !== undefined && this._iPreviousStartIndex !== iStartIndex,
+			bIsServerSide = this.isServerSide();
+
+		oPaginatorModel.setData({
+			skip: iStartIndex,
+			size: this.getPageSize(),
+			pageIndex: this.getPageNumber()
+		});
 
 		if (bIsPageChanged) {
 			this._prepareAnimation(iStartIndex);
 		}
 
 		if (bIsServerSide && bIsPageChanged) {
-			oPaginatorModel.setData({
-				skip: iStartIndex,
-				size: this.getPageSize(),
-				pageIndex: this.getPageNumber()
-			});
-
 			// if the paginator model doesn't have bindings,
 			// we need to call "refreshAllData" method,
 			// otherwise don't call it
@@ -403,7 +396,7 @@ sap.ui.define([
 			return;
 		}
 
-		this.setPageNumber(Math.min(this.getPageCount() - 1, this.getPageNumber() + 1));
+		this.setPageNumber(Math.min(this._getLastPageNumber(), this.getPageNumber() + 1));
 		this.sliceData();
 	};
 
@@ -425,6 +418,10 @@ sap.ui.define([
 			pageCount: this.getPageCount(),
 			pageIndex: this.getPageNumber()
 		};
+	};
+
+	Paginator.prototype._getLastPageNumber = function () {
+		return Math.max(0, this.getPageCount() - 1);
 	};
 
 	return Paginator;

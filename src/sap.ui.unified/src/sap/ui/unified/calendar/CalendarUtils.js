@@ -18,9 +18,10 @@ sap.ui.define([
 	'sap/ui/core/CalendarType',
 	'sap/ui/core/Locale',
 	'sap/ui/core/LocaleData',
-	"sap/ui/core/Configuration"
+	"sap/ui/core/Configuration",
+	"sap/ui/core/date/UI5Date"
 ],
-	function(UniversalDate, CalendarDate, CalendarType, Locale, LocaleData, Configuration) {
+	function(UniversalDate, CalendarDate, CalendarType, Locale, LocaleData, Configuration, UI5Date) {
 		"use strict";
 
 		// Static class
@@ -66,7 +67,7 @@ sap.ui.define([
 					oMyDate = oDate;
 				}
 
-				oLocaleDate = new Date(oMyDate.getUTCFullYear(), oMyDate.getUTCMonth(), oMyDate.getUTCDate());
+				oLocaleDate = UI5Date.getInstance(oMyDate.getUTCFullYear(), oMyDate.getUTCMonth(), oMyDate.getUTCDate());
 				if (oMyDate.getFullYear() < 1000) {
 					oLocaleDate.setFullYear(oMyDate.getFullYear());
 				}
@@ -103,7 +104,7 @@ sap.ui.define([
 					oMyDate = oDate;
 				}
 
-				oUTCDate = new Date(Date.UTC(oMyDate.getFullYear(), oMyDate.getMonth(), oMyDate.getDate()));
+				oUTCDate = UI5Date.getInstance(Date.UTC(oMyDate.getFullYear(), oMyDate.getMonth(), oMyDate.getDate()));
 				if (oMyDate.getFullYear() < 1000) {
 					oUTCDate.setUTCFullYear(oMyDate.getFullYear());
 				}
@@ -230,7 +231,7 @@ sap.ui.define([
 		 * If a given date is in the beginning of January (e.g. Friday, 2 Jan 2015, week 1), the function will return
 		 * week start date in the previous year(e.g. Sunday, 28 Dec 2014, week 53).
 		 *
-		 * @returns {Date} first date of the same week as the given <code>oDate</code> in local timezone.
+		 * @returns {Date} first date of the same week as the given <code>oDate</code> in UTC timezone.
 		 * @public
 		 */
 		CalendarUtils.getFirstDateOfWeek = function (oDate, oWeekConfig) {
@@ -271,8 +272,8 @@ sap.ui.define([
 		 * Gets the first day of a given month.
 		 * This function works with date values in UTC to produce timezone agnostic results.
 		 *
-		 * @param {Date} oDate JavaScript date
-		 * @returns {Date} JavaScript date corresponding to the first date of the month
+		 * @param {Date|module:sap/ui/core/date/UI5Date} oDate date instance
+		 * @returns {Date|module:sap/ui/core/date/UI5Date} date instance corresponding to the first date of the month
 		 * @public
 		 */
 		CalendarUtils.getFirstDateOfMonth = function(oDate) {
@@ -291,7 +292,7 @@ sap.ui.define([
 		CalendarUtils._getNumberOfWeeksForYear = function (iYear) {
 			var sLocale = Configuration.getFormatLocale(),
 				oLocaleData = LocaleData.getInstance(new Locale(sLocale)),
-				o1stJan = new Date(Date.UTC(iYear, 0, 1)),
+				o1stJan = UI5Date.getInstance(Date.UTC(iYear, 0, 1)),
 				i1stDay = o1stJan.getUTCDay(),
 				iNumberOfWeeksInYear = 52;
 
@@ -312,8 +313,8 @@ sap.ui.define([
 		/**
 		 * Determines if the given dates' months differ, including same months from different years.
 		 *
-		 * @param {Date} oDate1 JavaScript date
-		 * @param {Date} oDate2 JavaScript date
+		 * @param {Date|module:sap/ui/core/date/UI5Date} oDate1 date instance
+		 * @param {Date|module:sap/ui/core/date/UI5Date} oDate2 date instance
 		 * @return {boolean} true if the given dates' months differ
 		 * @public
 		 */
@@ -328,7 +329,7 @@ sap.ui.define([
 		 * @public
 		 */
 		CalendarUtils.isDateLastInMonth = function(oDate) {
-			var oNextDay = new Date(oDate.getTime() + 24 * 60 * 60 * 1000);
+			var oNextDay = UI5Date.getInstance(oDate.getTime() + 24 * 60 * 60 * 1000);
 			return oNextDay.getUTCDate() < oDate.getUTCDate();
 		};
 
@@ -370,7 +371,7 @@ sap.ui.define([
 		};
 
 		/**
-		 * Checks if the given object is JavaScript date object and throws error if its not.
+		 * Checks if the given object is UI5Date ot JavaScript Date object and throws error if its not.
 		 * @param {Object} oDate The date to be checked
 		 * @private
 		 */
@@ -378,7 +379,7 @@ sap.ui.define([
 			// Cross frame check for a date should be performed here otherwise setDateValue would fail in OPA tests
 			// because Date object in the test is different than the Date object in the application (due to the iframe).
 			if (!oDate || Object.prototype.toString.call(oDate) !== "[object Date]" || isNaN(oDate)) {
-				throw new Error("Date must be a JavaScript date object.");
+				throw new Error("Date must be a JavaScript or UI5Date date object.");
 			}
 		};
 
@@ -400,8 +401,8 @@ sap.ui.define([
 		/**
 		 * Compares the given month and the one from the <code>startDate</code>.
 		 *
-		 * @param {Date} oDate1 JavaScript date
-		 * @param {Date} oDate2 JavaScript date
+		 * @param {Date|module:sap/ui/core/date/UI5Date} oDate1 date instance
+		 * @param {Date|module:sap/ui/core/date/UI5Date} oDate2 date instance
 		 * @return {boolean} true if the first date's month is chronologically after the second
 		 * @private
 		 */
@@ -412,8 +413,8 @@ sap.ui.define([
 
 		/**
 		 * Evaluates minutes between two dates.
-		 * @param {Date} oFirstDate JavaScript date
-		 * @param {Date} oSecondDate JavaScript date
+		 * @param {Date|module:sap/ui/core/date/UI5Date} oFirstDate date instance
+		 * @param {Date|module:sap/ui/core/date/UI5Date} oSecondDate date instance
 		 * @return {int} iMinutes
 		 * @private
 		 */
@@ -432,7 +433,7 @@ sap.ui.define([
 		 * @private
 		 */
 		CalendarUtils._areCurrentMinutesLessThan = function (iMinutes) {
-			var iCurrentMinutes = new Date().getMinutes();
+			var iCurrentMinutes = UI5Date.getInstance().getMinutes();
 
 			return iMinutes >= iCurrentMinutes;
 		};
@@ -445,23 +446,23 @@ sap.ui.define([
 		 * @private
 		 */
 		CalendarUtils._areCurrentMinutesMoreThan = function (iMinutes) {
-			var iCurrentMinutes = new Date().getMinutes();
+			var iCurrentMinutes = UI5Date.getInstance().getMinutes();
 
 			return iMinutes <= iCurrentMinutes;
 		};
 
 		/**
 		 * Evaluates months between two dates.
-		 * @param {Date} oFirstDate JavaScript date
-		 * @param {Date} oSecondDate JavaScript date
+		 * @param {Date|module:sap/ui/core/date/UI5Date} oFirstDate date instance
+		 * @param {Date|module:sap/ui/core/date/UI5Date} oSecondDate date instance
 		 * @param {boolean} bDontAbsResult if omitted or false, the result will be positive number of months between dates;
 		 * 					if true, the result will be positive or negative depending of the direction of the difference
 		 * @return {int} iMonths
 		 * @private
 		 */
 		CalendarUtils._monthsBetween = function(oFirstDate, oSecondDate, bDontAbsResult) {
-			var oUTCFirstDate = new Date(Date.UTC(oFirstDate.getUTCFullYear(), oFirstDate.getUTCMonth(), oFirstDate.getUTCDate())),
-				oUTCSecondDate = new Date(Date.UTC(oSecondDate.getUTCFullYear(), oSecondDate.getUTCMonth(), oSecondDate.getUTCDate())),
+			var oUTCFirstDate = UI5Date.getInstance(Date.UTC(oFirstDate.getUTCFullYear(), oFirstDate.getUTCMonth(), oFirstDate.getUTCDate())),
+				oUTCSecondDate = UI5Date.getInstance(Date.UTC(oSecondDate.getUTCFullYear(), oSecondDate.getUTCMonth(), oSecondDate.getUTCDate())),
 				iMonths;
 
 			oUTCFirstDate.setUTCFullYear(oFirstDate.getUTCFullYear());
@@ -479,15 +480,15 @@ sap.ui.define([
 
 		/**
 		 * Evaluates hours between two dates.
-		 * @param {Date} oFirstDate JavaScript date
-		 * @param {Date} oSecondDate JavaScript date
+		 * @param {Date|module:sap/ui/core/date/UI5Date} oFirstDate date instance
+		 * @param {Date|module:sap/ui/core/date/UI5Date} oSecondDate date instance
 		 * @return {int} iMinutes
 		 * @private
 		 */
 		CalendarUtils._hoursBetween = function(oFirstDate, oSecondDate) {
-			var oNewFirstDate = new Date(Date.UTC(oFirstDate.getUTCFullYear(),
+			var oNewFirstDate = UI5Date.getInstance(Date.UTC(oFirstDate.getUTCFullYear(),
 				oFirstDate.getUTCMonth(), oFirstDate.getUTCDate(), oFirstDate.getUTCHours()));
-			var oNewSecondDate = new Date(Date.UTC(oSecondDate.getUTCFullYear(),
+			var oNewSecondDate = UI5Date.getInstance(Date.UTC(oSecondDate.getUTCFullYear(),
 				oSecondDate.getUTCMonth(), oSecondDate.getUTCDate(), oSecondDate.getUTCHours()));
 
 			oNewFirstDate.setUTCFullYear(oFirstDate.getUTCFullYear());
@@ -499,8 +500,8 @@ sap.ui.define([
 		/**
 		 * Evaluates whether a given date time part indicates midniht.
 		 *
-		 * @param {Date} oDate - JavaScript date
-		 * @returns {boolean}
+		 * @param {Date|module:sap/ui/core/date/UI5Date} oDate date instance
+		 * @returns {boolean} is midnight
 		 */
 		CalendarUtils._isMidnight = function(oDate) {
 			return oDate.getHours() === 0 && oDate.getMinutes() === 0 && oDate.getSeconds() === 0 && oDate.getMilliseconds() === 0;

@@ -15,7 +15,8 @@ sap.ui.define([
 	"sap/ui/core/format/DateFormat",
 	"sap/ui/core/date/UniversalDate",
 	"sap/ui/qunit/QUnitUtils",
-	"sap/ui/events/KeyCodes"
+	"sap/ui/events/KeyCodes",
+	"sap/ui/core/date/UI5Date"
 ],
 function (
 	Card,
@@ -32,7 +33,8 @@ function (
 	DateFormat,
 	UniversalDate,
 	QUnitUtils,
-	KeyCodes
+	KeyCodes,
+	UI5Date
 ) {
 	"use strict";
 
@@ -155,7 +157,7 @@ function (
 
 	QUnit.test("Header and NumericHeader dataTimestamp", function (assert) {
 		// Arrange
-		var oNow = new Date(),
+		var oNow = UI5Date.getInstance(),
 			oNowUniversalDate = new UniversalDate(oNow),
 			oDateFormat = DateFormat.getDateTimeInstance({relative: true}),
 			sTextNow = oDateFormat.format(oNowUniversalDate),
@@ -382,7 +384,7 @@ function (
 
 		var $header = oCard.getHeader().$();
 		assert.strictEqual(oCard.getFocusDomRef().getAttribute("role"), "group" , "Header role is correct.");
-		assert.notOk($header.hasClass("sapFCardClickable"), "sapFCardClickable class is not set");
+		assert.notOk($header.hasClass("sapFCardSectionClickable"), "sapFCardSectionClickable class is not set");
 
 		oCard.getHeader().attachPress(function () { });
 		oCard.invalidate();
@@ -391,7 +393,7 @@ function (
 
 		$header = oCard.getHeader().$();
 		assert.strictEqual(oCard.getFocusDomRef().getAttribute("role"), "button" , "Header role is correct.");
-		assert.ok($header.hasClass("sapFCardClickable"), "sapFCardClickable class is set");
+		assert.ok($header.hasClass("sapFCardSectionClickable"), "sapFCardSectionClickable class is set");
 
 		oCard.destroy();
 	});
@@ -407,7 +409,7 @@ function (
 
 		var $header = oCard.getHeader().$();
 		assert.strictEqual(oCard.getFocusDomRef().getAttribute("role"), "group" , "Header role is correct.");
-		assert.notOk($header.hasClass("sapFCardClickable"), "sapFCardClickable class is not set");
+		assert.notOk($header.hasClass("sapFCardSectionClickable"), "sapFCardSectionClickable class is not set");
 
 		oCard.getHeader().attachPress(function () { });
 		oCard.invalidate();
@@ -416,7 +418,7 @@ function (
 
 		$header = oCard.getHeader().$();
 		assert.strictEqual(oCard.getFocusDomRef().getAttribute("role"), "button" , "Header role is correct.");
-		assert.ok($header.hasClass("sapFCardClickable"), "sapFCardClickable class is set");
+		assert.ok($header.hasClass("sapFCardSectionClickable"), "sapFCardSectionClickable class is set");
 
 		oCard.destroy();
 	});

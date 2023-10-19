@@ -9,11 +9,11 @@ sap.ui.define(function () {
      * @enum {string}
      * @private
      * @ui5-restricted sap.fe
-     * @MDC_PUBLIC_CANDIDATE
      * @since 1.100.0
      * @alias sap.ui.mdc.enum.PropagationReason
+     * @deprecated since 1.115.0 - please see {@link sap.ui.mdc.enums.ValueHelpPropagationReason}
      */
-    var PropagationReason = {
+    const PropagationReason = {
         /**
          * Triggered by connected control after processing valuehelp output
          *

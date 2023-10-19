@@ -28,7 +28,7 @@
 			<mdc:ValueHelp
 				id="FH1"
 				validateInput="false"
-				delegate='\{"name": "sap/ui/v4demo/delegate/opensonfocus/ValueHelp.delegate", "payload": \{\}\}'>
+				delegate='\{"name": "sap/ui/v4demo/delegate/openson/ValueHelp.delegate", "payload": \{\}\}'>
 				<mdc:typeahead>
 					<mdcv:Popover title="Popover1" opensOnFocus="true">
 						<mdcvc:MTable keyPath="ID" descriptionPath="name" filterFields="$search">
@@ -61,10 +61,10 @@
 			<mdc:ValueHelp
 				id="FH2"
 				validateInput="false"
-				delegate='\{"name": "sap/ui/v4demo/delegate/opensonfocus/ValueHelp.delegate", "payload": \{\}\}'>
+				delegate='\{"name": "sap/ui/v4demo/delegate/openson/ValueHelp.delegate", "payload": \{\}\}'>
 				<mdc:typeahead>
 					<mdcv:Popover title="Popover2" opensOnFocus="true">
-						<mdcvc:MTable keyPath="ID" descriptionPath="name" filterFields="$search">
+						<mdcvc:MTable keyPath="ID" descriptionPath="name" filterFields="$search" useAsValueHelp="false">
 							<Table items='{path : "/Authors", length: 10}' mode="{= ${settings>/maxConditions} === -1 ? 'MultiSelect' : 'SingleSelectMaster'}" width="30rem">
 								<columns>
 									<Column width="5rem">
@@ -90,6 +90,11 @@
 						</mdcvc:MTable>
 					</mdcv:Popover>
 				</mdc:typeahead>
+				<mdc:dialog>
+					<mdcv:Dialog>
+						<mdcvc:Conditions/>
+					</mdcv:Dialog>
+				</mdc:dialog>
 			</mdc:ValueHelp>
 		</mdc:dependents>
 		<mdc:filterItems>
@@ -98,18 +103,20 @@
 				id="FF0"
 				label="TestField1"
 				conditions="{$filters>/conditions/author_ID}"
+				propertyKey="author_ID"
 				dataType="Edm.Int32"
 				required="false"
-				fieldHelp="FH1"
+				valueHelp="FH1"
 				display="DescriptionValue"
 				maxConditions="{settings>/maxConditions}" />
 			<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}'
 				id="FF1"
 				label="TestField2"
 				conditions="{$filters>/conditions/author_ID}"
+				propertyKey="author_ID"
 				dataType="Edm.Int32"
 				required="false"
-				fieldHelp="FH2"
+				valueHelp="FH2"
 				display="DescriptionValue"
 				maxConditions="{settings>/maxConditions}" />
 		</mdc:filterItems>

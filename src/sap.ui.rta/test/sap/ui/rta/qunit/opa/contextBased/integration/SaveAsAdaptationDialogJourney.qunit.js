@@ -1,7 +1,7 @@
 /* global QUnit */
 sap.ui.define(
 	[
-		"sap/ui/core/ValueState",
+		"sap/ui/core/library",
 		"sap/ui/test/opaQunit",
 		"sap/ui/test/Opa5",
 		"./pages/contextBased/SaveContextBasedAdaptationDialog",
@@ -9,17 +9,20 @@ sap.ui.define(
 		"./pages/contextVisibility/ContextSharingVisibilityFragment",
 		"./pages/AppPage"
 	],
-	function(ValueState, opaTest, Opa5) {
+	function(coreLibrary, opaTest, Opa5) {
 		"use strict";
 
+		// shortcut for sap.ui.core.ValueState
+		var {ValueState} = coreLibrary;
+
 		var arrangements = new Opa5({
-			iStartMyApp: function() {
+			iStartMyApp() {
 				return this.iStartMyAppInAFrame("test-resources/sap/ui/rta/qunit/opa/contextBased/index.html");
 			}
 		});
 
 		Opa5.extendConfig({
-			arrangements: arrangements,
+			arrangements,
 			autoWait: true
 		});
 
@@ -30,6 +33,7 @@ sap.ui.define(
 			Then.onTheDemoAppPage.iShouldSeeAddAdaptationDialogButton();
 			When.onTheDemoAppPage.iClickOnOpenAddAdaptationDialogButton();
 			Then.onTheAddAdaptationDialogPage.iShouldSeeAddAdaptationDialog();
+			Then.onTheAddAdaptationDialogPage.iShouldSeeDialogTitle("Save as New Adaptation");
 		});
 
 		QUnit.module("SaveAs Dialog with adaptations data from backend");
@@ -112,7 +116,7 @@ sap.ui.define(
 			Then.onTheAddAdaptationDialogPage.iShouldSeeSaveButtonEnabled(true);
 		});
 
-		opaTest("Should enter existing adaptation title", function (Given, When, Then) {
+		opaTest("Should enter existing adaptation title", function(Given, When, Then) {
 			When.onTheAddAdaptationDialogPage.iEnterContextBasedAdaptationTitle(" ");
 			Then.onTheAddAdaptationDialogPage.iShouldSeeContextBasedAdaptationTitle(" ");
 			Then.onTheAddAdaptationDialogPage.iShouldSeeSaveButtonEnabled(false);
@@ -132,7 +136,7 @@ sap.ui.define(
 		});
 
 		QUnit.module("SaveAs Dialog with no adaptations data from backend (simulated backend error)");
-		opaTest("Should open SaveAs Adaptation Dialog via demo page button with backend error", function (Given, When, Then) {
+		opaTest("Should open SaveAs Adaptation Dialog via demo page button with backend error", function(Given, When, Then) {
 			Then.onTheDemoAppPage.iShouldSeeAddAdaptationWithErrorDialogButton();
 			When.onTheDemoAppPage.iClickOnOpenAddAdapationWithErrorDialogButton();
 			Then.onTheAddAdaptationDialogPage.iShouldSeeAddAdaptationDialog();
@@ -153,7 +157,7 @@ sap.ui.define(
 
 		opaTest("Should set context-based priority", function(Give, When, Then) {
 			When.onTheAddAdaptationDialogPage.iClickOnPrioritySelection();
-			Then.onTheAddAdaptationDialogPage.iShouldSeePriorityItems(1);
+			Then.onTheAddAdaptationDialogPage.iShouldSeePriorityItems(5);
 			When.onTheAddAdaptationDialogPage.iSelectContextBasedAdaptationPriority(0);
 			Then.onTheAddAdaptationDialogPage.iShouldSeeSelectedContextBasedAdaptationPriority("Insert before all (Priority '1')");
 			Then.onTheAddAdaptationDialogPage.iShouldSeeSaveButtonEnabled(false);

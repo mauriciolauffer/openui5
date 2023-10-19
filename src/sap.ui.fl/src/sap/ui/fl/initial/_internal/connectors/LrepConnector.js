@@ -45,7 +45,7 @@ sap.ui.define([
 		 * @returns {Promise} Returns a Promise resolved empty after the script was included
 		 * @private
 		 */
-		 _loadModules: function (sFlexModulesUri) {
+		 _loadModules(sFlexModulesUri) {
 			return new Promise(function(resolve, reject) {
 				includeScript(sFlexModulesUri, undefined, resolve, reject);
 			});
@@ -58,7 +58,7 @@ sap.ui.define([
 		 * @private
 		 * @ui5-restricted sap.ui.fl.write._internal.connectors.LrepConnector
 		 */
-		_addClientInfo: function (mParameters) {
+		_addClientInfo(mParameters) {
 			var sClient = FlexUtils.getUrlParameter("sap-client");
 			if (!mParameters && sClient) {
 				mParameters = {};
@@ -81,15 +81,17 @@ sap.ui.define([
 		 * @param {string} [mPropertyBag.preview.reference] Reference of the base application for building the preview request
 		 * @param {sap.ui.fl.Layer} [mPropertyBag.preview.maxLayer] Limit to which layer the preview data has to be requested
 		 * @param {boolean} [mPropertyBag.allContexts] Includes also restricted context
+		 * @param {string} [mPropertyBag.version] Version to be loaded
+		 * @param {string} [mPropertyBag.adaptationId] - Context-based adaptation to be loaded
 		 * @returns {Promise<object>} Promise resolving with the JSON parsed server response of the flex data request
 		 * or resolves with undefined in case cache bustering determines that no data is present
 		 */
-		loadFlexData: function(mPropertyBag) {
+		loadFlexData(mPropertyBag) {
 			if (mPropertyBag.cacheKey === "<NO CHANGES>") {
 				return Promise.resolve();
 			}
 
-			var mParameters = _pick(mPropertyBag, ["version", "allContexts"]);
+			var mParameters = _pick(mPropertyBag, ["version", "allContexts", "adaptationId"]);
 			this._addClientInfo(mParameters);
 			Utils.addSAPLogonLanguageInfo(mParameters);
 			var sAppDescriptorId;
@@ -109,8 +111,8 @@ sap.ui.define([
 				initialConnector: this,
 				xsrfToken: this.xsrfToken,
 				siteId: mPropertyBag.siteId,
-				sAppDescriptorId: sAppDescriptorId
-			}).then(function (oResult) {
+				sAppDescriptorId
+			}).then(function(oResult) {
 				var oResponse = oResult.response;
 				if (oResult.etag) {
 					oResponse.cacheKey = oResult.etag;
@@ -129,7 +131,7 @@ sap.ui.define([
 				}
 
 				var sModulesUrl = Utils.getUrl(ROUTES.MODULES, mPropertyBag, mParameters);
-				return this._loadModules(sModulesUrl).then(function () {
+				return this._loadModules(sModulesUrl).then(function() {
 					return oResponse;
 				});
 			}.bind(this));

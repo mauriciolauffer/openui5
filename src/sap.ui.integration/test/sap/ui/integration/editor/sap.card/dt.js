@@ -514,7 +514,10 @@ sap.ui.define(["sap/ui/integration/Designtime"], function (
 									}
 								}).then(function (oData){
 									if (oData === false && value === true) {
-										context["control"].setState(false);
+										//to hide the whole parameter :
+										config.visible = false;
+										//just change the Switch :
+										//context["control"].setState(false);
 										return false;
 									}
 									return true;
@@ -538,6 +541,9 @@ sap.ui.define(["sap/ui/integration/Designtime"], function (
 									}
 								}).then(function (oData){
 									if (oData === false && value === true) {
+										//to hide the whole parameter :
+										//config.visible = false;
+										//just change the checkbox :
 										context["control"].setSelected(false);
 										return false;
 									}
@@ -642,6 +648,58 @@ sap.ui.define(["sap/ui/integration/Designtime"], function (
 								"key": "{key}",
 								"additionalText": "{additionalText}",
 								"icon": "{icon}"
+							}
+						}
+					},
+					"string_Select": {
+						"manifestpath": "/sap.card/configuration/parameters/string_Select/value",
+						"type": "string",
+						"values": {
+							"data": {
+								"json": [
+									{ "text": 0.3, "key": "key1", "additionalText": 1293883200000, "icon": "sap-icon://accept" },
+									{ "text": 0.6, "key": "key2", "additionalText": 1293883200000, "icon": "sap-icon://cart" },
+									{ "text": 0.8, "key": "key3", "additionalText": 1293883200000, "icon": "sap-icon://zoom-in" }
+								],
+								"path": "/"
+							},
+							"item": {
+								"text": "Percent: {= format.percent(${text}) }",
+								"key": "{key}",
+								"additionalText": "datetime: {= format.dateTime(${additionalText}, {style: 'long'}) }",
+								"icon": "{icon}"
+							}
+						},
+						"visualization": {
+							"type": "Select"
+						}
+					},
+					"Customer_Select": {
+						"manifestpath": "/sap.card/configuration/parameters/Customer_Select/value",
+						"type": "string",
+						"values": {
+							"data": {
+								"request": {
+									"url": "{{destinations.northwind}}/Customers",
+									"parameters": {
+										"$select": "CustomerID, CompanyName, Country, City, Address"
+									}
+								},
+								"path": "/value"
+							},
+							"item": {
+								"text": "{CompanyName}",
+								"key": "{CustomerID}",
+								"additionalText": "{= ${CustomerID} !== undefined ? ${Country} + ', ' +  ${City} + ', ' + ${Address} : ''}"
+							}
+						},
+						"visualization": {
+							"type": "Select",
+							"settings": {
+								"forceSelection": true,
+								"editable": true,
+								"visible": true,
+								"showSecondaryValues": true
 							}
 						}
 					},
@@ -2052,6 +2110,15 @@ sap.ui.define(["sap/ui/integration/Designtime"], function (
 								}
 							}
 						}
+					},
+					"local.destination": {
+						"type": "destination",
+						"label": "local destination label defined in dt",
+						"editable": false
+					},
+					"northwind.destination": {
+						"type": "destination",
+						"label": "northwind destination label defined in dt"
 					}
 				}
 			},

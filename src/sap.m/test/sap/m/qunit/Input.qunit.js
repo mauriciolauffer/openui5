@@ -176,7 +176,10 @@ sap.ui.define([
 		i1.setEnabled(enabled);
 		assert.equal(i1.getEnabled(), enabled, "Input is enabled");
 	});
-
+	/**
+	* @deprecated Since 1.119.
+	* @private
+	*/
 	QUnit.test("ValueHelpOnly", function(assert) {
 		assert.equal(i1.getValueHelpOnly(), false, "ValueHelpOnly Default: false");
 		var helponly = true;
@@ -634,13 +637,8 @@ sap.ui.define([
 		oCore.applyChanges();
 
 		checkSubmit("Enter pressed on field with value help", true, false, "hello");
-		oInput.setValueHelpOnly(true);
 		oCore.applyChanges();
 
-		checkSubmit("Enter pressed on field with value help only", false, false);
-		oInput.setShowValueHelp(false);
-		oInput.setValueHelpOnly(false);
-		oCore.applyChanges();
 
 
 		// Enter on Suggestions
@@ -671,6 +669,65 @@ sap.ui.define([
 			assert.ok(oInput._getSuggestionsPopover() && oInput._getSuggestionsPopover().getPopover().isOpen && !oInput._getSuggestionsPopover().getPopover().isOpen(), "Suggestion Popup should be closed");
 		}
 
+		oInput.destroy();
+	});
+
+	/**
+	* @deprecated Since 1.119.
+	*/
+	QUnit.test("Submit Event with valueHelpOnly", function(assert) {
+
+		var sEvents = "";
+		var sValue = "";
+		var oInput = new Input("hello", {
+			submit: function(oEvent){
+				sEvents += "E";
+				sValue = oEvent.getParameter("value");
+			},
+			change: function(){
+				sEvents += "C";
+			}
+		});
+		oInput.setEditable(true);
+		oInput.setShowValueHelp(true);
+		oInput.setValue("hello");
+		oInput.placeAt("content");
+
+		// change event should be fired only when the input is on focus
+		oInput.onfocusin();
+		oCore.applyChanges();
+
+		function checkSubmit(sText, bSubmitExpected, bChangeExpected, sExpectedValue) {
+			var e = "";
+			if (bChangeExpected) {
+				e += "C";
+			}
+			if (bSubmitExpected) {
+				e += "E";
+			}
+
+			sEvents = "";
+			sValue = "";
+			oCore.applyChanges();
+			qutils.triggerKeydown(oInput.getDomRef("inner"), KeyCodes.ENTER);
+			assert.equal(sEvents, e, sText + ": Correct number of events fired and order correct: " + e.length + (e.length > 0 ? "/" + e : ""));
+			if (bSubmitExpected) {
+				if (sExpectedValue) {
+					assert.equal(sValue, sExpectedValue, sText + ": Correct parameter 'value' in enter event: " + sExpectedValue);
+				} else {
+					assert.ok(!sValue, sText + ": Correct parameter 'value' in enter event: Value empty");
+				}
+			}
+		}
+
+		checkSubmit("Enter pressed on field with value help", true, false, "hello");
+		oInput.setValueHelpOnly(true);
+		oCore.applyChanges();
+
+		checkSubmit("Enter pressed on field with value help only", false, false);
+		oInput.setShowValueHelp(false);
+		oInput.setValueHelpOnly(false);
+		oCore.applyChanges();
 		oInput.destroy();
 	});
 
@@ -708,6 +765,9 @@ sap.ui.define([
 		oInput.destroy();
 	});
 
+	/**
+	* @deprecated Since 1.119.
+	*/
 	QUnit.test("Value Help Only CSS Classes and event", function(assert) {
 		var spy = this.spy(),
 			oInputVHO = new Input( {
@@ -726,6 +786,9 @@ sap.ui.define([
 		assert.strictEqual(spy.callCount, 1, "Value Help Request has been fired and received successfully");
 	});
 
+	/**
+	* @deprecated Since 1.119.
+	*/
 	QUnit.test("Conditions for Value Help Only not valid", function(assert) {
 	// case1: showValueHelp is false
 		var spy = this.spy(),
@@ -817,6 +880,9 @@ sap.ui.define([
 		assert.strictEqual(spy3.callCount, 0, "enabled = false: Tap has been fired and no Value Help Request is submitted");
 	});
 
+	/**
+	* @deprecated Since 1.119.
+	*/
 	QUnit.test("Keyboard Handling for ValueHelpOnly", function(assert) {
 		//Event check for Enter and Space
 		var evt = jQuery.Event("sapselect"),
@@ -2037,7 +2103,7 @@ sap.ui.define([
 		assert.equal(getPopupItemsContent(oPopup).getItems().length, oSuggestionData.tabularSuggestionItems.length, "Suggestions are inserted");
 		assert.strictEqual(getPopupItemsContent(oPopup).$().length, 1, "Suggestion table is rendered");
 		assert.ok(getPopupItemsContent(oPopup).isA("sap.m.Table"), "Suggestions are tabular)");
-		assert.strictEqual(oPopup.getContentWidth(), "100px", "Suggestion popup has 100px width");
+		assert.strictEqual(oPopup.getDomRef().getBoundingClientRect().width, 640, "Suggestion popup has 640px width since this is the max-width");
 
 		oInput._$input.trigger("focus").val("Product1").trigger("input");
 		this.clock.tick(400);
@@ -2214,8 +2280,8 @@ sap.ui.define([
 		var oInput = new Input({
 			showSuggestion : true,
 			suggestionColumns : [
-				new sap.m.Column({
-					header : new sap.m.Label({text : "A"})
+				new Column({
+					header : new Label({text : "A"})
 				})
 			],
 			suggestionItemSelected: function (oEvent) {
@@ -2238,12 +2304,12 @@ sap.ui.define([
 			}
 		}).placeAt("content");
 
-		oInput.setModel(new sap.ui.model.json.JSONModel(aData));
+		oInput.setModel(new JSONModel(aData));
 		oInput.bindAggregation("suggestionRows", {
 			path : "/",
-			template : new sap.m.ColumnListItem({
+			template : new ColumnListItem({
 				cells : [
-					new sap.m.Label({text : "{a}"})
+					new Label({text : "{a}"})
 				]
 			})
 		});
@@ -2787,7 +2853,7 @@ sap.ui.define([
 
 		assert.ok(oPopup.isOpen(), "Suggestion Popup is open now");
 		assert.strictEqual(getPopupItemsContent(oPopup).$().find("tbody").children(":visible").length, 1, "Suggestions are filtered");
-		assert.strictEqual(getPopupItemsContent(oPopup).$().find("tbody").find("tr>td>span" || "tr>td>label")[0].textContent, oSuggestionData.tabularSuggestionItems[1].name, "Product 2 is filtered");
+		assert.strictEqual(getPopupItemsContent(oPopup).$().find("tbody").find("tr>td>span, tr>td>label")[0].textContent, oSuggestionData.tabularSuggestionItems[1].name, "Product 2 is filtered");
 
 		getPopupItemsContent(oPopup).getItems()[1].ontap(new jQuery.Event());
 		this.clock.tick(300);
@@ -3194,6 +3260,9 @@ sap.ui.define([
 		oInput.destroy();
 	});
 
+	/**
+	* @deprecated Since 1.119.
+	*/
 	QUnit.test("Property startSuggestion on Desktop (Zero, valueHelpOnly)",  function(assert) {
 		var oSystem = {
 				desktop: true,
@@ -4485,6 +4554,9 @@ sap.ui.define([
 		oInput.destroy();
 	});
 
+	/**
+	* @deprecated Since 1.119.
+	*/
 	QUnit.test("Focus handling - Value Help Only 'tap' on Phone", function(assert) {
 		//Arrange
 		var bIsPhone = Device.system.phone;
@@ -5121,6 +5193,23 @@ sap.ui.define([
 		assert.strictEqual(this.oInput.getMaxSuggestionWidth(), this.oInput._getSuggestionsPopover()._sPopoverContentWidth, "Input and Popover widths should be the same.");
 	});
 
+	QUnit.test("Setting maxSuggestionWidth should not change selected item", function (assert) {
+		var oInput = new Input({
+			showSuggestion: true,
+			maxSuggestionWidth: "200px"
+		}).placeAt("content");
+
+		oCore.applyChanges();
+		oInput._getSuggestionsPopover().getPopover().open();
+
+		this.clock.tick(300);
+		oCore.applyChanges();
+
+		assert.ok(oInput._bAfterOpenFinisihed, "After open flag is correct");
+
+		oInput.destroy();
+	});
+
 	QUnit.test("calling _synchronizeSuggestions", function (assert) {
 		// arrange
 		var oStub = this.stub(Device, "system", {
@@ -5345,10 +5434,49 @@ sap.ui.define([
 		oCore.applyChanges();
 
 		oInput._oClearButton.firePress();
-
 		assert.strictEqual(changeHandler.callCount, 1, "Change should be called once");
 		assert.strictEqual(liveChangeHandler.callCount, 1, "Live Change should be called once");
 		assert.strictEqual(oInput.getValue(), "", "Input's value should be cleared");
+
+		oInput.destroy();
+	});
+
+	QUnit.test("Clear Icon - Value should be updated before firing liveChange and change events", function (assert) {
+		var done = assert.async(3);
+		var oInput = new Input({
+			showClearIcon: true,
+			value: "Dryanovo"
+		}).placeAt("content");
+
+		// Arrange
+		oInput.attachLiveChange(function(oEvent) {
+			var sValue = oEvent.getParameter("value");
+			var oInputValue = oEvent.getSource().getValue();
+
+			oCore.applyChanges();
+
+			// Assert
+			assert.strictEqual(sValue, oInputValue, 'Value should be updated before firing the live change event');
+			done();
+		});
+
+		// Arrange
+		oInput.attachChange(function(oEvent) {
+			var sValue = oEvent.getParameter("value");
+			var oInputValue = oEvent.getSource().getValue();
+
+			oCore.applyChanges();
+
+			// Assert
+			assert.strictEqual(sValue, oInputValue, 'Value should be updated before firing the change event');
+			done();
+		});
+
+		oCore.applyChanges();
+		oInput._oClearButton.firePress();
+
+		assert.strictEqual(oInput.getValue(), "", "Input's value should be cleared");
+		done();
 
 		oInput.destroy();
 	});
@@ -5544,6 +5672,117 @@ sap.ui.define([
 		oInput = null;
 	});
 
+	QUnit.test("Dynamic typeahead and item selection with delayed loading of tabular suggestions", function (assert) {
+		var oTabularPopover;
+
+		var oData = {
+			items: [
+				{key: "key1", value: "test1"},
+				{key: "key2", value: "test2"},
+				{key: "key3", value: "test3"},
+				{key: "key4", value: "test4"},
+				{key: "key5", value: "test5"},
+				{key: "key6", value: "test6"},
+				{key: "key7", value: "test7"}
+			]
+		};
+		var oModel = new JSONModel();
+		var oInputWithTabularSuggestions = new sap.m.Input({
+			showSuggestion: true,
+			suggestionRows: {
+				path: "/items",
+				template: new sap.m.ColumnListItem({
+					cells: [
+						new sap.m.Text({text:"{value}"})
+					]
+				})
+			},
+			suggestionColumns: [
+				new sap.m.Column({
+					header: new sap.m.Label({text: "Text"})
+				})
+			],
+			suggest: function (oEvent) {
+				// simulate some backend logic to filter the suggestions
+				var aItems = oData.items.filter(function(oItem) {
+					return oItem.value.includes(oEvent.getParameter("suggestValue"));
+				}).slice(0, 5);
+
+				setTimeout(function () {
+					oModel.setData({
+						items: aItems
+					});
+				}, 0);
+			}
+		});
+
+		oInputWithTabularSuggestions.setModel(oModel);
+		oInputWithTabularSuggestions.placeAt('content');
+		oCore.applyChanges();
+
+		oTabularPopover = oInputWithTabularSuggestions._getSuggestionsPopover();
+
+		oInputWithTabularSuggestions._$input.trigger("focus").trigger("keydown").val("test6").trigger("input");
+		oCore.applyChanges();
+		this.clock.tick(300);
+
+		assert.strictEqual(oTabularPopover.getItemsContainer().getItems()[0].getSelected(), true, "Correct item in the Suggested list is selected");
+
+		oInputWithTabularSuggestions.destroy();
+	});
+
+	QUnit.test("Dynamic typeahead and item selection with delayed loading of list items", function (assert) {
+		var oPopover;
+
+		var oData = {
+			items: [
+				{key: "key1", value: "test1"},
+				{key: "key2", value: "test2"},
+				{key: "key3", value: "test3"},
+				{key: "key4", value: "test4"},
+				{key: "key5", value: "test5"},
+				{key: "key6", value: "test6"},
+				{key: "key7", value: "test7"}
+			]
+		};
+		var oModel = new JSONModel();
+		var oInput = new Input("dynamic-input", {
+			showSuggestion: true,
+			filterSuggests: false,
+			suggestionItems: {
+				path: "/items",
+				template: new Item({key: "{key}", text: "{value}"})
+			},
+			suggest: function (oEvent) {
+				var aItems = oData.items.filter(function(oItem) {
+					return oItem.value.includes(oEvent.getParameter("suggestValue").slice(0, 5));
+				});
+
+				setTimeout(function () {
+					oModel.setData({
+						items: aItems
+					});
+				}, 0);
+			}
+		});
+
+		oInput.setModel(oModel);
+		oInput.placeAt('content');
+		oCore.applyChanges();
+
+		oPopover = oInput._getSuggestionsPopover();
+		oPopover.getPopover().open();
+		this.clock.tick(300);
+
+		oInput._$input.trigger("focus").trigger("keydown").val("test6").trigger("input");
+		this.clock.tick(300);
+
+		assert.strictEqual(getVisibleItems(oPopover.getPopover())[0].getSelected(), true, "Correct item in the Suggested list is selected");
+
+		oInput.destroy();
+	});
+
+
 	QUnit.test("Autocomplete with dynamic loading of items on mobile", function (assert) {
 		var oPopover;
 		var oPopupInput;
@@ -5568,13 +5807,13 @@ sap.ui.define([
 				{key: "key9", value: "test9"}
 			]
 		};
-		var oModel = new sap.ui.model.json.JSONModel();
-		var oInput = new sap.m.Input("dynamic-input", {
+		var oModel = new JSONModel();
+		var oInput = new Input("dynamic-input", {
 			showSuggestion: true,
 			filterSuggests: false,
 			suggestionItems: {
 				path: "/items",
-				template: new sap.ui.core.Item({key: "{key}", text: "{value}"})
+				template: new Item({key: "{key}", text: "{value}"})
 			},
 			suggest: function (oEvent) {
 				var aItems = oData.items.filter(function(oItem) {
@@ -7295,6 +7534,9 @@ sap.ui.define([
 		}
 	});
 
+	/**
+	* @deprecated Since 1.119.
+	*/
 	QUnit.test("showItems should not open the picker when valueHelpOnly is set to 'true'", function (assert) {
 		// Arrange
 		var oSpy = this.spy(this.oInput, "_openSuggestionPopup");

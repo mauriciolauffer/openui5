@@ -5,11 +5,17 @@
 /**
  * Initialization Code and shared classes of library sap.ui.table.
  */
-sap.ui.define(['sap/ui/core/Core', 'sap/ui/model/TreeAutoExpandMode',
-	'sap/ui/core/library', // library dependency
-	'sap/ui/unified/library'], // library dependency
-	function(Core, TreeAutoExpandMode) {
-
+sap.ui.define([
+	"sap/ui/core/Core",
+	"sap/ui/model/TreeAutoExpandMode", // TODO: Remove in UI5 2.0
+	"sap/ui/table/rowmodes/Type",
+	"sap/ui/core/library", // library dependency
+	"sap/ui/unified/library" // library dependency
+], function(
+	Core,
+	TreeAutoExpandMode, // TODO: Remove in UI5 2.0
+	RowModeType
+) {
 	"use strict";
 
 	/**
@@ -32,9 +38,12 @@ sap.ui.define(['sap/ui/core/Core', 'sap/ui/model/TreeAutoExpandMode',
 			"sap.ui.table.RowActionType",
 			"sap.ui.table.SelectionBehavior",
 			"sap.ui.table.SelectionMode",
+			/** @deprecated As of version 1.120 */
 			"sap.ui.table.SortOrder",
 			"sap.ui.table.VisibleRowCountMode",
-			"sap.ui.table.TreeAutoExpandMode" /*Note: Only added here to ensure that a corresponding module is created automatically. Cannot be used as type for properties!*/
+			/** @deprecated As of version 1.120 */
+			"sap.ui.table.TreeAutoExpandMode", /*Note: Only added here to ensure that a corresponding module is created automatically. Cannot be used as type for properties!*/
+			"sap.ui.table.plugins.SelectionMode"
 		],
 		interfaces: [],
 		controls: [
@@ -53,20 +62,23 @@ sap.ui.define(['sap/ui/core/Core', 'sap/ui/model/TreeAutoExpandMode',
 			"sap.ui.table.RowActionItem",
 			"sap.ui.table.RowSettings",
 			"sap.ui.table.rowmodes.RowMode",
-			"sap.ui.table.rowmodes.FixedRowMode",
-			"sap.ui.table.rowmodes.InteractiveRowMode",
-			"sap.ui.table.rowmodes.AutoRowMode",
+			"sap.ui.table.rowmodes.Fixed",
+			"sap.ui.table.rowmodes.Interactive",
+			"sap.ui.table.rowmodes.Auto",
+			"sap.ui.table.plugins.SelectionPlugin",
 			"sap.ui.table.plugins.MultiSelectionPlugin",
-			"sap.ui.table.plugins.SelectionPlugin"
+			"sap.ui.table.plugins.ODataV4Selection"
 		],
 		extensions: {
 			flChangeHandlers: {
-				"sap.ui.table.Table": {
-					"moveElements": "default"
-				},
-				"sap.ui.table.AnalyticalTable": {
-					"moveElements": "default"
-				}
+				// Note: MoveElements change handling is deprecated
+				//
+				// "sap.ui.table.Table": {
+				// 	"moveElements": "default"
+				// },
+				// "sap.ui.table.AnalyticalTable": {
+				// 	"moveElements": "default"
+				// }
 			},
 			//Configuration used for rule loading of Support Assistant
 			"sap.ui.support": {
@@ -202,6 +214,7 @@ sap.ui.define(['sap/ui/core/Core', 'sap/ui/model/TreeAutoExpandMode',
 	 * @version ${version}
 	 * @enum {string}
 	 * @public
+	 * @deprecated As of version 1.120, replaced with <code>sap.ui.core.SortOrder</code>
 	 */
 	thisLib.SortOrder = {
 
@@ -320,6 +333,7 @@ sap.ui.define(['sap/ui/core/Core', 'sap/ui/model/TreeAutoExpandMode',
 	 * Enumeration of the <code>ResetAllMode</code> that can be used in a <code>TablePersoController</code>.
 	 * @enum {string}
 	 * @public
+	 * @deprecated As of version 1.115
 	 */
 	thisLib.ResetAllMode = {
 
@@ -342,10 +356,9 @@ sap.ui.define(['sap/ui/core/Core', 'sap/ui/model/TreeAutoExpandMode',
 		ServiceReset: "ServiceReset"
 	};
 
-	// map the new Column to the old ColumnHeader
-	thisLib.ColumnHeader = thisLib.Column;
+	/** @deprecated As of version 1.120 */
+	thisLib.ColumnHeader = thisLib.Column; // map the new Column to the old ColumnHeader
 
-	// copy sap.ui.model.TreeAutoExpandMode onto the legacy type sap.ui.table.TreeAutoExpandMode
 	/**
 	 * Different modes for setting the auto expand mode on tree or analytical bindings.
 	 *
@@ -354,10 +367,42 @@ sap.ui.define(['sap/ui/core/Core', 'sap/ui/model/TreeAutoExpandMode',
 	 * @version ${version}
 	 * @typedef {sap.ui.model.TreeAutoExpandMode}
 	 * @public
+	 * @deprecated As of version 1.120
 	 */
 	thisLib.TreeAutoExpandMode = TreeAutoExpandMode;
 
+	if (!thisLib.plugins) {
+		thisLib.plugins = {};
+	}
+
+	/**
+	 * Mode of a selection plugin
+	 *
+	 * @version ${version}
+	 * @enum {string}
+	 * @private
+	 */
+	thisLib.plugins.SelectionMode = {
+		/**
+		 * Only one row can be selected at a time.
+		 * @public
+		 */
+		Single: "Single",
+
+		/**
+		 * Multiple rows can be selected.
+		 * @public
+		 */
+		MultiToggle: "MultiToggle"
+	};
+
+	thisLib.rowmodes = thisLib.rowmodes || {};
+	thisLib.rowmodes.Type = RowModeType;
+
 	//factory for table to create labels and textviews to be overwritten by commons and mobile library
+	/**
+	 * @deprecated As of version 1.118
+	 */
 	if (!thisLib.TableHelper) {
 		thisLib.TableHelper = {
 			addTableClass: function() { return ""; }, /* must return some additional CSS class */

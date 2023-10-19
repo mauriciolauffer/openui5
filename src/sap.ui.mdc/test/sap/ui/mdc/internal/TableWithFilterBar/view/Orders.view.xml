@@ -86,7 +86,7 @@
 									<mdcvc:filterBar>
 										<vhfb:FilterBar id="FH1--mdc--responsivetable-FB" liveMode="false" delegate='\{"name": "delegates/GenericVhFilterBarDelegate", "payload": \{\}\}'>
 											<vhfb:filterItems>
-												<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Order Number" conditions="{$filters>/conditions/OrderNo}" dataType="sap.ui.model.odata.type.String" dataTypeConstraints='\{"maxLength": 10, "isDigitSequence": true\}'/>
+												<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Order Number" conditions="{$filters>/conditions/OrderNo}" propertyKey="OrderNo" dataType="sap.ui.model.odata.type.String" dataTypeConstraints='\{"maxLength": 10, "isDigitSequence": true\}'/>
 											</vhfb:filterItems>
 										</vhfb:FilterBar>
 									</mdcvc:filterBar>
@@ -94,17 +94,16 @@
 										autoBindOnInit="false"
 										header="Items"
 										width="100%"
-										height="100%"
 										selectionMode="Multi"
 										p13nMode="Sort"
 										delegate='\{"name": "sap/ui/v4demo/delegate/GridTable.delegate", "payload": \{"collectionName": "Orders"\}\}'
 										threshold="50"
 										enableAutoColumnWidth="true">
 										<mdc:columns>
-											<mdc:table.Column header="Order Number" dataProperty="OrderNo">
+											<mdc:table.Column header="Order Number" propertyKey="OrderNo">
 												<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{path: 'OrderNo', type: 'sap.ui.model.odata.type.String', constraints: {maxLength: 10, isDigitSequence: true}}" editMode="Display" multipleLines="false" width="100%"/>
 											</mdc:table.Column>
-											<mdc:table.Column header="Order ID" dataProperty="ID">
+											<mdc:table.Column header="Order ID" propertyKey="ID">
 												<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{path: 'ID', type: 'sap.ui.model.odata.type.Guid', constraints: {nullable: false}}" editMode="Display" multipleLines="false" width="100%"/>
 											</mdc:table.Column>
 										</mdc:columns>
@@ -118,7 +117,7 @@
 									<mdcvc:filterBar>
 										<vhfb:FilterBar id="FH1--mdc--gridtable-FB" liveMode="false" delegate='\{"name": "delegates/GenericVhFilterBarDelegate", "payload": \{\}\}'>
 											<vhfb:filterItems>
-												<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Order Number" conditions="{$filters>/conditions/OrderNo}" dataType="sap.ui.model.odata.type.String" dataTypeConstraints='\{"maxLength": 10, "isDigitSequence": true\}'/>
+												<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Order Number" conditions="{$filters>/conditions/OrderNo}" propertyKey="OrderNo" dataType="sap.ui.model.odata.type.String" dataTypeConstraints='\{"maxLength": 10, "isDigitSequence": true\}'/>
 											</vhfb:filterItems>
 										</vhfb:FilterBar>
 									</mdcvc:filterBar>
@@ -126,17 +125,16 @@
 										autoBindOnInit="false"
 										header="Items"
 										width="100%"
-										height="100%"
 										selectionMode="Multi"
 										p13nMode="Sort"
 										delegate='\{"name": "sap/ui/v4demo/delegate/GridTable.delegate", "payload": \{"collectionName": "Orders"\}\}'
 										threshold="50"
 										enableAutoColumnWidth="true">
 										<mdc:columns>
-											<mdc:table.Column header="Order Number" dataProperty="OrderNo">
+											<mdc:table.Column header="Order Number" propertyKey="OrderNo">
 												<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{path: 'OrderNo', type: 'sap.ui.model.odata.type.String', constraints: {maxLength: 10, isDigitSequence: true}}" editMode="Display" multipleLines="false" width="100%"/>
 											</mdc:table.Column>
-											<mdc:table.Column header="Order ID" dataProperty="ID">
+											<mdc:table.Column header="Order ID" propertyKey="ID">
 												<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{path: 'ID', type: 'sap.ui.model.odata.type.Guid', constraints: {nullable: false}}" editMode="Display" multipleLines="false" width="100%"/>
 											</mdc:table.Column>
 										</mdc:columns>
@@ -151,12 +149,80 @@
 						</mdc:dialog>
 					</mdc:ValueHelp>
 
+					<mdc:ValueHelp id="VH-ID"
+						delegate='\{"name": "sap/ui/v4demo/delegate/ValueHelp.delegate", "payload": \{\}\}'>
+						<mdc:typeahead>
+							<mdcv:Popover id="VH-ID-Pop">
+								<mdcvc:MTable id="VH-ID-Pop-Cont" keyPath="ID" descriptionPath="OrderNo" filterFields="*OrderNo*">
+									<Table id="VH-ID-Pop-Cont-Table" items='{path : "/Orders", length: 10}' width="30rem" mode="MultiSelect">
+										<columns>
+											<Column>
+												<header>
+													<Text text="Order ID" />
+												</header>
+											</Column>
+											<Column>
+												<header>
+													<Text text="Order Number" />
+												</header>
+											</Column>
+										</columns>
+										<items>
+											<ColumnListItem type="Active">
+												<cells>
+													<Text text="{ID}" />
+													<Text text="{OrderNo}" />
+												</cells>
+											</ColumnListItem>
+										</items>
+									</Table>
+								</mdcvc:MTable>
+							</mdcv:Popover>
+						</mdc:typeahead>
+						<mdc:dialog>
+							<mdcv:Dialog id="VH-ID-Dia" title="Order ID">
+								<mdcvc:MDCTable id="VH-ID-Dia-Cont" keyPath="ID" descriptionPath="OrderNo" filterFields="" forceBind="true">
+									<mdcvc:filterBar>
+										<vhfb:FilterBar id="VH-ID-Dia-Cont-FB" liveMode="false" delegate='\{"name": "delegates/GenericVhFilterBarDelegate", "payload": \{\}\}'>
+											<vhfb:filterItems>
+												<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' label="Order Number" conditions="{$filters>/conditions/OrderNo}" propertyKey="OrderNo" dataType="sap.ui.model.odata.type.String" dataTypeConstraints='\{"maxLength": 10, "isDigitSequence": true\}'/>
+											</vhfb:filterItems>
+										</vhfb:FilterBar>
+									</mdcvc:filterBar>
+									<mdc:Table id="VH-ID-Dia-Cont-Table"
+										autoBindOnInit="false"
+										header="Items"
+										width="100%"
+										selectionMode="Multi"
+										p13nMode="Sort"
+										delegate='\{"name": "sap/ui/v4demo/delegate/GridTable.delegate", "payload": \{"collectionName": "Orders"\}\}'
+										threshold="50"
+										enableAutoColumnWidth="true">
+										<mdc:columns>
+											<mdc:table.Column header="Order ID" propertyKey="ID">
+												<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{path: 'ID', type: 'sap.ui.model.odata.type.Guid', constraints: {nullable: false}}" editMode="Display" multipleLines="false" width="100%"/>
+											</mdc:table.Column>
+											<mdc:table.Column header="Order Number" propertyKey="OrderNo">
+												<mdc:Field delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{path: 'OrderNo', type: 'sap.ui.model.odata.type.String', constraints: {maxLength: 10, isDigitSequence: true}}" editMode="Display" multipleLines="false" width="100%"/>
+											</mdc:table.Column>
+										</mdc:columns>
+										<mdc:type>
+											<mdc:table.ResponsiveTableType growingMode="Scroll"/>
+										</mdc:type>
+									</mdc:Table>
+								</mdcvc:MDCTable>
+
+								<mdcvc:Conditions id="VH-ID-Dia-Cond" label="Order ID"/>
+							</mdcv:Dialog>
+						</mdc:dialog>
+					</mdc:ValueHelp>
+
 					<mdc:ValueHelp id="FH-Currency"
 						delegate='\{"name": "sap/ui/v4demo/delegate/ValueHelp.delegate", "payload": \{\}\}'>
 						<mdc:typeahead>
 							<mdcv:Popover>
 								<mdcvc:FixedList items="{/Currencies}" useAsValueHelp="true">
-									<mdcf:ListFieldHelpItem key="{code}" text="{descr}" additionalText="{code}"/>
+									<mdcvc:FixedListItem key="{code}" text="{descr}" additionalText="{code}"/>
 								</mdcvc:FixedList>
 							</mdcv:Popover>
 						</mdc:typeahead>
@@ -167,14 +233,15 @@
 					dataType="Edm.String"
 					placeholder= "Search Orders"
 					conditions="{$filters>/conditions/$search}"
+					propertyKey="$search"
 					maxConditions="1"/>
 				</mdc:basicSearchField>
 
 				<mdc:filterItems>
-					<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' id="ff2" fieldHelp="FH1" label="Order Number" conditions="{$filters>/conditions/OrderNo}" dataType="sap.ui.model.odata.type.String" dataTypeConstraints='\{"maxLength": 10, "isDigitSequence": true\}'/>
-					<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' id="ff3" label="Order Time" conditions="{$filters>/conditions/orderTime}" dataType="Edm.TimeOfDay" />
-					<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' id="ff4" label="Order w. one Item for Book (Any)" conditions="{$filters>/conditions/Items*/book_ID}" dataType="Edm.Int32" />
-					<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' id="ff5" label="Order w. all Items for Book (All)" conditions="{$filters>/conditions/Items+/book_ID}" dataType="Edm.Int32" />
+					<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' id="ff2" valueHelp="FH1" label="Order Number" conditions="{$filters>/conditions/OrderNo}" propertyKey="OrderNo" dataType="sap.ui.model.odata.type.String" dataTypeConstraints='\{"maxLength": 10, "isDigitSequence": true\}'/>
+					<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' id="ff3" label="Order Time" conditions="{$filters>/conditions/orderTime}" propertyKey="orderTime" dataType="Edm.TimeOfDay" />
+					<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' id="ff4" label="Order w. one Item for Book (Any)" conditions="{$filters>/conditions/Items*/book_ID}" propertyKey="Items*/book_ID" dataType="Edm.Int32" />
+					<mdc:FilterField delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' id="ff5" label="Order w. all Items for Book (All)" conditions="{$filters>/conditions/Items+/book_ID}" propertyKey="Items+/book_ID" dataType="Edm.Int32" />
 				</mdc:filterItems>
             </mdc:FilterBar>
 
@@ -211,49 +278,49 @@
                         <mdc:table.Column
 									id="cID"
 									header="ID"
-									dataProperty="ID"
+									propertyKey="ID"
 								>
                             <mdc:Field id="F_ID" delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{path: 'ID', type: 'sap.ui.model.odata.type.Guid', constraints: {nullable: false}}" editMode="Display" multipleLines="false" width="100%"/>
                         </mdc:table.Column>
                         <mdc:table.Column
 									id="cOrderNo"
 									header="Order Number"
-									dataProperty="OrderNo"
+									propertyKey="OrderNo"
 								>
                             <mdc:Field id="F_OrderNo" delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{path: 'OrderNo', type: 'sap.ui.model.odata.type.String', constraints: {maxLength: 10, isDigitSequence: true}}" editMode="Display" multipleLines="false" width="100%"/>
                         </mdc:table.Column>
 						<mdc:table.Column
 									id="cTime"
 									header="Order time"
-									dataProperty="orderTime"
+									propertyKey="orderTime"
 								>
                             <mdc:Field id="F_orderTime" delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{path: 'orderTime', type: 'sap.ui.model.odata.type.TimeOfDay'}" editMode="Display" multipleLines="false" width="100%"/>
                         </mdc:table.Column>
                         <mdc:table.Column
 									id="cCustomer"
 									header="Customer"
-									dataProperty="customer_ID"
+									propertyKey="customer_ID"
 								>
                             <mdc:Field id="F_customer_ID" delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{path: 'customer_ID', type: 'sap.ui.model.odata.type.Int32'}" additionalValue="{customer/name}" display="Description" editMode="Display" multipleLines="false" width="100%"/>
                         </mdc:table.Column>
                         <mdc:table.Column
 									id="cCreatedAt"
 									header="Created On"
-									dataProperty="createdAt"
+									propertyKey="createdAt"
 								>
                             <mdc:Field id="F_createdAt" delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{path: 'createdAt', type: 'sap.ui.model.odata.type.DateTimeOffset', constraints: {precision: 7, V4: true}}" editMode="Display" multipleLines="false" width="100%"/>
                         </mdc:table.Column>
 						<mdc:table.Column
 									id="cModifiedAt"
 									header="Modified On"
-									dataProperty="modifiedAt"
+									propertyKey="modifiedAt"
 								>
                             <mdc:Field id="F_modifiedAt" delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{path: 'modifiedAt', type: 'sap.ui.model.odata.type.DateTimeOffset', constraints: {precision: 7, V4: true}}" editMode="Display" multipleLines="false" width="100%"/>
                         </mdc:table.Column>
 						<mdc:table.Column
 									id="cTotal"
 									header="Total"
-									dataProperty="total"
+									propertyKey="total"
 								>
                             <mdc:Field id="F_total" delegate='\{"name": "delegates/odata/v4/FieldBaseDelegate", "payload": \{\}\}' value="{parts: [{path: 'total', type:'sap.ui.model.odata.type.Decimal', constraints: {precision: 9, scale: 2}}, {path:'currency_code', type:'sap.ui.model.odata.type.String', constraints: {maxLength: 3}}, {mode:'OneTime', path:'/##@@requestCurrencyCodes', targetType:'any'}], type:'sap.ui.model.odata.type.Currency', mode:'TwoWay'}" editMode="Display" multipleLines="false" width="100%"/>
 						</mdc:table.Column>

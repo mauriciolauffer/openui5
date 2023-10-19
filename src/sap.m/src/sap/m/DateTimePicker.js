@@ -23,7 +23,7 @@ sap.ui.define([
 	'./ResponsivePopover',
 	'./Button',
 	'sap/ui/core/IconPool',
-	'sap/ui/qunit/utils/waitForThemeApplied',
+	"sap/ui/core/Theming",
 	'sap/ui/core/Configuration',
 	'sap/ui/core/date/UI5Date',
 	'sap/ui/dom/jquery/cursorPos' // provides jQuery.fn.cursorPos
@@ -47,7 +47,7 @@ sap.ui.define([
 	ResponsivePopover,
 	Button,
 	IconPool,
-	waitForThemeApplied,
+	Theming,
 	Configuration,
 	UI5Date
 ) {
@@ -97,19 +97,50 @@ sap.ui.define([
 	 *
 	 * On app level, there are two options to provide a date for the
 	 * <code>DateTimePicker</code> - as a string to the <code>value</code> property
-	 * or as a JavaScript Date object to the <code>dateValue</code> property (only one
+	 * or as a UI5Date or JavaScript Date object to the <code>dateValue</code> property (only one
 	 * of these properties should be used at a time):
 	 *
 	 * <ul><li>Use the <code>value</code> property if you want to bind the
 	 * <code>DateTimePicker</code> to a model using the
 	 * <code>sap.ui.model.type.DateTime</code></li>
+	 * @example <caption> binding the <code>value</code> property by using types </caption>
+	 * new sap.ui.model.json.JSONModel({date: sap.ui.core.date.UI5Date.getInstance(2022,10,10,12,10,10)});
+	 *
+	 * new sap.m.DateTimePicker({
+	 *     value: {
+	 *         type: "sap.ui.model.type.DateTime",
+	 *         path: "/date"
+	 *     }
+	 * });
+	 *
 	 * <li>Use the <code>value</code> property if the date is provided as a string from
 	 * the backend or inside the app (for example, as ABAP type DATS field)</li>
+	 * @example <caption> binding the <code>value</code> property by using types </caption>
+	 * new sap.ui.model.json.JSONModel({date:"2022-11-10-12-10-10"});
+	 *
+	 * new sap.m.DateTimePicker({
+	 *     value: {
+	 *         type: "sap.ui.model.type.DateTime",
+	 *         path: "/date",
+	 *         formatOptions: {
+	 *             source: {
+	 *                 pattern: "yyyy-MM-dd-HH-mm-ss"
+	 *             }
+	 *          }
+	 *     }
+	 * });
+	 *
+	 * <b>Note:</b> There are multiple binding type choices, such as:
+	 * sap.ui.model.type.Date
+	 * sap.ui.model.odata.type.DateTime
+	 * sap.ui.model.odata.type.DateTimeOffset
+	 * sap.ui.model.odata.type.DateTimeWithTimezone
+	 * See {@link sap.ui.model.type.Date}, {@link sap.ui.model.odata.type.DateTime}, {@link sap.ui.model.odata.type.DateTimeOffset} or {@link sap.ui.model.odata.type.DateTimeWithTimezone}
+	 *
 	 * <li>Use the <code>dateValue</code> property if the date is already provided as a
-	 * JavaScript Date object or you want to work with a JavaScript Date object.
+	 * UI5Date or JavaScript Date object or you want to work with a UI5Date or JavaScript Date object.
 	 * Use <code>dateValue</code> as a helper property to easily obtain the day, month, year,
-	 * hours, minutes and seconds of the chosen date and time. Although possible to bind it,
-	 * the recommendation is not to do it.
+	 * hours, minutes and seconds of the chosen date and time. Although it's possible to bind it, it's not recommended to do so.
 	 * When binding is needed, use <code>value</code> property instead</li></ul>
 	 *
 	 * <h3>Formatting</h3>
@@ -184,12 +215,34 @@ sap.ui.define([
 				showTimezone: { type: "boolean", group: "Behavior" },
 
 				/**
-				 * The IANA timezone ID, e.g <code>"Europe/Berlin"</code>. Date and time are displayed in this timezone.
-				 * The <code>value</code> property string is treated as if it is formatted in this timezone.
-				 * The <code>dateValue</code> property should not be used as this could lead to an unpredictable results. Use <code>getValue()</code> instead.
+				 * The IANA timezone ID, e.g <code>"Europe/Berlin"</code>.
+				 * For display purposes only in combination with <code>showTimezone</code> property.
+				 * The <code>value</code> property is a string representation of a date and time and is not related to the displayed time zone.
+				 * The <code>dateValue</code> property should not be used as this could lead to unpredictable results. Use <code>getValue()</code> instead.
+				 *
+				 * @example <caption> Converting <code>value</code> and <code>timezone</code> properties to a single moment in time</caption>
+				 * var oDate = new Date(Date.UTC(2021, 11, 24, 13, 37));
+				 *
+				 * var sValue = "Dec 24, 2021, 8:37:00 AM";
+				 * var sTimezone = "America/New_York";
+				 * sap.ui.core.format.DateFormat.getDateTimeWithTimezoneInstance({showTimezone: false}).parse(sValue, sTimezone)});
+				 * // output: [oDate, undefined]
+				 *
+				 * @see sap.ui.core.format.DateFormat.DateTimeWithTimezone.parse
 				 * @since 1.99
 				 */
-				timezone: { type: "string", group: "Data" }
+				timezone: { type: "string", group: "Data" },
+
+				/**
+				 * This property is inherited from <code>DatePicker</code> but its usage makes no sense in <code>DateTimePicker</code>
+				 * because <code>DateTimePicker</code> always have footer with buttons.
+				 * Additionally, the setter for this property is overriden to deny changing its value.
+				 *
+				 * @since 1.70
+				 */
+				showFooter : {type : "boolean", group : "Misc", defaultValue : false}
+
+
 			},
 			designtime: "sap/m/designtime/DateTimePicker.designtime",
 			dnd: { draggable: false, droppable: true }
@@ -306,9 +359,9 @@ sap.ui.define([
 						new SegmentedButtonItem(this.getId() + "-Switch-Clk", {key: "Clk", text: sTimeText})
 					]
 				});
-				oSwitcher.attachSelect(this._handleSelect, this);
+				oSwitcher.attachSelectionChange(this._handleSelectionChange, this);
 
-				this.setAggregation("_switcher", oSwitcher, true);
+				this.setAggregation("_switcher", oSwitcher);
 			}
 
 			if (Device.system.phone || jQuery('html').hasClass("sapUiMedia-Std-Phone") || this.getForcePhoneView()) {
@@ -335,9 +388,8 @@ sap.ui.define([
 			this.getCalendar().addDelegate(oOnAfterRenderingDelegate);
 		},
 
-		_handleSelect: function(oEvent) {
-
-			var sKey = oEvent.getParameter("key");
+		_handleSelectionChange: function(oEvent) {
+			var sKey = oEvent.getParameter("item").getKey();
 
 			this._switchVisibility(sKey);
 			if (sKey === "Clk") {
@@ -389,6 +441,14 @@ sap.ui.define([
 		this._bOnlyCalendar = false;
 	};
 
+	/**
+	 * This setter is overriden because the property is inherited from <code>DatePicker</code> but its usage makes no sense
+	 * in <code>DateTimePicker</code> as it always have footer with buttons. Setting the property won't have an effect at all.
+	 */
+	DateTimePicker.prototype.setShowFooter = function() {
+		return this;
+	};
+
 	DateTimePicker.prototype.setTimezone = function(sTimezone) {
 		var oCurrentDateValue,
 			sFormattedValue,
@@ -431,17 +491,7 @@ sap.ui.define([
 		DatePicker.prototype.onAfterRendering.apply(this, arguments);
 
 		if (this._getShowTimezone()) {
-			waitForThemeApplied().then(function() {
-				var oDummyContentDomRef = this.$().find(".sapMDummyContent"),
-					iDummyWidth;
-
-				if (!oDummyContentDomRef || !oDummyContentDomRef.length) {
-					return;
-				}
-
-				iDummyWidth = oDummyContentDomRef[0].getBoundingClientRect().width;
-				this.$("inner").css("max-width", (iDummyWidth + 2) + "px");
-			}.bind(this));
+			Theming.attachApplied(this._adjustInnerMaxWidth.bind(this));
 		}
 	};
 
@@ -515,6 +565,7 @@ sap.ui.define([
 
 		this._oTimezonePopup = undefined;
 		this._oPopupContent = undefined; // is destroyed via popup aggregation - just remove reference
+		Theming.detachApplied(this._adjustInnerMaxWidth);
 		Device.media.detachHandler(this._handleWindowResize, this);
 	};
 
@@ -546,6 +597,13 @@ sap.ui.define([
 		return DateTimeFormatStyles.Medium;
 	};
 
+	/**
+	 * Set minimum date that can be shown and selected in the <code>DateTimePicker</code>. This must be a UI5Date or JavaScript Date object.
+	 *
+	 * @param {Date|module:sap/ui/core/date/UI5Date} oDate A date instance
+	 * @returns {this} Reference to <code>this</code> for method chaining
+	 * @public
+	 */
 	DateTimePicker.prototype.setMinDate = function (oDate) {
 		DatePicker.prototype.setMinDate.call(this, oDate);
 
@@ -555,6 +613,13 @@ sap.ui.define([
 		return this;
 	};
 
+	/**
+	 * Set maximum date that can be shown and selected in the <code>DateTimePicker</code>. This must be a UI5Date or JavaScript Date object.
+	 *
+	 * @param {Date|module:sap/ui/core/date/UI5Date} oDate A date instance
+	 * @returns {this} Reference to <code>this</code> for method chaining
+	 * @public
+	 */
 	DateTimePicker.prototype.setMaxDate = function (oDate) {
 		DatePicker.prototype.setMaxDate.call(this, oDate);
 
@@ -582,6 +647,18 @@ sap.ui.define([
 		oClocks && oClocks.setShowCurrentTimeButton(bShow);
 
 		return this.setProperty("showCurrentTimeButton", bShow);
+	};
+
+	DateTimePicker.prototype._adjustInnerMaxWidth = function() {
+			var oDummyContentDomRef = this.$().find(".sapMDummyContent"),
+				iDummyWidth;
+
+			if (!oDummyContentDomRef || !oDummyContentDomRef.length) {
+				return;
+			}
+
+			iDummyWidth = oDummyContentDomRef[0].getBoundingClientRect().width;
+			this.$("inner").css("max-width", (iDummyWidth + 2) + "px");
 	};
 
 	DateTimePicker.prototype._getTimezoneNamePopup = function() {
@@ -988,10 +1065,11 @@ sap.ui.define([
 				oDate = UI5Date.getInstance();
 				this._oCalendar.removeAllSelectedDates();
 			}
-			var iMaxTimeMillis = this._oMaxDate.getTime();
 
-			if (oDate.getTime() < this._oMinDate.getTime() || oDate.getTime() > iMaxTimeMillis) {
+			if (oDate.getTime() < this._oMinDate.getTime()) {
 				oDate = this._oMinDate;
+			} else if (oDate.getTime() > this._oMaxDate.getTime()) {
+				oDate = this._oMaxDate;
 			}
 			this._oOKButton.setEnabled(false);
 		}
@@ -999,7 +1077,7 @@ sap.ui.define([
 		// convert the date to local date for the calendar and the clocks if binding is used
 		if (this._isTimezoneBinding()) {
 			sFormattedDate = this._getPickerParser().format(oDate, this._getTimezone(true));
-			oDate = this._getPickerParser().parse(sFormattedDate, TimezoneUtil.getLocalTimezone())[0];
+			oDate = this._getPickerParser().parse(sFormattedDate)[0];
 		}
 		this._oCalendar.focusDate(oDate);
 
@@ -1041,7 +1119,7 @@ sap.ui.define([
 		}
 
 		if (this._isTimezoneBinding()) {
-			sFormattedDate = this._getPickerParser().format(oDate, TimezoneUtil.getLocalTimezone());
+			sFormattedDate = this._getPickerParser().format(oDate);
 			oParts = this._getPickerParser().parse(sFormattedDate, this._getTimezone(true));
 			oDate = oParts && oParts[0];
 		}
@@ -1054,7 +1132,7 @@ sap.ui.define([
 	 * @name sap.m.DateTimePicker#getDateValue
 	 * @function
 	 * @public
-	 * @returns {Date} A JavaScript Date
+	 * @returns {Date|module:sap/ui/core/date/UI5Date} date instance
 	 * @since 1.102
 	 */
 

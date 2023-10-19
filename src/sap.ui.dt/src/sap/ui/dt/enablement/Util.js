@@ -26,7 +26,6 @@ sap.ui.define([
 	 * @static
 	 * @since 1.38
 	 * @alias sap.ui.dt.enablement.Util
-	 * @experimental Since 1.38. This class is experimental and provides only limited functionality. Also the API might be changed in future.
 	 */
 
 	var MIN_SIZE = 5;
@@ -46,7 +45,6 @@ sap.ui.define([
 			overlay: oElementOverlay
 		};
 	};
-
 
 	/**
 	 * Returns all aggregation infos of the element
@@ -92,7 +90,6 @@ sap.ui.define([
 
 		return mAggregationTest;
 	};
-
 
 	/**
 	 * Returns all information of all aggregations of the element

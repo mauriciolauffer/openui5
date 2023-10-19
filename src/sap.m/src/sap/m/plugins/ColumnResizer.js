@@ -164,7 +164,7 @@ sap.ui.define([
 	};
 
 	ColumnResizer.prototype._onmousemove = function(oEvent) {
-		if (bResizing) {
+		if (bResizing || this.getControl().getBusy() || this.getControl().getBlocked()) {
 			return;
 		}
 
@@ -244,7 +244,7 @@ sap.ui.define([
 		this.getConfig("additionalColumnWidth", $Cells, $ClonedCells);
 		this._$Container.append($HiddenArea);
 		var iWidth = Math.round($HiddenArea.append($ClonedCells)[0].getBoundingClientRect().width);
-		var iDistanceX = iWidth - oSession.fCurrentColumnWidth;
+		var iDistanceX = bRTL ? oSession.fCurrentColumnWidth - iWidth : iWidth - oSession.fCurrentColumnWidth;
 		$HiddenArea.remove();
 
 		return iDistanceX;
@@ -358,6 +358,13 @@ sap.ui.define([
 		} else {
 			oSession.iMaxIncrease = window.innerWidth;
 		}
+
+		if (bRTL) {
+			oSession.iMaxDecrease = this._getColumnMinWidth(oSession.oNextColumn) - oSession.fNextColumnWidth;
+			if (oSession.iEmptySpace != -1) {
+				oSession.iMaxIncrease = oSession.iEmptySpace + oSession.fCurrentColumnWidth - this._getColumnMinWidth(oSession.oCurrentColumn);
+			}
+		}
 	};
 
 	/**
@@ -446,13 +453,14 @@ sap.ui.define([
 		this._setSessionDistanceX(iDistanceX);
 		this._setColumnWidth();
 		this._endResizeSession();
+		oEvent.stopImmediatePropagation(true);
 	};
 
 	ColumnResizer.detectTextSelection = function(oDomRef) {
 		var oSelection = window.getSelection(),
 			sTextSelection = oSelection.toString().replace("/n", "");
 
-		return sTextSelection && jQuery.contains(oDomRef, oSelection.focusNode);
+		return sTextSelection && (oDomRef !== oSelection.focusNode && oDomRef.contains(oSelection.focusNode));
 	};
 
 	/**
@@ -544,27 +552,24 @@ sap.ui.define([
 	PluginBase.setConfigs({
 		"sap.m.Table": {
 			container: "listUl",
-			resizable: ".sapMListTblHeaderCell:not([aria-hidden=true])",
-			focusable: ".sapMColumnHeaderFocusable",
+			resizable: ".sapMListTblHeaderCell",
 			cellPaddingStyleClass: "sapMListTblCell",
 			fixAutoWidthColumns: true,
 			onActivate: function(oTable) {
 				this._vOrigFixedLayout = oTable.getFixedLayout();
 
 				if (!oTable.bActiveHeaders) {
-					oTable.bFocusableHeaders = true;
 					this.allowTouchResizing = ColumnResizer._isInTouchMode();
 				}
 
 				oTable.setFixedLayout("Strict");
 			},
 			onDeactivate: function(oTable) {
-				oTable.bFocusableHeaders = false;
 				oTable.setFixedLayout(this._vOrigFixedLayout);
 
 				// rerendering of the table is required if _vOrigFixedLayout == "Strict", since the focusable DOM must be removed
 				if (this._vOrigFixedLayout == "Strict") {
-					oTable.rerender();
+					oTable.invalidate();
 				}
 
 				delete this._vOrigFixedLayout;

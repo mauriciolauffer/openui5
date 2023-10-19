@@ -13,12 +13,17 @@ sap.ui.define([
 	 * Provides an API to handle default delegates.
 	 *
 	 * @namespace sap.ui.fl.apply.api.DelegateMediatorAPI
-	 * @experimental Since 1.80
 	 * @since 1.80
 	 * @private
 	 * @ui5-restricted
 	 */
 	var DelegateMediatorAPI = /** @lends sap.ui.fl.apply.api.DelegateMediatorAPI */{
+		types: {
+			READONLY: DelegateMediator.types.READONLY,
+			WRITEONLY: DelegateMediator.types.WRITEONLY,
+			COMPLETE: DelegateMediator.types.COMPLETE
+		},
+
 		/**
 		 * Registers the default delegate by model type.
 		 *
@@ -28,7 +33,7 @@ sap.ui.define([
 		 * @param {object} mPropertyBag.delegateType - Defines the type of the default delegate. Please look at <code>DelegageMediator.types</code> for possible entries
 	 	 * @param {object} [mPropertyBag.requiredLibraries] - map of required libraries
 		 */
-		registerDefaultDelegate: function (mPropertyBag) {
+		registerDefaultDelegate(mPropertyBag) {
 			DelegateMediator.registerDefaultDelegate(mPropertyBag);
 		},
 
@@ -42,7 +47,7 @@ sap.ui.define([
 		 * @param {boolean} [mPropertyBag.supportsDefault] - Include default delegate if no instance specific delegate is available
 		 * @returns {Promise.<sap.ui.core.util.reflection.FlexDelegateInfo>} Delegate information including the lazy loaded instance of the delegate
 		 */
-		getDelegateForControl: function (mPropertyBag) {
+		getDelegateForControl(mPropertyBag) {
 			return DelegateMediator.getDelegateForControl(
 				mPropertyBag.control,
 				mPropertyBag.modifier,
@@ -55,7 +60,7 @@ sap.ui.define([
 		 * Returns a list of library names which needs to be required to get default delegates loaded.
 		 * @returns {array} List of library names
 		 */
-		getKnownDefaultDelegateLibraries: function () {
+		getKnownDefaultDelegateLibraries() {
 			return DelegateMediator.getKnownDefaultDelegateLibraries();
 		},
 
@@ -69,7 +74,7 @@ sap.ui.define([
 		 * @param {string} [mPropertyBag.sModelType] - Model type, if none is provided the default model of oControl is taken instead
 		 * @returns {string[]} Required libraries
 		 */
-		getRequiredLibrariesForDefaultDelegate: function (mPropertyBag) {
+		getRequiredLibrariesForDefaultDelegate(mPropertyBag) {
 			return DelegateMediator.getRequiredLibrariesForDefaultDelegate(
 				mPropertyBag.delegateName,
 				mPropertyBag.control,

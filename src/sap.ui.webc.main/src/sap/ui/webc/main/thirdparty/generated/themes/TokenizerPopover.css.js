@@ -7,15 +7,14 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/T
   _exports.default = void 0;
   _parametersBundle = _interopRequireDefault(_parametersBundle);
   _parametersBundle2 = _interopRequireDefault(_parametersBundle2);
-
   function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-  (0, _Themes.registerThemePropertiesLoader)("@ui5/webcomponents-theming", "sap_fiori_3", () => _parametersBundle.default);
-  (0, _Themes.registerThemePropertiesLoader)("@ui5/webcomponents", "sap_fiori_3", () => _parametersBundle2.default);
-  var _default = {
+  (0, _Themes.registerThemePropertiesLoader)("@ui5/webcomponents-theming", "sap_fiori_3", async () => _parametersBundle.default);
+  (0, _Themes.registerThemePropertiesLoader)("@ui5/webcomponents", "sap_fiori_3", async () => _parametersBundle2.default);
+  const styleData = {
     packageName: "@ui5/webcomponents",
     fileName: "themes/TokenizerPopover.css",
-    content: "[ui5-responsive-popover]::part(content),[ui5-responsive-popover]::part(header){padding:0}"
+    content: "[ui5-responsive-popover]::part(content),[ui5-responsive-popover]::part(header){padding:0}#ui5-tokenizer-dialog-confirm-btn{height:100%;min-width:4rem}[ui5-responsive-popover]{margin-top:var(--_ui5-v1-18-0_tokenizer-popover_offset);margin-inline-start:calc(var(--_ui5-v1-18-0_tokenizer_padding)*-1)}"
   };
+  var _default = styleData;
   _exports.default = _default;
 });

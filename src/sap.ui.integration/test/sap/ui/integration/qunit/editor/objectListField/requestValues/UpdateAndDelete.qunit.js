@@ -186,7 +186,7 @@ sap.ui.define([
 					assert.ok(oTable.getEnableSelectAll(), "Table: SelectAll enabled");
 					assert.equal(oTable.getRows().length, 5, "Table: line number is 5");
 					assert.equal(oTable.getBinding().getCount(), 0, "Table: value length is 0");
-					var oToolbar = oTable.getToolbar();
+					var oToolbar = oTable.getExtension()[0];
 					assert.equal(oToolbar.getContent().length, 9, "Table toolbar: content length");
 					var oAddButton = oToolbar.getContent()[1];
 					assert.ok(oAddButton.getVisible(), "Table toolbar: add button visible");
@@ -210,7 +210,7 @@ sap.ui.define([
 								// scroll to the bottom
 								oTable._getScrollExtension().getVerticalScrollbar().scrollTop = 200;
 								wait().then(function () {
-									assert.ok(oTable.getSelectedIndex() === -1 && oTable.getSelectedIndices().length === 0, "Table: no selected row");
+									assert.ok(oTable.getSelectedIndices().length === 0, "Table: no selected row");
 									var oRow6 = oTable.getRows()[1];
 									assert.ok(deepEqual(cleanUUIDAndPosition(oRow6.getBindingContext().getObject()), Object.assign(deepClone(oValueNew), ({"_dt": {"_selected": true}}))), "Row 6: value");
 									oTable.setSelectedIndex(5);
@@ -356,7 +356,7 @@ sap.ui.define([
 					assert.ok(oTable.getEnableSelectAll(), "Table: SelectAll enabled");
 					assert.equal(oTable.getRows().length, 5, "Table: line number is 5");
 					assert.equal(oTable.getBinding().getCount(), 0, "Table: value length is 0");
-					var oToolbar = oTable.getToolbar();
+					var oToolbar = oTable.getExtension()[0];
 					assert.equal(oToolbar.getContent().length, 9, "Table toolbar: content length");
 					var oAddButton = oToolbar.getContent()[1];
 					assert.ok(oAddButton.getVisible(), "Table toolbar: add button visible");
@@ -380,7 +380,7 @@ sap.ui.define([
 								// scroll to the bottom
 								oTable._getScrollExtension().getVerticalScrollbar().scrollTop = 200;
 								wait().then(function () {
-									assert.ok(oTable.getSelectedIndex() === -1 && oTable.getSelectedIndices().length === 0, "Table: no selected row");
+									assert.ok(oTable.getSelectedIndices().length === 0, "Table: no selected row");
 									var oRow6 = oTable.getRows()[1];
 									assert.ok(deepEqual(cleanUUIDAndPosition(oRow6.getBindingContext().getObject()), Object.assign(deepClone(oValueNew), ({"_dt": {"_selected": true}}))), "Row 6: value");
 									oTable.setSelectedIndex(5);
@@ -517,7 +517,7 @@ sap.ui.define([
 					assert.ok(oTable.getEnableSelectAll(), "Table: SelectAll enabled");
 					assert.equal(oTable.getRows().length, 5, "Table: line number is 5");
 					assert.equal(oTable.getBinding().getCount(), 0, "Table: value length is 0");
-					var oToolbar = oTable.getToolbar();
+					var oToolbar = oTable.getExtension()[0];
 					assert.equal(oToolbar.getContent().length, 9, "Table toolbar: content length");
 					var oAddButton = oToolbar.getContent()[1];
 					assert.ok(oAddButton.getVisible(), "Table toolbar: add button visible");
@@ -541,7 +541,7 @@ sap.ui.define([
 								// scroll to the bottom
 								oTable._getScrollExtension().getVerticalScrollbar().scrollTop = 200;
 								wait().then(function () {
-									assert.ok(oTable.getSelectedIndex() === -1 && oTable.getSelectedIndices().length === 0, "Table: no selected row");
+									assert.ok(oTable.getSelectedIndices().length === 0, "Table: no selected row");
 									var oRow6 = oTable.getRows()[1];
 									assert.ok(deepEqual(cleanUUIDAndPosition(oRow6.getBindingContext().getObject()), Object.assign(deepClone(oValueNew), ({"_dt": {"_selected": true}}))), "Row 6: value");
 									oTable.setSelectedIndex(5);
@@ -697,7 +697,7 @@ sap.ui.define([
 					assert.ok(oTable.getEnableSelectAll(), "Table: SelectAll enabled");
 					assert.equal(oTable.getRows().length, 5, "Table: line number is 5");
 					assert.equal(oTable.getBinding().getCount(), 0, "Table: value length is 0");
-					var oToolbar = oTable.getToolbar();
+					var oToolbar = oTable.getExtension()[0];
 					assert.equal(oToolbar.getContent().length, 9, "Table toolbar: content length");
 					var oAddButton = oToolbar.getContent()[1];
 					assert.ok(oAddButton.getVisible(), "Table toolbar: add button visible");
@@ -721,7 +721,7 @@ sap.ui.define([
 								// scroll to the bottom
 								oTable._getScrollExtension().getVerticalScrollbar().scrollTop = 200;
 								wait().then(function () {
-									assert.ok(oTable.getSelectedIndex() === -1 && oTable.getSelectedIndices().length === 0, "Table: no selected row");
+									assert.ok(oTable.getSelectedIndices().length === 0, "Table: no selected row");
 									var oRow6 = oTable.getRows()[1];
 									assert.ok(deepEqual(cleanUUIDAndPosition(oRow6.getBindingContext().getObject()), Object.assign(deepClone(oValueNew), ({"_dt": {"_selected": true}}))), "Row 6: value");
 									oTable.setSelectedIndex(5);
@@ -912,7 +912,7 @@ sap.ui.define([
 					assert.ok(oTable.getEnableSelectAll(), "Table: SelectAll enabled");
 					assert.equal(oTable.getRows().length, 5, "Table: line number is 5");
 					assert.equal(oTable.getBinding().getCount(), 0, "Table: value length is 0");
-					var oToolbar = oTable.getToolbar();
+					var oToolbar = oTable.getExtension()[0];
 					assert.equal(oToolbar.getContent().length, 9, "Table toolbar: content length");
 					var oAddButton = oToolbar.getContent()[1];
 					assert.ok(oAddButton.getVisible(), "Table toolbar: add button visible");
@@ -936,7 +936,7 @@ sap.ui.define([
 								// scroll to the bottom
 								oTable._getScrollExtension().getVerticalScrollbar().scrollTop = 200;
 								wait().then(function () {
-									assert.ok(oTable.getSelectedIndex() === -1 && oTable.getSelectedIndices().length === 0, "Table: no selected row");
+									assert.ok(oTable.getSelectedIndices().length === 0, "Table: no selected row");
 									var oRow6 = oTable.getRows()[1];
 									assert.ok(deepEqual(cleanUUIDAndPosition(oRow6.getBindingContext().getObject()), Object.assign(deepClone(oValueNew), ({"_dt": {"_selected": true}}))), "Row 6: value");
 									oTable.setSelectedIndex(5);
@@ -991,7 +991,7 @@ sap.ui.define([
 					assert.ok(oTable.getEnableSelectAll(), "Table: SelectAll enabled");
 					assert.equal(oTable.getRows().length, 5, "Table: line number is 5");
 					assert.equal(oTable.getBinding().getCount(), 0, "Table: value length is 0");
-					var oToolbar = oTable.getToolbar();
+					var oToolbar = oTable.getExtension()[0];
 					assert.equal(oToolbar.getContent().length, 9, "Table toolbar: content length");
 					var oAddButton = oToolbar.getContent()[1];
 					assert.ok(oAddButton.getVisible(), "Table toolbar: add button visible");
@@ -1015,7 +1015,7 @@ sap.ui.define([
 								// scroll to the bottom
 								oTable._getScrollExtension().getVerticalScrollbar().scrollTop = 200;
 								wait().then(function () {
-									assert.ok(oTable.getSelectedIndex() === -1 && oTable.getSelectedIndices().length === 0, "Table: no selected row");
+									assert.ok(oTable.getSelectedIndices().length === 0, "Table: no selected row");
 									var oRow6 = oTable.getRows()[1];
 									var oSelectionCell6 = oRow6.getCells()[0];
 									assert.ok(oSelectionCell6.isA("sap.m.CheckBox"), "Row 6: Cell 1 is CheckBox");

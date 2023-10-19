@@ -1,4 +1,4 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/m/Button",
@@ -22,8 +22,8 @@ sap.ui.define([
 	"sap/ui/rta/plugin/Rename",
 	"sap/ui/model/json/JSONModel",
 	"sap/ui/thirdparty/sinon-4",
-	"sap/ui/core/Core"
-], function (
+	"sap/ui/qunit/utils/nextUIUpdate"
+], function(
 	Button,
 	Label,
 	Input,
@@ -45,21 +45,21 @@ sap.ui.define([
 	Rename,
 	JSONModel,
 	sinon,
-	oCore
+	nextUIUpdate
 ) {
 	"use strict";
 
 	var sandbox = sinon.createSandbox();
 
 	QUnit.module("Given a Plugin and 'hasChangeHandler' is called", {
-		beforeEach: function() {
+		beforeEach() {
 			this.oPlugin = new Plugin({
 				commandFactory: new CommandFactory()
 			});
 			this.oButton = new Button();
 			this.oGetChangeHandlerStub = sandbox.stub(ChangesWriteAPI, "getChangeHandler");
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oButton.destroy();
 			sandbox.restore();
 		}
@@ -85,7 +85,7 @@ sap.ui.define([
 
 		QUnit.test("when 'getVariantManagement' is called", function(assert) {
 			var oObjectWithVM = {
-				getVariantManagement: function() {
+				getVariantManagement() {
 					return "variant-test";
 				}
 			};
@@ -97,7 +97,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given the Plugin is initialized with move registered for a control", {
-		beforeEach: function(assert) {
+		async beforeEach(assert) {
 			var done = assert.async();
 
 			this.oButton = new Button();
@@ -107,7 +107,7 @@ sap.ui.define([
 				]
 			}).placeAt("qunit-fixture");
 
-			oCore.applyChanges();
+			await nextUIUpdate();
 
 			this.oDesignTime = new DesignTime({
 				rootElements: [this.oLayout]
@@ -127,7 +127,7 @@ sap.ui.define([
 				done();
 			}.bind(this));
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oLayout.destroy();
 			this.oDesignTime.destroy();
 			sandbox.restore();
@@ -233,7 +233,7 @@ sap.ui.define([
 
 			this.oPlugin.evaluateEditable([this.oLayoutOverlay], {onRegistration: false});
 			assert.equal(oSetProcessingStatusSpy.firstCall.args[0], true, "the plugin switched to processing state on first");
-			this.oPlugin.attachEventOnce('processingStatusChange', function() {
+			this.oPlugin.attachEventOnce("processingStatusChange", function() {
 				assert.equal(oModifyPluginListSpy.lastCall.args[1], true, "the _modifyPluginList function is called");
 				assert.equal(oSetProcessingStatusSpy.lastCall.args[0], false, "the plugin switched the processing state off again");
 				fnDone();
@@ -247,7 +247,7 @@ sap.ui.define([
 
 			// clearing up all default actions and replacing with getResponsibleElement()
 			this.oLayoutOverlay.getDesignTimeMetadata().getData().actions = {
-				getResponsibleElement: function () {
+				getResponsibleElement: function() {
 					return this.oButton;
 				}.bind(this),
 				actionsFromResponsibleElement: ["actionName"]
@@ -274,7 +274,7 @@ sap.ui.define([
 
 			// clearing up all default actions and replacing with getResponsibleElement()
 			this.oLayoutOverlay.getDesignTimeMetadata().getData().actions = {
-				getResponsibleElement: function () {
+				getResponsibleElement: function() {
 					return this.oButton;
 				}.bind(this)
 			};
@@ -294,7 +294,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given the Designtime is initialized with 2 Plugins with _isEditable not stubbed", {
-		beforeEach: function(assert) {
+		async beforeEach(assert) {
 			var done = assert.async();
 
 			this.oButton = new Button("button");
@@ -304,7 +304,7 @@ sap.ui.define([
 				]
 			}).placeAt("qunit-fixture");
 
-			oCore.applyChanges();
+			await nextUIUpdate();
 
 			this.oCheckControlIdSpy = sandbox.spy(FlexUtils, "checkControlId");
 
@@ -327,7 +327,7 @@ sap.ui.define([
 				done();
 			}.bind(this));
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oLayout.destroy();
 			this.oDesignTime.destroy();
 			sandbox.restore();
@@ -343,7 +343,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given the Designtime is initialized with 2 Plugins with _isEditable stubbed asynchronous", {
-		beforeEach: function(assert) {
+		async beforeEach(assert) {
 			var done = assert.async();
 			var oModel = new JSONModel([{text: "item1"}, {text: "item2"}, {text: "item3"}]);
 			this.oCustomListItemTemplate = new CustomListItem("boundListItem", {content: [new Button("boundListItem-btn", {text: "{text}"})]});
@@ -363,7 +363,7 @@ sap.ui.define([
 					this.oBoundList
 				]
 			}).placeAt("qunit-fixture");
-			oCore.applyChanges();
+			await nextUIUpdate();
 
 			var oCommandFactory = new CommandFactory();
 			this.oRenamePlugin = new Rename({
@@ -390,7 +390,7 @@ sap.ui.define([
 				done();
 			}.bind(this));
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oLayout.destroy();
 			this.oDesignTime.destroy();
 			sandbox.restore();
@@ -452,16 +452,16 @@ sap.ui.define([
 			// Element modified callback is async due to debouncing, make sure to wait for both plugins
 			// to start editable evaluation as a workaround
 			var oEvaluateEditableStub = sandbox.stub(Plugin.prototype, "evaluateEditable")
-				.callThrough()
-				.onSecondCall()
-				.callsFake(function() {
-					oEvaluateEditableStub.wrappedMethod.apply(this.oRemovePlugin, arguments);
-					assert.strictEqual(oFindAllOverlaysInContainerStub.callCount, 1, "then findAllOverlaysInContainer is only called once");
-					assert.strictEqual(oSetRelevantSpy.callCount, 2, "then setRelevantOverlays is called twice");
-					assert.strictEqual(oGetRelevantSpy.callCount, 2, "then getRelevantOverlays is called twice");
-					assert.strictEqual(this.oLayoutOverlay.getRelevantOverlays().length, 4, "then four overlays are relevant");
-					fnDone();
-				}.bind(this));
+			.callThrough()
+			.onSecondCall()
+			.callsFake(function(...aArgs) {
+				oEvaluateEditableStub.wrappedMethod.apply(this.oRemovePlugin, aArgs);
+				assert.strictEqual(oFindAllOverlaysInContainerStub.callCount, 1, "then findAllOverlaysInContainer is only called once");
+				assert.strictEqual(oSetRelevantSpy.callCount, 2, "then setRelevantOverlays is called twice");
+				assert.strictEqual(oGetRelevantSpy.callCount, 2, "then getRelevantOverlays is called twice");
+				assert.strictEqual(this.oLayoutOverlay.getRelevantOverlays().length, 4, "then four overlays are relevant");
+				fnDone();
+			}.bind(this));
 
 			this.oLayoutOverlay.fireElementModified({
 				type: "removeAggregation",
@@ -472,11 +472,11 @@ sap.ui.define([
 		QUnit.test("when the elementModified event is thrown multiple times in a row", function(assert) {
 			var fnDone = assert.async();
 			var oEvaluateEditableStub = sandbox.stub(this.oRenamePlugin, "evaluateEditable")
-				.callsFake(function() {
-					oEvaluateEditableStub.wrappedMethod.apply(this.oRemovePlugin, arguments);
-					assert.ok(oEvaluateEditableStub.calledOnce, "then the evaluation is only executed once");
-					fnDone();
-				}.bind(this));
+			.callsFake(function(...aArgs) {
+				oEvaluateEditableStub.wrappedMethod.apply(this.oRemovePlugin, aArgs);
+				assert.ok(oEvaluateEditableStub.calledOnce, "then the evaluation is only executed once");
+				fnDone();
+			}.bind(this));
 
 			this.oLayoutOverlay.fireElementModified({
 				type: "removeAggregation",
@@ -555,7 +555,7 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given the Plugin is initialized", {
-		beforeEach: function(assert) {
+		async beforeEach(assert) {
 			this.oGroup = new FormContainer("group");
 			this.oForm = new Form("Form", {
 				formContainers: [this.oGroup]
@@ -563,7 +563,7 @@ sap.ui.define([
 
 			this.oCheckControlIdSpy = sandbox.spy(FlexUtils, "checkControlId");
 
-			oCore.applyChanges();
+			await nextUIUpdate();
 
 			this.oPlugin = new Plugin({
 				commandFactory: new CommandFactory()
@@ -582,7 +582,7 @@ sap.ui.define([
 				done();
 			}.bind(this));
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oDesignTime.destroy();
 			this.oForm.destroy();
 			sandbox.restore();
@@ -600,9 +600,9 @@ sap.ui.define([
 			});
 
 			return this.oPlugin.checkAggregationsOnSelf(this.oFormOverlay, "changeType")
-				.then(function(bCheck) {
-					assert.ok(bCheck, "then it returns true");
-				});
+			.then(function(bCheck) {
+				assert.ok(bCheck, "then it returns true");
+			});
 		});
 
 		QUnit.test("when DesignTimeMetadata has actions and checkAggregations method is called without the action name", function(assert) {
@@ -611,9 +611,9 @@ sap.ui.define([
 			});
 
 			return this.oPlugin.checkAggregationsOnSelf(this.oFormOverlay, undefined)
-				.then(function(bCheck) {
-					assert.notOk(bCheck, "then it returns false");
-				});
+			.then(function(bCheck) {
+				assert.notOk(bCheck, "then it returns false");
+			});
 		});
 
 		QUnit.test("when DesignTimeMetadata has no actions but aggregations with actions and checkAggregationsOnSelf method is called with the aggregation name", function(assert) {
@@ -628,22 +628,23 @@ sap.ui.define([
 			});
 
 			return this.oPlugin.checkAggregationsOnSelf(this.oFormOverlay, "changeType", "formContainers")
-				.then(function(bCheck) {
-					assert.ok(bCheck, "then it returns true for the correct aggregation");
-					return this.oPlugin.checkAggregationsOnSelf(this.oFormOverlay, "changeType", "dummyAggregation")
+			.then(function(bCheck) {
+				assert.ok(bCheck, "then it returns true for the correct aggregation");
+				return this.oPlugin.checkAggregationsOnSelf(this.oFormOverlay, "changeType", "dummyAggregation")
 				.then(function(bCheck) {
 					assert.notOk(bCheck, "then it returns false for another aggregation");
 				});
-				}.bind(this));
+			}.bind(this));
 		});
 	});
 
 	QUnit.module("Given the Plugin is initialized.", {
-		beforeEach: function() {
+		async beforeEach() {
 			this.oTitle0 = new Title({id: "Title0"});
 			this.oLabel0 = new Label({id: "Label0"});
 			this.oInput0 = new Input({id: "Input0"});
 			this.oSimpleForm = new SimpleForm("SimpleForm", {
+				layout: "ResponsiveGridLayout",
 				title: "Simple Form",
 				content: [this.oTitle0, this.oLabel0, this.oInput0]
 			});
@@ -652,10 +653,10 @@ sap.ui.define([
 				content: [this.oSimpleForm]
 			}).placeAt("qunit-fixture");
 
-			oCore.applyChanges();
+			await nextUIUpdate();
 
 			this.oForm = this.oSimpleForm.getAggregation("form");
-			this.oFormContainer = this.oSimpleForm.getAggregation("form").getAggregation("formContainers")[0];
+			[this.oFormContainer] = this.oSimpleForm.getAggregation("form").getAggregation("formContainers");
 
 			this.oCheckControlIdSpy = sandbox.spy(FlexUtils, "checkControlId");
 
@@ -663,7 +664,7 @@ sap.ui.define([
 				commandFactory: new CommandFactory()
 			});
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oPlugin.destroy();
 			this.oVerticalLayout.destroy();
 			sandbox.restore();
@@ -710,7 +711,7 @@ sap.ui.define([
 				aggregations: {
 					form: {
 						actions: {
-							getStableElements: function(oElement) {
+							getStableElements(oElement) {
 								var aStableElements = [];
 								var oLabel;
 								var oTitleOrToolbar;
@@ -765,11 +766,12 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given this the Plugin is initialized.", {
-		beforeEach: function(assert) {
+		async beforeEach(assert) {
 			this.oTitle0 = new Title();
 			this.oLabel0 = new Label();
 			this.oInput0 = new Input();
 			this.oSimpleForm = new SimpleForm("SimpleForm", {
+				layout: "ResponsiveGridLayout",
 				title: "Simple Form",
 				content: [this.oTitle0, this.oLabel0, this.oInput0]
 			});
@@ -778,9 +780,9 @@ sap.ui.define([
 				content: [this.oSimpleForm]
 			}).placeAt("qunit-fixture");
 
-			oCore.applyChanges();
+			await nextUIUpdate();
 
-			this.oFormContainer = this.oSimpleForm.getAggregation("form").getAggregation("formContainers")[0];
+			[this.oFormContainer] = this.oSimpleForm.getAggregation("form").getAggregation("formContainers");
 
 			this.oCheckControlIdSpy = sandbox.spy(FlexUtils, "checkControlId");
 
@@ -800,7 +802,7 @@ sap.ui.define([
 				done();
 			}.bind(this));
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oVerticalLayout.destroy();
 			this.oDesignTime.destroy();
 			sandbox.restore();
@@ -811,7 +813,7 @@ sap.ui.define([
 				aggregations: {
 					form: {
 						actions: {
-							getStableElements: function(oElement) {
+							getStableElements(oElement) {
 								var aStableElements = [];
 								var oLabel;
 								var oTitleOrToolbar;
@@ -858,7 +860,7 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

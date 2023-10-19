@@ -7,6 +7,7 @@ sap.ui.define([
 	"./View",
 	"./ViewType",
 	"./XMLViewRenderer",
+	"sap/base/config",
 	"sap/base/Log",
 	"sap/base/strings/hash",
 	"sap/base/util/LoaderExtensions",
@@ -28,6 +29,7 @@ sap.ui.define([
 		View,
 		ViewType,
 		XMLViewRenderer,
+		BaseConfig,
 		Log,
 		hash,
 		LoaderExtensions,
@@ -139,7 +141,19 @@ sap.ui.define([
 				/**
 				 * The processing mode of the XMLView.
 				 */
-				processingMode: { type: "sap.ui.core.mvc.XMLProcessingMode", visibility: "hidden" }
+				processingMode: { type: "sap.ui.core.mvc.XMLProcessingMode", visibility: "hidden" },
+
+				/**
+				 * legacy-relevant:
+				 *
+				 * A map containing references to modules loaded via a 'core:require' statement
+				 * in an XMLView.
+				 *
+				 * Only used for HTML embedded in an XMLView. This kind of HTML is processed synchronously only
+				 * and needs access to 'core:require' modules from outside.
+				 * Normally 'core:require' modules are NOT passed into nested Views and Fragments.
+				 */
+				requireContext : 'Object'
 			},
 
 			designtime: "sap/ui/core/designtime/mvc/XMLView.designtime"
@@ -281,7 +295,12 @@ sap.ui.define([
 	 * @private
 	 * @since 1.44
 	 */
-	XMLView._bUseCache = Configuration.getViewCache() && Cache._isSupportedEnvironment();
+	XMLView._bUseCache = BaseConfig.get({
+		name: "sapUiXxViewCache",
+		type: BaseConfig.Type.Boolean,
+		defaultValue: true,
+		external: true
+	}) && Cache._isSupportedEnvironment();
 
 	function validatexContent(xContent) {
 		if (xContent.parseError.errorCode !== 0) {
@@ -768,7 +787,7 @@ sap.ui.define([
 	 * @static
 	 * @param {string|sap.ui.core.mvc.XMLView.PreprocessorType} sType
 	 *      the type of content to be processed
-	 * @param {string|function} vPreprocessor
+	 * @param {string|function(Object, sap.ui.core.mvc.View.Preprocessor.ViewInfo, object)} vPreprocessor
 	 *      module path of the preprocessor implementation or a preprocessor function
 	 * @param {string} [sViewType="XML"]
 	 *      Since 1.89, added for signature compatibility with {@link sap.ui.core.mvc.View#registerPreprocessor

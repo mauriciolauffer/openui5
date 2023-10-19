@@ -8,7 +8,9 @@ sap.ui.define([
 	"sap/ui/unified/CalendarAppointment",
 	"sap/ui/events/KeyCodes",
 	'sap/ui/unified/calendar/CalendarDate',
-	"sap/ui/core/Core"
+	"sap/ui/core/Core",
+	"sap/ui/core/date/UI5Date",
+	"sap/ui/unified/DateTypeRange"
 ], function(
 	jQuery,
 	ResponsivePopover,
@@ -18,7 +20,9 @@ sap.ui.define([
 	CalendarAppointment,
 	KeyCodes,
 	CalendarDate,
-	oCore
+	oCore,
+	UI5Date,
+	DateTypeRange
 ) {
 	"use strict";
 
@@ -46,31 +50,31 @@ sap.ui.define([
 		// prepare
 		var aFullDayApps = [
 				new CalendarAppointment({
-					startDate: new Date(2018, 6, 7),
-					endDate: new Date(2018, 6, 8)
+					startDate: UI5Date.getInstance(2018, 6, 7),
+					endDate: UI5Date.getInstance(2018, 6, 8)
 				}),
 				new CalendarAppointment({
-					startDate: new Date(2018, 6, 8),
-					endDate: new Date(2018, 6, 9)
+					startDate: UI5Date.getInstance(2018, 6, 8),
+					endDate: UI5Date.getInstance(2018, 6, 9)
 				}),
 				new CalendarAppointment({
-					startDate: new Date(2018, 6, 6),
-					endDate: new Date(2018, 6, 9)
+					startDate: UI5Date.getInstance(2018, 6, 6),
+					endDate: UI5Date.getInstance(2018, 6, 9)
 				}),
 				new CalendarAppointment({
-					startDate: new Date(2018, 6, 7),
-					endDate: new Date(2018, 6, 7)
+					startDate: UI5Date.getInstance(2018, 6, 7),
+					endDate: UI5Date.getInstance(2018, 6, 7)
 				}),
 				new CalendarAppointment({
-					startDate: new Date(2018, 6, 8),
-					endDate: new Date(2018, 6, 8)
+					startDate: UI5Date.getInstance(2018, 6, 8),
+					endDate: UI5Date.getInstance(2018, 6, 8)
 				}),
 				new CalendarAppointment({
-					startDate: new Date(2018, 6, 9),
-					endDate: new Date(2018, 6, 9)
+					startDate: UI5Date.getInstance(2018, 6, 9),
+					endDate: UI5Date.getInstance(2018, 6, 9)
 				})
 			],
-			oStartDate = new Date(2018, 6, 8),
+			oStartDate = UI5Date.getInstance(2018, 6, 8),
 			oGrid = new SinglePlanningCalendarGrid({
 				startDate: oStartDate,
 				appointments: aFullDayApps
@@ -92,8 +96,8 @@ sap.ui.define([
 	QUnit.test("_getLineClamp", function (assert) {
 		// Arrange
 		var SPCRenderer = SinglePlanningCalendarGridRenderer,
-			oAppStartDate = new Date("2018", "6", "9", "9", "0"),
-			oAppEndDate = new Date("2018", "6", "9", "9", "20"),
+			oAppStartDate = UI5Date.getInstance("2018", "6", "9", "9", "0"),
+			oAppEndDate = UI5Date.getInstance("2018", "6", "9", "9", "20"),
 			sLineClamp;
 
 		// Act
@@ -104,8 +108,8 @@ sap.ui.define([
 
 		//Arrange
 		// Set appointment duration to 1 hour
-		oAppStartDate = new Date("2018", "6", "9", "9", "0");
-		oAppEndDate = new Date("2018", "6", "9", "10", "0");
+		oAppStartDate = UI5Date.getInstance("2018", "6", "9", "9", "0");
+		oAppEndDate = UI5Date.getInstance("2018", "6", "9", "10", "0");
 
 		// Act
 		sLineClamp = SPCRenderer._getLineClamp(oAppStartDate, oAppEndDate);
@@ -115,8 +119,8 @@ sap.ui.define([
 
 		//Arrange
 		// Set appointment duration to 1 hour and 20 minutes
-		oAppStartDate = new Date("2018", "6", "9", "9", "0");
-		oAppEndDate = new Date("2018", "6", "9", "10", "20");
+		oAppStartDate = UI5Date.getInstance("2018", "6", "9", "9", "0");
+		oAppEndDate = UI5Date.getInstance("2018", "6", "9", "10", "20");
 
 		// Act
 		sLineClamp = SPCRenderer._getLineClamp(oAppStartDate, oAppEndDate);
@@ -127,8 +131,8 @@ sap.ui.define([
 
 		//Arrange
 		// Set appointment duration to 1 hour 40 minutes
-		oAppStartDate = new Date("2018", "6", "9", "9", "0");
-		oAppEndDate = new Date("2018", "6", "9", "10", "40");
+		oAppStartDate = UI5Date.getInstance("2018", "6", "9", "9", "0");
+		oAppEndDate = UI5Date.getInstance("2018", "6", "9", "10", "40");
 
 		// Act
 		sLineClamp = SPCRenderer._getLineClamp(oAppStartDate, oAppEndDate);
@@ -138,8 +142,8 @@ sap.ui.define([
 
 		//Arrange
 		// Set appointment duration to 2 hours
-		oAppStartDate = new Date("2018", "6", "9", "9", "0");
-		oAppEndDate = new Date("2018", "6", "9", "11", "00");
+		oAppStartDate = UI5Date.getInstance("2018", "6", "9", "9", "0");
+		oAppEndDate = UI5Date.getInstance("2018", "6", "9", "11", "00");
 
 		// Act
 		sLineClamp = SPCRenderer._getLineClamp(oAppStartDate, oAppEndDate);
@@ -149,8 +153,8 @@ sap.ui.define([
 
 		//Arrange
 		// Set appointment duration to 2.15 hours
-		oAppStartDate = new Date("2018", "6", "9", "9", "0");
-		oAppEndDate = new Date("2018", "6", "9", "11", "15");
+		oAppStartDate = UI5Date.getInstance("2018", "6", "9", "9", "0");
+		oAppEndDate = UI5Date.getInstance("2018", "6", "9", "11", "15");
 
 		// Act
 		sLineClamp = SPCRenderer._getLineClamp(oAppStartDate, oAppEndDate);
@@ -160,8 +164,8 @@ sap.ui.define([
 
 		//Arrange
 		// Set appointment duration to 2.30 hours
-		oAppStartDate = new Date("2018", "6", "9", "9", "0");
-		oAppEndDate = new Date("2018", "6", "9", "11", "30");
+		oAppStartDate = UI5Date.getInstance("2018", "6", "9", "9", "0");
+		oAppEndDate = UI5Date.getInstance("2018", "6", "9", "11", "30");
 
 		// Act
 		sLineClamp = SPCRenderer._getLineClamp(oAppStartDate, oAppEndDate);
@@ -171,8 +175,8 @@ sap.ui.define([
 
 		//Arrange
 		// Set appointment duration to 3 hours
-		oAppStartDate = new Date("2018", "6", "9", "9", "0");
-		oAppEndDate = new Date("2018", "6", "9", "12", "00");
+		oAppStartDate = UI5Date.getInstance("2018", "6", "9", "9", "0");
+		oAppEndDate = UI5Date.getInstance("2018", "6", "9", "12", "00");
 
 		// Act
 		sLineClamp = SPCRenderer._getLineClamp(oAppStartDate, oAppEndDate);
@@ -186,10 +190,11 @@ sap.ui.define([
 		oCore.getConfiguration().setFormatLocale("en-US");
 
 		var oGrid = new SinglePlanningCalendarGrid(),
-			oMockStardDate = new Date(2019, 7, 5, 10),
-			oMockEndDate = new Date(2019, 7, 5, 15),
-			sExpectedInfo = oGrid._oUnifiedRB.getText("CALENDAR_START_TIME") + ": Monday 05/08/2019 at 10:00:00 AM; " +
-				oGrid._oUnifiedRB.getText("CALENDAR_END_TIME") + ": Monday 05/08/2019 at 3:00:00 PM";
+			oMockStardDate = UI5Date.getInstance(2019, 7, 5, 10),
+			oMockEndDate = UI5Date.getInstance(2019, 7, 5, 15),
+			// \u202f is a Narrow No-Break Space which has been introduced with CLDR version 43
+			sExpectedInfo = oGrid._oUnifiedRB.getText("CALENDAR_START_TIME") + ": Monday 05/08/2019 at 10:00:00\u202fAM; " +
+				oGrid._oUnifiedRB.getText("CALENDAR_END_TIME") + ": Monday 05/08/2019 at 3:00:00\u202fPM";
 
 		oGrid.placeAt("qunit-fixture");
 		oCore.applyChanges();
@@ -206,8 +211,8 @@ sap.ui.define([
 		oCore.getConfiguration().setFormatLocale("en-GB");
 
 		var oGrid = new SinglePlanningCalendarGrid(),
-			oMockStardDate = new Date(2019, 7, 5, 10),
-			oMockEndDate = new Date(2019, 7, 5, 15),
+			oMockStardDate = UI5Date.getInstance(2019, 7, 5, 10),
+			oMockEndDate = UI5Date.getInstance(2019, 7, 5, 15),
 			sExpectedInfo = oGrid._oUnifiedRB.getText("CALENDAR_START_TIME") + ": Monday 05/08/2019 at 10:00:00; " +
 				oGrid._oUnifiedRB.getText("CALENDAR_END_TIME") + ": Monday 05/08/2019 at 15:00:00";
 
@@ -224,12 +229,12 @@ sap.ui.define([
 	QUnit.test("applyFocusInfo", function(assert) {
 		// prepare
 		var oAppointment = new CalendarAppointment({
-				startDate: new Date(2018, 6, 14, 5),
-				endDate: new Date(2018, 6, 14, 6),
+				startDate: UI5Date.getInstance(2018, 6, 14, 5),
+				endDate: UI5Date.getInstance(2018, 6, 14, 6),
 				selected: false
 			}),
 			oGrid = new SinglePlanningCalendarGrid({
-				startDate: new Date(2018, 6, 8),
+				startDate: UI5Date.getInstance(2018, 6, 8),
 				appointments: [oAppointment]
 			}),
 			oPopover = new ResponsivePopover({
@@ -363,11 +368,11 @@ sap.ui.define([
 	QUnit.test("_findSrcControl", function(assert) {
 		// Prepare
 		var oAppointment = new CalendarAppointment({
-				startDate: new Date(2022,0,20),
-				endDate: new Date(2022,11,31)
+				startDate: UI5Date.getInstance(2022,0,20),
+				endDate: UI5Date.getInstance(2022,11,31)
 			}),
 			oGrid = new SinglePlanningCalendarGrid({
-				startDate: new Date(2022,0,25),
+				startDate: UI5Date.getInstance(2022,0,25),
 				appointments: [oAppointment]
 			}),
 			oFireAppointmentSelectSpy = this.spy(oGrid, "fireAppointmentSelect");
@@ -403,6 +408,61 @@ sap.ui.define([
 		assert.strictEqual(oGrid._oFormatAriaFullDayCell.oFormatOptions.pattern.indexOf("EEEE dd/MM/yyyy"), 0, "Full day cell Aria info pattern is correct (contains 'yyyy' instead of 'YYYY'");
 		assert.strictEqual(oGrid._getDateFormatter().oFormatOptions.pattern, "yyyyMMdd-HHmm", "Grid cell pattern is correct (contains 'yyyy' instead of 'YYYY'");
 
+	});
+
+	QUnit.test("Non working days helper method", function(assert) {
+		// Prepare
+		var oDate = UI5Date.getInstance(2018, 6, 2),
+			oGrid = new SinglePlanningCalendarGrid({
+			specialDates: [
+				new DateTypeRange({ type: "NonWorking", startDate: oDate})
+			]
+		});
+
+		// assert
+		assert.ok(oGrid._isNonWorkingDay(CalendarDate.fromLocalJSDate(oDate)), "02.06.2018 is a non working day");
+	});
+
+	QUnit.test("CalendarAppointment's getDomRef() returns proper DOM element", function(assert) {
+		// Prepare
+		var aAppointments = [
+				new CalendarAppointment("SPC-app-111", {
+					startDate: UI5Date.getInstance(2023, 9, 16, 9, 0),
+					endDate: UI5Date.getInstance(2023, 9, 16, 9, 30)
+				}),
+				new CalendarAppointment("SPC-app-11", {
+					startDate: UI5Date.getInstance(2023, 9, 16, 9, 0),
+					endDate: UI5Date.getInstance(2023, 9, 16, 9, 30)
+				}),
+				new CalendarAppointment("SPC-app-10", {
+					startDate: UI5Date.getInstance(2023, 9, 16, 9, 0),
+					endDate: UI5Date.getInstance(2023, 9, 16, 9, 30)
+				}),
+				new CalendarAppointment("SPC-app-1", {
+					startDate: UI5Date.getInstance(2023, 9, 16, 9, 0),
+					endDate: UI5Date.getInstance(2023, 9, 16, 9, 30)
+				}),
+				new CalendarAppointment("SPC-app-13", {
+					startDate: UI5Date.getInstance(2023, 9, 16, 9, 0),
+					endDate: UI5Date.getInstance(2023, 9, 16, 9, 30)
+				})
+			],
+			oStartDate = UI5Date.getInstance(2023, 9, 16),
+			oSPCGrid = new SinglePlanningCalendarGrid({
+				startDate: oStartDate,
+				appointments: aAppointments
+			});
+
+		// arrange
+		oSPCGrid.placeAt("qunit-fixture");
+		oCore.applyChanges();
+
+		// assert
+		assert.strictEqual(aAppointments[1].getDomRef().getAttribute("id"), "SPC-app-11-0_1", "The returned DOM reference of the appointment with index 1 is correct.");
+		assert.strictEqual(aAppointments[3].getDomRef().getAttribute("id"), "SPC-app-1-0_3", "The returned DOM reference of the appointment with index 3 is correct.");
+
+		// cleanup
+		oSPCGrid.destroy();
 	});
 
 	QUnit.module("Events");
@@ -445,13 +505,13 @@ sap.ui.define([
 		var oGrid = new SinglePlanningCalendarGrid({
 				appointments: [
 					new CalendarAppointment({
-						startDate: new Date(2018, 6, 8, 5),
-						endDate: new Date(2018, 6, 8, 6),
+						startDate: UI5Date.getInstance(2018, 6, 8, 5),
+						endDate: UI5Date.getInstance(2018, 6, 8, 6),
 						selected: true
 					}),
 					new CalendarAppointment({
-						startDate: new Date(2018, 6, 9, 4),
-						endDate: new Date(2018, 6, 10, 4),
+						startDate: UI5Date.getInstance(2018, 6, 9, 4),
+						endDate: UI5Date.getInstance(2018, 6, 10, 4),
 						selected: true
 					})
 				]
@@ -483,7 +543,7 @@ sap.ui.define([
 	QUnit.test("cellPress", function(assert) {
 		// prepare
 		var oGrid = new SinglePlanningCalendarGrid({
-				startDate: new Date(2018, 6, 8)
+				startDate: UI5Date.getInstance(2018, 6, 8)
 			}),
 			oFakeEvent = {
 				target: jQuery("<div></div>").attr({
@@ -502,8 +562,8 @@ sap.ui.define([
 		// assert
 		assert.ok(fnFireGridCellFocusSpy.withArgs("cellPress").calledOnce, "Event was fired");
 		assert.ok(fnFireGridCellFocusSpy.calledWithExactly("cellPress", {
-			startDate: new Date(2018, 6 , 8, 3),
-			endDate: new Date(2018, 6, 8, 4),
+			startDate: UI5Date.getInstance(2018, 6 , 8, 3),
+			endDate: UI5Date.getInstance(2018, 6, 8, 4),
 			id: oGrid.getId()
 		}), "Event was fired with the correct parameters");
 
@@ -514,12 +574,12 @@ sap.ui.define([
 	QUnit.test("borderReached: when focus is on appointment and we are navigating in backward direction on week view", function(assert) {
 		// prepare
 		var oAppointment = new CalendarAppointment({
-				startDate: new Date(2018, 6, 8, 5),
-				endDate: new Date(2018, 6, 8, 6),
+				startDate: UI5Date.getInstance(2018, 6, 8, 5),
+				endDate: UI5Date.getInstance(2018, 6, 8, 6),
 				selected: true
 			}),
 			oGrid = new SinglePlanningCalendarGrid({
-				startDate: new Date(2018, 6, 8),
+				startDate: UI5Date.getInstance(2018, 6, 8),
 				appointments: [oAppointment]
 			}),
 			oFakeEvent = {
@@ -543,7 +603,7 @@ sap.ui.define([
 		// assert
 		assert.ok(fnFireBorderReachedSpy.withArgs("borderReached").calledOnce, "Event was fired");
 		assert.ok(fnFireBorderReachedSpy.calledWithExactly("borderReached", {
-			startDate: new Date(2018, 6, 8, 5),
+			startDate: UI5Date.getInstance(2018, 6, 8, 5),
 			next: false,
 			fullDay: false,
 			id: oGrid.getId()
@@ -559,12 +619,12 @@ sap.ui.define([
 	QUnit.test("borderReached: when focus is on appointment and we are navigating in forward direction on week view", function(assert) {
 		// prepare
 		var oAppointment = new CalendarAppointment({
-				startDate: new Date(2018, 6, 14, 5),
-				endDate: new Date(2018, 6, 14, 6),
+				startDate: UI5Date.getInstance(2018, 6, 14, 5),
+				endDate: UI5Date.getInstance(2018, 6, 14, 6),
 				selected: true
 			}),
 			oGrid = new SinglePlanningCalendarGrid({
-				startDate: new Date(2018, 6, 8),
+				startDate: UI5Date.getInstance(2018, 6, 8),
 				appointments: [oAppointment]
 			}),
 			oFakeEvent = {
@@ -588,7 +648,7 @@ sap.ui.define([
 		// assert
 		assert.ok(fnFireBorderReachedSpy.withArgs("borderReached").calledOnce, "Event was fired");
 		assert.ok(fnFireBorderReachedSpy.calledWithExactly("borderReached", {
-			startDate: new Date(2018, 6, 14, 5),
+			startDate: UI5Date.getInstance(2018, 6, 14, 5),
 			next: true,
 			fullDay: false,
 			id: oGrid.getId()
@@ -604,7 +664,7 @@ sap.ui.define([
 	QUnit.test("borderReached: when focus is on grid cell and we are navigation in backward direction on week view", function(assert) {
 		// prepare
 		var oGrid = new SinglePlanningCalendarGrid({
-				startDate: new Date(2018, 6, 8)
+				startDate: UI5Date.getInstance(2018, 6, 8)
 			}),
 			oFakeEvent = {
 				target: jQuery("<div></div>").attr({
@@ -623,7 +683,7 @@ sap.ui.define([
 		// assert
 		assert.ok(fnFireBorderReachedSpy.withArgs("borderReached").calledOnce, "Event was fired");
 		assert.ok(fnFireBorderReachedSpy.calledWithExactly("borderReached", {
-			startDate: new Date(2018, 6, 8, 3),
+			startDate: UI5Date.getInstance(2018, 6, 8, 3),
 			next: false,
 			fullDay: false,
 			id: oGrid.getId()
@@ -636,7 +696,7 @@ sap.ui.define([
 	QUnit.test("borderReached: when focus is on grid cell and we are navigation in forward direction on week view", function(assert) {
 		// prepare
 		var oGrid = new SinglePlanningCalendarGrid({
-				startDate: new Date(2018, 6, 8)
+				startDate: UI5Date.getInstance(2018, 6, 8)
 			}),
 			oFakeEvent = {
 				target: jQuery("<div></div>").attr({
@@ -655,7 +715,7 @@ sap.ui.define([
 		// assert
 		assert.ok(fnFireBorderReachedSpy.withArgs("borderReached").calledOnce, "Event was fired");
 		assert.ok(fnFireBorderReachedSpy.calledWithExactly("borderReached", {
-			startDate: new Date(2018, 6, 14, 3),
+			startDate: UI5Date.getInstance(2018, 6, 14, 3),
 			next: true,
 			fullDay: false,
 			id: oGrid.getId()

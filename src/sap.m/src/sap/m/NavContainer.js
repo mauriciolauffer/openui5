@@ -7,6 +7,7 @@ sap.ui.define([
 	'./library',
 	"sap/ui/core/Configuration",
 	'sap/ui/core/Control',
+	"sap/ui/core/Core",
 	'sap/ui/core/RenderManager',
 	'./NavContainerRenderer',
 	"sap/ui/thirdparty/jquery",
@@ -16,6 +17,7 @@ sap.ui.define([
 	library,
 	Configuration,
 	Control,
+	Core,
 	RenderManager,
 	NavContainerRenderer,
 	jQuery,
@@ -638,6 +640,8 @@ sap.ui.define([
 			this._applyAutoFocus(oNavInfo);
 		}
 
+		this.enhancePagesAccessibility();
+
 		this.fireNavigationFinished(oNavInfo);
 		this.fireAfterNavigate(oNavInfo);
 		this._dequeueNavigation();
@@ -657,6 +661,20 @@ sap.ui.define([
 			Log.warning(this.toString() + ": target page '" + oNavInfo.toId + "' still has CSS class 'sapMNavItemHidden' after transition. This should not be the case, please check the preceding log statements.");
 			oNavInfo.to.removeStyleClass("sapMNavItemHidden");
 		}
+	};
+
+	NavContainer.prototype.enhancePagesAccessibility = function () {
+		var oCurrentPage = this.getCurrentPage();
+
+		this.getPages().forEach(function (oPage) {
+			var oFocusDomRef = oPage?.getFocusDomRef();
+
+			if (oCurrentPage === oPage) {
+				oFocusDomRef?.removeAttribute("aria-hidden");
+			} else {
+				oFocusDomRef?.setAttribute("aria-hidden", true);
+			}
+		});
 	};
 
 	NavContainer.prototype._dequeueNavigation = function () {
@@ -1821,7 +1839,8 @@ sap.ui.define([
 	};
 
 	NavContainer.prototype.addPage = function (oPage) {
-		var aPages = this.getPages();
+		var aPages = this.getPages(),
+			rerender = this.invalidate.bind(this);
 		// Routing often adds an already existing page. ManagedObject would remove and re-add it because the order is affected,
 		// but here the order does not matter, so just ignore the call in this case.
 		if (aPages.indexOf(oPage) > -1) {
@@ -1839,7 +1858,13 @@ sap.ui.define([
 			this._fireAdaptableContentChange(oPage);
 			if (this.getDomRef()) {
 				this._ensurePageStackInitialized();
-				this.rerender();
+
+				/**
+				 * @deprecated since 1.70
+				 */
+				rerender = this.rerender.bind(this);
+
+				rerender();
 			}
 		}
 
@@ -1847,7 +1872,8 @@ sap.ui.define([
 	};
 
 	NavContainer.prototype.insertPage = function (oPage, iIndex) {
-		var iPreviousPageCount = this.getPages().length;
+		var iPreviousPageCount = this.getPages().length,
+			rerender = this.invalidate.bind(this);
 
 		this.insertAggregation("pages", oPage, iIndex, true);
 
@@ -1859,7 +1885,13 @@ sap.ui.define([
 			this._fireAdaptableContentChange(oPage);
 			if (this.getDomRef()) {
 				this._ensurePageStackInitialized();
-				this.rerender();
+
+				/**
+				 * @deprecated since 1.70
+				 */
+				rerender = this.rerender.bind(this);
+
+				rerender();
 			}
 		}
 
@@ -1881,9 +1913,10 @@ sap.ui.define([
 	 * @since 1.91
 	 */
 	NavContainer.prototype.showPlaceholder = function(mSettings) {
-		var pLoaded;
+		var pLoaded,
+			Placeholder = sap.ui.require("sap/ui/core/Placeholder");
 
-		if (!Configuration.getPlaceholder()) {
+		if (!Placeholder || !Placeholder.isEnabled()) {
 			return;
 		}
 

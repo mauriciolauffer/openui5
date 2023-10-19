@@ -2,6 +2,7 @@
 sap.ui.define([
 	"sap/base/Log",
 	"sap/ui/core/Configuration",
+	"sap/ui/core/date/UI5Date",
 	"sap/ui/core/format/NumberFormat",
 	"sap/ui/model/FormatException",
 	"sap/ui/model/ParseException",
@@ -18,9 +19,11 @@ sap.ui.define([
 	"sap/ui/model/type/TimeInterval",
 	"sap/ui/model/type/Unit",
 	"sap/ui/test/TestUtils"
-], function (Log, Configuration, NumberFormat, FormatException, ParseException, ValidateException, BooleanType,
-		CurrencyType, DateTimeType, DateTimeIntervalType, FileSizeType, FloatType, IntegerType, StringType, TimeType,
-		TimeIntervalType, UnitType, TestUtils) {
+], function (Log, Configuration, UI5Date, NumberFormat, FormatException, ParseException,
+		ValidateException, BooleanType, CurrencyType, DateTimeType, DateTimeIntervalType,
+		FileSizeType, FloatType, IntegerType, StringType, TimeType, TimeIntervalType, UnitType,
+		TestUtils
+) {
 	"use strict";
 
 	function checkValidateException(oEx) {
@@ -78,6 +81,9 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.module("sap.ui.model.type.Boolean", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach : function() {
 			Configuration.setLanguage("en-US");
 		},
@@ -119,6 +125,9 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.module("sap.ui.model.type.Currency", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach : function() {
 			Configuration.setLanguage("en-US");
 		},
@@ -733,11 +742,11 @@ sap.ui.define([
 
 	QUnit.test("dateTime formatValue", function (assert) {
 		// as date object is locale dependend fill it manually
-		var dateValue = new Date(2003, 1, 1, 4, 5, 6, 7);
+		var dateValue = UI5Date.getInstance(2003, 1, 1, 4, 5, 6, 7);
 
 		var dateType = new DateTimeType();
 
-		assert.strictEqual(dateType.formatValue(dateValue, "string"), "Feb 1, 2003, 4:05:06 AM", "format test");
+		assert.strictEqual(dateType.formatValue(dateValue, "string"), "Feb 1, 2003, 4:05:06\u202FAM", "format test");
 
 		dateType = new DateTimeType({ pattern: "yy-MM-dd '/' hh:mm" });
 		assert.strictEqual(dateType.formatValue(dateValue, "string"), "03-02-01 / 04:05", "format test with pattern");
@@ -755,18 +764,18 @@ sap.ui.define([
 	});
 
 	QUnit.test("dateTime parseValue", function (assert) {
-		var dateValue = new Date(2003, 1, 1, 4, 5, 6);
+		var dateValue = UI5Date.getInstance(2003, 1, 1, 4, 5, 6);
 		var dateType = new DateTimeType();
 		assert.strictEqual(dateType.parseValue("Feb 1, 2003, 4:05:06 AM", "string").getTime(), dateValue.getTime(), "parse test");
 
-		dateValue = new Date(2003, 1, 1, 4, 5, 6, 7);
+		dateValue = UI5Date.getInstance(2003, 1, 1, 4, 5, 6, 7);
 		dateType = new DateTimeType({ pattern: "yy-MM-dd HH:mm:ss'+'SSS'" });
 		assert.strictEqual(dateType.parseValue("03-02-01 04:05:06+007", "string").getTime(), dateValue.getTime(), "parse test with pattern");
 
 		dateType = new DateTimeType({ source: { pattern: "yyyy/MM/dd HHmmssSSS" }, pattern: "dd.MM.yyyy HH-mm-ss.SSS" });
 		assert.strictEqual(dateType.parseValue("01.02.2003 04-05-06.007", "string"), "2003/02/01 040506007", "parse test with source pattern");
 
-		dateValue = new Date(2012, 0, 24, 14, 33, 0);
+		dateValue = UI5Date.getInstance(2012, 0, 24, 14, 33, 0);
 		dateType = new DateTimeType({ source: { pattern: "timestamp" }, pattern: "dd.MM.yyyy HH:mm" });
 		assert.strictEqual(dateType.parseValue("24.01.2012 14:33", "string"), dateValue.getTime(), "parse test with timestamp");
 
@@ -793,6 +802,16 @@ sap.ui.define([
 	});
 
 	//*********************************************************************************************
+	QUnit.test("getPlaceholderText", function (assert) {
+		var oType = new DateTimeType();
+
+		this.mock(oType.oOutputFormat).expects("getPlaceholderText").withExactArgs().returns("~placeholder");
+
+		// code under test
+		assert.strictEqual(oType.getPlaceholderText(), "~placeholder");
+	});
+
+	//*********************************************************************************************
 	QUnit.module("sap.ui.model.type.DateTimeInterval", {
 		beforeEach : function() {
 			Configuration.setLanguage("en-US");
@@ -805,35 +824,45 @@ sap.ui.define([
 	QUnit.test("DateTimeInterval formatValue", function (assert) {
 		var oDateTimeIntervalType = new DateTimeIntervalType();
 
-		var oDateTime1 = new Date(2003, 1, 1, 4, 5, 6);
-		var oDateTime2 = new Date(2003, 1, 2, 5, 6, 7);
+		var oDateTime1 = UI5Date.getInstance(2003, 1, 1, 4, 5, 6);
+		var oDateTime2 = UI5Date.getInstance(2003, 1, 2, 5, 6, 7);
 
-		assert.strictEqual(oDateTimeIntervalType.formatValue([oDateTime1, oDateTime2], "string"), "Feb 1, 2003, 4:05:06 AM – Feb 2, 2003, 5:06:07 AM", "dates can be formatted as interval");
+		assert.strictEqual(oDateTimeIntervalType.formatValue([oDateTime1, oDateTime2], "string"),
+			"Feb 1, 2003, 4:05:06\u202FAM\u2009\u2013\u2009Feb 2, 2003, 5:06:07\u202FAM",
+			"dates can be formatted as interval");
 
 		oDateTimeIntervalType = new DateTimeIntervalType({
 			source: {}
 		});
-		assert.strictEqual(oDateTimeIntervalType.formatValue(["Feb 1, 2003, 4:05:06 AM", "Feb 2, 2003, 5:06:07 AM"], "string"), "Feb 1, 2003, 4:05:06 AM – Feb 2, 2003, 5:06:07 AM", "dates can be formatted as interval");
+		assert.strictEqual(
+			oDateTimeIntervalType.formatValue(["Feb 1, 2003, 4:05:06 AM", "Feb 2, 2003, 5:06:07 AM"], "string"),
+			"Feb 1, 2003, 4:05:06\u202FAM\u2009\u2013\u2009Feb 2, 2003, 5:06:07\u202FAM",
+			"dates can be formatted as interval");
 	});
 
 	QUnit.test("DateTimeInterval parseValue", function (assert) {
 		var oDateTimeIntervalType = new DateTimeIntervalType();
 
-		var oDateTime1 = new Date(2003, 1, 1, 4, 5, 6);
-		var oDateTime2 = new Date(2003, 1, 2, 5, 6, 7);
+		var oDateTime1 = UI5Date.getInstance(2003, 1, 1, 4, 5, 6);
+		var oDateTime2 = UI5Date.getInstance(2003, 1, 2, 5, 6, 7);
 
-		assert.deepEqual(oDateTimeIntervalType.parseValue("Feb 1, 2003, 4:05:06 AM – Feb 2, 2003, 5:06:07 AM", "string"), [oDateTime1, oDateTime2], "Interval string can be parsed into an array of dates");
+		assert.deepEqual(
+			oDateTimeIntervalType.parseValue("Feb 1, 2003, 4:05:06 AM \u2013 Feb 2, 2003, 5:06:07 AM", "string"),
+			[oDateTime1, oDateTime2], "Interval string can be parsed into an array of dates");
 
 		oDateTimeIntervalType = new DateTimeIntervalType({
 			source: {}
 		});
 
-		assert.deepEqual(oDateTimeIntervalType.parseValue("Feb 1, 2003, 4:05:06 AM – Feb 2, 2003, 5:06:07 AM", "string"), ["Feb 1, 2003, 4:05:06 AM", "Feb 2, 2003, 5:06:07 AM"], "Interval string can be parsed into an array of formatted dates");
+		assert.deepEqual(
+			oDateTimeIntervalType.parseValue("Feb 1, 2003, 4:05:06 AM \u2013 Feb 2, 2003, 5:06:07 AM", "string"),
+			["Feb 1, 2003, 4:05:06\u202FAM", "Feb 2, 2003, 5:06:07\u202FAM"],
+			"Interval string can be parsed into an array of formatted dates");
 	});
 
 	QUnit.test("DateTimeInterval validateValue", function (assert) {
-		var oDateTime1 = new Date(2003, 1, 1, 4, 5, 6);
-		var oDateTime2 = new Date(2003, 1, 2, 5, 6, 7);
+		var oDateTime1 = UI5Date.getInstance(2003, 1, 1, 4, 5, 6);
+		var oDateTime2 = UI5Date.getInstance(2003, 1, 2, 5, 6, 7);
 
 		var oDateTimeIntervalType = new DateTimeIntervalType({}, {
 			minimum: oDateTime1,
@@ -848,7 +877,20 @@ sap.ui.define([
 	});
 
 	//*********************************************************************************************
+	QUnit.test("getPlaceholderText", function (assert) {
+		var oType = new DateTimeIntervalType();
+
+		this.mock(oType.oOutputFormat).expects("getPlaceholderText").withExactArgs().returns("~placeholder");
+
+		// code under test
+		assert.strictEqual(oType.getPlaceholderText(), "~placeholder");
+	});
+
+	//*********************************************************************************************
 	QUnit.module("sap.ui.model.type.FileSize", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach : function() {
 			Configuration.setLanguage("en-US");
 		},
@@ -1025,6 +1067,9 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.module("sap.ui.model.type.Float", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach : function() {
 			Configuration.setLanguage("en-US");
 		},
@@ -1233,6 +1278,9 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.module("sap.ui.model.type.Integer", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach : function() {
 			Configuration.setLanguage("en-US");
 		},
@@ -1361,40 +1409,51 @@ sap.ui.define([
 	});
 
 	QUnit.test("Single constraint", function (assert) {
-		var oBundle = sap.ui.getCore().getLibraryResourceBundle(),
-			sExpectedMessage = oBundle.getText("Integer.Minimum").replace("{0}", "1"),
+		var oBundle = {
+				getText : function () {}
+			},
 			oType = new IntegerType(null, {
 				minimum: 1
 			});
 
-		try {
+		this.mock(sap.ui.getCore()).expects("getLibraryResourceBundle").withExactArgs().returns(oBundle);
+		this.mock(oBundle).expects("getText").withExactArgs("Integer.Minimum", ["1"]).returns(">=1");
+
+		// code under test
+		assert.throws(function () {
 			oType.validateValue(0);
-		} catch (e) {
-			assert.ok(e instanceof ValidateException, "ValidateException is thrown");
-			assert.strictEqual(e.message, sExpectedMessage, "Validation message for constraint is returned");
-		}
+		}, function (e) {
+			return e instanceof ValidateException && e.message == ">=1";
+		}, "ValidateException is thrown with validation message for single contraint");
 	});
 
 	QUnit.test("Multiple constraints", function (assert) {
-		var oBundle = sap.ui.getCore().getLibraryResourceBundle(),
-			sMessage1 = oBundle.getText("Integer.Minimum").replace("{0}", "2"),
-			sMessage2 = oBundle.getText("Integer.Maximum").replace("{0}", "0"),
-			sExpectedMessage = sMessage1 + ". " + sMessage2 + ".";
-		var oType = new IntegerType(null, {
-			minimum: 2,
-			maximum: 0
-		});
+		var oBundle = {
+				getText : function () {}
+			},
+			oBundleMock = this.mock(oBundle),
+			oType = new IntegerType(null, {
+				minimum: 2,
+				maximum: 0
+			});
 
-		try {
+		this.mock(sap.ui.getCore()).expects("getLibraryResourceBundle").withExactArgs().returns(oBundle);
+		oBundleMock.expects("getText").withExactArgs("Integer.Minimum", ["2"]).returns(">=2");
+		oBundleMock.expects("getText").withExactArgs("Integer.Maximum", ["0"]).returns("<=0");
+
+		// code under test
+		assert.throws(function () {
 			oType.validateValue(1);
-		} catch (e) {
-			assert.ok(e instanceof ValidateException, "ValidateException is thrown");
-			assert.strictEqual(e.message, sExpectedMessage, "Combined validation message for both contraints is returned");
-		}
+		}, function (e) {
+			return e instanceof ValidateException && e.message == ">=2. <=0.";
+		}, "ValidateException is thrown with combined validation message for both contraints");
 	});
 
 	//*********************************************************************************************
 	QUnit.module("sap.ui.model.type.String", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach : function() {
 			Configuration.setLanguage("en-US");
 		},
@@ -1521,8 +1580,8 @@ sap.ui.define([
 	{constraints : {search : "ab"}, message : "String.Search"},
 	{constraints : {startsWith : "ab"}, message : "String.StartsWith ab"},
 	{constraints : {startsWithIgnoreCase : "ab"}, message : "String.StartsWith ab"}
-].forEach(function (oFixture) {
-	QUnit.test("string validateValue with null, exception, " + oFixture.message, function (assert) {
+].forEach(function (oFixture, i) {
+	QUnit.test("string validateValue with null, exception, #" + i, function (assert) {
 		var oType = new StringType(null, oFixture.constraints);
 
 		TestUtils.withNormalizedMessages(function () {
@@ -1550,9 +1609,9 @@ sap.ui.define([
 	QUnit.test("time formatValue", function (assert) {
 		var timeType = new TimeType();
 		// as date object is locale dependend fill it manually
-		var timeValue = new Date(2003, 1, 1, 16, 58, 49);
+		var timeValue = UI5Date.getInstance(2003, 1, 1, 16, 58, 49);
 
-		assert.strictEqual(timeType.formatValue(timeValue, "string"), "4:58:49 PM", "format test");
+		assert.strictEqual(timeType.formatValue(timeValue, "string"), "4:58:49\u202FPM", "format test");
 
 		timeType = new TimeType({ pattern: "HH:mm:ss" });
 		assert.strictEqual(timeType.formatValue(timeValue, "string"), "16:58:49", "format test with pattern");
@@ -1571,7 +1630,7 @@ sap.ui.define([
 
 	QUnit.test("time parseValue", function (assert) {
 		// as date object is locale dependend fill it manually
-		var timeValue = new Date(1970, 0, 1, 16, 58, 49);
+		var timeValue = UI5Date.getInstance(1970, 0, 1, 16, 58, 49);
 
 		var timeType = new TimeType();
 		assert.strictEqual(timeType.parseValue("04:58:49 PM", "string").getTime(), timeValue.getTime(), "parse test");
@@ -1608,6 +1667,16 @@ sap.ui.define([
 	});
 
 	//*********************************************************************************************
+	QUnit.test("getPlaceholderText", function (assert) {
+		var oType = new TimeType();
+
+		this.mock(oType.oOutputFormat).expects("getPlaceholderText").withExactArgs().returns("~placeholder");
+
+		// code under test
+		assert.strictEqual(oType.getPlaceholderText(), "~placeholder");
+	});
+
+	//*********************************************************************************************
 	QUnit.module("sap.ui.model.type.TimeInterval", {
 		beforeEach : function() {
 			Configuration.setLanguage("en-US");
@@ -1619,23 +1688,25 @@ sap.ui.define([
 
 	QUnit.test("TimeInterval formatValue", function (assert) {
 		var oTimeIntervalType = new TimeIntervalType();
-		var oTime1 = new Date(2003, 1, 1, 16, 58, 49);
-		var oTime2 = new Date(2003, 1, 1, 17,  0,  0);
+		var oTime1 = UI5Date.getInstance(2003, 1, 1, 16, 58, 49);
+		var oTime2 = UI5Date.getInstance(2003, 1, 1, 17, 0, 0);
 
-		assert.strictEqual(oTimeIntervalType.formatValue([oTime1, oTime2], "string"), "4:58:49 PM – 5:00:00 PM", "dates can be formatted as interval");
+		assert.strictEqual(oTimeIntervalType.formatValue([oTime1, oTime2], "string"),
+			"4:58:49\u202FPM\u2009\u2013\u20095:00:00\u202FPM", "dates can be formatted as interval");
 
 		oTimeIntervalType = new TimeIntervalType({
 			source: {}
 		});
-		assert.strictEqual(oTimeIntervalType.formatValue(["4:58:49 PM", "5:00:00 PM"], "string"), "4:58:49 PM – 5:00:00 PM", "dates can be formatted as interval");
+		assert.strictEqual(oTimeIntervalType.formatValue(["4:58:49 PM", "5:00:00 PM"], "string"),
+			"4:58:49\u202FPM\u2009\u2013\u20095:00:00\u202FPM", "dates can be formatted as interval");
 	});
 
 	QUnit.test("TimeInterval parseValue", function (assert) {
 		var oTimeIntervalType = new TimeIntervalType();
-		var oTime1 = new Date(1970, 0, 1, 16, 58, 49);
-		var oTime2 = new Date(1970, 0, 1, 17,  0,  0);
+		var oTime1 = UI5Date.getInstance(1970, 0, 1, 16, 58, 49);
+		var oTime2 = UI5Date.getInstance(1970, 0, 1, 17, 0, 0);
 
-		var aTimeIntervalResult = oTimeIntervalType.parseValue("4:58:49 PM –  5:00:00 PM", "string");
+		var aTimeIntervalResult = oTimeIntervalType.parseValue("4:58:49 PM \u2013  5:00:00 PM", "string");
 
 		assert.deepEqual([aTimeIntervalResult[0].getTime(), aTimeIntervalResult[1].getTime()], [oTime1.getTime(), oTime2.getTime()], "Interval string can be parsed into an array of dates");
 
@@ -1643,12 +1714,13 @@ sap.ui.define([
 			source: {}
 		});
 
-		assert.deepEqual(oTimeIntervalType.parseValue("4:58:49 PM – 5:00:00 PM", "string"), ["4:58:49 PM", "5:00:00 PM"], "Interval string can be parsed into an array of formatted dates");
+		assert.deepEqual(oTimeIntervalType.parseValue("4:58:49 PM \u2013 5:00:00 PM", "string"),
+			["4:58:49\u202FPM", "5:00:00\u202FPM"], "Interval string can be parsed into an array of formatted dates");
 	});
 
 	QUnit.test("TimeInterval validateValue", function (assert) {
-		var oTime1 = new Date(1970, 0, 1, 16, 58, 49);
-		var oTime2 = new Date(1970, 0, 1, 17,  0,  0);
+		var oTime1 = UI5Date.getInstance(1970, 0, 1, 16, 58, 49);
+		var oTime2 = UI5Date.getInstance(1970, 0, 1, 17, 0, 0);
 		var oTimeIntervalType = new TimeIntervalType({}, {
 			minimum: oTime1,
 			maximum: oTime2
@@ -1662,7 +1734,20 @@ sap.ui.define([
 	});
 
 	//*********************************************************************************************
+	QUnit.test("getPlaceholderText", function (assert) {
+		var oType = new TimeIntervalType();
+
+		this.mock(oType.oOutputFormat).expects("getPlaceholderText").withExactArgs().returns("~placeholder");
+
+		// code under test
+		assert.strictEqual(oType.getPlaceholderText(), "~placeholder");
+	});
+
+	//*********************************************************************************************
 	QUnit.module("sap.ui.model.type.Unit", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
 		beforeEach : function() {
 			Configuration.setLanguage("en-US");
 		},
@@ -2334,41 +2419,6 @@ sap.ui.define([
 		// "" --> 0
 		var oUnitType5 = new UnitType({emptyString: 0, parseAsString: true});
 		assert.deepEqual(oUnitType5.parseValue("", "string"), ["0", undefined], "0 is returned");
-	});
-
-	QUnit.test("Multiple Unit-Instances with bound custom units and other distinct format options", function (assert) {
-		// new Meter type
-		var CustomUnitType = UnitType.extend("sap.ui.core.test.CustomUnitType", {
-			constructor: function (oFormatOptions, oConstraints) {
-				UnitType.apply(this, [oFormatOptions, oConstraints, ["customUnits"]]);
-			}
-		});
-
-		var oCustomUnitConfig = {
-			"length-meter": {
-				"unitPattern-count-one": "{0} m",
-				"unitPattern-count-many": "{0} m",
-				"unitPattern-count-other": "{0} m",
-				"decimals": 4
-			}
-		};
-
-		var oCustomUnitTypeInstanceSpy = this.spy(NumberFormat, "getUnitInstance");
-
-		var oCustomUnitType = new CustomUnitType(/* showMeasure is true by default*/);
-		var oCustomUnitType2 = new CustomUnitType({showMeasure: false});
-		var oCustomUnitType3 = new CustomUnitType({showMeasure: false});
-
-		// straight forward case
-		assert.strictEqual(oCustomUnitType.formatValue([123.456789, "length-meter", oCustomUnitConfig], "string"), "123.456789 m");
-		assert.strictEqual(oCustomUnitTypeInstanceSpy.callCount, 1, "1st instance created");
-
-		// additional format options
-		assert.strictEqual(oCustomUnitType2.formatValue([123.456789, "length-meter", oCustomUnitConfig], "string"), "123.456789", "formatted value respects the 'decimals' of custom unit");
-		assert.strictEqual(oCustomUnitTypeInstanceSpy.callCount, 2, "2nd instance created, because of different format options");
-
-		assert.strictEqual(oCustomUnitType3.formatValue([123.456789, "length-meter", oCustomUnitConfig], "string"), "123.456789", "formatted value respects the 'decimals' of custom unit");
-		assert.strictEqual(oCustomUnitTypeInstanceSpy.callCount, 2, "No additional instance is created, 2nd instance is taken from cache");
 	});
 
 	QUnit.test("unit parseValue with strict mode - CLDR (showMeasure=true)", function (assert) {

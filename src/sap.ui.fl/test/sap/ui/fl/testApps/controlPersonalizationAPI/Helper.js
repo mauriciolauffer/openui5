@@ -6,12 +6,12 @@ sap.ui.define(["sap/ui/fl/apply/api/FlexRuntimeInfoAPI", "sap/ui/core/library"],
 	"use strict";
 
 	// shortcut for sap.ui.core.ValueState
-	var ValueState = coreLibrary.ValueState;
+	var {ValueState} = coreLibrary;
 
 	return {
-		formatStatusState: function (aChanges, aControlIds) {
+		formatStatusState(aChanges, aControlIds) {
 			var bParameterMissing = !aChanges || aControlIds.some(
-				function (sControlId) {
+				function(sControlId) {
 					return !sControlId;
 				});
 
@@ -19,14 +19,14 @@ sap.ui.define(["sap/ui/fl/apply/api/FlexRuntimeInfoAPI", "sap/ui/core/library"],
 				return ValueState.None;
 			}
 
-			return FlexRuntimeInfoAPI.isPersonalized({selectors: aControlIds}).then(function (bIsPersonalized) {
+			return FlexRuntimeInfoAPI.isPersonalized({selectors: aControlIds}).then(function(bIsPersonalized) {
 				return bIsPersonalized ? ValueState.Success : ValueState.Error;
 			});
 		},
 
-		formatStatusText: function (aChanges, aControlIds, sPersonalizationMessage, sNoPersonalizationMessage) {
+		formatStatusText(aChanges, aControlIds, sPersonalizationMessage, sNoPersonalizationMessage) {
 			var bParameterMissing = !aChanges || aControlIds.some(
-				function (sControlId) {
+				function(sControlId) {
 					return !sControlId;
 				});
 
@@ -34,7 +34,7 @@ sap.ui.define(["sap/ui/fl/apply/api/FlexRuntimeInfoAPI", "sap/ui/core/library"],
 				return "Not all parameters set to the model yet!";
 			}
 
-			return FlexRuntimeInfoAPI.isPersonalized({selectors: aControlIds}).then(function (bIsPersonalized) {
+			return FlexRuntimeInfoAPI.isPersonalized({selectors: aControlIds}).then(function(bIsPersonalized) {
 				return bIsPersonalized ? sPersonalizationMessage : sNoPersonalizationMessage;
 			});
 		}

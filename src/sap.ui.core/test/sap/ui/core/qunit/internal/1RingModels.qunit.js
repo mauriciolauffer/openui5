@@ -32,8 +32,10 @@ sap.ui.require([
 		// ***************************************************************************************
 		// sap.ui.core.date.* - tests are contained in testsuite.i18.qunit.js
 		// ***************************************************************************************
+		"sap/ui/core/qunit/date/_Calendars.qunit",
 		"sap/ui/core/qunit/i18n/Buddhist.qunit",
 		"sap/ui/core/qunit/i18n/CalendarUtils.qunit",
+		"sap/ui/core/qunit/i18n/CalendarWeekNumbering.qunit",
 		"sap/ui/core/qunit/i18n/Islamic.qunit",
 		"sap/ui/core/qunit/i18n/Japanese.qunit",
 		"sap/ui/core/qunit/i18n/Persian.qunit",
@@ -84,6 +86,7 @@ sap.ui.require([
 		"sap/ui/core/qunit/model/_Helper.qunit",
 		"sap/ui/core/qunit/model/Binding.qunit",
 		"sap/ui/core/qunit/model/ClientListBinding.qunit",
+		"sap/ui/core/qunit/model/ClientPropertyBinding.qunit",
 		"sap/ui/core/qunit/model/ClientTreeBinding.qunit",
 		"sap/ui/core/qunit/model/ClientTreeBindingAdapter.qunit",
 		"sap/ui/core/qunit/model/CompositeDataState.qunit",
@@ -93,6 +96,7 @@ sap.ui.require([
 		"sap/ui/core/qunit/model/FilterProcessor.qunit",
 		"sap/ui/core/qunit/model/ListBinding.qunit",
 		"sap/ui/core/qunit/model/Model.qunit",
+		"sap/ui/core/qunit/model/PropertyBinding.qunit",
 		"sap/ui/core/qunit/model/Sorter.qunit",
 		"sap/ui/core/qunit/model/TreeBinding.qunit",
 		"sap/ui/core/qunit/model/TreeBindingAdapter.qunit",
@@ -235,9 +239,7 @@ sap.ui.require([
 		// sap.ui.model.resource.* - tests are contained in testsuite.databinding.qunit.js
 		// ***************************************************************************************
 		"sap/ui/core/qunit/resource/ResourceBinding.qunit",
-		//TODO: get test running in 1RingModels.qunit; it uses "originInfo" configuration that
-		// cannot be changed at runtime
-		// "sap/ui/core/qunit/resource/ResourceModel.qunit",
+		"sap/ui/core/qunit/resource/ResourceModel.qunit",
 
 		// ***************************************************************************************
 		// sap.ui.model.type.* - tests are contained in testsuite.types.qunit.js

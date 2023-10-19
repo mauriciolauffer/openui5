@@ -6,7 +6,7 @@ sap.ui.define([
 ], function(Engine, Log, Util, FLChangeHandlerBase, CondenserClassification) {
 	"use strict";
 
-	var ItemBaseFlex = {
+	const ItemBaseFlex = {
 
 		/******************************* Control specific methods (Interface) *************************************/
 
@@ -15,12 +15,13 @@ sap.ui.define([
 		 * implement control delegate specific hooks <code>addItem</code>
 		 *
 		 * @param {object} Delegate The control specific delegate
-		 * @param {string} sDataPropertyName The property name which should be added
+		 * @param {string} sPropertyKeyName The property name which should be added
 		 * @param {object} oControl The control defined as <code>selectorElement</code> in the change
 		 * @param {object} mPropertyBag Instance of property bag from Flex change API
+		 * @returns {Promise<sap.ui.core.Control>} Promise resolving with the created item to be added
 		 */
-		beforeAddItem: function(Delegate, sDataPropertyName, oControl, mPropertyBag) {
-			return Delegate.addItem.call(Delegate, sDataPropertyName, oControl, mPropertyBag);
+		beforeAddItem: function(Delegate, sPropertyKey, oControl, mPropertyBag) {
+			return Delegate.addItem(oControl, sPropertyKey, mPropertyBag);
 		},
 
 		/**
@@ -31,9 +32,10 @@ sap.ui.define([
 		 * @param {object} oItem The item which should be removed
 		 * @param {object} oControl The control defined as <code>selectorElement</code> in the change
 		 * @param {object} mPropertyBag Instance of property bag from Flex change API
+		 * @returns {Promise<sap.ui.core.Control>}  Promise resolving with the created item to be removed
 		 */
 		afterRemoveItem: function(Delegate, oItem, oControl, mPropertyBag) {
-			return Delegate.removeItem.call(Delegate, oItem, oControl, mPropertyBag);
+			return Delegate.removeItem(oControl, oItem, mPropertyBag);
 		},
 
 		/**
@@ -83,7 +85,7 @@ sap.ui.define([
 		 * @returns {Promise<object>} Promise resolving to an object containing the name of the aggregation and its items
 		 */
 		determineAggregation: function(oModifier, oControl) {
-			var sDefaultAggregation;
+			let sDefaultAggregation;
 			return Promise.resolve()
 				.then(oModifier.getControlMetadata.bind(oModifier, oControl))
 				.then(function(oMetadata) {
@@ -102,10 +104,11 @@ sap.ui.define([
 		/******************************* ItemBaseFlex internal methods *************************************/
 
 		_getExistingAggregationItem: function(oChangeContent, mPropertyBag, oControl) {
-			var oModifier = mPropertyBag.modifier;
+			const oModifier = mPropertyBag.modifier;
 			return this.determineAggregation(oModifier, oControl)
 			.then(function(oAggregation) {
-				var oExistingItem, aAggregationItems = oAggregation.items;
+				let oExistingItem;
+				const aAggregationItems = oAggregation.items;
 				if (aAggregationItems) {
 					oExistingItem = this.findItem(oModifier, aAggregationItems, oChangeContent.name); //can return a promise
 				}
@@ -118,6 +121,9 @@ sap.ui.define([
 				sap.ui.require([
 					sDelegatePath
 				], fResolveLoad, fRejectLoad);
+			})
+			.then(function(Delegate){
+				return Delegate;
 			});
 		},
 
@@ -132,16 +138,16 @@ sap.ui.define([
 		},
 
 		_applyAdd: function(oChange, oControl, mPropertyBag, sChangeReason) {
-			var bIsRevert = (sChangeReason === Util.REVERT);
+			const bIsRevert = (sChangeReason === Util.REVERT);
 			this.beforeApply(oChange.getChangeType(), oControl, bIsRevert);
-			var oModifier = mPropertyBag.modifier, oChangeContent = bIsRevert ? oChange.getRevertData() : oChange.getContent();
-			var sDataPropertyName = oChangeContent.name;
-			var iIndex;
-			var aDefaultAggregation;
-			var oAggregation;
-			var sControlAggregationItemId;
+			const oModifier = mPropertyBag.modifier, oChangeContent = bIsRevert ? oChange.getRevertData() : oChange.getContent();
+			const sPropertyKeyName = oChangeContent.name;
+			let iIndex;
+			let aDefaultAggregation;
+			let oAggregation;
+			let sControlAggregationItemId;
 
-			var pAdd = this.determineAggregation(oModifier, oControl)
+			const pAdd = this.determineAggregation(oModifier, oControl)
 
 			// 1) Check for existing item in the controls aggregation
 			.then(function(oRetrievedAggregation){
@@ -164,7 +170,7 @@ sap.ui.define([
 						return this._getDelegate(oDelegate.name);
 					}.bind(this))
 					.then(function(Delegate){
-						return this.beforeAddItem(Delegate, sDataPropertyName, oControl, mPropertyBag, oChangeContent);
+						return this.beforeAddItem(Delegate, sPropertyKeyName, oControl, mPropertyBag, oChangeContent);
 					}.bind(this))
 					.then(function(oRequestedItem){
 						return oRequestedItem;
@@ -214,17 +220,17 @@ sap.ui.define([
 		},
 
 		_applyRemove: function(oChange, oControl, mPropertyBag, sChangeReason) {
-			var bIsRevert = (sChangeReason === Util.REVERT);
+			const bIsRevert = (sChangeReason === Util.REVERT);
 			this.beforeApply(oChange.getChangeType(), oControl, bIsRevert);
 
-			var oModifier = mPropertyBag.modifier, oChangeContent = bIsRevert ? oChange.getRevertData() : oChange.getContent();
-			var oAggregation;
-			var iIndex;
-			var oControlAggregationItem;
-			var sControlAggregationItemId;
+			const oModifier = mPropertyBag.modifier, oChangeContent = bIsRevert ? oChange.getRevertData() : oChange.getContent();
+			let oAggregation;
+			let iIndex;
+			let oControlAggregationItem;
+			let sControlAggregationItemId;
 
 			// 1) Fetch the existimg item from the control
-			var pRemove = this.determineAggregation(oModifier, oControl)
+			const pRemove = this.determineAggregation(oModifier, oControl)
 			.then(function(oDeterminedAggregation){
 				oAggregation = oDeterminedAggregation;
 				return this._getExistingAggregationItem(oChangeContent, mPropertyBag, oControl);
@@ -261,7 +267,7 @@ sap.ui.define([
 						// Continue? --> destroy the item (but only if it exists, it may not exist if an earlier layer removed it already)
 						if (bContinue && oControlAggregationItem) {
 							// destroy the item
-							sControlAggregationItemId = sControlAggregationItemId = oControlAggregationItem.getId ? oControlAggregationItem.getId() : oControlAggregationItem.id;
+							sControlAggregationItemId = oModifier.getId(oControlAggregationItem);
 							oModifier.destroy(oControlAggregationItem, "KeepDom");
 						}
 						this.afterApply(oChange.getChangeType(), oControl, bIsRevert);
@@ -289,21 +295,21 @@ sap.ui.define([
 		},
 
 		_applyMove: function(oChange, oControl, mPropertyBag, sChangeReason) {
-			var sControlAggregationItemId;
-			var bIsRevert = (sChangeReason === Util.REVERT);
+			let sControlAggregationItemId;
+			const bIsRevert = (sChangeReason === Util.REVERT);
 			this.beforeApply(oChange.getChangeType(), oControl, bIsRevert);
 			if (this._bSupressFlickering) {
 				this._delayInvalidate(oControl);
 			}
 
-			var oModifier = mPropertyBag.modifier;
-			var oChangeContent = bIsRevert ? oChange.getRevertData() : oChange.getContent();
-			var oControlAggregationItem;
-			var oAggregation;
-			var iOldIndex;
+			const oModifier = mPropertyBag.modifier;
+			const oChangeContent = bIsRevert ? oChange.getRevertData() : oChange.getContent();
+			let oControlAggregationItem;
+			let oAggregation;
+			let iOldIndex;
 
 			// 1) Fetch existing item
-			var pMove = this.determineAggregation(oModifier, oControl)
+			const pMove = this.determineAggregation(oModifier, oControl)
 			.then(function(oRetrievedAggregation){
 				oAggregation = oRetrievedAggregation;
 				return this._getExistingAggregationItem(oChangeContent, mPropertyBag, oControl);
@@ -358,7 +364,7 @@ sap.ui.define([
 		},
 
 		_removeIndexFromChange: function(oChange) {
-			var oContent = oChange.getContent();
+			const oContent = oChange.getContent();
 			delete oContent.index;
 			oChange.setContent(oContent);
 		},
@@ -370,7 +376,7 @@ sap.ui.define([
 				apply: this._applyAdd.bind(this),
 				revert: this._applyRemove.bind(this),
 				getCondenserInfo: function(oChange, mPropertyBag) {
-					var oControl = mPropertyBag.modifier.bySelector(oChange.getSelector(), mPropertyBag.appComponent);
+					const oControl = mPropertyBag.modifier.bySelector(oChange.getSelector(), mPropertyBag.appComponent);
 					return this.determineAggregation(mPropertyBag.modifier, oControl)
 					.then(function(oAggregation){
 						return {
@@ -396,7 +402,7 @@ sap.ui.define([
 				complete: this._removeIndexFromChange.bind(this),
 				revert: this._applyAdd.bind(this),
 				getCondenserInfo: function(oChange, mPropertyBag) {
-					var oControl = mPropertyBag.modifier.bySelector(oChange.getSelector(), mPropertyBag.appComponent);
+					const oControl = mPropertyBag.modifier.bySelector(oChange.getSelector(), mPropertyBag.appComponent);
 					return this.determineAggregation(mPropertyBag.modifier, oControl)
 					.then(function(oAggregation){
 						return {
@@ -404,7 +410,12 @@ sap.ui.define([
 							targetContainer: oChange.getSelector(),
 							targetAggregation: oAggregation.name,
 							classification: CondenserClassification.Destroy,
-							sourceIndex: oChange.getRevertData().index
+							sourceIndex: oChange.getRevertData().index,
+							setIndexInRevertData: function(oChange, iIndex) {
+								const oRevertData = oChange.getRevertData();
+								oRevertData.index = iIndex;
+								oChange.setRevertData(oRevertData);
+							}
 						};
 					});
 				}.bind(this)
@@ -416,7 +427,7 @@ sap.ui.define([
 				apply: this._applyMove.bind(this),
 				revert: this._applyMove.bind(this),
 				getCondenserInfo: function(oChange, mPropertyBag) {
-					var oControl = mPropertyBag.modifier.bySelector(oChange.getSelector(), mPropertyBag.appComponent);
+					const oControl = mPropertyBag.modifier.bySelector(oChange.getSelector(), mPropertyBag.appComponent);
 					return this.determineAggregation(mPropertyBag.modifier, oControl)
 					.then(function(oAggregation){
 						return {
@@ -433,6 +444,11 @@ sap.ui.define([
 							},
 							getTargetIndex: function(oChange) {
 								return oChange.getContent().index;
+							},
+							setIndexInRevertData: function(oChange, iIndex) {
+								const oRevertData = oChange.getRevertData();
+								oRevertData.index = iIndex;
+								oChange.setRevertData(oRevertData);
 							}
 						};
 					});

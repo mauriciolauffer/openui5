@@ -17,267 +17,237 @@ sap.ui.define([
 				headerText: "Some text...",
 				items: [
 					new MenuItem({
+						additionalText: "Some text...",
 						icon: "employee",
 						text: "Some text...",
 						items: [
 							new MenuItem({
+								additionalText: "Some text...",
 								icon: "employee",
 								text: "Some text...",
 								items: [
 									new MenuItem({
+										additionalText: "Some text...",
 										icon: "employee",
-										text: "Some text...",
-										items: [
-
-										]
+										text: "Some text..."
 									}),
 									new MenuItem({
+										additionalText: "Some text...",
 										icon: "employee",
-										text: "Some text...",
-										items: [
-
-										]
+										text: "Some text..."
 									}),
 									new MenuItem({
+										additionalText: "Some text...",
 										icon: "employee",
-										text: "Some text...",
-										items: [
-
-										]
+										text: "Some text..."
 									})
 								]
 							}),
 							new MenuItem({
+								additionalText: "Some text...",
 								icon: "employee",
 								text: "Some text...",
 								items: [
 									new MenuItem({
+										additionalText: "Some text...",
 										icon: "employee",
-										text: "Some text...",
-										items: [
-
-										]
+										text: "Some text..."
 									}),
 									new MenuItem({
+										additionalText: "Some text...",
 										icon: "employee",
-										text: "Some text...",
-										items: [
-
-										]
+										text: "Some text..."
 									}),
 									new MenuItem({
+										additionalText: "Some text...",
 										icon: "employee",
-										text: "Some text...",
-										items: [
-
-										]
+										text: "Some text..."
 									})
 								]
 							}),
 							new MenuItem({
+								additionalText: "Some text...",
 								icon: "employee",
 								text: "Some text...",
 								items: [
 									new MenuItem({
+										additionalText: "Some text...",
 										icon: "employee",
-										text: "Some text...",
-										items: [
-
-										]
+										text: "Some text..."
 									}),
 									new MenuItem({
+										additionalText: "Some text...",
 										icon: "employee",
-										text: "Some text...",
-										items: [
-
-										]
+										text: "Some text..."
 									}),
 									new MenuItem({
+										additionalText: "Some text...",
 										icon: "employee",
-										text: "Some text...",
-										items: [
-
-										]
+										text: "Some text..."
 									})
 								]
 							})
 						]
 					}),
 					new MenuItem({
+						additionalText: "Some text...",
 						icon: "employee",
 						text: "Some text...",
 						items: [
 							new MenuItem({
+								additionalText: "Some text...",
 								icon: "employee",
 								text: "Some text...",
 								items: [
 									new MenuItem({
+										additionalText: "Some text...",
 										icon: "employee",
-										text: "Some text...",
-										items: [
-
-										]
+										text: "Some text..."
 									}),
 									new MenuItem({
+										additionalText: "Some text...",
 										icon: "employee",
-										text: "Some text...",
-										items: [
-
-										]
+										text: "Some text..."
 									}),
 									new MenuItem({
+										additionalText: "Some text...",
 										icon: "employee",
-										text: "Some text...",
-										items: [
-
-										]
+										text: "Some text..."
 									})
 								]
 							}),
 							new MenuItem({
+								additionalText: "Some text...",
 								icon: "employee",
 								text: "Some text...",
 								items: [
 									new MenuItem({
+										additionalText: "Some text...",
 										icon: "employee",
-										text: "Some text...",
-										items: [
-
-										]
+										text: "Some text..."
 									}),
 									new MenuItem({
+										additionalText: "Some text...",
 										icon: "employee",
-										text: "Some text...",
-										items: [
-
-										]
+										text: "Some text..."
 									}),
 									new MenuItem({
+										additionalText: "Some text...",
 										icon: "employee",
-										text: "Some text...",
-										items: [
-
-										]
+										text: "Some text..."
 									})
 								]
 							}),
 							new MenuItem({
+								additionalText: "Some text...",
 								icon: "employee",
 								text: "Some text...",
 								items: [
 									new MenuItem({
+										additionalText: "Some text...",
 										icon: "employee",
-										text: "Some text...",
-										items: [
-
-										]
+										text: "Some text..."
 									}),
 									new MenuItem({
+										additionalText: "Some text...",
 										icon: "employee",
-										text: "Some text...",
-										items: [
-
-										]
+										text: "Some text..."
 									}),
 									new MenuItem({
+										additionalText: "Some text...",
 										icon: "employee",
-										text: "Some text...",
-										items: [
-
-										]
+										text: "Some text..."
 									})
 								]
 							})
 						]
 					}),
 					new MenuItem({
+						additionalText: "Some text...",
 						icon: "employee",
 						text: "Some text...",
 						items: [
 							new MenuItem({
+								additionalText: "Some text...",
 								icon: "employee",
 								text: "Some text...",
 								items: [
 									new MenuItem({
+										additionalText: "Some text...",
 										icon: "employee",
-										text: "Some text...",
-										items: [
-
-										]
+										text: "Some text..."
 									}),
 									new MenuItem({
+										additionalText: "Some text...",
 										icon: "employee",
-										text: "Some text...",
-										items: [
-
-										]
+										text: "Some text..."
 									}),
 									new MenuItem({
+										additionalText: "Some text...",
 										icon: "employee",
-										text: "Some text...",
-										items: [
-
-										]
+										text: "Some text..."
 									})
 								]
 							}),
 							new MenuItem({
+								additionalText: "Some text...",
 								icon: "employee",
 								text: "Some text...",
 								items: [
 									new MenuItem({
+										additionalText: "Some text...",
 										icon: "employee",
-										text: "Some text...",
-										items: [
-
-										]
+										text: "Some text..."
 									}),
 									new MenuItem({
+										additionalText: "Some text...",
 										icon: "employee",
-										text: "Some text...",
-										items: [
-
-										]
+										text: "Some text..."
 									}),
 									new MenuItem({
+										additionalText: "Some text...",
 										icon: "employee",
-										text: "Some text...",
-										items: [
-
-										]
+										text: "Some text..."
 									})
 								]
 							}),
 							new MenuItem({
+								additionalText: "Some text...",
 								icon: "employee",
 								text: "Some text...",
 								items: [
 									new MenuItem({
+										additionalText: "Some text...",
 										icon: "employee",
-										text: "Some text...",
-										items: [
-
-										]
+										text: "Some text..."
 									}),
 									new MenuItem({
+										additionalText: "Some text...",
 										icon: "employee",
-										text: "Some text...",
-										items: [
-
-										]
+										text: "Some text..."
 									}),
 									new MenuItem({
+										additionalText: "Some text...",
 										icon: "employee",
-										text: "Some text...",
-										items: [
-
-										]
+										text: "Some text..."
 									})
 								]
 							})
 						]
 					})
 				],
+				afterClose: function(oEvent) {
+					// console.log("Event afterClose fired for Menu with parameters: ", oEvent.getParameters());
+				},
+				afterOpen: function(oEvent) {
+					// console.log("Event afterOpen fired for Menu with parameters: ", oEvent.getParameters());
+				},
+				beforeClose: function(oEvent) {
+					// console.log("Event beforeClose fired for Menu with parameters: ", oEvent.getParameters());
+				},
+				beforeOpen: function(oEvent) {
+					// console.log("Event beforeOpen fired for Menu with parameters: ", oEvent.getParameters());
+				},
 				itemClick: function(oEvent) {
 					// console.log("Event itemClick fired for Menu with parameters: ", oEvent.getParameters());
 				}

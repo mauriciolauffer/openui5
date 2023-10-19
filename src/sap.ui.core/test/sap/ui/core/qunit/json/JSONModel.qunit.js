@@ -1,14 +1,15 @@
 /*global QUnit, sinon */
 sap.ui.define([
 	"./data/JSONModelFakeService",
-	"sap/ui/model/json/JSONModel",
-	"sap/ui/model/Context",
 	"sap/m/Label",
 	"sap/m/List",
 	"sap/m/StandardListItem",
+	"sap/ui/core/date/UI5Date",
 	"sap/ui/layout/VerticalLayout",
+	"sap/ui/model/Context",
+	"sap/ui/model/json/JSONModel",
 	"sap/ui/thirdparty/jquery"
-], function(fakeService, JSONModel, Context, Label, List, ListItem, VerticalLayout, jQuery) {
+], function (fakeService, Label, List, ListItem, UI5Date, VerticalLayout, Context, JSONModel, jQuery) {
 	"use strict";
 
 	var oLabel,
@@ -124,7 +125,7 @@ sap.ui.define([
 			number: 123,
 			bool: true,
 			func: function() {},
-			date: new Date(Date.UTC(2022,0,1))
+			date: UI5Date.getInstance(2022, 0, 1)
 		};
 		var oModel = new JSONModel(oData, true),
 			oString = oModel.bindProperty("/string"),
@@ -179,7 +180,7 @@ sap.ui.define([
 		assert.ok(bBool, "Boolean change event fired");
 
 		assert.equal(oDate.getValue(), oData.date, "Date old value");
-		oData.date = new Date();
+		oData.date = UI5Date.getInstance();
 		assert.equal(oDate.getValue(), oData.date, "Date new value");
 		assert.ok(bDate, "Date change event fired");
 
@@ -275,7 +276,7 @@ sap.ui.define([
 		oModel.setProperty("1/firstName", "Petri", oLabel.getBindingContext());
 		assert.equal(oLabel.getText(), "Petri", "new text value from model");
 	});
-
+	/** @deprecated As of version 1.88.0, reason Model.prototype.setLegacySyntax */
 	QUnit.test("test model setProperty onlabel with bindingContext and relative path (legacySyntax = true)", function(assert) {
 		oModel.setLegacySyntax(true);
 		var oContext = oModel.createBindingContext("/teamMembers");
@@ -287,7 +288,7 @@ sap.ui.define([
 		assert.equal(oLabel.getText(), "Petro", "new text value from model");
 		oModel.setLegacySyntax(false);
 	});
-
+	/** @deprecated As of version 1.88.0, reason Model.prototype.setLegacySyntax */
 	QUnit.test("test model setProperty onlabel without bindingContext and relative path (legacySyntax = true)", function(assert) {
 		oModel.setLegacySyntax(true);
 		oLabel.setBindingContext(undefined);
@@ -298,7 +299,7 @@ sap.ui.define([
 		assert.equal(oLabel.getText(), "Petre", "new text value from model");
 		oModel.setLegacySyntax(false);
 	});
-
+	/** @deprecated As of version 1.88.0, reason Model.prototype.setLegacySyntax */
 	QUnit.test("test model setProperty onlabel with bindingContext and absolute path (legacySyntax = true)", function(assert) {
 		oModel.setLegacySyntax(true);
 		var oContext = oModel.createBindingContext("/teamMembers/HorstDerGrosse");
@@ -864,7 +865,7 @@ sap.ui.define([
 		oModel.setJSON(sJSON,false);
 		assert.equal(oModel.getData().name, "John", "get Data test");
 	});
-
+	/** @deprecated As of version 1.88.0, reason Model.prototype.setLegacySyntax */
 	QUnit.test("test JSON compatible syntax", function(assert) {
 		var oModel = new JSONModel(aTestData);
 		oModel.setLegacySyntax(true);
@@ -877,7 +878,7 @@ sap.ui.define([
 		value = oModel.getProperty("lastName", oContext);
 		assert.equal(value, "Wallace", "model value");
 	});
-
+	/** @deprecated As of version 1.88.0, reason Model.prototype.setLegacySyntax */
 	QUnit.test("test JSON compatible syntax fail", function(assert) {
 		var oModel = new JSONModel(aTestData);
 		oModel.setLegacySyntax(false);

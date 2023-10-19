@@ -1,4 +1,4 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/ui/fl/FakeLrepConnector",
@@ -9,23 +9,20 @@ sap.ui.define([
 ) {
 	"use strict";
 
-	/**
-	 * @deprecated Since version 1.70
-	 */
 	QUnit.module("Given a FakeLrepConnector", {
-		beforeEach: function () {
+		beforeEach() {
 			FakeLrepConnectorLocalStorage.disableFakeConnector();
 		}
-	}, function () {
-		QUnit.test("when a prototype function of the connector is overwritten", function (assert) {
-			function fnInjectedFuction () {}
+	}, function() {
+		QUnit.test("when a prototype function of the connector is overwritten", function(assert) {
+			function fnInjectedFuction() {}
 			FakeLrepConnector.prototype.create = fnInjectedFuction;
 
 			assert.equal(FakeLrepConnector.prototype.create, fnInjectedFuction, "then the function is set");
 		});
 
-		QUnit.test("when a prototype function of the connector is overwritten and the disableFakeConnector is called", function (assert) {
-			FakeLrepConnector.prototype.create = function () {};
+		QUnit.test("when a prototype function of the connector is overwritten and the disableFakeConnector is called", function(assert) {
+			FakeLrepConnector.prototype.create = function() {};
 			FakeLrepConnectorLocalStorage.disableFakeConnector();
 
 			assert.deepEqual(FakeLrepConnector.prototype, {}, "then the function is no longer set");

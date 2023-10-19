@@ -15,7 +15,7 @@ sap.ui.define([
 	"sap/m/MessageToast",
 	"sap/base/Log",
 	"sap/ui/thirdparty/sinon-4"
-], function (
+], function(
 	ManageAppsController,
 	AppVariantOverviewUtils,
 	AppVariantUtils,
@@ -36,10 +36,10 @@ sap.ui.define([
 	var sandbox = sinon.createSandbox();
 
 	QUnit.module("Given that a ManageApps controller is instantiated", {
-		afterEach: function () {
+		afterEach() {
 			sandbox.restore();
 		},
-		after: function() {
+		after() {
 			if (document.getElementById("sapUiBusyIndicator")) {
 				document.getElementById("sapUiBusyIndicator").style.display = "none";
 			}
@@ -52,13 +52,13 @@ sap.ui.define([
 			sandbox.stub(oManageAppsController, "getView").returns(oViewStub);
 
 			var fnSimulatedOwnerComponent = {
-				getIdRunningApp: function() {
+				getIdRunningApp() {
 					return "id1";
 				},
-				getIsOverviewForKeyUser: function() {
+				getIsOverviewForKeyUser() {
 					return true;
 				},
-				getLayer: function() {
+				getLayer() {
 					return Layer.CUSTOMER;
 				}
 			};
@@ -118,13 +118,13 @@ sap.ui.define([
 			sandbox.stub(oManageAppsController, "getView").returns(oViewStub);
 
 			var fnSimulatedOwnerComponent = {
-				getIdRunningApp: function() {
+				getIdRunningApp() {
 					return "id1";
 				},
-				getIsOverviewForKeyUser: function() {
+				getIsOverviewForKeyUser() {
 					return true;
 				},
-				getLayer: function() {
+				getLayer() {
 					return Layer.CUSTOMER;
 				}
 			};
@@ -154,13 +154,13 @@ sap.ui.define([
 			sandbox.stub(oManageAppsController, "getView").returns(oViewStub);
 
 			var fnSimulatedOwnerComponent = {
-				getIdRunningApp: function() {
+				getIdRunningApp() {
 					return "id1";
 				},
-				getIsOverviewForKeyUser: function() {
+				getIsOverviewForKeyUser() {
 					return true;
 				},
-				getLayer: function() {
+				getLayer() {
 					return Layer.CUSTOMER;
 				}
 			};
@@ -193,7 +193,7 @@ sap.ui.define([
 			var fnMessageToastSpy = sandbox.spy(MessageToast, "show");
 
 			var oButton = {
-				getBindingContext: function() {
+				getBindingContext() {
 					return {
 						sPath: "/appVariants/0"
 					};
@@ -203,7 +203,6 @@ sap.ui.define([
 			var oEmptyEvent = new Event("emptyEventId", oButton, {
 				button: oButton
 			});
-
 
 			oManageAppsController.copyId(oEmptyEvent);
 			assert.equal(fnModelPropertyStub.callCount, 1, "the modelProperty method is called once");
@@ -219,7 +218,7 @@ sap.ui.define([
 			modelPropertySpy.onThirdCall().returns(undefined);
 
 			var oButton = {
-				getBindingContext: function() {
+				getBindingContext() {
 					return {
 						sPath: "/appVariants/0"
 					};
@@ -229,7 +228,6 @@ sap.ui.define([
 			var oEmptyEvent = new Event("emptyEventId", oButton, {
 				button: oButton
 			});
-
 
 			var fnOnDeleteFromOverviewDialogStub = sandbox.stub(RtaAppVariantFeature, "onDeleteFromOverviewDialog").resolves();
 
@@ -288,28 +286,27 @@ sap.ui.define([
 			oManageAppsController.formatAdaptUIButtonTooltip(false, undefined);
 			assert.ok(oGetTextStub.calledWithExactly("TOOLTIP_ADAPTUI_ON_PREMISE"), "then tooltip text key is correct");
 
-			oManageAppsController.formatAdaptUIButtonTooltip(false, 'R');
+			oManageAppsController.formatAdaptUIButtonTooltip(false, "R");
 			assert.ok(oGetTextStub.calledWithExactly("TOOLTIP_ADAPTUI_STATUS_RUNNING"), "then tooltip text key is correct");
 
-			oManageAppsController.formatAdaptUIButtonTooltip(false, 'U');
+			oManageAppsController.formatAdaptUIButtonTooltip(false, "U");
 			assert.ok(oGetTextStub.calledWithExactly("TOOLTIP_ADAPTUI_STATUS_UNPBLSHD_ERROR"), "then tooltip text key is correct");
 
-			oManageAppsController.formatAdaptUIButtonTooltip(false, 'E');
+			oManageAppsController.formatAdaptUIButtonTooltip(false, "E");
 			assert.ok(oGetTextStub.calledWithExactly("TOOLTIP_ADAPTUI_STATUS_UNPBLSHD_ERROR"), "then tooltip text key is correct");
 
-			oManageAppsController.formatAdaptUIButtonTooltip(false, 'P');
+			oManageAppsController.formatAdaptUIButtonTooltip(false, "P");
 			assert.ok(oGetTextStub.calledWithExactly("TOOLTIP_ADAPTUI_STATUS_PUBLISHED"), "then tooltip text key is correct");
 
-
-			assert.equal(oManageAppsController.formatAdaptUIButtonTooltip(false, 'bla'), undefined, "then no tooltip will be set");
+			assert.equal(oManageAppsController.formatAdaptUIButtonTooltip(false, "bla"), undefined, "then no tooltip will be set");
 			assert.equal(oManageAppsController.formatAdaptUIButtonTooltip(true), undefined, "then no tooltip will be set");
 		});
 	});
 
 	QUnit.module("Given that a ManageApps controller is instantiated", {
-		beforeEach: function () {
+		beforeEach() {
 		},
-		afterEach: function () {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
@@ -325,7 +322,7 @@ sap.ui.define([
 			});
 
 			var oButton = {
-				getBindingContext: function() {
+				getBindingContext() {
 					return {
 						sPath: "/appVariants/0"
 					};
@@ -342,7 +339,7 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

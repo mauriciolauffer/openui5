@@ -6,7 +6,7 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
   });
   _exports.pathData = _exports.ltr = _exports.default = _exports.accData = void 0;
   const name = "inspect";
-  const pathData = "M101.801 25.95q0-10.98 7.486-18.465T127.75 0h357.303q10.978 0 18.464 7.485t7.485 18.464v357.302q0 10.979-7.485 18.464t-18.464 7.486H127.75q-10.978 0-18.463-7.486t-7.486-18.464V25.95zm-50.9 435.15h434.152q10.978 0 18.464 6.986t7.485 17.965-7.485 18.464T485.053 512H25.949q-10.978 0-18.464-7.485T0 486.05V26.947Q0 15.97 7.485 8.483T25.95.998t17.965 7.485 6.987 18.464V461.1zm101.8-102.8h306.402V51.9H152.702V358.3zm135.736-211.587q-12.975-12.974-5.989-27.945 5.989-15.969 23.954-15.969h76.85q10.978 0 17.964 6.987t6.987 17.964v76.85q0 17.965-15.97 23.954-15.968 6.986-26.946-5.989l-20.96-19.96-96.81 96.81q-6.987 6.987-17.965 6.987t-17.965-6.987q-7.985-7.984-7.985-17.965t7.985-17.965l96.81-96.81z";
+  const pathData = "M486 0q11 0 18.5 7.5T512 26v332q0 11-7.5 18.5T486 384H154q-11 0-18.5-7.5T128 358V26q0-11 7.5-18.5T154 0h332zm0 461q11 0 18.5 7t7.5 18-7.5 18.5T486 512H26q-11 0-18.5-7.5T0 486V26Q0 15 7.5 7.5T26 0t18 7.5T51 26v435h435zM461 51H179v282h282V51zM250 288q-11 0-18.5-7.5T224 262q0-10 8-18l97-97h-47q-11 0-18.5-7t-7.5-18 7.5-18.5T282 96h108q11 0 18.5 7.5T416 122v108q0 11-7.5 18.5T390 256t-18-7.5-7-18.5v-47l-97 97q-8 8-18 8z";
   _exports.pathData = pathData;
   const ltr = false;
   _exports.ltr = ltr;
@@ -20,6 +20,6 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
     collection,
     packageName
   });
-  var _default = "inspect";
+  var _default = "SAP-icons-v5/inspect";
   _exports.default = _default;
 });

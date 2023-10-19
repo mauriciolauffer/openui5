@@ -3,21 +3,21 @@
  */
 
 sap.ui.define([
+	"sap/ui/fl/apply/_internal/flexState/ManifestUtils",
+	"sap/ui/fl/registry/Settings",
 	"sap/ui/fl/write/_internal/appVariant/AppVariantFactory",
-	"sap/ui/fl/write/api/PersistenceWriteAPI",
-	"sap/ui/fl/write/api/ChangesWriteAPI",
-	"sap/ui/fl/apply/_internal/ChangesController",
-	"sap/ui/fl/write/_internal/SaveAs",
 	"sap/ui/fl/write/_internal/connectors/LrepConnector",
-	"sap/ui/fl/registry/Settings"
+	"sap/ui/fl/write/_internal/SaveAs",
+	"sap/ui/fl/write/api/ChangesWriteAPI",
+	"sap/ui/fl/write/api/PersistenceWriteAPI"
 ], function(
+	ManifestUtils,
+	Settings,
 	AppVariantFactory,
-	PersistenceWriteAPI,
-	ChangesWriteAPI,
-	ChangesController,
-	SaveAs,
 	LrepConnector,
-	Settings
+	SaveAs,
+	ChangesWriteAPI,
+	PersistenceWriteAPI
 ) {
 	"use strict";
 
@@ -41,9 +41,7 @@ sap.ui.define([
 			appId: mPropertyBag.appId
 		};
 
-		var oDescriptorFlexController = ChangesController.getFlexControllerInstance(mPropertyBag.selector);
-
-		mPropertyBag.id = oDescriptorFlexController.getComponentName();
+		mPropertyBag.id = ManifestUtils.getFlexReferenceForSelector(mPropertyBag.selector);
 		// Pass a flag to know which consumer is calling SaveAs handler
 		mPropertyBag.isForSmartBusiness = true;
 	}
@@ -52,7 +50,6 @@ sap.ui.define([
 	 * Provides an API for tools to create, update, delete app variants only for ABAP systems.
 	 *
 	 * @namespace sap.ui.fl.write.api.SmartBusinessWriteAPI
-	 * @experimental Since 1.74
 	 * @since 1.74
 	 * @private
 	 * @ui5-restricted sap.ui.rta, similar tools
@@ -82,7 +79,7 @@ sap.ui.define([
 		 * @private
 		 * @ui5-restricted
 		 */
-		create: function (mPropertyBag) {
+		create(mPropertyBag) {
 			if (!mPropertyBag.layer) {
 				return Promise.reject("Layer must be provided");
 			}
@@ -95,8 +92,7 @@ sap.ui.define([
 				return Promise.reject("App variant ID must be provided");
 			}
 
-			var oFlexController = ChangesController.getFlexControllerInstance(mPropertyBag.selector);
-			mPropertyBag.reference = oFlexController.getComponentName();
+			mPropertyBag.reference = ManifestUtils.getFlexReferenceForSelector(mPropertyBag.selector);
 
 			// Pass a flag to determine the consumer who is calling SaveAs handler
 			mPropertyBag.isForSmartBusiness = true;
@@ -118,7 +114,7 @@ sap.ui.define([
 		 * @private
 		 * @ui5-restricted
 		 */
-		update: function (mPropertyBag) {
+		update(mPropertyBag) {
 			_validateAndAdjustPropertyBag(mPropertyBag);
 			return _checkSettingsAndExecuteActionByName("updateAppVariant", mPropertyBag);
 		},
@@ -136,7 +132,7 @@ sap.ui.define([
 		 * @private
 		 * @ui5-restricted
 		 */
-		remove: function (mPropertyBag) {
+		remove(mPropertyBag) {
 			_validateAndAdjustPropertyBag(mPropertyBag);
 			return _checkSettingsAndExecuteActionByName("deleteAppVariant", mPropertyBag);
 		},
@@ -149,7 +145,7 @@ sap.ui.define([
 		 * @private
 		 * @ui5-restricted
 		 */
-		getDesignTimeVariant: function (mPropertyBag) {
+		getDesignTimeVariant(mPropertyBag) {
 			if (!mPropertyBag.id) {
 				return Promise.reject("App Variant ID must be provided");
 			}
@@ -166,7 +162,7 @@ sap.ui.define([
 		 * @private
 		 * @ui5-restricted
 		 */
-		getRunTimeVariant: function (mPropertyBag) {
+		getRunTimeVariant(mPropertyBag) {
 			if (!mPropertyBag.appId) {
 				return Promise.reject("Reference App ID must be provided");
 			}
@@ -174,7 +170,7 @@ sap.ui.define([
 				return Promise.reject("App Variant ID must be provided");
 			}
 
-			var sAppUrl = "/sap/bc/lrep/content/apps/" + mPropertyBag.appId + "/appVariants/" + mPropertyBag.id + "/manifest.appdescr_variant";
+			var sAppUrl = `/sap/bc/lrep/content/apps/${mPropertyBag.appId}/appVariants/${mPropertyBag.id}/manifest.appdescr_variant`;
 			return LrepConnector.appVariant.getManifest({
 				appVarUrl: sAppUrl
 			});
@@ -192,7 +188,7 @@ sap.ui.define([
 		 * @private
 		 * @ui5-restricted
 		 */
-		createDescriptorInlineChanges: function(mPropertyBag) {
+		createDescriptorInlineChanges(mPropertyBag) {
 			if (!mPropertyBag.appId) {
 				return Promise.reject("appId must be provided");
 			}
@@ -216,7 +212,7 @@ sap.ui.define([
 		 * @private
 	 	 * @ui5-restricted
 		 */
-		add: function (mPropertyBag) {
+		add(mPropertyBag) {
 			if (!mPropertyBag.appId) {
 				return Promise.reject("appId must be provided");
 			}

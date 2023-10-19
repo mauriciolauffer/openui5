@@ -25,7 +25,10 @@ sap.ui.define([
 	"use strict";
 
 	// shortcut for sap.m.ListMode
-	var ListMode = Library.ListMode;
+	var ListMode = Library.ListMode,
+		UploadType = Library.UploadType,
+		UploadState = Library.UploadState,
+		ButtonType = Library.ButtonType;
 
 	function getData() {
 		return {
@@ -86,6 +89,47 @@ sap.ui.define([
 			assert.ok(!progressBox.getVisible(), "progress bar is not visible for the uploaded state");
 			done();
 		});
+	});
+
+	QUnit.test("Test for terminate upload dialog popup", function(assert) {
+		// Arrange
+		var oItem = this.oUploadSet.getItems()[0];
+		oItem.setUploadState(UploadState.Uploading);
+		var oTerminateButton = oItem._getTerminateButton();
+		assert.ok(oTerminateButton.getVisible(), "Terminate button is visible for the uploading state");
+		// Act
+		oTerminateButton.firePress();
+		// Assert
+		var oDialog = oCore.byId(this.oUploadSet.getId() + "-teminateDialog");
+		assert.ok(oDialog, "Terminate dialog should now be presented.");
+		assert.equal(oDialog.getButtons()[0].getType(), ButtonType.Emphasized, "First button is emphasized.");
+		oDialog.getButtons()[1].firePress();
+		oDialog.getButtons()[0].getParent().fireAfterClose();
+		oDialog = oCore.byId(this.oUploadSet.getId() + "-teminateDialog");
+		assert.notOk(oDialog, "Terminate dialog should now be closed.");
+	});
+
+	QUnit.test("Test for checking if the upload type is of Native by default", function (assert) {
+		//arrange
+		var oItem = this.oUploadSet.getItems()[0];
+		assert.equal(oItem.getUploadType(), UploadType.Native ,"Upload type is returning as Native as expected");
+	});
+
+	QUnit.test("Test for checking if the upload type is of Native when uploaded by the user", function (assert) {
+		this.oUploadSet.attachEventOnce("beforeUploadStarts",function(oEvent){
+			var oItem = oEvent.getParameter("item");
+			assert.equal(oItem.getUploadType(),UploadType.Native,"Upload type is returning as Native as expected");
+		});
+
+		var file = new File(["foo"], "foo.txt", {
+			type: "text/plain"
+		  });
+		var oFiles = {
+			0: file,
+			length: 1
+		};
+
+		this.oUploadSet._processNewFileObjects(oFiles);
 	});
 
 	QUnit.test("Events beforeItemAdded and afterItemAdded are called at proper time and with correct parameters, prevent default applies.", function (assert) {
@@ -298,9 +342,147 @@ sap.ui.define([
 
 		oItem._getConfirmRenameButton().firePress();
 		oCore.applyChanges();
-
 	});
 
+	[
+		{
+			message: "Rename filename to empty string -> show error",
+			inputString: ""
+		},
+		{
+			message: "Rename filename to string with multiple white spaces -> show error",
+			inputString: "       "
+		},
+		{
+			message: "Rename filename to string with multiple white spaces, horizontal tabulations, new line characters -> show error",
+			inputString: "    \t \n \t \t  \n  "
+		}
+	].forEach(function(data) {
+		QUnit.test(data.message, function (assert) {
+			// Arrange
+			var oItem = this.oUploadSet.getItems()[0];
+
+			oItem._getEditButton().firePress();
+			oItem._getFileNameEdit().setValue(data.inputString);
+			oItem._getConfirmRenameButton().firePress();
+
+			// Assert
+			var oEdit = oItem._getFileNameEdit();
+			assert.ok(!!oEdit, "Item edit control is present");
+			assert.equal(oEdit.getValueStateText(), "Please enter a file name.", "Item edit control error message is correct");
+		});
+	});
+
+	[
+		{
+			message: "Same file names are not allowed, rename file to already existing file name -> show error",
+			inputString: "Brenda"
+		},
+		{
+			message: "Same file names are not allowed, rename file to already existing file name with multiple white spaces -> show error",
+			inputString: "   Brenda      "
+		},
+		{
+			message: "Same file names are not allowed, rename file to already existing file name with multiple white spaces, horizontal tabulations, new line characters -> show error",
+			inputString: "    \t \n Brenda\t \t  \n  "
+		}
+	].forEach(function(data) {
+		QUnit.test(data.message, function (assert) {
+			// Arrange
+			var oItem = this.oUploadSet.getItems()[0];
+
+			oItem._getEditButton().firePress();
+			oItem._getFileNameEdit().setValue(data.inputString);
+			oItem._getConfirmRenameButton().firePress();
+
+			// Assert
+			assert.notOk(this.oUploadSet.getSameFilenameAllowed(), "Flag same file names are not allowed is set");
+			var oEdit = oItem._getFileNameEdit();
+			assert.ok(!!oEdit, "Item edit control is present");
+			assert.equal(oEdit.getValueStateText(), "File name already exists.", "Item edit control error message is correct");
+		});
+	});
+
+	QUnit.test("Then enabling edit button, UploadSet.handleItemGetDisabled is not called", function (assert) {
+		var spyHandleItemGetDisabled = this.spy(this.oUploadSet, "handleItemGetDisabled");
+		var oItem = this.oUploadSet.getItems()[1];
+		assert.notOk(oItem.getEnabledEdit(), "Edit button initially is disabled");
+
+		oItem.setEnabledEdit(true);
+
+		assert.ok(oItem.getEnabledEdit(), "Edit button is enabled");
+		assert.ok(spyHandleItemGetDisabled.notCalled, "UploadSet.handleItemGetDisabled is not called");
+	});
+
+	QUnit.test("Then showing edit button, UploadSet.handleItemGetDisabled is not called", function (assert) {
+		var spyHandleItemGetDisabled = this.spy(this.oUploadSet, "handleItemGetDisabled");
+		var oItem = this.oUploadSet.getItems()[1];
+		assert.notOk(oItem.getVisibleEdit(), "Edit button initially is hidden");
+
+		oItem.setVisibleEdit(true);
+
+		assert.ok(oItem.getVisibleEdit(), "Edit button is visible");
+		assert.ok(spyHandleItemGetDisabled.notCalled, "UploadSet.handleItemGetDisabled is not called");
+	});
+
+	QUnit.test("Then disabling edit button, for item that is not in edit, UploadSet._handleItemEditCancelation is not called", function (assert) {
+		var spyHandleItemEditCancelation = this.spy(this.oUploadSet, "_handleItemEditCancelation");
+		var oItem = this.oUploadSet.getItems()[0];
+		assert.ok(oItem.getEnabledEdit(), "Edit button initially is enabled");
+
+		oItem.setEnabledEdit(false);
+
+		assert.notOk(oItem.getEnabledEdit(), "Edit button is disabled");
+		assert.ok(spyHandleItemEditCancelation.notCalled, "UploadSet._handleItemEditCancelation is not called");
+	});
+
+	QUnit.test("Then hiding edit button, for item that is not in edit, UploadSet._handleItemEditCancelation is not called", function (assert) {
+		var spyHandleItemEditCancelation = this.spy(this.oUploadSet, "_handleItemEditCancelation");
+		var oItem = this.oUploadSet.getItems()[0];
+		assert.ok(oItem.getVisibleEdit(), "Edit button initially is visible");
+
+		oItem.setVisibleEdit(false);
+
+		assert.notOk(oItem.getVisibleEdit(), "Edit button is hidden");
+		assert.ok(spyHandleItemEditCancelation.notCalled, "UploadSet._handleItemEditCancelation is not called");
+	});
+
+	QUnit.test("Then hiding edit button, for item that is not in edit, but there is another item in edit mode UploadSet._handleItemEditCancelation is not called", function (assert) {
+		var spyHandleItemEditCancelation = this.spy(this.oUploadSet, "_handleItemEditCancelation");
+		var oItem0 = this.oUploadSet.getItems()[0],
+			oItem1 = this.oUploadSet.getItems()[1];
+		oItem0.setVisibleEdit(true);
+		oItem1.setVisibleEdit(true);
+		assert.ok(oItem0.getVisibleEdit(), "First edit button initially is visible");
+		assert.ok(oItem1.getVisibleEdit(), "Second edit button initially is visible");
+
+		oItem0._getEditButton().firePress();
+		oCore.applyChanges();
+
+		oItem1.setVisibleEdit(false);
+
+		assert.notOk(oItem1.getVisibleEdit(), "Edit button is hidden");
+		assert.ok(spyHandleItemEditCancelation.notCalled, "UploadSet._handleItemEditCancelation is not called");
+	});
+
+	QUnit.test("Then hiding edit button, for item that is in edit, it's edit mode is cancelled", function (assert) {
+		var oItem = this.oUploadSet.getItems()[0];
+		oItem.setVisibleEdit(true);
+		assert.ok(oItem.getVisibleEdit(), "Edit button initially is visible");
+
+		oItem._getEditButton().firePress();
+		var sItemEditFileName = oItem._getFileNameEdit().getValue();
+		oItem._getFileNameEdit().setValue(sItemEditFileName + " - some additional text");
+
+		oItem.setVisibleEdit(false);
+		assert.notOk(oItem.getVisibleEdit(), "Edit button is hidden");
+
+		oItem.setVisibleEdit(true);
+		assert.ok(oItem.getVisibleEdit(), "Edit button is visible");
+
+		oItem._getEditButton().firePress();
+		assert.equal(oItem._getFileNameEdit().getValue(), sItemEditFileName, "File name didn't changed");
+	});
 
 	QUnit.test("Check filename with no extension", function (assert) {
 		//Arrange
@@ -384,7 +566,6 @@ sap.ui.define([
 		assert.equal(this.oUploadSet._oList.getNoDataText(), sNoDataText + " " + sNoDataDescription, "Nodata Text is set in the List");
 		assert.equal(oIllustratedMessage.getTitle(), sNoDataText, "default text is rendered in Upload set");
 		assert.equal(oIllustratedMessage.getDescription(), sNoDataDescription, "default discription is rendered in Upload set");
-		assert.equal(oIllustratedMessage.getDomRef().querySelector("svg").getAttribute("aria-labelledby"), oIllustratedMessage.getId(), "AriaLabelledBy is set correctly.");
 	});
 
 	QUnit.test("No data type illustrated message rendering", function(assert) {
@@ -395,7 +576,33 @@ sap.ui.define([
 		oCore.applyChanges();
 		//Assert
 		assert.equal(oIllustratedMessage.getIllustrationType(), IllustratedMessageType.NoData, "The no data illustrated message is rendred");
-		assert.equal(oIllustratedMessage.getDomRef().querySelector("svg").getAttribute("aria-labelledby"), oIllustratedMessage.getId(), "AriaLabelledBy is set correctly.");
+		assert.equal(oIllustratedMessage.getDomRef().querySelector("svg").getAttribute("aria-labelledby"), this.oUploadSet._oInvisibleText.getId(), "AriaLabelledBy is set correctly.");
+	});
+
+	QUnit.test("Get ariaDescribedBy values and validate them with illustration message text and descriptions", function(assert) {
+		//Arrange
+		this.oUploadSet.unbindAggregation("items");
+		var oIllustratedMessage = this.oUploadSet._getIllustratedMessage();
+
+		oCore.applyChanges();
+		//Assert
+		var oTextAndDescriptionIds = oIllustratedMessage.getAccessibilityReferences();
+		var aAriaDescribedById = this.oUploadSet._oUploadButton.getAriaDescribedBy();
+		assert.equal(Object.keys(oTextAndDescriptionIds).length,2,"Length of the ariadescribedby array is two");
+		assert.equal(aAriaDescribedById[0],oTextAndDescriptionIds.title,"Title id is included in aria-describedBy");
+		assert.equal(aAriaDescribedById[1],oTextAndDescriptionIds.description,"Description id is included in aria-describedBy");
+	});
+
+	QUnit.test("No data rendering - with user specified no data illustration type", function(assert) {
+		//Arrange
+		this.oUploadSet.setProperty("noDataIllustrationType", IllustratedMessageType.SuccessBalloon);
+		this.oUploadSet.unbindAggregation("items");
+		var oIllustratedMessage = this.oUploadSet._getIllustratedMessage();
+
+		oCore.applyChanges();
+		//Assert
+		assert.equal(oIllustratedMessage.getIllustrationType(), IllustratedMessageType.SuccessBalloon, "The custom illustrated message type is rendred");
+		assert.equal(oIllustratedMessage.getDomRef().querySelector("svg").getAttribute("aria-labelledby"), this.oUploadSet._oInvisibleText.getId(), "AriaLabelledBy is set correctly.");
 	});
 
 	QUnit.test("No data rendering - with user specified no data text", function(assert) {
@@ -408,7 +615,7 @@ sap.ui.define([
 		//Assert
 		assert.equal(oIllustratedMessage.getTitle(), "myNoDataText", "The no data text set by user is rendered");
 		assert.equal(this.oUploadSet._oList.getNoDataText(), "myNoDataText" + " " + this.oUploadSet.getNoDataDescription(), "Nodata Text is set in the List");
-		assert.equal(oIllustratedMessage.getDomRef().querySelector("svg").getAttribute("aria-labelledby"), oIllustratedMessage.getId(), "AriaLabelledBy is set correctly.");
+		assert.equal(oIllustratedMessage.getDomRef().querySelector("svg").getAttribute("aria-labelledby"), this.oUploadSet._oInvisibleText.getId(), "AriaLabelledBy is set correctly.");
 	});
 
 	QUnit.test("No data rendering - with user specified no data description", function(assert) {
@@ -421,7 +628,7 @@ sap.ui.define([
 		//Assert
 		assert.equal(oIllustratedMessage.getDescription(), "myNoDataDescription", "The no data description set by user is rendered");
 		assert.equal(this.oUploadSet._oList.getNoDataText(), this.oUploadSet.getNoDataText() + " " + "myNoDataDescription", "Nodata Text is set in the List");
-		assert.equal(oIllustratedMessage.getDomRef().querySelector("svg").getAttribute("aria-labelledby"), oIllustratedMessage.getId(), "AriaLabelledBy is set correctly.");
+		assert.equal(oIllustratedMessage.getDomRef().querySelector("svg").getAttribute("aria-labelledby"), this.oUploadSet._oInvisibleText.getId(), "AriaLabelledBy is set correctly.");
 	});
 
 	QUnit.test("Test httpRequestMethod property with XMLHttpRequest", function (assert) {
@@ -477,6 +684,15 @@ sap.ui.define([
 		this.oUploadSet._getImplicitUploader();
 		this.oUploadSet.setUploadUrl('/test');
 		assert.equal(this.oUploadSet.getUploadUrl(), "/test", "Uploader uploadUrl is updated successfuly");
+	});
+
+	QUnit.test("UploadSet.setMaxFileNameLength updates maxFileNameLength and maximumFilenameLength properties", function(assert) {
+		//Arrange
+		this.oUploadSet.setMaxFileNameLength(50);
+
+		//Assert
+		assert.equal(this.oUploadSet.getMaxFileNameLength(), 50, "UploadSet maxFileNameLength is 50");
+		assert.equal(this.oUploadSet.getDefaultFileUploader().getMaximumFilenameLength(), 50, "File Uploader maximumFilenameLength is 50");
 	});
 
 	function createNativeDragEventDummy(sEventType) {
@@ -714,11 +930,80 @@ sap.ui.define([
 		assert.ok(this.oUploadSet._oUploadButton && !this.oUploadSet._oUploadButton.getEnabled(), "Upload button on illustrated message section is disabled when uploadenabled is set to false");
 	});
 
+	QUnit.test("Test to validate visibility status of upload button on illustrated message section", function(assert) {
+
+		//arrange
+		this.oUploadSet.removeAllItems();
+		oCore.applyChanges();
+
+		//assert initial case
+		assert.ok(this.oUploadSet._oUploadButton && this.oUploadSet._oUploadButton.getVisible(), "By default uploadButtonInvisible is set to false and Upload button is visible");
+
+		//act
+		this.oUploadSet.setUploadButtonInvisible(true);
+		oCore.applyChanges();
+
+		//assert
+		assert.ok(this.oUploadSet._oUploadButton && !this.oUploadSet._oUploadButton.getVisible(), "Upload button on illustrated message section is hidden when uploadButtonInvisible is set to true");
+	});
+
+	QUnit.test("Test to check focus update on delete item", function(assert){
+		//arrange
+		var oItemsList = this.oUploadSet.getItems();
+		this.oUploadSet._oItemToBeDeleted = oItemsList[0];
+		var fnDone = assert.async();
+		var iState = 0;
+
+		var afterRenderDelegate = {
+			onAfterRendering: function () {
+				if ( iState == 0 ) {
+					iState++;
+					assert.equal(this.oUploadSet._bItemRemoved, false, "_bItemRemoved flag is reset to false");
+					assert.equal(document.activeElement,  this.oUploadSet.getList().getItems()[0].getDomRef(), "Focus is set correctly");
+					this.oUploadSet._oItemToBeDeleted = oItemsList[1];
+					this.oUploadSet._handleClosedDeleteDialog("OK");
+				} else {
+					assert.equal(this.oUploadSet._bItemRemoved, false, "_bItemRemoved flag is reset to false");
+					assert.equal(document.activeElement,  this.oUploadSet.getList().getDomRef().querySelector(".sapMUCNoDataPage"), "Focus is set correctly");
+					this.oUploadSet.removeEventDelegate(afterRenderDelegate);
+					fnDone();
+				}
+			}.bind(this)
+
+		};
+		this.oUploadSet.addEventDelegate(afterRenderDelegate);
+		this.oUploadSet._handleClosedDeleteDialog("OK");
+	});
+
+	QUnit.module("UploadSet general functionality", {
+		beforeEach: function () {
+			this.oUploadSet = new UploadSet("uploadSet", {
+				uploadEnabled: false,
+				uploadButtonInvisible: false
+			}).setModel(new JSONModel(getData()));
+			this.oUploadSet.placeAt("qunit-fixture");
+			oCore.applyChanges();
+		},
+		afterEach: function () {
+			this.oUploadSet.destroy();
+			this.oUploadSet = null;
+		}
+	});
+
+	QUnit.test("Test to validate visibility status of upload button on illustrated message section when upload disabled", function(assert) {
+		var button = this.oUploadSet.getUploadButtonForIllustratedMessage();
+
+		assert.equal(button.getEnabled(), false, "Upload button on illustrated message section is disabled when uploadEnabled is set to false");
+		assert.equal(button.getVisible(), true, "Upload button on illustrated message section is visible when uploadButtonInvisible is set to false");
+	});
+
 	QUnit.module("UploadSet general functionality", {
 		beforeEach: function () {
 			this.oUploadSet = new UploadSet("uploadSet", {
 				fileTypes:"txt,doc,png",
 				mediaTypes:"text/plain,application/msword,image/jpeg,image/png",
+				maxFileNameLength: 50,
+				maxFileSize: 5,
 				items: {
 					path: "/items",
 					template: TestUtils.createItemTemplate(),
@@ -772,7 +1057,7 @@ sap.ui.define([
 		oCore.applyChanges();
 	});
 
-	QUnit.test("Test for invalid file type, media type files upload attempt", function(assert) {
+	QUnit.test("Test for invalid media type, files upload attempt", function(assert) {
 		//arrange
 		var oFileUploader = this.oUploadSet.getDefaultFileUploader();
 		var oFileList = { // Files with webKitrelative path to simulate directory and sub directories
@@ -811,9 +1096,285 @@ sap.ui.define([
 			assert.ok(oEvent.getParameter("item"), "mismatch item is present");
 
 			var oItem = oEvent.getParameter("item");
-			if (oItem) {
-				assert.equal(oItem.getMetadata().getName(), "sap.m.upload.UploadSetItem", "mismatched UploadSetItem received");
+			assert.equal(oItem.getFileName(), "Sample File 5.pdf", "mismatched UploadSetItem received");
+			done();
+		});
+
+		//act
+		oFileUploader.handlechange({
+			target: {
+				files: oFileList
 			}
+		});
+	});
+
+	QUnit.test("Test for invalid media type, change Upload mediaTypes value and make upload attempt", function(assert) {
+		//arrange
+		var oFileUploader = this.oUploadSet.getDefaultFileUploader();
+		var oFileList = {
+			0: {
+				name: "Sample File 1.txt",
+				size: 1,
+				type: "type1"
+			},
+			1: {
+				name: "Sample File 2.txt",
+				size: 1,
+				type: "type2"
+			},
+			2: {
+				name: "Sample File 3.txt",
+				size: 1,
+				type: "unknown-type"
+			},
+			length: 5
+		};
+		this.oUploadSet.setMediaTypes(["type1", "type2"]);
+
+		var done = assert.async();
+
+		this.oUploadSet.attachEventOnce("mediaTypeMismatch",function(oEvent){
+			//Assert
+			assert.ok(oEvent.getParameter("item"), "mismatch item is present");
+
+			var oItem = oEvent.getParameter("item");
+			assert.equal(oItem.getFileName(), "Sample File 3.txt", "mismatched UploadSetItem received");
+			done();
+		});
+
+		//act
+		oFileUploader.handlechange({
+			target: {
+				files: oFileList
+			}
+		});
+	});
+
+	QUnit.test("Test for invalid file type, files upload attempt", function(assert) {
+		//arrange
+		var oFileUploader = this.oUploadSet.getDefaultFileUploader();
+		var oFileList = { // Files with webKitrelative path to simulate directory and sub directories
+			0: {
+				name: "Sample File 1.txt",
+				size: 1,
+				type: "text/plain"
+			},
+			1: {
+				name: "Sample File 2.pdf",
+				size: 1,
+				type: "application/pdf"
+			},
+			length: 2
+		};
+		this.oUploadSet.setMediaTypes([]);
+
+		var done = assert.async();
+
+		this.oUploadSet.attachEventOnce("fileTypeMismatch",function(oEvent){
+			//Assert
+			assert.ok(oEvent.getParameter("item"), "mismatch item is present");
+
+			var oItem = oEvent.getParameter("item");
+			assert.equal(oItem.getFileName(), "Sample File 2.pdf", "mismatched UploadSetItem received");
+			done();
+		});
+
+		//act
+		oFileUploader.handlechange({
+			target: {
+				files: oFileList
+			}
+		});
+	});
+
+	QUnit.test("Test for invalid file type, change Upload set fileTypes value and make upload attempt", function(assert) {
+		//arrange
+		var oFileUploader = this.oUploadSet.getDefaultFileUploader();
+		var oFileList = { // Files with webKitrelative path to simulate directory and sub directories
+			0: {
+				name: "Sample File 1.xxx",
+				size: 1,
+				type: "text/plain"
+			},
+			1: {
+				name: "Sample File 2.yyy",
+				size: 1,
+				type: "application/pdf"
+			},
+			length: 2
+		};
+		this.oUploadSet.setMediaTypes([]);
+		this.oUploadSet.setFileTypes(["xxx"]);
+
+		var done = assert.async();
+
+		this.oUploadSet.attachEventOnce("fileTypeMismatch",function(oEvent){
+			//Assert
+			assert.ok(oEvent.getParameter("item"), "mismatch item is present");
+
+			var oItem = oEvent.getParameter("item");
+			assert.equal(oItem.getFileName(), "Sample File 2.yyy", "mismatched UploadSetItem received");
+			done();
+		});
+
+		//act
+		oFileUploader.handlechange({
+			target: {
+				files: oFileList
+			}
+		});
+	});
+
+	QUnit.test("Test for file name maximum length, upload attempt", function(assert) {
+		//arrange
+		var oFileUploader = this.oUploadSet.getDefaultFileUploader(),
+			sLongFileName = "12345678901234567890123456789012345678901234567890.txt",
+			oFileList = { // Files with webKitrelative path to simulate directory and sub directories
+			0: {
+				name: "Sample File 1.txt",
+				size: 1,
+				type: "text/plain"
+			},
+			1: {
+				name: sLongFileName,
+				size: 1,
+				type: "text/plain"
+			},
+			2: {
+				name: "Sample File 3.txt",
+				size: 1,
+				type: "text/plain"
+			},
+			length: 3
+		};
+		assert.equal(this.oUploadSet.getMaxFileNameLength(), 50, "upload set file name maximum length is ok");
+		var done = assert.async();
+
+		this.oUploadSet.attachEventOnce("fileNameLengthExceeded",function(oEvent){
+			//Assert
+			assert.ok(oEvent.getParameter("item"), "item is present");
+
+			var oItem = oEvent.getParameter("item");
+			assert.equal(oItem.getFileName(), sLongFileName, "event contain correct invalid file name");
+			done();
+		});
+
+		//act
+		oFileUploader.handlechange({
+			target: {
+				files: oFileList
+			}
+		});
+	});
+
+	QUnit.test("Test for file name maximum length, change Upload set maxFileNameLength value and make upload attempt", function(assert) {
+		//arrange
+		var oFileUploader = this.oUploadSet.getDefaultFileUploader(),
+			sLongFileName = "12345678901234567890.txt",
+			oFileList = { // Files with webKitrelative path to simulate directory and sub directories
+			0: {
+				name: "Sample File 1.txt",
+				size: 1,
+				type: "text/plain"
+			},
+			1: {
+				name: sLongFileName,
+				size: 1,
+				type: "text/plain"
+			},
+			2: {
+				name: "Sample File 3.txt",
+				size: 1,
+				type: "text/plain"
+			},
+			length: 3
+		};
+		assert.equal(this.oUploadSet.getMaxFileNameLength(), 50, "upload set file name maximum length is ok");
+		this.oUploadSet.setMaxFileNameLength(20);
+		assert.equal(this.oUploadSet.getMaxFileNameLength(), 20, "upload set file name maximum length changed");
+
+		var done = assert.async();
+
+		this.oUploadSet.attachEventOnce("fileNameLengthExceeded",function(oEvent){
+			//Assert
+			assert.ok(oEvent.getParameter("item"), "item is present");
+
+			var oItem = oEvent.getParameter("item");
+			assert.equal(oItem.getFileName(), sLongFileName, "event contain correct invalid file name");
+			done();
+		});
+
+		//act
+		oFileUploader.handlechange({
+			target: {
+				files: oFileList
+			}
+		});
+	});
+
+	QUnit.test("Test for file maximum size, upload attempt", function(assert) {
+		//arrange
+		var oFileUploader = this.oUploadSet.getDefaultFileUploader(),
+			oFileList = { // Files with webKitrelative path to simulate directory and sub directories
+			0: {
+				name: "Sample File 1.txt",
+				size: 1,
+				type: "text/plain"
+			},
+			1: {
+				name: "Sample File 2.txt",
+				size: 6 * 1024 * 1024,
+				type: "text/plain"
+			},
+			length: 2
+		};
+		assert.equal(this.oUploadSet.getMaxFileSize(), 5, "upload set file maximum size is ok");
+		var done = assert.async();
+
+		this.oUploadSet.attachEventOnce("fileSizeExceeded",function(oEvent){
+			//Assert
+			assert.ok(oEvent.getParameter("item"), "item is present");
+
+			var oItem = oEvent.getParameter("item");
+			assert.equal(oItem.getFileName(), "Sample File 2.txt", "event contain correct invalid file name");
+			done();
+		});
+
+		//act
+		oFileUploader.handlechange({
+			target: {
+				files: oFileList
+			}
+		});
+	});
+
+	QUnit.test("Test for file maximum size, change Upload set maxFileSize value and make upload attempt", function(assert) {
+		//arrange
+		var oFileUploader = this.oUploadSet.getDefaultFileUploader(),
+			oFileList = { // Files with webKitrelative path to simulate directory and sub directories
+			0: {
+				name: "Sample File 1.txt",
+				size: 1,
+				type: "text/plain"
+			},
+			1: {
+				name: "Sample File 2.txt",
+				size: 4 * 1024 * 1024,
+				type: "text/plain"
+			},
+			length: 2
+		};
+		assert.equal(this.oUploadSet.getMaxFileSize(), 5, "upload set file maximum size is ok");
+		this.oUploadSet.setMaxFileSize(3);
+		assert.equal(this.oUploadSet.getMaxFileSize(), 3, "upload set file maximum size have changed");
+		var done = assert.async();
+
+		this.oUploadSet.attachEventOnce("fileSizeExceeded",function(oEvent){
+			//Assert
+			assert.ok(oEvent.getParameter("item"), "item is present");
+
+			var oItem = oEvent.getParameter("item");
+			assert.equal(oItem.getFileName(), "Sample File 2.txt", "event contain correct invalid file name");
 			done();
 		});
 
@@ -959,10 +1520,10 @@ sap.ui.define([
 		oTargetDomRef.dispatchEvent(createNativeDragEventDummy("dragenter"));
 	});
 
-
 	QUnit.test("bring Drop here illustrated message, when Dragged into target area", function(assert) {
 		var oTargetDomRef = this.oUploadSet.getList().getDomRef();
 		oTargetDomRef.focus();
+		this.oUploadSet.removeAllItems(); // illustrated message only renders when there are no items in the list.
 		var oDropInfo = this.oUploadSet.getList().getDragDropConfig()[1];
 		oDropInfo.attachDragEnter(function(oEvent) {
 			assert.equal(this.oUploadSet._getIllustratedMessage().getIllustrationType(), IllustratedMessageType.UploadCollection, "The Drop file here illustrated message is rendred");
@@ -993,113 +1554,335 @@ sap.ui.define([
 
 	});
 
+	QUnit.test("Drag and then move away outside the browser, illustrated image get properly displayed", function(assert) {
+		this.oUploadSet.removeAllItems(); // illustrated message only renders when there are no items in the list.
+		var oTargetDomRef = this.oUploadSet.getList().getDomRef();
+		oTargetDomRef.focus();
+		var oDropInfo = this.oUploadSet.getList().getDragDropConfig()[1];
+		oDropInfo.attachDragEnter(function() {
+			assert.equal(this.oUploadSet._getIllustratedMessage().getIllustrationType(), IllustratedMessageType.UploadCollection, "The Drop file here illustrated message is rendered");
+		}.bind(this));
+
+		oTargetDomRef.dispatchEvent(createNativeDragEventDummy("dragenter"));
+		oTargetDomRef.dispatchEvent(createNativeDragEventDummy("dragleave"));
+
+		assert.equal(this.oUploadSet._getIllustratedMessage().getIllustrationType(), IllustratedMessageType.NoData, "The Drop file here illustrated message got reset");
+	});
+
+	QUnit.test("Drag away outside the browser then drag is not initiated, illustrated image is updated", function(assert) {
+		this.oUploadSet.removeAllItems(); // illustrated message only renders when there are no items in the list.
+		var spyGetIllustratedMessage = this.spy(this.oUploadSet, "_getIllustratedMessage");
+		var oTargetDomRef = this.oUploadSet.getList().getDomRef();
+		oTargetDomRef.focus();
+
+		oTargetDomRef.dispatchEvent(createNativeDragEventDummy("dragleave"));
+
+		assert.equal(this.oUploadSet._getIllustratedMessage().getIllustrationType(), IllustratedMessageType.NoData, "Illustrated message is correct");
+		assert.equal(spyGetIllustratedMessage.callCount, 2, "Update illustrated message was called");
+	});
+
+	QUnit.test("Drag away outside the browser, illustrated image is not updated, then there is drag session with drag control", function(assert) {
+		this.oUploadSet.removeAllItems(); // illustrated message only renders when there are no items in the list.
+		var spyGetIllustratedMessage = this.spy(this.oUploadSet, "_getIllustratedMessage");
+		this.oUploadSet.ondragleave({dragSession: {getDropControl: function() {return true;}}, relatedTarget: true});
+
+		assert.equal(this.oUploadSet._getIllustratedMessage().getIllustrationType(), IllustratedMessageType.NoData, "Illustrated message is correct");
+		assert.equal(spyGetIllustratedMessage.callCount, 1, "Only initial call was mad");
+	});
+
 	QUnit.test("Test for method setMultiple", function(assert) {
 		assert.equal(this.oUploadSet.getMultiple(), false, "Initial multiple value (false) is set correctly");
 		this.oUploadSet.setMultiple(true);
 		assert.equal(this.oUploadSet.getMultiple(), true, "Multiple property should be set to true");
 	});
 
-	QUnit.test("Drag and drop of multiple files with multiple property", function(assert) {
-
+	QUnit.test("Test if upload is disabled, on drop file code isn't executed", function(assert) {
 		// arrange
-		var oDataTransfer = new DataTransfer();
-		function webkitGetAsEntry() {
-			return {
-				isFile: true,
-				isDirectory:false
-			};
-		}
-		var oFileItem1 = new File([new Blob([])], "sample Drop File.txt", {type: "text/plain"} );
-
-		var oFileItem2 = new File([new Blob([])], "sample Drop File.txtSample Drop File 2.txt", {type: "text/plain"} );
-		oDataTransfer.items.add(oFileItem1);
-		oDataTransfer.items.add(oFileItem2);
-
-		for (var i = 0; i < oDataTransfer.items.length; i++) {
-			var oItemPrototype = Object.getPrototypeOf(oDataTransfer.items[i]);
-			oItemPrototype.webkitGetAsEntry = webkitGetAsEntry;
-		}
-
 		var oEvent = new EventBase("drop", {}, { // using BaseEvent to create sample drop event to simulate drag and drop
+			browserEvent: {}
+		});
+		this.spy(oEvent, "getParameter");
+		this.oUploadSet.setUploadEnabled(false);
+
+		// act
+		this.oUploadSet._onDropFile(oEvent);
+
+		// assert
+		assert.ok(oEvent.getParameter.notCalled, "Code din't get executed");
+	});
+
+	function getDragAndPropEvent(isFileEntries) {
+		const oDataTransfer = {items: []};
+
+		if (isFileEntries?.length) {
+			isFileEntries.forEach(function(isFile) {
+				oDataTransfer.items.push({
+					isFile: isFile,
+					webkitGetAsEntry: function() {
+						return {
+							isFile: this.isFile,
+							isDirectory: !this.isFile,
+							file: function(callback) {
+								callback(this.isFile ? "file" : "directory");
+							}
+						};
+					}
+				});
+			});
+		}
+
+		return new EventBase("drop", {}, { // using BaseEvent to create sample drop event to simulate drag and drop
 			browserEvent: {
 				dataTransfer: oDataTransfer
 			}
 		});
+	}
 
-		this.stub(this.oUploadSet, "_getFilesFromDataTransferItems").callsFake(function() {
-			// creating fake function since this function makes xhr call to upload files
-			return new Promise(function(resolve, reject){
-				resolve(true);
-			});
+	[
+		{
+			message: "Two files",
+			dropContent: [true, true],
+			multiple: false,
+			directory: false,
+			errorMessage: "UPLOADCOLLECTION_MULTIPLE_FALSE"
+		},
+		{
+			message: "One file and one directory",
+			dropContent: [true, false],
+			multiple: false,
+			directory: false,
+			errorMessage: "UPLOADCOLLECTION_MULTIPLE_FALSE"
+		},
+		{
+			message: "One file and one directory",
+			dropContent: [true, false],
+			multiple: true,
+			directory: false,
+			errorMessage: "UPLOAD_SET_DIRECTORY_FALSE"
+		},
+		{
+			message: "One file and one directory",
+			dropContent: [true, false],
+			multiple: true,
+			directory: true,
+			errorMessage: "UPLOAD_SET_DIRECTORY_FALSE"
+		},
+		{
+			message: "One directory",
+			dropContent: [false],
+			multiple: true,
+			directory: false,
+			errorMessage: "UPLOAD_SET_DIRECTORY_FALSE"
+		},
+		{
+			message: "One file",
+			dropContent: [true],
+			multiple: false,
+			directory: true,
+			errorMessage: "UPLOAD_SET_DROP_DIRECTORY"
+		},
+		{
+			message: "One file and one directory",
+			dropContent: [true, false],
+			multiple: false,
+			directory: true,
+			errorMessage: "UPLOAD_SET_DROP_DIRECTORY"
+		}
+	].forEach(function(data) {
+		QUnit.test(data.message + ", multiple - " + data.multiple + ", directory - " + data.directory, function (assert) {
+			// arrange
+			const oEvent = getDragAndPropEvent(data.dropContent);
+			this.oUploadSet.setDirectory(data.directory);
+			this.oUploadSet.setMultiple(data.multiple);
+			this.spy(this.oUploadSet, "_getFilesFromDataTransferItems");
+			this.spy(this.oUploadSet._oRb, "getText");
+			this.stub(MessageBox, "error");
+
+			// act
+			this.oUploadSet._onDropFile(oEvent);
+
+			// assert
+			assert.ok(this.oUploadSet._getFilesFromDataTransferItems.notCalled, "Multiple files are not uploaded");
+			assert.ok(this.oUploadSet._oRb.getText.calledOnce, "Get error text had been called 1 time");
+			assert.ok(this.oUploadSet._oRb.getText.firstCall.calledWith(data.errorMessage), "Get correct error text");
+			assert.ok(MessageBox.error.calledOnce, "Set error message had been called 1 time");
+
+			MessageBox.error.reset();
 		});
-		this.stub(MessageBox, "error").returns("Dummy Error message");
-
-		// act
-		this.oUploadSet._onDropFile(oEvent); // method invoked on uploadSet when dropping files to upload
-
-		// assert
-		assert.ok(this.oUploadSet._getFilesFromDataTransferItems.notCalled, "Multiple files are not uploaded with multiple property set to false");
-
-		// act
-		this.oUploadSet.setMultiple(true);
-
-		this.oUploadSet._onDropFile(oEvent); // method invoked on uploadSet when dropping files to upload
-
-		// assert
-		assert.ok(this.oUploadSet._getFilesFromDataTransferItems.called, "Multiple files are uploaded with multiple property set to true");
-
 	});
 
-	QUnit.test("Test for eliminating non file types passed along with valid file types", function(assert) {
-
+	QUnit.test("Drop no files or directories", function(assert) {
 		// arrange
-		var oDataTransferEliminateTypes = new DataTransfer();
-		function nativeWebkitGetAsEntry() {
-			return this.kind && this.kind == "file" ?
-				{
-					isFile: true,
-					isDirectory: false
-				} :
-				null;
-		}
-		var oFileItem1 = new File([new Blob([])], "sample Drop File.txt", {type: "text/plain"} );
-
-		var oFileItem2 = new File([new Blob([])], "sample Drop File.txtSample Drop File 2.txt", {type: "text/plain"} );
-		oDataTransferEliminateTypes.items.add(oFileItem1);
-		oDataTransferEliminateTypes.items.add(oFileItem2);
-
-		// creating non file type
-		oDataTransferEliminateTypes.items.add("sample file 3", "string");
-
-		for (var i = 0; i < oDataTransferEliminateTypes.items.length; i++) {
-			var oItemPrototype = Object.getPrototypeOf(oDataTransferEliminateTypes.items[i]);
-			oItemPrototype.webkitGetAsEntry = nativeWebkitGetAsEntry;
-		}
-
-		var oEvent = new EventBase("drop", {}, { // using BaseEvent to create sample drop event to simulate drag and drop
-			browserEvent: {
-				dataTransfer: oDataTransferEliminateTypes
-			}
-		});
-		var oItems = oEvent.getParameter("browserEvent").dataTransfer.items;
-		oItems = Array.from(oItems);
-		oItems.pop();
-
-		this.stub(this.oUploadSet, "_getFilesFromDataTransferItems").callsFake(function(oItems) {
-			// creating fake function since this function makes xhr call to upload files
-			return new Promise(function(resolve, reject){
-				resolve(true);
-			});
-		});
-		this.stub(MessageBox, "error").returns("Dummy Error message");
+		const oEvent = getDragAndPropEvent();
+		this.oUploadSet.setDirectory(false);
+		this.oUploadSet.setMultiple(false);
+		this.spy(this.oUploadSet, "_getFilesFromDataTransferItems");
+		this.spy(this.oUploadSet._oRb, "getText");
+		this.stub(MessageBox, "error");
 
 		// act
-		this.oUploadSet.setMultiple(true);
-		this.oUploadSet._onDropFile(oEvent); // method invoked on uploadSet when dropping files to upload
+		this.oUploadSet._onDropFile(oEvent);
 
 		// assert
-		assert.ok(this.oUploadSet._getFilesFromDataTransferItems.calledWithExactly(oItems), "Non file types are eliminated when files are drag and dropped");
+		assert.ok(this.oUploadSet._getFilesFromDataTransferItems.notCalled, "Multiple files are not uploaded");
+		assert.ok(this.oUploadSet._oRb.getText.notCalled, "Get error text is not called");
+		assert.ok(MessageBox.error.notCalled, "Set error message is not called");
+		MessageBox.error.reset();
+	});
 
+	QUnit.test("Drop multiple files, but webkitGetAsEntry return null", function(assert) {
+		// arrange
+		const oEvent = getDragAndPropEvent([true, true]);
+		const oItems = oEvent.getParameter("browserEvent").dataTransfer.items;
+		oItems[0].webkitGetAsEntry = function() { return null;};
+		oItems[1].webkitGetAsEntry = function() { return null;};
+		this.oUploadSet.setDirectory(false);
+		this.oUploadSet.setMultiple(false);
+		this.spy(this.oUploadSet, "_getFilesFromDataTransferItems");
+		this.spy(this.oUploadSet._oRb, "getText");
+		this.stub(MessageBox, "error");
+
+		// act
+		this.oUploadSet._onDropFile(oEvent);
+
+		// assert
+		assert.ok(this.oUploadSet._getFilesFromDataTransferItems.notCalled, "Multiple files are not uploaded");
+		assert.ok(this.oUploadSet._oRb.getText.notCalled, "Get error text is not called");
+		assert.ok(MessageBox.error.notCalled, "Set error message is not called");
+		MessageBox.error.reset();
+	});
+
+	QUnit.test("Drop multiple files", function(assert) {
+		// arrange
+		const that = this,
+			oEvent = getDragAndPropEvent([true, true]);
+		this.oUploadSet.setDirectory(false);
+		this.oUploadSet.setMultiple(true);
+		this.spy(this.oUploadSet, "_getFilesFromDataTransferItems");
+		const done = assert.async();
+		this.stub(this.oUploadSet, "_processNewFileObjects").callsFake(function() {
+			assert.ok(that.oUploadSet._processNewFileObjects.called, "Upload files called");
+			assert.ok(that.oUploadSet._processNewFileObjects.firstCall.calledWithExactly(["file", "file"]), "To upload passed two files");
+			done();
+		});
+
+		// act
+		this.oUploadSet._onDropFile(oEvent);
+
+		// assert
+		assert.ok(this.oUploadSet._getFilesFromDataTransferItems.called, "Retrieve files for upload");
+	});
+
+	QUnit.test("Drop multiple files, file loading throw error", function(assert) {
+		// arrange
+		const oEvent = getDragAndPropEvent([true, true]);
+		const oItems = oEvent.getParameter("browserEvent").dataTransfer.items;
+		oItems[1].webkitGetAsEntry = function() {
+			return {
+				isFile: this.isFile,
+				isDirectory: !this.isFile,
+				file: function(_resolve, reject) {
+					reject("error loading file");
+				}
+			};
+		};
+		this.oUploadSet.setDirectory(false);
+		this.oUploadSet.setMultiple(true);
+		this.spy(this.oUploadSet, "_getFilesFromDataTransferItems");
+		this.spy(this.oUploadSet, "_processNewFileObjects");
+
+		// act
+		assert.throws(this.oUploadSet._onDropFile(oEvent), "Error is thrown");
+
+		// assert
+		assert.ok(this.oUploadSet._getFilesFromDataTransferItems.called, "Retrieve files for upload");
+		assert.ok(this.oUploadSet._processNewFileObjects.notCalled, "File upload is not triggered");
+	});
+
+	QUnit.test("Drop directory with two files", function(assert) {
+		// arrange
+		const that = this,
+			oEvent = getDragAndPropEvent([false]);
+		const oItems = oEvent.getParameter("browserEvent").dataTransfer.items;
+		oItems[0].webkitGetAsEntry = function() {
+				return {
+					isFile: this.isFile,
+					isDirectory: !this.isFile,
+					createReader: function() {
+						return {
+							readEntries: function(caller) {
+								const aDataTransferItems = getDragAndPropEvent([true, true]).getParameter("browserEvent").dataTransfer.items;
+								caller(aDataTransferItems.map(function(entry) { return entry.webkitGetAsEntry();}));
+							}
+						};
+					}
+				};
+			};
+		this.oUploadSet.setDirectory(true);
+		this.oUploadSet.setMultiple(true);
+		this.spy(this.oUploadSet, "_getFilesFromDataTransferItems");
+		const done = assert.async();
+		this.stub(this.oUploadSet, "_processNewFileObjects").callsFake(function() {
+			assert.ok(that.oUploadSet._processNewFileObjects.called, "Upload files called");
+			assert.ok(that.oUploadSet._processNewFileObjects.firstCall.calledWithExactly(["file", "file"]), "To upload passed two files");
+			done();
+		});
+
+		// act
+		this.oUploadSet._onDropFile(oEvent);
+
+		// assert
+		assert.ok(this.oUploadSet._getFilesFromDataTransferItems.called, "Retrieve files for upload");
+	});
+
+	QUnit.test("Drop directory with not files", function(assert) {
+		// arrange
+		const oEvent = getDragAndPropEvent([false]);
+		const oItems = oEvent.getParameter("browserEvent").dataTransfer.items;
+		oItems[0].webkitGetAsEntry = function() {
+				return {
+					isFile: this.isFile,
+					isDirectory: !this.isFile,
+					createReader: function() {
+						return {
+							readEntries: function(caller) {
+								caller([]);
+							}
+						};
+					}
+				};
+			};
+		this.oUploadSet.setDirectory(true);
+		this.oUploadSet.setMultiple(true);
+		this.spy(this.oUploadSet, "_getFilesFromDataTransferItems");
+		this.spy(this.oUploadSet, "_processNewFileObjects");
+
+		// act
+		this.oUploadSet._onDropFile(oEvent);
+
+		// assert
+		assert.ok(this.oUploadSet._getFilesFromDataTransferItems.called, "Retrieve files for upload");
+		assert.ok(this.oUploadSet._processNewFileObjects.notCalled, "File upload is not triggered");
+	});
+
+	QUnit.test("webkitGetAsEntry return object that don't have isFile and isDirectory flags set to true", function(assert) {
+		// arrange
+		const oEvent = getDragAndPropEvent([false]);
+		const oItems = oEvent.getParameter("browserEvent").dataTransfer.items;
+		oItems[0].webkitGetAsEntry = function() {
+				return {};
+			};
+		this.oUploadSet.setDirectory(true);
+		this.oUploadSet.setMultiple(true);
+		this.spy(this.oUploadSet, "_getFilesFromDataTransferItems");
+		this.spy(this.oUploadSet, "_processNewFileObjects");
+
+		// act
+		this.oUploadSet._onDropFile(oEvent);
+
+		// assert
+		assert.ok(this.oUploadSet._getFilesFromDataTransferItems.called, "Retrieve files for upload");
+		assert.ok(this.oUploadSet._processNewFileObjects.notCalled, "File upload is not triggered");
 	});
 
 	QUnit.test("Test for MultiSelect in pending upload (not supported)", function(assert) {
@@ -1405,47 +2188,6 @@ sap.ui.define([
 		assert.ok(oFileUploaderChangeSpy.notCalled, "Directory uploads aborted with restrited file types");
 	});
 
-	QUnit.test("Drag and drop of directory files with directory property", function(assert) {
-
-		// arrange
-		var oDataTransfer = new DataTransfer();
-		oDataTransfer.items.add(new File([new Blob([])], "sample Drop File" ));
-
-		function webkitGetAsEntry() {
-			return {
-				isFile: false,
-				isDirectory:true
-			};
-		}
-
-		var oItemPrototype = Object.getPrototypeOf(oDataTransfer.items[0]);
-
-		oItemPrototype.webkitGetAsEntry = webkitGetAsEntry;
-
-		var oEvent = new EventBase("drop", {}, { // using BaseEvent to create sample drop event to simulate drag and drop
-			browserEvent: {
-				dataTransfer: oDataTransfer
-			}
-		});
-
-		this.stub(this.oUploadSet, "_getFilesFromDataTransferItems").callsFake(function() {
-			// creating fake function since this function makes xhr call to upload files
-			return new Promise(function(resolve, reject){
-				resolve(true);
-			});
-		});
-		this.stub(MessageBox, "error").returns("Dummy Error message");
-
-		// act
-		this.oUploadSet.setDirectory(true);
-
-		this.oUploadSet._onDropFile(oEvent); // method invoked on uploadSet when dropping files to upload
-
-		// assert
-		assert.ok(this.oUploadSet._getFilesFromDataTransferItems.called, "Directory files are uploaded with directory property set to true");
-
-	});
-
 	return Core.loadLibrary("sap.suite.ui.commons", { async: true })
 	.then(function() {
 		QUnit.module("Cloud File Picker", {
@@ -1482,36 +2224,38 @@ sap.ui.define([
 			oCloudFilePickerInstance.close();
 		});
 
-		QUnit.test("Cloud File Picker button visibility", function (assert) {
-			// assert
-			assert.equal(this.oUploadSet._getCloudFilePicker(), null, "Cloud File Picker Button not enabled by default");
+		QUnit.test("Cloud File Picker Menu button visibility", function (assert) {
+            // assert
+            assert.equal(this.oUploadSet._getCloudFilePicker(), null, "Cloud File Picker Button not enabled by default");
 
-			//act
-			this.oUploadSet.setCloudFilePickerEnabled(true);
+            //act
+            this.oUploadSet.setCloudFilePickerEnabled(true);
 
-			// assert
-			assert.equal(this.oUploadSet._getCloudFilePicker() instanceof sap.m.Button, true, "Cloud File Picker Button enabled with CloudFilePicker property enabled");
-		});
+            // assert
+            assert.equal(this.oUploadSet._getCloudFilePicker() instanceof sap.m.MenuButton, true, "Cloud File Picker Menu Button enabled with CloudFilePicker property enabled");
+            assert.ok(this.oUploadSet._getCloudFilePicker().getMenu().getItems().length === 2, "Cloud File Picker Menu Button created with 2 menu items (local and cloud)");
+        });
 
-		QUnit.test("Cloud File picker button created with custom text", function (assert) {
+        QUnit.test("Cloud File picker Menu button created with custom text", function (assert) {
 
-			// arrange
-			var sDefaultCloudFilePickerButtonText = this.oUploadSet._oRb.getText("UPLOAD_SET_DEFAULT_CFP_BUTTON_TEXT");
+            // arrange
+            var sDefaultCloudFilePickerButtonText = this.oUploadSet._oRb.getText("UPLOAD_SET_DEFAULT_CFP_BUTTON_TEXT");
 
-			//act
-			this.oUploadSet.setCloudFilePickerEnabled(true);
-			var oCloudPickerButton = this.oUploadSet._getCloudFilePicker();
+            //act
+            this.oUploadSet.setCloudFilePickerEnabled(true);
+            var oCloudPickerButton = this.oUploadSet._getCloudFilePicker();
 
-			// assert
-			assert.ok(oCloudPickerButton && oCloudPickerButton.getText() === sDefaultCloudFilePickerButtonText, "Cloud File Picker Button created with default text");
+            // assert
+            assert.ok(oCloudPickerButton && oCloudPickerButton.getMenu().getItems()[1].getText() === sDefaultCloudFilePickerButtonText, "Cloud File Picker Menu Button created with default text");
 
-			//act
-			this.oUploadSet.setCloudFilePickerButtonText("Upload from cloud");
-			var oCloudPickerButton2 = this.oUploadSet._getCloudFilePicker();
+            //act
+            var sCustomCloudFilePickerButtonText = "Custom Cloud Picker Text";
+            this.oUploadSet.setCloudFilePickerButtonText(sCustomCloudFilePickerButtonText);
+            var oCloudPickerButton2 = this.oUploadSet._getCloudFilePicker();
 
-			// assert
-			assert.ok(oCloudPickerButton2 && oCloudPickerButton2.getText() === 'Upload from cloud', "Cloud File Picker Button created with custom text");
-		});
+            // assert
+            assert.ok(oCloudPickerButton2 && oCloudPickerButton2.getMenu().getItems()[1].getText() === sCustomCloudFilePickerButtonText, "Cloud File Picker Menu Button created with custom text");
+        });
 
 		QUnit.test("Cloud File Picker instance created with service url provided", function (assert) {
 
@@ -1562,10 +2306,11 @@ sap.ui.define([
 			var done = assert.async();
 
 			this.oUploadSet.attachEventOnce("uploadCompleted",function(oEvent){
+				var oItem = oEvent.getParameter("item");
 				//Assert
-				assert.ok(oEvent.getParameter("item"), "item param present");
-				var addedItem = oEvent.getParameter("item");
-				assert.ok(addedItem && addedItem.getFileName() === 'Test File.txt', "File selected from cloud uploaded");
+				assert.ok(oItem, "item param present");
+				assert.ok(oItem && oItem.getFileName() === 'Test File.txt', "File selected from cloud uploaded");
+				assert.equal(oItem.getUploadType(),UploadType.Cloud,"Item has been uploaded from cloud");
 				done();
 			});
 		});

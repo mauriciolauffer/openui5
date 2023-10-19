@@ -7,12 +7,13 @@ sap.ui.define([
 	'sap/ui/core/Popup',
 	'sap/ui/core/library',
 	'sap/ui/core/Control',
+	'sap/ui/core/Element',
 	'sap/ui/Device',
 	"sap/base/Log",
 	"sap/ui/thirdparty/jquery",
 	"sap/ui/core/Configuration"
 ],
-	function(InstanceManager, Popup, coreLibrary, Control, Device, Log, jQuery, Configuration) {
+	function(InstanceManager, Popup, coreLibrary, Control, Element, Device, Log, jQuery, Configuration) {
 		"use strict";
 
 		// shortcut for sap.ui.core.Dock
@@ -105,10 +106,10 @@ sap.ui.define([
 		};
 
 		MessageToast._aPopups = [];
-
 		MessageToast._iOpenedPopups = 0;
-
 		MessageToast._bBoundedEvents = false;
+		MessageToast._mOptions = {};
+		MessageToast._sMessage = "";
 
 		MessageToast._validateSettings = function(mSettings) {
 
@@ -343,6 +344,39 @@ sap.ui.define([
 			}
 		};
 
+		// Display the message permanently if the desired key combination is pressed
+		MessageToast._fnKeyDown = function(oEvent) {
+			var oFocusableElement;
+			var oPopup = this._aPopups[0];
+			var bShift = oEvent.shiftKey;
+			var bMetaKey = Device.os.macintosh ? oEvent.metaKey : oEvent.ctrlKey;
+
+			if (oPopup && oPopup.isOpen() && bShift && bMetaKey && oEvent.code === "KeyM") {
+				oEvent.preventDefault();
+
+				oFocusableElement = document.querySelector(".sapMMessageToastHiddenFocusable");
+				oPopup.getContent().classList.add("sapMFocus");
+				oFocusableElement.focus();
+				clearTimeout(this._iCloseTimeoutId);
+			}
+		};
+
+		// Close the message when in permanent display mode
+		function handleKbdClose(oEvent) {
+			var bShift = oEvent.shiftKey;
+			var bMetaKey = Device.os.macintosh ? oEvent.metaKey : oEvent.ctrlKey;
+			var oPopup = this._aPopups[0];
+
+			if (oEvent.code === "Escape" || (bShift && bMetaKey && oEvent.code === "KeyM")) {
+				oEvent.preventDefault();
+
+				setTimeout(function() {
+					this._mSettings.opener && this._mSettings.opener.focus();
+				}.bind(this), 0);
+				oPopup.close();
+			}
+		}
+
 		/* =========================================================== */
 		/* API methods                                                 */
 		/* =========================================================== */
@@ -366,18 +400,20 @@ sap.ui.define([
 		 * @param {string} [mOptions.animationTimingFunction='ease'] Describes how the close animation will progress. Possible values "ease", "linear", "ease-in", "ease-out", "ease-in-out".
 		 * @param {int} [mOptions.animationDuration=1000] Time in milliseconds that the close animation takes to complete. Needs to be a finite positive integer. For not animation set to 0.
 		 * @param {boolean} [mOptions.closeOnBrowserNavigation=true] Specifies if the message toast closes on browser navigation.
-		 *
 		 * @public
 		 */
 		MessageToast.show = function(sMessage, mOptions) {
+			var oOpener = Element.closestTo(document.activeElement);
+			var oAccSpan;
 			var that = MessageToast,
 				mSettings = jQuery.extend({}, MessageToast._mSettings, { message: sMessage }),
 				oPopup = new Popup(),
 				iPos,
 				oMessageToastDomRef,
 				sPointerEvents = "mousedown." + CSSCLASS + " touchstart." + CSSCLASS,
-				iCloseTimeoutId,
 				iMouseLeaveTimeoutId;
+
+			MessageToast._mSettings.opener = oOpener;
 
 			mOptions = normalizeOptions(mOptions);
 
@@ -425,6 +461,14 @@ sap.ui.define([
 				MessageToast._bBoundedEvents = true;
 			}
 
+			// Focus invisible span to avoid double announcement in NVDA
+			oAccSpan = document.createElement("span");
+			oAccSpan.setAttribute("tabIndex", 0);
+			oAccSpan.setAttribute("class", "sapMMessageToastHiddenFocusable");
+
+			oPopup.getContent().prepend(oAccSpan);
+			oAccSpan.addEventListener("keydown", handleKbdClose.bind(this));
+
 			// opens the popup's content at the position specified via #setPosition
 			oPopup.open();
 			MessageToast._iOpenedPopups++;
@@ -454,10 +498,11 @@ sap.ui.define([
 			oPopup.attachClosed(handleMTClosed);
 
 			// close the message toast
-			iCloseTimeoutId = setTimeout(oPopup["close"].bind(oPopup), mSettings.duration);
+			this._iCloseTimeoutId = setTimeout(oPopup["close"].bind(oPopup), mSettings.duration);
+
 			function fnClearTimeout() {
-				clearTimeout(iCloseTimeoutId);
-				iCloseTimeoutId = null;
+				clearTimeout(that._iCloseTimeoutId);
+				that._iCloseTimeoutId = null;
 
 				function fnMouseLeave() {
 					iMouseLeaveTimeoutId = setTimeout(oPopup["close"].bind(oPopup), mSettings.duration);
@@ -475,7 +520,9 @@ sap.ui.define([
 			// WP 8.1 fires mouseleave event on tap
 			if (Device.system.desktop) {
 				oPopup.getContent().addEventListener("mouseleave", function () {
-					iCloseTimeoutId = setTimeout(oPopup["close"].bind(oPopup), mSettings.duration);
+					if (document.activeElement !== oPopup.getContent()) {
+						this._iCloseTimeoutId = setTimeout(oPopup["close"].bind(oPopup), mSettings.duration);
+					}
 				});
 			}
 		};

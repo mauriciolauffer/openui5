@@ -27,8 +27,6 @@ sap.ui.define([
 	 * @private
 	 * @since 1.53
 	 * @alias sap.ui.rta.appVariant.AppVariantManager
-	 * @experimental Since 1.53. This class is experimental and provides only limited functionality. Also the API might be
-	 *               changed in future.
 	 */
 	var AppVariantManager = ManagedObject.extend("sap.ui.rta.appVariant.AppVariantManager", {
 		metadata: {
@@ -102,32 +100,33 @@ sap.ui.define([
 		oPropertyChange = AppVariantUtils.getInlineChangeInputIcon(oAppVariantSpecificData.icon);
 		aAllInlineChangeOperations.push(AppVariantUtils.createInlineChange(oPropertyChange, "appdescr_ui_setIcon", vSelector));
 
-		/***********************************************************Inbounds handling******************************************************************/
+		/** *********************************************************Inbounds handling******************************************************************/
 		return AppVariantUtils.getInboundInfo(oAppVariantSpecificData.inbounds)
-			.then(function(oInboundInfo) {
-				var sCurrentRunningInboundId = oInboundInfo.currentRunningInbound;
+		.then(function(oInboundInfo) {
+			var sCurrentRunningInboundId = oInboundInfo.currentRunningInbound;
 
-				// If there is no inbound, create a new inbound
-				if (oInboundInfo.addNewInboundRequired) {
-					// create a inline change using a change type 'appdescr_app_addNewInbound'
-					var oInlineChangePromise = AppVariantUtils.prepareAddNewInboundChange(sCurrentRunningInboundId, sAppVariantId, oAppVariantSpecificData)
-						.then(function(oPropertyChange) {
-							return AppVariantUtils.createInlineChange(oPropertyChange, "appdescr_app_addNewInbound", vSelector);
-						});
+			// If there is no inbound, create a new inbound
+			if (oInboundInfo.addNewInboundRequired) {
+				// create a inline change using a change type 'appdescr_app_addNewInbound'
+				var oInlineChangePromise = AppVariantUtils.prepareAddNewInboundChange(sCurrentRunningInboundId, sAppVariantId, oAppVariantSpecificData)
+				.then(function(oPropertyChange) {
+					return AppVariantUtils.createInlineChange(oPropertyChange, "appdescr_app_addNewInbound", vSelector);
+				});
 
-					aAllInlineChangeOperations.push(oInlineChangePromise);
+				aAllInlineChangeOperations.push(oInlineChangePromise);
+			} else {
+				// create a inline change using a change type 'appdescr_app_changeInbound'
+				oPropertyChange = AppVariantUtils.prepareChangeInboundChange(sCurrentRunningInboundId, sAppVariantId, oAppVariantSpecificData);
+				aAllInlineChangeOperations.push(AppVariantUtils.createInlineChange(oPropertyChange, "appdescr_app_changeInbound", vSelector));
+			}
 
-					// create a inline change using a change type 'appdescr_app_removeAllInboundsExceptOne'
-					oPropertyChange = AppVariantUtils.prepareRemoveAllInboundsExceptOneChange(sCurrentRunningInboundId);
-					aAllInlineChangeOperations.push(AppVariantUtils.createInlineChange(oPropertyChange, "appdescr_app_removeAllInboundsExceptOne", vSelector));
-				} else {
-					// create a inline change using a change type 'appdescr_app_changeInbound'
-					oPropertyChange = AppVariantUtils.prepareChangeInboundChange(sCurrentRunningInboundId, sAppVariantId, oAppVariantSpecificData);
-					aAllInlineChangeOperations.push(AppVariantUtils.createInlineChange(oPropertyChange, "appdescr_app_changeInbound", vSelector));
-				}
+			// remove all other inbounds except appVariant inbound
+			// create a inline change using a change type 'appdescr_app_removeAllInboundsExceptOne'
+			oPropertyChange = AppVariantUtils.prepareRemoveAllInboundsExceptOneChange(sCurrentRunningInboundId);
+			aAllInlineChangeOperations.push(AppVariantUtils.createInlineChange(oPropertyChange, "appdescr_app_removeAllInboundsExceptOne", vSelector));
 
-				return Promise.all(aAllInlineChangeOperations);
-			});
+			return Promise.all(aAllInlineChangeOperations);
+		});
 	};
 
 	/**
@@ -218,10 +217,10 @@ sap.ui.define([
 	AppVariantManager.prototype.triggerCatalogPublishing = function(sAppVariantId, sReferenceAppId, bSaveAs) {
 		var fnTriggerCatalogOperation = bSaveAs ? AppVariantUtils.triggerCatalogAssignment : AppVariantUtils.triggerCatalogUnAssignment;
 		return fnTriggerCatalogOperation(sAppVariantId, this.getLayer(), sReferenceAppId)
-			.catch(function(oError) {
-				var sMessageKey = bSaveAs ? "MSG_CATALOG_ASSIGNMENT_FAILED" : "MSG_DELETE_APP_VARIANT_FAILED";
-				return AppVariantUtils.catchErrorDialog(oError, sMessageKey, sAppVariantId);
-			});
+		.catch(function(oError) {
+			var sMessageKey = bSaveAs ? "MSG_CATALOG_ASSIGNMENT_FAILED" : "MSG_DELETE_APP_VARIANT_FAILED";
+			return AppVariantUtils.catchErrorDialog(oError, sMessageKey, sAppVariantId);
+		});
 	};
 
 	/**

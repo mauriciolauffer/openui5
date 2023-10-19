@@ -125,14 +125,15 @@ sap.ui.define([
 	};
 
 	/*
-	 * Provides utility functions used this extension
+	 * Provides utility functions used by this extension
 	 */
 	var ExtensionHelper = {
 
-		/*
+		/**
 		 * Returns the index of the column (in the array of visible columns (see Table._getVisibleColumns())) of the current focused cell
 		 * In case the focused cell is a row action the given index equals the length of the visible columns.
 		 * This function must not be used if the focus is on a row header.
+		 * @param {sap.ui.table.extensions.Accessibility} oExtension The accessibility extension.
 		 * @returns {int}
 		 */
 		getColumnIndexOfFocusedCell: function(oExtension) {
@@ -145,7 +146,7 @@ sap.ui.define([
 		 * If the current focus is on a cell of the table, this function returns
 		 * the cell type and the jQuery wrapper object of the corresponding cell:
 		 *
-		 * @param {sap.ui.table.AccExtension} oExtension The accessibility extension.
+		 * @param {sap.ui.table.extensions.Accessibility} oExtension The accessibility extension.
 		 * @returns {sap.ui.table.utils.TableUtils.CellInfo} An object containing information about the cell.
 		 */
 		getInfoOfFocusedCell: function(oExtension) {
@@ -222,23 +223,32 @@ sap.ui.define([
 		},
 
 		/*
-		 * Returns the tooltip of the column or the contained label, if any.
+		 * Returns the tooltip of the column or the contained label, if any and if it differs from the label itself.
 		 */
 		getColumnTooltip: function(oColumn) {
 			if (!oColumn) {
 				return null;
 			}
 
+			var oLabel = oColumn.getLabel();
+
+			function isTooltipEqualToLabel(sTooltip) {
+				if (!sTooltip) {
+					return false;
+				}
+				var sText = oLabel && oLabel.getText ? oLabel.getText() : "";
+				return sTooltip == sText;
+			}
+
 			var sTooltip = oColumn.getTooltip_AsString();
-			if (sTooltip) {
+			if (!isTooltipEqualToLabel(sTooltip)) {
 				return sTooltip;
 			}
 
-			var oLabel = oColumn.getLabel();
 			if (TableUtils.isA(oLabel, "sap.ui.core.Control")) {
 				sTooltip = oLabel.getTooltip_AsString();
 			}
-			if (sTooltip) {
+			if (!isTooltipEqualToLabel(sTooltip)) {
 				return sTooltip;
 			}
 
@@ -272,8 +282,9 @@ sap.ui.define([
 			return oRow.getIndex() + 1 + TableUtils.getHeaderRowCount(oRow.getTable());
 		},
 
-		/*
+		/**
 		 * Determines the current row and column and updates the hidden description texts of the table accordingly.
+		 * @param {sap.ui.table.extensions.Accessibility} oExtension The accessibility extension.
 		 */
 		updateRowColCount: function(oExtension) {
 			var oTable = oExtension.getTable(),
@@ -308,8 +319,9 @@ sap.ui.define([
 			};
 		},
 
-		/*
+		/**
 		 * Removes the acc modifications of the cell which had the focus before.
+		 * @param {sap.ui.table.extensions.Accessibility} oExtension The accessibility extension.
 		 */
 		cleanupCellModifications: function(oExtension) {
 			if (oExtension._cleanupInfo) {
@@ -617,6 +629,9 @@ sap.ui.define([
 		/**
 		 * Returns the default aria attributes for the given element type with the given settings.
 		 * @see sap.ui.table.extensions.Accessibility.ELEMENTTYPES
+		 * @param {sap.ui.table.extensions.Accessibility} oExtension The accessibility extension.
+		 * @param {string} sType
+		 * @param {object} [mParams]
 		 */
 		getAriaAttributesFor: function(oExtension, sType, mParams) {
 			var mAttributes = {},
@@ -663,15 +678,12 @@ sap.ui.define([
 							}
 						}
 					}
-					if (!oTable._getShowStandardTooltips() && mRenderConfig.headerSelector.type === "toggle") {
-						mAttributes["aria-labelledby"] = [sTableId + "-ariaselectall"];
-					}
 					break;
 
 				case AccExtension.ELEMENTTYPES.ROWHEADER:
 					mAttributes["role"] = "gridcell";
 					mAttributes["aria-colindex"] = 1;
-					if (TableUtils.hasRowHeader(oTable) && oTable._getSelectionPlugin()._getSelectionMode() === SelectionMode.None) {
+					if (TableUtils.hasRowHeader(oTable) && oTable.getSelectionMode() === SelectionMode.None) {
 						mAttributes["aria-labelledby"] = [sTableId + "-rowselecthdr"];
 					}
 					break;
@@ -704,15 +716,26 @@ sap.ui.define([
 						mAttributes["aria-labelledby"].push(sTableId + "-ariafixedcolumn");
 					}
 
-					if (!bHasColSpan && oColumn && oColumn.getSorted()) {
-						mAttributes["aria-sort"] = oColumn.getSortOrder() === "Ascending" ? "ascending" : "descending";
+					if (!bHasColSpan && oColumn) {
+						mAttributes["aria-sort"] = oColumn.getSortOrder().toLowerCase();
+						/** @deprecated As of version 1.120 */
+						if (!oColumn.getSorted()) {
+							delete mAttributes["aria-sort"];
+						}
 					}
 
 					if (!bHasColSpan && oColumn) {
 						var oColumnHeaderMenu = oColumn.getHeaderMenuInstance();
 						if (oColumnHeaderMenu) {
-							mAttributes["aria-haspopup"] = oColumnHeaderMenu.getAriaHasPopupType().toLowerCase();
-						} else if (oColumn._menuHasItems()) {
+							var sPopupType = oColumnHeaderMenu.getAriaHasPopupType();
+							if (sPopupType !== "None") {
+								mAttributes["aria-haspopup"] = sPopupType.toLowerCase();
+							}
+						}
+						/**
+						 * @deprecated As of Version 1.117
+						 */
+						if (!oColumnHeaderMenu && oColumn._menuHasItems()) {
 							mAttributes["aria-haspopup"] = "menu";
 						}
 					}
@@ -839,6 +862,21 @@ sap.ui.define([
 					if (mParams.rowNavigated) {
 						mAttributes["aria-current"] = true;
 					}
+
+					if (!mParams.fixedCol) {
+						mAttributes["aria-owns"] = [];
+						if (TableUtils.hasRowHeader(oTable)) {
+							mAttributes["aria-owns"].push(sTableId + "-rowsel" + mParams.index);
+						}
+						if (TableUtils.hasFixedColumns(oTable)) {
+							for (var j = 0; j < oTable.getComputedFixedColumnCount(); j++) {
+								mAttributes["aria-owns"].push(sTableId + "-rows-row" + mParams.index + "-col" + j);
+							}
+						}
+						if (TableUtils.hasRowActions(oTable)) {
+							mAttributes["aria-owns"].push(sTableId + "-rowact" + mParams.index);
+						}
+					}
 					break;
 
 				case AccExtension.ELEMENTTYPES.TREEICON: //The expand/collapse icon in the TreeTable
@@ -852,11 +890,8 @@ sap.ui.define([
 							if (mParams && mParams.row) {
 								if (mParams.row.isExpandable()) {
 									var sText = TableUtils.getResourceText("TBL_COLLAPSE_EXPAND");
-									if (oTable._getShowStandardTooltips()) {
-										mAttributes["title"] = sText;
-									} else {
-										mAttributes["aria-label"] = sText;
-									}
+									mAttributes["title"] = sText;
+
 									mAttributes["aria-expanded"] = "" + (!!mParams.row.isExpanded());
 									mAttributes["aria-hidden"] = "false";
 									mAttributes["role"] = "button";
@@ -1100,11 +1135,12 @@ sap.ui.define([
 
 		var oTable = this.getTable();
 		var aRows = oTable.getRows();
-		var oRow, i;
+		var oRow, i, $Ref;
 
 		for (i = 0; i < aRows.length; i++) {
 			oRow = aRows[i];
-			oRow.getDomRefs(true).row.attr("aria-rowindex", ExtensionHelper.getRowIndex(oRow));
+			$Ref = oRow.getDomRefs(true);
+			$Ref.row.not($Ref.rowHeaderPart).not($Ref.rowActionPart).attr("aria-rowindex", ExtensionHelper.getRowIndex(oRow));
 		}
 	};
 
@@ -1216,7 +1252,7 @@ sap.ui.define([
 		}
 
 		var oTable = this.getTable();
-		var bShowRowTooltips = !oRow.isEmpty() && !oRow.isGroupHeader() && !oRow.isSummary() && oTable._getShowStandardTooltips();
+		var bShowRowTooltips = !oRow.isEmpty() && !oRow.isGroupHeader() && !oRow.isSummary() && !oTable._getHideStandardTooltips();
 
 		if ($Ref.row) {
 			if (bShowRowTooltips && TableUtils.isRowSelectionAllowed(oTable) && !$Ref.row.hasClass("sapUiTableRowHidden")) {
@@ -1266,10 +1302,10 @@ sap.ui.define([
 		if (!oRow.isEmpty() && !oRow.isGroupHeader() && !oRow.isSummary()) {
 			var mTooltipTexts = this.getAriaTextsForSelectionMode(true);
 			var oTable = this.getTable();
-			var bIsSelected = oTable._getSelectionPlugin().isIndexSelected(oRow.getIndex());
+			var bIsSelected = oTable._getSelectionPlugin().isSelected(oRow);
 
 			if ($Ref.row) {
-				$Ref.row.add($Ref.row.children(".sapUiTableCell")).attr("aria-selected", bIsSelected ? "true" : "false");
+				$Ref.row.not($Ref.rowHeaderPart).not($Ref.rowActionPart).add($Ref.row.children(".sapUiTableCell")).attr("aria-selected", bIsSelected ? "true" : "false");
 			}
 
 			if (!bIsSelected) {
@@ -1307,7 +1343,7 @@ sap.ui.define([
 			});
 		}
 
-		oDomRefs.row.attr({
+		oDomRefs.row.not(oDomRefs.rowHeaderPart).not(oDomRefs.rowActionPart).attr({
 			"aria-expanded": oRow.isExpandable() ? oRow.isExpanded() + "" : null,
 			"aria-level": oRow.getLevel()
 		});
@@ -1392,7 +1428,7 @@ sap.ui.define([
 			sSelectionMode = oTable.getSelectionMode();
 		}
 
-		var bShowTooltips = oTable._getShowStandardTooltips();
+		var bShowTooltips = !oTable._getHideStandardTooltips();
 		var mTooltipTexts = {
 			mouse: {
 				rowSelect: "",
@@ -1404,7 +1440,7 @@ sap.ui.define([
 			}
 		};
 
-		var iSelectedIndicesCount = oTable._getSelectionPlugin().getSelectedCount();
+		var iSelectedCount = oTable._getSelectionPlugin().getSelectedCount();
 
 		if (sSelectionMode === SelectionMode.Single) {
 			mTooltipTexts.mouse.rowSelect = bShowTooltips ? TableUtils.getResourceText("TBL_ROW_SELECT") : "";
@@ -1419,7 +1455,7 @@ sap.ui.define([
 			// text for de-select is the same like for single selection
 			mTooltipTexts.keyboard.rowDeselect = TableUtils.getResourceText("TBL_ROW_DESELECT_KEY");
 
-			if (bConsiderSelectionState === true && iSelectedIndicesCount === 0) {
+			if (bConsiderSelectionState === true && iSelectedCount === 0) {
 				// if there is no row selected yet, the selection is like in single selection case
 				mTooltipTexts.mouse.rowSelect = bShowTooltips ? TableUtils.getResourceText("TBL_ROW_SELECT") : "";
 			}

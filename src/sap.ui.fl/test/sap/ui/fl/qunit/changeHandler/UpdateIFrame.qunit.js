@@ -1,4 +1,4 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/ui/core/util/reflection/JsControlTreeModifier",
@@ -35,18 +35,18 @@ sap.ui.define([
 	});
 
 	var sProtocol = "https";
-	var sOpenUI5Url = sProtocol + "://openu5/";
-	var sSapUI5Url = sProtocol + "://sapui5/";
+	var sOpenUI5Url = `${sProtocol}://openu5/`;
+	var sSapUI5Url = `${sProtocol}://sapui5/`;
 	var sBoundUrl = "{model>/protocol}://{model>/flavor}/";
 	var sDefaultSize = "500px";
 
 	var mPropertyBag = {modifier: JsControlTreeModifier, appComponent: oComponent};
 
 	QUnit.module("Given that update change handlers for an IFrame is created", {
-		before: function() {
+		before() {
 			return oComponentPromise;
 		},
-		beforeEach: function() {
+		beforeEach() {
 			this.oIFrame = new IFrame(oComponent.createId("iframe"), {
 				width: sDefaultSize,
 				height: sDefaultSize,
@@ -79,84 +79,93 @@ sap.ui.define([
 			this.oChange = new UIChange(oChangeJson);
 			return this.oIFrame._oSetUrlPromise;
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oIFrame.destroy();
 			this.oModel.destroy();
 			sandbox.restore();
 		}
 	}, function() {
-		QUnit.test("when completeChangeContent & applyChange with JsControlTreeModifier are called", function (assert) {
+		QUnit.test("when completeChangeContent & applyChange with JsControlTreeModifier are called", function(assert) {
 			UpdateIFrame.completeChangeContent(this.oChange, this.mSapUI5UrlChange, mPropertyBag);
 
 			return UpdateIFrame.applyChange(this.oChange, this.oIFrame, mPropertyBag)
-				.then(function() {
-					return this.oIFrame._oSetUrlPromise;
-				}.bind(this))
-				.then(function() {
-					assert.strictEqual(this.oIFrame.getUrl(), sSapUI5Url, "then the IFrame url changes");
-				}.bind(this));
+			.then(function() {
+				return this.oIFrame._oSetUrlPromise;
+			}.bind(this))
+			.then(function() {
+				assert.strictEqual(this.oIFrame.getUrl(), sSapUI5Url, "then the IFrame url changes");
+			}.bind(this));
 		});
 
-		QUnit.test("when completeChangeContent & applyChange with JsControlTreeModifier are called and then reverted", function (assert) {
+		QUnit.test("when completeChangeContent & applyChange with JsControlTreeModifier are called and then reverted", function(assert) {
 			var originalUrl = this.oIFrame.getUrl();
 
 			UpdateIFrame.completeChangeContent(this.oChange, this.mSapUI5UrlChange, mPropertyBag);
 
 			return UpdateIFrame.applyChange(this.oChange, this.oIFrame, mPropertyBag)
-				.then(UpdateIFrame.revertChange.bind(UpdateIFrame, this.oChange, this.oIFrame, mPropertyBag))
-				.then(function() {
-					return this.oIFrame._oSetUrlPromise;
-				}.bind(this))
-				.then(function() {
-					assert.strictEqual(this.oIFrame.getUrl(), originalUrl, "then the IFrame url is the same as before");
-				}.bind(this));
+			.then(UpdateIFrame.revertChange.bind(UpdateIFrame, this.oChange, this.oIFrame, mPropertyBag))
+			.then(function() {
+				return this.oIFrame._oSetUrlPromise;
+			}.bind(this))
+			.then(function() {
+				assert.strictEqual(this.oIFrame.getUrl(), originalUrl, "then the IFrame url is the same as before");
+			}.bind(this));
 		});
 
-		QUnit.test("when completeChangeContent & applyChange with JsControlTreeModifier and binding value are called", function (assert) {
+		QUnit.test("when an useLegacyNavigation update is reverted", async function(assert) {
+			UpdateIFrame.completeChangeContent(
+				this.oChange,
+				{
+					content: { useLegacyNavigation: true }
+				},
+				mPropertyBag
+			);
+
+			await UpdateIFrame.applyChange(this.oChange, this.oIFrame, mPropertyBag);
+			await UpdateIFrame.revertChange(this.oChange, this.oIFrame, mPropertyBag);
+
+			assert.strictEqual(
+				this.oIFrame.getUseLegacyNavigation(),
+				false,
+				"then the useLegacyNavigation flag is the same as before"
+			);
+		});
+
+		QUnit.test("when completeChangeContent & applyChange with JsControlTreeModifier and binding value are called", function(assert) {
 			this.mSapUI5UrlChange.content.url = sBoundUrl;
 
 			UpdateIFrame.completeChangeContent(this.oChange, this.mSapUI5UrlChange, mPropertyBag);
 
 			return UpdateIFrame.applyChange(this.oChange, this.oIFrame, mPropertyBag)
-				.then(function() {
-					return this.oIFrame._oSetUrlPromise;
-				}.bind(this))
-				.then(function() {
-					var oBindingInfo = this.oIFrame.getBindingInfo("url");
-					assert.strictEqual(oBindingInfo.parts[0].path, "/protocol", "then the property value binding path has changed as expected");
-					assert.strictEqual(oBindingInfo.parts[0].model, "model", "and the property value binding model has changed as expected");
-					assert.strictEqual(this.oIFrame.getUrl(), sSapUI5Url, "and the property value is correct");
-				}.bind(this));
+			.then(function() {
+				var oBindingInfo = this.oIFrame.getBindingInfo("url");
+				assert.strictEqual(oBindingInfo.parts[0].path, "/protocol", "then the property value binding path has changed as expected");
+				assert.strictEqual(oBindingInfo.parts[0].model, "model", "and the property value binding model has changed as expected");
+				assert.strictEqual(this.oIFrame.getUrl(), sSapUI5Url, "and the property value is correct");
+			}.bind(this));
 		});
 
-		QUnit.test("when a value is bound, completeChangeContent & applyChange with JsControlTreeModifier are called and then reverted", function (assert) {
+		QUnit.test("when a value is bound, completeChangeContent & applyChange with JsControlTreeModifier are called and then reverted", async function(assert) {
 			this.oIFrame.applySettings({
 				url: sBoundUrl,
 				_settings: {
 					url: sBoundUrl
 				}
 			});
-			return this.oIFrame._oSetUrlPromise.then(function() {
-				assert.strictEqual(this.oIFrame.getUrl(), sSapUI5Url, "the initial bound value is correct");
-				this.mSapUI5UrlChange.content.url = sOpenUI5Url;
+			assert.strictEqual(this.oIFrame.getUrl(), sSapUI5Url, "the initial bound value is correct");
+			this.mSapUI5UrlChange.content.url = sOpenUI5Url;
 
-				UpdateIFrame.completeChangeContent(this.oChange, this.mSapUI5UrlChange, mPropertyBag);
+			UpdateIFrame.completeChangeContent(this.oChange, this.mSapUI5UrlChange, mPropertyBag);
 
-				return UpdateIFrame.applyChange(this.oChange, this.oIFrame, mPropertyBag)
-					.then(UpdateIFrame.revertChange.bind(UpdateIFrame, this.oChange, this.oIFrame, mPropertyBag))
-					.then(function() {
-						return this.oIFrame._oSetUrlPromise;
-					}.bind(this))
-					.then(function() {
-						var oBindingInfo = this.oIFrame.getBindingInfo("url");
-						assert.strictEqual(oBindingInfo.parts[0].path, "/protocol", "then the property value binding path does not change");
-						assert.strictEqual(oBindingInfo.parts[0].model, "model", "and the property value binding model does not change");
-						assert.strictEqual(this.oIFrame.getUrl(), sSapUI5Url, "and the property value is still correct");
-					}.bind(this));
-			}.bind(this));
+			await UpdateIFrame.applyChange(this.oChange, this.oIFrame, mPropertyBag);
+			await UpdateIFrame.revertChange(this.oChange, this.oIFrame, mPropertyBag);
+			const oBindingInfo = this.oIFrame.getBindingInfo("url");
+			assert.strictEqual(oBindingInfo.parts[0].path, "/protocol", "then the property value binding path does not change");
+			assert.strictEqual(oBindingInfo.parts[0].model, "model", "and the property value binding model does not change");
+			assert.strictEqual(this.oIFrame.getUrl(), sSapUI5Url, "and the property value is still correct");
 		});
 
-		QUnit.test("when completeChangeContent & applyChange with XmlTreeModifier are called, and reverted later", function (assert) {
+		QUnit.test("when completeChangeContent & applyChange with XmlTreeModifier are called, and reverted later", function(assert) {
 			this.myLayoutId = "myLayout";
 			this.oLayout = new VerticalLayout(oComponent.createId(this.myLayoutId), {
 				content: [this.oIFrame]
@@ -164,31 +173,31 @@ sap.ui.define([
 
 			var oDOMParser = new DOMParser();
 			var oXmlString =
-					"<mvc:View xmlns:mvc='sap.ui.core.mvc' xmlns:layout='sap.ui.layout' xmlns='sap.ui.fl.util'>" +
-						"<layout:VerticalLayout id='" + this.oLayout.getId() + "'>" +
-							"<layout:content>" +
-								"<IFrame id='" + this.oIFrame.getId() + "' url='" + sOpenUI5Url + "'>" +
-								"</IFrame>" +
-							"</layout:content>" +
-						"</layout:VerticalLayout>" +
-					"</mvc:View>";
+					`<mvc:View xmlns:mvc='sap.ui.core.mvc' xmlns:layout='sap.ui.layout' xmlns='sap.ui.fl.util'>` +
+						`<layout:VerticalLayout id='${this.oLayout.getId()}'>` +
+							`<layout:content>` +
+								`<IFrame id='${this.oIFrame.getId()}' url='${sOpenUI5Url}'>` +
+								`</IFrame>` +
+							`</layout:content>` +
+						`</layout:VerticalLayout>` +
+					`</mvc:View>`;
 
 			var oXmlDocument = oDOMParser.parseFromString(oXmlString, "application/xml");
 			this.oXmlView = oXmlDocument.documentElement;
-			this.oXmlLayout = this.oXmlView.childNodes[0];
-			this.oXmlIFrame = this.oXmlLayout.childNodes[0].childNodes[0];
+			[this.oXmlLayout] = this.oXmlView.childNodes;
+			[this.oXmlIFrame] = this.oXmlLayout.childNodes[0].childNodes;
 			UpdateIFrame.completeChangeContent(this.oChange, this.mSapUI5UrlChange, mPropertyBag);
 
 			return UpdateIFrame.applyChange(this.oChange, this.oXmlIFrame, {modifier: XmlTreeModifier})
-				.then(function() {
-					assert.equal(this.oXmlIFrame.getAttribute("url"), sSapUI5Url, "then the IFrame url changes");
-					return UpdateIFrame.revertChange(this.oChange, this.oXmlIFrame, {modifier: XmlTreeModifier});
-				}.bind(this))
-				.then(function() {
-					assert.equal(this.oXmlIFrame.getAttribute("url"), sOpenUI5Url, "then the IFrame url does not change");
+			.then(function() {
+				assert.equal(this.oXmlIFrame.getAttribute("url"), sSapUI5Url, "then the IFrame url changes");
+				return UpdateIFrame.revertChange(this.oChange, this.oXmlIFrame, {modifier: XmlTreeModifier});
+			}.bind(this))
+			.then(function() {
+				assert.equal(this.oXmlIFrame.getAttribute("url"), sOpenUI5Url, "then the IFrame url does not change");
 
-					this.oLayout.destroy();
-				}.bind(this));
+				this.oLayout.destroy();
+			}.bind(this));
 		});
 
 		// DISABLE since I have a question about this test
@@ -233,13 +242,13 @@ sap.ui.define([
 		// 	this.oLayout.destroy();
 		// });
 
-		QUnit.test("when completeChangeContent is called without a setting", function (assert) {
+		QUnit.test("when completeChangeContent is called without a setting", function(assert) {
 			assert.throws(
 				UpdateIFrame.completeChangeContent.bind(this, this.oChange, {}, mPropertyBag),
 				"then an error is thrown");
 		});
 
-		QUnit.test("when completeChangeContent is called without a value", function (assert) {
+		QUnit.test("when completeChangeContent is called without a value", function(assert) {
 			delete this.mSapUI5UrlChange.content.url;
 
 			assert.throws(
@@ -248,7 +257,7 @@ sap.ui.define([
 		});
 	});
 
-	//TODO: Negative test to check if the error is properly raised when change is incomplete
+	// TODO: Negative test to check if the error is properly raised when change is incomplete
 
 	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";

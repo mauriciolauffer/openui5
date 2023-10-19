@@ -3,9 +3,16 @@
 sap.ui.define([
 	"sap/ui/table/qunit/TableQUnitUtils.ODataV2",
 	"sap/ui/table/Table",
+	"sap/ui/table/rowmodes/Fixed",
 	"sap/ui/model/Filter",
 	"sap/ui/core/Core"
-], function(TableQUnitUtils, Table, Filter, Core) {
+], function(
+	TableQUnitUtils,
+	Table,
+	FixedRowMode,
+	Filter,
+	Core
+) {
 	"use strict";
 
 	QUnit.module("API", {
@@ -73,6 +80,9 @@ sap.ui.define([
 		});
 	});
 
+	/**
+	 * @deprecated As of version 1.119
+	 */
 	QUnit.module("Get contexts", {
 		before: function() {
 			this.oMockServer = TableQUnitUtils.startMockServer();
@@ -144,13 +154,13 @@ sap.ui.define([
 		return oTable.qunit.whenRenderingFinished().then(function() {
 			assert.equal(oGetContextsSpy.callCount, 6, "Call count of method to get contexts");
 
-			// The initial getContexts call does not consider fixed row counts and the threshold, because the binding is initialized before
+			// The initial getContexts call does not consider fixed row counts, because the binding is initialized before
 			// the corresponding properties are set (see ManagedObject#applySettings).
 			// Fixed bottom rows can't be requested if the count is unknown. As soon as the binding receives a getContexts call that triggers a
 			// request, it ignores subsequent calls.
 
 			// refreshRows
-			sinon.assert.calledWithExactly(oGetContextsSpy.getCall(0), 0, 10, 100); // scrollable rows
+			sinon.assert.calledWithExactly(oGetContextsSpy.getCall(0), 1, 10, 10); // scrollable rows
 			// render
 			sinon.assert.calledWithExactly(oGetContextsSpy.getCall(1), 0, 1, 0, true); // fixed top rows
 			sinon.assert.calledWithExactly(oGetContextsSpy.getCall(2), 2, 3, 3); // scrollable rows
@@ -805,20 +815,24 @@ sap.ui.define([
 		var that = this;
 
 		this.oTable.getBinding().filter(new Filter({path: "Name", operator: "EQ", value1: "DoesNotExist"}));
-		this.oTable.rerender();
+		this.oTable.invalidate();
+		Core.applyChanges();
 		return this.oTable.qunit.whenRenderingFinished().then(function() {
 			TableQUnitUtils.assertNoDataVisible(assert, that.oTable, true, "Filter");
 			that.assertNoDataVisibilityChangeCount(assert, 1);
-			that.oTable.rerender();
+			that.oTable.invalidate();
+			Core.applyChanges();
 		}).then(this.oTable.qunit.whenRenderingFinished).then(function() {
 			TableQUnitUtils.assertNoDataVisible(assert, that.oTable, true, "Rerender");
 			that.assertNoDataVisibilityChangeCount(assert, 0);
 			that.oTable.getBinding().filter();
-			that.oTable.rerender();
+			that.oTable.invalidate();
+			Core.applyChanges();
 		}).then(this.oTable.qunit.whenRenderingFinished).then(function() {
 			TableQUnitUtils.assertNoDataVisible(assert, that.oTable, false, "Remove Filter");
 			that.assertNoDataVisibilityChangeCount(assert, 1);
-			that.oTable.rerender();
+			that.oTable.invalidate();
+			Core.applyChanges();
 		}).then(this.oTable.qunit.whenRenderingFinished).then(function() {
 			TableQUnitUtils.assertNoDataVisible(assert, that.oTable, false, "Rerender");
 			that.assertNoDataVisibilityChangeCount(assert, 0);
@@ -845,20 +859,24 @@ sap.ui.define([
 		var that = this;
 
 		this.oTable.unbindRows();
-		this.oTable.rerender();
+		this.oTable.invalidate();
+		Core.applyChanges();
 		return this.oTable.qunit.whenRenderingFinished().then(function() {
 			TableQUnitUtils.assertNoDataVisible(assert, that.oTable, true, "Unbind");
 			that.assertNoDataVisibilityChangeCount(assert, 1);
-			that.oTable.rerender();
+			that.oTable.invalidate();
+			Core.applyChanges();
 		}).then(this.oTable.qunit.whenRenderingFinished).then(function() {
 			TableQUnitUtils.assertNoDataVisible(assert, that.oTable, true, "Rerender");
 			that.assertNoDataVisibilityChangeCount(assert, 0);
 			that.oTable.bindRows(oBindingInfo);
-			that.oTable.rerender();
+			that.oTable.invalidate();
+			Core.applyChanges();
 		}).then(this.oTable.qunit.whenRenderingFinished).then(function() {
 			TableQUnitUtils.assertNoDataVisible(assert, that.oTable, false, "Bind");
 			that.assertNoDataVisibilityChangeCount(assert, 1);
-			that.oTable.rerender();
+			that.oTable.invalidate();
+			Core.applyChanges();
 		}).then(this.oTable.qunit.whenRenderingFinished).then(function() {
 			TableQUnitUtils.assertNoDataVisible(assert, that.oTable, false, "Rerender");
 			that.assertNoDataVisibilityChangeCount(assert, 0);

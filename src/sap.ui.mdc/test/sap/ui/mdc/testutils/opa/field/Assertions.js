@@ -9,7 +9,7 @@ sap.ui.define([
 	"sap/base/util/deepEqual",
 	"./waitForField",
 	"../Utils",
-	"sap/ui/mdc/enum/EditMode",
+	"sap/ui/mdc/enums/FieldEditMode",
 	"../matchers/DOMRef"
 ], function(
 	Opa5,
@@ -18,7 +18,7 @@ sap.ui.define([
 	deepEqual,
 	waitForField,
 	Utils,
-	EditMode,
+	FieldEditMode,
 	DOMRef
 ) {
 	"use strict";
@@ -35,7 +35,7 @@ sap.ui.define([
 			return waitForField.call(this, Utils.enhanceWaitFor(vIdentifier, {
 				success: function (oField) {
 					if (sValue) {
-						var oContent = oField._getContent()[0];
+						var oContent = oField.getCurrentContent()[0];
 						var sControlType = oContent.getMetadata().getName();
 						var bIsDatePicker = aDatePickerControls.includes(sControlType);
 

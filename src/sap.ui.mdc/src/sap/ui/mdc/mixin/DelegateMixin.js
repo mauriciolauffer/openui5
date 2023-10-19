@@ -2,16 +2,16 @@
  * ${copyright}
  */
 
-sap.ui.define(["sap/ui/mdc/util/loadModules", "sap/base/Log"], function (loadModules, Log) {
+sap.ui.define(["sap/ui/mdc/util/loadModules", "sap/base/Log", "sap/ui/mdc/BaseDelegate"], function (loadModules, Log, BaseDelegate) {
 	"use strict";
 
-	var _validateDelegateConfig = function (oConfig) {
+	const _validateDelegateConfig = function (oConfig) {
 		if (!oConfig || !oConfig.name) {
 			throw new Error("Delegate configuration '" + (oConfig && JSON.stringify(oConfig)) +  "' invalid");
 		}
 	};
 
-	var _fnInitDelegate = function (oResult) {
+	const _fnInitDelegate = function (oResult) {
 		if (!this.bIsDestroyed) {
 			if (oResult instanceof Error) {
 				this.fnRejectDelegate(oResult);
@@ -34,8 +34,9 @@ sap.ui.define(["sap/ui/mdc/util/loadModules", "sap/base/Log"], function (loadMod
 	 * <ul>
 	 * <li><code>awaitControlDelegate</code> - Provides access to the delegate initialization <code>Promise</code>.</li>
 	 * <li><code>getControlDelegate</code> - Returns the delegate instance, if available.</li>
+	 * <li><code>isControlDelegateInitialized</code> - Checks whether the control delegate is available.</li>
 	 * <li><code>getPayload</code> - Returns the payload object set for the delegate property.</li>
-	 * <li><code>getTypeUtil</code> - Returns the <code>typeUtil</code> made available by the delegate module</li>
+	 * <li><code>getTypeMap</code> - Returns the <code>TypeMap</code> made available by the delegate module</li>
 	 * <li><code>initControlDelegate</code> - Loads and initializes the delegate module related to the enhanced control.</li>
 	 * <li><code>initPropertyHelper</code> - Loads and initializes the property helper related to the enhanced control.</li>
 	 * <li><code>awaitPropertyHelper</code> - Provides access to the property helper initialization <code>Promise</code>.</li>
@@ -67,7 +68,7 @@ sap.ui.define(["sap/ui/mdc/util/loadModules", "sap/base/Log"], function (loadMod
 	 * @experimental
 	 * @ui5-restricted sap.ui.mdc
 	*/
-	var DelegateMixin = {};
+	const DelegateMixin = {};
 
 	DelegateMixin.init = function (fnInit) {
 		return function () {
@@ -110,8 +111,8 @@ sap.ui.define(["sap/ui/mdc/util/loadModules", "sap/base/Log"], function (loadMod
 	 * Loads and initializes the delegate module related to the enhanced control.
 	 *
 	 * @protected
-	 * @param {sap.ui.mdc.BaseDelegate} [oPreloadedModule] Preloaded delegate module
-	 * @returns {Promise<sap.ui.mdc.BaseDelegate>} Returns a <code>Promise</code> that resolves the delegate module, if available
+	 * @param {module:sap/ui/mdc/BaseDelegate} [oPreloadedModule] Preloaded delegate module
+	 * @returns {Promise<module:sap/ui/mdc/BaseDelegate>} Returns a <code>Promise</code> that resolves the delegate module, if available
 	 */
 	DelegateMixin.initControlDelegate = function (oPreloadedModule) {
 
@@ -121,7 +122,7 @@ sap.ui.define(["sap/ui/mdc/util/loadModules", "sap/base/Log"], function (loadMod
 			if (oPreloadedModule) {
 				_fnInitDelegate.call(this, [oPreloadedModule]);
 			} else {
-				var oDelegate = this.getDelegate();
+				const oDelegate = this.getDelegate();
 				_validateDelegateConfig(oDelegate);
 				this.bDelegateLoading = true;
 				loadModules(oDelegate.name).then(_fnInitDelegate.bind(this)).catch(_fnInitDelegate.bind(this));
@@ -134,8 +135,8 @@ sap.ui.define(["sap/ui/mdc/util/loadModules", "sap/base/Log"], function (loadMod
 	/**
 	 * Checks whether the delegate module related to the enhanced control is loaded.
 	 *
-	 * @protected
 	 * @returns {boolean} Whether the delegate module is loaded
+	 * @public
 	 */
 	DelegateMixin.isControlDelegateInitialized = function() {
 		return this.bDelegateInitialized;
@@ -144,12 +145,12 @@ sap.ui.define(["sap/ui/mdc/util/loadModules", "sap/base/Log"], function (loadMod
 	/**
 	 * Returns the payload object set for the delegate property.
 	 *
-	 * @protected
 	 * @returns {object} Payload set for delegate property
+	 * @public
 	 */
 	DelegateMixin.getPayload = function () {
 		if (!this._oPayload) {
-			var oDelegateConfig = this.getDelegate();
+			const oDelegateConfig = this.getDelegate();
 			this._oPayload = oDelegateConfig && oDelegateConfig.payload;
 		}
 
@@ -160,32 +161,47 @@ sap.ui.define(["sap/ui/mdc/util/loadModules", "sap/base/Log"], function (loadMod
 	 * Returns the <code>typeUtil</code> made available by a delegate module.
 	 *
 	 * @protected
-	 * @returns {sap.ui.mdc.util.TypeUtil} <code>typeUtil</code> made available by the delegate module
+	 * @returns {sap.ui.mdc.util.TypeUtil|module:sap/ui/mdc/util/TypeMap} <code>TypeUtil</code> object
 	 * @throws Throws an error if the delegate module is not available
+ 	 * @deprecated since 1.115.0 - please see {@link #getTypeMap}
 	 */
 	DelegateMixin.getTypeUtil = function () {
-		if (!this._oTypeUtil) {
+		return this.getTypeMap();
+	};
+
+	/**
+	 * Returns the <code>TypeMap</code> made available by a delegate module.
+	 *
+	 * @returns {module:sap/ui/mdc/util/TypeMap} <code>TypeMap</code> object
+	 * @throws Throws an error if the delegate module is not available
+	 * @public
+	 */
+	DelegateMixin.getTypeMap = function () {
+		if (!this._oTypeMap) {
 			if (!this._oDelegate) {
-				throw new Error("A delegate instance providing typeUtil is not (yet) available.");
+				throw new Error("A delegate instance providing a TypeMap is not (yet) available.");
 			}
-			this._oTypeUtil = this._oDelegate.getTypeUtil && this._oDelegate.getTypeUtil(this._oPayload);
+			this._oTypeMap = this._oDelegate.getTypeMap(this);
 		}
 
-		return this._oTypeUtil;
+		return this._oTypeMap;
 	};
 
 	/**
 	 * Returns the delegate instance, if available.
 	 *
-	 * @protected
-	 * @returns {sap.ui.mdc.BaseDelegate} <code>typeUtil</code> made available by a delegate module
+	 * @returns {module:sap/ui/mdc/BaseDelegate} <code>typeUtil</code> made available by a delegate module
 	 * @throws Throws an error if the delegate module is not available
+	 * @public
 	 */
 	DelegateMixin.getControlDelegate = function () {
 		if (!this._oDelegate) {
-			throw new Error("A delegate instance is not (yet) available. You must call initControlDelegate before calling getControlDelegate.");
+			if (this.isDestroyed()) {
+				throw new Error("A delegate instance is not available. The object instance is destroyed.");
+			} else {
+				throw new Error("A delegate instance is not (yet) available. You must call initControlDelegate before calling getControlDelegate.");
+			}
 		}
-
 		return this._oDelegate;
 	};
 
@@ -194,7 +210,7 @@ sap.ui.define(["sap/ui/mdc/util/loadModules", "sap/base/Log"], function (loadMod
 	 * <b>Note:</b> <code>initControlDelegate</code> must be called to start the delegate initialization
 	 *
 	 * @protected
-	 * @returns {Promise<sap.ui.mdc.BaseDelegate>} Returns a <code>Promise</code> reflecting the delegate initialization
+	 * @returns {Promise<module:sap/ui/mdc/BaseDelegate>} Returns a <code>Promise</code> reflecting the delegate initialization
 	 * @throws Throws an error if the delegate module is not available
 	 */
 	DelegateMixin.awaitControlDelegate = function () {
@@ -212,7 +228,7 @@ sap.ui.define(["sap/ui/mdc/util/loadModules", "sap/base/Log"], function (loadMod
 			this._oDelegateInitialized = null;
 			this._oDelegate = null;
 			this._oPayload = null;
-			this._oTypeUtil = null;
+			this._oTypeMap = null;
 
 			if (fnExit) {
 				fnExit.apply(this, arguments);
@@ -233,6 +249,7 @@ sap.ui.define(["sap/ui/mdc/util/loadModules", "sap/base/Log"], function (loadMod
 		this.getControlDelegate = DelegateMixin.getControlDelegate;
 		this.getPayload = DelegateMixin.getPayload;
 		this.getTypeUtil = DelegateMixin.getTypeUtil;
+		this.getTypeMap = DelegateMixin.getTypeMap;
 		this.initControlDelegate = DelegateMixin.initControlDelegate;
 	};
 

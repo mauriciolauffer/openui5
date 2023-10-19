@@ -42,9 +42,8 @@ sap.ui.define([
 		 * @author SAP SE
 		 * @version ${version}
 		 *
-		 * @public
+		 * @private
 		 * @alias sap.m.StandardDynamicDateOption
-		 * @experimental Since 1.92. This class is experimental and provides only limited functionality. Also the API might be changed in future.
 		 */
 		var StandardDynamicDateOption = DynamicDateOption.extend("sap.m.StandardDynamicDateOption", /** @lends sap.m.StandardDynamicDateOption.prototype */ {
 			metadata: {
@@ -402,10 +401,6 @@ sap.ui.define([
 
 			if (oValue && oValue.values) {
 				oValue.values = oValue.values.map(function(val) {
-					if (val instanceof Date) {
-						return oControl._reverseConvertDate(val);
-					}
-
 					return val;
 				});
 			}
@@ -423,10 +418,6 @@ sap.ui.define([
 				}
 
 				var oInputControl;
-				var bUTC = false;
-				if (oControl && oValue) {
-					bUTC = oControl._checkFormatterUTCTimezone(oValue.operator);
-				}
 
 				switch (aParams[iIndex].getType()) {
 					case "int":
@@ -438,18 +429,18 @@ sap.ui.define([
 						}
 						break;
 					case "date":
-						oInputControl = this._createDateControl(oValue, iIndex, fnControlsUpdated, bUTC, sCalendarWeekNumbering);
+						oInputControl = this._createDateControl(oValue, iIndex, fnControlsUpdated, sCalendarWeekNumbering);
 						break;
 					case "datetime":
 						if (aParams.length === 1) {
 							// creates "single" DateTime option (embedded in the DynamicDateRange popup)
-							oInputControl = this._createDateTimeInnerControl(oValue, iIndex, fnControlsUpdated, bUTC, sCalendarWeekNumbering);
+							oInputControl = this._createDateTimeInnerControl(oValue, iIndex, fnControlsUpdated, sCalendarWeekNumbering);
 						} else if (aParams.length === 2) {
-							oInputControl = this._createDateTimeControl(oValue, iIndex, fnControlsUpdated, bUTC, sCalendarWeekNumbering);
+							oInputControl = this._createDateTimeControl(oValue, iIndex, fnControlsUpdated, sCalendarWeekNumbering);
 						}
 						break;
 					case "daterange":
-						oInputControl = this._createDateRangeControl(oValue, iIndex, fnControlsUpdated, bUTC, sCalendarWeekNumbering);
+						oInputControl = this._createDateRangeControl(oValue, iIndex, fnControlsUpdated, sCalendarWeekNumbering);
 					break;
 					case "month":
 						oInputControl = this._createMonthControl(oValue, iIndex, fnControlsUpdated);
@@ -718,7 +709,7 @@ sap.ui.define([
 				case "SPECIFICMONTHINYEAR":
 					var oDate = new UniversalDate();
 					oDate.setMonth(oValue.values[0]);
-					oDate.setYear(oValue.values[1]);
+					oDate.setFullYear(oValue.values[1]);
 					oDate = UniversalDateUtils.getMonthStartDate(oDate);
 					return UniversalDateUtils.getRange(0, "MONTH", oDate);
 				case "DATE":

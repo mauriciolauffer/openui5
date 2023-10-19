@@ -75,7 +75,7 @@ sap.ui.define([
 			sReason = "MSG_DRAFT_EXISTS";
 		} else if (oReloadInfo.allContexts) {
 			sReason = "MSG_RESTRICTED_CONTEXT_EXIST";
-		} // TODO add app descr changes case for start?
+		}// TODO add app descr changes case for start?
 		return sReason;
 	}
 
@@ -91,6 +91,9 @@ sap.ui.define([
 			}
 			if (oReloadInfo.allContexts) {
 				return "MSG_RELOAD_WITH_PERSONALIZATION_AND_RESTRICTED_CONTEXT";
+			}
+			if (oReloadInfo.switchEndUserAdaptation) {
+				return "MSG_RELOAD_WITH_PERSONALIZATION_AND_CONTEXT_BASED_ADAPTATION";
 			}
 			return "MSG_RELOAD_WITH_PERSONALIZATION_AND_VIEWS";
 		}
@@ -110,6 +113,10 @@ sap.ui.define([
 		if (oReloadInfo.allContexts) {
 			return "MSG_RELOAD_WITHOUT_ALL_CONTEXT";
 		}
+
+		if (oReloadInfo.switchEndUserAdaptation) {
+			return "MSG_RELOAD_OTHER_CONTEXT_BASED_ADAPTATION";
+		}
 		return undefined;
 	}
 
@@ -125,31 +132,34 @@ sap.ui.define([
 	}
 
 	function triggerReloadOnStart(oReloadInfo, bVersioningEnabled, bDeveloperMode) {
-		if (mUShellServices.CrossApplicationNavigation && bVersioningEnabled) {
-			// clears FlexState and triggers reloading of the flex data without blocking
-			if (oReloadInfo.isDraftAvailable) {
-				VersionsAPI.loadDraftForApplication({
+		return Promise.resolve().then(function() {
+			if (mUShellServices.CrossApplicationNavigation && bVersioningEnabled) {
+				// clears FlexState and triggers reloading of the flex data without blocking
+				if (oReloadInfo.isDraftAvailable) {
+					return VersionsAPI.loadDraftForApplication({
+						control: oReloadInfo.selector,
+						layer: oReloadInfo.layer,
+						allContexts: oReloadInfo.allContexts,
+						adaptationId: oReloadInfo.adaptationId
+					});
+				}
+				return VersionsAPI.loadVersionForApplication({
 					control: oReloadInfo.selector,
 					layer: oReloadInfo.layer,
-					allContexts: oReloadInfo.allContexts
-				});
-			} else {
-				VersionsAPI.loadVersionForApplication({
-					control: oReloadInfo.selector,
-					layer: oReloadInfo.layer,
-					allContexts: oReloadInfo.allContexts
+					allContexts: oReloadInfo.allContexts,
+					adaptationId: oReloadInfo.adaptationId
 				});
 			}
-		}
-		var sReason = getReloadMessageOnStart(oReloadInfo);
-		// showing messages in visual editor is leading to blocked screen. In this case we should reload without message
-		var pMessageBox = bDeveloperMode ? Promise.resolve() : Utils.showMessageBox("information", sReason);
-		return pMessageBox.then(function() {
+			return undefined;
+		}).then(function() {
+			var sReason = getReloadMessageOnStart(oReloadInfo);
+			// showing messages in visual editor is leading to blocked screen. In this case we should reload without message
+			return bDeveloperMode ? undefined : Utils.showMessageBox("information", sReason);
+		}).then(function() {
 			ReloadManager.enableAutomaticStart(oReloadInfo.layer, oReloadInfo.selector);
 			oReloadInfo.onStart = true;
 			return ReloadManager.triggerReload(oReloadInfo);
-		})
-		.then(function() {
+		}).then(function() {
 			return true;
 		});
 	}
@@ -199,7 +209,7 @@ sap.ui.define([
 	ReloadManager.enableAutomaticStart = function(sLayer, oRootControl) {
 		var sFlexReference = FlexRuntimeInfoAPI.getFlexReference({element: oRootControl});
 		var vParameter = sFlexReference || true;
-		window.sessionStorage.setItem("sap.ui.rta.restart." + sLayer, vParameter);
+		window.sessionStorage.setItem(`sap.ui.rta.restart.${sLayer}`, vParameter);
 	};
 
 	/**
@@ -208,7 +218,7 @@ sap.ui.define([
 	 * @param {sap.ui.fl.Layer} sLayer - Active layer
 	 */
 	ReloadManager.disableAutomaticStart = function(sLayer) {
-		window.sessionStorage.removeItem("sap.ui.rta.restart." + sLayer);
+		window.sessionStorage.removeItem(`sap.ui.rta.restart.${sLayer}`);
 	};
 
 	/**
@@ -218,7 +228,7 @@ sap.ui.define([
 	 * @returns {boolean} <code>true</code> if restart is needed
 	 */
 	ReloadManager.needsAutomaticStart = function(sLayer) {
-		return !!window.sessionStorage.getItem("sap.ui.rta.restart." + sLayer);
+		return !!window.sessionStorage.getItem(`sap.ui.rta.restart.${sLayer}`);
 	};
 
 	/**
@@ -266,6 +276,7 @@ sap.ui.define([
 	 * @param {sap.ui.fl.Selector} mProperties.selector - Root control
 	 * @param {boolean} mProperties.versioningEnabled - Whether versioning is enabled
 	 * @param {boolean} mProperties.developerMode - Whether the developer mode is set
+	 * @param {string} mProperties.adaptationId - Context-based adaptation ID of the currently displayed adaptation
 	 *
 	 * @return {Promise<boolean>} Resolving to <code>false</code> means that reload is not necessary
 	 */
@@ -278,7 +289,7 @@ sap.ui.define([
 			URLParsingService: mUShellServices.URLParsing
 		});
 		return ReloadInfoAPI.getReloadReasonsForStart(mProperties).then(function(oReloadInfo) {
-			if (oReloadInfo.hasHigherLayerChanges || oReloadInfo.isDraftAvailable || oReloadInfo.allContexts) {
+			if (oReloadInfo.hasHigherLayerChanges || oReloadInfo.isDraftAvailable || oReloadInfo.allContexts || oReloadInfo.switchAdaptation) {
 				return triggerReloadOnStart(oReloadInfo, mProperties.versioningEnabled, mProperties.developerMode);
 			}
 			return undefined;

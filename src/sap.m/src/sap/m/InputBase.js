@@ -16,7 +16,8 @@ sap.ui.define([
 	'sap/base/Log',
 	"sap/ui/events/KeyCodes",
 	"sap/ui/thirdparty/jquery",
-	// jQuery Plugin "cursorPos"
+	"sap/ui/core/Lib",
+    // jQuery Plugin "cursorPos"
 	"sap/ui/dom/jquery/cursorPos",
 	// jQuery Plugin "getSelectedText"
 	"sap/ui/dom/jquery/getSelectedText",
@@ -36,7 +37,8 @@ function(
 	InputBaseRenderer,
 	log,
 	KeyCodes,
-	jQuery
+	jQuery,
+	Library
 ) {
 	"use strict";
 
@@ -239,6 +241,7 @@ function(
 	 * https://html.spec.whatwg.org/multipage/forms.html#input-type-attr-summary
 	 *
 	 * @see sap.m.InputBase#oninput
+	 * @type boolean
 	 * @protected
 	 */
 	InputBase.prototype.bShowLabelAsPlaceholder = !Device.support.input.placeholder;
@@ -294,6 +297,7 @@ function(
 		/**
 		 * Indicates whether the input field is in the rendering phase.
 		 *
+		 * @type boolean
 		 * @protected
 		 */
 		this.bRenderingPhase = false;
@@ -1152,7 +1156,7 @@ function(
 	 * @protected
 	 */
 	InputBase.prototype.getAccessibilityInfo = function() {
-		var oRb = sap.ui.getCore().getLibraryResourceBundle("sap.m"),
+		var oRb = Library.getResourceBundleFor("sap.m"),
 			sRequired = this.getRequired() ? oRb.getText("ELEMENT_REQUIRED") : '',
 			oRenderer = this.getRenderer();
 
@@ -1173,7 +1177,7 @@ function(
 	 * @returns {string} The value of the accessibility description info
 	 */
 	InputBase.prototype.getValueDescriptionInfo = function () {
-		return this.getValue() || sap.ui.getCore().getLibraryResourceBundle("sap.m").getText("INPUTBASE_VALUE_EMPTY");
+		return this.getValue() || Library.getResourceBundleFor("sap.m").getText("INPUTBASE_VALUE_EMPTY");
 	};
 
 	/**

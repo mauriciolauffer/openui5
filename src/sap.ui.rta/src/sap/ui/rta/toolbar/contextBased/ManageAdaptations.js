@@ -4,8 +4,9 @@
 
 // Provides control sap.ui.rta.toolbar.contextBased.ManageAdaptationsDialog
 sap.ui.define([
-	"sap/base/Log",
+	"sap/base/i18n/Localization",
 	"sap/base/util/restricted/_isEqual",
+	"sap/base/Log",
 	"sap/ui/base/ManagedObject",
 	"sap/ui/core/Fragment",
 	"sap/ui/fl/write/api/ContextBasedAdaptationsAPI",
@@ -13,11 +14,13 @@ sap.ui.define([
 	"sap/ui/rta/Utils",
 	"sap/ui/model/Filter",
 	"sap/ui/model/FilterOperator",
-	"sap/ui/model/json/JSONModel"
-],
-function(
-	Log,
+	"sap/ui/model/json/JSONModel",
+	"sap/ui/core/date/UI5Date",
+	"sap/ui/performance/Measurement"
+], function(
+	Localization,
 	_isEqual,
+	Log,
 	ManagedObject,
 	Fragment,
 	ContextBasedAdaptationsAPI,
@@ -25,20 +28,22 @@ function(
 	Utils,
 	Filter,
 	FilterOperator,
-	JSONModel
+	JSONModel,
+	UI5Date,
+	Measurement
 ) {
 	"use strict";
 
 	var oRanking = {
 		Initial: 0,
 		Default: 1024,
-		Before: function(iRank) {
+		Before(iRank) {
 			return iRank + 1024;
 		},
-		Between: function(iRank1, iRank2) {
+		Between(iRank1, iRank2) {
 			return (iRank1 + iRank2) / 2;
 		},
-		After: function(iRank) {
+		After(iRank) {
 			return iRank + 0.5;
 		}
 	};
@@ -51,17 +56,19 @@ function(
 				}
 			}
 		},
-		constructor: function() {
-			ManagedObject.prototype.constructor.apply(this, arguments);
+		// eslint-disable-next-line object-shorthand
+		constructor: function(...aArgs) {
+			ManagedObject.prototype.constructor.apply(this, aArgs);
 			this.oTextResources = this.getToolbar().getTextResources();
 		}
 	});
 
 	ManageAdaptations.prototype.openManageAdaptationDialog = function() {
+		Measurement.start("onCBAOpenManageAdaptationDialog", "Measurement of opening the manage context-based adaptation dialog");
 		if (!this._oManageAdaptationDialogPromise) {
 			this._oManageAdaptationDialogPromise = Fragment.load({
 				name: "sap.ui.rta.toolbar.contextBased.ManageAdaptationsDialog",
-				id: this.getToolbar().getId() + "_fragment--sapUiRta_manageAdaptationDialog",
+				id: `${this.getToolbar().getId()}_fragment--sapUiRta_manageAdaptationDialog`,
 				controller: {
 					formatContextColumnCell: formatContextColumnCell.bind(this),
 					formatContextColumnTooltip: formatContextColumnTooltip.bind(this),
@@ -71,7 +78,9 @@ function(
 					moveDown: moveDown.bind(this),
 					onDropSelectedAdaptation: onDropSelectedAdaptation.bind(this),
 					onSaveReorderedAdaptations: onSaveReorderedAdaptations.bind(this),
-					onClose: onCloseDialog.bind(this)
+					isAdaptationsSelected: isAdaptationsSelected.bind(this),
+					getIndexOfSelectedAdaptation: getIndexOfSelectedAdaptation.bind(this),
+					onCancel: onCancelDialog.bind(this)
 				}
 			}).then(function(oDialog) {
 				this._oManageAdaptationDialog = oDialog;
@@ -79,21 +88,31 @@ function(
 				this.getToolbar().addDependent(this._oManageAdaptationDialog);
 			}.bind(this));
 		} else {
-			setEnabledPropertyOfMoveButton.call(this, false);
+			syncEnabledPropertyOfMoveButtons.call(this);
 			enableDragAndDropForAdaptationTable.call(this, true);
 			enableSaveButton.call(this, false);
 		}
-		return this._oManageAdaptationDialogPromise.then(function() {
-			var oRtaInformation = this.getToolbar().getRtaInformation();
-			return ContextBasedAdaptationsAPI.load({control: oRtaInformation.rootControl, layer: oRtaInformation.flexSettings.layer});
-		}.bind(this)).then(function(oAdaptationsModel) {
-			this.oAdaptationsModel = oAdaptationsModel;
-			this.oReferenceAdaptationsData = JSON.parse(JSON.stringify(oAdaptationsModel.getData()));
+		return this._oManageAdaptationDialogPromise
+		.then(function() {
+			this._oRtaInformation = this.getToolbar().getRtaInformation();
+			return ContextBasedAdaptationsAPI.load({
+				control: this._oRtaInformation.rootControl,
+				layer: this._oRtaInformation.flexSettings.layer
+			});
+		}.bind(this)).then(function(oAdaptations) {
+			this.oAdaptationsModel = ContextBasedAdaptationsAPI.getAdaptationsModel({
+				control: this._oRtaInformation.rootControl,
+				layer: this._oRtaInformation.flexSettings.layer
+			});
+			this.oAdaptationsModel.updateAdaptations(oAdaptations.adaptations);
+			this.oReferenceAdaptationsData = JSON.parse(JSON.stringify(this.oAdaptationsModel.getProperty("/adaptations")));
+			this._oOriginAdaptationsData = JSON.parse(JSON.stringify(this.oAdaptationsModel.getProperty("/allAdaptations")));
 			this._oControlConfigurationModel = new JSONModel({isTableItemSelected: false});
 			this._oManageAdaptationDialog.setModel(this.oAdaptationsModel, "contextBased");
 			this._oManageAdaptationDialog.setModel(this._oControlConfigurationModel, "controlConfiguration");
-			initializeRanks(this.oAdaptationsModel);
 			getAdaptationsTable.call(this).attachSelectionChange(onSelectionChange.bind(this));
+			Measurement.end("onCBAOpenManageAdaptationDialog");
+			Measurement.getActive() && Log.info(`onCBAOpenManageAdaptationDialog: ${Measurement.getMeasurement("onCBAOpenManageAdaptationDialog").time} ms`);
 			return this._oManageAdaptationDialog.open();
 		}.bind(this)
 		).catch(function(oError) {
@@ -107,8 +126,8 @@ function(
 
 	// ------ formatting ------
 	function formatContextColumnCell(aRoles) {
-		return aRoles.length + " " + (aRoles.length > 1 ?
-			this.oTextResources.getText("TXT_TABLE_CONTEXT_CELL_ROLES") : this.oTextResources.getText("TXT_TABLE_CONTEXT_CELL_ROLE"));
+		return `${aRoles.length} ${aRoles.length > 1 ?
+			this.oTextResources.getText("TXT_TABLE_CONTEXT_CELL_ROLES") : this.oTextResources.getText("TXT_TABLE_CONTEXT_CELL_ROLE")}`;
 	}
 
 	function formatContextColumnTooltip(aRoles) {
@@ -116,28 +135,40 @@ function(
 	}
 
 	function formatCreatedChangedOnColumnCell(sModifiedBy, sModifiedDate) {
-		var oDateFormat = sap.ui.core.format.DateFormat.getDateInstance({
-			pattern: "MMM d, yyyy"
-		});
-		var oDate = oDateFormat.format(new Date(sModifiedDate));
-
-		return sModifiedBy + "\n" + oDate;
+		var oUi5Date = UI5Date.getInstance(sModifiedDate);
+		var oOptions = {
+			year: "numeric",
+			month: "short",
+			day: "numeric",
+			hour: "numeric",
+			minute: "numeric"
+		};
+		var sLanguage = Localization.getLanguage();
+		return `${sModifiedBy}\n${oUi5Date.toLocaleTimeString(sLanguage, oOptions)}`;
 	}
 
 	function onSelectionChange(oEvent) {
 		if (oEvent.getParameter("selected") === true) {
 			this._oControlConfigurationModel.setProperty("/isTableItemSelected", true);
-			if (isSearchFieldValueEmpty.call(this)) {
-				setEnabledPropertyOfMoveButton.call(this, true);
-			}
+			syncEnabledPropertyOfMoveButtons.call(this);
 		}
 	}
 
-	function setEnabledPropertyOfMoveButton(bIsEnabled) {
+	function syncEnabledPropertyOfMoveButtons() {
 		var oUpButton = getControlInDialog.call(this, "moveUpButton");
 		var oDownButton = getControlInDialog.call(this, "moveDownButton");
-		oUpButton.setEnabled(bIsEnabled);
-		oDownButton.setEnabled(bIsEnabled);
+		if (isSearchFieldValueEmpty.call(this)) {
+			if (isAdaptationsSelected.call(this)) {
+				oUpButton.setEnabled(getIndexOfSelectedAdaptation.call(this) > 0);
+				oDownButton.setEnabled(getIndexOfSelectedAdaptation.call(this) < this.oAdaptationsModel.getProperty("/count") - 1);
+			} else {
+				oUpButton.setEnabled(false);
+				oDownButton.setEnabled(false);
+			}
+		} else {
+			oUpButton.setEnabled(false);
+			oDownButton.setEnabled(false);
+		}
 	}
 
 	// ------ search field ------
@@ -148,13 +179,13 @@ function(
 		var oDefaultApplicationTable = getDefaultApplicationTable.call(this);
 		var sDefaultTableText = getDefaultApplicationTitle.call(this);
 		if (sQuery && sQuery.length > 0) {
-			setEnabledPropertyOfMoveButton.call(this, false);
+			syncEnabledPropertyOfMoveButtons.call(this);
 			enableDragAndDropForAdaptationTable.call(this, false);
-			//filter Table context
+			// filter Table context
 			var oFilterByTitle = new Filter("title", FilterOperator.Contains, sQuery);
 			var oFilterByContextId = new Filter({
 				path: "contexts/role",
-				test: function(aRoles) {
+				test(aRoles) {
 					return aRoles.some(function(sRole) {
 						return sRole.includes(sQuery.toUpperCase());
 					});
@@ -163,7 +194,7 @@ function(
 			var oFilterCreatedBy = new Filter("createdBy", FilterOperator.Contains, sQuery);
 			var oFilterChangedBy = new Filter("changedBy", FilterOperator.Contains, sQuery);
 			oFilters = new Filter([oFilterByTitle, oFilterByContextId, oFilterCreatedBy, oFilterChangedBy]);
-			//Filter default Table context
+			// Filter default Table context
 			if (sDefaultTableText.toUpperCase().includes(sQuery.toUpperCase())) {
 				oDefaultApplicationTable.setVisible(true);
 			} else {
@@ -172,7 +203,7 @@ function(
 		} else {
 			enableDragAndDropForAdaptationTable.call(this, true);
 			if (this._oControlConfigurationModel.getProperty("/isTableItemSelected")) {
-				setEnabledPropertyOfMoveButton.call(this, true);
+				syncEnabledPropertyOfMoveButtons.call(this);
 			}
 			oDefaultApplicationTable.setVisible(true);
 		}
@@ -203,14 +234,6 @@ function(
 		oModel.refresh(true);
 	}
 
-	function initializeRanks(oModel) {
-		var aContexts = oModel.getProperty("/adaptations") || [];
-		aContexts.forEach(function(oContext, iIndex) {
-			oContext.rank = iIndex + 1;
-		});
-		oModel.setProperty("/adaptations", aContexts);
-	}
-
 	function moveSelectedItem(sDirection) {
 		var oTable = getAdaptationsTable.call(this);
 		var oSelectedItem = oTable.getSelectedItem(0);
@@ -233,7 +256,8 @@ function(
 		sortByRank(this.oAdaptationsModel);
 		// after move select the sibling
 		oTable.getItems()[iSiblingItemIndex].setSelected(true).focus();
-		enableSaveButton.call(this, true);
+		enableSaveButton.call(this, didAdaptationsPriorityChange.call(this));
+		syncEnabledPropertyOfMoveButtons.call(this);
 	}
 
 	function onDropSelectedAdaptation(oEvent) {
@@ -271,14 +295,18 @@ function(
 		// set the rank property and update the model to refresh the bindings
 		this.oAdaptationsModel.setProperty("rank", iNewRank, oDraggedItemContext);
 		sortByRank(this.oAdaptationsModel);
-		initializeRanks(this.oAdaptationsModel);
-		enableSaveButton.call(this, true);
+		var oAllUpdatedAdaptations = Object.assign(
+			this.oAdaptationsModel.getProperty("/allAdaptations"),
+			this.oAdaptationsModel.getProperty("/adaptations")
+		);
+		this.oAdaptationsModel.updateAdaptations(oAllUpdatedAdaptations);
+		enableSaveButton.call(this, didAdaptationsPriorityChange.call(this));
 	}
 
 	function didAdaptationsPriorityChange() {
 		return !_isEqual(
-			this.oAdaptationsModel.getProperty("/adaptations").map(function(oAdapation) { return oAdapation.id; }),
-			this.oReferenceAdaptationsData.adaptations.map(function(oAdapation) { return oAdapation.id; })
+			this.oAdaptationsModel.getProperty("/adaptations").map(function(oAdaptation) { return oAdaptation.id; }),
+			this.oReferenceAdaptationsData.map(function(oAdaptation) { return oAdaptation.id; })
 		);
 	}
 
@@ -293,7 +321,7 @@ function(
 	}
 
 	function getControlInDialog(sId) {
-		return this.getToolbar().getControl("manageAdaptationDialog--" + sId);
+		return this.getToolbar().getControl(`manageAdaptationDialog--${sId}`);
 	}
 
 	function getDefaultApplicationTable() {
@@ -316,27 +344,60 @@ function(
 		getAdaptationsTable.call(this).getDragDropConfig()[0].setEnabled(bIsEnabled);
 	}
 
-	function onSaveReorderedAdaptations() {
-		if (didAdaptationsPriorityChange.call(this)) {
-			var oRtaInformation = this.getToolbar().getRtaInformation();
-			var aAdaptationPriorities = this.oAdaptationsModel.getProperty("/adaptations").map(function(oAdaptation) { return oAdaptation.id; });
-			ContextBasedAdaptationsAPI.reorder({control: oRtaInformation.rootControl, layer: oRtaInformation.flexSettings.layer, parameters: {priorities: aAdaptationPriorities}})
-			.catch(function(oError) {
-				Log.error(oError.stack);
-				var sMessage = "MSG_LREP_TRANSFER_ERROR";
-				var oOptions = { titleKey: "BTN_MANAGE_APP_CTX" };
-				oOptions.details = oError.userMessage;
-				Utils.showMessageBox("error", sMessage, oOptions);
-			});
+	function isAdaptationsSelected() {
+		var oAdaptationsTable = getAdaptationsTable.call(this);
+		return oAdaptationsTable.getSelectedContextPaths().length > 0;
+	}
+
+	function getIndexOfSelectedAdaptation() {
+		var oAdaptationsTable = getAdaptationsTable.call(this);
+		if (oAdaptationsTable.getSelectedContextPaths().length > 0) {
+			var aSplitedPath = oAdaptationsTable.getSelectedContextPaths()[0].split("/");
+			var iIndexOfSelectedItem = Number(aSplitedPath[aSplitedPath.length - 1]);
+			return iIndexOfSelectedItem;
 		}
+		return -1;
+	}
+
+	function onSaveReorderedAdaptations() {
+		Utils.checkDraftOverwrite(this.getToolbar().getModel("versions")).then(function() {
+			var oRtaInformation = this.getToolbar().getRtaInformation();
+			var aAdaptationPriorities = this.oAdaptationsModel.getProperty("/adaptations")
+			.map(function(oAdaptation) { return oAdaptation.id; });
+			return ContextBasedAdaptationsAPI.reorder({
+				control: oRtaInformation.rootControl,
+				layer: oRtaInformation.flexSettings.layer,
+				parameters: {priorities: aAdaptationPriorities}
+			});
+		}.bind(this)).then(function() {
+			var oAllUpdatedAdaptations = Object.assign(
+				this.oAdaptationsModel.getProperty("/allAdaptations"),
+				this.oAdaptationsModel.getProperty("/adaptations")
+			);
+			this.oAdaptationsModel.updateAdaptations(oAllUpdatedAdaptations);
+			onCloseDialog.call(this);
+		}.bind(this))
+		.catch(function(oError) {
+			if (oError !== "cancel") {
+				Utils.showMessageBox("error", "MSG_LREP_TRANSFER_ERROR", { titleKey: "BTN_MANAGE_APP_CTX", error: oError});
+				Log.error(`sap.ui.rta: ${oError.stack || oError.message || oError}`);
+			}
+		});
+	}
+
+	function onCancelDialog() {
+		// the adaptationsModel has to be set to its origin as no reorder has taken place
+		this.oAdaptationsModel.updateAdaptations(this._oOriginAdaptationsData);
 		onCloseDialog.call(this);
 	}
 
 	function onCloseDialog() {
 		this._oControlConfigurationModel.setProperty("/isTableItemSelected", false);
 		getSearchField.call(this).setValue("");
+		var oTable = getAdaptationsTable.call(this);
+		oTable.getBinding("items").filter([]);
+		oTable.removeSelections();
 		getDefaultApplicationTable.call(this).setVisible(true);
-		this._oManageAdaptationDialog.getModel("contextBased").setData(null);
 		this._oManageAdaptationDialog.close();
 	}
 

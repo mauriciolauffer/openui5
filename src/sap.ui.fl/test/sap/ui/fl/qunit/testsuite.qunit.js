@@ -1,7 +1,7 @@
 sap.ui.define([
 	"sap/base/util/merge",
 	"sap/base/Log"
-], function (
+], function(
 	merge,
 	Log
 ) {
@@ -45,12 +45,6 @@ sap.ui.define([
 					resourceroots: {
 						"sap/ui/fl/test/registry": "test-resources/sap/ui/fl/qunit/testResources"
 					}
-				}
-			},
-			"initial/_internal/changeHandlers/ChangeRegistryItem": {
-				group: "Initial Internal",
-				coverage: {
-					only: ["sap/ui/fl/initial/_internal/changeHandlers/ChangeRegistryItem"]
 				}
 			},
 			"initial/_internal/connectors/StaticFileConnector": {
@@ -193,10 +187,22 @@ sap.ui.define([
 					only: ["sap/ui/fl/apply/_internal/changes/descriptor/app/AddAnnotationsToOData"]
 				}
 			},
+			"apply/_internal/changes/descriptor/app/RemoveAllInboundsExceptOne": {
+				group: "Apply Internal - Descriptor Change Merger",
+				coverage: {
+					only: ["sap/ui/fl/apply/_internal/changes/descriptor/app/RemoveAllInboundsExceptOne"]
+				}
+			},
 			"apply/_internal/changes/descriptor/app/ChangeInbound": {
 				group: "Apply Internal - Descriptor Change Merger",
 				coverage: {
 					only: ["sap/ui/fl/apply/_internal/changes/descriptor/app/ChangeInbound", "sap/ui/fl/util/DescriptorChangeCheck", "sap/ui/fl/util/changePropertyValueByPath"]
+				}
+			},
+			"apply/_internal/changes/descriptor/app/AddNewInbound": {
+				group: "Apply Internal - Descriptor Change Merger",
+				coverage: {
+					only: ["sap/ui/fl/apply/_internal/changes/descriptor/app/AddNewInbound", "sap/ui/fl/util/DescriptorChangeCheck"]
 				}
 			},
 			"apply/_internal/changes/descriptor/ui5/SetMinUI5Version": {
@@ -277,6 +283,9 @@ sap.ui.define([
 					only: ["sap/ui/fl/util/DescriptorChangeCheck"]
 				}
 			},
+			/**
+			 * @deprecated Since 1.84
+			 */
 			"apply/_internal/connectors/ObjectStorageConnector": {
 				group: "Apply Internal",
 				coverage: {
@@ -384,7 +393,15 @@ sap.ui.define([
 			"apply/_internal/flexState/controlVariants/VariantManagementState": {
 				group: "Apply Internal",
 				coverage: {
-					only: ["sap/ui/fl/apply/_internal/flexState/controlVariants/VariantManagementState"]
+					only: [
+						"sap/ui/fl/apply/_internal/flexState/controlVariants/VariantManagementState",
+						"sap/ui/fl/apply/_internal/flexState/InitialPrepareFunctions"
+					]
+				},
+				ui5: {
+					resourceroots: {
+						"rta/qunit": "test-resources/sap/ui/rta/qunit/"
+					}
 				}
 			},
 			"apply/_internal/flexState/controlVariants/Switcher": {
@@ -441,12 +458,6 @@ sap.ui.define([
 					only: ["sap/ui/fl/apply/_internal/flexState/compVariants/Utils"]
 				}
 			},
-			"apply/_internal/flexState/controlVariants/prepareVariantsMap": {
-				group: "Apply Internal",
-				coverage: {
-					only: ["sap/ui/fl/apply/_internal/flexState/controlVariants/prepareVariantsMap"]
-				}
-			},
 			"apply/_internal/preprocessors/ControllerExtension": {
 				group: "Apply Internal",
 				coverage: {
@@ -458,10 +469,15 @@ sap.ui.define([
 					}
 				}
 			},
-			"apply/_internal/ChangesController": {
+			"apply/_internal/preprocessors/ComponentLifecycleHooks": {
 				group: "Apply Internal",
 				coverage: {
-					only: ["sap/ui/fl/apply/_internal/ChangesController"]
+					only: ["sap/ui/fl/apply/_internal/preprocessors/ComponentLifecycleHooks"]
+				},
+				ui5: {
+					resourceroots: {
+						"rta/qunit": "test-resources/sap/ui/rta/qunit/"
+					}
 				}
 			},
 			"apply/_internal/preprocessors/EventHistory": {
@@ -493,19 +509,37 @@ sap.ui.define([
 				ui5: {
 					resourceroots: {
 						"sap/ui/fl/qunit/extensionPoint": "test-resources/sap/ui/fl/qunit/apply/_internal/extensionPoint"
-					}
+					},
+					"xx-suppressDeactivationOfControllerCode": true,
+					"xx-designMode": true
+				}
+			},
+			/**
+			 * @deprecated Since 1.77
+			 */
+			"apply/_internal/extensionPoint/ProcessorLegacy": {
+				group: "Apply Internal",
+				coverage: {
+					only: ["sap/ui/fl/apply/_internal/extensionPoint/ProcessorLegacy"]
+				},
+				ui5: {
+					resourceroots: {
+						"sap/ui/fl/qunit/extensionPoint": "test-resources/sap/ui/fl/qunit/apply/_internal/extensionPoint"
+					},
+					"xx-suppressDeactivationOfControllerCode": true,
+					"xx-designMode": true
 				}
 			},
 			"write/api/AppVariantWriteAPI": {
 				group: "Write API",
 				coverage: {
-					only: ["sap/ui/fl/write/api/AppVariantWriteAPI", "sap/ui/fl/apply/_internal/ChangesController"]
+					only: ["sap/ui/fl/write/api/AppVariantWriteAPI"]
 				}
 			},
 			"write/api/ChangesWriteAPI": {
 				group: "Write API",
 				coverage: {
-					only: ["sap/ui/fl/write/api/ChangesWriteAPI", "sap/ui/fl/apply/_internal/ChangesController"]
+					only: ["sap/ui/fl/write/api/ChangesWriteAPI"]
 				}
 			},
 			"write/api/ContextBasedAdaptationsAPI": {
@@ -524,6 +558,9 @@ sap.ui.define([
 				group: "Write API",
 				coverage: {
 					only: ["sap/ui/fl/write/api/ControlPersonalizationWriteAPI"]
+				},
+				ui5: {
+					flexibilityServices: '[{"connector": "SessionStorageConnector"}]'
 				}
 			},
 			"write/api/ExtensionPointRegistryAPI": {
@@ -547,7 +584,7 @@ sap.ui.define([
 			"write/api/PersistenceWriteAPI": {
 				group: "Write API",
 				coverage: {
-					only: ["sap/ui/fl/write/api/PersistenceWriteAPI", "sap/ui/fl/apply/_internal/ChangesController"]
+					only: ["sap/ui/fl/write/api/PersistenceWriteAPI"]
 				}
 			},
 			"write/api/ReloadInfoAPI": {
@@ -617,6 +654,12 @@ sap.ui.define([
 				group: "Write Internal",
 				coverage: {
 					only: ["sap/ui/fl/write/_internal/flexState/compVariants/CompVariantState"]
+				}
+			},
+			"write/_internal/flexState/UI2PersonalizationState/UI2PersonalizationState": {
+				group: "Write Internal",
+				coverage: {
+					only: ["sap/ui/fl/write/_internal/flexState/UI2PersonalizationState/UI2PersonalizationState"]
 				}
 			},
 			"write/_internal/connectors/ObjectPathConnector": {
@@ -707,7 +750,25 @@ sap.ui.define([
 				ui5: {
 					resourceroots: {
 						"sap/ui/fl/qunit/extensionPoint": "test-resources/sap/ui/fl/qunit/apply/_internal/extensionPoint"
-					}
+					},
+					"xx-suppressDeactivationOfControllerCode": true,
+					"xx-designMode": true
+				}
+			},
+			/**
+			 * @deprecated Since 1.77
+			 */
+			"write/_internal/extensionPoint/ProcessorLegacy": {
+				group: "Write Internal",
+				coverage: {
+					only: ["sap/ui/fl/write/_internal/extensionPoint/ProcessorLegacy"]
+				},
+				ui5: {
+					resourceroots: {
+						"sap/ui/fl/qunit/extensionPoint": "test-resources/sap/ui/fl/qunit/apply/_internal/extensionPoint"
+					},
+					"xx-suppressDeactivationOfControllerCode": true,
+					"xx-designMode": true
 				}
 			},
 			"write/_internal/fieldExtensibility/ABAPExtensibilityVariantFactory": {
@@ -1009,6 +1070,13 @@ sap.ui.define([
 				}
 			},
 
+			"designtime/util/IFrame.designtime": {
+				group: "Designtime",
+				coverage: {
+					only: ["sap/ui/fl/designtime/util/IFrame.designtime"]
+				}
+			},
+
 			// Variant tests:
 			"variants/VariantManagement": {
 				group: "Variants",
@@ -1021,7 +1089,8 @@ sap.ui.define([
 				ui5: {
 					resourceroots: {
 						"sap.ui.test": "test-resources/sap/ui/fl/qunit/testResources/"
-					}
+					},
+					flexibilityServices: '[{"connector": "SessionStorageConnector"}]'
 				},
 				coverage: {
 					only: ["sap/ui/fl/variants/VariantModel"]
@@ -1047,11 +1116,6 @@ sap.ui.define([
 			},
 
 			// CLOUD IOI tests:
-			Cache: {
-				coverage: {
-					only: ["sap/ui/fl/Cache"]
-				}
-			},
 			library: {
 				coverage: {
 					only: ["sap/ui/fl/library"]
@@ -1084,6 +1148,9 @@ sap.ui.define([
 					libs: null // The fl library is being loaded inside the test
 				}
 			},
+			/**
+			 * @deprecated Since 1.70
+			 */
 			FakeLrepConnector: {
 				coverage: {
 					only: ["sap/ui/fl/FakeLrepConnector"]
@@ -1102,7 +1169,7 @@ sap.ui.define([
 
 			// Rules
 			"rules/StableId": {
-				group: "rules",
+				group: "Rules",
 				ui5: {
 					resourceroots: {
 						"sap.ui.support.TestHelper": "test-resources/sap/ui/support/TestHelper"
@@ -1111,43 +1178,43 @@ sap.ui.define([
 			},
 			// Support
 			"support/apps/contentbrowser/controller/ContentDetails.controller": {
-				group: "support",
+				group: "Support",
 				coverage: {
 					only: ["sap/ui/fl/support"]
 				}
 			},
 			"support/apps/contentbrowser/controller/ContentDetailsEdit.controller": {
-				group: "support",
+				group: "Support",
 				coverage: {
 					only: ["sap/ui/fl/support"]
 				}
 			},
 			"support/apps/contentbrowser/controller/LayerContentMaster.controller": {
-				group: "support",
+				group: "Support",
 				coverage: {
 					only: ["sap/ui/fl/support"]
 				}
 			},
 			"support/apps/contentbrowser/controller/Layers.controller": {
-				group: "support",
+				group: "Support",
 				coverage: {
 					only: ["sap/ui/fl/support"]
 				}
 			},
 			"support/apps/contentbrowser/lrepConnector/LRepConnector": {
-				group: "support",
+				group: "Support",
 				coverage: {
 					only: ["sap/ui/fl/support"]
 				}
 			},
 			"support/apps/contentbrowser/utils/DataUtils": {
-				group: "support",
+				group: "Support",
 				coverage: {
 					only: ["sap/ui/fl/support"]
 				}
 			},
 			"support/apps/contentbrowser/utils/ErrorUtils": {
-				group: "support",
+				group: "Support",
 				coverage: {
 					only: ["sap/ui/fl/support"]
 				}
@@ -1155,28 +1222,28 @@ sap.ui.define([
 
 			// transport
 			"write/_internal/transport/TransportDialog": {
-				group: "transport",
+				group: "Transport",
 				coverage: {
 					only: ["sap/ui/fl/write/_internal/transport/TransportDialog"]
 				}
 			},
 			"write/_internal/transport/TransportSelection": {
-				group: "transport",
+				group: "Transport",
 				coverage: {
 					only: ["sap/ui/fl/write/_internal/transport/TransportSelection"]
 				}
 			},
 			"write/_internal/transport/Transports": {
-				group: "transport",
+				group: "Transport",
 				coverage: {
 					only: ["sap/ui/fl/write/_internal/transport/Transports"]
 				}
 			},
 			"designtime/Library": {
-				group: "designTime"
+				group: "DesignTime"
 			},
 			"integration/async/ComponentWithView": {
-				group: "integration/async",
+				group: "Integration/async",
 				ui5: {
 					resourceroots: {
 						"sap.ui.fl.qunit.integration.async": "test-resources/sap/ui/fl/qunit/integration/async"
@@ -1184,7 +1251,7 @@ sap.ui.define([
 				}
 			},
 			"integration/FlexInReuseComponents": {
-				group: "integration",
+				group: "Integration",
 				ui5: {
 					resourceroots: {
 						"sap.ui.fl.qunit.integration": "test-resources/sap/ui/fl/qunit/integration"
@@ -1192,12 +1259,12 @@ sap.ui.define([
 				}
 			},
 			"registry/Settings": {
-				group: "registry",
+				group: "Registry",
 				coverage: {
 					only: ["sap/ui/fl/registry/Settings"]
 				}
 			},
-			//OVP key user test scenarios
+			// OVP key user test scenarios
 			"apply/_internal/changes/descriptor/ovp/ChangeCard": {
 				group: "Apply Internal - OVP Change card",
 				coverage: {
@@ -1231,10 +1298,10 @@ sap.ui.define([
 				case 200:
 				case 304:
 					var aLibraries = JSON.parse(this.responseText).libraries;
-					bCompAvailable = aLibraries.some(function (mLibrary) {
+					bCompAvailable = aLibraries.some(function(mLibrary) {
 						return mLibrary.name === "sap.ui.comp";
 					});
-					bMdcAvailable = aLibraries.some(function (mLibrary) {
+					bMdcAvailable = aLibraries.some(function(mLibrary) {
 						return mLibrary.name === "sap.ui.mdc";
 					});
 					break;
@@ -1261,8 +1328,11 @@ sap.ui.define([
 							"sap.ui.rta.qunitrta": "test-resources/sap/ui/rta/internal/testdata/qunit_rta/",
 							"sap.ui.rta.test": "test-resources/sap/ui/rta/internal/testdata/rta/",
 							"sap.ui.mdc.app": "test-resources/sap/ui/mdc/sample/table",
-							"sap.ui.fl.testResources": "test-resources/sap/ui/fl/qunit/testResources"
-						}
+							"sap.ui.fl.testResources": "test-resources/sap/ui/fl/qunit/testResources",
+							delegates: "test-resources/sap/ui/mdc/delegates/"
+						},
+						libs: ["sap.ui.mdc"],
+						flexibilityServices: '[{"connector": "SessionStorageConnector"}]'
 					},
 					qunit: {
 						reorder: false

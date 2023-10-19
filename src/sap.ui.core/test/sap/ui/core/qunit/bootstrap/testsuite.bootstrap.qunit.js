@@ -20,7 +20,9 @@ sap.ui.define(function() {
 			}
 		},
 		tests: {
-			/*
+			/**
+			 * @deprecated As of version 1.120
+			 *
 			 * DebugMode.qunit.html is still an HTML page of its own as the debug mode code
 			 * wouldn't recognize the bootstrap script in the (dynamically enriched) Test.qunit.html
 			 */
@@ -35,6 +37,9 @@ sap.ui.define(function() {
 					reorder: false
 				}
 			},
+			/**
+			 * @deprecated As of version 1.120
+			 */
 			"DebugMode (partial, sync)": {
 				group: "DebugMode",
 				page: "test-resources/sap/ui/core/qunit/bootstrap/DebugMode.qunit.html?sap-ui-debug=sap%2Fm%2FListBase,fixture%2Fdebug-mode%2F",
@@ -46,6 +51,9 @@ sap.ui.define(function() {
 					reorder: false
 				}
 			},
+			/**
+			 * @deprecated As of version 1.120
+			 */
 			"DebugMode (full, sync)": {
 				group: "DebugMode",
 				page: "test-resources/sap/ui/core/qunit/bootstrap/DebugMode.qunit.html?sap-ui-debug=true",
@@ -339,37 +347,64 @@ sap.ui.define(function() {
 				},
 				beforeBootstrap: "./CalendarClassLoadingWithCustomBootTask.beforeBootstrap.qunit"
 			},
-			"CfgDefaults": {
-				group: "Configuration",
-				page: "test-resources/sap/ui/core/qunit/bootstrap/CfgDefaults.qunit.html"
-			},
-			"CfgFromConfigAttribute": {
-				group: "Configuration",
-				page: "test-resources/sap/ui/core/qunit/bootstrap/CfgFromConfigAttribute.qunit.html"
-			},
-			"CfgFromGlobalObject": {
-				group: "Configuration",
-				page: "test-resources/sap/ui/core/qunit/bootstrap/CfgFromGlobalObject.qunit.html"
-			},
-			"CfgFromTagAttributes": {
-				group: "Configuration",
-				page: "test-resources/sap/ui/core/qunit/bootstrap/CfgFromTagAttributes.qunit.html",
-				ui5: {
-					libs: "sap.m",
-					theme: "fantasy",
-					language: "klingon"
-				}
+			"ControlBehavior": {
+				title: "Test Page for ControlBehavior",
+				group: "Configuration"
 			},
 			"Configuration": {
+				autostart: false,
 				group: "Configuration",
-				ui5: {
-					theme: "SapSampleTheme2",
-					language: "en",
-					calendarType: "islamic",
-					logLevel: "WARNING",
-					noConflict: "true",
-					libs: "sap.ui.core"
+				page: "test-resources/sap/ui/core/qunit/bootstrap/Configuration.qunit.html",
+				qunit: {
+					reorder: false
+				}
+			},
+			"ConfigurationFlexibility_LibLoaded": {
+				autostart: false,
+				group: "Configuration",
+				qunit: {
+					reorder: false
 				},
+				ui5: {
+					"flexibilityservices": '[{"connector": "KeyUser", "url": "/some/url", "laverFilters": []}]'
+				}
+			},
+			"ConfigurationFlexibility_LoadLibUrl": {
+				autostart: false,
+				group: "Configuration",
+				page: "test-resources/sap/ui/core/qunit/bootstrap/ConfigurationFlexibility_LibLoaded.qunit.html?sapUiFlexibilityServices=" + encodeURI('[{"connector":"KeyUser","url": "/some/url","laverFilters":[]}]'),
+				qunit: {
+					reorder: false
+				}
+			},
+			"ConfigurationFlexibility_LoadLibUrl_SkipAutomatic": {
+				autostart: false,
+				group: "Configuration",
+				page: "test-resources/sap/ui/core/qunit/bootstrap/ConfigurationFlexibility_LibNotLoaded.qunit.html?sapUiXxSkipAutomaticFlLibLoading=true&sapUiFlexibilityServices=" + encodeURI('[{"connector":"KeyUser","url": "/some/url","laverFilters":[]}]'),
+				qunit: {
+					reorder: false
+				}
+			},
+			"ConfigurationFlexibility_DefaultDoesNotLoadLib": {
+				autostart: false,
+				group: "Configuration",
+				page: "test-resources/sap/ui/core/qunit/bootstrap/ConfigurationFlexibility_LibNotLoaded.qunit.html",
+				qunit: {
+					reorder: false
+				}
+			},
+			"ConfigurationFlexibility_LibConfigured": {
+				autostart: false,
+				group: "Configuration",
+				qunit: {
+					reorder: false
+				},
+				ui5: {
+					"libs": 'sap.ui.fl'
+				}
+			},
+			"Configuration_language_via_URL": {
+				group: "Configuration",
 				qunit: {
 					reorder: false
 				}
@@ -455,7 +490,8 @@ sap.ui.define(function() {
 					language: "en",
 					preload: "async",
 					theme: "base",
-					versionedLibCss: false
+					versionedLibCss: false,
+					XxWaitForTheme: "init"
 				},
 				beforeBootstrap: "./ThemeVersion.beforeBootstrap.qunit",
 				module: "./ThemeVersion.qunit"
@@ -467,7 +503,8 @@ sap.ui.define(function() {
 					language: "en",
 					preload: "sync",
 					theme: "base",
-					versionedLibCss: false
+					versionedLibCss: false,
+					XxWaitForTheme: "init"
 				},
 				beforeBootstrap: "./ThemeVersion.beforeBootstrap.qunit",
 				module: "./ThemeVersion.qunit"
@@ -484,7 +521,8 @@ sap.ui.define(function() {
 							"sap.ui.core": "test-resources/sap/ui/core/qunit/testdata/customcss/"
 						}
 					},
-					versionedLibCss: true
+					versionedLibCss: true,
+					XxWaitForTheme: "init"
 				},
 				beforeBootstrap: "./ThemeVersion.beforeBootstrap.qunit",
 				module: "./ThemeVersion.qunit",
@@ -499,11 +537,15 @@ sap.ui.define(function() {
 					language: "en",
 					theme: "base",
 					preload: "async",
-					versionedLibCss: true
+					versionedLibCss: true,
+					XxWaitForTheme: "init"
 				},
 				beforeBootstrap: "./ThemeVersion.beforeBootstrap.qunit",
 				module: "./ThemeVersion.qunit"
 			},
+			/**
+			 * @deprecated As of version 1.111
+			 */
 			"ThemeVersion-on-sync-customcss": {
 				group: "Theme Versioning",
 				title: "QUnit Page for Theme Version Parameter - on - sync (with custom.css)",
@@ -516,11 +558,15 @@ sap.ui.define(function() {
 							"sap.ui.core": "test-resources/sap/ui/core/qunit/testdata/customcss/"
 						}
 					},
-					versionedLibCss: true
+					versionedLibCss: true,
+					XxWaitForTheme: "init"
 				},
 				beforeBootstrap: "./ThemeVersion.beforeBootstrap.qunit",
 				module: "./ThemeVersion.qunit"
 			},
+			/**
+			 * @deprecated As of version 1.111
+			 */
 			"ThemeVersion-on-sync": {
 				group: "Theme Versioning",
 				title: "QUnit Page for Theme Version Parameter - on - sync",
@@ -528,7 +574,8 @@ sap.ui.define(function() {
 					theme: "base",
 					language: "en",
 					preload: "sync",
-					versionedLibCss: true
+					versionedLibCss: true,
+					XxWaitForTheme: "init"
 				},
 				beforeBootstrap: "./ThemeVersion.beforeBootstrap.qunit",
 				module: "./ThemeVersion.qunit"

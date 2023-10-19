@@ -1,10 +1,5 @@
 var fs = require('fs');
 var url = require('url');
-var cspMiddleware = require('@ui5/server').middlewareRepository.getMiddleware("csp");
-if (cspMiddleware.middleware) {
-	// ui5-server 2.0 returns the middleware as an attribute of an object
-	cspMiddleware = cspMiddleware.middleware;
-}
 
 
 module.exports = function(grunt, config) {
@@ -75,6 +70,7 @@ module.exports = function(grunt, config) {
 					middlewares.splice(grunt.option('watch') ? 3 : 2, 0,
 						createReplacementMiddleware("sap/ui/Global.js"),
 						createReplacementMiddleware("sap/ui/core/Configuration.js"),
+						createReplacementMiddleware("sap/ui/core/getCompatibilityVersion.js"),
 						[ '/' + testsuiteName + '/resources/sap-ui-version.json', function(req, res, next) {
 
 							var version = grunt.config('package.version');
@@ -147,54 +143,6 @@ module.exports = function(grunt, config) {
 
 						next();
 					});
-
-					var oCspConfig = {
-						allowDynamicPolicySelection: true,
-						allowDynamicPolicyDefinition: true,
-						defaultPolicyIsReportOnly: true,
-						definedPolicies: {
-							"sap-target-level-1":
-								"default-src 'self'; " +
-								"script-src  'self' 'unsafe-eval'; " +
-								"style-src   'self' 'unsafe-inline'; " +
-								"font-src    'self' data:; " +
-								"img-src     'self' https: http: data: blob:; " +
-								"media-src   'self' https: http: data: blob:; " +
-								"object-src  blob:; " +
-								"frame-src   'self' https: gap: data: blob: mailto: tel:; " +
-								"worker-src  'self' blob:; " +
-								"child-src   'self' blob:; " +
-								"connect-src 'self' https: wss:; " +
-								"base-uri    'self';",
-							"sap-target-level-2":
-								"default-src 'self'; " +
-								"script-src  'self'; " +
-								"style-src   'self' 'unsafe-inline'; " +
-								"font-src    'self' data:; " +
-								"img-src     'self' https: http: data: blob:; " +
-								"media-src   'self' https: http: data: blob:; " +
-								"object-src  blob:; " +
-								"frame-src   'self' https: gap: data: blob: mailto: tel:; " +
-								"worker-src  'self' blob:; " +
-								"child-src   'self' blob:; " +
-								"connect-src 'self' https: wss:; " +
-								"base-uri    'self';",
-							"sap-target-level-3":
-								"default-src 'self'; " +
-								"script-src  'self'; " +
-								"style-src   'self'; " +
-								"font-src    'self'; " +
-								"img-src     'self' https:; " +
-								"media-src   'self' https:; " +
-								"object-src  'self'; " +
-								"frame-src   'self' https: gap: mailto: tel:; " +
-								"worker-src  'self'; " +
-								"child-src   'self'; " +
-								"connect-src 'self' https: wss:; " +
-								"base-uri    'self';"
-						}
-					};
-					middlewares.unshift(cspMiddleware("sap-ui-xx-csp-policy", oCspConfig));
 
 					// Make sure .xml files are served with Content-Type application/xml instead of text/xml
 					// as it causes issues with OData / datajs.

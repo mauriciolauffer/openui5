@@ -6,7 +6,7 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
   });
   _exports.pathData = _exports.ltr = _exports.default = _exports.accData = void 0;
   const name = "synchronize";
-  const pathData = "M447 87l1-23q0-14 9-23t23-9 22.5 9 9.5 23v96q0 14-9 23t-23 9h-97q-14 0-23-8.5t-9-22.5 9-23 23-9h24l-21-17q-26-21-58.5-34.5T259 64q-58 0-104.5 30.5T86 173q-5 12-17 16.5t-24-.5q-17-5-22-17.5t3-24.5q31-65 91.5-105.5T256 1q48 0 92 19t80 51zM65 425l-1 23q0 14-9 23t-23 9-22.5-9T1 448v-96q-1-14 8-23t23-9h97q14 0 23 8.5t9 22.5-9 23-23 9l-24 1 21 16q26 21 58.5 34.5T253 448q58 0 104.5-30.5T426 339q5-12 17-16.5t24 .5q17 5 22 17.5t-3 24.5q-31 65-91.5 105.5T257 511q-48 0-92.5-19T84 441z";
+  const pathData = "M26 192q-11 0-18.5-7.5T0 166q0-2 1-6t5-12q17-33 42.5-60.5t58-47 70-30T254 0q60 0 113.5 23.5T461 90V58q0-11 7-18.5t18-7.5 18.5 7.5T512 58v108q0 11-7.5 18.5T486 192H378q-11 0-18.5-7.5T352 166t7.5-18 18.5-7h59q-33-43-81-66.5T254 51q-66 0-121 34t-84 93q-8 14-23 14zm460 128q11 0 18.5 7.5T512 346q0 2-1 6t-5 12q-16 33-42.5 60.5t-59 47-70 30T258 512q-60 0-113.5-23.5T51 422v32q0 11-7 18.5T26 480t-18.5-7.5T0 454V346q0-11 7.5-18.5T26 320h108q11 0 18.5 7.5T160 346t-7.5 18-18.5 7H75q33 43 81 66.5T258 461q66 0 121-34t84-93q8-14 23-14z";
   _exports.pathData = pathData;
   const ltr = false;
   _exports.ltr = ltr;
@@ -21,6 +21,6 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
     collection,
     packageName
   });
-  var _default = "synchronize";
+  var _default = "SAP-icons-v5/synchronize";
   _exports.default = _default;
 });

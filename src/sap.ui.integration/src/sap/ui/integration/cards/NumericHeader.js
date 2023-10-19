@@ -7,6 +7,9 @@ sap.ui.define([
 	"sap/f/cards/NumericHeader",
 	"sap/f/cards/NumericHeaderRenderer",
 	"sap/f/cards/NumericSideIndicator",
+	"sap/m/library",
+	"sap/m/Text",
+	"sap/ui/integration/util/BindingHelper",
 	"sap/ui/model/json/JSONModel",
 	"sap/ui/integration/util/BindingResolver",
 	"sap/ui/integration/util/LoadingProvider"
@@ -16,11 +19,17 @@ sap.ui.define([
 	FNumericHeader,
 	FNumericHeaderRenderer,
 	NumericSideIndicator,
+	mLibrary,
+	Text,
+	BindingHelper,
 	JSONModel,
 	BindingResolver,
 	LoadingProvider
 ) {
 	"use strict";
+
+	// shortcut for sap.m.AvatarColor
+	var AvatarColor = mLibrary.AvatarColor;
 
 	/**
 	 * Constructor for a new <code>NumericHeader</code>.
@@ -42,7 +51,7 @@ sap.ui.define([
 	 */
 	var NumericHeader = FNumericHeader.extend("sap.ui.integration.cards.NumericHeader", {
 
-		constructor: function (mConfiguration, oActionsToolbar) {
+		constructor: function (sId, mConfiguration, oActionsToolbar, oIconFormatter) {
 
 			mConfiguration = mConfiguration || {};
 
@@ -57,14 +66,39 @@ sap.ui.define([
 
 			if (mConfiguration.status && mConfiguration.status.text && !mConfiguration.status.text.format) {
 				mSettings.statusText = mConfiguration.status.text;
+				mSettings.statusVisible = mConfiguration.status.visible;
+			}
+
+			// @todo move to common place with Header.js
+			if (mConfiguration.icon) {
+				var vInitials = mConfiguration.icon.initials || mConfiguration.icon.text;
+				var sBackgroundColor = mConfiguration.icon.backgroundColor || (vInitials ? AvatarColor.Accent6 : AvatarColor.Transparent);
+
+				mSettings.iconSrc = mConfiguration.icon.src;
+				mSettings.iconDisplayShape = mConfiguration.icon.shape;
+				mSettings.iconInitials = vInitials;
+				mSettings.iconAlt = mConfiguration.icon.alt;
+				mSettings.iconBackgroundColor = sBackgroundColor;
+				mSettings.iconVisible = mConfiguration.icon.visible;
+			}
+
+			if (mSettings.iconSrc) {
+				mSettings.iconSrc = BindingHelper.formattedProperty(mSettings.iconSrc, function (sValue) {
+					return oIconFormatter.formatSrc(sValue);
+				});
 			}
 
 			extend(mSettings, {
 				unitOfMeasurement: mConfiguration.unitOfMeasurement,
-				details: mConfiguration.details,
-				detailsMaxLines: mConfiguration.detailsMaxLines,
+				details: mConfiguration.details?.text || mConfiguration.details,
+				detailsMaxLines: mConfiguration.details?.maxLines || mConfiguration.detailsMaxLines,
 				sideIndicatorsAlignment: mConfiguration.sideIndicatorsAlignment
 			});
+
+
+			if (mConfiguration.details?.state) {
+				mSettings.detailsState = mConfiguration.details.state;
+			}
 
 			if (mConfiguration.mainIndicator) {
 				mSettings.number = mConfiguration.mainIndicator.number;
@@ -80,9 +114,24 @@ sap.ui.define([
 				});
 			}
 
+			if (mConfiguration.banner) {
+				mSettings.bannerLines = mConfiguration.banner.map(function (mBannerLine) { // TODO validate that it is an array and with no more than 2 elements
+					var oBannerLine = new Text({
+						text: mBannerLine.text,
+						visible: mBannerLine.visible
+					});
+
+					if (mBannerLine.diminished) {
+						oBannerLine.addStyleClass("sapFCardHeaderBannerLineDiminished");
+					}
+
+					return oBannerLine;
+				});
+			}
+
 			mSettings.toolbar = oActionsToolbar;
 
-			FNumericHeader.call(this, mSettings);
+			FNumericHeader.call(this, sId, mSettings);
 		},
 		metadata: {
 			library: "sap.ui.integration",
@@ -148,7 +197,7 @@ sap.ui.define([
 	/**
 	 * @override
 	 */
-	NumericHeader.prototype._isInteractive = function () {
+	NumericHeader.prototype.isInteractive = function () {
 		return this.getInteractive();
 	};
 
@@ -161,11 +210,17 @@ sap.ui.define([
 	};
 
 	NumericHeader.prototype.isLoading = function () {
-		var oLoadingProvider = this.getAggregation("_loadingProvider"),
-			oCard = this.getCardInstance(),
-			bCardLoading = oCard && oCard.isA("sap.ui.integration.widgets.Card") ? oCard.isLoading() : false;
+		if (!this.isReady()) {
+			return true;
+		}
 
-		return !oLoadingProvider.isDataProviderJson() && (oLoadingProvider.getLoading() || bCardLoading);
+		if (this._oDataProvider) {
+			return this.getAggregation("_loadingProvider").getLoading();
+		}
+
+		var oCard = this.getCardInstance();
+
+		return oCard && oCard.isLoading();
 	};
 
 	/**
@@ -216,8 +271,6 @@ sap.ui.define([
 
 		this._oDataProvider = this._oDataProviderFactory.create(oDataSettings, this._oServiceManager);
 
-		this.getAggregation("_loadingProvider").setDataProvider(this._oDataProvider);
-
 		if (oDataSettings && oDataSettings.name) {
 			oModel = oCard.getModel(oDataSettings.name);
 		} else if (this._oDataProvider) {
@@ -236,7 +289,10 @@ sap.ui.define([
 			}.bind(this));
 
 			this._oDataProvider.attachError(function (oEvent) {
-				this._handleError(oEvent.getParameter("message"));
+				this._handleError({
+					requestErrorParams: oEvent.getParameters(),
+					requestSettings: this._oDataProvider.getSettings()
+				});
 				this.onDataRequestComplete();
 			}.bind(this));
 
@@ -246,8 +302,8 @@ sap.ui.define([
 		}
 	};
 
-	NumericHeader.prototype._handleError = function (sLogMessage) {
-		this.fireEvent("_error", { logMessage: sLogMessage });
+	NumericHeader.prototype._handleError = function (mErrorInfo) {
+		this.fireEvent("_error", { errorInfo: mErrorInfo });
 	};
 
 	NumericHeader.prototype.refreshData = function () {
@@ -261,7 +317,9 @@ sap.ui.define([
 	 * @ui5-restricted
 	 */
 	NumericHeader.prototype.showLoadingPlaceholders = function () {
-		this.getAggregation("_loadingProvider").setLoading(true);
+		if (!this._isDataProviderJson()) {
+			this.getAggregation("_loadingProvider").setLoading(true);
+		}
 	};
 
 	/**
@@ -285,6 +343,10 @@ sap.ui.define([
 	 */
 	NumericHeader.prototype.getCardInstance = function () {
 		return Core.byId(this.getCard());
+	};
+
+	NumericHeader.prototype._isDataProviderJson = function () {
+		return this._oDataProvider && this._oDataProvider.getSettings() && this._oDataProvider.getSettings()["json"];
 	};
 
 	return NumericHeader;

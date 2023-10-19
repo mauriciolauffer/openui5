@@ -30,8 +30,6 @@ sap.ui.define([
 	 * @private
 	 * @since 1.42
 	 * @alias sap.ui.rta.command.LREPSerializer
-	 * @experimental Since 1.42. This class is experimental and provides only limited functionality. Also the API might be
-	 *               changed in future.
 	 */
 	var LREPSerializer = ManagedObject.extend("sap.ui.rta.command.LREPSerializer", {
 		metadata: {
@@ -74,18 +72,20 @@ sap.ui.define([
 		this.getCommandStack().removeCommandExecutionHandler(this._fnHandleCommandExecuted);
 	};
 	LREPSerializer.prototype._isPersistedChange = function(oPreparedChange) {
-		return !!this.getCommandStack()._aPersistedChanges && this.getCommandStack()._aPersistedChanges.indexOf(oPreparedChange.getId()) !== -1;
+		return !!this.getCommandStack()._aPersistedChanges
+			&& this.getCommandStack()._aPersistedChanges.indexOf(oPreparedChange.getId()) !== -1;
 	};
 
 	LREPSerializer.prototype.handleCommandExecuted = function(oEvent) {
-		return (function (oEvent) {
+		return (function(oEvent) {
 			var oParams = oEvent;
 			this._lastPromise = this._lastPromise.catch(function() {
 				// _lastPromise chain must not be interrupted
 			}).then(function() {
 				var aCommands = this.getCommandStack().getSubCommands(oParams.command);
+				var oAppComponent;
+				var aFlexObjects = [];
 				if (oParams.undo) {
-					var aRemovePromises = [];
 					aCommands.forEach(function(oCommand) {
 						// for revertable changes which don't belong to LREP (variantSwitch) or runtime only changes
 						if (!(oCommand instanceof FlexCommand || oCommand instanceof AppDescriptorCommand)
@@ -93,12 +93,18 @@ sap.ui.define([
 							return;
 						}
 						var oChange = oCommand.getPreparedChange();
-						var oAppComponent = oCommand.getAppComponent();
+						oAppComponent = oCommand.getAppComponent();
 						if (oAppComponent) {
-							aRemovePromises.push(PersistenceWriteAPI.remove({change: oChange, selector: oAppComponent}));
+							aFlexObjects.push(oChange);
 						}
 					});
-					return Promise.all(aRemovePromises);
+					if (oAppComponent) {
+						return PersistenceWriteAPI.remove({
+							flexObjects: aFlexObjects,
+							selector: oAppComponent
+						});
+					}
+					return Promise.resolve();
 				}
 				var aDescriptorCreateAndAdd = [];
 				aCommands.forEach(function(oCommand) {
@@ -107,18 +113,20 @@ sap.ui.define([
 						return;
 					}
 					if (oCommand instanceof FlexCommand) {
-						var oAppComponent = oCommand.getAppComponent();
+						oAppComponent = oCommand.getAppComponent();
 						if (oAppComponent) {
 							var oPreparedChange = oCommand.getPreparedChange();
 							if (!this._isPersistedChange(oPreparedChange)) {
-								PersistenceWriteAPI.add({change: oCommand.getPreparedChange(), selector: oAppComponent});
+								aFlexObjects.push(oCommand.getPreparedChange());
 							}
 						}
 					} else if (oCommand instanceof AppDescriptorCommand) {
 						aDescriptorCreateAndAdd.push(oCommand.createAndStoreChange());
 					}
 				}.bind(this));
-
+				if (oAppComponent) {
+					PersistenceWriteAPI.add({flexObjects: aFlexObjects, selector: oAppComponent});
+				}
 				return Promise.all(aDescriptorCreateAndAdd);
 			}.bind(this));
 			return this._lastPromise;
@@ -150,7 +158,8 @@ sap.ui.define([
 	 * @param {boolean} mPropertyBag.saveAsDraft - save the changes as a draft
 	 * @param {string} [mPropertyBag.layer] - Layer for which the changes should be saved
 	 * @param {boolean} [mPropertyBag.removeOtherLayerChanges=false] - Whether to remove changes on other layers before saving
-	 * @param {string} [mPropertyBag.version] - Layer for which the changes should be saved
+	 * @param {string} [mPropertyBag.version] - Version to load into Flex State after saving (e.g. undefined when exiting RTA)
+	 * @param {string} [mPropertyBag.adaptationId] - Adaptation to load into Flex State after saving (e.g. undefined when exiting RTA)
 	 * @returns {Promise} return empty promise
 	 * @public
 	 */
@@ -170,6 +179,7 @@ sap.ui.define([
 				layer: mPropertyBag.layer,
 				removeOtherLayerChanges: !!mPropertyBag.removeOtherLayerChanges,
 				version: mPropertyBag.version,
+				adaptationId: mPropertyBag.adaptationId,
 				condenseAnyLayer: mPropertyBag.condenseAnyLayer
 			});
 		}.bind(this))

@@ -29,13 +29,12 @@ sap.ui.define(['sap/ui/model/BindingMode', 'sap/ui/model/ClientModel', 'sap/ui/m
 	 * @author SAP SE
 	 * @version ${version}
 	 *
-	 * @param {sap.ui.core.message.MessageManager} oMessageManager The MessageManager instance
 	 * @public
 	 * @alias sap.ui.model.message.MessageModel
 	 */
 	var MessageModel = ClientModel.extend("sap.ui.model.message.MessageModel", /** @lends sap.ui.model.message.MessageModel.prototype */ {
 
-		constructor : function(oMessageManager) {
+		constructor : function() {
 			ClientModel.apply(this, arguments);
 
 			this.sDefaultBindingMode = BindingMode.OneWay;
@@ -44,8 +43,6 @@ sap.ui.define(['sap/ui/model/BindingMode', 'sap/ui/model/ClientModel', 'sap/ui/m
 				"TwoWay" : false,
 				"OneTime" : false
 			};
-
-			this.oMessageManager = oMessageManager;
 		}
 	});
 
@@ -61,14 +58,8 @@ sap.ui.define(['sap/ui/model/BindingMode', 'sap/ui/model/ClientModel', 'sap/ui/m
 		this.checkUpdate();
 	};
 
-	MessageModel.prototype.fireMessageChange = function(oParameters) {
-		this.fireEvent("messageChange", oParameters);
-		return this;
-	};
-
 	/*
-	 * @see sap.ui.model.Model.prototype.bindProperty
-	 *
+	 * @see sap.ui.model.ClientModel#bindProperty
 	 */
 	MessageModel.prototype.bindProperty = function(sPath, oContext, mParameters) {
 		var oBinding = new MessagePropertyBinding(this, sPath, oContext, mParameters);

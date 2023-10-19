@@ -4,19 +4,17 @@
 
 sap.ui.define([
 	"sap/ui/mdc/mixin/DelegateMixin",
-	"sap/ui/mdc/util/PropertyHelper",
 	"sap/ui/base/ManagedObject"
 ], function(
 	DelegateMixin,
-	PropertyHelper,
 	ManagedObject
 ) {
 	"use strict";
 
-	var	TestClass;
-	var oSomeInstance;
+	let	TestClass;
+	let oSomeInstance;
 	//var PropertyHelperSubclass = PropertyHelper.extend("sap.ui.mdc.mixin.test.PropertyHelper");
-	var TestClassWithFetchProperties = TestClass = ManagedObject.extend("sap.ui.mdc.mixin.test.TestClassWithFetchProperties", {
+	const TestClassWithFetchProperties = TestClass = ManagedObject.extend("sap.ui.mdc.mixin.test.TestClassWithFetchProperties", {
 		metadata: {
 			properties: {
 				delegate: {
@@ -34,10 +32,10 @@ sap.ui.define([
 	QUnit.module("DelegateMixin", {
 		beforeEach: function() {
 
-			var stubbedRequire = sinon.stub(sap.ui, "require").callThrough(); // subsequent calls in loadModules use array signature therefore function normally
+			const stubbedRequire = sinon.stub(sap.ui, "require").callThrough(); // subsequent calls in loadModules use array signature therefore function normally
 			stubbedRequire.withArgs('sap/ui/mdc/BaseDelegate').returns(undefined);
 			stubbedRequire.withArgs('sap/ui/mdc/odata/BaseDelegate').returns(undefined);
-			stubbedRequire.withArgs('sap/ui/mdc/odata/v4/BaseDelegate').returns(undefined);
+			stubbedRequire.withArgs('sap/ui/mdc/odata/v4/TypeMap').returns(undefined);
 
 			TestClass = ManagedObject.extend("temp", {
 				metadata: {
@@ -85,7 +83,7 @@ sap.ui.define([
 	});
 
 	QUnit.test("delegate module loading", function(assert) {
-		var done = assert.async(2);
+		const done = assert.async(2);
 		oSomeInstance = new TestClass();
 		oSomeInstance.initControlDelegate().then(function (oDelegate) {
 			assert.ok(!!oDelegate, "module loaded successfully");
@@ -93,7 +91,7 @@ sap.ui.define([
 		});
 		assert.ok(oSomeInstance.bDelegateLoading, "module loading");
 
-		var oSomeInstance1 = new TestClass({delegate: {name: "/delegate-doesnt-exist"}});
+		const oSomeInstance1 = new TestClass({delegate: {name: "/delegate-doesnt-exist"}});
 		oSomeInstance1.initControlDelegate().catch(function (oError) {
 			assert.ok(oError instanceof Error, "module loading failed");
 			oSomeInstance1.destroy();
@@ -102,14 +100,14 @@ sap.ui.define([
 	});
 
 	QUnit.test("subsequent initControlDelegate calls", function(assert) {
-		var done = assert.async();
+		const done = assert.async();
 		oSomeInstance = new TestClass();
-		var oFirstCall = oSomeInstance.initControlDelegate();
+		const oFirstCall = oSomeInstance.initControlDelegate();
 		assert.ok(oFirstCall instanceof Promise, "First call to initControlDelegate");
 		oFirstCall.then(function (oDelegate) {
 			assert.ok(!!oDelegate, "module loaded successfully");
 
-			var oThirdCall = oSomeInstance.initControlDelegate();
+			const oThirdCall = oSomeInstance.initControlDelegate();
 			assert.ok(oThirdCall instanceof Promise, "Third call to initControlDelegate ");
 			oThirdCall.then(function () {
 				assert.ok(sap.ui.require.withArgs("sap/ui/mdc/BaseDelegate").calledOnce, "module is only loaded once");
@@ -125,7 +123,7 @@ sap.ui.define([
 		oSomeInstance = new TestClass();
 		assert.deepEqual(oSomeInstance.getDelegate(), {name: "sap/ui/mdc/BaseDelegate"}, "Default delegate configuration");
 
-		var oSomeInstance1 = new TestClass(undefined, {delegate: {name: "sap/ui/mdc/odata/BaseDelegate"}});
+		const oSomeInstance1 = new TestClass(undefined, {delegate: {name: "sap/ui/mdc/odata/BaseDelegate"}});
 		assert.deepEqual(oSomeInstance1.getDelegate(), {name: "sap/ui/mdc/odata/BaseDelegate"}, "explicit delegate configuration");
 		oSomeInstance1.destroy();
 
@@ -153,7 +151,7 @@ sap.ui.define([
 
 		oSomeInstance.initControlDelegate();
 
-		var done = assert.async();
+		const done = assert.async();
 
 		oSomeInstance.awaitControlDelegate().then(function () {
 			assert.ok(oSomeInstance.getControlDelegate() === oSomeInstance._oDelegate, "delegate returned");
@@ -172,27 +170,45 @@ sap.ui.define([
 	});
 
 	QUnit.test("getPayload", function(assert) {
-		var oPayload = {x:1};
+		const oPayload = {x:1};
 		oSomeInstance = new TestClass({delegate: {name: "sap/ui/mdc/BaseDelegate", payload: oPayload}});
 		assert.ok(oSomeInstance.getPayload() === oPayload, "Payload returned");
 	});
 
 	QUnit.test("getTypeUtil", function(assert) {
 		oSomeInstance = new TestClass();
+
+		if (!oSomeInstance.getTypeUtil) {
+			assert.ok(true, "Test not executed in legacy-free build");
+			return undefined;
+		}
+
+		sinon.spy(oSomeInstance, "getTypeMap");
+		return oSomeInstance.initControlDelegate().then(function () {
+			assert.notOk(oSomeInstance.getTypeMap.called, "getTypeMap not executed yet");
+			const oTypeMap = oSomeInstance.getTypeUtil();
+			assert.ok(oSomeInstance.getTypeMap.calledOnce, "getTypeUtil calls getTypeMap");
+			assert.equal(oTypeMap, oSomeInstance.getTypeMap(), "getTypeUtil returns getTypeMap result");
+			oSomeInstance.getTypeMap.restore();
+		});
+	});
+
+	QUnit.test("getTypeMap", function(assert) {
+		oSomeInstance = new TestClass();
 		assert.deepEqual(oSomeInstance.getDelegate(), {name: "sap/ui/mdc/BaseDelegate"}, "Default delegate configuration");
 
 		assert.throws(function () {
-			oSomeInstance.getTypeUtil();
+			oSomeInstance.getTypeMap();
 		}, function(oError) {
-			return oError instanceof Error && oError.message === "A delegate instance providing typeUtil is not (yet) available.";
+			return oError instanceof Error && oError.message === "A delegate instance providing a TypeMap is not (yet) available.";
 		},  "throws error if called before delegated is initialized");
 
 		oSomeInstance.initControlDelegate();
 
-		var done = assert.async();
+		const done = assert.async();
 
 		oSomeInstance.awaitControlDelegate().then(function () {
-			assert.ok(oSomeInstance.getTypeUtil() === oSomeInstance._oDelegate.getTypeUtil(), "delegate returned");
+			assert.ok(oSomeInstance.getTypeMap() === oSomeInstance._oDelegate.getTypeMap(), "delegate returned");
 			done();
 		});
 	});

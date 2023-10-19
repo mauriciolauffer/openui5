@@ -10,9 +10,6 @@ sap.ui.define([
 	"sap/ui/model/json/JSONModel",
 	"sap/base/util/merge",
 	"sap/ui/model/resource/ResourceModel",
-	"sap/base/util/LoaderExtensions",
-	"sap/ui/core/theming/Parameters",
-	"sap/ui/dom/includeStylesheet",
 	"sap/ui/integration/library",
 	"sap/ui/integration/designtime/editor/CardPreview"
 ], function (
@@ -23,9 +20,6 @@ sap.ui.define([
 	JSONModel,
 	merge,
 	ResourceModel,
-	LoaderExtensions,
-	Parameters,
-	includeStylesheet,
 	library,
 	CardPreview
 ) {
@@ -138,7 +132,7 @@ sap.ui.define([
 				if (!instance) { //not a card instance, but a string
 					//could be a card dom element id
 					var element = document.getElementById(vCardIdOrSettings);
-					if (element && element.tagName && element.tagName === "ui-integration-card") {
+					if (element && element.tagName && element.tagName.toUpperCase() === "ui-integration-card".toUpperCase()) {
 						instance = element._getControl();
 					}
 				}
@@ -198,7 +192,7 @@ sap.ui.define([
 		this._manifestModel = new JSONModel(oManifestJson);
 		this._isManifestReady = true;
 		this.fireManifestReady();
-		this._createResourceBundlesForMultiTranslation();
+		this._initResourceBundlesForMultiTranslation();
 		//add a context model
 		this._createContextModel();
 		if (this._oEditorManifest && this._oEditorManifest.getResourceBundle()) {

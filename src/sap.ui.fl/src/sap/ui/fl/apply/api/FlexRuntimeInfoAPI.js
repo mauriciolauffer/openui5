@@ -8,7 +8,8 @@ sap.ui.define([
 	"sap/ui/core/util/reflection/JsControlTreeModifier",
 	"sap/ui/fl/apply/_internal/controlVariants/Utils",
 	"sap/ui/fl/apply/_internal/flexState/ManifestUtils",
-	"sap/ui/fl/apply/_internal/ChangesController",
+	"sap/ui/fl/initial/_internal/FlexConfiguration",
+	"sap/ui/fl/ChangePersistenceFactory",
 	"sap/ui/fl/FlexControllerFactory",
 	"sap/ui/fl/Layer",
 	"sap/ui/fl/Utils"
@@ -18,7 +19,8 @@ sap.ui.define([
 	JsControlTreeModifier,
 	VariantUtils,
 	ManifestUtils,
-	ChangesController,
+	FlexConfiguration,
+	ChangePersistenceFactory,
 	FlexControllerFactory,
 	Layer,
 	Utils
@@ -29,7 +31,6 @@ sap.ui.define([
 	 * Provides an API to get specific information about the <code>sap.ui.fl</code> runtime.
 	 *
 	 * @namespace sap.ui.fl.apply.api.FlexRuntimeInfoAPI
-	 * @experimental Since 1.67
 	 * @since 1.67
 	 * @private
 	 * @ui5-restricted UI5 controls, sap.ovp, tests
@@ -47,7 +48,7 @@ sap.ui.define([
 		 * @private
 		 * @ui5-restricted
 		 */
-		isPersonalized: function(mPropertyBag) {
+		isPersonalized(mPropertyBag) {
 			function logAndReject(sMessage) {
 				Log.error(sMessage);
 				return Promise.reject(sMessage);
@@ -58,7 +59,7 @@ sap.ui.define([
 			}
 
 			function filterBySelectors(oAppComponent, aControls, oChange) {
-				var aIdsOfPassedControls = aControls.map(function (oControl) {
+				var aIdsOfPassedControls = aControls.map(function(oControl) {
 					return oControl.id || oControl.getId();
 				});
 				var oSelector = oChange.getSelector();
@@ -81,13 +82,13 @@ sap.ui.define([
 				return logAndReject("App Component could not be determined");
 			}
 
-			var oFlexController = FlexControllerFactory.createForControl(oAppComponent);
-			return oFlexController.getComponentChanges({currentLayer: Layer.USER, includeCtrlVariants: true})
-			.then(function (aChanges) {
+			var oChangePersistence = ChangePersistenceFactory.getChangePersistenceForControl(oAppComponent);
+			return oChangePersistence.getChangesForComponent({currentLayer: Layer.USER, includeCtrlVariants: true})
+			.then(function(aChanges) {
 				return aChanges
-					.filter(filterBySelectors.bind(this, oAppComponent, mPropertyBag.selectors))
-					.filter(filterByChangeType.bind(this, mPropertyBag.changeTypes))
-					.some(ifValidFileType);
+				.filter(filterBySelectors.bind(this, oAppComponent, mPropertyBag.selectors))
+				.filter(filterByChangeType.bind(this, mPropertyBag.changeTypes))
+				.some(ifValidFileType);
 			}.bind(this));
 		},
 
@@ -107,7 +108,7 @@ sap.ui.define([
 		 * @private
 		 * @ui5-restricted
 		 */
-		waitForChanges: function(mPropertyBag) {
+		waitForChanges(mPropertyBag) {
 			var aComplexSelectors;
 			var oFirstElement;
 			if (mPropertyBag.element) {
@@ -121,12 +122,12 @@ sap.ui.define([
 						selector: oSelector
 					};
 				});
-				oFirstElement = mPropertyBag.selectors[0];
+				[oFirstElement] = mPropertyBag.selectors;
 			} else if (mPropertyBag.complexSelectors) {
 				aComplexSelectors = mPropertyBag.complexSelectors;
 				oFirstElement = mPropertyBag.complexSelectors[0].selector;
 			}
-			return ChangesController.getFlexControllerInstance(oFirstElement).waitForChangesToBeApplied(aComplexSelectors);
+			return FlexControllerFactory.createForSelector(oFirstElement).waitForChangesToBeApplied(aComplexSelectors);
 		},
 
 		/**
@@ -139,7 +140,7 @@ sap.ui.define([
 		 * @private
 		 * @ui5-restricted
 		 */
-		isFlexSupported: function(mPropertyBag) {
+		isFlexSupported(mPropertyBag) {
 			return !!Utils.getAppComponentForControl(mPropertyBag.element);
 		},
 
@@ -153,7 +154,7 @@ sap.ui.define([
 		 * @private
 		 * @ui5-restricted
 		 */
-		hasVariantManagement: function(mPropertyBag) {
+		hasVariantManagement(mPropertyBag) {
 			return VariantUtils.belongsToVariantManagement(mPropertyBag.element);
 		},
 
@@ -164,8 +165,19 @@ sap.ui.define([
 		 * @param {sap.ui.base.ManagedObject} mPropertyBag.element - Element or component instance
 		 * @returns {string} Flex reference
 		 */
-		getFlexReference: function(mPropertyBag) {
+		getFlexReference(mPropertyBag) {
 			return ManifestUtils.getFlexReferenceForControl(mPropertyBag.element);
+		},
+
+		/**
+		 * Returns the configured Flexibility Services
+		 * @returns {object[]} Flexibility services configuration
+		 *
+		 * @private
+		 * @ui5-restricted sap.ui.rta
+		 */
+		getConfiguredFlexServices() {
+			return FlexConfiguration.getFlexibilityServices();
 		}
 	};
 

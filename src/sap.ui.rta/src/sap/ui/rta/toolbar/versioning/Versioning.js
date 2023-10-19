@@ -8,7 +8,7 @@ sap.ui.define([
 	"sap/ui/core/format/DateFormat",
 	"sap/ui/core/Fragment",
 	"sap/ui/core/library",
-	"sap/ui/fl/write/api/Version",
+	"sap/ui/fl/initial/api/Version",
 	"sap/ui/model/Sorter",
 	"sap/ui/rta/Utils"
 ], function(
@@ -23,7 +23,7 @@ sap.ui.define([
 ) {
 	"use strict";
 
-	var MessageType = coreLibrary.MessageType;
+	var {MessageType} = coreLibrary;
 	var DRAFT_ACCENT_COLOR = "sapUiRtaDraftVersionAccent";
 	var ACTIVE_ACCENT_COLOR = "sapUiRtaActiveVersionAccent";
 
@@ -49,8 +49,9 @@ sap.ui.define([
 				}
 			}
 		},
-		constructor: function() {
-			ManagedObject.prototype.constructor.apply(this, arguments);
+		// eslint-disable-next-line object-shorthand
+		constructor: function(...aArgs) {
+			ManagedObject.prototype.constructor.apply(this, aArgs);
 			this.oTextResources = this.getToolbar().getTextResources();
 		}
 	});
@@ -67,8 +68,8 @@ sap.ui.define([
 		this.getToolbar().fireEvent("switchVersion", {version: sVersion});
 	}
 
-	function doesActiveVersionExists (aVersions) {
-		return aVersions.some(function (oVersion) {
+	function doesActiveVersionExists(aVersions) {
+		return aVersions.some(function(oVersion) {
 			return oVersion.type === Version.Type.Active;
 		});
 	}
@@ -119,7 +120,9 @@ sap.ui.define([
 			// in case of "Original App" and "Draft" no timestamp is set
 			return "";
 		}
-
+		if (sTimeStamp.indexOf("Z") === -1) {
+			sTimeStamp = `${sTimeStamp}Z`;
+		}
 		return DateFormat.getInstance({
 			format: "yMMMdjm"
 		}).format(new Date(sTimeStamp));
@@ -127,7 +130,9 @@ sap.ui.define([
 
 	function getGroupHeaderFactory(oGroup) {
 		return new GroupHeaderListItem({
-			title: oGroup.key ? this.oTextResources.getText("TIT_VERSION_HISTORY_PUBLISHED") : this.oTextResources.getText("TIT_VERSION_HISTORY_UNPUBLISHED"),
+			title: oGroup.key
+				? this.oTextResources.getText("TIT_VERSION_HISTORY_PUBLISHED")
+				: this.oTextResources.getText("TIT_VERSION_HISTORY_UNPUBLISHED"),
 			upperCase: false,
 			visible: this.getToolbar().getModel("versions").getProperty("/publishVersionVisible")
 		}).addStyleClass("sapUiRtaVersionHistoryGrouping").addStyleClass("sapUiRtaVersionHistory");
@@ -152,7 +157,7 @@ sap.ui.define([
 	Versioning.prototype.formatVersionButtonText = function(aVersions, sDisplayedVersion) {
 		var sText = "";
 		var sType = "Active";
-		aVersions = aVersions || [];
+		aVersions ||= [];
 
 		if (sDisplayedVersion === undefined || sDisplayedVersion === Version.Number.Original) {
 			sText = this.oTextResources.getText("TIT_ORIGINAL_APP");
@@ -161,7 +166,7 @@ sap.ui.define([
 				sType = Version.Type.Active;
 			}
 		} else {
-			var oDisplayedVersion = aVersions.find(function (oVersion) {
+			var oDisplayedVersion = aVersions.find(function(oVersion) {
 				return oVersion.version === sDisplayedVersion;
 			});
 			if (oDisplayedVersion) {
@@ -189,25 +194,23 @@ sap.ui.define([
 	Versioning.prototype.showVersionHistory = function(oEvent) {
 		var oVersionButton = oEvent.getSource();
 
-		if (!this._oVersionHistoryDialogPromise) {
-			this._oVersionHistoryDialogPromise = Fragment.load({
-				name: "sap.ui.rta.toolbar.versioning.VersionHistory",
-				id: this.getToolbar().getId() + "_fragment--sapUiRta_versionHistoryDialog",
-				controller: {
-					formatVersionTitle: formatVersionTitle.bind(this),
-					formatVersionTimeStamp: formatVersionTimeStamp,
-					formatHighlight: formatHighlight,
-					formatHighlightText: formatHighlightText.bind(this),
-					formatOriginalAppHighlight: formatOriginalAppHighlight,
-					formatOriginalAppHighlightText: formatOriginalAppHighlightText.bind(this),
-					versionSelected: versionSelected.bind(this),
-					getGroupHeaderFactory: getGroupHeaderFactory.bind(this)
-				}
-			}).then(function(oDialog) {
-				this.getToolbar().addDependent(oDialog);
-				return oDialog;
-			}.bind(this));
-		}
+		this._oVersionHistoryDialogPromise ||= Fragment.load({
+			name: "sap.ui.rta.toolbar.versioning.VersionHistory",
+			id: `${this.getToolbar().getId()}_fragment--sapUiRta_versionHistoryDialog`,
+			controller: {
+				formatVersionTitle: formatVersionTitle.bind(this),
+				formatVersionTimeStamp,
+				formatHighlight,
+				formatHighlightText: formatHighlightText.bind(this),
+				formatOriginalAppHighlight,
+				formatOriginalAppHighlightText: formatOriginalAppHighlightText.bind(this),
+				versionSelected: versionSelected.bind(this),
+				getGroupHeaderFactory: getGroupHeaderFactory.bind(this)
+			}
+		}).then(function(oDialog) {
+			this.getToolbar().addDependent(oDialog);
+			return oDialog;
+		}.bind(this));
 
 		return this._oVersionHistoryDialogPromise.then(function(oVersionsDialog) {
 			if (!oVersionsDialog.isOpen()) {
@@ -230,22 +233,22 @@ sap.ui.define([
 		if (!this._oActivateVersionDialogPromise) {
 			this._oActivateVersionDialogPromise = Fragment.load({
 				name: "sap.ui.rta.toolbar.versioning.VersionTitleDialog",
-				id: this.getToolbar().getId() + "_fragment--sapUiRta_activateVersionDialog",
+				id: `${this.getToolbar().getId()}_fragment--sapUiRta_activateVersionDialog`,
 				controller: {
-					onConfirmVersioningDialog: function () {
+					onConfirmVersioningDialog: function() {
 						var sVersionTitle = this.getToolbar().getControl("activateVersionDialog--versionTitleInput").getValue();
 						this.getToolbar().fireEvent("activate", {versionTitle: sVersionTitle});
 						this._oActivateVersionDialog.close();
 					}.bind(this),
-					onCancelVersioningDialog: function () {
+					onCancelVersioningDialog: function() {
 						this._oActivateVersionDialog.close();
 					}.bind(this),
-					onVersionTitleLiveChange: function (oEvent) {
+					onVersionTitleLiveChange: function(oEvent) {
 						var sValue = oEvent.getParameter("value");
 						this.getToolbar().getControl("activateVersionDialog--confirmVersionTitleButton").setEnabled(!!sValue);
 					}.bind(this)
 				}
-			}).then(function (oDialog) {
+			}).then(function(oDialog) {
 				this._oActivateVersionDialog = oDialog;
 				oDialog.addStyleClass(Utils.getRtaStyleClassName());
 				this.getToolbar().addDependent(this._oActivateVersionDialog);
@@ -255,7 +258,7 @@ sap.ui.define([
 			this.getToolbar().getControl("activateVersionDialog--confirmVersionTitleButton").setEnabled(false);
 		}
 
-		return this._oActivateVersionDialogPromise.then(function () {
+		return this._oActivateVersionDialogPromise.then(function() {
 			var sTitle = this.oTextResources.getText("TIT_VERSION_TITLE_DIALOG");
 			if (sDisplayedVersion !== Version.Number.Draft) {
 				sTitle = this.oTextResources.getText("TIT_REACTIVATE_VERSION_TITLE_DIALOG");

@@ -1,4 +1,4 @@
-/* global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/m/App",
@@ -43,7 +43,7 @@ sap.ui.define([
 					}
 				}
 			},
-			createContent: function() {
+			createContent() {
 				var oApp = new App(this.createId("mockapp"));
 				oViewPromise = XMLView.create({
 					id: this.createId("mockview"),
@@ -66,25 +66,25 @@ sap.ui.define([
 	}
 
 	function after() {
-		QUnit.config.fixture = '';
+		QUnit.config.fixture = "";
 		this.oComponentContainer.destroy();
 	}
 
 	QUnit.module("Given that RuntimeAuthoring and ControllerExtension service are created and 'add' is called", {
-		before: before,
-		after: after,
-		beforeEach: function () {
+		before,
+		after,
+		beforeEach() {
 			this.oRta = new RuntimeAuthoring({
 				showToolbars: false,
 				rootControl: this.oComponent
 			});
 			this.iCreateChangeCounter = 0;
 			this.iAddChangeCounter = 0;
-			sandbox.stub(ChangesWriteAPI, "create").callsFake(function (mPropertyBag) {
+			sandbox.stub(ChangesWriteAPI, "create").callsFake(function(mPropertyBag) {
 				this.iCreateChangeCounter++;
 				this.oCreateChangeParameter = mPropertyBag.changeSpecificData;
 				return {
-					convertToFileContent: function () {
+					convertToFileContent() {
 						return {definition: "definition"};
 					}
 				};
@@ -98,22 +98,22 @@ sap.ui.define([
 				isPublishEnabled: true
 			});
 			sandbox.stub(ReloadManager, "handleReloadOnStart").resolves(false);
-			return this.oRta.start().then(function () {
+			return this.oRta.start().then(function() {
 				return this.oRta.getService("controllerExtension").then(function(oService) {
 					this.oControllerExtension = oService;
 				}.bind(this));
 			}.bind(this));
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oRta.destroy();
 			sandbox.restore();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("with correct parameters and developer mode = true", function(assert) {
 			sandbox.stub(this.oView, "getController").returns({
-				getMetadata: function() {
+				getMetadata() {
 					return {
-						getName: function() {
+						getName() {
 							return "controllerName";
 						}
 					};
@@ -124,7 +124,7 @@ sap.ui.define([
 				developerMode: true,
 				scenario: "scenario"
 			});
-			return this.oControllerExtension.add("coding/foo.js", this.oView.getId()).then(function (oDefinition) {
+			return this.oControllerExtension.add("coding/foo.js", this.oView.getId()).then(function(oDefinition) {
 				assert.deepEqual(oDefinition, {definition: "definition"}, "the function returns the definition of the change");
 				assert.strictEqual(this.iCreateChangeCounter, 1, "and ChangesWriteAPI.create was called once");
 				assert.strictEqual(this.iAddChangeCounter, 1, "and PersistenceWriteAPI.add was called once");
@@ -178,9 +178,9 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given that RuntimeAuthoring and ControllerExtension service are created and 'getTemplate' is called", {
-		before: before,
-		after: after,
-		beforeEach: function () {
+		before,
+		after,
+		beforeEach() {
 			server = sinon.fakeServer.create();
 			server.respondImmediately = true;
 
@@ -194,24 +194,24 @@ sap.ui.define([
 				rootControl: this.oComponent
 			});
 			sandbox.stub(ReloadManager, "handleReloadOnStart").resolves(false);
-			return this.oRta.start().then(function () {
+			return this.oRta.start().then(function() {
 				return this.oRta.getService("controllerExtension").then(function(oService) {
 					this.oControllerExtension = oService;
 					this.oViewOverlay = OverlayRegistry.getOverlay(this.oView);
 				}.bind(this));
 			}.bind(this));
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oRta.destroy();
 			sandbox.restore();
 			server.restore();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("with a template available in debug sources", function(assert) {
 			var sPath = "sap/ui/rta/service/ControllerExtension";
 			sandbox.stub(this.oViewOverlay.getDesignTimeMetadata(), "getControllerExtensionTemplate").returns(sPath);
 
-			server.respondWith(sap.ui.require.toUrl(sPath) + "-dbg.js", [200, {"Content-Type": "html/text"}, "abc"]);
+			server.respondWith(`${sap.ui.require.toUrl(sPath)}-dbg.js`, [200, {"Content-Type": "html/text"}, "abc"]);
 			return this.oControllerExtension.getTemplate(this.oView.getId()).then(function(sTemplate) {
 				assert.equal(sTemplate, "abc", "the service returned the template");
 			});
@@ -220,8 +220,8 @@ sap.ui.define([
 		QUnit.test("with a template available, but no debug sources", function(assert) {
 			var sPath = "sap/ui/rta/service/ControllerExtension";
 			sandbox.stub(this.oViewOverlay.getDesignTimeMetadata(), "getControllerExtensionTemplate").returns(sPath);
-			server.respondWith(sap.ui.require.toUrl(sPath) + "-dbg.js", [404, {}, ""]);
-			server.respondWith(sap.ui.require.toUrl(sPath) + ".js", [200, {"Content-Type": "html/text"}, "def"]);
+			server.respondWith(`${sap.ui.require.toUrl(sPath)}-dbg.js`, [404, {}, ""]);
+			server.respondWith(`${sap.ui.require.toUrl(sPath)}.js`, [200, {"Content-Type": "html/text"}, "def"]);
 
 			return this.oControllerExtension.getTemplate(this.oView.getId()).then(function(sTemplate) {
 				assert.equal(sTemplate, "def", "the service returned the template");
@@ -239,8 +239,8 @@ sap.ui.define([
 
 		QUnit.test("with template available that can't be found", function(assert) {
 			sandbox.stub(this.oViewOverlay.getDesignTimeMetadata(), "getControllerExtensionTemplate").returns("undefined");
-			server.respondWith(sap.ui.require.toUrl("undefined") + "-dbg.js", [404, {}, ""]);
-			server.respondWith(sap.ui.require.toUrl("undefined") + ".js", [404, {}, ""]);
+			server.respondWith(`${sap.ui.require.toUrl("undefined")}-dbg.js`, [404, {}, ""]);
+			server.respondWith(`${sap.ui.require.toUrl("undefined")}.js`, [404, {}, ""]);
 
 			return this.oControllerExtension.getTemplate(this.oView.getId())
 			.then(function() {
@@ -252,7 +252,7 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

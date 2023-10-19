@@ -165,7 +165,7 @@ function (
 			oPage1.attachEventOnce("onAfterRenderingDOMReady", function() {
 				toggleHidden(true); // show page
 			});
-			oPage1.rerender();
+			oPage1.invalidate();
 		});
 	});
 
@@ -420,6 +420,47 @@ function (
 		Core.applyChanges();
 	});
 
+	QUnit.test("updates the title positioning in first onAfterRendering", function (assert) {
+		//setup
+		var oPage = this.oObjectPage,
+			oSpy = this.spy(oPage, "_adjustTitlePositioning"),
+			done = assert.async();
+
+		oPage.addEventDelegate({
+			onAfterRendering: function() {
+				assert.equal(oSpy.callCount, 1, "update is called");
+				done();
+				oPage.removeEventDelegate(this);
+			}
+		});
+
+		oPage.placeAt("qunit-fixture");
+		Core.applyChanges();
+	});
+
+	QUnit.test("sets scrollPaddingTop", function (assert) {
+		//setup
+		var oPage = this.oObjectPage,
+			oSpy = this.spy(oPage, "_adjustTitlePositioning"),
+			done = assert.async();
+
+		oPage.attachEventOnce("onAfterRenderingDOMReady", function() {
+			oSpy.reset();
+
+			// act: scroll to snap
+			oPage._scrollTo(oPage._getSnapPosition() + 1, 0);
+
+			// check
+			assert.equal(oSpy.callCount, 1, "update is called");
+			assert.ok(parseInt(oPage._$opWrapper.css("padding-top")) > 0, "scroll-padding-top is set");
+			assert.strictEqual(oPage._$opWrapper.css("padding-top"), oPage._$opWrapper.css("scroll-padding-top"), "scroll-padding-top matches padding-top");
+			done();
+		});
+
+		oPage.placeAt("qunit-fixture");
+		Core.applyChanges();
+	});
+
 	QUnit.module("update content size", {
 		beforeEach: function (assert) {
 			var done = assert.async();
@@ -622,7 +663,7 @@ function (
 			// Act
 			oCacheDomElementsSpy.resetHistory();
 			oObtainLayoutSpy.resetHistory();
-			oObjectPage.rerender(); // after rerender the old cached references will no longer be valid
+			oObjectPage.invalidate(); // after rerender the old cached references will no longer be valid
 		});
 	});
 

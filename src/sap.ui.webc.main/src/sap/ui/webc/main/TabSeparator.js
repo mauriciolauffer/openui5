@@ -4,7 +4,7 @@
 
 // Provides control sap.ui.webc.main.TabSeparator.
 sap.ui.define([
-	"sap/ui/webc/common/WebComponent",
+	"sap/ui/core/webc/WebComponent",
 	"./library",
 	"./thirdparty/TabSeparator"
 ], function(WebComponent, library) {
@@ -16,7 +16,7 @@ sap.ui.define([
 	 * @param {string} [sId] ID for the new control, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new control
 	 *
-	 * @extends sap.ui.webc.common.WebComponent
+	 * @extends sap.ui.core.webc.WebComponent
 	 * @class
 	 *
 	 * The <code>sap.ui.webc.main.TabSeparator</code> represents a vertical line to separate tabs inside a <code>sap.ui.webc.main.TabContainer</code>.
@@ -37,9 +37,17 @@ sap.ui.define([
 			tag: "ui5-tab-separator-ui5",
 			interfaces: [
 				"sap.ui.webc.main.ITab"
-			]
+			],
+			methods: ["getTabInStripDomRef"]
 		}
 	});
+
+	/**
+	 * Returns the DOM reference of the separator that is placed in the header. <b>Note:</b> Tabs and separators, placed in the <code>subTabs</code> slot of other tabs are not shown in the header. Calling this method on such tabs or separators will return <code>null</code>.
+	 * @public
+	 * @name sap.ui.webc.main.TabSeparator#getTabInStripDomRef
+	 * @function
+	 */
 
 	/* CUSTOM CODE START */
 	/* CUSTOM CODE END */

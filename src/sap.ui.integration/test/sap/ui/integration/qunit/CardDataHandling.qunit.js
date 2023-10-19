@@ -2,18 +2,22 @@
 
 sap.ui.define([
 	"sap/ui/integration/widgets/Card",
+	"sap/ui/integration/util/DataProvider",
 	"sap/ui/integration/util/RequestDataProvider",
 	"sap/ui/integration/util/ServiceDataProvider",
 	"sap/ui/integration/cards/Header",
 	"sap/ui/integration/cards/BaseContent",
+	"sap/ui/integration/library",
 	"sap/ui/core/Core"
 ],
 function (
 	Card,
+	DataProvider,
 	RequestDataProvider,
 	ServiceDataProvider,
 	Header,
 	BaseContent,
+	library,
 	Core
 ) {
 	"use strict";
@@ -357,6 +361,63 @@ function (
 				},
 				"item": {
 					"title": "{testContent>name}"
+				}
+			}
+		}
+	};
+
+	var oManifest_ModelSizeLimit = {
+		"sap.card": {
+			"type": "List",
+			"configuration": {
+				"modelSizeLimit": 2,
+				"filters": {
+					"shipper": {
+						"type": "Select",
+						"label": "Shipper",
+						"item": {
+							"template": {
+								"key": "{name}",
+								"title": "{name}"
+							}
+						},
+						"data": {
+							"json": [
+								{ "name": "Name 1" },
+								{ "name": "Name 2" },
+								{ "name": "Name 3" },
+								{ "name": "Name 4" },
+								{ "name": "Name 5" },
+								{ "name": "Name 6" },
+								{ "name": "Name 7" },
+								{ "name": "Name 8" },
+								{ "name": "Name 9" },
+								{ "name": "Name 10" }
+							]
+						}
+					}
+				}
+			},
+			"data": {
+				"json": [
+					{ "name": "Name 1" },
+					{ "name": "Name 2" },
+					{ "name": "Name 3" },
+					{ "name": "Name 4" },
+					{ "name": "Name 5" },
+					{ "name": "Name 6" },
+					{ "name": "Name 7" },
+					{ "name": "Name 8" },
+					{ "name": "Name 9" },
+					{ "name": "Name 10" }
+				]
+			},
+			"header": {
+				"title": "Title"
+			},
+			"content": {
+				"item": {
+					"title": "{name}"
 				}
 			}
 		}
@@ -1353,4 +1414,246 @@ function (
 		this.oCard.placeAt(DOM_RENDER_LOCATION);
 	});
 
+	QUnit.module("Data Handling when preview mode is 'Abstract'", {
+		beforeEach: function () {
+			this.getDataSpy = this.spy(DataProvider.prototype, "getData");
+			this.oCard = new Card({
+				previewMode: library.CardPreviewMode.Abstract,
+				manifest: {
+					"sap.app": {
+						"id": "test.card.dataHandling.previewModeAbstract"
+					},
+					"sap.card": {
+						"type": "List",
+						"data": {
+							"json": {
+								"key": "value"
+							}
+						},
+						"configuration": {
+							"filters": {
+								"filter1": {
+									"data": {
+										"json": {
+											"key": "value"
+										}
+									}
+								}
+							}
+						},
+						"header": {
+							"data": {
+								"json": {
+									"key": "value"
+								}
+							},
+							"title": "{/key}"
+						},
+						"content": {
+							"data": {
+								"json": [{
+									"key": "value"
+								}]
+							},
+							"item": {
+								"title": "{key}"
+							}
+						}
+					}
+				}
+			});
+			this.oCard.placeAt(DOM_RENDER_LOCATION);
+		},
+		afterEach: function () {
+			this.oCard.destroy();
+		}
+	});
+
+	QUnit.test("No data requests should be made in 'Abstract' preview mode", function (assert) {
+		var done = assert.async();
+
+		this.oCard.attachEvent("_ready", function () {
+			assert.strictEqual(this.getDataSpy.callCount, 0, "There should be no 'getData' calls in 'Abstract' preview mode");
+
+			done();
+		}.bind(this));
+	});
+
+	QUnit.module("Data Handling when preview mode is 'MockData'", {
+		beforeEach: function () {
+			this.oCard = new Card({
+				previewMode: library.CardPreviewMode.MockData
+			});
+			this.oCard.placeAt(DOM_RENDER_LOCATION);
+		},
+		afterEach: function () {
+			this.oCard.destroy();
+		}
+	});
+
+	QUnit.test("Data requests should be made as configured in 'mockData' sections", function (assert) {
+		var done = assert.async();
+		var JSONDataSpy = this.spy(DataProvider.prototype, "getData");
+		var requestDataSpy = this.spy(RequestDataProvider.prototype, "getData");
+		var oManifest = {
+			"sap.app": {
+				"id": "test.card.dataHandling.previewModeMockData"
+			},
+			"sap.card": {
+				"type": "List",
+				"configuration": {
+					"filters": {
+						"filter1": {
+							"value": "Mocked filter 1",
+							"item": {
+								"template": {
+									"key": "{filterKey}",
+									"title": "{filterTitle}"
+								}
+							},
+							"data": {
+								"request": {
+									"url": "thisRequestShouldNotBeMade"
+								},
+								"mockData": {
+									"json": [{
+										"filterKey": "mockedFilter1",
+										"filterTitle": "Mocked filter 1"
+									}]
+								}
+							}
+						}
+					}
+				},
+				"header": {
+					"data": {
+						"request": {
+							"url": "thisRequestShouldNotBeMade"
+						},
+						"mockData": {
+							"json": {
+								"title": "Mocked card title"
+							}
+						}
+					},
+					"title": "{/title}"
+				},
+				"content": {
+					"data": {
+						"request": {
+							"url": "thisRequestShouldNotBeMade"
+						},
+						"mockData": {
+							"json": [{
+								"title": "Mocked item title 1"
+							}]
+						}
+					},
+					"item": {
+						"title": "{title}"
+					}
+				}
+			}
+		};
+
+		this.oCard.attachEvent("_ready", function () {
+			Core.applyChanges();
+
+			assert.strictEqual(requestDataSpy.callCount, 0, "No data requests should be made");
+			assert.strictEqual(JSONDataSpy.callCount, 3, "Data configured in 'mockData' sections should be loaded");
+			assert.strictEqual(this.oCard.getCardHeader().getTitle(), oManifest["sap.card"].header.data.mockData.json.title, "Mock data should be loaded for sap.card/header");
+			assert.strictEqual(this.oCard.getCardContent().getInnerList().getItems()[0].getTitle(), oManifest["sap.card"].content.data.mockData.json[0].title, "Mock data should be loaded for sap.card/content");
+			assert.strictEqual(this.oCard.getAggregation("_filterBar")._getFilters()[0]._getSelect().getItems()[0].getText(), oManifest["sap.card"].configuration.filters.filter1.data.mockData.json[0].filterTitle, "Mock data should be loaded for sap.card/configuration/filters");
+			done();
+		}.bind(this));
+
+		this.oCard.setManifest(oManifest);
+	});
+
+	QUnit.test("If 'mockData' sections are missing, data should not be fetched", function (assert) {
+		var done = assert.async();
+		var getDataSpy = this.spy(DataProvider.prototype, "getData");
+
+		this.oCard.attachEvent("_ready", function () {
+			assert.strictEqual(getDataSpy.callCount, 0, "Data requests are not made");
+
+			done();
+		});
+
+		this.oCard.setManifest({
+			"sap.app": {
+				"id": "test.card.dataHandling.previewModeAbstract"
+			},
+			"sap.card": {
+				"type": "List",
+				"data": {
+					"json": {
+						"key": "value"
+					}
+				},
+				"configuration": {
+					"filters": {
+						"filter1": {
+							"data": {
+								"json": {
+									"key": "value"
+								}
+							}
+						}
+					}
+				},
+				"header": {
+					"data": {
+						"json": {
+							"key": "value"
+						}
+					},
+					"title": "{/key}"
+				},
+				"content": {
+					"data": {
+						"json": [{
+							"key": "value"
+						}]
+					},
+					"item": {
+						"title": "{key}"
+					}
+				}
+			}
+		});
+	});
+
+	QUnit.module("Request Model Configuration", {
+		beforeEach: function () {
+			this.oCard = new Card();
+		},
+		afterEach: function () {
+			this.oCard.destroy();
+		}
+	});
+
+	QUnit.test("model size limit", function (assert) {
+		// Arrange
+		var done = assert.async(),
+			oCard = this.oCard;
+
+		oCard.attachEvent("_ready", function () {
+			Core.applyChanges();
+
+			var aItems = oCard.getCardContent().getInnerList().getItems(),
+				oFilterBar = oCard.getAggregation("_filterBar"),
+				oSelect = oFilterBar._getFilters()[0]._getSelect();
+
+			// Assert
+			assert.strictEqual(aItems.length, 2, "List has 2 items.");
+			assert.strictEqual(oSelect.getItems().length, 2, "Select filter has 2 items.");
+
+			done();
+		});
+
+		// Act
+		oCard.setManifest(oManifest_ModelSizeLimit);
+		oCard.placeAt(DOM_RENDER_LOCATION);
+	});
 });

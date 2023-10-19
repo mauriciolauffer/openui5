@@ -20,24 +20,6 @@ sap.ui.define([
 		oModelFormatter;
 
 	/**
-	 * Returns the formatter. Creates it lazily.
-	 * @param {sap.ui.model.odata.type.Date} oType
-	 *   the type instance
-	 * @returns {sap.ui.core.format.DateFormat}
-	 *   the formatter
-	 */
-	function getFormatter(oType) {
-		var oFormatOptions;
-
-		if (!oType.oFormat) {
-			oFormatOptions = extend({strictParsing : true}, oType.oFormatOptions);
-			oFormatOptions.UTC = true;
-			oType.oFormat = DateFormat.getDateInstance(oFormatOptions);
-		}
-		return oType.oFormat;
-	}
-
-	/**
 	 * Returns a formatter that formats the date into yyyy-MM-dd. Creates it lazily.
 	 *
 	 * @returns {sap.ui.core.format.DateFormat}
@@ -158,7 +140,7 @@ sap.ui.define([
 					: getModelFormatter().parse(vValue, false);
 			case "string":
 				oDate = vValue instanceof Date ? vValue : getModelFormatter().parse(vValue);
-				return oDate ? getFormatter(this).format(oDate) : vValue;
+				return oDate ? this.getFormat().format(oDate) : vValue;
 			default:
 				throw new FormatException("Don't know how to format " + this.getName() + " to "
 					+ sTargetType);
@@ -178,6 +160,53 @@ sap.ui.define([
 
 		return sap.ui.getCore().getLibraryResourceBundle().getText("EnterDate",
 			[this.formatValue(sDemoDate, "string")]);
+	};
+
+	/**
+	 * Returns a date object for a given model value.
+	 *
+	 * @param {string|null} sModelValue
+	 *   The model value of this type. Can be retrieved via {@link sap.ui.model.odata.type.Date#getModelValue}.
+	 * @returns {Date|module:sap/ui/core/date/UI5Date|null}
+	 *   An instance of <code>Date</code> for which the local getters <code>getDate()</code>, <code>getMonth()</code>,
+	 *   and <code>getFullYear()</code> can be used to get the corresponding day, month, and year of the given model
+	 *   value
+	 *
+	 * @since 1.113.0
+	 * @private
+	 * @ui5-restricted sap.fe, sap.suite.ui.generic.template, sap.ui.comp, sap.ui.generic
+	 */
+	EdmDate.prototype.getDateValue = function (sModelValue) {
+		return sModelValue ? UI5Date.getInstance(sModelValue + "T00:00") : null;
+	};
+
+	/**
+	 * @override
+	 */
+	EdmDate.prototype.getFormat = function () {
+		if (!this.oFormat) {
+			var oFormatOptions = extend({strictParsing : true}, this.oFormatOptions);
+			oFormatOptions.UTC = true;
+			this.oFormat = DateFormat.getDateInstance(oFormatOptions);
+		}
+
+		return this.oFormat;
+	};
+
+	/**
+	 * Returns the ISO string for the given model value.
+	 *
+	 * @param {string|null} sModelValue
+	 *   The model value, as returned by {@link #getModelValue}
+	 * @returns {string|null}
+	 *   A date string according to ISO 8601, or <code>null</code> if the given model value is falsy
+	 *
+	 * @since 1.114.0
+	 * @private
+	 * @ui5-restricted sap.fe, sap.suite.ui.generic.template, sap.ui.comp, sap.ui.generic
+	 */
+	EdmDate.prototype.getISOStringFromModelValue = function (sModelValue) {
+		return sModelValue ? sModelValue : null;
 	};
 
 	/**
@@ -230,6 +259,23 @@ sap.ui.define([
 	};
 
 	/**
+	 * Returns the model value for the given ISO string.
+	 *
+	 * @param {string|null} sISOString
+	 *   A string according to ISO 8601, as returned by {@link #getISOStringFromModelValue}
+	 * @returns {string|null}
+	 *   The model representation for the given ISO string for this type,
+	 *   or <code>null</code> if the given ISO string is falsy
+	 *
+	 * @since 1.114.0
+	 * @private
+	 * @ui5-restricted sap.fe, sap.suite.ui.generic.template, sap.ui.comp, sap.ui.generic
+	 */
+	EdmDate.prototype.getModelValueFromISOString = function (sISOString) {
+		return sISOString ? sISOString : null;
+	};
+
+	/**
 	 * Returns the type's name.
 	 *
 	 * @returns {string}
@@ -267,7 +313,7 @@ sap.ui.define([
 			case "object":
 				return getModelFormatter().format(vValue, false);
 			case "string":
-				oResult = getFormatter(this).parse(vValue);
+				oResult = this.getFormat().parse(vValue);
 				if (!oResult) {
 					throw new ParseException(this._getErrorMessage());
 				}

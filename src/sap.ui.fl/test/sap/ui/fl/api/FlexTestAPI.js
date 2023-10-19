@@ -4,7 +4,6 @@
 
 sap.ui.define([
 	"sap/ui/fl/apply/_internal/flexState/FlexState",
-	"sap/ui/fl/apply/_internal/ChangesController",
 	"sap/ui/fl/write/api/ChangesWriteAPI",
 	"sap/ui/fl/write/_internal/connectors/LocalStorageConnector",
 	"sap/ui/fl/write/_internal/connectors/SessionStorageConnector",
@@ -14,7 +13,6 @@ sap.ui.define([
 	"sap/ui/fl/Layer"
 ], function(
 	FlexState,
-	ChangesController,
 	ChangesWriteAPI,
 	LocalStorageConnector,
 	SessionStorageConnector,
@@ -28,7 +26,6 @@ sap.ui.define([
 	/**
 	 * Includes functionality for testing purposes. Must not be used in productive coding
 	 *
-	 * @experimental
 	 * @since 1.77
 	 * @version ${version}
 	 * @private
@@ -55,7 +52,7 @@ sap.ui.define([
 	 * @ui5-restricted sap.ui.fl, sap.ui.rta
 	 */
 	FlexTestAPI.getDirtyChanges = function(mPropertyBag) {
-		return ChangesController.getFlexControllerInstance(mPropertyBag.selector)._oChangePersistence.getDirtyChanges();
+		return FlexControllerFactory.createForSelector(mPropertyBag.selector)._oChangePersistence.getDirtyChanges();
 	};
 
 	/**
@@ -64,19 +61,28 @@ sap.ui.define([
 	 * @param {object} mPropertyBag - Object with additional information
 	 * @param {sap.ui.core.Component} mPropertyBag.appComponent - application component owning the VariantModel
 	 * @param {object} mPropertyBag.data - Preset data
+	 * @param {boolean} mPropertyBag.initFlexState - Flag to indicate whether additionally the FlexState should be initialized
 	 * @returns {Promise<sap.ui.fl.variants.VariantModel>} Resolving to the initialized variant model
 	 * @ui5-restricted sap.ui.fl, sap.ui.rta
 	 */
 	FlexTestAPI.createVariantModel = function(mPropertyBag) {
-		var oFlexController = FlexControllerFactory.createForControl(mPropertyBag.appComponent);
-		var oModel = new VariantModel(mPropertyBag.data, {
-			flexController: oFlexController,
-			appComponent: mPropertyBag.appComponent
-		});
-		return oModel.initialize()
+		var oInitPromise = Promise.resolve();
+		if (mPropertyBag.initFlexState) {
+			oInitPromise = FlexState.initialize({
+				componentId: mPropertyBag.appComponent.getId()
+			});
+		}
+		return oInitPromise.then(function() {
+			var oFlexController = FlexControllerFactory.createForControl(mPropertyBag.appComponent);
+			var oModel = new VariantModel(mPropertyBag.data, {
+				flexController: oFlexController,
+				appComponent: mPropertyBag.appComponent
+			});
+			return oModel.initialize()
 			.then(function() {
 				return oModel;
 			});
+		});
 	};
 
 	/**
@@ -93,7 +99,7 @@ sap.ui.define([
 		if (mPropertyBag.appComponent) {
 			mPropertyBag.selector.appComponent = mPropertyBag.appComponent;
 		}
-		mPropertyBag.changeSpecificData.layer = mPropertyBag.changeSpecificData.layer || Layer.CUSTOMER;
+		mPropertyBag.changeSpecificData.layer ||= Layer.CUSTOMER;
 		return ChangesWriteAPI.create({
 			changeSpecificData: mPropertyBag.changeSpecificData,
 			selector: mPropertyBag.selector
@@ -111,8 +117,8 @@ sap.ui.define([
 		var oConnector = sStorageType === "LocalStorage" ? LocalStorageConnector : SessionStorageConnector;
 
 		return oConnector.loadFlexData({reference: sReference})
-		.then(function (aResponses) {
-			return aResponses.reduce(function (iNumberOfChanges, oResponse) {
+		.then(function(aResponses) {
+			return aResponses.reduce(function(iNumberOfChanges, oResponse) {
 				return iNumberOfChanges + oResponse.changes.length;
 			}, 0);
 		});
@@ -136,7 +142,7 @@ sap.ui.define([
 				return;
 			}
 			var oFlexObject = JSON.parse(oStorage.getItem(sKey));
-			if (oFlexObject.reference === sReference || oFlexObject.reference + ".Component" === sReference) {
+			if (oFlexObject.reference === sReference || `${oFlexObject.reference}.Component` === sReference) {
 				iCount++;
 			}
 		});

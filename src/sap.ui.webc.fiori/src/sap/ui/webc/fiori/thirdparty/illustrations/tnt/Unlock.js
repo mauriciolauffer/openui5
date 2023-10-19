@@ -25,15 +25,15 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
   _tntDialogUnlock = _interopRequireDefault(_tntDialogUnlock);
   _tntSceneUnlock = _interopRequireDefault(_tntSceneUnlock);
   _tntSpotUnlock = _interopRequireDefault(_tntSpotUnlock);
-
   function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
   const name = "Unlock";
   const set = "tnt";
+  const collection = "V4";
   (0, _Illustrations.registerIllustration)(name, {
     dialogSvg: _tntDialogUnlock.default,
     sceneSvg: _tntSceneUnlock.default,
     spotSvg: _tntSpotUnlock.default,
-    set
+    set,
+    collection
   });
 });

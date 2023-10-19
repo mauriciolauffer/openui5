@@ -28,7 +28,6 @@ sap.ui.define([
 	 * @private
 	 * @since 1.34
 	 * @alias sap.ui.rta.plugin.CreateContainer
-	 * @experimental Since 1.34. This class is experimental and provides only limited functionality. Also the API might be changed in future.
 	 */
 	var CreateContainer = BaseCreate.extend("sap.ui.rta.plugin.CreateContainer", /** @lends sap.ui.rta.plugin.CreateContainer.prototype */ {
 		metadata: {
@@ -61,12 +60,12 @@ sap.ui.define([
 		return this._getText(vAction, oElement, oDesignTimeMetadata, sText);
 	};
 
-	CreateContainer.prototype._getContainerTitle = function (vAction, oElement, oDesignTimeMetadata) {
+	CreateContainer.prototype._getContainerTitle = function(vAction, oElement, oDesignTimeMetadata) {
 		var sText = "TITLE_CREATE_CONTAINER";
 		return this._getText(vAction, oElement, oDesignTimeMetadata, sText);
 	};
 
-	CreateContainer.prototype.handleCreate = function (bSibling, oOverlay) {
+	CreateContainer.prototype.handleCreate = function(bSibling, oOverlay) {
 		var vAction = this.getCreateAction(bSibling, oOverlay);
 		var oParentOverlay = this._getParentOverlay(bSibling, oOverlay);
 		var oParent = oParentOverlay.getElement();
@@ -111,13 +110,13 @@ sap.ui.define([
 	 * @param {sap.ui.dt.ElementOverlay[]} aElementOverlays - Target overlays
 	 * @return {object[]} returns array containing the items with required data
 	 */
-	CreateContainer.prototype.getMenuItems = function (aElementOverlays) {
+	CreateContainer.prototype.getMenuItems = function(aElementOverlays) {
 		var bOverlayIsSibling = true;
 		var sPluginId = "CTX_CREATE_SIBLING_CONTAINER";
 		var iRank = 40;
 		var aMenuItems = [];
 
-		var isMenuItemEnabled = function (bOverlayIsSibling, aOverlays) {
+		var isMenuItemEnabled = function(bOverlayIsSibling, aOverlays) {
 			return this.isEnabled(aOverlays, bOverlayIsSibling);
 		}.bind(this);
 
@@ -143,7 +142,7 @@ sap.ui.define([
 	 * Get the name of the action related to this plugin.
 	 * @return {string} Returns the action name
 	 */
-	CreateContainer.prototype.getActionName = function () {
+	CreateContainer.prototype.getActionName = function() {
 		return "createContainer";
 	};
 

@@ -9,7 +9,7 @@
 sap.ui.define([
 	"delegates/json/FilterBarDelegate",
 	'sap/ui/mdc/util/IdentifierUtil',
-	'sap/ui/mdc/util/TypeUtil',
+	'sap/ui/mdc/DefaultTypeMap',
 	'sap/ui/model/type/Boolean',
 	'sap/ui/model/type/String',
 	'sap/ui/model/type/Integer',
@@ -17,123 +17,83 @@ sap.ui.define([
 	'sap/ui/model/type/DateTime',
 	'sap/ui/model/type/Time',
 	'sap/ui/model/type/Float'
-], function (FilterBarDelegate, IdentifierUtil, TypeUtil, BooleanType, StringType, IntegerType, DateType, DateTimeType, TimeType, FloatType) {
+], function (FilterBarDelegate, IdentifierUtil, DefaultTypeMap, BooleanType, StringType, IntegerType, DateType, DateTimeType, TimeType, FloatType) {
 	"use strict";
 
-	var FilterBarTestDelegate = Object.assign({}, FilterBarDelegate);
+	const FilterBarTestDelegate = Object.assign({}, FilterBarDelegate);
 
 	FilterBarTestDelegate.fetchProperties = function (oFilterBar) {
-		var sType, aProperties = [];
+		const aProperties = [];
 
-		sType = 'sap.ui.model.type.Boolean';
 		aProperties.push({
 			name: "prop1",
 			label: "Boolean",
 			required: false,
-			dataType : sType,
-			maxConditions: 1,
-			typeConfig : {
-				className : sType,
-				typeInstance :	TypeUtil._normalizeType(sType, null, null)
-			}
+			dataType : 'sap.ui.model.type.Boolean',
+			maxConditions: 1
 		});
 
-		sType = 'sap.ui.model.type.String';
 		aProperties.push({
 			name: "prop2",
 			label: "String single",
 			required: true,
-			dataType : sType,
-			maxConditions: 1,
-			display: "Description",
-			typeConfig : {
-				className : sType,
-				typeInstance :	TypeUtil._normalizeType(sType, null, { maxLength: 3})
-			}
+			dataType : 'sap.ui.model.type.String',
+			maxConditions: 1
+			//,display: "Description"
 		});
 
-		sType = 'sap.ui.model.type.String';
 		aProperties.push({
 			name: "prop3",
 			label: "String multi",
 			required: false,
-			dataType : sType,
-			maxConditions: -1,
-			typeConfig : {
-				className : sType,
-				typeInstance :	TypeUtil._normalizeType(sType, null, null)
-			}
+			dataType : 'sap.ui.model.type.String',
+			maxConditions: -1
 		});
 
-		sType = 'sap.ui.model.type.Integer';
 		aProperties.push({
 			name: "prop4",
 			label: "Integer",
 			required: false,
-			dataType : sType,
-			typeConfig : {
-				className : sType,
-				typeInstance :	TypeUtil._normalizeType(sType, null, null)
-			}
+			dataType : 'sap.ui.model.type.Integer'
 		});
 
-		sType = 'sap.ui.model.type.Date';
 		aProperties.push({
 			name: "prop5",
 			label: "Date",
 			required: false,
-			dataType : sType,
-			typeConfig : {
-				className : sType,
-				typeInstance :	TypeUtil._normalizeType(sType, null, null)
-			}
+			dataType : 'sap.ui.model.type.Date'
 		});
 
-		sType = 'sap.ui.model.type.DateTime';
 		aProperties.push({
 			name: "prop6",
 			label: "DateTime",
 			required: false,
-			dataType : sType,
-			typeConfig : {
-				className : sType,
-				typeInstance :	TypeUtil._normalizeType(sType, null, {precision: 7})
-			}
+			dataType : 'sap.ui.model.type.DateTime'
 		});
 
-		sType = 'sap.ui.model.type.Time';
 		aProperties.push({
 			name: "prop7",
 			label: "Time",
 			required: false,
-			dataType : sType,
-			typeConfig : {
-				className : sType,
-				typeInstance :	TypeUtil._normalizeType(sType, null, null)
-			}
+			dataType : 'sap.ui.model.type.Time'
 		});
 
-		sType = 'sap.ui.model.type.Float';
 		aProperties.push({
 			name: "prop8",
 			label: "Float",
 			required: false,
-			dataType : sType,
-			typeConfig : {
-				className : sType,
-				typeInstance :	TypeUtil._normalizeType(sType, null, { precision : 5, scale : 2})
-			}
+			dataType : 'sap.ui.model.type.Float'
 		});
 
 		return Promise.resolve(aProperties);
 	};
 
 
-	FilterBarTestDelegate.addItem = function(sPropertyName, oFilterBar, mPropertyBag) {
+	FilterBarTestDelegate.addItem = function(oFilterBar, sPropertyName, mPropertyBag) {
 
 		return FilterBarTestDelegate.fetchProperties(oFilterBar).then(function(aProperties) {
 
-			var oProperty = null;
+			let oProperty = null;
 			aProperties.some(function(oPropertyInfo) {
 				if (sPropertyName === IdentifierUtil.getPropertyKey(oPropertyInfo)) {
 					oProperty = oPropertyInfo;
@@ -143,7 +103,7 @@ sap.ui.define([
 			});
 
 			if (oProperty) {
-				return FilterBarTestDelegate._createFilterField(oProperty, oFilterBar, mPropertyBag);
+				return FilterBarTestDelegate._createFilterField(oFilterBar, oProperty, mPropertyBag);
 			}
 		});
 	};

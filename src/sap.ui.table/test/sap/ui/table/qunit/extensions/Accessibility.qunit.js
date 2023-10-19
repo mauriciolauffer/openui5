@@ -20,7 +20,7 @@ sap.ui.define([
 	"sap/ui/core/Core",
 	"sap/m/IllustratedMessage",
 	"sap/m/Label",
-	"sap/ui/core/Configuration"
+	"sap/ui/core/ControlBehavior"
 ], function(
 	TableQUnitUtils,
 	TableUtils,
@@ -41,7 +41,7 @@ sap.ui.define([
 	oCore,
 	IllustratedMessage,
 	Label,
-	Configuration
+	ControlBehavior
 ) {
 	"use strict";
 
@@ -126,7 +126,7 @@ sap.ui.define([
 		[oTable, oTreeTable].forEach(function(_oTable) {
 			_oTable.removeAllColumns();
 			TableQUnitUtils.addColumn(_oTable, "A Label", "A", false, true, true);
-			TableQUnitUtils.addColumn(_oTable, "B Label", "B");
+			TableQUnitUtils.addColumn(_oTable, "B Label", "B").setTooltip("B Label");
 			TableQUnitUtils.addColumn(_oTable, "C Label", "C", true).setTooltip("tooltip");
 			TableQUnitUtils.addColumn(_oTable, "D Label", "D", false, true, true).getTemplate().setVisible(false);
 			TableQUnitUtils.addColumn(_oTable, "E Label", "E", false, true, true).setLabel(new Label({text: "E Label", required: true}));
@@ -135,6 +135,7 @@ sap.ui.define([
 			oColumn.setSortProperty("SomeSortProperty");
 			oColumn.setFilterProperty("SomeFilterProperty");
 			oColumn.setSortOrder("Ascending");
+			/** @deprecated As of version 1.120 */
 			oColumn.setSorted(true);
 			oColumn.setFiltered(true);
 
@@ -543,8 +544,8 @@ sap.ui.define([
 			assert.strictEqual(oRefs.row.attr("aria-level"), "1", "aria-level set on group row");
 			assert.strictEqual(oRefs.fixed.attr("aria-expanded"), "true", "aria-expanded set on group row (fixed)");
 			assert.strictEqual(oRefs.fixed.attr("aria-level"), "1", "aria-level set on group row (fixed)");
-			assert.strictEqual(oRefs.act.attr("aria-expanded"), "true", "aria-expanded set on row action");
-			assert.strictEqual(oRefs.act.attr("aria-level"), "1", "aria-level set on row action");
+			assert.notOk(oRefs.act.attr("aria-expanded"), "aria-expanded is not set on row action");
+			assert.notOk(oRefs.act.attr("aria-level"), "aria-level is not set on row action");
 
 			var $Cell;
 			var i;
@@ -593,7 +594,7 @@ sap.ui.define([
 
 			assert.strictEqual(oRefs.row.attr("aria-level"), "1", "aria-level set on sum row");
 			assert.strictEqual(oRefs.fixed.attr("aria-level"), "1", "aria-level set on sum row (fixed part)");
-			assert.strictEqual(oRefs.act.attr("aria-level"), "1", "aria-level set on sum row (action part)");
+			assert.notOk(oRefs.act.attr("aria-level"), "aria-level is not set on sum row (action part)");
 
 			var $Cell;
 			var i;
@@ -657,7 +658,8 @@ sap.ui.define([
 		assert.strictEqual($Elem.attr("role"), "gridcell", "role");
 		assert.strictEqual($Elem.parent().attr("aria-level"), "1", "aria-level");
 		assert.strictEqual($Elem.parent().attr("aria-expanded"), "false", "aria-expanded");
-		oTable.rerender();
+		oTable.invalidate();
+		oCore.applyChanges();
 		$Elem = oTable.$("rows-row0-col0");
 		checkAriaSelected($Elem.attr("aria-selected"), true, assert);
 		$Elem = oTable.$("rows-row1-col0");
@@ -927,8 +929,8 @@ sap.ui.define([
 		fakeGroupRow(1).then(function(oRefs) {
 			var $Cell;
 
-			assert.strictEqual(oRefs.hdr.attr("aria-expanded"), "true", "aria-expanded set on group row header");
-			assert.strictEqual(oRefs.hdr.attr("aria-level"), "1", "aria-level set on group row header");
+			assert.notOk(oRefs.hdr.attr("aria-expanded"), "aria-expanded is not set on group row header");
+			assert.notOk(oRefs.hdr.attr("aria-level"), "aria-level is not set on group row header");
 			assert.strictEqual(oRefs.hdr.attr("aria-haspopup"), "menu", "aria-haspopup set on group row header");
 
 			$Cell = getRowHeader(1, false, assert);
@@ -989,7 +991,7 @@ sap.ui.define([
 
 		return fakeSumRow(1).then(function(oRefs) {
 			oRowDomRefs = oRefs;
-			assert.strictEqual(oRefs.hdr.attr("aria-level"), "1", "aria-level set on sum row header");
+			assert.notOk(oRefs.hdr.attr("aria-level"), "aria-level is not set on sum row header");
 
 			$Cell = getRowHeader(1, false, assert);
 			that.testAriaLabels($Cell, 1, assert, {sum: true});
@@ -1020,14 +1022,13 @@ sap.ui.define([
 		var $Elem;
 
 		$Elem = oTable.$("rowsel0");
-		assert.strictEqual($Elem.parent().attr("role"), "row", "parent role");
 		assert.strictEqual($Elem.attr("role"), "gridcell", "role");
 		checkAriaSelected($Elem.attr("aria-selected"), true, assert);
 
 		$Elem = oTable.$("rowsel1");
-		assert.strictEqual($Elem.parent().attr("role"), "row", "parent role");
 		checkAriaSelected($Elem.attr("aria-selected"), false, assert);
-		oTable.rerender();
+		oTable.invalidate();
+		oCore.applyChanges();
 
 		$Elem = oTable.$("rowsel0");
 		checkAriaSelected($Elem.attr("aria-selected"), true, assert);
@@ -1324,12 +1325,10 @@ sap.ui.define([
 		var $Elem;
 
 		$Elem = oTable.$("rowact0");
-		assert.strictEqual($Elem.parent().attr("role"), "row", "parent role");
 		assert.strictEqual($Elem.attr("role"), "gridcell", "role");
 		checkAriaSelected($Elem.attr("aria-selected"), true, assert);
 
 		$Elem = oTable.$("rowact1");
-		assert.strictEqual($Elem.parent().attr("role"), "row", "parent role");
 		checkAriaSelected($Elem.attr("aria-selected"), false, assert);
 	});
 
@@ -1363,7 +1362,6 @@ sap.ui.define([
 		beforeEach: function() {
 			createTables();
 			_modifyTables();
-			this._sAdditionalLabeling = oTable._getShowStandardTooltips() ? "" : (" " + oTable.getId() + "-ariaselectall");
 		},
 		afterEach: function() {
 			destroyTables();
@@ -1376,13 +1374,13 @@ sap.ui.define([
 		var $Cell = getSelectAll(true, assert);
 
 		assert.strictEqual(($Cell.attr("aria-labelledby") || "").trim(),
-			sTableId + "-ariacount " + sTableId + "-ariaselection " + sTableId + "-colnumberofcols" + this._sAdditionalLabeling, "aria-labelledby of select all");
+			sTableId + "-ariacount " + sTableId + "-ariaselection " + sTableId + "-colnumberofcols", "aria-labelledby of select all");
 
 		$Cell = getCell(1, 1, true, assert); //set focus somewhere else on the table
 		testAriaLabelsForFocusedDataCell($Cell, 1, 1, assert, {firstTime: false, rowChange: true, colChange: true});
 
 		$Cell = getSelectAll(true, assert);
-		assert.strictEqual(($Cell.attr("aria-labelledby") || "").trim(), sTableId + "-colnumberofcols" + this._sAdditionalLabeling,
+		assert.strictEqual(($Cell.attr("aria-labelledby") || "").trim(), sTableId + "-colnumberofcols",
 			"aria-labelledby of select all");
 		TableQUnitUtils.setFocusOutsideOfTable(assert);
 		setTimeout(function() {
@@ -1406,7 +1404,7 @@ sap.ui.define([
 		TableQUnitUtils.setFocusOutsideOfTable(assert);
 		var $Cell = getSelectAll(false, assert);
 		assert.strictEqual(($Cell.attr("aria-labelledby") || "").trim(),
-			this._sAdditionalLabeling, "aria-labelledby of select all");
+			"", "aria-labelledby of select all");
 		TableQUnitUtils.setFocusOutsideOfTable(assert);
 	});
 
@@ -1489,6 +1487,9 @@ sap.ui.define([
 		oCore.applyChanges();
 	});
 
+	/**
+	 * @deprecated As of version 1.38
+	 */
 	QUnit.test("ARIA Attributes of Table Header", function(assert) {
 		var $Elem = oTable.$().find(".sapUiTableHdr");
 		assert.strictEqual($Elem.attr("role"), "heading", "role");
@@ -1584,17 +1585,25 @@ sap.ui.define([
 	});
 
 	QUnit.test("ARIA Attributes of TR Elements", function(assert) {
+		initRowActions(oTable, 1, 1);
+		oCore.applyChanges();
+
+		var sTableId = oTable.getId();
 		var $Elem = getCell(0, 0, false, assert).parent();
 		assert.strictEqual($Elem.attr("role"), "row", "role");
+		assert.strictEqual($Elem.attr("aria-owns"), undefined, "aria-owns");
 		checkAriaSelected($Elem.attr("aria-selected"), true, assert);
 		$Elem = getCell(0, 1, false, assert).parent();
 		assert.strictEqual($Elem.attr("role"), "row", "role");
+		assert.strictEqual($Elem.attr("aria-owns"), sTableId + "-rowsel0 " + sTableId + "-rows-row0-col0 " + sTableId + "-rowact0", "aria-owns");
 		checkAriaSelected($Elem.attr("aria-selected"), true, assert);
 		$Elem = getCell(1, 0, false, assert).parent();
 		assert.strictEqual($Elem.attr("role"), "row", "role");
+		assert.strictEqual($Elem.attr("aria-owns"), undefined, "aria-owns");
 		checkAriaSelected($Elem.attr("aria-selected"), false, assert);
 		$Elem = getCell(1, 1, false, assert).parent();
 		assert.strictEqual($Elem.attr("role"), "row", "role");
+		assert.strictEqual($Elem.attr("aria-owns"), sTableId + "-rowsel1 " + sTableId + "-rows-row1-col0 " + sTableId + "-rowact1", "aria-owns");
 		checkAriaSelected($Elem.attr("aria-selected"), false, assert);
 	});
 
@@ -1618,11 +1627,9 @@ sap.ui.define([
 				assert.strictEqual($Elem.attr("aria-rowindex"),
 					"" + (oTable.getFirstVisibleRow() + i + 2), "row " + i + ": aria-rowindex of the tr element");
 				$Elem = oTable.$("rowsel" + i).parent();
-				assert.strictEqual($Elem.attr("aria-rowindex"),
-					"" + (oTable.getFirstVisibleRow() + i + 2), "row " + i + ": aria-rowindex of the row header");
+				assert.notOk($Elem.attr("aria-rowindex"), "no aria-rowindex on the row header");
 				$Elem = oTable.$("rowact" + i).parent();
-				assert.strictEqual($Elem.attr("aria-rowindex"),
-					"" + (oTable.getFirstVisibleRow() + i + 2), "row " + i + ": aria-rowindex of the row action");
+				assert.notOk($Elem.attr("aria-rowindex"), "no aria-rowindex of the row action");
 			}
 			done();
 		}
@@ -1657,9 +1664,9 @@ sap.ui.define([
 			"1st Column header cell: colnumberofcols");
 
 		sinon.stub(oTable, "_getTotalRowCount").returns(1);
-		oTable.setVisibleRowCount(1);
+		oTable.getRowMode().setRowCount(1);
 		oTable._bVariableRowHeightEnabled = true;
-		oTable.rerender();
+		oCore.applyChanges();
 
 		getCell(0, 0, true);
 		assert.equal(oAriaCount.textContent.trim(), "", "Data cell in row 1 column 1: ariacount");
@@ -1718,11 +1725,6 @@ sap.ui.define([
 				assert.strictEqual($Elem.attr("aria-current"), (i === iCurrentRow ? "true" : undefined),
 					"row " + i + ": aria-current of the tr element");
 				$Elem = oTable.$("rowsel" + i).parent();
-				assert.strictEqual($Elem.attr("aria-current"), (i === iCurrentRow ? "true" : undefined),
-					"row " + i + ": aria-current of the row header");
-				$Elem = oTable.$("rowact" + i).parent();
-				assert.strictEqual($Elem.attr("aria-current"), (i === iCurrentRow ? "true" : undefined),
-					"row " + i + ": aria-current of the row action");
 			}
 		}
 
@@ -1753,7 +1755,8 @@ sap.ui.define([
 		var $Elem = jQuery(document.getElementById(sTableId + "-overlay"));
 		assert.strictEqual($Elem.attr("aria-labelledby"),
 			oTable.getAriaLabelledBy() + " " + oTable.getTitle().getId() + " " + sTableId + "-ariainvalid", "aria-labelledby");
-		oTable.rerender();
+		oTable.invalidate();
+		oCore.applyChanges();
 		$OverlayCoveredElements = oTable.$().find("[data-sap-ui-table-acc-covered*='overlay']");
 		$OverlayCoveredElements.each(function() {
 			assert.ok(jQuery(this).attr("aria-hidden") === "true", "aria-hidden");
@@ -1787,7 +1790,8 @@ sap.ui.define([
 			$NoDataCoveredElements.each(function() {
 				assert.ok(jQuery(this).attr("aria-hidden") === "true", "aria-hidden");
 			});
-			oTable.rerender();
+			oTable.invalidate();
+			oCore.applyChanges();
 			$NoDataCoveredElements = oTable.$().find("[data-sap-ui-table-acc-covered*='nodata']");
 			$NoDataCoveredElements.each(function() {
 				assert.ok(jQuery(this).attr("aria-hidden") === "true", "aria-hidden");
@@ -1825,7 +1829,7 @@ sap.ui.define([
 
 	QUnit.test("HiddenTexts", function(assert) {
 		var aHiddenTexts = [
-			"ariacount", "toggleedit", "ariaselectall", "ariarowgrouplabel", "ariagrandtotallabel",
+			"ariacount", "toggleedit", "ariarowgrouplabel", "ariagrandtotallabel",
 			"ariagrouptotallabel", "rownumberofrows", "colnumberofcols", "cellacc", "ariacolmenu",
 			"ariacolspan", "ariacolfiltered", "ariacolsortedasc", "ariacolsorteddes", "ariafixedcolumn", "ariainvalid", "ariaselection",
 			"ariashowcolmenu", "ariahidecolmenu", "rowexpandtext", "rowcollapsetext", "rownavigatedtext", "ariarequired"
@@ -1878,7 +1882,7 @@ sap.ui.define([
 	});
 
 	QUnit.test("Highlight texts", function(assert) {
-		oTable.setVisibleRowCount(1);
+		oTable.getRowMode().setRowCount(1);
 		oCore.applyChanges();
 
 		var aVisibleHighlights = [
@@ -2082,7 +2086,7 @@ sap.ui.define([
 	QUnit.test("Hidden Standard Tooltips", function(assert) {
 
 		function checkTooltips(bEnable, sSelectionBehavior, sSelectionMode, iExpected) {
-			oTable._bHideStandardTooltips = !bEnable;
+			oTable._setHideStandardTooltips(!bEnable);
 			oTable.setSelectionBehavior(sSelectionBehavior);
 			oTable.setSelectionMode(sSelectionMode);
 			oCore.applyChanges();
@@ -2112,13 +2116,13 @@ sap.ui.define([
 		checkTooltips(true, "RowSelector", "Single", iRowSelectors + iActionItems);
 		checkTooltips(true, "RowSelector", "None", iActionItems);
 
-		checkTooltips(false, "Row", "MultiToggle", iActionItems);
+		checkTooltips(false, "Row", "MultiToggle", 1 /*SelAll*/ + iActionItems);
 		checkTooltips(false, "Row", "Single", iActionItems);
 		checkTooltips(false, "Row", "None", iActionItems);
-		checkTooltips(false, "RowOnly", "MultiToggle", iActionItems);
+		checkTooltips(false, "RowOnly", "MultiToggle", 1 /*SelAll*/ + iActionItems);
 		checkTooltips(false, "RowOnly", "Single", iActionItems);
 		checkTooltips(false, "RowOnly", "None", iActionItems);
-		checkTooltips(false, "RowSelector", "MultiToggle", iActionItems);
+		checkTooltips(false, "RowSelector", "MultiToggle", 1 /*SelAll*/ + iActionItems);
 		checkTooltips(false, "RowSelector", "Single", iActionItems);
 		checkTooltips(false, "RowSelector", "None", iActionItems);
 	});
@@ -2135,7 +2139,7 @@ sap.ui.define([
 
 	QUnit.test("No Acc Mode", function(assert) {
 		oTable._getAccExtension()._accMode = false;
-		var oConfigStub = sinon.stub(Configuration, "getAccessibility");
+		var oConfigStub = sinon.stub(ControlBehavior, "isAccessibilityEnabled");
 		oConfigStub.returns(false);
 		oTable.findElements(true, function(oElement) {
 			oElement.invalidate();

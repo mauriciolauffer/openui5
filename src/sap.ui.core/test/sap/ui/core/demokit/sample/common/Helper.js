@@ -12,7 +12,8 @@ sap.ui.define("sap/ui/core/sample/common/Helper", [
 	"sap/ui/core/Configuration"
 ], function (Log, Opa5, EnterText, Press, Interactable, TestUtils, Configuration) {
 	"use strict";
-	var Helper;
+	var aCleanupTasks = [],
+		Helper;
 
 	/**
 	 * Checks the value/text of a sap.m.Input/.Text field
@@ -71,6 +72,14 @@ sap.ui.define("sap/ui/core/sample/common/Helper", [
 
 	// Helper functions used within sap.ui.core.sample.common namespace
 	Helper = {
+		/**
+		 * Adds a clean-up task which is called in <code>afterEach</code>.
+		 *
+		 * @param {function():void} fnTask - The task
+		 */
+		addToCleanUp : function (fnTask) {
+			aCleanupTasks.push(fnTask);
+		},
 
 		/**
 		 * Changes the value of a sap.m.Input field
@@ -453,8 +462,10 @@ sap.ui.define("sap/ui/core/sample/common/Helper", [
 		 *  The QUnit module name
 		 * @param {number} [iTestTimeout]
 		 *  The desired timeout in seconds for one QUnit.test() within the current QUnit module.
+		 * @param {function} [fnBeforeEach] - Runs before each test
+		 * @param {function} [fnAfterEach] - Runs after each test
 		 */
-		qUnitModule : function (sName, iTestTimeout) {
+		qUnitModule : function (sName, iTestTimeout, fnBeforeEach, fnAfterEach) {
 			var sDefaultLanguage = Configuration.getLanguage(),
 				iTimeoutBefore,
 				bSetTimeout = TestUtils.isRealOData() && iTestTimeout;
@@ -472,6 +483,12 @@ sap.ui.define("sap/ui/core/sample/common/Helper", [
 					if (bSetTimeout) {
 						QUnit.config.testTimeout = iTimeoutBefore;
 					}
+				},
+				beforeEach : fnBeforeEach,
+				afterEach : function () {
+					aCleanupTasks.forEach((fnTask) => fnTask());
+					aCleanupTasks.length = 0;
+					return fnAfterEach && fnAfterEach.apply(this, arguments);
 				}
 			});
 		}

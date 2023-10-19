@@ -8,7 +8,6 @@ sap.ui.define([
 	"sap/ui/fl/apply/_internal/flexObjects/States",
 	"sap/ui/fl/Layer",
 	"sap/ui/fl/qunit/apply/_internal/flexObjects/getFlexObjectFileContent",
-	"sap/base/util/UriParameters",
 	"sap/ui/thirdparty/sinon-4"
 ], function(
 	merge,
@@ -18,7 +17,6 @@ sap.ui.define([
 	States,
 	Layer,
 	getFlexObjectFileContent,
-	UriParameters,
 	sinon
 ) {
 	"use strict";
@@ -26,7 +24,7 @@ sap.ui.define([
 	var sandbox = sinon.createSandbox();
 
 	QUnit.module("Given sap.ui.fl.apply._internal.flexObjects.CompVariant.constructor is called", {
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
@@ -108,7 +106,7 @@ sap.ui.define([
 	}
 
 	QUnit.module("Given 'CompVariant' created by FlexObjectFactory.createCompVariant", {
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
@@ -213,6 +211,14 @@ sap.ui.define([
 			assert.strictEqual(oCompVariant.getContent().specialContent, "my-test-content", "then content is stored into comp variant");
 		});
 
+		QUnit.test("when 'storeVisible' is called", function(assert) {
+			var oCompVariant = FlexObjectFactory.createCompVariant({});
+			oCompVariant.storeVisible(true);
+			assert.ok(oCompVariant.getVisible(), "then visible is stored into comp variant");
+			oCompVariant.storeVisible(false);
+			assert.notOk(oCompVariant.getVisible(), "then visible is stored into comp variant");
+		});
+
 		QUnit.test("when 'storeExecuteOnSelection' is called", function(assert) {
 			var oCompVariant = FlexObjectFactory.createCompVariant({});
 			oCompVariant.setState(States.LifecycleState.PERSISTED);
@@ -232,9 +238,11 @@ sap.ui.define([
 		QUnit.test("when 'storeContexts' is called", function(assert) {
 			var oCompVariant = FlexObjectFactory.createCompVariant({});
 			oCompVariant.setState(States.LifecycleState.PERSISTED);
+			assert.notOk(oCompVariant.hasContexts(), "the comp variant has contexts");
 			oCompVariant.storeContexts({
 				test: "test"
 			});
+			assert.ok(oCompVariant.hasContexts(), "the comp variant has contexts");
 			assert.strictEqual(oCompVariant.getContexts().test, "test", "then after setter is called, getContexts returns contexts");
 			assert.strictEqual(oCompVariant.getState(), States.LifecycleState.DIRTY, "then the comp variant state is 'dirty'");
 		});
@@ -245,6 +253,24 @@ sap.ui.define([
 			};
 			var oBaseVariant = FlexObjectFactory.createFromFileContent(this.mFileContent, CompVariant);
 			assert.strictEqual(oBaseVariant.getVariantId(), "variant-id", "then the variant id is set correctly");
+		});
+
+		QUnit.test("when 'cloneFileContentWithNewId' is called", function(assert) {
+			this.mFileContent = {
+				variantId: "variant-id"
+			};
+			var oBaseVariant = FlexObjectFactory.createFromFileContent(this.mFileContent, CompVariant);
+			var oCopiedCompVariantContent = oBaseVariant.cloneFileContentWithNewId();
+			var oCopiedCompVariant = FlexObjectFactory.createFromFileContent(oCopiedCompVariantContent);
+
+			assert.strictEqual(oBaseVariant.getSupportInformation().user, oCopiedCompVariant.getSupportInformation().user, "the user is properly set");
+			assert.strictEqual(oBaseVariant.getSupportInformation().generator, oCopiedCompVariant.getSupportInformation().generator, "the generator is properly set");
+			assert.strictEqual(oBaseVariant.getFlexObjectMetadata().reference, oCopiedCompVariant.getFlexObjectMetadata().reference, "the reference is properly set");
+			assert.strictEqual(oBaseVariant.getName(), oCopiedCompVariant.getName(), "the variant name is properly set");
+			assert.strictEqual(oBaseVariant.getLayer(), oCopiedCompVariant.getLayer(), "the layer is properly set");
+			assert.notStrictEqual(oBaseVariant.getId(), oCopiedCompVariant.getId(), "the Id is properly set");
+			assert.notStrictEqual(oBaseVariant.getVariantId(), oCopiedCompVariant.getVariantId(), "the variantId is properly set");
+			assert.deepEqual(oBaseVariant.getContexts(), oCopiedCompVariant.getContexts(), "the contexts are properly set");
 		});
 	});
 
@@ -499,7 +525,7 @@ sap.ui.define([
 	}
 
 	QUnit.module("Given isEditEnabled/isRenameEnabled/isDeleteEnabled is called", {
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
@@ -581,17 +607,15 @@ sap.ui.define([
 			assert.equal(oVariant.isDeleteEnabled(Layer.VENDOR), false, "then the boolean for deleteEnabled was determined correct");
 		});
 
-		aScenarios.forEach(function (mTestSetup) {
+		aScenarios.forEach(function(mTestSetup) {
 			QUnit.test(mTestSetup.testName, function(assert) {
 				// mocked settings
 				Settings._instance = new Settings(mTestSetup.settings);
 				stubCurrentUser(mTestSetup.currentUser);
 				if (mTestSetup.sapUiLayerUrlParameter) {
-					sandbox.stub(UriParameters, "fromQuery").returns({
-						get: function () {
-							return mTestSetup.sapUiLayerUrlParameter;
-						}
-					});
+					sandbox.stub(URLSearchParams.prototype, "get").returns(
+						mTestSetup.sapUiLayerUrlParameter
+					);
 				}
 
 				var oVariant = createVariant(mTestSetup.variant);
@@ -603,7 +627,7 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

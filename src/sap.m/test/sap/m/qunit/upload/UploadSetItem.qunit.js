@@ -16,9 +16,10 @@ sap.ui.define([
 	"sap/m/upload/Uploader",
 	"sap/ui/core/Item",
 	"sap/ui/core/Core",
-	"sap/ui/core/Element"
+	"sap/ui/core/Element",
+	"sap/m/ObjectStatus"
 ], function (KeyCodes, UploadSet, UploadSetItem, UploadSetRenderer, Toolbar, Label, ListItemBaseRenderer,
-			 Dialog, Device, MessageBox, JSONModel, TestUtils, IconPool, Uploader, Item, oCore, Element) {
+			 Dialog, Device, MessageBox, JSONModel, TestUtils, IconPool, Uploader, Item, oCore, Element,ObjectStatus) {
 	"use strict";
 
 	function getData() {
@@ -154,7 +155,7 @@ sap.ui.define([
 			target: oTarget,
 			keyCode: KeyCodes.ENTER
 		});
-		assert.equal(oPressedSpy.callCount, 1, "Upload set item handler for hitting a file name should be called.");
+		assert.equal(oPressedSpy.callCount, 0, "Upload set item handler for hitting a file name should be called.");
 
 		this.oUploadSet.onkeydown({
 			target: oTarget,
@@ -188,6 +189,28 @@ sap.ui.define([
 			keyCode: KeyCodes.DELETE
 		});
 		assert.equal(oDeleteSpy.calledTwice, false, "When focus is on input element delete handler should not be called");
+	});
+
+	QUnit.test("Keyboard action [DELETE] is handled properly, if remove button is disabled", function(assert) {
+		var oItem = this.oUploadSet.getItems()[0],
+			oTarget = {id: oItem.getListItem().getId()},
+			oDeleteSpy = this.spy(UploadSet.prototype, "_handleItemDelete");
+		oItem.setEnabledRemove(false);
+		assert.notOk(oItem.getEnabledRemove(), "Remove button is disabled");
+
+		this.oUploadSet.onkeydown({ target: oTarget, keyCode: KeyCodes.DELETE });
+		assert.ok(oDeleteSpy.notCalled, "Upload set item handler for removing a file isn't called.");
+	});
+
+	QUnit.test("Keyboard action [DELETE] is handled properly, if remove button is not visible", function(assert) {
+		var oItem = this.oUploadSet.getItems()[0],
+			oTarget = {id: oItem.getListItem().getId()},
+			oDeleteSpy = this.spy(UploadSet.prototype, "_handleItemDelete");
+		oItem.setVisibleRemove(false);
+		assert.notOk(oItem.getVisibleRemove(), "Remove button is not visible");
+
+		this.oUploadSet.onkeydown({ target: oTarget, keyCode: KeyCodes.DELETE });
+		assert.ok(oDeleteSpy.notCalled, "Upload set item handler for removing a file isn't called.");
 	});
 
 	/* ============== */
@@ -278,6 +301,23 @@ sap.ui.define([
 
 		assert.notOk(oItemUrlUndefined._getFileNameLink().getEnabled(), "Link is not clickable");
 		assert.ok(oItemUrlDefined._getFileNameLink().getEnabled(), "Link is clicklable");
+	});
+
+	QUnit.test("Wrapping should be set to true on the filenameLink", function (assert) {
+		assert.expect(2);
+
+		var oItemUrlUndefined = new UploadSetItem({
+			fileName: "fileName.txt",
+			url: undefined
+		});
+
+		var oItemUrlDefined = new UploadSetItem({
+			fileName: "fileName.txt",
+			url: "testingUrl"
+		});
+
+		assert.ok(oItemUrlUndefined._getFileNameLink().getWrapping(), "Wrapping has set to true on link");
+		assert.ok(oItemUrlDefined._getFileNameLink().getWrapping(), "Wrapping has set to true on link");
 	});
 
 	QUnit.test("Test for setThumbnailUrl API", function(assert) {
@@ -439,6 +479,56 @@ sap.ui.define([
 		assert.equal(oItem.getEditState(), true, "New edit state of the item returned sucessfully.");
 	});
 
+	QUnit.test("Test if UploadSet maxFileNameLength is set to null, file name with extension", function(assert) {
+		// Setup
+		this.oUploadSet.setMaxFileNameLength(null);
+		var oItem = this.oUploadSet.getItems()[0];
+		oItem.setFileName("withExtension.pgn");
+		oItem._setInEditMode(true);
+
+		// Asserts
+		assert.strictEqual(this.oUploadSet.getMaxFileNameLength(), 0, "UploadSet.getMaxFileNameLength() is set to 0");
+		assert.strictEqual(oItem._getFileNameEdit().getProperty("maxLength"), 0, "Input field maxLength is 0");
+	});
+
+	QUnit.test("Test if edit item name don't have extension", function(assert) {
+		// Setup
+		this.oUploadSet.setMaxFileNameLength(50);
+		var oItem = this.oUploadSet.getItems()[0];
+		oItem.setFileName("noExtension");
+		oItem._setInEditMode(true);
+
+		// Asserts
+		assert.strictEqual(this.oUploadSet.getMaxFileNameLength(), 50, "UploadSet.getMaxFileNameLength() is set to 50");
+		assert.strictEqual(oItem._getFileNameEdit().getProperty("maxLength"), 50, "Input field maxLength is 50");
+	});
+
+	QUnit.test("Test if edit item name have extension", function(assert) {
+		// Setup
+		this.oUploadSet.setMaxFileNameLength(50);
+		var oItem = this.oUploadSet.getItems()[0],
+			sExtension = ".png";
+		oItem.setFileName("withExtension" + sExtension);
+		oItem._setInEditMode(true);
+
+		// Asserts
+		assert.strictEqual(this.oUploadSet.getMaxFileNameLength(), 50, "UploadSet.getMaxFileNameLength() is set to 50");
+		assert.strictEqual(oItem._getFileNameEdit().getProperty("maxLength"), 50 - sExtension.length, "Input field maxLength is 46");
+	});
+
+	QUnit.test("Test if edit item name extension length is bigger that getMaxFileNameLength()", function(assert) {
+		// Setup
+		this.oUploadSet.setMaxFileNameLength(2);
+		var oItem = this.oUploadSet.getItems()[0],
+			sExtension = ".png";
+		oItem.setFileName("withExtension" + sExtension);
+		oItem._setInEditMode(true);
+
+		// Asserts
+		assert.strictEqual(this.oUploadSet.getMaxFileNameLength(), 2, "UploadSet.getMaxFileNameLength() is set to 2");
+		assert.strictEqual(oItem._getFileNameEdit().getProperty("maxLength"), 0, "Input field maxLength is 0");
+	});
+
 	QUnit.module("UploadSetItem Accessibility Tests", {
 		beforeEach: function () {
 			this.fnSpy = this.spy(Element.prototype, "setTooltip");
@@ -469,5 +559,159 @@ sap.ui.define([
 		var oItem = this.oUploadSet.getItems()[0];
 		oItem._oListItem.focus();
 		assert.ok(oItem._oListItem.getDomRef().getAttribute("aria-labelledby"), "The description is being read out");
+	});
+
+	QUnit.module("UploadSetItems now accespts markersAsStatus aggregation", {
+		beforeEach: function() {
+			this.oUploadSet = new UploadSet("upload-set",{
+				items: new UploadSetItem("upload-set-item", {
+					markersAsStatus: new ObjectStatus("obj-status", {
+						text: "Managed By Google Cloud",
+						icon: "sap-icon://share-2"
+					})
+				})
+			}).placeAt("qunit-fixture");
+			oCore.applyChanges();
+		},
+		afterEach: function() {
+			this.oUploadSet.destroy();
+			this.oUploadSet = null;
+		}
+	});
+
+	QUnit.test("markersAsStatus aggregation is now getting rendered", function (assert) {
+		var oUploadSetItem = this.oUploadSet.getItems()[0],
+		oMarkersAsStatus = oUploadSetItem.getMarkersAsStatus()[0];
+		assert.ok(oMarkersAsStatus.getDomRef(),"Object Status is getting rendered as expected on the first row of the uploadSetItem");
+	});
+
+	QUnit.module("UploadSetItem test attributes and statuses rendering", {
+		afterEach: function () {
+			this.oUploadSet.destroy();
+			this.oUploadSet = null;
+		}
+	});
+
+	function createUploadSetForProperties(data) {
+		this.oUploadSet = new UploadSet("uploadSet", {
+			items: {
+				path: "/items",
+				template: TestUtils.createItemTemplate(),
+				templateShareable: false
+			}
+		}).setModel(new JSONModel(data));
+		this.oUploadSet.placeAt("qunit-fixture");
+		oCore.applyChanges();
+	}
+
+	function getDataForRendering(oParams) {
+		return {
+			items: [
+				{
+					fileName: "File01.txt",
+					statuses: oParams && oParams.statuses ? oParams.statuses : undefined,
+					attributes: oParams && oParams.attributes ? oParams.attributes : undefined
+				}
+			]
+		};
+	}
+
+	function getElement(visible) {
+		return {title: "T01", text: "text01", visible: visible};
+	}
+
+	function getStatusesDomRefs(assert) {
+		return getDomRefs.call(this, assert, "getStatuses");
+	}
+
+	function getAttributesDomRefs(assert) {
+		return getDomRefs.call(this, assert, "getAttributes");
+	}
+
+	function getDomRefs(assert, functionName) {
+		assert.ok(this.oUploadSet.getItems().length, "Items are not empty");
+		var oItem = this.oUploadSet.getItems()[0];
+
+		var aEntries = oItem[functionName]();
+		assert.ok(aEntries.length, "Item property is not empty");
+
+		var oContainer;
+		for (var index in aEntries) {
+			if (aEntries[index].getDomRef()) {
+				oContainer = aEntries[index].getDomRef().parentNode;
+				break;
+			}
+		}
+		assert.ok(oContainer, "Container is present");
+		return oContainer.childNodes;
+	}
+
+	function assertClasses(assert, aChildren, aClasses) {
+		assert.equal(aChildren.length, aClasses.length, "Container have correct child count");
+		for (var i = 0; i < aChildren.length; i++) {
+			assert.ok(aChildren[i].classList.contains(aClasses[i]), "(" + (i + 1) + ") entry object is correct one");
+		}
+	}
+
+	[
+		{
+			message: "Upload set item statuses, delimiter is only rendered between items",
+			statuses: [getElement(true), getElement(true), getElement(true)],
+			expected: ["sapMObjStatus", "sapMUCSeparator", "sapMObjStatus", "sapMUCSeparator", "sapMObjStatus"]
+		},
+		{
+			message: "Upload set item statuses, delimiter is only rendered between items, first element is not visible",
+			statuses: [getElement(false), getElement(true), getElement(true)],
+			expected: ["sapUiHiddenPlaceholder", "sapMObjStatus", "sapMUCSeparator", "sapMObjStatus"]
+		},
+		{
+			message: "Upload set item statuses, delimiter is only rendered between items, last element is not visible",
+			statuses: [getElement(true), getElement(true), getElement(false)],
+			expected: ["sapMObjStatus", "sapMUCSeparator", "sapMObjStatus", "sapUiHiddenPlaceholder"]
+		},
+		{
+			message: "Upload set item statuses, delimiter is only rendered between items, middle element is not visible",
+			statuses: [getElement(true), getElement(false), getElement(true)],
+			expected: ["sapMObjStatus", "sapUiHiddenPlaceholder", "sapMUCSeparator", "sapMObjStatus"]
+		}
+	].forEach(function(data) {
+		QUnit.test(data.message, function (assert) {
+			// Arrange
+			createUploadSetForProperties.call(this, getDataForRendering({statuses: data.statuses}));
+
+			// Assert
+			assertClasses(assert, getStatusesDomRefs.call(this, assert), data.expected);
+		});
+	});
+
+	[
+		{
+			message: "Upload set item attributes, delimiter is only rendered between items",
+			attributes: [getElement(true), getElement(true), getElement(true)],
+			expected: ["sapMUCAttr", "sapMUCSeparator", "sapMUCAttr", "sapMUCSeparator", "sapMUCAttr"]
+		},
+		{
+			message: "Upload set item attributes, delimiter is only rendered between items, first element is not visible",
+			attributes: [getElement(false), getElement(true), getElement(true)],
+			expected: ["sapUiHiddenPlaceholder", "sapMUCAttr", "sapMUCSeparator", "sapMUCAttr"]
+		},
+		{
+			message: "Upload set item attributes, delimiter is only rendered between items, last element is not visible",
+			attributes: [getElement(true), getElement(true), getElement(false)],
+			expected: ["sapMUCAttr", "sapMUCSeparator", "sapMUCAttr", "sapUiHiddenPlaceholder"]
+		},
+		{
+			message: "Upload set item attributes, delimiter is only rendered between items, middle element is not visible",
+			attributes: [getElement(true), getElement(false), getElement(true)],
+			expected: ["sapMUCAttr", "sapUiHiddenPlaceholder", "sapMUCSeparator", "sapMUCAttr"]
+		}
+	].forEach(function(data) {
+		QUnit.test(data.message, function (assert) {
+			// Arrange
+			createUploadSetForProperties.call(this, getDataForRendering({attributes: data.attributes}));
+
+			// Assert
+			assertClasses(assert, getAttributesDomRefs.call(this, assert), data.expected);
+		});
 	});
 });

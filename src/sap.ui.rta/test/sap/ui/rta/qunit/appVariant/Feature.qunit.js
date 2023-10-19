@@ -14,12 +14,11 @@ sap.ui.define([
 	"sap/ui/rta/command/Stack",
 	"sap/ui/core/Control",
 	"sap/base/Log",
-	"sap/base/util/UriParameters",
 	"sap/ui/fl/write/api/AppVariantWriteAPI",
 	"sap/ui/fl/write/api/ChangesWriteAPI",
 	"sap/m/MessageBox",
 	"test-resources/sap/ui/rta/qunit/RtaQunitUtils"
-], function (
+], function(
 	sinon,
 	RtaAppVariantFeature,
 	AppVariantOverviewUtils,
@@ -33,7 +32,6 @@ sap.ui.define([
 	Stack,
 	Control,
 	Log,
-	UriParameters,
 	AppVariantWriteAPI,
 	ChangesWriteAPI,
 	MessageBox,
@@ -45,14 +43,14 @@ sap.ui.define([
 
 	function stubUshellContainer() {
 		var oUshellContainerStub = {
-			getServiceAsync: function() {
+			getServiceAsync() {
 				return Promise.resolve({
-					toExternal: function() {
+					toExternal() {
 					},
-					getHash: function() {
+					getHash() {
 						return "Action-somestring";
 					},
-					parseShellHash: function() {
+					parseShellHash() {
 						return {
 							semanticObject: "Action",
 							action: "somestring"
@@ -60,7 +58,7 @@ sap.ui.define([
 					}
 				});
 			},
-			setDirtyFlag: function() {
+			setDirtyFlag() {
 				return false;
 			}
 		};
@@ -79,18 +77,16 @@ sap.ui.define([
 	}
 
 	QUnit.module("Given that a RtaAppVariantFeature is instantiated", {
-		afterEach: function () {
-			if (sap["ushell_abap"]) {
-				sap["ushell_abap"] = null;
-			}
+		afterEach() {
+			sandbox.stub(FlUtils, "getUShellService").withArgs("CrossApplicationNavigation").returns(Promise.resolve(undefined));
 			sandbox.restore();
 		},
-		after: function() {
+		after() {
 			if (document.getElementById("sapUiBusyIndicator")) {
 				document.getElementById("sapUiBusyIndicator").style.display = "none";
 			}
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("when isManifestSupported() is called,", function(assert) {
 			var oMockedDescriptorData = {
 				"sap.app": {
@@ -216,14 +212,14 @@ sap.ui.define([
 		});
 
 		QUnit.test("when isOverviewExtended() is called when the query parameter is given and is true,", function(assert) {
-			var oStub = sandbox.stub(UriParameters.prototype, "get");
+			var oStub = sandbox.stub(URLSearchParams.prototype, "get");
 			oStub.withArgs("sap-ui-xx-app-variant-overview-extended").returns("true");
 			assert.equal(RtaAppVariantFeature.isOverviewExtended(), true, "then the app variant overview is shown both for key user and SAP developer");
 			oStub.restore();
 		});
 
 		QUnit.test("when isOverviewExtended() is called when the query parameter is given and is false,", function(assert) {
-			var oStub = sandbox.stub(UriParameters.prototype, "get");
+			var oStub = sandbox.stub(URLSearchParams.prototype, "get");
 			oStub.withArgs("sap-ui-xx-app-variant-overview-extended").returns("false");
 			assert.equal(RtaAppVariantFeature.isOverviewExtended(), false, "then the app variant overview is shown only for key user");
 			oStub.restore();
@@ -362,13 +358,13 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given that the ushell is stubbed", {
-		beforeEach: function() {
+		beforeEach() {
 			stubUshellContainer();
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		},
-		after: function() {
+		after() {
 			if (document.getElementById("sapUiBusyIndicator")) {
 				document.getElementById("sapUiBusyIndicator").style.display = "none";
 			}
@@ -591,15 +587,15 @@ sap.ui.define([
 	});
 
 	QUnit.module("Given that the ushell and an UIComponent is stubbed", {
-		beforeEach: function() {
+		beforeEach() {
 			stubUshellContainer();
 			this.oAppComponent = RtaQunitUtils.createAndStubAppComponent(sandbox);
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 			this.oAppComponent.destroy();
 		},
-		after: function() {
+		after() {
 			if (document.getElementById("sapUiBusyIndicator")) {
 				document.getElementById("sapUiBusyIndicator").style.display = "none";
 			}
@@ -698,7 +694,7 @@ sap.ui.define([
 
 			return RtaAppVariantFeature.onSaveAs(false, false, Layer.CUSTOMER, oSelectedAppVariant).then(function() {
 				assert.equal(oProcessSaveAsDialog.callCount, 1, "then the processSaveAsDialog method is called once");
-				assert.equal(oCreateChangesSpy.callCount, 6, "then ChangesWriteAPI.create method is called " + oCreateChangesSpy.callCount + " times");
+				assert.equal(oCreateChangesSpy.callCount, 6, `then ChangesWriteAPI.create method is called ${oCreateChangesSpy.callCount} times`);
 				assert.equal(oSaveAsAppVariantStub.callCount, 1, "then the AppVariantWriteAPI.save method is called once");
 				assert.equal(oClearRTACommandStack.callCount, 1, "then the clearRTACommandStack method is called once");
 				assert.equal(oShowSuccessMessage.callCount, 1, "then the showSuccessMessage method is called once");
@@ -752,7 +748,7 @@ sap.ui.define([
 
 			return RtaAppVariantFeature.onSaveAs(false, false, Layer.CUSTOMER, oSelectedAppVariant).then(function() {
 				assert.equal(oProcessSaveAsDialog.callCount, 1, "then the processSaveAsDialog method is called once");
-				assert.equal(oCreateChangesSpy.callCount, 6, "then ChangesWriteAPI.create method is called " + oCreateChangesSpy.callCount + " times");
+				assert.equal(oCreateChangesSpy.callCount, 6, `then ChangesWriteAPI.create method is called ${oCreateChangesSpy.callCount} times`);
 				assert.equal(oSaveAsAppVariantStub.callCount, 1, "then the AppVariantWriteAPI.saveAs method is called once");
 				assert.equal(oClearRTACommandStack.callCount, 1, "then the clearRTACommandStack method is called once");
 				assert.equal(oShowSuccessMessage.callCount, 2, "then the showSuccessMessage method is called twice");
@@ -803,7 +799,7 @@ sap.ui.define([
 
 			return RtaAppVariantFeature.onSaveAs(false, false, Layer.CUSTOMER, oSelectedAppVariant).then(function() {
 				assert.equal(oProcessSaveAsDialog.callCount, 1, "then the processSaveAsDialog method is called once");
-				assert.equal(oCreateChangesSpy.callCount, 6, "then ChangesWriteAPI.create method is called " + oCreateChangesSpy.callCount + " times");
+				assert.equal(oCreateChangesSpy.callCount, 6, `then ChangesWriteAPI.create method is called ${oCreateChangesSpy.callCount} times`);
 				assert.equal(oSaveAsAppVariantStub.callCount, 1, "then the AppVariantWriteAPI.saveAs method is called once");
 				assert.equal(oClearRTACommandStack.callCount, 1, "then the clearRTACommandStack method is called once");
 				assert.equal(oShowSuccessMessage.callCount, 2, "then the showSuccessMessage method is called twice");
@@ -862,7 +858,7 @@ sap.ui.define([
 
 			return fnTriggerSaveAs().then(function() {
 				assert.equal(oProcessSaveAsDialog.callCount, 1, "then the processSaveAsDialog method is called once");
-				assert.equal(oCreateChangesSpy.callCount, 6, "then ChangesWriteAPI.create method is called " + oCreateChangesSpy.callCount + " times");
+				assert.equal(oCreateChangesSpy.callCount, 6, `then ChangesWriteAPI.create method is called ${oCreateChangesSpy.callCount} times`);
 				assert.equal(oSaveAsAppVariantStub.callCount, 1, "then the AppVariantWriteAPI.saveAs method is called once");
 				assert.equal(oClearRTACommandStack.callCount, 1, "then the clearRTACommandStack method is called once");
 				assert.equal(oShowSuccessMessage.callCount, 1, "then the showSuccessMessage method is called once");
@@ -916,7 +912,7 @@ sap.ui.define([
 
 			return RtaAppVariantFeature.onSaveAs(true, false, Layer.CUSTOMER, oSelectedAppVariant).then(function() {
 				assert.equal(oProcessSaveAsDialog.callCount, 1, "then the processSaveAsDialog method is called once");
-				assert.equal(oCreateChangesSpy.callCount, 6, "then ChangesWriteAPI.create method is called " + oCreateChangesSpy.callCount + " times");
+				assert.equal(oCreateChangesSpy.callCount, 6, `then ChangesWriteAPI.create method is called ${oCreateChangesSpy.callCount} times`);
 				assert.equal(oSaveAsAppVariantStub.callCount, 1, "then the AppVariantWriteAPI.saveAs method is called once");
 				assert.equal(oClearRTACommandStack.callCount, 1, "then the clearRTACommandStack method is called once");
 				assert.equal(oShowSuccessMessageStub.callCount, 2, "then the showSuccessMessage method is called twice");
@@ -975,7 +971,7 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

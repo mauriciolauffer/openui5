@@ -4,17 +4,17 @@
 
 sap.ui.define([
 	"../../ValueHelpDelegate",
-	'sap/ui/mdc/odata/v4/TypeUtil',
 	'sap/base/Log',
 	'sap/ui/model/FilterType',
-	'sap/base/util/deepEqual'
+	'sap/base/util/deepEqual',
+	'sap/ui/mdc/odata/v4/TypeMap'
 
 ], function(
 	ValueHelpDelegate,
-	TypeUtil,
 	Log,
 	FilterType,
-	deepEqual
+	deepEqual,
+	ODataV4TypeMap
 ) {
 	"use strict";
 
@@ -26,14 +26,17 @@ sap.ui.define([
 	 * @author SAP SE
 	 * @private
 	 * @ui5-restricted sap.fe
-	 * @MDC_PUBLIC_CANDIDATE
 	 * @experimental As of version 1.95
 	 * @since 1.95.0
 	 * @extends module:sap/ui/mdc/ValueHelpDelegate
 	 * @alias module:sap/ui/mdc/odata/v4/ValueHelpDelegate
 	 * @deprecated This module should not be used and will be removed in future versions!
 	 */
-	var ODataV4ValueHelpDelegate = Object.assign({}, ValueHelpDelegate);
+	const ODataV4ValueHelpDelegate = Object.assign({}, ValueHelpDelegate);
+
+	ODataV4ValueHelpDelegate.getTypeMap = function (oPayload) {
+		return ODataV4TypeMap;
+	};
 
 	ODataV4ValueHelpDelegate.isSearchSupported = function(oPayload, oContent, oListBinding) {
 		return !!oListBinding.changeParameters;
@@ -43,8 +46,8 @@ sap.ui.define([
 		ValueHelpDelegate.updateBindingInfo(oPayload, oContent, oBindingInfo);
 
 		if (oContent.getFilterFields() === "$search"){
-			var oFilterBar = oContent._getPriorityFilterBar();
-			var sSearch = oContent.isTypeahead() ? oContent._getPriorityFilterValue() : oFilterBar && oFilterBar.getSearch();
+			const oFilterBar = oContent._getPriorityFilterBar();
+			let sSearch = oContent.isTypeahead() ? oContent._getPriorityFilterValue() : oFilterBar && oFilterBar.getSearch();
 			if (this.adjustSearch) {
 				sSearch = this.adjustSearch(oPayload, oContent.isTypeahead(), sSearch);
 			}
@@ -53,7 +56,7 @@ sap.ui.define([
 	};
 
 	ODataV4ValueHelpDelegate.updateBinding = function(oPayload, oListBinding, oBindingInfo) {
-		var oRootBinding = oListBinding.getRootBinding() || oListBinding;
+		const oRootBinding = oListBinding.getRootBinding() || oListBinding;
 		if (!oRootBinding.isSuspended()) {
 			oRootBinding.suspend();
 		}
@@ -79,10 +82,6 @@ sap.ui.define([
 		return oListBinding.requestContexts(0, iRequestedItems).then(function(aContexts) {
 			return aContexts.length === 0;
 		});
-	};
-
-	ODataV4ValueHelpDelegate.getTypeUtil = function (oPayload) {
-		return TypeUtil;
 	};
 
 	return ODataV4ValueHelpDelegate;

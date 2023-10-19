@@ -4,7 +4,7 @@
 
 // Provides control sap.ui.webc.main.Tab.
 sap.ui.define([
-	"sap/ui/webc/common/WebComponent",
+	"sap/ui/core/webc/WebComponent",
 	"./library",
 	"sap/ui/core/EnabledPropagator",
 	"./thirdparty/Tab"
@@ -19,7 +19,7 @@ sap.ui.define([
 	 * @param {string} [sId] ID for the new control, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new control
 	 *
-	 * @extends sap.ui.webc.common.WebComponent
+	 * @extends sap.ui.core.webc.WebComponent
 	 * @class
 	 *
 	 * The <code>sap.ui.webc.main.Tab</code> represents a selectable item inside a <code>sap.ui.webc.main.TabContainer</code>. It defines both the item in the tab strip (top part of the <code>sap.ui.webc.main.TabContainer</code>) and the content that is presented to the user once the tab is selected.
@@ -44,7 +44,7 @@ sap.ui.define([
 			properties: {
 
 				/**
-				 * Represents the "additionalText" text, which is displayed in the tab.
+				 * Represents the "additionalText" text, which is displayed in the tab. In the cases when in the same time there are tabs with icons and tabs without icons, if a tab has no icon the "additionalText" is displayed larger.
 				 */
 				additionalText: {
 					type: "string",
@@ -81,7 +81,7 @@ sap.ui.define([
 					type: "boolean",
 					defaultValue: true,
 					mapping: {
-						type: "attribute",
+						type: "property",
 						to: "disabled",
 						formatter: "_mapEnabled"
 					}
@@ -139,7 +139,7 @@ sap.ui.define([
 	});
 
 	/**
-	 * Returns the DOM reference of the tab that is placed in the header. <b>Note:</b> If you need a DOM ref to the tab content please use the <code>getDomRef</code> method.
+	 * Returns the DOM reference of the tab that is placed in the header. <b>Note:</b> Tabs, placed in the <code>subTabs</code> slot of other tabs are not shown in the header. Calling this method on such tabs will return <code>null</code>. <b>Note:</b> If you need a DOM ref to the tab content please use the <code>getDomRef</code> method.
 	 * @public
 	 * @name sap.ui.webc.main.Tab#getTabInStripDomRef
 	 * @function

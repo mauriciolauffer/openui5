@@ -30,6 +30,7 @@ sap.ui.define([
 	"sap/m/Slider",
 	"sap/m/MenuItem",
 	"sap/m/Menu",
+	"sap/m/Panel",
 	"sap/m/Popover",
 	"sap/m/OverflowToolbarAssociativePopover",
 	"sap/m/OverflowToolbarAssociativePopoverControls",
@@ -68,6 +69,7 @@ sap.ui.define([
 	Slider,
 	MenuItem,
 	Menu,
+	Panel,
 	Popover,
 	OverflowToolbarAssociativePopover,
 	OverflowToolbarAssociativePopoverControls,
@@ -95,8 +97,8 @@ sap.ui.define([
 	/**
 	 * Generates some content that will be used for creating toolbars
 	 * Important: do not modify this array, some elements are referenced by their index in the returned array
-	 * [] @param {boolean} [bWithLayout]
-	 * @returns {*[]}
+	 * @param {boolean} [bWithLayout]
+	 * @returns {sap.ui.core.Control[]}
 	 */
 	function getDefaultContent(bWithLayout) {
 		return [
@@ -109,7 +111,7 @@ sap.ui.define([
 			}),
 			new Button({
 				text: "2 Record",
-				layoutData: bWithLayout ? new OverflowToolbarLayoutData({stayInOverflow: true}) : undefined
+				layoutData: bWithLayout ? new OverflowToolbarLayoutData({priority: OverflowToolbarPriority.AlwaysOverflow}) : undefined
 			}),
 			new Button({
 				text: "3 Play"
@@ -119,7 +121,7 @@ sap.ui.define([
 			}),
 			new Button({
 				text: "5 Stop",
-				layoutData: bWithLayout ? new OverflowToolbarLayoutData({moveToOverflow: false}) : undefined
+				layoutData: bWithLayout ? new OverflowToolbarLayoutData({priority: OverflowToolbarPriority.NeverOverflow}) : undefined
 			}),
 			new Button({
 				text: "6 Rewind"
@@ -461,7 +463,7 @@ sap.ui.define([
 		var aDefaultContent = [
 					getButton('1'),
 					getButton('2'),
-					new Button({text: "3", width: "100px", layoutData: new OverflowToolbarLayoutData({stayInOverflow: true})}),
+					new Button({text: "3", width: "100px", layoutData: new OverflowToolbarLayoutData({priority: OverflowToolbarPriority.AlwaysOverflow})}),
 					getButton('4'),
 					getButton('5')
 				],
@@ -486,7 +488,7 @@ sap.ui.define([
 					getButton('2'),
 					getButton('3'),
 					getButton('4'),
-					new Button({text: "5", width: "100px", layoutData: new OverflowToolbarLayoutData({moveToOverflow: false})})
+					new Button({text: "5", width: "100px", layoutData: new OverflowToolbarLayoutData({priority: OverflowToolbarPriority.NeverOverflow})})
 				],
 				oOverflowTB = createOverflowToolbar({
 					width: "600px"
@@ -1967,7 +1969,7 @@ sap.ui.define([
 		spy = this.spy(OverflowToolbar.prototype, "onLayoutDataChange");
 
 		oOverflowTB = createOverflowToolbar({width: 'auto'}, aContent);
-		aContent[5].setLayoutData(new OverflowToolbarLayoutData({stayInOverflow: true}));
+		aContent[5].setLayoutData(new OverflowToolbarLayoutData({priority: OverflowToolbarPriority.AlwaysOverflow}));
 		this.clock.tick(1000);
 
 		assert.strictEqual(spy.callCount, 1, "Layout recalculation triggered");
@@ -2024,7 +2026,7 @@ sap.ui.define([
 		assert.strictEqual(spyResizeHandler.callCount, 4, "For every resize/change, _setControlsOverflowAndShrinking is called");
 
 		// Change the layout of a button - the cache should be invalidated
-		aDefaultContent[1].setLayoutData(new OverflowToolbarLayoutData({stayInOverflow: true}));
+		aDefaultContent[1].setLayoutData(new OverflowToolbarLayoutData({priority: OverflowToolbarPriority.AlwaysOverflow}));
 		this.clock.tick(1000);
 
 		assert.strictEqual(spyCache.callCount, 3, "When the layout of a control is changed, the cache is recalculated");
@@ -2093,7 +2095,7 @@ sap.ui.define([
 					new Text({text: "Label2", width: "100px"}),
 					new Button({text: "1", width: "100px"}),
 					new Button({text: "2", width: "100px"}),
-					new Button({text: "3", width: "100px", layoutData: new OverflowToolbarLayoutData({stayInOverflow: true})}),
+					new Button({text: "3", width: "100px", layoutData: new OverflowToolbarLayoutData({priority: OverflowToolbarPriority.AlwaysOverflow})}),
 					new Button({text: "4", width: "100px"}),
 					new Button({text: "5", width: "100px"})
 				],
@@ -2310,7 +2312,7 @@ sap.ui.define([
 		});
 
 		// Act
-		oLayoutData.setPriority("AlwaysOverflow");
+		oLayoutData.setPriority(OverflowToolbarPriority.AlwaysOverflow);
 
 		// Assert
 		assert.strictEqual(oSpyInvalidate.callCount, 1, "Invalidate is called");
@@ -2915,15 +2917,14 @@ sap.ui.define([
 									minWidth: "50px"
 								})
 							}),
-			oOTB = createOverflowToolbar({}, [oTestButton]),
-			iRemInPx = DomUnitsRem.toPx("1rem");
+			oOTB = createOverflowToolbar({}, [oTestButton]);
 
 		oOTB.placeAt("qunit-fixture");
 		oCore.applyChanges();
 
 		// Assert
-		assert.strictEqual(oOTB._getOptimalControlWidth(oTestButton), 50 + (0.25 * iRemInPx),
-			"Size is equal to minWidth + margins");
+		assert.strictEqual(oOTB._getOptimalControlWidth(oTestButton), 50,
+			"Size is equal to minWidth without margin, as it is only one control, so no margin-left is applied (instead, there is a padding added to the OFT)");
 	});
 
 	QUnit.test("Size of a control with LayoutData, shrinkable = true and minWidth and visible = false, is reported correctly", function (assert) {
@@ -2959,14 +2960,13 @@ sap.ui.define([
 									minWidth: "50px"
 								})
 							}),
-			oOTB = createOverflowToolbar({}, [oTestButton]),
-			iRemInPx = DomUnitsRem.toPx("1rem");
+			oOTB = createOverflowToolbar({}, [oTestButton]);
 
 		oOTB.placeAt("qunit-fixture");
 		oCore.applyChanges();
 
 		// Assert
-		assert.strictEqual(oOTB._getOptimalControlWidth(oTestButton), 200 + (0.25 * iRemInPx),
+		assert.strictEqual(oOTB._getOptimalControlWidth(oTestButton), 200,
 			"Size is equal to outer width");
 	});
 
@@ -2995,8 +2995,8 @@ sap.ui.define([
 		oCore.applyChanges();
 
 		// Assert
-		assert.strictEqual(oOTB._getOptimalControlWidth(oTestButton), (3 * iRemInPx) + (0.25 * iRemInPx),
-			"Size is equal to minWidth (3rem) + left margin of first child");
+		assert.strictEqual(oOTB._getOptimalControlWidth(oTestButton), (3 * iRemInPx),
+			"Size is equal to minWidth (3rem), as it is only one control, so no margin-left is applied (instead, there is a padding added to the OFT)");
 
 		// OFT has right padding, we deduct it
 		assert.strictEqual(oOTB._getOptimalControlWidth(oTestButton2), (50 * (300 - (oOTB.$().innerWidth() - oOTB.$().width()))) / 100 + (0.5 * iRemInPx),
@@ -3304,7 +3304,8 @@ sap.ui.define([
 
 		// act - overvlow button has been focused, then invalidate the toolbar.
 		this.oOTBOverflowed.sFocusedChildControlId = oOverflowButton.getId();
-		this.oOTBOverflowed.rerender();
+		this.oOTBOverflowed.invalidate();
+		oCore.applyChanges();
 	});
 
 	QUnit.test("Focus should move on last child after toolbar expanding", function (assert) {
@@ -3857,6 +3858,93 @@ sap.ui.define([
 
 		//Assert
 		assert.equal(oTable.getItems()[0].getContentAnnouncement(), "Button Test Button Button " + sExpectedTooltip, "here");
+	});
+
+	QUnit.test("OverflowToolbar recalculates controls' sizes when there are content with relative width and OFT loses width", function (assert) {
+		//Arrange
+		var oOtb = new OverflowToolbar({
+			content: [
+				new Button({
+					width: "20%",
+					text: "Test Button"
+				}),
+				new Button({
+					text: "Test Button 2"
+				})
+			]
+		}),
+		oPanel = new Panel({
+			content: oOtb
+		}),
+		oPanelRerenderingDelegate = {
+			onAfterRendering: function () {
+				oPanel.removeEventDelegate(oPanelRerenderingDelegate);
+				oPanel.setWidth("500px");
+				oSpy = sinon.spy(oOtb, "_cacheControlsInfo");
+
+				oOtb.addEventDelegate({
+					onAfterRendering: function () {
+						// Assert
+						assert.ok(oSpy.calledOnce, "_cacheControlsInfo is called");
+
+						// Clean up
+						oPanel.destroy();
+						fnDone();
+					}
+				});
+			}
+		},
+		fnDone = assert.async(),
+		oSpy;
+
+		assert.expect(1);
+
+		//Act
+		oPanel.placeAt("qunit-fixture");
+		oCore.applyChanges();
+
+		oPanel.setWidth("0px");
+		oPanel.addEventDelegate(oPanelRerenderingDelegate);
+	});
+
+	QUnit.test("OverflowToolbar with one Control, having 100% width", function (assert) {
+
+		//Arrange
+		var oOtb = new OverflowToolbar({
+			content: [
+				new SearchField()
+			]
+		});
+
+		//Act
+		oOtb.placeAt("qunit-fixture");
+		oCore.applyChanges();
+
+		//Assert
+		assert.strictEqual(oOtb._getPopover().getAssociatedContent().length, 0, "SearchField is not in overflow Popover");
+
+		//Clean up
+		oOtb.destroy();
+	});
+
+	QUnit.test("OverflowToolbar sapMBarChildFirstChild class", function (assert) {
+		var oFirstControl = this.otb.getContent()[0],
+			oSecondControl = this.otb.getContent()[1];
+
+		//Assert
+		assert.ok(oFirstControl.hasStyleClass("sapMBarChildFirstChild"), "First child has 'sapMBarChildFirstChild' class");
+		assert.notOk(oSecondControl.hasStyleClass("sapMBarChildFirstChild"), "Second child does not have 'sapMBarChildFirstChild' class");
+
+		//Act
+		oFirstControl.setVisible(false);
+		oCore.applyChanges();
+
+		//Assert
+		assert.notOk(oFirstControl.hasStyleClass("sapMBarChildFirstChild"), "First child does not have 'sapMBarChildFirstChild' class");
+		assert.ok(oSecondControl.hasStyleClass("sapMBarChildFirstChild"), "Second child now has 'sapMBarChildFirstChild' class, as the first one is not visible");
+
+		//Clean up
+		this.otb.destroy();
 	});
 
 	QUnit.module("Associative popover");

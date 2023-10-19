@@ -23,11 +23,18 @@ sap.ui.define([
 		metadata: {
 			properties: {
 				/**
-				 * Indicates whether favorite variants are shown in the variants list.
+				 * Indicates whether variant is shown as favorite in the variants list.
 				 */
 				favorite: {
 					type: "boolean",
 					defaultValue: false
+				},
+				/**
+				 * Indicates whether variant is shown in the variant list.
+				 */
+				visible: {
+					type: "boolean",
+					defaultValue: true
 				},
 				/**
 				 * Indicates whether the variant is automatically executed.
@@ -58,8 +65,9 @@ sap.ui.define([
 				}
 			}
 		},
-		constructor: function() {
-			FlexObject.apply(this, arguments);
+		// eslint-disable-next-line object-shorthand
+		constructor: function(...aArgs) {
+			FlexObject.apply(this, aArgs);
 
 			if (!this.getVariantId()) {
 				this.setVariantId(this.getId());
@@ -72,11 +80,10 @@ sap.ui.define([
 	 * @returns {object} Mapping information
 	 * @static
 	 */
-	Variant.getMappingInfo = function () {
+	Variant.getMappingInfo = function() {
 		return Object.assign(FlexObject.getMappingInfo(), {
 			favorite: "favorite",
 			executeOnSelection: "executeOnSelection",
-			standardVariant: "standardVariant",
 			contexts: "contexts"
 		});
 	};
@@ -86,7 +93,7 @@ sap.ui.define([
 	 * Can be overridden to avoid access of static mapping within base methods.
 	 * @returns {object} Mapping information
 	 */
-	Variant.prototype.getMappingInfo = function () {
+	Variant.prototype.getMappingInfo = function() {
 		return Variant.getMappingInfo();
 	};
 
@@ -94,7 +101,7 @@ sap.ui.define([
 	 * Retrieves the variant name from the <code>texts</code> FlexObject property
 	 * @returns {string} Variant name
 	 */
-	Variant.prototype.getName = function () {
+	Variant.prototype.getName = function() {
 		return this.getText("variantName");
 	};
 
@@ -107,5 +114,16 @@ sap.ui.define([
 		this.setText("variantName", sName, "XFLD", bSkipStateChange);
 	};
 
+	/**
+	 * Retrieves information whether the variant has at least one context.
+	 * @returns {boolean} true if variant has at least one context else false
+	 */
+	Variant.prototype.hasContexts = function() {
+		var oContexts = this.getContexts();
+		var aContextKeys = Object.keys(oContexts);
+		return aContextKeys.some(function(sContextKey) {
+			return oContexts[sContextKey].length > 0;
+		});
+	};
 	return Variant;
 });

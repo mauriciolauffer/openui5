@@ -19,7 +19,13 @@ sap.ui.define(function() {
 			app: {},
 			bootstrap: {},
 			csp: {},
-			compat: {},
+			/**
+			 * Testsuite for validating the jQuery-compat layer that patches incompatibilities between jQuery v2 and v3
+			 * @deprecated As of 1.112
+			 */
+			compat: {
+				page: "test-resources/sap/ui/core/qunit/compat_legacyAPIs/testsuite.compat.qunit.html"
+			},
 			component: {},
 			composite: {},
 			"Messaging": {
@@ -35,6 +41,9 @@ sap.ui.define(function() {
 			},
 			"Browser Runtime": {
 				page: "test-resources/sap/ui/core/qunit/testsuites/testsuite.browser.runtime.qunit.html"
+			},
+			"Base Configuration": {
+				page: "test-resources/sap/ui/core/qunit/testsuites/testsuite.base.configuration.qunit.html"
 			},
 			"Control Framework": {
 				page: "test-resources/sap/ui/core/qunit/testsuites/testsuite.control.framework.qunit.html"

@@ -2,6 +2,7 @@
 sap.ui.define([
 	"sap/ui/thirdparty/jquery",
 	"sap/ui/core/Core",
+	"sap/ui/core/Control",
 	"sap/ui/core/library",
 	"sap/ui/core/mvc/XMLView",
 	"sap/base/Log",
@@ -17,8 +18,9 @@ sap.ui.define([
 	"sap/m/Button",
 	"sap/m/Label",
 	"sap/m/Panel",
-	"sap/m/Text"],
-function($, Core, coreLibrary, XMLView, Log, Lib, ObjectPageDynamicHeaderTitle, ObjectPageSection, ObjectPageSectionBase, ObjectPageSubSectionClass, BlockBase, ObjectPageLayout, library, App, Button, Label, Panel, Text) {
+	"sap/m/Text",
+	"sap/ui/core/HTML"],
+function($, Core, Control, coreLibrary, XMLView, Log, Lib, ObjectPageDynamicHeaderTitle, ObjectPageSection, ObjectPageSectionBase, ObjectPageSubSectionClass, BlockBase, ObjectPageLayout, library, App, Button, Label, Panel, Text, HTML) {
 	"use strict";
 
 	var TitleLevel = coreLibrary.TitleLevel;
@@ -979,7 +981,14 @@ function($, Core, coreLibrary, XMLView, Log, Lib, ObjectPageDynamicHeaderTitle, 
 				]
 			}),
 		oSpy = this.spy(Log, "error"),
+		oSetParentSpy,
 		done = assert.async();
+
+		opl.addEventDelegate({
+			onBeforeRendering: function () {
+				oSetParentSpy = this.spy(Control.prototype, "setParent");
+			}.bind(this)
+		});
 
 		opl.addEventDelegate({
 			onAfterRendering: function() {
@@ -987,6 +996,8 @@ function($, Core, coreLibrary, XMLView, Log, Lib, ObjectPageDynamicHeaderTitle, 
 				oSubSection.addBlock(new BlockBase());
 				oSubSection._applyLayout(opl);
 				assert.equal(oSpy.callCount, 0, "no error on adding block");
+				assert.ok(oSetParentSpy.calledWith(oSubSection, "blocks"), "Control's setParent is called with ObjectPageSubSection");
+				assert.strictEqual(oSubSection.getBlocks().length, 2, "ObjectPageSubSection has two controls in 'blocks' aggregation");
 				done();
 				oSubSection.removeAllDependents();
 				opl.destroy();
@@ -1278,41 +1289,48 @@ function($, Core, coreLibrary, XMLView, Log, Lib, ObjectPageDynamicHeaderTitle, 
 		});
 	});
 
-    QUnit.module("SubSection access to parent ObjectPage", {
-        beforeEach: function () {
-            this.oObjectPageLayout = new ObjectPageLayout({
-                sections: [
-                    new ObjectPageSection("section1", {
-                        title: "section 1",
-                        subSections: [
-                            new ObjectPageSubSectionClass({
-                                title:"subsection 1",
-                                blocks: [
-                                    new Button({ text: 'notext' })
-                                ]
-                            })
-                        ]
-                    })
-                ]
-            });
-            this.oObjectPageLayout.placeAt('qunit-fixture');
-            Core.applyChanges();
-        },
-        afterEach: function () {
-            this.oObjectPageLayout.destroy();
-        }
-    });
+	QUnit.module("SubSection access to parent", {
+		beforeEach: function () {
+			this.oObjectPageLayout = new ObjectPageLayout({
+				sections: [
+					new ObjectPageSection("section1", {
+						title: "section 1",
+						subSections: [
+							new ObjectPageSubSectionClass({
+								title:"subsection 1",
+								blocks: [
+									new Button({ text: 'notext' })
+								]
+							})
+						]
+					})
+				]
+			});
+			this.oObjectPageLayout.placeAt('qunit-fixture');
+			Core.applyChanges();
+		},
+		afterEach: function () {
+			this.oObjectPageLayout.destroy();
+		}
+	});
 
-    QUnit.test("No error when accessing a property of parent ObjectPage", function(assert) {
-        // note that selected section is the last visible one
-        var oSection = this.oObjectPageLayout.getSections()[0],
-            oSubSection;
+	QUnit.test("No error when accessing a property of parent ObjectPage", function(assert) {
+		// note that selected section is the last visible one
+		var oSection = this.oObjectPageLayout.getSections()[0],
+			oSubSection;
 
-        //act
-        oSubSection = oSection.removeSubSection(0);
+		//act
+		oSubSection = oSection.removeSubSection(0);
 
-        assert.ok(!oSubSection._getUseTitleOnTheLeft(), "falsy value is returned");
-    });
+		assert.ok(!oSubSection._getUseTitleOnTheLeft(), "falsy value is returned");
+	});
+
+	QUnit.test("sParentAggregationName matches parent", function(assert) {
+		var oSection = this.oObjectPageLayout.getSections()[0],
+			oSubSection = oSection.getSubSections()[0];
+
+		assert.equal(oSubSection.sParentAggregationName, "subSections", "the parent aggregation name matches the public parent");
+	});
 
 	QUnit.module("Accessibility", {
 		beforeEach: function() {
@@ -1450,7 +1468,8 @@ function($, Core, coreLibrary, XMLView, Log, Lib, ObjectPageDynamicHeaderTitle, 
 			//check
 			var iViewportHeight = oPage._getScrollableViewportHeight(false),
 				iOffsetTop = library.Utilities.getChildPosition(oSubSection.$(), oPage._$contentContainer).top,
-				iExpectedSubSectionHeight = Math.round(iViewportHeight - iOffsetTop),
+				iOffsetBottom = oPage.getDomRef().getBoundingClientRect().bottom - oSubSection.getDomRef().getBoundingClientRect().bottom,
+				iExpectedSubSectionHeight = Math.round(iViewportHeight - iOffsetTop - iOffsetBottom),
 				iSubSectionHeight = Math.round(oSubSection.$().outerHeight() + parseInt(oSection.$().css("marginTop")));
 			assert.strictEqual(iSubSectionHeight, iExpectedSubSectionHeight, "the height is correct");
 			done();
@@ -1477,7 +1496,8 @@ function($, Core, coreLibrary, XMLView, Log, Lib, ObjectPageDynamicHeaderTitle, 
 			//check
 			var iViewportHeight = oPage._getScrollableViewportHeight(false),
 				iOffsetTop = library.Utilities.getChildPosition(oSubSection.$(), oPage._$contentContainer).top,
-				iExpectedSubSectionHeight = Math.round(iViewportHeight - iOffsetTop),
+				iOffsetBottom = oPage.getDomRef().getBoundingClientRect().bottom - oSubSection.getDomRef().getBoundingClientRect().bottom,
+				iExpectedSubSectionHeight = Math.round(iViewportHeight - iOffsetTop - iOffsetBottom),
 				iSubSectionHeight = Math.round(oSubSection.$().outerHeight() + parseInt(oSection.$().css("marginTop")));
 			assert.strictEqual(iSubSectionHeight, iExpectedSubSectionHeight, "the height is correct");
 			done();
@@ -1508,7 +1528,8 @@ function($, Core, coreLibrary, XMLView, Log, Lib, ObjectPageDynamicHeaderTitle, 
 			//check
 			var iViewportHeight = oPage._getScrollableViewportHeight(false),
 				iOffsetTop = library.Utilities.getChildPosition(oSubSection.$(), oPage._$contentContainer).top,
-				iExpectedSubSectionHeight = Math.round(iViewportHeight - iOffsetTop),
+				iOffsetBottom = oPage.getDomRef().getBoundingClientRect().bottom - oSubSection.getDomRef().getBoundingClientRect().bottom,
+				iExpectedSubSectionHeight = Math.round(iViewportHeight - iOffsetTop - iOffsetBottom),
 				iSubSectionHeight = Math.round(oSubSection.$().outerHeight() + parseInt(oSection.$().css("marginTop")));
 			assert.strictEqual(iSubSectionHeight, iExpectedSubSectionHeight, "the height is correct");
 			done();
@@ -1530,7 +1551,8 @@ function($, Core, coreLibrary, XMLView, Log, Lib, ObjectPageDynamicHeaderTitle, 
 			//check
 			var iViewportHeight = oPage._getScrollableViewportHeight(false),
 				iOffsetTop = library.Utilities.getChildPosition(oSubSection.$(), oPage._$contentContainer).top,
-				iExpectedSubSectionHeight = Math.round(iViewportHeight - iOffsetTop);
+				iOffsetBottom = oPage.getDomRef().getBoundingClientRect().bottom - oSubSection.getDomRef().getBoundingClientRect().bottom,
+				iExpectedSubSectionHeight = Math.round(iViewportHeight - iOffsetTop - iOffsetBottom);
 
 			oSubSection.getDomRef().style.paddingTop = "20px";
 			oPage._requestAdjustLayout(true);
@@ -1539,6 +1561,28 @@ function($, Core, coreLibrary, XMLView, Log, Lib, ObjectPageDynamicHeaderTitle, 
 			done();
 
 		}, this);
+	});
+
+	QUnit.test("sapUxAPObjectPageSubSectionFitContainer expands the subSection with title to fit the container", function (assert) {
+		var oSection = this.oObjectPage.getSections()[0],
+			oSubSection = oSection.getSubSections()[0],
+			done = assert.async();
+
+		//setup: make the subSection fit its container and ensure it has a title
+		oSubSection.addStyleClass(ObjectPageSubSectionClass.FIT_CONTAINER_CLASS);
+		oSubSection.setTitle("some title");
+		//allow [by UX rule] the above title to render by making the subSection non-first:
+		oSection.insertSubSection(new ObjectPageSubSectionClass({ // insert subsection above
+			blocks: [new Text({text: "block content"})]
+		}));
+
+		var oStub = this.stub(oSubSection, "_setHeight").callsFake(function() {
+			ObjectPageSubSectionClass.prototype._setHeight.apply(this, arguments);
+			assert.strictEqual(oSubSection.getDomRef().scrollHeight, oSubSection.getDomRef().offsetHeight,
+				"no scrollable content");
+				oStub.restore();
+			done();
+		});
 	});
 
 	QUnit.test("single subSection with sapUxAPObjectPageSubSectionFitContainer no scrolling", function (assert) {
@@ -1606,6 +1650,31 @@ function($, Core, coreLibrary, XMLView, Log, Lib, ObjectPageDynamicHeaderTitle, 
 					"oComputerSpacerHeightSpy called with bAllowScrollSectionToTop = false");
 				assert.ok(parseInt(oSubSection.$().css("height")) < oPage._getSectionsContainerHeight(false),
 					"With content fit container no scrollbar is needed");
+				done();
+		}, this);
+	});
+
+	QUnit.test("sapUxAPObjectPageSubSectionFitContainer with dynamic header title - has scroll when content exceeds container",
+		function (assert) {
+			// Set-up
+			var oPage = this.oObjectPage,
+				oSection = this.oObjectPage.getSections()[0],
+				oSubSection = oSection.getSubSections()[0],
+				oToggleScrollingSpy = this.spy(oPage, "_toggleScrolling"),
+				done = assert.async();
+
+			assert.expect(2);
+
+			this.stub(oSubSection, "_hasRestrictedHeight").returns(false);
+
+			// Act
+			oPage.setHeaderTitle(new ObjectPageDynamicHeaderTitle());
+			oSubSection.addStyleClass(ObjectPageSubSectionClass.FIT_CONTAINER_CLASS);
+
+			oPage.attachEventOnce("onAfterRenderingDOMReady", function() {
+				// Assert
+				assert.strictEqual(oPage._bAllContentFitsContainer, true, "_bAllContentFitsContainer is 'true'");
+				assert.ok(oToggleScrollingSpy.calledWith(true), "oToggleScrollingSpy called with 'true' - scrolling is allowed");
 				done();
 		}, this);
 	});
@@ -1733,6 +1802,32 @@ function($, Core, coreLibrary, XMLView, Log, Lib, ObjectPageDynamicHeaderTitle, 
 
 				done();
 			});
+	});
+
+	QUnit.test("sapUxAPObjectPageSubSectionFitContainer preserves the minimal content height", function (assert) {
+		var oPage = this.oObjectPage,
+			oSection = this.oObjectPage.getSections()[0],
+			oSubSection = oSection.getSubSections()[0],
+			oQunitFixtureElement = document.getElementById("qunit-fixture"),
+			sPageHeight = "200px",
+			sPageContentHeight = "300px",
+			done = assert.async();
+
+		// Setup: content height is bigger than page height
+		oSubSection.removeAllBlocks();
+		oQunitFixtureElement.style.height = sPageHeight;
+		oSubSection.addBlock(new HTML({content: '<div style="min-height:' + sPageContentHeight + '"></div>'}));
+
+		//act
+		oSubSection.addStyleClass(ObjectPageSubSectionClass.FIT_CONTAINER_CLASS);
+
+		//setup
+		oPage.attachEventOnce("onAfterRenderingDOMReady", function() {
+			//check
+			assert.strictEqual(oSubSection.getDomRef().style.height, "", "the height of the section is not restricted");
+			oQunitFixtureElement.style.height = ""; // clean up
+			done();
+		}, this);
 	});
 
 	QUnit.module("Invalidation", {

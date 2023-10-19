@@ -22,6 +22,7 @@ sap.ui.define([
 	"./Link",
 	"./MessageItem",
 	"./GroupHeaderListItem",
+	'sap/ui/core/InvisibleText',
 	"sap/ui/core/library",
 	"sap/ui/base/ManagedObject",
 	"./MessageViewRenderer",
@@ -49,6 +50,7 @@ sap.ui.define([
 	Link,
 	MessageItem,
 	GroupHeaderListItem,
+	InvisibleText,
 	coreLibrary,
 	ManagedObject,
 	MessageViewRenderer,
@@ -416,6 +418,8 @@ sap.ui.define([
 
 			// TODO: adopt this to NavContainer's public API once a parameter for back navigation transition name is available
 			this._navContainer._pageStack[this._navContainer._pageStack.length - 1].transition = "slide";
+		} else if (aListItems.length === 0) {
+			this._navContainer.backToTop();
 		}
 
 		// Bind automatically to the MessageModel if no items are bound
@@ -596,13 +600,16 @@ sap.ui.define([
 			content: "<span id=\"" + sCloseBtnDescrId + "\" class=\"sapMMsgViewHiddenContainer\">" + sCloseBtnDescr + "</span>"
 		});
 
-		var sHeadingDescr = this._oResourceBundle.getText("MESSAGEPOPOVER_ARIA_HEADING");
-		var sHeadingDescrId = this.getId() + "-HeadingDescr";
-		var oHeadingARIAHiddenDescr = new HTML(sHeadingDescrId, {
+		var sHeadingDescr = this._oResourceBundle.getText("MESSAGEPOPOVER_ARIA_HEADING"),
+		sHeadingDescrId = this.getId() + "-HeadingDescr",
+		sSegmentedBtnDescrId = InvisibleText.getStaticId("sap.m", "MESSAGEVIEW_SEGMENTED_BTN_DESCRIPTION"),
+		oHeadingARIAHiddenDescr = new HTML(sHeadingDescrId, {
 			content: "<span id=\"" + sHeadingDescrId + "\" class=\"sapMMsgViewHiddenContainer\" role=\"heading\">" + sHeadingDescr + "</span>"
 		});
 
-		this._oSegmentedButton = new SegmentedButton(this.getId() + "-segmented", {}).addStyleClass("sapMSegmentedButtonNoAutoWidth");
+		this._oSegmentedButton = new SegmentedButton(this.getId() + "-segmented", {
+			ariaLabelledBy: sSegmentedBtnDescrId
+		}).addStyleClass("sapMSegmentedButtonNoAutoWidth");
 
 		this._oListHeader = new Toolbar({
 			content: [this._oSegmentedButton, new ToolbarSpacer(), oCloseBtnARIAHiddenDescr, oHeadingARIAHiddenDescr]
@@ -887,7 +894,7 @@ sap.ui.define([
 			if (iCount > 0) {
 				oButton = new Button(this.getId() + "-" + sListName, {
 					text: sListName == "all" ? this._oResourceBundle.getText(sBundleText) : iCount,
-					tooltip: this._oResourceBundle.getText(sBundleText),
+					tooltip: sListName === "all" ? "" : this._oResourceBundle.getText(sBundleText),
 					icon: ICONS[sListName],
 					press: pressClosure(sListName)
 				}).addStyleClass(CSS_CLASS + "Btn" + sListName.charAt(0).toUpperCase() + sListName.slice(1));

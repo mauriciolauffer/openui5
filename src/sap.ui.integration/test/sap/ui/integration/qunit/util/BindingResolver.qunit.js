@@ -4,9 +4,10 @@ sap.ui.define([
 	"sap/ui/model/json/JSONModel",
 	"sap/ui/base/ManagedObject",
 	"sap/ui/integration/util/BindingResolver",
-	"sap/ui/integration/util/BindingHelper"
+	"sap/ui/integration/util/BindingHelper",
+	"sap/ui/core/date/UI5Date"
 ],
-function (JSONModel, ManagedObject, BindingResolver, BindingHelper) {
+function (JSONModel, ManagedObject, BindingResolver, BindingHelper, UI5Date) {
 	"use strict";
 
 	QUnit.module("BindingResolver resolveValue");
@@ -221,7 +222,7 @@ function (JSONModel, ManagedObject, BindingResolver, BindingHelper) {
 	QUnit.test("Resolving instances of Date", function (assert) {
 		// Arrange
 		var oData = {
-			value: new Date()
+			value: UI5Date.getInstance()
 		};
 
 		// Assert
@@ -300,48 +301,4 @@ function (JSONModel, ManagedObject, BindingResolver, BindingHelper) {
 		assert.strictEqual(vResolved, "value1 value2", "Text is resolved correctly based on 2 models.");
 	});
 
-	QUnit.module("Is binding info");
-
-	QUnit.test("Correct binding infos", function (assert) {
-		// Arrange
-		var aSamples = [
-			{
-				path: "something/something"
-			},
-			{
-				parts: [
-					"something/something",
-					"something/something"
-				],
-				formatter: function () {}
-			},
-			{
-				parts: [
-					"something/something",
-					"something/something"
-				],
-				binding: {}
-			}
-		];
-
-		aSamples.forEach(function (oSample) {
-			// Assert
-			assert.strictEqual(BindingResolver.isBindingInfo(oSample), true, "Object is binding info.");
-		});
-	});
-
-	QUnit.test("Not binding infos", function (assert) {
-		// Arrange
-		var aSamples = [
-			{},
-			{
-				test: "test"
-			}
-		];
-
-		aSamples.forEach(function (oSample) {
-			// Assert
-			assert.strictEqual(BindingResolver.isBindingInfo(oSample), false, "Object is not a binding info.");
-		});
-	});
 });

@@ -8,8 +8,9 @@ sap.ui.define([
 	"sap/ui/mdc/condition/FilterConverter",
 	"sap/ui/mdc/condition/FilterOperatorUtil",
 	"sap/ui/mdc/condition/Operator",
-	"sap/ui/mdc/enum/ConditionValidated",
-	'sap/ui/mdc/enum/EditMode',
+	"sap/ui/mdc/enums/ConditionValidated",
+	'sap/ui/mdc/enums/FieldEditMode',
+	"sap/ui/mdc/enums/OperatorName",
 	"sap/m/Table",
 	"sap/m/ColumnListItem",
 	"sap/m/Column",
@@ -28,7 +29,8 @@ sap.ui.define([
 	FilterOperatorUtil,
 	Operator,
 	ConditionValidated,
-	EditMode,
+	FieldEditMode,
+	OperatorName,
 	Table,
 	ColumnListItem,
 	Column,
@@ -85,108 +87,108 @@ sap.ui.define([
 			var oConditionChangeBinding = oCM.bindProperty("/conditions", oCM.getContext("/conditions"));
 			oConditionChangeBinding.attachChange(this.handleConditionModelChange.bind(this));
 
-			oCM.addCondition("ProductId", Condition.createCondition("EQ", ["22134T"], undefined, undefined, ConditionValidated.Validated));
-			oCM.addCondition("Name", Condition.createCondition("StartsWith", ["Web"], undefined, undefined, ConditionValidated.NotValidated));
-			oCM.addCondition("Date", Condition.createCondition("EQ", [new Date(1397520000000)], undefined, undefined, ConditionValidated.NotValidated));
-			oCM.addCondition("Quantity", Condition.createCondition("EQ", [22], undefined, undefined, ConditionValidated.NotValidated));
-			oCM.addCondition("Description", Condition.createCondition("Contains", ["USB"], undefined, undefined, ConditionValidated.NotValidated));
-			oCM.addCondition("Status", Condition.createCondition("EQ", ["S1"], undefined, undefined, ConditionValidated.Validated));
-			oCM.addCondition("WeightMeasure,WeightUnit", Condition.createCondition("EQ", [[700, "g"]], undefined, undefined, ConditionValidated.NotValidated));
+			oCM.addCondition("ProductId", Condition.createCondition(OperatorName.EQ, ["22134T"], undefined, undefined, ConditionValidated.Validated));
+			oCM.addCondition("Name", Condition.createCondition(OperatorName.StartsWith, ["Web"], undefined, undefined, ConditionValidated.NotValidated));
+			oCM.addCondition("Date", Condition.createCondition(OperatorName.EQ, [new Date(1397520000000)], undefined, undefined, ConditionValidated.NotValidated));
+			oCM.addCondition("Quantity", Condition.createCondition(OperatorName.EQ, [22], undefined, undefined, ConditionValidated.NotValidated));
+			oCM.addCondition("Description", Condition.createCondition(OperatorName.Contains, ["USB"], undefined, undefined, ConditionValidated.NotValidated));
+			oCM.addCondition("Status", Condition.createCondition(OperatorName.EQ, ["S1"], undefined, undefined, ConditionValidated.Validated));
+			oCM.addCondition("WeightMeasure,WeightUnit", Condition.createCondition(OperatorName.EQ, [[700, "g"]], undefined, undefined, ConditionValidated.NotValidated));
 
 			//set the model on your view
 			oView.setModel(oCM, "cm");
 
 			var fnFireChange = function(aConditions, bValid, vWrongValue, oPromise) { this.fireEvent("change", { conditions: aConditions, valid: bValid, promise: oPromise }); };
-			var fnGetOperators = function() { return ["EQ"]; };
+			var fnGetOperators = function() { return [OperatorName.EQ]; };
 			var oBaseField = oView.byId("FB1");
-			oBaseField._fireChange = fnFireChange;
+			oBaseField.fireChangeEvent = fnFireChange;
 			oBaseField.attachEvent("change", this.handleChange, this);
-			oBaseField._getOperators = fnGetOperators; // fake Field
+			oBaseField.getSupportedOperators = fnGetOperators; // fake Field
 			oBaseField = oView.byId("FB2");
-			oBaseField._fireChange = fnFireChange;
+			oBaseField.fireChangeEvent = fnFireChange;
 			oBaseField.attachEvent("change", this.handleChange, this);
-			oBaseField._getOperators = fnGetOperators; // fake Field
+			oBaseField.getSupportedOperators = fnGetOperators; // fake Field
 			oBaseField = oView.byId("FB3");
-			oBaseField._fireChange = fnFireChange;
+			oBaseField.fireChangeEvent = fnFireChange;
 			oBaseField.attachEvent("change", this.handleChange, this);
 			oBaseField = oView.byId("FB4");
-			oBaseField._fireChange = fnFireChange;
+			oBaseField.fireChangeEvent = fnFireChange;
 			oBaseField.attachEvent("change", this.handleChange, this);
 			oBaseField = oView.byId("FB5");
-			oBaseField._fireChange = fnFireChange;
+			oBaseField.fireChangeEvent = fnFireChange;
 			oBaseField.attachEvent("change", this.handleChange, this);
 			oBaseField = oView.byId("FB6");
-			oBaseField._fireChange = fnFireChange;
+			oBaseField.fireChangeEvent = fnFireChange;
 			oBaseField.attachEvent("change", this.handleChange, this);
 			oBaseField = oView.byId("FB7");
-			oBaseField._fireChange = fnFireChange;
-			oBaseField._getOperators = fnGetOperators; // fake Field
+			oBaseField.fireChangeEvent = fnFireChange;
+			oBaseField.getSupportedOperators = fnGetOperators; // fake Field
 			oBaseField.attachEvent("change", this.handleChange, this);
 			oBaseField = oView.byId("FB8");
-			oBaseField._fireChange = fnFireChange;
-			oBaseField._getOperators = fnGetOperators; // fake Field
+			oBaseField.fireChangeEvent = fnFireChange;
+			oBaseField.getSupportedOperators = fnGetOperators; // fake Field
 			oBaseField.attachEvent("change", this.handleChange, this);
 			oBaseField = oView.byId("FB9");
-			oBaseField._fireChange = fnFireChange;
+			oBaseField.fireChangeEvent = fnFireChange;
 			oBaseField.attachEvent("change", this.handleChange, this);
 			oBaseField = oView.byId("FB9a");
-			oBaseField._fireChange = fnFireChange;
+			oBaseField.fireChangeEvent = fnFireChange;
 			oBaseField.attachEvent("change", this.handleChange, this);
 			oBaseField = oView.byId("FB9b");
-			oBaseField._fireChange = fnFireChange;
+			oBaseField.fireChangeEvent = fnFireChange;
 			oBaseField.attachEvent("change", this.handleChange, this);
 			oBaseField = oView.byId("FB9c");
-			oBaseField._fireChange = fnFireChange;
+			oBaseField.fireChangeEvent = fnFireChange;
 			oBaseField.attachEvent("change", this.handleChange, this);
 			oBaseField = oView.byId("FB10");
 			var oCM2 = new ConditionModel(); // dummy for Link
 			oView.setModel(oCM2, "cm2");
-			oCM2.addCondition("Link", Condition.createCondition("EQ", ["My Link"]));
-			oBaseField._fireChange = fnFireChange;
+			oCM2.addCondition("Link", Condition.createCondition(OperatorName.EQ, ["My Link"]));
+			oBaseField.fireChangeEvent = fnFireChange;
 			oBaseField.attachEvent("change", this.handleChange, this);
 			oBaseField = oView.byId("FB11");
-			oBaseField._fireChange = fnFireChange;
+			oBaseField.fireChangeEvent = fnFireChange;
 			oBaseField.attachEvent("change", this.handleChange, this);
 			oBaseField = oView.byId("FB12");
-			oBaseField._fireChange = fnFireChange;
+			oBaseField.fireChangeEvent = fnFireChange;
 			oBaseField.attachEvent("change", this.handleChange, this);
 			oBaseField = oView.byId("FB13");
-			oBaseField._fireChange = fnFireChange;
+			oBaseField.fireChangeEvent = fnFireChange;
 			oBaseField.attachEvent("change", this.handleChange, this);
 			oBaseField = oView.byId("FB14");
-			oBaseField._fireChange = fnFireChange;
+			oBaseField.fireChangeEvent = fnFireChange;
 			oBaseField.attachEvent("change", this.handleChange, this);
 			oBaseField = oView.byId("FB15");
-			oBaseField._fireChange = fnFireChange;
+			oBaseField.fireChangeEvent = fnFireChange;
 			oBaseField.attachEvent("change", this.handleChange, this);
 			oBaseField = oView.byId("FB16");
-			oBaseField._fireChange = fnFireChange;
+			oBaseField.fireChangeEvent = fnFireChange;
 			oBaseField.attachEvent("change", this.handleChange, this);
 			oBaseField = oView.byId("FB16b");
-			oBaseField._fireChange = fnFireChange;
+			oBaseField.fireChangeEvent = fnFireChange;
 			oBaseField.attachEvent("change", this.handleChange, this);
 			oBaseField = oView.byId("FB17");
-			oBaseField._fireChange = fnFireChange;
+			oBaseField.fireChangeEvent = fnFireChange;
 			oBaseField.attachEvent("change", this.handleChange, this);
 			oBaseField = oView.byId("FB18");
-			oBaseField._fireChange = fnFireChange;
+			oBaseField.fireChangeEvent = fnFireChange;
 			oBaseField.attachEvent("change", this.handleChange, this);
-			oBaseField._getOperators = fnGetOperators; // fake Field
+			oBaseField.getSupportedOperators = fnGetOperators; // fake Field
 			oBaseField = oView.byId("FB19");
-			oBaseField._fireChange = fnFireChange;
+			oBaseField.fireChangeEvent = fnFireChange;
 			oBaseField.attachEvent("change", this.handleChange, this);
 			oBaseField = oView.byId("FB20");
-			oBaseField._fireChange = fnFireChange;
+			oBaseField.fireChangeEvent = fnFireChange;
 			oBaseField.attachEvent("change", this.handleChange, this);
 			oBaseField = oView.byId("FB21");
-			oBaseField._fireChange = fnFireChange;
+			oBaseField.fireChangeEvent = fnFireChange;
 			oBaseField.attachEvent("change", this.handleChange, this);
 			oBaseField = oView.byId("FB-Country");
-			oBaseField._fireChange = fnFireChange;
+			oBaseField.fireChangeEvent = fnFireChange;
 			oBaseField.attachEvent("change", this.handleChange, this);
 
 			// add custom operators
-			var oOperator = FilterOperatorUtil.getOperator("EQ");
+			var oOperator = FilterOperatorUtil.getOperator(OperatorName.EQ);
 			var oMyOperator = new Operator({
 				name: "myEQ",
 				filterOperator: oOperator.filterOperator,
@@ -206,7 +208,7 @@ sap.ui.define([
 			FilterOperatorUtil.addOperator(oMyOperator);
 			oMyOperator = new Operator({
 				name: "myNE",
-				filterOperator: "NE",
+				filterOperator: FilterOperator.NE,
 				tokenParse: "^!=(.+)$",
 				tokenFormat: "!(={0})",
 				tokenText: "My NotEqual",
@@ -226,9 +228,9 @@ sap.ui.define([
 			FilterOperatorUtil.addOperator(oMyOperator);
 
 			oBaseField = oView.byId("FB-MatrId");
-			oBaseField._fireChange = fnFireChange;
+			oBaseField.fireChangeEvent = fnFireChange;
 			oBaseField.attachEvent("change", this.handleChange, this);
-			oBaseField._getOperators = function() {return ["GT", "LT", "myEQ", "myNE"];};
+			oBaseField.getSupportedOperators = function() {return [OperatorName.GT, OperatorName.LT, "myEQ", "myNE"];};
 
 		},
 
@@ -347,9 +349,9 @@ sap.ui.define([
 			var oField = this.byId("F11");
 			var bPressed = oEvent.getParameter("pressed");
 			if (bPressed) {
-				oField.setEditMode(EditMode.Display);
+				oField.setEditMode(FieldEditMode.Display);
 			} else {
-				oField.setEditMode(EditMode.Editable);
+				oField.setEditMode(FieldEditMode.Editable);
 			}
 		},
 
@@ -364,8 +366,8 @@ sap.ui.define([
 		},
 
 		handleStatusOpen: function(oEvent) {
-			var oFieldHelp = oEvent.oSource;
-			var oWrapper = oFieldHelp.getContent();
+			var oValueHelp = oEvent.oSource;
+			var oWrapper = oValueHelp.getContent();
 			setTimeout(function() { // test async table assignment
 				var oTable = oWrapper.getTable();
 				if (!oTable) {
@@ -445,9 +447,9 @@ sap.ui.define([
 					oField.setConditions([aConditions[0]]); // clear conditions as FixedList only allows one
 				}
 				oField.setMaxConditions(1);
-				oField.setFieldHelp(oView.byId("LFH-MatrId"));
+				oField.setValueHelp(oView.byId("LFH-MatrId"));
 			} else {
-				oField.setFieldHelp(oView.byId("VH-MatrId-FL"));
+				oField.setValueHelp(oView.byId("VH-MatrId-FL"));
 				oField.setMaxConditions(-1);
 			}
 		}

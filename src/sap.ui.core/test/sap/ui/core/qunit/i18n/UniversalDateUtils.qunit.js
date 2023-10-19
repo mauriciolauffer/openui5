@@ -1,12 +1,20 @@
 /*global QUnit, sinon */
 sap.ui.define([
-	"sap/ui/core/date/UniversalDateUtils",
-	"sap/ui/core/date/UniversalDate",
 	"sap/ui/core/CalendarType",
-	'sap/ui/core/Configuration'
-], function(UniversalDateUtils, UniversalDate, CalendarType, Configuration) {
+	"sap/ui/core/Configuration",
+	"sap/ui/core/date/UI5Date",
+	"sap/ui/core/date/UniversalDate",
+	"sap/ui/core/date/UniversalDateUtils",
+	// load all required calendars in advance
+	"sap/ui/core/date/Buddhist",
+	"sap/ui/core/date/Gregorian",
+	"sap/ui/core/date/Islamic",
+	"sap/ui/core/date/Japanese",
+	"sap/ui/core/date/Persian"
+], function (CalendarType, Configuration, UI5Date, UniversalDate, UniversalDateUtils) {
 	"use strict";
 
+	const sLanguage = Configuration.getLanguage();
 	var testDate = function(assert, oDate, iDuration, sUnit, iFullYear, iMonth, iDate, iHours, iMinutes, iSecond, iMilliseconds) {
 		assert.strictEqual(oDate.getFullYear(), iFullYear, "getRange " + iDuration +  " " + sUnit + ": year set correctly");
 		assert.strictEqual(oDate.getMonth(), iMonth, "getRange " + iDuration +  " " + sUnit + ": month set correctly");
@@ -17,7 +25,17 @@ sap.ui.define([
 		assert.strictEqual(oDate.getMilliseconds(), iMilliseconds, "getRange " + iDuration +  " " + sUnit + ": milliseconds set correctly");
 	};
 
-	QUnit.module("sap.ui.core.date.UniversalDateUtils");
+	QUnit.module("sap.ui.core.date.UniversalDateUtils", {
+		before() {
+			this.__ignoreIsolatedCoverage__ = true;
+		},
+		beforeEach: function () {
+			Configuration.setLanguage("en_US");
+		},
+		afterEach: function () {
+			Configuration.setLanguage(sLanguage);
+		}
+	});
 
 	QUnit.test("Static Methods Test", function (assert) {
 		var oUDate = UniversalDateUtils.resetStartTime(new UniversalDate());
@@ -46,46 +64,45 @@ sap.ui.define([
 	});
 
 	QUnit.test("Static Methods Test getRange", function (assert) {
-
-		var oDate = new UniversalDate(2000, 0, 1, 0, 0, 0, 0),
-			oUniversalDateUtilsStub = sinon.stub(UniversalDateUtils, "createNewUniversalDate").returns( oDate);
+		let oDate = new UniversalDate(2000, 0, 1, 0, 0, 0, 0);
+		let oUniversalDateUtilsStub = this.stub(UniversalDateUtils, "createNewUniversalDate").returns(oDate);
 
 		//DateRange MINUTE
-		var aRange = UniversalDateUtils.getRange(3, "MINUTE");
+		let aRange = UniversalDateUtils.getRange(3, "MINUTE");
 		testDate(assert, aRange[0].oDate, 1, "MINUTE", 2000, 0, 1, 0,0,0,0);
 		testDate(assert, aRange[1].oDate, 1, "MINUTE", 2000, 0, 1, 0,3,0,0);
 
-		var aRange = UniversalDateUtils.getRange(-3, "MINUTE");
+		aRange = UniversalDateUtils.getRange(-3, "MINUTE");
 		testDate(assert, aRange[0].oDate, 1, "MINUTE", 1999, 11, 31, 23,57,0,0);
 		testDate(assert, aRange[1].oDate, 1, "MINUTE", 2000, 0, 1, 0,0,0,0);
 
-		var aRange = UniversalDateUtils.getRange(0, "MINUTE");
+		aRange = UniversalDateUtils.getRange(0, "MINUTE");
 		testDate(assert, aRange[0].oDate, 1, "MINUTE", 2000, 0, 1, 0,0,0,0);
 		testDate(assert, aRange[1].oDate, 1, "MINUTE", 2000, 0, 1, 0,0,0,0);
 
-		var aRange = UniversalDateUtils.getRange(61, "MINUTE");
+		aRange = UniversalDateUtils.getRange(61, "MINUTE");
 		testDate(assert, aRange[0].oDate, 1, "MINUTE", 2000, 0, 1, 0,0,0,0);
 		testDate(assert, aRange[1].oDate, 1, "MINUTE", 2000, 0, 1, 1,1,0,0);
 
 		//DateRange HOUR
-		var aRange = UniversalDateUtils.getRange(3, "HOUR");
+		aRange = UniversalDateUtils.getRange(3, "HOUR");
 		testDate(assert, aRange[0].oDate, 1, "HOUR", 2000, 0, 1, 0,0,0,0);
 		testDate(assert, aRange[1].oDate, 1, "HOUR", 2000, 0, 1, 3,0,0,0);
 
-		var aRange = UniversalDateUtils.getRange(-3, "HOUR");
+		aRange = UniversalDateUtils.getRange(-3, "HOUR");
 		testDate(assert, aRange[0].oDate, 1, "HOUR", 1999, 11, 31, 21,0,0,0);
 		testDate(assert, aRange[1].oDate, 1, "HOUR", 2000, 0, 1, 0,0,0,0);
 
-		var aRange = UniversalDateUtils.getRange(0, "HOUR");
+		aRange = UniversalDateUtils.getRange(0, "HOUR");
 		testDate(assert, aRange[0].oDate, 1, "HOUR", 2000, 0, 1, 0,0,0,0);
 		testDate(assert, aRange[1].oDate, 1, "HOUR", 2000, 0, 1, 0,0,0,0);
 
-		var aRange = UniversalDateUtils.getRange(25, "HOUR");
+		aRange = UniversalDateUtils.getRange(25, "HOUR");
 		testDate(assert, aRange[0].oDate, 1, "HOUR", 2000, 0, 1, 0,0,0,0);
 		testDate(assert, aRange[1].oDate, 1, "HOUR", 2000, 0, 2, 1,0,0,0);
 
 		//DateRange DAY
-		var aRange = UniversalDateUtils.getRange(1, "DAY");
+		aRange = UniversalDateUtils.getRange(1, "DAY");
 		testDate(assert, aRange[0].oDate, 1, "DAY", 2000, 0, 2, 0,0,0,0);
 		testDate(assert, aRange[1].oDate, 1, "DAY", 2000, 0, 2, 23,59,59,999);
 
@@ -138,7 +155,6 @@ sap.ui.define([
 		testDate(assert, aRange[0].oDate, 0, "WEEK", 1999, 11, 26, 0,0,0,0);
 		testDate(assert, aRange[1].oDate, 0, "WEEK", 2000, 0, 1, 23,59,59,999);
 
-
 		//DateRange MONTH
 		aRange = UniversalDateUtils.getRange(1, "MONTH");
 		testDate(assert, aRange[0].oDate, 1, "MONTH", 2000, 1, 1, 0,0,0,0);
@@ -159,7 +175,7 @@ sap.ui.define([
 		oDate.setMonth(0);
 		oDate.setFullYear(2000);
 
-		oUniversalDateUtilsStub = sinon.stub(UniversalDateUtils, "createNewUniversalDate").returns( oDate);
+		oUniversalDateUtilsStub = this.stub(UniversalDateUtils, "createNewUniversalDate").returns(oDate);
 
 		aRange = UniversalDateUtils.getRange(-1, "MONTH"); // previous month
 		testDate(assert, aRange[0].oDate, -1, "MONTH", 1999, 11, 1, 0,0,0,0);
@@ -168,7 +184,6 @@ sap.ui.define([
 		aRange = UniversalDateUtils.getRange(0, "MONTH"); // current month
 		testDate(assert, aRange[0].oDate, 0, "MONTH", 2000, 0, 1, 0,0,0,0);
 		testDate(assert, aRange[1].oDate, 0, "MONTH", 2000, 0, 31, 23,59,59,999);
-
 
 		//DateRange QUARTER
 		aRange = UniversalDateUtils.getRange(1, "QUARTER");
@@ -191,7 +206,6 @@ sap.ui.define([
 		testDate(assert, aRange[0].oDate, 0, "QUARTER", 2000, 0, 1, 0,0,0,0);
 		testDate(assert, aRange[1].oDate, 0, "QUARTER", 2000, 2, 31, 23,59,59,999);
 
-
 		//DateRange YEAR
 		aRange = UniversalDateUtils.getRange(1, "YEAR");
 		testDate(assert, aRange[0].oDate, 1, "YEAR", 2001, 0, 1, 0,0,0,0);
@@ -206,7 +220,6 @@ sap.ui.define([
 		testDate(assert, aRange[1].oDate, 0, "YEAR", 2000, 11, 31, 23,59,59,999);
 
 		oUniversalDateUtilsStub.restore();
-
 
 		//week start date with locale
 		oDate = UniversalDateUtils.getWeekStartDate(new UniversalDate(), "en-US");
@@ -234,7 +247,6 @@ sap.ui.define([
 		var iDiff = oDate2.getTime() - oDate1.getTime();
 		assert.strictEqual(iDiff >= 0 && iDiff <= 10, true, "UniversalDateUtils.getQuarterStartDate without date");
 
-
 		var oDate = new UniversalDate(); // to test determination of interval start
 		oDate.setMilliseconds(0);
 		oDate.setSeconds(0);
@@ -244,20 +256,20 @@ sap.ui.define([
 		oDate.setMonth(0);
 		oDate.setFullYear(2000);
 
-		var oUniversalDateUtilsStub = sinon.stub(UniversalDateUtils, "createNewUniversalDate").returns( oDate);
+		let oUniversalDateUtilsStub = this.stub(UniversalDateUtils, "createNewUniversalDate").returns(oDate);
 
 		//lastMinutes
-		var aRange = UniversalDateUtils.ranges.lastMinutes(3);
+		let aRange = UniversalDateUtils.ranges.lastMinutes(3);
 		testDate(assert, aRange[0].oDate, -3, "MINUTE", 1999, 11, 31, 23,57,0,0);
 		testDate(assert, aRange[1].oDate, -3, "MINUTE", 2000, 0, 1, 0,0,0,0);
 
 		//lastHours
-		var aRange = UniversalDateUtils.ranges.lastHours(3);
+		aRange = UniversalDateUtils.ranges.lastHours(3);
 		testDate(assert, aRange[0].oDate, -3, "HOURS", 1999, 11, 31, 21,0,0,0);
 		testDate(assert, aRange[1].oDate, -3, "HOURS", 2000, 0, 1, 0,0,0,0);
 
 		//lastDays
-		var aRange = UniversalDateUtils.ranges.lastDays(3);
+		aRange = UniversalDateUtils.ranges.lastDays(3);
 		testDate(assert, aRange[0].oDate, -3, "DAY", 1999, 11, 29, 0,0,0,0);
 		testDate(assert, aRange[1].oDate, -3, "DAY", 1999, 11, 31, 23,59,59,999);
 
@@ -277,12 +289,12 @@ sap.ui.define([
 		testDate(assert, aRange[1].oDate, 1, "DAY", 2000, 0, 2, 23,59,59,999);
 
 		//nextMinutes
-		var aRange = UniversalDateUtils.ranges.nextMinutes(3);
+		aRange = UniversalDateUtils.ranges.nextMinutes(3);
 		testDate(assert, aRange[0].oDate, 3, "MINUTE", 2000, 0, 1, 0,0,0,0);
 		testDate(assert, aRange[1].oDate, 3, "MINUTE", 2000, 0, 1, 0,3,0,0);
 
 		//nextHours
-		var aRange = UniversalDateUtils.ranges.nextHours(3);
+		aRange = UniversalDateUtils.ranges.nextHours(3);
 		testDate(assert, aRange[0].oDate, 3, "HOURS", 2000, 0, 1, 0,0,0,0);
 		testDate(assert, aRange[1].oDate, 3, "HOURS", 2000, 0, 1, 3,0,0,0);
 
@@ -290,7 +302,6 @@ sap.ui.define([
 		aRange = UniversalDateUtils.ranges.nextDays(3);
 		testDate(assert, aRange[0].oDate, 3, "DAY", 2000, 0, 2, 0,0,0,0);
 		testDate(assert, aRange[1].oDate, 3, "DAY", 2000, 0, 4, 23,59,59,999);
-
 
 		//lastWeeks
 		aRange = UniversalDateUtils.ranges.lastWeeks(5);
@@ -335,7 +346,6 @@ sap.ui.define([
 		testDate(assert, aRange[0].oDate, 5, "WEEK", 2000, 0, 2, 0,0,0,0);
 		testDate(assert, aRange[1].oDate, 5, "WEEK", 2000, 1, 5, 23,59,59,999);
 
-
 		//lastMonths
 		aRange = UniversalDateUtils.ranges.lastMonths(13);
 		testDate(assert, aRange[0].oDate, -13, "MONTH", 1998, 11, 1, 0,0,0,0);
@@ -379,7 +389,6 @@ sap.ui.define([
 		testDate(assert, aRange[0].oDate, 13, "MONTH", 2000, 1, 1, 0,0,0,0);
 		testDate(assert, aRange[1].oDate, 13, "MONTH", 2001, 1, 28, 23,59,59,999);
 
-
 		//lastQuarters
 		aRange = UniversalDateUtils.ranges.lastQuarters(5);
 		testDate(assert, aRange[0].oDate, -5, "QUARTER", 1998, 9, 1, 0,0,0,0);
@@ -413,7 +422,6 @@ sap.ui.define([
 		testDate(assert, aRange[0].oDate, 5, "QUARTER", 2000, 3, 1, 0,0,0,0);
 		testDate(assert, aRange[1].oDate, 5, "QUARTER", 2001, 5, 30, 23,59,59,999);
 
-
 		//firstDay current Quarter
 		aRange = UniversalDateUtils.ranges.firstDayOfQuarter();
 		testDate(assert, aRange[0].oDate, 1, "QUARTER", 2000, 0, 1, 0,0,0,0);
@@ -443,7 +451,6 @@ sap.ui.define([
 		aRange = UniversalDateUtils.ranges.quarter(4);
 		testDate(assert, aRange[0].oDate, 4, "QUARTER", 2000, 9, 1, 0,0,0,0);
 		testDate(assert, aRange[1].oDate, 4, "QUARTER", 2000, 11, 31, 23,59,59,999);
-
 
 		//lastYears
 		aRange = UniversalDateUtils.ranges.lastYears(5);
@@ -495,8 +502,7 @@ sap.ui.define([
 		oDate.setMonth(4);
 		oDate.setFullYear(2000);
 
-		oUniversalDateUtilsStub = sinon.stub(UniversalDateUtils, "createNewUniversalDate").returns( oDate);
-
+		oUniversalDateUtilsStub = this.stub(UniversalDateUtils, "createNewUniversalDate").returns(oDate);
 
 		//yearToDate
 		aRange = UniversalDateUtils.ranges.yearToDate();
@@ -514,11 +520,12 @@ sap.ui.define([
 	QUnit.test("CalendarType calendarWeekNumbering date calculation Stability", function(assert) {
 
 		var sCalendarWeekNumbering = "WesternTraditional",
-			oCurrentDate = new Date('2023-01-08T00:13:37'),
+			oCurrentDate = UI5Date.getInstance('2023-01-08T00:13:37'),
 			oClock = sinon.useFakeTimers(oCurrentDate.getTime()),
-			oConfigStub = sinon.stub(Configuration, "getCalendarType").returns("Islamic"),
 			//lastWeek
 			aRange = UniversalDateUtils.ranges.lastWeek(sCalendarWeekNumbering);
+
+		this.stub(Configuration, "getCalendarType").returns("Islamic");
 
 		testDate(assert, aRange[0].getJSDate(), -1, "WEEK", 2023, 0, 1, 0,0,0,0);
 		testDate(assert, aRange[1].getJSDate(), -1, "WEEK", 2023, 0, 7, 23,59,59,999);
@@ -556,26 +563,80 @@ sap.ui.define([
 		testDate(assert, aRange[0].oDate, 1, "WEEKS", 2023, 0, 15, 0,0,0,0);
 		testDate(assert, aRange[1].oDate, 1, "WEEKS", 2023, 0, 21, 23,59,59,999);
 
-		oConfigStub.restore();
 		oClock.restore();
 	});
 
-	QUnit.test("_getDateFromWeekStartByDayOffset", function(assert) {
-		var sCalendarWeekNumbering = 'WesternTraditional',
-			oCurrentDate = new Date('2023-01-09T00:13:37'),
-			oClock = sinon.useFakeTimers(oCurrentDate.getTime()),
-			oConfigStub = sinon.stub(Configuration, "getCalendarType").returns("Islamic"),
-			oFirstDateOfWeek = UniversalDateUtils._getDateFromWeekStartByDayOffset(sCalendarWeekNumbering);
+	//*********************************************************************************************
+	QUnit.test("_getDateFromWeekStartByDayOffset", function (assert) {
+		var oFormatSettings = {getFormatLocale: function () {}},
+			oResult = new UniversalDate(),
+			oUniversalDate = {getWeek: function () {}};
 
-		testDate(assert, oFirstDateOfWeek, 1, "WEEKS", 1444, 5, 15, 0,0,0,0);
+		this.mock(Configuration).expects("getCalendarType").withExactArgs().returns("~CalendarType");
+		this.mock(Configuration).expects("getFormatSettings").withExactArgs().returns(oFormatSettings);
+		this.mock(oFormatSettings).expects("getFormatLocale").withExactArgs().returns("~oLocale");
+		this.mock(UniversalDateUtils).expects("createNewUniversalDate").withExactArgs().returns(oUniversalDate);
+		this.mock(oUniversalDate).expects("getWeek")
+			.withExactArgs("~oLocale", "~sCalendarWeekNumbering")
+			.returns({week: "~week", year: "~year"});
+		this.mock(UniversalDate).expects("getFirstDateOfWeek")
+			.withExactArgs("~CalendarType", "~year", "~week", "~oLocale", "~sCalendarWeekNumbering")
+			.returns({year: 2023, month: 0, day: 1});
+		// Mock implementation of constructor of UniversalDate
+		this.mock(UniversalDate).expects("getClass").withExactArgs().returns("~class");
+		this.mock(UniversalDate.prototype).expects("createDate")
+			.withExactArgs("~class", sinon.match(function (oArguments) {
+				assert.deepEqual(Array.from(oArguments), [2023, 0, 2, 0, 0, 0]);
+				return true;
+			}))
+			.returns(oResult);
 
-		oFirstDateOfWeek = UniversalDateUtils._getDateFromWeekStartByDayOffset(sCalendarWeekNumbering, 1);
-		testDate(assert, oFirstDateOfWeek, 1, "WEEKS", 1444, 5, 16, 0,0,0,0);
-
-		oConfigStub.restore();
-		oClock.restore();
+		// Code under test
+		assert.strictEqual(UniversalDateUtils._getDateFromWeekStartByDayOffset("~sCalendarWeekNumbering", 1), oResult);
 	});
 
+	//*********************************************************************************************
+	// Integration test for BCP: 2380029711
+	// This test is currently skipped due to missing functionality in Configuration.setFirstDayOfWeek,
+	// see TODO below and BCP 2370022908
+	QUnit.skip("_getDateFromWeekStartByDayOffset with a configured first day of week", function(assert) {
+		var oFirstDateOfWeek,
+			sCalendarWeekNumbering = 'Default',
+			sDefaultLanguage = Configuration.getLanguage();
+
+		this.mock(UniversalDateUtils).expects("createNewUniversalDate")
+			.withExactArgs()
+			.returns(new UniversalDate(2023, 0, 13));
+
+		Configuration.setLanguage('en-US');
+		Configuration.getFormatSettings().setFirstDayOfWeek(1);
+
+		// code under test
+		oFirstDateOfWeek = UniversalDateUtils._getDateFromWeekStartByDayOffset(sCalendarWeekNumbering);
+		// In en-US locale the first day of the second calendar week is actually the 8th (Sunday),
+		// but due to setting the firstDayOfWeek to 1 (Mon), the returned date should be the 9th of Jan
+		testDate(assert, oFirstDateOfWeek, 1, "WEEKS", 2023, 0, 9, 0, 0, 0, 0);
+
+		Configuration.setLanguage(sDefaultLanguage);
+		//TODO: The parameter null is documented in the setFirstDayOfWeek method but is currently not supported
+		Configuration.getFormatSettings().setFirstDayOfWeek(null);
+	});
+
+	QUnit.test("_getDateFromWeekStartByDayOffset with custom timezone", function(assert) {
+		// prepare
+		var oUniversalDateWeekDay;
+
+		this.mock(UniversalDateUtils).expects("createNewUniversalDate")
+			.withExactArgs()
+			.atLeast(1)
+			.returns(new UniversalDate(675, 1, 1));
+
+		// act
+		oUniversalDateWeekDay = UniversalDateUtils._getDateFromWeekStartByDayOffset('WesternTraditional', 1);
+
+		//assert
+		testDate(assert, oUniversalDateWeekDay, 1, "DATE", 675, 1, 1, 0,0,0,0);
+	});
 
 	/**
 	 * Tested invariant:
@@ -586,7 +647,7 @@ sap.ui.define([
 		var fFixedDateTime = Date.now();
 
 		Object.keys(CalendarType).forEach(function(sCalendarType) {
-			var oDate = new Date(fFixedDateTime),
+			var oDate = UI5Date.getInstance(fFixedDateTime),
 				oInput = UniversalDate.getInstance(oDate, sCalendarType),
 				oOutput;
 
@@ -699,5 +760,4 @@ sap.ui.define([
 			});
 		});
 	});
-
 });

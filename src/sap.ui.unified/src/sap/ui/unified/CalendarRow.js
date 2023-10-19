@@ -69,7 +69,7 @@ sap.ui.define([
 	var InvisibleMessageMode = corelibrary.InvisibleMessageMode;
 
 	/*
-	 * <code>UniversalDate</code> objects are used inside the <code>CalendarRow</code>, whereas JavaScript dates are used in the API.
+	 * <code>UniversalDate</code> objects are used inside the <code>CalendarRow</code>, whereas UI5Date or JavaScript dates are used in the API.
 	 * So conversion must be done on API functions.
 	 *
 	 * ItemNavigation is not used as the keyboard navigation is somehow different.
@@ -99,7 +99,7 @@ sap.ui.define([
 		properties : {
 
 			/**
-			 * Start date, as JavaScript Date object, of the row. As default, the current date is used.
+			 * Start date, as UI5Date or JavaScript Date object, of the row. As default, the current date is used.
 			 */
 			startDate : {type : "object", group : "Data"},
 
@@ -339,12 +339,12 @@ sap.ui.define([
 			intervalSelect : {
 				parameters : {
 					/**
-					 * Interval start date as JavaScript date object
+					 * Interval start date as UI5Date or JavaScript Date object
 					 */
 					startDate : {type : "object"},
 
 					/**
-					 * Interval end date as JavaScript date object
+					 * Interval end date as UI5Date or JavaScript Date object
 					 */
 					endDate : {type : "object"},
 
@@ -464,9 +464,11 @@ sap.ui.define([
 	};
 
 	/**
-	 * Set the start date of the row
-	 * @param {Date} [oStartDate] Start date, as JavaScript Date object, of the row
+	 * Set the start date of the row.
+	 *
+	 * @param {Date|module:sap/ui/core/date/UI5Date} [oStartDate] Start date, as date instance, of the row
 	 * @returns {this} Reference to <code>this</code> for method chaining
+	 * @public
 	 */
 	CalendarRow.prototype.setStartDate = function(oStartDate){
 
@@ -490,6 +492,7 @@ sap.ui.define([
 
 	/**
 	 * Returns the start date of the row.
+	 *
 	 * @returns {sap.ui.core.date.UniversalDate} in UTC timezone
 	 * @private
 	 */
@@ -615,19 +618,19 @@ sap.ui.define([
 	CalendarRow.prototype.onsapselect = function(oEvent){
 		// focused appointment must be selected
 		var aVisibleAppointments = this._getVisibleAppointments(),
-			sBundleKey;
+			oAppointment, sBundleKey;
 
 
 		for (var i = 0; i < aVisibleAppointments.length; i++) {
-			var oAppointment = aVisibleAppointments[i].appointment;
+			oAppointment = aVisibleAppointments[i].appointment;
 			if (containsOrEquals(oAppointment.getDomRef(), oEvent.target)) {
 				var bRemoveOldSelection = !(this.getMultipleAppointmentsSelection() || oEvent.ctrlKey || oEvent.metaKey);
 				_selectAppointment.call(this, oAppointment, bRemoveOldSelection);
-				sBundleKey = oAppointment.getSelected() ? "APPOINTMENT_SELECTED" : "APPOINTMENT_UNSELECTED";
 				break;
 			}
 		}
 
+		sBundleKey = oAppointment.getSelected() ? "APPOINTMENT_SELECTED" : "APPOINTMENT_UNSELECTED";
 		this._oInvisibleMessage.announce(this._oRb.getText(sBundleKey), InvisibleMessageMode.Polite);
 
 		//To prevent bubbling into PlanningCalendar.
@@ -827,7 +830,7 @@ sap.ui.define([
 	 * Focus the <code>CalendarAppointment</code> in the <code>CalendarRow</code> that is nearest to
 	 * the given date.
 	 *
-	 * @param {Date} oDate Javascript Date object.
+	 * @param {Date|module:sap/ui/core/date/UI5Date} oDate date instance.
 	 * @returns {this} Reference to <code>this</code> for method chaining
 	 * @public
 	 */
@@ -1082,7 +1085,7 @@ sap.ui.define([
 	}
 
 	/*
-	 * @param {object} oDate JavaScript date object
+	 * @param {object} oDate date instace
 	 * @returns {UniversalDate} Start date for date object
 	 */
 	function _calculateStartDate(oDate) {
@@ -1162,6 +1165,11 @@ sap.ui.define([
 
 		for (i = 0; i < aAppointments.length; i++) {
 			oAppointment = aAppointments[i];
+
+			if (!oAppointment || !oAppointment.getStartDate()) {
+				continue;
+			}
+
 			var oAppointmentStartDate = CalendarUtils._createUniversalUTCDate(oAppointment.getStartDate(), undefined, true);
 			var oAppointmentStartDateTime = oAppointmentStartDate.getTime();
 			oAppointmentStartDate.setUTCSeconds(0); // ignore seconds
@@ -1681,6 +1689,7 @@ sap.ui.define([
 		var sAriaLabelNotSelected;
 		var sAriaLabelSelected;
 		var sSelectedTextId = InvisibleText.getStaticId("sap.ui.unified", "APPOINTMENT_SELECTED");
+		var sUnselectedTextId = InvisibleText.getStaticId("sap.ui.unified", "APPOINTMENT_UNSELECTED");
 		var bSelect = !oAppointment.getSelected();
 
 		if (bRemoveOldSelection) {
@@ -1700,14 +1709,14 @@ sap.ui.define([
 						}
 					}
 					sAriaLabel = oApp.$().attr("aria-labelledby");
-					sAriaLabelNotSelected = sAriaLabel ? sAriaLabel.replace(sSelectedTextId, "") : "";
+					sAriaLabelNotSelected = sAriaLabel ? sAriaLabel.replace(sSelectedTextId, sUnselectedTextId) : "";
 					oApp.$().attr("aria-labelledby", sAriaLabelNotSelected);
 				}
 			}
 		}
 
-		sAriaLabelSelected = oAppointment.$().attr("aria-labelledby") + " " + sSelectedTextId;
-		sAriaLabelNotSelected = oAppointment.$().attr("aria-labelledby").replace(sSelectedTextId, "").trim();
+		sAriaLabelSelected = oAppointment.$().attr("aria-labelledby").replace(sUnselectedTextId, sSelectedTextId).trim();
+		sAriaLabelNotSelected = oAppointment.$().attr("aria-labelledby").replace(sSelectedTextId, sUnselectedTextId).trim();
 
 		if (oAppointment.getSelected()) {
 			oAppointment.setProperty("selected", false, true); // do not invalidate CalendarRow
@@ -1728,8 +1737,6 @@ sap.ui.define([
 			for (i = 0; i < oAppointment._aAppointments.length; i++) {
 				oApp = oAppointment._aAppointments[i];
 				oApp.setProperty("selected", bSelect, true); // do not invalidate CalendarRow
-				sAriaLabelSelected = oApp.$().attr("aria-labelledby") + " " + sSelectedTextId;
-				oApp.$().attr("aria-labelledby", sAriaLabelSelected);
 			}
 			this.fireSelect({
 				appointments: oAppointment._aAppointments,

@@ -14,12 +14,13 @@ sap.ui.define([
 	"sap/ui/fl/variants/VariantManagement",
 	"sap/m/p13n/BasePanel",
 	"sap/ui/core/library",
-	"sap/ui/mdc/enum/PersistenceMode",
+	"sap/m/p13n/enum/PersistenceMode",
 	"sap/ui/core/Control",
 	"sap/ui/core/Core",
 	"sap/m/p13n/modules/xConfigAPI",
-	"sap/m/p13n/MetadataHelper"
-], function (Control, Engine, Controller, FlexRuntimeInfoAPI, FlexModificationHandler, ModificationHandler, TestModificationHandler, BaseObject, VBox, HBox, PersistenceProvider, VariantManagement, BasePanel, coreLibrary, PersistenceMode, CoreControl, oCore, xConfigAPI, MetadataHelper) {
+	"sap/m/p13n/MetadataHelper",
+	"sap/ui/core/CustomData"
+], function (Control, Engine, Controller, FlexRuntimeInfoAPI, FlexModificationHandler, ModificationHandler, TestModificationHandler, BaseObject, VBox, HBox, PersistenceProvider, VariantManagement, BasePanel, coreLibrary, PersistenceMode, CoreControl, oCore, xConfigAPI, MetadataHelper, CustomData) {
 	"use strict";
 
 	QUnit.module("Modification Handler", {
@@ -69,13 +70,15 @@ sap.ui.define([
 		var oFMHStub = sinon.stub(FlexModificationHandler.getInstance(), "processChanges");
 		oFMHStub.returns(Promise.resolve());
 
-		Engine.getInstance()._processChanges(this.oControl, [{
-			selectorElement: this.oControl,
-			changeSpecificData: {
-				changeType: "someTestChange",
-				content: {}
-			}
-		}]);
+		Engine.getInstance()._processChanges(this.oControl, {
+			ModificationHandlerTest: [{
+				selectorElement: this.oControl,
+				changeSpecificData: {
+					changeType: "someTestChange",
+					content: {}
+				}
+			}]
+		});
 
 		var aProvidedEngineChanges = oFMHStub.getCall(0).args[0];
 		var oModificationPayload = oFMHStub.getCall(0).args[1];
@@ -113,13 +116,15 @@ sap.ui.define([
 		var oFMHStub = sinon.stub(FlexModificationHandler.getInstance(), "processChanges");
 		oFMHStub.returns(Promise.resolve());
 
-		Engine.getInstance()._processChanges(this.oControl, [{
-			selectorElement: this.oControl,
-			changeSpecificData: {
-				changeType: "someTestChange",
-				content: {}
-			}
-		}]);
+		Engine.getInstance()._processChanges(this.oControl, {
+			ModificationHandlerTest: [{
+				selectorElement: this.oControl,
+				changeSpecificData: {
+					changeType: "someTestChange",
+					content: {}
+				}
+			}]
+		});
 
 		var aProvidedEngineChanges = oFMHStub.getCall(0).args[0];
 		var oModificationPayload = oFMHStub.getCall(0).args[1];
@@ -974,6 +979,44 @@ sap.ui.define([
 			this.oControl.destroy();
 			Engine.getInstance().destroy();
 		}
+	});
+
+	QUnit.test("Check that the inital event is fired when required", function(assert) {
+
+		const oStateChangeSpy = sinon.spy(Engine.getInstance(), "fireStateChange");
+		const oControl = new Control();
+
+		Engine.getInstance().register(oControl, {
+			controller: {
+				test: new Controller({
+					control: oControl,
+					targetAggregation: "test"
+				})
+			}
+		});
+
+		assert.ok(oStateChangeSpy.notCalled, "The state change has not been triggered");
+
+		const oXConfig = new CustomData({
+			key: "xConfig"
+		});
+
+		oXConfig.setValue(JSON.stringify({modified: true}));
+
+		const oControlWithXConfig = new Control({
+			customData: oXConfig
+		});
+
+		Engine.getInstance().register(oControlWithXConfig, {
+			controller: {
+				test: new Controller({
+					control: oControl,
+					targetAggregation: "test"
+				})
+			}
+		});
+
+		assert.ok(oStateChangeSpy.calledOnce, "The state change has been triggered");
 	});
 /*
 	QUnit.test("Check event firing on Engine change propagation", function(assert){

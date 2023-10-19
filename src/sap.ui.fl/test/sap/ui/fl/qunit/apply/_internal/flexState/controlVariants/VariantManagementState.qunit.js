@@ -1,65 +1,52 @@
 /* global QUnit */
 
 sap.ui.define([
-	"sap/base/util/includes",
-	"sap/base/util/LoaderExtensions",
+	"rta/qunit/RtaQunitUtils",
+	"sap/base/util/isEmptyObject",
 	"sap/base/util/merge",
-	"sap/base/util/values",
-	"sap/base/Log",
 	"sap/ui/core/util/reflection/JsControlTreeModifier",
 	"sap/ui/fl/apply/_internal/controlVariants/Utils",
 	"sap/ui/fl/apply/_internal/flexObjects/FlexObjectFactory",
 	"sap/ui/fl/apply/_internal/flexObjects/States",
-	"sap/ui/fl/apply/_internal/flexState/controlVariants/prepareVariantsMap",
 	"sap/ui/fl/apply/_internal/flexState/controlVariants/VariantManagementState",
 	"sap/ui/fl/apply/_internal/flexState/FlexState",
-	"sap/ui/fl/initial/_internal/StorageUtils",
+	"sap/ui/fl/apply/_internal/flexState/InitialPrepareFunctions",
+	"sap/ui/fl/apply/_internal/flexState/Loader",
 	"sap/ui/fl/Layer",
-	"sap/ui/fl/Utils",
 	"sap/ui/thirdparty/sinon-4"
 ], function(
-	includes,
-	LoaderExtensions,
+	RtaQunitUtils,
+	isEmptyObject,
 	merge,
-	values,
-	Log,
 	JsControlTreeModifier,
 	VariantUtil,
 	FlexObjectFactory,
 	States,
-	prepareVariantsMap,
 	VariantManagementState,
 	FlexState,
-	StorageUtils,
+	InitialPrepareFunctions,
+	Loader,
 	Layer,
-	Utils,
 	sinon
 ) {
 	"use strict";
 	var sandbox = sinon.createSandbox();
-	QUnit.dump.maxDepth = 20;
 
-	function getInitialChangesForVariant (sVReference, mVariantsMap) {
-		return values(mVariantsMap).reduce(function(aChanges, oVMData) {
-			oVMData.variants.some(function(oVariant) {
-				if (oVariant.instance.getId() === sVReference) {
-					aChanges = aChanges.concat(oVariant.controlChanges);
-					return true;
-				}
-			});
-			return aChanges;
-		}, []);
-	}
+	var sReference = "flexReference";
+	var sComponentId = "componentId";
+	var sVariantManagementReference = "vmReference";
+	var sStandardVariantReference = "vmReference";
+	var oComponent = RtaQunitUtils.createAndStubAppComponent(sandbox, sComponentId);
 
 	function createVariant(mVariantProperties) {
 		return FlexObjectFactory.createFlVariant({
-			variantName: mVariantProperties.title,
-			id: mVariantProperties.fileName,
-			reference: mVariantProperties.reference || "myReference",
-			layer: mVariantProperties.layer,
-			user: mVariantProperties.author,
+			variantName: mVariantProperties.title || "Test variant",
+			id: mVariantProperties.fileName || "testVariant",
+			reference: mVariantProperties.reference || sReference,
+			layer: mVariantProperties.layer || Layer.CUSTOMER,
+			user: mVariantProperties.author || "SAP",
 			variantReference: mVariantProperties.variantReference,
-			variantManagementReference: mVariantProperties.variantManagementReference,
+			variantManagementReference: mVariantProperties.variantManagementReference || sVariantManagementReference,
 			favorite: mVariantProperties.favorite,
 			visible: mVariantProperties.visible,
 			executeOnSelection: mVariantProperties.executeOnSelect,
@@ -67,889 +54,1339 @@ sap.ui.define([
 		});
 	}
 
-	function createUIChange(mFileContent) {
-		return FlexObjectFactory.createUIChange({
-			id: mFileContent.fileName,
-			layer: mFileContent.layer
+	function initializeFlexStateWithStandardVariant() {
+		return FlexState.initialize({
+			componentId: sComponentId,
+			reference: sReference
+		}).then(function() {
+			var oStandardVariant = createVariant({
+				fileName: sStandardVariantReference
+			});
+			VariantManagementState.addRuntimeSteadyObject(
+				sReference,
+				sComponentId,
+				oStandardVariant
+			);
+			return oStandardVariant;
 		});
 	}
 
-	QUnit.module("Given a VariantManagementState", {
-		afterEach: function() {
-			sandbox.restore();
+	function stubFlexObjectsSelector(aFlexObjects) {
+		var oFlexObjectsSelector = FlexState.getFlexObjectsDataSelector();
+		var oGetFlexObjectsStub = sandbox.stub(oFlexObjectsSelector, "get");
+		oGetFlexObjectsStub.callsFake(function(...aArgs) {
+			return aFlexObjects.concat(oGetFlexObjectsStub.wrappedMethod.apply(this, aArgs));
+		});
+		oFlexObjectsSelector.checkUpdate();
+	}
+
+	function cleanup() {
+		FlexState.clearState();
+		FlexState.clearRuntimeSteadyObjects(sReference, sComponentId);
+		// TODO: Check if this is an issue in prod
+		VariantManagementState.getVariantManagementMap().clearCachedResult();
+		VariantManagementState.resetCurrentVariantReference(sReference);
+		sandbox.restore();
+	}
+
+	QUnit.module("VariantsMapSelector", {
+		beforeEach() {
+			return initializeFlexStateWithStandardVariant().then(function(oStandardVariant) {
+				this.oStandardVariant = oStandardVariant;
+			}.bind(this));
+		},
+		afterEach() {
+			cleanup();
 		}
 	}, function() {
-		QUnit.test("when fake Standard Variants are used", function(assert) {
-			var oSetStub = sandbox.stub(FlexState, "setFakeStandardVariant");
-			var oResetStub = sandbox.stub(FlexState, "resetFakedStandardVariants");
+		QUnit.test("when there are existing flex objects (including a CompVariant)", function(assert) {
+			var oUIChange = FlexObjectFactory.createUIChange({
+				id: "someUIChange",
+				layer: Layer.CUSTOMER,
+				variantReference: sStandardVariantReference
+			});
+			var oCompVariant = FlexObjectFactory.createCompVariant({
+				id: "someCompVariant",
+				layer: Layer.CUSTOMER
+			});
+			stubFlexObjectsSelector([oUIChange, oCompVariant]);
 
-			var oVariant = {foo: "bar"};
-			var sReference = "flexReference";
-			var sComponentId = "componentId";
-			VariantManagementState.addFakeStandardVariant(sReference, sComponentId, oVariant);
-			assert.strictEqual(oSetStub.callCount, 1, "the FlexState was called once");
-			assert.strictEqual(oSetStub.lastCall.args[0], sReference, "the reference was passed");
-			assert.strictEqual(oSetStub.lastCall.args[1], sComponentId, "the component ID was passed");
-			assert.strictEqual(oSetStub.lastCall.args[2], oVariant, "the Variant was passed");
-
-			VariantManagementState.clearFakedStandardVariants(sReference, sComponentId);
-			assert.strictEqual(oResetStub.callCount, 1, "the FlexState was called once");
-			assert.strictEqual(oResetStub.lastCall.args[0], sReference, "the reference was passed");
-			assert.strictEqual(oResetStub.lastCall.args[1], sComponentId, "the component ID was passed");
+			assert.deepEqual(
+				VariantManagementState.getVariantManagementMap().get({ reference: sReference }),
+				{
+					vmReference: {
+						currentVariant: "vmReference",
+						defaultVariant: "vmReference",
+						modified: true,
+						variantManagementChanges: [],
+						variants: [
+							{
+								author: "SAP",
+								contexts: {},
+								controlChanges: [oUIChange],
+								executeOnSelect: false,
+								favorite: true,
+								instance: this.oStandardVariant,
+								isStandardVariant: true,
+								key: "vmReference",
+								layer: "CUSTOMER",
+								title: "Test variant",
+								variantChanges: [],
+								visible: true
+							}
+						]
+					}
+				},
+				"then the variants map is properly built"
+			);
 		});
 
-		QUnit.test("when getContent is called", function(assert) {
-			var oClearStub = sandbox.stub(FlexState, "getVariantsState");
+		QUnit.test("when there are variant changes", function(assert) {
+			var aVariantChanges = [
+				FlexObjectFactory.createUIChange({
+					id: "setTitleChange",
+					layer: Layer.CUSTOMER,
+					changeType: "setTitle",
+					fileType: "ctrl_variant_change",
+					selector: {
+						id: sStandardVariantReference
+					},
+					texts: {
+						title: { value: "Renamed variant" }
+					}
+				}),
+				FlexObjectFactory.createUIChange({
+					id: "setExecuteOnSelectChange",
+					layer: Layer.CUSTOMER,
+					changeType: "setExecuteOnSelect",
+					fileType: "ctrl_variant_change",
+					selector: {
+						id: sStandardVariantReference
+					},
+					content: {
+						executeOnSelect: true
+					}
+				}),
+				FlexObjectFactory.createUIChange({
+					id: "setContextsChange",
+					layer: Layer.CUSTOMER,
+					changeType: "setContexts",
+					fileType: "ctrl_variant_change",
+					selector: {
+						id: sStandardVariantReference
+					},
+					content: {
+						contexts: { role: ["ADMIN"], country: ["DE"] }
+					}
+				})
+			];
+			stubFlexObjectsSelector(aVariantChanges);
 
-			var sReference = "flexReference";
-			VariantManagementState.getContent(sReference);
-			assert.strictEqual(oClearStub.callCount, 1, "the FlexState was called once");
-			assert.strictEqual(oClearStub.lastCall.args[0], sReference, "the reference was passed");
+			assert.deepEqual(
+				VariantManagementState.getVariantManagementMap().get({ reference: sReference }),
+				{
+					vmReference: {
+						currentVariant: "vmReference",
+						defaultVariant: "vmReference",
+						modified: false,
+						variantManagementChanges: [],
+						variants: [
+							{
+								author: "SAP",
+								contexts: { role: ["ADMIN"], country: ["DE"] },
+								controlChanges: [],
+								executeOnSelect: true,
+								favorite: true,
+								instance: this.oStandardVariant,
+								isStandardVariant: true,
+								key: "vmReference",
+								layer: "CUSTOMER",
+								title: "Renamed variant",
+								variantChanges: aVariantChanges,
+								visible: true
+							}
+						]
+					}
+				},
+				"then the variant changes are applied on the variant map"
+			);
+			assert.strictEqual(
+				VariantManagementState.getVariantDependentFlexObjects({reference: sReference}).length, 3,
+				"all changes are returned"
+			);
+		});
+
+		QUnit.test("when there are variant management changes", function(assert) {
+			var oVariantManagementChange = FlexObjectFactory.createUIChange({
+				id: "setDefaultVariantChange",
+				layer: Layer.CUSTOMER,
+				changeType: "setDefault",
+				fileType: "ctrl_variant_management_change",
+				selector: {
+					id: sVariantManagementReference
+				},
+				content: {
+					defaultVariant: "customVariant"
+				}
+			});
+			stubFlexObjectsSelector([
+				createVariant({
+					variantReference: sVariantManagementReference,
+					fileName: "customVariant"
+				}),
+				oVariantManagementChange
+			]);
+
+			var oVMData = VariantManagementState.getVariantManagementMap().get({ reference: sReference })[sVariantManagementReference];
+			assert.strictEqual(
+				oVMData.currentVariant,
+				"customVariant",
+				"then the change is applied and the current variant is changed"
+			);
+			assert.strictEqual(
+				oVMData.defaultVariant,
+				"customVariant",
+				"then the change is applied and the default variant is changed"
+			);
+			assert.strictEqual(
+				oVMData.variantManagementChanges[0],
+				oVariantManagementChange,
+				"then the change is returned as part of the variant management map"
+			);
+			assert.strictEqual(
+				VariantManagementState.getVariantDependentFlexObjects({reference: sReference}).length, 2,
+				"all changes are returned"
+			);
+		});
+
+		QUnit.test("when there is an invalid variant change", function(assert) {
+			stubFlexObjectsSelector([
+				FlexObjectFactory.createUIChange({
+					id: "changeWithSomeInvalidChangeType",
+					layer: Layer.CUSTOMER,
+					changeType: "someInvalidChangeType",
+					fileType: "ctrl_variant_change",
+					selector: {
+						id: sStandardVariantReference
+					}
+				})
+			]);
+			assert.throws(
+				function() {
+					VariantManagementState.getVariantManagementMap().get({ reference: sReference });
+				},
+				"then an error is thrown by the selector execute function"
+			);
+		});
+
+		QUnit.test("when there are no flex objects", function(assert) {
+			var oFlexObjectsSelector = FlexState.getFlexObjectsDataSelector();
+			sandbox.stub(oFlexObjectsSelector, "get").returns([]);
+			oFlexObjectsSelector.checkUpdate();
+			assert.ok(
+				isEmptyObject(VariantManagementState.getVariantManagementMap().get({ reference: sReference })),
+				"then an empty map is returned"
+			);
+		});
+
+		QUnit.test("when multiple variants are returned", function(assert) {
+			stubFlexObjectsSelector([
+				createVariant({
+					variantReference: sVariantManagementReference,
+					fileName: "XYZ"
+				}),
+				FlexObjectFactory.createUIChange({
+					id: "setTitleChange",
+					layer: Layer.CUSTOMER,
+					changeType: "setTitle",
+					fileType: "ctrl_variant_change",
+					selector: {
+						id: "XYZ"
+					},
+					texts: {
+						title: { value: "XYZ" }
+					}
+				}),
+				createVariant({
+					variantReference: sVariantManagementReference,
+					fileName: "abc"
+				}),
+				FlexObjectFactory.createUIChange({
+					id: "setTitleChange",
+					layer: Layer.CUSTOMER,
+					changeType: "setTitle",
+					fileType: "ctrl_variant_change",
+					selector: {
+						id: "abc"
+					},
+					texts: {
+						title: { value: "abc" }
+					}
+				}),
+				createVariant({
+					variantReference: sVariantManagementReference,
+					fileName: "DEF"
+				}),
+				FlexObjectFactory.createUIChange({
+					id: "setTitleChange",
+					layer: Layer.CUSTOMER,
+					changeType: "setTitle",
+					fileType: "ctrl_variant_change",
+					selector: {
+						id: "DEF"
+					},
+					texts: {
+						title: { value: "DEF" }
+					}
+				})
+			]);
+
+			var aVariants = VariantManagementState.getVariantManagementMap()
+			.get({ reference: sReference })[sVariantManagementReference].variants;
+			assert.strictEqual(
+				aVariants[0].key,
+				sVariantManagementReference,
+				"then the standard variant is returned first"
+			);
+			assert.deepEqual(
+				aVariants.map(function(mVariantData) {
+					return mVariantData.key;
+				}),
+				[sVariantManagementReference, "abc", "DEF", "XYZ"],
+				"then all other variants are sorted alphabetically"
+			);
+		});
+
+		QUnit.test("when the variant management only contains changes that are persisted or saved to the variant", function(assert) {
+			var oPersistedUIChange = FlexObjectFactory.createUIChange({
+				id: "someUIChange",
+				layer: Layer.CUSTOMER,
+				variantReference: sStandardVariantReference
+			});
+			oPersistedUIChange.setState(States.LifecycleState.PERSISTED);
+
+			var oChangeSavedToVariant = FlexObjectFactory.createUIChange({
+				id: "someOtherUIChange",
+				layer: Layer.CUSTOMER,
+				variantReference: sStandardVariantReference
+			});
+			oChangeSavedToVariant.setSavedToVariant(true);
+
+			stubFlexObjectsSelector([oPersistedUIChange, oChangeSavedToVariant]);
+			var oVariantsMap = VariantManagementState.getVariantManagementMap().get({ reference: sReference });
+			assert.notOk(
+				oVariantsMap[sVariantManagementReference].modified,
+				"then it is not marked as modified"
+			);
+		});
+
+		QUnit.test("when there are multiple variants with lower layer changes in the referenced variant", function(assert) {
+			var oUIChange = FlexObjectFactory.createUIChange({
+				id: "someUIChange",
+				layer: Layer.VENDOR,
+				variantReference: "vendorVariant"
+			});
+			var oIndependentUIChange = FlexObjectFactory.createUIChange({
+				id: "someOtherUIChange",
+				layer: Layer.CUSTOMER
+			});
+			var oUIChange2 = FlexObjectFactory.createUIChange({
+				id: "someOtherOtherUIChange",
+				layer: Layer.USER,
+				variantReference: sStandardVariantReference
+			});
+			var oVendorVariant = createVariant({
+				variantReference: sVariantManagementReference,
+				fileName: "vendorVariant",
+				layer: Layer.VENDOR
+			});
+			var oCustomerVariant = createVariant({
+				variantReference: "vendorVariant",
+				fileName: "customerVariant",
+				layer: Layer.CUSTOMER
+			});
+			var oUserVariant = createVariant({
+				variantReference: "customerVariant",
+				fileName: "userVariant",
+				layer: Layer.USER
+			});
+			stubFlexObjectsSelector([oIndependentUIChange, oUIChange, oUIChange2, oVendorVariant, oCustomerVariant, oUserVariant]);
+			var aVariants = VariantManagementState.getVariantManagementMap()
+			.get({ reference: sReference })[sVariantManagementReference].variants;
+			assert.strictEqual(aVariants[0].controlChanges.length, 1, "there is one control change on standard");
+			assert.strictEqual(aVariants[1].controlChanges.length, 1, "the vendor variant has one change");
+			assert.strictEqual(aVariants[2].controlChanges.length, 1, "the customer variant has one change");
+			assert.strictEqual(aVariants[3].controlChanges.length, 1, "the user variant has one change");
+		});
+
+		QUnit.test("when variants are set to favorite = false (default and non-default)", function(assert) {
+			var oVariantManagementChange = FlexObjectFactory.createUIChange({
+				id: "setDefaultVariantChange",
+				layer: Layer.USER,
+				changeType: "setDefault",
+				fileType: "ctrl_variant_management_change",
+				selector: {
+					id: sVariantManagementReference
+				},
+				content: {
+					defaultVariant: "variant2"
+				}
+			});
+			var oVariantSetFavoriteDefaultVariant = FlexObjectFactory.createUIChange({
+				id: "setFavoriteChangeOnDefaultVariant",
+				layer: Layer.CUSTOMER,
+				changeType: "setFavorite",
+				fileType: "ctrl_variant_change",
+				selector: {
+					id: "variant2"
+				},
+				content: {
+					favorite: false
+				}
+			});
+			var oVariantSetFavoriteNonDefaultVariant = FlexObjectFactory.createUIChange({
+				id: "setFavoriteChangeOnNonDefaultVariant",
+				layer: Layer.CUSTOMER,
+				changeType: "setFavorite",
+				fileType: "ctrl_variant_change",
+				selector: {
+					id: "variant1"
+				},
+				content: {
+					favorite: false
+				}
+			});
+			stubFlexObjectsSelector([
+				oVariantManagementChange,
+				createVariant({
+					variantReference: sVariantManagementReference,
+					fileName: "variant1"
+				}),
+				createVariant({
+					variantReference: sVariantManagementReference,
+					fileName: "variant2"
+				}),
+				oVariantSetFavoriteDefaultVariant,
+				oVariantSetFavoriteNonDefaultVariant
+			]);
+
+			var oVMData = VariantManagementState.getVariantManagementMap().get({ reference: sReference })[sVariantManagementReference];
+			assert.notOk(
+				oVMData.variants[1].favorite,
+				"then the non-default variant is no longer a favorite"
+			);
+			assert.ok(
+				oVMData.variants[2].favorite,
+				"then the default variant is still a favorite"
+			);
 		});
 	});
 
-	QUnit.module("Given a backend response from storage", {
-		beforeEach: function() {
-			return Promise.all([
-				LoaderExtensions.loadResource({
-					dataType: "json",
-					url: sap.ui.require.toUrl("test-resources/sap/ui/fl/qunit/testResources/TestVariantsConnectorResponse.json"),
-					async: true
-				}),
-				LoaderExtensions.loadResource({
-					dataType: "json",
-					url: sap.ui.require.toUrl("test-resources/sap/ui/fl/qunit/testResources/TestFakeVariantsModelData.json"),
-					async: true
+	function toFileContent(aFlexObjects) {
+		return aFlexObjects.map(function(oFlexObject) {
+			return oFlexObject.convertToFileContent();
+		});
+	}
+
+	QUnit.module("Fake standard variant", {
+		afterEach() {
+			cleanup();
+		}
+	}, function() {
+		[{
+			flexObjects: {
+				variants: [
+					createVariant({
+						variantReference: sVariantManagementReference,
+						fileName: "customVariant"
+					})
+				]
+			},
+			testName: "a custom variant",
+			expectedVMReferences: [sVariantManagementReference],
+			expectedVariantsCount: 2
+		},
+		{
+			flexObjects: {
+				variants: [
+					createVariant({
+						variantReference: "someDeletedVariant",
+						fileName: "customVariant",
+						layer: Layer.USER
+					})
+				],
+				variantDependentControlChanges: [
+					FlexObjectFactory.createUIChange({
+						id: "someUIChange",
+						layer: Layer.CUSTOMER,
+						variantReference: sVariantManagementReference
+					})
+				]
+			},
+			testName: "a custom variant based on a deleted variant",
+			expectedVMReferences: [sVariantManagementReference],
+			expectedVariantsCount: 2,
+			customAssertions: [
+				function(assert) {
+					var oVariantsMap = VariantManagementState.getVariantManagementMap().get({ reference: sReference });
+					assert.strictEqual(
+						oVariantsMap[sVariantManagementReference].variants[1].instance.getVariantReference(),
+						sVariantManagementReference,
+						"then the variant reference of the custom variant is changed to the standard variant"
+					);
+					assert.strictEqual(
+						oVariantsMap[sVariantManagementReference].variants[0].controlChanges.length,
+						1,
+						"then lower layer changes from the standard variant are referenced"
+					);
+				}
+			]
+		},
+		{
+			flexObjects: {
+				variants: [
+					createVariant({
+						variantReference: sVariantManagementReference,
+						fileName: "customVariant"
+					}),
+					createVariant({
+						variantManagementReference: "secondVariant",
+						fileName: "customVariant2"
+					})
+				]
+			},
+			testName: "multiple custom variants for different vm controls",
+			expectedVMReferences: [sVariantManagementReference, "secondVariant"],
+			expectedVariantsCount: 2
+		},
+		{
+			flexObjects: {
+				variantDependentControlChanges: [
+					FlexObjectFactory.createUIChange({
+						variantReference: sVariantManagementReference,
+						id: "someUIChange"
+					})
+				]
+			},
+			testName: "a UI change on the standard variant (legacy)",
+			expectedVMReferences: [sVariantManagementReference],
+			expectedVariantsCount: 1
+		},
+		{
+			flexObjects: {
+				variantDependentControlChanges: [
+					FlexObjectFactory.createUIChange({
+						variantReference: "id_1000000000000_123_flVariant",
+						id: "someUIChange"
+					})
+				]
+			},
+			testName: "a UI change on a deleted non-standard variant (legacy)",
+			expectedVMReferences: [],
+			expectedVariantsCount: 0
+		},
+		{
+			flexObjects: {
+				variantDependentControlChanges: [
+					FlexObjectFactory.createUIChange({
+						variantReference: sVariantManagementReference,
+						id: "someUIChange",
+						isChangeOnStandardVariant: true
+					})
+				]
+			},
+			testName: "a UI change on the standard variant",
+			expectedVMReferences: [sVariantManagementReference],
+			expectedVariantsCount: 1
+		},
+		{
+			flexObjects: {
+				variantDependentControlChanges: [
+					FlexObjectFactory.createUIChange({
+						variantReference: sVariantManagementReference,
+						id: "someUIChange",
+						isChangeOnStandardVariant: false
+					})
+				]
+			},
+			testName: "a UI change on a deleted non-standard variant",
+			expectedVMReferences: [],
+			expectedVariantsCount: 0
+		},
+		{
+			flexObjects: {
+				variantChanges: [
+					FlexObjectFactory.createUIChange({
+						variantReference: sVariantManagementReference,
+						id: "someVariantChange",
+						fileType: "ctrl_variant_change",
+						changeType: "setTitle",
+						selector: { id: sStandardVariantReference}
+					})
+				]
+			},
+			testName: "a variant change (e.g. setTitle)",
+			expectedVMReferences: [],
+			expectedVariantsCount: 0
+		}].forEach(function(oTestInput) {
+			var sName = `when the storageResponse contains ${oTestInput.testName}`;
+			QUnit.test(sName, function(assert) {
+				var oInitialPrepareSpy = sandbox.spy(InitialPrepareFunctions, "variants");
+
+				var oLoaderStub = sandbox.stub(Loader, "loadFlexData");
+				function fakeLoadFlexData(...aArgs) {
+					return oLoaderStub.wrappedMethod.apply(this, aArgs)
+					// eslint-disable-next-line max-nested-callbacks
+					.then(function(oOriginalResponse) {
+						var oResponseAddition = { changes: {} };
+						// eslint-disable-next-line max-nested-callbacks
+						Object.keys(oTestInput.flexObjects).forEach(function(sResponseKey) {
+							oResponseAddition.changes[sResponseKey] = toFileContent(oTestInput.flexObjects[sResponseKey]);
+						});
+						return merge(
+							oOriginalResponse,
+							oResponseAddition
+						);
+					});
+				}
+				oLoaderStub.callsFake(fakeLoadFlexData);
+
+				return FlexState.initialize({
+					componentId: sComponentId,
+					reference: sReference
 				})
-			]).then(function(aValues) {
-				this.oBackendResponse = {};
-				this.oBackendResponse.changes = aValues[0];
+				// eslint-disable-next-line max-nested-callbacks
+				.then(function() {
+					var oVariantsMap = VariantManagementState.getVariantManagementMap().get({ reference: sReference });
+					assert.ok(oInitialPrepareSpy.calledOnce, "then the initial prepare function is called");
+					var aVMRs = oTestInput.expectedVMReferences || [sVariantManagementReference];
+					assert.strictEqual(
+						Object.keys(oVariantsMap).length,
+						aVMRs.length,
+						"then the proper amount of variant management instances is created"
+					);
+					// eslint-disable-next-line max-nested-callbacks
+					aVMRs.forEach(function(sVMR) {
+						assert.strictEqual(
+							oVariantsMap[sVMR].variants[0].key,
+							sVMR,
+							"then the standard variant is automatically added based on the existing variant"
+						);
+						assert.strictEqual(
+							oVariantsMap[sVMR].variants.length,
+							oTestInput.expectedVariantsCount,
+							"then the correct amount of variants is created"
+						);
+					});
+					// eslint-disable-next-line max-nested-callbacks
+					(oTestInput.customAssertions || []).forEach(function(fnAssertion) {
+						fnAssertion(assert);
+					});
+				});
+			});
+		});
 
-				this.oVariantModelData = aValues[1];
+		QUnit.test("when a fake standard variant is added", function(assert) {
+			return FlexState.initialize({
+				componentId: sComponentId,
+				reference: sReference
+			})
+			.then(function() {
+				var oVariant = createVariant({
+					fileName: sVariantManagementReference
+				});
+				VariantManagementState.addRuntimeSteadyObject(sReference, sComponentId, oVariant);
 
-				this.sReference = "componentReference";
-				this.sComponentId = "componentId";
-				this.mPropertyBag = {
-					unfilteredStorageResponse: {changes: {}},
-					storageResponse: this.oBackendResponse,
-					componentId: this.sComponentId,
-					componentData: {
-						technicalParameters: {}
-					},
-					reference: this.sReference
-				};
-				this.oVariantsMap = {};
-				sandbox.stub(VariantManagementState, "getContent")
-					.callThrough()
-					.withArgs(this.sReference)
-					.returns(this.oVariantsMap);
+				var oVariantManagementState = VariantManagementState.getVariantManagementMap().get({ reference: sReference });
+
+				assert.strictEqual(
+					oVariantManagementState[sVariantManagementReference].variants.length,
+					1,
+					"then the standard variant is added to the vm state"
+				);
+				assert.strictEqual(
+					oVariantManagementState[sVariantManagementReference].defaultVariant,
+					sVariantManagementReference,
+					"then the standard variant is is set as default"
+				);
+			});
+		});
+
+		QUnit.test("when the fake standard variant is reset", function(assert) {
+			return FlexState.initialize({
+				componentId: sComponentId,
+				reference: sReference
+			})
+			.then(function() {
+				var oVariant = createVariant({
+					fileName: sVariantManagementReference
+				});
+				VariantManagementState.addRuntimeSteadyObject(sReference, sComponentId, oVariant);
+
+				var oVariantManagementState = VariantManagementState.getVariantManagementMap().get({ reference: sReference });
+
+				assert.strictEqual(
+					oVariantManagementState[sVariantManagementReference].variants.length,
+					1,
+					"then the standard variant is initially added to the vm state"
+				);
+
+				VariantManagementState.clearRuntimeSteadyObjects(sReference, sComponentId);
+				assert.strictEqual(
+					VariantManagementState.getVariantManagementMap().get({ reference: sReference })[sVariantManagementReference],
+					undefined,
+					"then the standard variant gets cleared"
+				);
+			});
+		});
+
+		QUnit.test("when there are changes referencing a deleted variant", function(assert) {
+			var sDeletedVariant = "deletedVariantRef";
+			var oUIChange = FlexObjectFactory.createUIChange({
+				id: "someUIChange",
+				layer: Layer.CUSTOMER,
+				variantReference: sDeletedVariant
+			});
+			var oSetTitleChange = FlexObjectFactory.createUIChange({
+				variantReference: sVariantManagementReference,
+				id: "someVariantChange",
+				fileType: "ctrl_variant_change",
+				changeType: "setTitle",
+				selector: { id: sDeletedVariant}
+			});
+			var oSetDefaultChange = FlexObjectFactory.createUIChange({
+				id: "setDefaultVariantChange",
+				layer: Layer.CUSTOMER,
+				changeType: "setDefault",
+				fileType: "ctrl_variant_management_change",
+				selector: {
+					id: sVariantManagementReference
+				},
+				content: {
+					defaultVariant: "anotherCustomVariant"
+				}
+			});
+			stubFlexObjectsSelector([oUIChange, oSetTitleChange, oSetDefaultChange]);
+			return FlexState.initialize({
+				componentId: sComponentId,
+				reference: sReference
+			})
+			.then(function() {
+				var oVariantMap = VariantManagementState.getVariantManagementMap().get({ reference: sReference });
+				assert.deepEqual(oVariantMap, {}, "no variant entry was created");
+			});
+		});
+	});
+
+	QUnit.module("Initial current variant handling", {
+		beforeEach() {
+			return initializeFlexStateWithStandardVariant().then(function(oStandardVariant) {
+				this.oStandardVariant = oStandardVariant;
 			}.bind(this));
 		},
-		afterEach: function() {
-			sandbox.restore();
+		afterEach() {
+			cleanup();
 		}
-	}, function () {
-		QUnit.test("when 'fillVariantModel' and then 'getInitialChanges' are called with parameters containing no technical parameters", function(assert) {
-			merge(this.oVariantsMap, prepareVariantsMap(this.mPropertyBag));
-
-			var oData = VariantManagementState.fillVariantModel({reference: this.sReference});
-
-			assert.deepEqual(oData, this.oVariantModelData, "then correct variant model data is returned");
-
-			var aResultantInitialChanges = VariantManagementState.getInitialChanges({reference: this.sReference});
-			var aExpectedInitialChanges = [];
-			Object.keys(oData).forEach(function(sVMReference) {
-				aExpectedInitialChanges = aExpectedInitialChanges.concat(
-					getInitialChangesForVariant(oData[sVMReference].currentVariant || oData[sVMReference].defaultVariant, this.oVariantsMap)
-				);
-			}.bind(this));
-			assert.deepEqual(aResultantInitialChanges, aExpectedInitialChanges, "then correct initial changes were returned");
+	}, function() {
+		QUnit.test("when retrieving the initial current variant", function(assert) {
+			var oVariantManagementState = VariantManagementState.getVariantManagementMap().get({ reference: sReference });
+			assert.strictEqual(
+				oVariantManagementState[sVariantManagementReference].currentVariant,
+				sVariantManagementReference,
+				"then the standard variant is selected as the current variant"
+			);
 		});
 
-		QUnit.test("when 'fillVariantModel' and then 'getInitialChanges' are called with parameters containing technical parameters for multiple variant management references", function(assert) {
-			this.mPropertyBag.componentData.technicalParameters[VariantUtil.VARIANT_TECHNICAL_PARAMETER] = ["vmReference1", "variant11"];
+		QUnit.test("when the initial current variant was set via technical parameters", function(assert) {
+			var oComponentData = {technicalParameters: {}};
+			oComponentData.technicalParameters[VariantUtil.VARIANT_TECHNICAL_PARAMETER] = ["customVariant"];
+			sandbox.stub(FlexState, "getComponentData").returns(oComponentData);
+			stubFlexObjectsSelector([
+				createVariant({
+					variantReference: sVariantManagementReference,
+					fileName: "customVariant"
+				})
+			]);
 
-			merge(this.oVariantsMap, prepareVariantsMap(this.mPropertyBag));
-
-			var oData = VariantManagementState.fillVariantModel({reference: this.sReference});
-			this.oVariantModelData["vmReference1"].currentVariant = "vmReference1";
-			this.oVariantModelData["vmReference2"].currentVariant = "variant11";
-
-			assert.deepEqual(oData, this.oVariantModelData, "then correct variant model data is returned");
-
-			var aResultantInitialChanges = VariantManagementState.getInitialChanges({reference: this.sReference});
-			var aExpectedInitialChanges = [];
-			Object.keys(oData).forEach(function(sVMReference) {
-				aExpectedInitialChanges = aExpectedInitialChanges.concat(
-					getInitialChangesForVariant(oData[sVMReference].currentVariant || oData[sVMReference].defaultVariant, this.oVariantsMap)
-				);
-			}.bind(this));
-			assert.deepEqual(aResultantInitialChanges, aExpectedInitialChanges, "then correct initial changes were returned");
+			assert.strictEqual(
+				VariantManagementState.getVariantManagementMap().get({ reference: sReference })[sVariantManagementReference].currentVariant,
+				"customVariant",
+				"then the current variant is set"
+			);
 		});
 
-		QUnit.test("when 'fillVariantModel' and then 'getInitialChanges' are called with parameters containing technical parameters for a single variant management reference", function(assert) {
-			this.mPropertyBag.componentData.technicalParameters[VariantUtil.VARIANT_TECHNICAL_PARAMETER] = ["vmReference1"];
+		QUnit.test("when the technical parameters contain entries for multiple references", function(assert) {
+			var oComponentData = {technicalParameters: {}};
+			oComponentData.technicalParameters[VariantUtil.VARIANT_TECHNICAL_PARAMETER] = ["customVariant", "customVariantForSecondVM"];
+			sandbox.stub(FlexState, "getComponentData").returns(oComponentData);
+			stubFlexObjectsSelector([
+				createVariant({
+					variantReference: sVariantManagementReference,
+					fileName: "customVariant"
+				}),
+				createVariant({
+					variantReference: "secondVM",
+					variantManagementReference: "secondVM",
+					fileName: "customVariantForSecondVM"
+				})
+			]);
+			VariantManagementState.addRuntimeSteadyObject(
+				sReference,
+				sComponentId,
+				createVariant({
+					fileName: "secondVM",
+					variantManagementReference: "secondVM"
+				})
+			);
 
-			merge(this.oVariantsMap, prepareVariantsMap(this.mPropertyBag));
-
-			var oData = VariantManagementState.fillVariantModel({reference: this.sReference});
-			this.oVariantModelData["vmReference1"].currentVariant = "vmReference1";
-
-			assert.deepEqual(oData, this.oVariantModelData, "then correct variant model data is returned");
-
-			var aResultantInitialChanges = VariantManagementState.getInitialChanges({reference: this.sReference});
-			var aExpectedInitialChanges = [];
-			Object.keys(oData).forEach(function(sVMReference) {
-				aExpectedInitialChanges = aExpectedInitialChanges.concat(
-					getInitialChangesForVariant(oData[sVMReference].currentVariant || oData[sVMReference].defaultVariant, this.oVariantsMap)
-				);
-			}.bind(this));
-			assert.deepEqual(aResultantInitialChanges, aExpectedInitialChanges, "then correct initial changes were returned");
+			var oVMMap = VariantManagementState.getVariantManagementMap().get({ reference: sReference });
+			assert.strictEqual(
+				oVMMap[sVariantManagementReference].currentVariant,
+				"customVariant",
+				"then the current variant is set"
+			);
+			assert.strictEqual(
+				oVMMap.secondVM.currentVariant,
+				"customVariantForSecondVM",
+				"then the current variant is set for the second vm"
+			);
 		});
 
-		QUnit.test("when 'fillVariantModel' and then 'getInitialChanges' are called with parameters containing multiple technical parameters for a single variant management reference", function(assert) {
-			this.mPropertyBag.componentData.technicalParameters[VariantUtil.VARIANT_TECHNICAL_PARAMETER] = ["vmReference2", "variant11"];
+		QUnit.test("when the initial current variant was set via technical parameters but is invalid", function(assert) {
+			var oComponentData = {technicalParameters: {}};
+			oComponentData.technicalParameters[VariantUtil.VARIANT_TECHNICAL_PARAMETER] = ["someInvalidVariant"];
+			sandbox.stub(FlexState, "getComponentData").returns(oComponentData);
 
-			merge(this.oVariantsMap, prepareVariantsMap(this.mPropertyBag));
-
-			var oData = VariantManagementState.fillVariantModel({reference: this.sReference});
-			this.oVariantModelData["vmReference2"].currentVariant = "variant11";
-
-			assert.deepEqual(oData, this.oVariantModelData, "then correct variant model data is returned");
-
-			var aResultantInitialChanges = VariantManagementState.getInitialChanges({reference: this.sReference});
-			var aExpectedInitialChanges = [];
-			Object.keys(oData).forEach(function(sVMReference) {
-				aExpectedInitialChanges = aExpectedInitialChanges.concat(
-					getInitialChangesForVariant(oData[sVMReference].currentVariant || oData[sVMReference].defaultVariant, this.oVariantsMap)
-				);
-			}.bind(this));
-			assert.deepEqual(aResultantInitialChanges, aExpectedInitialChanges, "then correct initial changes were returned");
+			assert.strictEqual(
+				VariantManagementState.getVariantManagementMap().get({ reference: sReference })[sVariantManagementReference].currentVariant,
+				sVariantManagementReference,
+				"then the default falls back to the standard variant"
+			);
 		});
 
-		QUnit.test("when 'fillVariantModel' and then 'getInitialChanges' are called with parameters containing valid and invalid technical parameters", function(assert) {
-			this.mPropertyBag.componentData.technicalParameters[VariantUtil.VARIANT_TECHNICAL_PARAMETER] = ["nonExistenceVariantManagement", "vmReference1"];
+		QUnit.test("when the initial current variant was set via technical parameters but is hidden", function(assert) {
+			var oComponentData = {technicalParameters: {}};
+			oComponentData.technicalParameters[VariantUtil.VARIANT_TECHNICAL_PARAMETER] = ["customVariant"];
+			sandbox.stub(FlexState, "getComponentData").returns(oComponentData);
 
-			merge(this.oVariantsMap, prepareVariantsMap(this.mPropertyBag));
+			stubFlexObjectsSelector([
+				createVariant({
+					variantReference: sVariantManagementReference,
+					fileName: "customVariant"
+				}),
+				FlexObjectFactory.createUIChange({
+					id: "setVisibleChange",
+					layer: Layer.CUSTOMER,
+					changeType: "setVisible",
+					fileType: "ctrl_variant_change",
+					selector: {
+						id: "customVariant"
+					},
+					content: {
+						visible: false
+					}
+				})
+			]);
 
-			var oData = VariantManagementState.fillVariantModel({reference: this.sReference});
-			this.oVariantModelData["vmReference1"].currentVariant = "vmReference1";
-
-			assert.deepEqual(oData, this.oVariantModelData, "then correct variant model data is returned");
-
-			var aResultantInitialChanges = VariantManagementState.getInitialChanges({reference: this.sReference});
-			var aExpectedInitialChanges = [];
-			Object.keys(oData).forEach(function(sVMReference) {
-				aExpectedInitialChanges = aExpectedInitialChanges.concat(
-					getInitialChangesForVariant(oData[sVMReference].currentVariant || oData[sVMReference].defaultVariant, this.oVariantsMap)
-				);
-			}.bind(this));
-			assert.deepEqual(aResultantInitialChanges, aExpectedInitialChanges, "then correct initial changes were returned");
+			assert.strictEqual(
+				VariantManagementState.getVariantManagementMap().get({ reference: sReference })[sVariantManagementReference].currentVariant,
+				sVariantManagementReference,
+				"then the default falls back to the standard variant"
+			);
 		});
 
-		QUnit.test("when 'fillVariantModel' and then 'getInitialChanges' are called with parameters containing technical parameters for an invalid variant management reference", function(assert) {
-			this.mPropertyBag.componentData.technicalParameters[VariantUtil.VARIANT_TECHNICAL_PARAMETER] = ["variant2"];
+		QUnit.test("when the initial current variant was set via technical parameters and setDefault changes exist", function(assert) {
+			var oComponentData = {technicalParameters: {}};
+			oComponentData.technicalParameters[VariantUtil.VARIANT_TECHNICAL_PARAMETER] = ["customVariant"];
+			sandbox.stub(FlexState, "getComponentData").returns(oComponentData);
 
-			merge(this.oVariantsMap, prepareVariantsMap(this.mPropertyBag));
+			stubFlexObjectsSelector([
+				createVariant({
+					variantReference: sVariantManagementReference,
+					fileName: "customVariant"
+				}),
+				createVariant({
+					variantReference: sVariantManagementReference,
+					fileName: "anotherCustomVariant"
+				}),
+				FlexObjectFactory.createUIChange({
+					id: "setDefaultVariantChange",
+					layer: Layer.CUSTOMER,
+					changeType: "setDefault",
+					fileType: "ctrl_variant_management_change",
+					selector: {
+						id: sVariantManagementReference
+					},
+					content: {
+						defaultVariant: "anotherCustomVariant"
+					}
+				})
+			]);
 
-			var oData = VariantManagementState.fillVariantModel({reference: this.sReference});
-
-			assert.deepEqual(oData, this.oVariantModelData, "then correct variant model data is returned");
-
-			var aResultantInitialChanges = VariantManagementState.getInitialChanges({reference: this.sReference});
-			var aExpectedInitialChanges = [];
-			Object.keys(oData).forEach(function(sVMReference) {
-				aExpectedInitialChanges = aExpectedInitialChanges.concat(
-					getInitialChangesForVariant(oData[sVMReference].currentVariant || oData[sVMReference].defaultVariant, this.oVariantsMap)
-				);
-			}.bind(this));
-			assert.deepEqual(aResultantInitialChanges, aExpectedInitialChanges, "then correct initial changes were returned");
+			assert.strictEqual(
+				VariantManagementState.getVariantManagementMap().get({ reference: sReference })[sVariantManagementReference].currentVariant,
+				"customVariant",
+				"then the technical parameter wins over the setDefault change"
+			);
 		});
 
-		QUnit.test("when 'fillVariantModel' and then 'getInitialChanges' are called with parameters containing an invisible default variant", function(assert) {
-			merge(this.oVariantsMap, prepareVariantsMap(this.mPropertyBag));
+		QUnit.test("when the variant that was set as default was removed and there is no key user default variant", function(assert) {
+			stubFlexObjectsSelector([
+				// Default variant was set via perso change but is no longer available, e.g. because of version switch
+				FlexObjectFactory.createUIChange({
+					id: "setDefaultVariantChange",
+					layer: Layer.USER,
+					changeType: "setDefault",
+					fileType: "ctrl_variant_management_change",
+					selector: {
+						id: sVariantManagementReference
+					},
+					content: {
+						defaultVariant: "customVariant"
+					}
+				})
+			]);
 
-			var oData = VariantManagementState.fillVariantModel({reference: this.sReference});
+			assert.strictEqual(
+				VariantManagementState.getVariantManagementMap().get({ reference: sReference })[sVariantManagementReference].currentVariant,
+				sVariantManagementReference,
+				"then the current variant falls back to the standard variant"
+			);
 
-			assert.deepEqual(oData, this.oVariantModelData, "then correct variant model data is returned");
-
-			var aResultantInitialChanges = VariantManagementState.getInitialChanges({reference: this.sReference});
-			var aExpectedInitialChanges = [];
-			Object.keys(oData).forEach(function(sVMReference) {
-				aExpectedInitialChanges = aExpectedInitialChanges.concat(
-					getInitialChangesForVariant(oData[sVMReference].currentVariant || oData[sVMReference].defaultVariant, this.oVariantsMap)
-				);
-			}.bind(this));
-			assert.deepEqual(aResultantInitialChanges, aExpectedInitialChanges, "then correct initial changes were returned");
+			assert.strictEqual(
+				VariantManagementState.getVariantManagementMap().get({ reference: sReference })[sVariantManagementReference].defaultVariant,
+				sVariantManagementReference,
+				"then the default variant falls back to the standard variant"
+			);
 		});
 
-		QUnit.test("when 'getInitialChanges' is called with a vmReference", function(assert) {
-			merge(this.oVariantsMap, prepareVariantsMap(this.mPropertyBag));
-			var oGetVariantChangesStub = sandbox.stub(VariantManagementState, "getControlChangesForVariant").returns(["foo"]);
+		QUnit.test("when the variant that was set as default is set to hidden (removed by Key User) but there is a key user default variant", function(assert) {
+			stubFlexObjectsSelector([
+				// Key user creates two new variants and sets one to default
+				createVariant({
+					variantReference: sVariantManagementReference,
+					fileName: "KeyUserDefaultVariant"
+				}),
+				createVariant({
+					variantReference: sVariantManagementReference,
+					fileName: "EndUserDefaultVariant"
+				}),
+				FlexObjectFactory.createUIChange({
+					id: "setDefaultVariantChange",
+					layer: Layer.CUSTOMER,
+					changeType: "setDefault",
+					fileType: "ctrl_variant_management_change",
+					selector: {
+						id: sVariantManagementReference
+					},
+					content: {
+						defaultVariant: "KeyUserDefaultVariant"
+					}
+				}),
+				// End user sets the other variant as default
+				FlexObjectFactory.createUIChange({
+					id: "setDefaultVariantChange",
+					layer: Layer.USER,
+					changeType: "setDefault",
+					fileType: "ctrl_variant_management_change",
+					selector: {
+						id: sVariantManagementReference
+					},
+					content: {
+						defaultVariant: "EndUserDefaultVariant"
+					}
+				}),
+				// Key user removes the key user default variant
+				FlexObjectFactory.createUIChange({
+					id: "setVisibleChange",
+					layer: Layer.CUSTOMER,
+					changeType: "setVisible",
+					fileType: "ctrl_variant_change",
+					selector: {
+						id: "EndUserDefaultVariant"
+					},
+					content: {
+						visible: false
+					}
+				})
+			]);
 
-			assert.deepEqual(VariantManagementState.getInitialChanges({
-				vmReference: "vmReference1",
-				reference: this.sReference
-			}), ["foo"], "the function returns what 'getControlChangesForVariant' returns for that variant");
-			assert.equal(oGetVariantChangesStub.callCount, 1, "getControlChangesForVariant was called once");
-			var mExpectedParameters = {
-				vmReference: "vmReference1",
-				reference: this.sReference,
-				vReference: "variant0",
+			assert.strictEqual(
+				VariantManagementState.getVariantManagementMap().get({ reference: sReference })[sVariantManagementReference].currentVariant,
+				"KeyUserDefaultVariant",
+				"then the current variant falls back to the key user default variant"
+			);
+
+			assert.strictEqual(
+				VariantManagementState.getVariantManagementMap().get({ reference: sReference })[sVariantManagementReference].defaultVariant,
+				"KeyUserDefaultVariant",
+				"then the default variant falls back to the key user default variant"
+			);
+		});
+	});
+
+	QUnit.module("Variant-related selectors", {
+		beforeEach() {
+			return initializeFlexStateWithStandardVariant();
+		},
+		afterEach() {
+			cleanup();
+		}
+	}, function() {
+		QUnit.test("when accessing a variant", function(assert) {
+			var sCustomVariantKey = "customVariant";
+			var oVariant = createVariant({
+				variantReference: sVariantManagementReference,
+				fileName: sCustomVariantKey
+			});
+			stubFlexObjectsSelector([
+				oVariant
+			]);
+			var oVariantData = VariantManagementState.getVariant({
+				reference: sReference,
+				vmReference: sVariantManagementReference,
+				vReference: sCustomVariantKey
+			});
+			assert.strictEqual(
+				oVariantData.key,
+				sCustomVariantKey,
+				"then the proper variant is returned by the selector"
+			);
+			assert.strictEqual(
+				oVariantData.instance,
+				oVariant,
+				"then the returned variant data contains the expected variant instance"
+			);
+		});
+
+		QUnit.test("when accessing a variant without providing a variant key", function(assert) {
+			stubFlexObjectsSelector([
+				createVariant({
+					variantReference: sVariantManagementReference,
+					fileName: "customVariant"
+				})
+			]);
+			var oVariantData = VariantManagementState.getVariant({
+				reference: sReference,
+				vmReference: sVariantManagementReference
+			});
+			assert.strictEqual(
+				oVariantData.key,
+				sVariantManagementReference,
+				"then the standard variant is returned by the selector"
+			);
+		});
+
+		QUnit.test("when retrieving the control changes for a variant", function(assert) {
+			var oPersistedUIChange = FlexObjectFactory.createUIChange({
+				id: "somePersistedUIChange",
+				layer: Layer.CUSTOMER,
+				variantReference: "customVariant"
+			});
+			oPersistedUIChange.setState(States.LifecycleState.PERSISTED);
+			var oDirtyUIChange = FlexObjectFactory.createUIChange({
+				id: "someDirtyUIChange",
+				layer: Layer.CUSTOMER,
+				variantReference: "customVariant"
+			});
+			stubFlexObjectsSelector([
+				createVariant({
+					variantReference: sVariantManagementReference,
+					fileName: "customVariant"
+				}),
+				oPersistedUIChange,
+				oDirtyUIChange,
+				FlexObjectFactory.createUIChange({
+					id: "someNonVariantRelatedUIChange",
+					layer: Layer.CUSTOMER
+				}),
+				FlexObjectFactory.createUIChange({
+					id: "someCompChange",
+					layer: Layer.CUSTOMER,
+					selector: {
+						persistencyKey: "foo"
+					}
+				})
+			]);
+
+			assert.strictEqual(
+				VariantManagementState.getControlChangesForVariant({
+					reference: sReference,
+					vmReference: sVariantManagementReference,
+					vReference: "customVariant"
+				}).length,
+				2,
+				"then all changes are returned"
+			);
+			var aControlChanges = VariantManagementState.getControlChangesForVariant({
+				reference: sReference,
+				vmReference: sVariantManagementReference,
+				vReference: "customVariant",
 				includeDirtyChanges: false
-			};
-			assert.deepEqual(oGetVariantChangesStub.lastCall.args[0], mExpectedParameters, "the correct variant was asked for changes");
-
-			this.oVariantsMap.vmReference1.currentVariant = "variant2";
-			mExpectedParameters = {
-				vmReference: "vmReference1",
-				reference: this.sReference,
-				vReference: "variant2",
-				includeDirtyChanges: false
-			};
-			VariantManagementState.getInitialChanges({
-				vmReference: "vmReference1",
-				reference: this.sReference
 			});
-			assert.equal(oGetVariantChangesStub.callCount, 2, "getControlChangesForVariant was called once again");
-			assert.deepEqual(oGetVariantChangesStub.lastCall.args[0], mExpectedParameters, "the correct variant was asked for changes");
+			assert.strictEqual(
+				aControlChanges.length,
+				1,
+				"then dirty changes can be filtered via a parameter"
+			);
+			assert.strictEqual(
+				aControlChanges[0].getId(),
+				"somePersistedUIChange",
+				"then the persisted UI change is still returned"
+			);
+			assert.strictEqual(
+				VariantManagementState.getVariantDependentFlexObjects({reference: sReference}).length, 3,
+				"all three changes are returned"
+			);
 		});
 
-		QUnit.test("when 'setVariantData' is called with a changed title and previous index", function(assert) {
-			merge(this.oVariantsMap, prepareVariantsMap(this.mPropertyBag));
-
-
-			var aVariants = this.oVariantsMap["vmReference1"].variants;
-			aVariants[1].instance.setName("ZZZ");
-			assert.equal(aVariants[1].instance.getId(), "variant0", "then before renaming the title variant present at index 1");
-			var iSortedIndex = VariantManagementState.setVariantData({vmReference: "vmReference1", previousIndex: 1, reference: this.sReference});
-			assert.equal(iSortedIndex, 2, "then the correct sorted index was returned");
-			assert.equal(aVariants[2].instance.getId(), "variant0", "then the renamed variant was placed at the correct index");
-		});
-
-		QUnit.test("when 'setVariantData' is called with a changed title and previous index for standard variant", function(assert) {
-			merge(this.oVariantsMap, prepareVariantsMap(this.mPropertyBag));
-
-			var aVariants = this.oVariantsMap["vmReference1"].variants;
-			aVariants[1].instance.setName("ZZZ");
-			assert.equal(aVariants[0].instance.getId(), "vmReference1", "then before renaming the title variant present at index 0");
-			var iSortedIndex = VariantManagementState.setVariantData({vmReference: "vmReference1", previousIndex: 0, reference: this.sReference});
-			assert.equal(iSortedIndex, 0, "then the correct sorted index was returned");
-			assert.equal(aVariants[0].instance.getId(), "vmReference1", "then the renamed variant was placed at the correct index\"");
-		});
-
-		QUnit.test("when 'getVariant' is called", function(assert) {
-			merge(this.oVariantsMap, prepareVariantsMap(this.mPropertyBag));
-			var oExpectedVariant = this.oVariantsMap["vmReference1"].variants[0];
-			var oVariant = VariantManagementState.getVariant({vmReference: "vmReference1", vReference: oExpectedVariant.instance.getId(), reference: this.sReference});
-			assert.deepEqual(oExpectedVariant, oVariant, "then the correct variant object is returned");
-		});
-
-		QUnit.test("when 'getControlChangesForVariant' is called with includeDirtyChanges parameter", function(assert) {
-			merge(this.oVariantsMap, prepareVariantsMap(this.mPropertyBag));
-			var oDirtyChange = createUIChange({
-				fileName: "dirtyChange",
-				layer: Layer.CUSTOMER
+		QUnit.test("when retrieving the variant changes for a variant", function(assert) {
+			var oCtrlVariantChange = FlexObjectFactory.createUIChange({
+				id: "someCtrlVariantChange",
+				layer: Layer.CUSTOMER,
+				changeType: "setTitle",
+				fileType: "ctrl_variant_change",
+				selector: {
+					id: "customVariant"
+				}
 			});
-			VariantManagementState.addChangeToVariant({
-				change: oDirtyChange,
-				vmReference: "vmReference1",
-				vReference: "variant0",
-				reference: this.sReference
+			stubFlexObjectsSelector([
+				createVariant({
+					variantReference: sVariantManagementReference,
+					fileName: "customVariant"
+				}),
+				oCtrlVariantChange
+			]);
+
+			assert.strictEqual(
+				VariantManagementState.getVariantChangesForVariant({
+					reference: sReference,
+					vmReference: sVariantManagementReference,
+					vReference: "customVariant"
+				})[0].getId(),
+				"someCtrlVariantChange",
+				"then the change is returned"
+			);
+		});
+
+		QUnit.test("when setting and retrieving the current variant", function(assert) {
+			assert.strictEqual(
+				VariantManagementState.getCurrentVariantReference({
+					reference: sReference,
+					vmReference: sVariantManagementReference
+				}),
+				sStandardVariantReference,
+				"then the standard variant is returned by default"
+			);
+
+			stubFlexObjectsSelector([
+				createVariant({
+					variantReference: sVariantManagementReference,
+					fileName: "customVariant"
+				})
+			]);
+			VariantManagementState.setCurrentVariant({
+				reference: sReference,
+				vmReference: sVariantManagementReference,
+				newVReference: "customVariant"
 			});
 
-			function includesDirtyChange(aChanges) {
-				return !!aChanges.find(function(oChange) {
-					return oChange.getId() === "dirtyChange";
+			assert.strictEqual(
+				VariantManagementState.getCurrentVariantReference({
+					reference: sReference,
+					vmReference: sVariantManagementReference
+				}),
+				"customVariant",
+				"then the current variant can be set and the new variant is returned"
+			);
+
+			VariantManagementState.resetCurrentVariantReference(sReference);
+			assert.strictEqual(
+				VariantManagementState.getCurrentVariantReference({
+					reference: sReference,
+					vmReference: sVariantManagementReference
+				}),
+				sStandardVariantReference,
+				"then the standard variant is returned by default"
+			);
+		});
+
+		QUnit.test("when setting the current variant to an invalid value", function(assert) {
+			VariantManagementState.setCurrentVariant({
+				reference: sReference,
+				vmReference: sVariantManagementReference,
+				newVReference: "someNonExistingVariant"
+			});
+
+			assert.strictEqual(
+				VariantManagementState.getCurrentVariantReference({
+					reference: sReference,
+					vmReference: sVariantManagementReference
+				}),
+				sStandardVariantReference,
+				"then the standard variant is returned as the current variant"
+			);
+		});
+
+		QUnit.test("when retrieving a list of variant management references", function(assert) {
+			VariantManagementState.addRuntimeSteadyObject(
+				sReference,
+				sComponentId,
+				createVariant({
+					fileName: "someOtherVM",
+					variantManagementReference: "someOtherVM"
+				})
+			);
+			assert.deepEqual(
+				VariantManagementState.getVariantManagementReferences(sReference),
+				[sVariantManagementReference, "someOtherVM"],
+				"then all references are returned"
+			);
+		});
+	});
+
+	QUnit.module("Initial changes handling", {
+		beforeEach() {
+			return initializeFlexStateWithStandardVariant()
+			.then(function() {
+				VariantManagementState.addRuntimeSteadyObject(
+					sReference,
+					sComponentId,
+					createVariant({
+						fileName: "someOtherVM",
+						variantManagementReference: "someOtherVM"
+					})
+				);
+				var aUIChanges = [
+					FlexObjectFactory.createUIChange({
+						id: "change1",
+						layer: Layer.CUSTOMER,
+						variantReference: sVariantManagementReference,
+						selector: {
+							id: "someId"
+						}
+					}),
+					FlexObjectFactory.createUIChange({
+						id: "change2",
+						layer: Layer.CUSTOMER,
+						variantReference: sVariantManagementReference,
+						selector: {
+							id: "someOtherId"
+						}
+					}),
+					FlexObjectFactory.createUIChange({
+						id: "change3",
+						layer: Layer.CUSTOMER,
+						variantReference: "someOtherVM",
+						selector: {
+							id: "someThirdId"
+						}
+					})
+				];
+				aUIChanges.forEach(function(oUIChange) {
+					oUIChange.setState(States.LifecycleState.PERSISTED);
 				});
-			}
-
-			var aAllChanges = VariantManagementState.getControlChangesForVariant({
-				vmReference: "vmReference1",
-				reference: this.sReference
+				stubFlexObjectsSelector(aUIChanges);
 			});
-			assert.ok(
-				includesDirtyChange(aAllChanges),
-				"then by default the dirty change is returned"
-			);
-			var aPersistedChanges = VariantManagementState.getControlChangesForVariant({
-				vmReference: "vmReference1",
-				reference: this.sReference,
-				includeDirtyChanges: false
-			});
-			assert.notOk(
-				includesDirtyChange(aPersistedChanges),
-				"then if the parameter is set, the dirty change is excluded"
+		},
+		afterEach() {
+			cleanup();
+		}
+	}, function() {
+		QUnit.test("when getting the initial changes with a vm reference", function(assert) {
+			assert.strictEqual(
+				VariantManagementState.getInitialChanges({
+					reference: sReference,
+					vmReference: sVariantManagementReference
+				}).length,
+				2,
+				"then only UI changes for the selected vm are returned"
 			);
 		});
 
-		QUnit.test("when 'getVariantChangesForVariant' is called", function(assert) {
-			merge(this.oVariantsMap, prepareVariantsMap(this.mPropertyBag));
-
-			var oVariantChanges1 = VariantManagementState.getVariantChangesForVariant({vmReference: "vmReference1", reference: this.sReference});
-			var oVariantChanges2 = VariantManagementState.getVariantChangesForVariant({vmReference: "vmReference1", vReference: "variant2", reference: this.sReference});
-			var oVariantChanges3 = VariantManagementState.getVariantChangesForVariant({vmReference: "vmReference1", vReference: "notExisting", reference: this.sReference});
-
-			assert.equal(Object.keys(oVariantChanges1).length, 3, "three kinds of variant changes are returned for the default variant (variant0)");
-			assert.equal(Object.keys(oVariantChanges2).length, 3, "three kinds of variant changes are returned for variant2");
-			assert.deepEqual(oVariantChanges3, {}, "an empty object is returned for variant3");
+		QUnit.test("when getting the initial changes without a vm reference", function(assert) {
+			assert.strictEqual(
+				VariantManagementState.getInitialChanges({
+					reference: sReference
+				}).length,
+				3,
+				"then all UI changes are returned"
+			);
 		});
 
-		QUnit.test("when 'setCurrentVariant'  is called", function(assert) {
-			merge(this.oVariantsMap, prepareVariantsMap(this.mPropertyBag));
-			assert.notOk(this.oVariantsMap["vmReference1"].currentVariant, "then previously the current variant is not set");
-			VariantManagementState.setCurrentVariant({vmReference: "vmReference1", newVReference: "variant2", reference: this.sReference});
-			assert.strictEqual(this.oVariantsMap["vmReference1"].currentVariant, "variant2", "then current variant is set correctly");
+		QUnit.test("when getting the initial changes with an invalid vm reference", function(assert) {
+			assert.strictEqual(
+				VariantManagementState.getInitialChanges({
+					reference: sReference,
+					vmReference: "someInvalidVMReference"
+				}).length,
+				0,
+				"then no UI changes are returned"
+			);
 		});
 
-		QUnit.test("when 'getVariantManagementReferences'  is called", function(assert) {
-			merge(this.oVariantsMap, prepareVariantsMap(this.mPropertyBag));
-			var aVMReferences = VariantManagementState.getVariantManagementReferences(this.sReference);
-			assert.equal(aVMReferences.length, 6, "there are 6 references");
-			assert.ok(includes(aVMReferences, "vmReference1"));
-			assert.ok(includes(aVMReferences, "vmReference2"));
-			assert.ok(includes(aVMReferences, "vmReference3"));
-			assert.ok(includes(aVMReferences, "vmReference4"));
-			assert.ok(includes(aVMReferences, "nonExistingVariant1"));
-			assert.ok(includes(aVMReferences, "nonExistingVariant2"));
-		});
-
-		QUnit.test("when 'getCurrentVariantReference' is called", function(assert) {
-			merge(this.oVariantsMap, prepareVariantsMap(this.mPropertyBag));
-			var sCurrentVariantReference = VariantManagementState.getCurrentVariantReference({
-				reference: this.sReference,
-				vmReference: "vmReference1"
-			});
-			assert.equal(sCurrentVariantReference, "variant0", "the default is the current variant reference");
-
-			this.oVariantsMap.vmReference1.currentVariant = "variant2";
-			sCurrentVariantReference = VariantManagementState.getCurrentVariantReference({
-				reference: this.sReference,
-				vmReference: "vmReference1"
-			});
-			assert.equal(sCurrentVariantReference, "variant2", "the default is the current variant reference");
-		});
-
-		QUnit.test("when waitForInitialVariantChanges is called", function(assert) {
-			merge(this.oVariantsMap, prepareVariantsMap(this.mPropertyBag));
+		QUnit.test("when calling waitForInitialVariantChanges", function(assert) {
 			var oFlexControllerStub = {
 				waitForChangesToBeApplied: sandbox.stub().resolves("foo")
 			};
 			sandbox.stub(JsControlTreeModifier, "bySelector").callsFake(function(oSelector) {
 				return oSelector.id;
 			});
+
 			return VariantManagementState.waitForInitialVariantChanges({
-				vmReference: "vmReference1",
-				reference: this.sReference,
+				vmReference: sVariantManagementReference,
+				reference: sReference,
 				appComponent: {},
 				flexController: oFlexControllerStub
 			})
 			.then(function(vReturn) {
-				assert.equal(vReturn, "foo", "the function returns the return value of waitForChanges");
-				assert.equal(oFlexControllerStub.waitForChangesToBeApplied.callCount, 1, "waitForChanges was called once");
+				assert.strictEqual(
+					vReturn,
+					"foo",
+					"then the function returns the return value of waitForChanges"
+				);
+				assert.ok(
+					oFlexControllerStub.waitForChangesToBeApplied.calledOnce,
+					"waitForChanges was called"
+				);
 				var aArguments = oFlexControllerStub.waitForChangesToBeApplied.lastCall.args[0];
-				assert.ok(Utils.indexOfObject(aArguments, {selector: "RTADemoAppMD---detail--GroupElementDatesShippingStatus" }) > -1, "the first selector was passed");
-				assert.ok(Utils.indexOfObject(aArguments, {selector: "RTADemoAppMD---detail--GroupElementDatesShippingStatus1" }) > -1, "the second selector was passed");
+				assert.ok(
+					aArguments.some(
+						function(oArgument) {
+							return oArgument.selector === "someId";
+						}),
+					"then the first selector was passed"
+				);
+				assert.ok(
+					aArguments.some(
+						function(oArgument) {
+							return oArgument.selector === "someOtherId";
+						}),
+					"then the second selector was passed"
+				);
 			});
 		});
 
-		QUnit.test("when waitForInitialVariantChanges is called with unavailable controls", function(assert) {
-			merge(this.oVariantsMap, prepareVariantsMap(this.mPropertyBag));
+		QUnit.test("when calling waitForInitialVariantChanges with unavailable controls", function(assert) {
 			var oFlexControllerStub = {
 				waitForChangesToBeApplied: sandbox.stub().resolves("foo")
 			};
-			sandbox.stub(JsControlTreeModifier, "bySelector");
+			sandbox.stub(JsControlTreeModifier, "bySelector").returns();
+
 			return VariantManagementState.waitForInitialVariantChanges({
-				vmReference: "vmReference1",
-				reference: this.sReference,
+				vmReference: sVariantManagementReference,
+				reference: sReference,
 				appComponent: {},
 				flexController: oFlexControllerStub
 			})
 			.then(function() {
-				assert.ok(true, "the function resolves");
-				assert.equal(oFlexControllerStub.waitForChangesToBeApplied.callCount, 0, "waitForChanges was not called");
+				assert.ok(oFlexControllerStub.waitForChangesToBeApplied.notCalled, "then waitForChanges was not called");
 			});
 		});
 	});
 
-	QUnit.module("Given changes / variants are required to be added / removed from variant management state", {
-		beforeEach: function() {
-			this.oVariantsMap = {
-				vmReference1: {
-					variants: [
-						{
-							instance: createVariant({
-								fileName: "vmReference1",
-								title: "Standard"
-							}),
-							variantChanges: {},
-							controlChanges: []
-						},
-						{
-							instance: createVariant({
-								fileName: "variant0",
-								title: "existing"
-							}),
-							variantChanges: {
-								setTitle: [
-									{
-										id: "testTitleChange"
-									}
-								]
-							},
-							controlChanges: [
-								createUIChange({
-									fileName: "controlChange1",
-									layer: Layer.VENDOR
-								}),
-								createUIChange({
-									fileName: "controlChange2",
-									layer: Layer.VENDOR
-								}),
-								createUIChange({
-									fileName: "controlChange3",
-									layer: Layer.CUSTOMER
-								})
-							]
-						}
-					],
-					variantManagementChanges: {
-						setDefault: [
-							{
-								id: "testDefaultChange"
-							}
-						]
-					}
-				}
-			};
-			this.sReference = "componentReference";
-			this.sVMReference = "vmReference1";
-			sandbox.stub(VariantManagementState, "getContent")
-				.callThrough()
-				.withArgs(this.sReference)
-				.returns(this.oVariantsMap);
-		},
-		afterEach: function() {
-			sandbox.restore();
-		}
-	}, function () {
-		QUnit.test("when 'updateChangesForVariantManagementInMap' is called to add a variant change", function(assert) {
-			var mArguments = {
-				add: true,
-				changeContent: {
-					fileName: "new_setTitle",
-					fileType: "ctrl_variant_change",
-					changeType: "setTitle",
-					selector: {id: "variant0"}
-				},
-				vmReference: this.sVMReference,
-				reference: this.sReference
-			};
-			VariantManagementState.updateChangesForVariantManagementInMap(mArguments);
-			var oTargetVariant = this.oVariantsMap[this.sVMReference].variants[1];
-			var oLastVariantChange = oTargetVariant.variantChanges[mArguments.changeContent.changeType].pop();
-			assert.equal(oTargetVariant.instance.getId(), mArguments.changeContent.selector.id, "then it is the target variant");
-			assert.equal(oLastVariantChange.fileName, mArguments.changeContent.fileName, "then the new variant change was added to the map");
-		});
-
-		QUnit.test("when 'updateChangesForVariantManagementInMap' is called to remove a variant change", function(assert) {
-			var mArguments = {
-				add: false,
-				changeContent: {
-					fileName: "new_setTitle",
-					fileType: "ctrl_variant_change",
-					changeType: "setTitle",
-					selector: {id: "variant0"}
-				},
-				vmReference: this.sVMReference,
-				reference: this.sReference
-			};
-			this.oVariantsMap["vmReference1"].variants[1].variantChanges.setTitle.push(mArguments.changeContent);
-
-			VariantManagementState.updateChangesForVariantManagementInMap(mArguments);
-			var oTargetVariant = this.oVariantsMap[this.sVMReference].variants[1];
-			var iLength = oTargetVariant.variantChanges[mArguments.changeContent.changeType].length;
-			assert.equal(oTargetVariant.instance.getId(), mArguments.changeContent.selector.id, "then it is the target variant");
-			assert.equal(iLength, 1, "then the variant changes have the correct length");
-			assert.notEqual(oTargetVariant.variantChanges[mArguments.changeContent.changeType][0].fileName, mArguments.changeContent.fileName, "then the variant change was removed from the map");
-		});
-
-		QUnit.test("when 'updateChangesForVariantManagementInMap' is called to add a variant management change", function(assert) {
-			var mArguments = {
-				changeContent: {
-					fileName: "new_setDefault",
-					fileType: "ctrl_variant_management_change",
-					changeType: "setDefault",
-					selector: {id: "vmReference1"}
-				},
-				add: true,
-				vmReference: this.sVMReference,
-				reference: this.sReference
-			};
-
-			VariantManagementState.updateChangesForVariantManagementInMap(mArguments);
-			var oLastVariantManagementChange = this.oVariantsMap[this.sVMReference].variantManagementChanges[mArguments.changeContent.changeType].pop();
-			assert.ok(oLastVariantManagementChange.fileName, mArguments.changeContent.fileName, "then the variant management change was added");
-		});
-
-		QUnit.test("when 'updateChangesForVariantManagementInMap' is called to remove a variant management change", function(assert) {
-			var mArguments = {
-				changeContent: {
-					fileName: "new_setDefault",
-					fileType: "ctrl_variant_management_change",
-					changeType: "setDefault",
-					selector: {id: this.sVMReference}
-				},
-				add: false,
-				vmReference: this.sVMReference,
-				reference: this.sReference
-			};
-			this.oVariantsMap["vmReference1"].variantManagementChanges[mArguments.changeContent.changeType].push(mArguments.changeContent);
-
-			VariantManagementState.updateChangesForVariantManagementInMap(mArguments);
-			var iLength = this.oVariantsMap[this.sVMReference].variantManagementChanges[mArguments.changeContent.changeType].length;
-			assert.equal(iLength, 1, "then the variant management changes have the correct length");
-			assert.notEqual(this.oVariantsMap[this.sVMReference].variantManagementChanges[mArguments.changeContent.changeType][0].fileName, mArguments.changeContent.fileName, "then the variant management change was removed from the map");
-		});
-
-		QUnit.test("when calling 'addChangeToVariant' is called", function(assert) {
-			var oChangeToBeAdded1 = createUIChange({fileName: "newChange"});
-			var oChangeToBeAdded2 = createUIChange({fileName: "controlChange1"});
-			var bSuccess1 = VariantManagementState.addChangeToVariant({change: oChangeToBeAdded1, vmReference: this.sVMReference, vReference: "variant0", reference: this.sReference});
-			var bSuccess2 = VariantManagementState.addChangeToVariant({change: oChangeToBeAdded2, vmReference: this.sVMReference, vReference: "variant0", reference: this.sReference});
-
-			assert.ok(bSuccess1, "then adding a change was successful");
-			assert.notOk(bSuccess2, "then adding an already existing change was unsuccessful");
-
-			var aChanges = VariantManagementState.getControlChangesForVariant({vmReference: this.sVMReference, vReference: "variant0", reference: this.sReference});
-			assert.equal(aChanges.length, 4, "then the number of changes in the variant is correct");
-			assert.equal(aChanges[3], oChangeToBeAdded1, "then the newly added change is at the end of the array");
-		});
-
-		QUnit.test("when 'removeChangeFromVariant' is called", function(assert) {
-			var oChangeToBeRemoved1 = createUIChange({fileName: "controlChange1"});
-			var oChangeToBeRemoved2 = createUIChange({fileName: "nonExistentChange"});
-			var bSuccess1 = VariantManagementState.removeChangeFromVariant({change: oChangeToBeRemoved1, vmReference: this.sVMReference, vReference: "variant0", reference: this.sReference});
-			var bSuccess2 = VariantManagementState.removeChangeFromVariant({change: oChangeToBeRemoved2, vmReference: this.sVMReference, vReference: "variant0", reference: this.sReference});
-
-			assert.ok(bSuccess1, "then removing an existing change was successful");
-			assert.notOk(bSuccess2, "then removing a non existent change was unsuccessful");
-
-			var aChanges = VariantManagementState.getControlChangesForVariant({vmReference: this.sVMReference, vReference: "variant0", reference: this.sReference});
-			assert.equal(aChanges.length, 2, "then the number of changes in the variant is correct");
-			assert.notEqual(aChanges[0].getId(), oChangeToBeRemoved1.getId(), "then the removed change does not exist");
-			assert.notEqual(aChanges[1].getId(), oChangeToBeRemoved1.getId(), "then the removed change does not exist");
-		});
-
-		QUnit.test("when 'addVariantToVariantManagement' is called with a new variant and no variant reference", function(assert) {
-			var oChangeContent0 = {fileName: "change0"};
-			var oChangeContent1 = {fileName: "change1"};
-
-			var oFakeVariantData1 = {
-				instance: createVariant({
-					title: "AA",
-					fileName: "newVariant1"
-				}),
-				controlChanges: [oChangeContent0]
-			};
-
-			var oFakeVariantData2 = {
-				instance: createVariant({
-					title: "ZZ",
-					fileName: "newVariant2"
-				}),
-				controlChanges: [oChangeContent1]
-			};
-
-			var iIndex1 = VariantManagementState.addVariantToVariantManagement({variantData: oFakeVariantData1, vmReference: this.sVMReference, reference: this.sReference});
-			var iIndex2 = VariantManagementState.addVariantToVariantManagement({variantData: oFakeVariantData2, vmReference: this.sVMReference, reference: this.sReference});
-
-			var aVariants = this.oVariantsMap[this.sVMReference].variants;
-
-			assert.equal(aVariants[iIndex1].instance.getId(), oFakeVariantData1.instance.getId(), "then the first variant was added to the correct index");
-			assert.equal(aVariants[iIndex2].instance.getId(), oFakeVariantData2.instance.getId(), "then the second variant was added to the correct index");
-		});
-
-		QUnit.test("when 'addVariantToVariantManagement' is called on CUSTOMER layer and a variant reference from a VENDOR layer variant, with 2 VENDOR and one CUSTOMER change", function(assert) {
-			var oChangeContent0 = createUIChange({fileName: "change0"});
-			VariantManagementState.getControlChangesForVariant({vReference: "variant0", vmReference: this.sVMReference, reference: this.sReference});
-
-			var oFakeVariantData = {
-				instance: createVariant({
-					fileName: "newVariant1",
-					variantReference: "variant0",
-					layer: Layer.CUSTOMER,
-					title: "AA"
-				}),
-				controlChanges: [oChangeContent0]
-			};
-
-			var iIndex = VariantManagementState.addVariantToVariantManagement({variantData: oFakeVariantData, vmReference: this.sVMReference, reference: this.sReference});
-			var aVariants = this.oVariantsMap[this.sVMReference].variants;
-
-			assert.equal(aVariants[iIndex].instance.getId(), oFakeVariantData.instance.getId(), "then the variant was added to the correct index");
-
-			var aChangeFileNames = aVariants[iIndex].controlChanges.map(function (oChange) {
-				return oChange.getId();
-			});
-			assert.equal(aVariants[iIndex].controlChanges.length, 3, "then one own change and 2 referenced changes exists");
-			assert.equal(aChangeFileNames[0], aVariants[2].controlChanges[0].getId(), "then referenced change exists at the starting of the array");
-			assert.equal(aChangeFileNames[1], aVariants[2].controlChanges[1].getId(), "then referenced change exists at the starting of the array");
-			assert.equal(aChangeFileNames[2], oChangeContent0.getId(), "then variant's own change exists and is placed at the end of the the array");
-		});
-
-		QUnit.test("when 'addVariantToVariantManagement' is called on USER layer and a variant reference from a VENDOR layer variant with 2 VENDOR and one CUSTOMER change", function(assert) {
-			var oChangeContent0 = createUIChange({fileName: "change0"});
-			VariantManagementState.getControlChangesForVariant({vReference: "variant0", vmReference: "vmReference1", reference: this.sReference});
-
-			var oFakeVariantData = {
-				instance: createVariant({
-					fileName: "newVariant1",
-					variantReference: "variant0",
-					layer: Layer.USER,
-					title: "AA"
-				}),
-				controlChanges: [oChangeContent0]
-			};
-
-			var iIndex = VariantManagementState.addVariantToVariantManagement({variantData: oFakeVariantData, vmReference: "vmReference1", reference: this.sReference});
-			var aVariants = this.oVariantsMap["vmReference1"].variants;
-
-			assert.equal(aVariants[iIndex].instance.getId(), oFakeVariantData.instance.getId(), "then the variant was added to the correct index");
-
-			var aChangeFileNames = aVariants[iIndex].controlChanges.map(function (oChange) {
-				return oChange.getId();
-			});
-			assert.equal(aVariants[iIndex].controlChanges.length, 4, "then one own change and 2 referenced changes exists");
-			assert.equal(aChangeFileNames[0], aVariants[2].controlChanges[0].getId(), "then referenced change exists at the starting of the array");
-			assert.equal(aChangeFileNames[1], aVariants[2].controlChanges[1].getId(), "then referenced change exists at the starting of the array");
-			assert.equal(aChangeFileNames[2], aVariants[2].controlChanges[2].getId(), "then referenced change exists at the starting of the array");
-			assert.equal(aChangeFileNames[3], oChangeContent0.getId(), "then variant's own change exists and is placed at the end of the the array");
-		});
-
-		QUnit.test("when 'removeVariantFromVariantManagement' is called with a variant", function(assert) {
-			var oVariantDataToBeRemoved = this.oVariantsMap["vmReference1"].variants[1];
-			var oVariantToBeRemoved = oVariantDataToBeRemoved.instance;
-
-			VariantManagementState.removeVariantFromVariantManagement({variant: oVariantToBeRemoved, vmReference: "vmReference1", reference: this.sReference});
-
-			var aVariants = this.oVariantsMap["vmReference1"].variants;
-			var bPresent = aVariants.some(function(oVariant) {
-				return oVariant.instance.getId() === oVariantDataToBeRemoved.instance.getId();
-			});
-			assert.notOk(bPresent, "then the variant was removed");
-		});
-	});
-
-	QUnit.module("Given variant related changes are added / deleted from Flex State", {
-		beforeEach: function() {
-			this.oResponse = StorageUtils.getEmptyFlexDataResponse();
-			this.sReference = "reference";
-			sandbox.stub(FlexState, "getFlexObjectsFromStorageResponse").returns(this.oResponse);
-			sandbox.stub(VariantManagementState, "getContent")
-				.callThrough()
-				.withArgs(this.sReference)
-				.returns({someKey: "variantMap"});
-		},
-		afterEach: function() {
-			sandbox.restore();
-		}
-	}, function() {
-		QUnit.test("when 'updateVariantsState' is called without an existing variants state", function(assert) {
-			VariantManagementState.getContent.reset();
-			sandbox.stub(Log, "error");
-			VariantManagementState.updateVariantsState({
-				reference: this.sReference
-			});
-			assert.equal(Log.error.callCount, 1, "then an error was logged");
-		});
-
-		QUnit.test("when 'updateVariantsState' is called to add variant related changes", function(assert) {
-			var oStub1 = sandbox.stub();
-			var oStub2 = sandbox.stub();
-			VariantManagementState.addUpdateStateListener(this.sReference, oStub1);
-			VariantManagementState.addUpdateStateListener("reference2", oStub2);
-			VariantManagementState.removeUpdateStateListener("reference2", oStub2);
-
-			var oVariantDependentControlChange = FlexObjectFactory.createFromFileContent({
-				fileType: "change"
-			});
-			VariantManagementState.updateVariantsState({
-				reference: this.sReference,
-				changeToBeAddedOrDeleted: oVariantDependentControlChange,
-				content: {}
-			});
-			assert.deepEqual(this.oResponse.variantDependentControlChanges[0], oVariantDependentControlChange.convertToFileContent(), "then the variants related change was added to flex state response");
-			assert.strictEqual(oStub1.callCount, 1, "the listener was called");
-			assert.strictEqual(oStub2.callCount, 0, "the added and removed listener was not called");
-			assert.strictEqual(
-				oVariantDependentControlChange.getState(),
-				States.LifecycleState.PERSISTED,
-				"then the change state is updated"
-			);
-
-			var oVariant = FlexObjectFactory.createFromFileContent({
-				fileType: "ctrl_variant"
-			});
-			VariantManagementState.updateVariantsState({
-				reference: this.sReference,
-				changeToBeAddedOrDeleted: oVariant,
-				content: {}
-			});
-			assert.deepEqual(this.oResponse.variants[0], oVariant.convertToFileContent(), "then the variants related change was added to flex state response");
-			assert.strictEqual(oStub1.callCount, 2, "the listener was called");
-			assert.strictEqual(oStub2.callCount, 0, "the added and removed listener was not called");
-
-			var oVariantManagementChange = FlexObjectFactory.createFromFileContent({
-				fileType: "ctrl_variant_management_change"
-			});
-			VariantManagementState.updateVariantsState({
-				reference: this.sReference,
-				changeToBeAddedOrDeleted: oVariantManagementChange,
-				content: {}
-			});
-			assert.deepEqual(this.oResponse.variantManagementChanges[0], oVariantManagementChange.convertToFileContent(), "then the variants related change was added to flex state response");
-			assert.strictEqual(oStub1.callCount, 3, "the listener was called");
-			assert.strictEqual(oStub2.callCount, 0, "the added and removed listener was not called");
-
-			var oVariantChange = FlexObjectFactory.createFromFileContent({
-				fileType: "ctrl_variant_change"
-			});
-			VariantManagementState.updateVariantsState({
-				reference: this.sReference,
-				changeToBeAddedOrDeleted: oVariantChange,
-				content: {}
-			});
-			assert.deepEqual(this.oResponse.variantChanges[0], oVariantChange.convertToFileContent(), "then the variants related change was added to flex state response");
-			assert.strictEqual(oStub1.callCount, 4, "the listener was called");
-			assert.strictEqual(oStub2.callCount, 0, "the added and removed listener was not called");
-
-			VariantManagementState.removeUpdateStateListener(this.sReference);
-			var oVariantDependentControlChange1 = FlexObjectFactory.createFromFileContent({
-				fileType: "change"
-			});
-			VariantManagementState.updateVariantsState({
-				reference: this.sReference,
-				changeToBeAddedOrDeleted: oVariantDependentControlChange1,
-				content: {}
-			});
-			assert.deepEqual(this.oResponse.variantDependentControlChanges[0], oVariantDependentControlChange.convertToFileContent(), "then the variants related change was added to flex state response");
-			assert.strictEqual(oStub1.callCount, 4, "the listener was not called again");
-			assert.strictEqual(oStub2.callCount, 0, "the added and removed listener was not called");
-		});
-
-		QUnit.test("when 'updateVariantsState' is called to delete variant related changes", function(assert) {
-			var oVariantDependentControlChange = {
-				getState: function() {return States.LifecycleState.DELETE;},
-				convertToFileContent: function() {
-					return {
-						fileType: "change",
-						fileName: "variantDependentControlChange"
-					};
-				}
-			};
-			this.oResponse.variantDependentControlChanges.push(oVariantDependentControlChange.convertToFileContent());
-			VariantManagementState.updateVariantsState({
-				reference: this.sReference,
-				changeToBeAddedOrDeleted: oVariantDependentControlChange,
-				content: {}
-			});
-			assert.equal(this.oResponse.variantDependentControlChanges.length, 0, "then the variants related change was deleted from the flex state response");
-
-			var oVariant = {
-				getState: function() {return States.LifecycleState.DELETE;},
-				convertToFileContent: function() {
-					return {
-						fileType: "ctrl_variant",
-						fileName: "variant"
-					};
-				}
-			};
-			this.oResponse.variants.push(oVariant.convertToFileContent());
-			VariantManagementState.updateVariantsState({
-				reference: this.sReference,
-				changeToBeAddedOrDeleted: oVariant,
-				content: {}
-			});
-			assert.equal(this.oResponse.variants.length, 0, "then the variants related change was deleted from the flex state response");
-
-			var oVariantManagementChange = {
-				getState: function() {return States.LifecycleState.DELETE;},
-				convertToFileContent: function() {
-					return {
-						fileType: "ctrl_variant_management_change",
-						fileName: "variantManagementChange"
-					};
-				}
-			};
-			this.oResponse.variantManagementChanges.push(oVariantManagementChange.convertToFileContent());
-			VariantManagementState.updateVariantsState({
-				reference: this.sReference,
-				changeToBeAddedOrDeleted: oVariantManagementChange,
-				content: {}
-			});
-			assert.equal(this.oResponse.variantManagementChanges.length, 0, "then the variants related change was deleted from the flex state response");
-
-			var oVariantChange = {
-				getState: function() {return States.LifecycleState.DELETE;},
-				convertToFileContent: function() {
-					return {
-						fileType: "ctrl_variant_change",
-						fileName: "variantChange"
-					};
-				}
-			};
-			this.oResponse.variantChanges.push(oVariantChange.convertToFileContent());
-			VariantManagementState.updateVariantsState({
-				reference: this.sReference,
-				changeToBeAddedOrDeleted: oVariantChange,
-				content: {}
-			});
-			assert.equal(this.oResponse.variantChanges.length, 0, "then the variants related change was deleted from the flex state response");
-		});
-
-		QUnit.test("when 'updateVariantsState' is called to update variant related changes", function(assert) {
-			var oVariantDependentControlChange = FlexObjectFactory.createFromFileContent({
-				fileType: "change",
-				fileName: "someChange",
-				state: States.LifecycleState.DIRTY
-			});
-			VariantManagementState.updateVariantsState({
-				reference: this.sReference,
-				changeToBeAddedOrDeleted: oVariantDependentControlChange,
-				content: {}
-			});
-			oVariantDependentControlChange.setContent({ key: "Some change to the file content" });
-			assert.strictEqual(
-				oVariantDependentControlChange.getState(),
-				States.LifecycleState.DIRTY,
-				"then the change state is set to dirty when changing the flex object"
-			);
-
-			VariantManagementState.updateVariantsState({
-				reference: this.sReference,
-				changeToBeAddedOrDeleted: oVariantDependentControlChange,
-				content: {}
-			});
-			assert.strictEqual(
-				this.oResponse.variantDependentControlChanges.length,
-				1,
-				"then no further change is added to the flex state response"
-			);
-			assert.deepEqual(
-				this.oResponse.variantDependentControlChanges[0].content,
-				{ key: "Some change to the file content" },
-				"then the change is updated"
-			);
-			assert.strictEqual(
-				oVariantDependentControlChange.getState(),
-				States.LifecycleState.PERSISTED,
-				"then the change state is set to persisted"
-			);
-		});
-	});
-
-	QUnit.done(function () {
+	QUnit.done(function() {
+		oComponent.destroy();
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

@@ -16,13 +16,16 @@ sap.ui.define([
 	"use strict";
 
 	//shortcut for sap.ui.core.ValueState
-	var ValueState = coreLibrary.ValueState;
+	const ValueState = coreLibrary.ValueState;
 
 	// shortcut for sap.m.ListKeyboardMode
-	var ListKeyboardMode = mLibrary.ListKeyboardMode;
+	const ListKeyboardMode = mLibrary.ListKeyboardMode;
 
 	// shortcut for sap.m.FlexJustifyContent
-	var FlexJustifyContent = mLibrary.FlexJustifyContent;
+	const FlexJustifyContent = mLibrary.FlexJustifyContent;
+
+	// shortcut for sap.m.WrappingType
+	const WrappingType = mLibrary.WrappingType;
 
 	/**
 	 * Constructor for a new <code>FilterPanel</code>.
@@ -39,12 +42,12 @@ sap.ui.define([
 	 * @author SAP SE
 	 * @version ${version}
 	 *
-	 * @public
+	 * @private
 	 * @experimental Since 1.107.
 	 * @since 1.107
 	 * @alias sap.ui.mdc.p13n.panels.FilterPanel
 	 */
-	var FilterPanel = QueryPanel.extend("sap.ui.mdc.p13n.panels.FilterPanel", {
+	const FilterPanel = QueryPanel.extend("sap.ui.mdc.p13n.panels.FilterPanel", {
 		metadata: {
 			library: "sap.ui.mdc",
 			properties: {
@@ -79,13 +82,12 @@ sap.ui.define([
 	 * @property {string} label The label describing the personalization item
 	 * @property {boolean} active Defines whether there is a visible grid shown in the panel for this key, also triggers the call of the <code>#itemFactory</code> function
 	 *
-	 * @public
+	 * @private
 	 */
 
 	/**
 	 * Sets the personalization state of the panel instance.
 	 * @name sap.ui.mdc.p13n.panels.FilterPanel.prototype.setP13nData
-	 * @public
 	 * @function
 	 *
 	 * @param {sap.ui.mdc.p13n.panels.FilterItem[]} aP13nData An array containing the personalization state
@@ -95,18 +97,19 @@ sap.ui.define([
 	FilterPanel.prototype.PRESENCE_ATTRIBUTE = "active";
 
 	FilterPanel.prototype._createInnerListControl = function () {
-		var oList = QueryPanel.prototype._createInnerListControl.apply(this, arguments);
-		oList.setKeyboardMode(ListKeyboardMode.Edit);
+		const oList = QueryPanel.prototype._createInnerListControl.apply(this, arguments);
 		return oList;
 	};
 
 	FilterPanel.prototype._createQueryRowGrid = function(oItem) {
 
-		var oRowContent = oItem.name ? this._createRowContainer(oItem.label, oItem.key) : this._createKeySelect(oItem.name);
+		const oRowContent = oItem.name ? this._createRowContainer(oItem.label, oItem.key) : this._createKeySelect(oItem.name);
 
-		var aContent = [oRowContent];
+		const aContent = [oRowContent];
 		if (oItem.name) {
-			aContent.push(this._createFactoryControl(oItem));
+			const oFilterItem = this._createFactoryControl(oItem);
+			aContent.push(oFilterItem);
+			this._setLabelForOnBox(oFilterItem, oRowContent);
 		}
 		return new Grid({
 			containerQuery: true,
@@ -123,30 +126,37 @@ sap.ui.define([
 		return this._getResourceText("p13n.FILTER_REMOVEICONTOOLTIP");
 	};
 
+	FilterPanel.prototype._getRemoveButtonAnnouncementText = function () {
+		return this._getResourceText("p13n.FILTER_REMOVEICONANNOUNCE");
+	};
+
 	FilterPanel.prototype._createKeySelect = function (sKey) {
 
-		var oComboBox = new ComboBox({
+		const oComboBox = new ComboBox({
 			width: "100%",
 			items: this._getAvailableItems(),
 			placeholder: this._getPlaceholderText(),
 			selectionChange: function(oEvt) {
-				var oComboBox = oEvt.getSource();
+				const oComboBox = oEvt.getSource();
 				this._selectKey(oComboBox);
 			}.bind(this),
 			change: function(oEvt) {
-				var oComboBox = oEvt.getSource();
-				var newValue = oEvt.getParameter("newValue");
+				const oComboBox = oEvt.getSource();
+				const newValue = oEvt.getParameter("newValue");
 				oComboBox.setValueState( newValue && !oComboBox.getSelectedItem() ? ValueState.Error : ValueState.None);
 				this._selectKey();
 			}.bind(this)
 		});
 
+		oComboBox.setLayoutData(new GridData({
+			span: "XL4 L4 M4 S11"
+		}));
 
 		return oComboBox;
 	};
 
 	FilterPanel.prototype._createRemoveButton = function (bVisible) {
-		var oRemoveBtn = QueryPanel.prototype._createRemoveButton.apply(this, arguments);
+		const oRemoveBtn = QueryPanel.prototype._createRemoveButton.apply(this, arguments);
 		oRemoveBtn.setJustifyContent(FlexJustifyContent.Start);//avoid remove button overlapping with input field
 		oRemoveBtn.setLayoutData(new GridData({
 			span: "XL1 L1 M1 S1"
@@ -156,8 +166,8 @@ sap.ui.define([
 
 	FilterPanel.prototype._createRowContainer = function(sText, sKey) {
 		// var sKey = oSelect._key;
-		var oLabel = new Label({text: sText, showColon: true, wrapping: true});
-		var oFieldBox = new VBox({
+		const oLabel = new Label({text: sText, showColon: true, wrapping: true, wrappingType: WrappingType.Hyphenated});
+		const oFieldBox = new VBox({
 			items:[oLabel.addStyleClass("sapUiTinyMarginBegin")]
 		});
 		oFieldBox._key = sKey;
@@ -169,7 +179,7 @@ sap.ui.define([
 	};
 
 	FilterPanel.prototype._selectKey = function(oComboBox) {
-		var oQueryRowGrid, sKey;
+		let oQueryRowGrid, sKey;
 		if (oComboBox) {
 			this._oComboBox = oComboBox;
 			oQueryRowGrid = oComboBox.getParent();
@@ -182,15 +192,15 @@ sap.ui.define([
 			if (sKey) {
 				QueryPanel.prototype._selectKey.call(this, oComboBox);
 
-				var oSelect = oQueryRowGrid.getContent()[0];
+				const oSelect = oQueryRowGrid.getContent()[0];
 				oQueryRowGrid.removeContent(oSelect);
 
-				var sText = sKey ? oComboBox.getSelectedItem().getText() : "";
+				const sText = sKey ? oComboBox.getSelectedItem().getText() : "";
 
-				var oFieldBox = this._createRowContainer(sText, sKey); //Create a container with a VBox and a label with some padding inside and insert it in the grid
+				const oFieldBox = this._createRowContainer(sText, sKey); //Create a container with a VBox and a label with some padding inside and insert it in the grid
 				oQueryRowGrid.insertContent(oFieldBox,0);
 
-				var oFilterItem = this._createFactoryControl({name: sKey}); //Create the actual filterable control and insert it in the grid
+				const oFilterItem = this._createFactoryControl({name: sKey}); //Create the actual filterable control and insert it in the grid
 				this._setLabelForOnBox(oFilterItem, oFieldBox);
 
 				oQueryRowGrid.insertContent(oFilterItem, 1);
@@ -219,7 +229,7 @@ sap.ui.define([
 	};
 
 	FilterPanel.prototype._createFactoryControl = function(oItem) {
-		var oField = this.getItemFactory().call(this, oItem);
+		const oField = this.getItemFactory().call(this, oItem);
 		oField.setLayoutData(new GridData({
 			span: "XL7 L7 M7 S7"
 		}));

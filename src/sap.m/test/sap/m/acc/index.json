@@ -473,7 +473,7 @@
 		},
 		{
 			"control": "sap.m.SearchField",
-			"url": "../SearchField.html",
+			"url": "SearchField.html",
 			"appComponent": "CA-UI5-CTR-ROD"
 		},
 		{
@@ -606,11 +606,6 @@
 				"title": "ACC test for sap.m.Tokenizer",
 				"module": "./tokenizer.qunit"
 			}
-		},
-		{
-			"control": "sap.m.TileContainer",
-			"url": "../TileContainer.html",
-			"appComponent": "CA-UI5-CTR-BAL"
 		},
 		{
 			"control": "sap.m.TileContent",

@@ -5,10 +5,10 @@ sap.ui.define([
 	"sap/ui/integration/util/RequestDataProvider",
 	"sap/base/Log",
 	"sap/ui/core/Core",
-	"sap/base/util/merge"
-], function (RequestDataProvider, Log, Core, merge) {
+	"sap/base/util/deepExtend",
+	"sap/ui/core/date/UI5Date"
+], function (RequestDataProvider, Log, Core, deepExtend, UI5Date) {
 	"use strict";
-	/*global URL*/
 
 	/**
 	 * @const The amount of seconds in a common calendar year.
@@ -109,19 +109,19 @@ sap.ui.define([
 		var pRequestPromise,
 			oCardHeader = this.getCardInstanceHeader();
 
-		this._sCurrentRequestFullUrl = getFullUrl(oRequest);
+		this._sCurrentRequestFullUrl = getFullUrl(oRequest.url);
 
 		this._subscribeToHostMessages();
 
 		pRequestPromise = RequestDataProvider.prototype._request.apply(this, arguments);
 
 		pRequestPromise.then(function (vResult) {
-			var jqXHR = vResult[1],
-				sDate = jqXHR.getResponseHeader("Date");
+			var oResponse = vResult[1],
+				sDate = oResponse.headers.get("Date");
 
 			if (sDate && oCardHeader) {
 				this._attachTimestampPress();
-				oCardHeader.setDataTimestamp((new Date(sDate)).toISOString());
+				oCardHeader.setDataTimestamp((UI5Date.getInstance(sDate)).toISOString());
 			}
 		}.bind(this));
 
@@ -166,13 +166,24 @@ sap.ui.define([
 	 * @inheritdoc
 	 */
 	CacheAndRequestDataProvider.prototype._modifyRequestBeforeSent = function (oRequest, oSettings) {
+		oSettings.request = this._addCacheSettings(oSettings.request);
+
+		return RequestDataProvider.prototype._modifyRequestBeforeSent.call(this, oRequest, oSettings);
+	};
+
+	/**
+	 * @inheritdoc
+	 */
+	CacheAndRequestDataProvider.prototype._addCacheSettings = function (oSettings) {
 		var oDefault = {
-				enabled: true,
-				maxAge: 0,
-				staleWhileRevalidate: true
+				cache: {
+					enabled: true,
+					maxAge: 0,
+					staleWhileRevalidate: true
+				}
 			},
-			oNewSettings = merge({request: { cache: oDefault }}, oSettings),
-			oCache = oNewSettings.request.cache;
+			oNewSettings = deepExtend(oDefault, oSettings),
+			oCache = oNewSettings.cache;
 
 		if (oCache.noStore) {
 			// temporary needed for backward compatibility
@@ -189,9 +200,14 @@ sap.ui.define([
 			}
 		}
 
-		oNewSettings.request.cache = oCache;
+		return oNewSettings;
+	};
 
-		return RequestDataProvider.prototype._modifyRequestBeforeSent.call(this, oRequest, oNewSettings);
+	/**
+	 * @override
+	 */
+	CacheAndRequestDataProvider.prototype._getRequestSettings = function () {
+		return this._addCacheSettings(this.getSettings().request);
 	};
 
 	/**

@@ -2,7 +2,9 @@
  * ${copyright}
  */
 sap.ui.define([
-	"sap/ui/base/Object",
+	"sap/ui/base/EventProvider",
+	"sap/base/Log",
+	"sap/ui/integration/library",
 	"sap/ui/integration/util/ServiceDataProvider",
 	"sap/ui/integration/util/RequestDataProvider",
 	"sap/ui/integration/util/CacheAndRequestDataProvider",
@@ -11,16 +13,22 @@ sap.ui.define([
 	"sap/ui/integration/util/JSONBindingHelper",
 	"sap/ui/integration/util/BindingHelper",
 	"sap/ui/integration/util/CsrfTokenHandler"
-], function (BaseObject,
-			 ServiceDataProvider,
-			 RequestDataProvider,
-			 CacheAndRequestDataProvider,
-			 DataProvider,
-			 ExtensionDataProvider,
-			 JSONBindingHelper,
-			 BindingHelper,
-			 CsrfTokenHandler) {
+], function (
+	EventProvider,
+	Log,
+	library,
+	ServiceDataProvider,
+	RequestDataProvider,
+	CacheAndRequestDataProvider,
+	DataProvider,
+	ExtensionDataProvider,
+	JSONBindingHelper,
+	BindingHelper,
+	CsrfTokenHandler
+) {
 	"use strict";
+
+	var CardPreviewMode = library.CardPreviewMode;
 
 	/**
 	 * @class
@@ -35,9 +43,9 @@ sap.ui.define([
 	 * @since 1.65
 	 * @alias sap.ui.integration.util.DataProviderFactory
 	 */
-	var DataProviderFactory = BaseObject.extend("sap.ui.integration.util.DataProviderFactory", {
+	var DataProviderFactory = EventProvider.extend("sap.ui.integration.util.DataProviderFactory", {
 		constructor: function (mSettings) {
-			BaseObject.call(this);
+			EventProvider.call(this);
 
 			mSettings = mSettings || {};
 
@@ -65,7 +73,7 @@ sap.ui.define([
 	 * @ui5-restricted sap.ui.integration, shell-toolkit
 	 */
 	DataProviderFactory.prototype.destroy = function () {
-		BaseObject.prototype.destroy.apply(this, arguments);
+		EventProvider.prototype.destroy.apply(this, arguments);
 
 		if (this._aDataProviders) {
 			this._aDataProviders.forEach(function(oDataProvider) {
@@ -111,12 +119,17 @@ sap.ui.define([
 	 * @returns {sap.ui.integration.util.DataProvider|null} A data provider instance used for data retrieval.
 	 */
 	DataProviderFactory.prototype.create = function (oDataConfiguration, oServiceManager, bIsFilter, bConfigurationAlreadyResolved) {
-		if (!oDataConfiguration) {
+		var oCard = this._oCard;
+
+		if (!DataProviderFactory.isProvidingConfiguration(oDataConfiguration) || oCard && oCard.getPreviewMode() === CardPreviewMode.Abstract) {
 			return null;
 		}
 
-		var oCard = this._oCard,
-			oEditor = this._oEditor,
+		if (oCard && oCard.getPreviewMode() === CardPreviewMode.MockData) {
+			oDataConfiguration = this._applyMockDataConfiguration(oDataConfiguration);
+		}
+
+		var oEditor = this._oEditor,
 			oHost = this._oHost || (oCard && oCard.getHostInstance()) || (oEditor && oEditor.getHostInstance()),
 			bUseExperimentalCaching = oHost && oHost.bUseExperimentalCaching,
 			oSettings = this._createDataProviderSettings(oDataConfiguration, bConfigurationAlreadyResolved),
@@ -137,8 +150,6 @@ sap.ui.define([
 			oDataProvider = new DataProvider(oSettings);
 		} else if (oDataConfiguration.extension) {
 			oDataProvider = new ExtensionDataProvider(oSettings, this._oExtension);
-		} else {
-			return null;
 		}
 
 		if (oCard) {
@@ -174,7 +185,7 @@ sap.ui.define([
 	/**
 	 * Removes a DataProvider from Factory's registry.
 	 *
-	 * @param oDataProvider {sap.ui.integration.util.DataProvider}
+	 * @param {sap.ui.integration.util.DataProvider} oDataProvider The data provider to be removed
 	 * @private
 	 * @ui5-restricted sap.ui.integration, shell-toolkit
 	 * @experimental
@@ -220,6 +231,29 @@ sap.ui.define([
 		}
 
 		return oConfig;
+	};
+
+	DataProviderFactory.prototype._applyMockDataConfiguration = function (oDataConfiguration) {
+		if (!oDataConfiguration.mockData || !DataProviderFactory.isProvidingConfiguration(oDataConfiguration.mockData)) {
+			Log.error("There is no mock data configured.", "sap.ui.integration.widgets.Card");
+			return null;
+		}
+
+		var oNewDataConfiguration = Object.assign({}, oDataConfiguration);
+		delete oNewDataConfiguration.request;
+		delete oNewDataConfiguration.service;
+		delete oNewDataConfiguration.json;
+		delete oNewDataConfiguration.extension;
+
+		return Object.assign(oNewDataConfiguration, oDataConfiguration.mockData);
+	};
+
+	/**
+	 * @param {object} oDataCfg Data configuration
+	 * @returns {boolean} Whether the configuration provides data
+	 */
+	DataProviderFactory.isProvidingConfiguration = function (oDataCfg) {
+		return oDataCfg && (oDataCfg.request || oDataCfg.service || oDataCfg.json || oDataCfg.extension);
 	};
 
 	return DataProviderFactory;

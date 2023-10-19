@@ -1,4 +1,4 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
 	"sap/ui/fl/Utils",
@@ -16,21 +16,21 @@ sap.ui.define([
 	QUnit.module("ServiceValidation", {
 		mUShellContainer: {
 			mSystemInfo: {
-				getName: function() {
+				getName() {
 					return "ABC";
 				},
-				getClient: function() {
+				getClient() {
 					return "123";
 				}
 			},
-			getLogonSystem: function() {
+			getLogonSystem() {
 				return this.mSystemInfo;
 			}
 		},
-		beforeEach: function () {
+		beforeEach() {
 			sandbox.stub(Utils, "getUshellContainer").returns(this.mUShellContainer);
 		},
-		afterEach: function() {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
@@ -252,7 +252,7 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

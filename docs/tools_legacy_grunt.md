@@ -76,21 +76,6 @@ grunt build [--libs=<library-1>,<library-n>] [--production] [--minify-css] [--in
 #  grunt build --libs=sap.ui.core,sap.m   # only build sap.ui.core and sap.m in non-production mode (non-minified css, with test-resources)
 ```
 
-## test
-
-Argument   | Description                                                                      | Default
----------- | -------------------------------------------------------------------------------- | -------------
-browsers   | Browser name(s) to test on (comma-separated) `chrome`, `firefox`, `ie`, `safari` | `chrome`
-
-Runs QUnit tests with Selenium WebDriver on a local server.
-
-```
-grunt test --browsers=<browsers>
-
-# example
-#  grunt test --browsers="safari,firefox"   # run tests of all libraries on safari and firefox
-```
-
 ## docs
 
 Argument               | Description                                                                       | Default
@@ -113,57 +98,3 @@ grunt serve
 
 open http://localhost:8080/testsuite/documentation.html#/api
 ```
-
-## cldr
-
-Install required npm modules and regenerate CLDR files contained in sap.ui.core.cldr.
-
-## cldr-download
-
-Install the required npm modules for UI5 CLDR generation.
-
-## cldr-generate
-
-Argument | Description | Default
----------- | --------------------------------------------------------------------------------------------- | -------------
-output | The folder path where the generated JSON files are stored. | none
-prettyPrint | Whether the output JSON files are pretty printed | true
-
-Generate UI5 locale JSON files using the CLDR npm mpdules.
-
-```
-grunt cldr-generate [--output=<output-folder-path>] [--no-prettyPrint]
-
-# example
-#  grunt cldr-generate --output=cldr  # generate the UI5 locale JSON files which are saved in folder "cldr" and pretty printed
-#  grunt cldr-generate  # generate the UI5 locale JSON files which replace the UI5 locale JSON files directly
-```
-
-## visualtest
-
-Argument         | Description                                                                      | Default
------------------| -------------------------------------------------------------------------------- | -------------
-browsers         | Browser name(s) to test on (comma-separated) `chrome`, `firefox`, `ie`, `safari` | `chrome`
-libs             | Library name(s) suites to execute (comma-separated), supports partial match      | all suites
-specs            | Spec names(s) to execute (comma-separated), supports partial match               | all specs
-seleniumAddress  | Address (host:port/wd/hub) of remote Selenium server to use                      | auto start locally
-seleniumHost     | Starts selenium server on this local host or IP                                  | primary non-loopback ip
-seleniumPort     | Starts selenium server on this local port                                        | 4444
-take             | Take actual screenshots                                                          | true
-compare          | Compare actual to reference screenshots, raquires taking screenshots             | true
-update           | Update different reference screenshots, requires comparing                       | false
-
-Runs visual tests with Selenium WebDriver on a local server.
-
-```
-grunt visualtest [--libs=<library-1>,<library-n>] [--specs=<spec-1>,<spec-n>] [--browsers=<browser-1>,<browsers-n>]
-
-# example
-#  grunt visualtest --browsers="firefox"   # run all visual tests of all libraries on firefox
-#  grunt visualtest --libs=sap.m           # run only visual tests of sap.m library
-#  grunt visualtest --specs=ActionSelect   # run only visual test with name ActionSelect
-#  grunt visualtest --browsers="safari" --seleniumAddress=<host>:4444/wd/hub # run visual tests on remote selenium server
-```
-
-#### Limitations
---browsers="" command with multiple browsers is not fully supported yet

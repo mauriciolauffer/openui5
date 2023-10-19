@@ -1,12 +1,12 @@
-/*global QUnit*/
+/* global QUnit */
 
 sap.ui.define([
-	"sap/ui/core/Core",
+	"sap/ui/core/Lib",
 	"sap/ui/fl/initial/_internal/changeHandlers/ChangeHandlerRegistration",
 	"sap/ui/fl/initial/_internal/changeHandlers/ChangeHandlerStorage",
 	"sap/ui/thirdparty/sinon-4"
 ], function(
-	Core,
+	Lib,
 	ChangeHandlerRegistration,
 	ChangeHandlerStorage,
 	sinon
@@ -16,13 +16,14 @@ sap.ui.define([
 	var sandbox = sinon.createSandbox();
 
 	QUnit.module("sap.ui.fl.initial._internal.changeHandlers.ChangeHandlerRegistration", {
-		beforeEach: function () {
+		beforeEach() {
+			this.oAttachLibraryChangedStub = sandbox.stub(Lib, "attachLibraryChanged");
 		},
-		afterEach: function () {
+		afterEach() {
 			sandbox.restore();
 		}
 	}, function() {
-		QUnit.test("the registry can identify flexChangeHandlers from already loaded libraries", function (assert) {
+		QUnit.test("the registry can identify flexChangeHandlers from already loaded libraries", function(assert) {
 			var oFlChangeHandlerObject = {foo: "bar"};
 
 			var aLoadedLibraries = [
@@ -35,17 +36,16 @@ sap.ui.define([
 			];
 
 			var oRegisterFlexChangeHandlersStub = sandbox.stub(ChangeHandlerStorage, "registerChangeHandlersForLibrary");
-			sandbox.stub(Core, "getLoadedLibraries").returns(aLoadedLibraries);
-			var oAttachLibraryChangedStub = sandbox.stub(Core, "attachLibraryChanged");
+			sandbox.stub(Lib, "all").returns(aLoadedLibraries);
 
-			return ChangeHandlerRegistration.getChangeHandlersOfLoadedLibsAndRegisterOnNewLoadedLibs().then(function() {
+			return ChangeHandlerRegistration.getChangeHandlersOfLoadedLibsAndRegisterOnNewLoadedLibs().then(() => {
 				assert.equal(oRegisterFlexChangeHandlersStub.callCount, 1, "for one lib the register flex change handlers was called");
 				assert.equal(oRegisterFlexChangeHandlersStub.firstCall.args[0], oFlChangeHandlerObject, "the change handler passed within the metadata was passed to the registration");
-				assert.equal(oAttachLibraryChangedStub.callCount, 1, "the change handler registration registers to later loaded libraries");
+				assert.equal(this.oAttachLibraryChangedStub.callCount, 1, "the change handler registration registers to later loaded libraries");
 			});
 		});
 
-		QUnit.test("the registry registration rejects when error occurs", function (assert) {
+		QUnit.test("the registry registration rejects when error occurs", function(assert) {
 			var oLoadedLibrary1 = {
 				extensions: {
 					flChangeHandlers: {}
@@ -53,17 +53,16 @@ sap.ui.define([
 			};
 
 			var oRegisterFlexChangeHandlersStub = sandbox.stub(ChangeHandlerStorage, "registerChangeHandlersForLibrary").rejects();
-			sandbox.stub(Core, "getLoadedLibraries").returns([oLoadedLibrary1]);
-			var oAttachLibraryChangedStub = sandbox.stub(Core, "attachLibraryChanged");
+			sandbox.stub(Lib, "all").returns([oLoadedLibrary1]);
 
 			return ChangeHandlerRegistration.getChangeHandlersOfLoadedLibsAndRegisterOnNewLoadedLibs()
-			.catch(function() {
+			.catch(() => {
 				assert.equal(oRegisterFlexChangeHandlersStub.callCount, 1, "the change handler registration rejects after error");
-				assert.equal(oAttachLibraryChangedStub.callCount, 1, "the change handler registration registers to later loaded libraries");
+				assert.equal(this.oAttachLibraryChangedStub.callCount, 1, "the change handler registration registers to later loaded libraries");
 			});
 		});
 
-		QUnit.test("the registry can identify flexChangeHandlers from loaded libraries after fl was loaded", function (assert) {
+		QUnit.test("the registry can identify flexChangeHandlers from loaded libraries after fl was loaded", function(assert) {
 			var oFlChangeHandlerObject = {foo: "bar"};
 			var oMockedLibraryChangedEvent = {
 				parameters: {
@@ -75,14 +74,14 @@ sap.ui.define([
 					}
 				}
 			};
-			oMockedLibraryChangedEvent.getParameter = function (key) {
+			oMockedLibraryChangedEvent.getParameter = function(key) {
 				return oMockedLibraryChangedEvent.parameters[key];
 			};
 
-			sandbox.stub(Core, "attachLibraryChanged").callsFake(function(fnCallback) {
+			this.oAttachLibraryChangedStub.callsFake(function(fnCallback) {
 				fnCallback(oMockedLibraryChangedEvent);
 			});
-			sandbox.stub(Core, "getLoadedLibraries").returns({});
+			sandbox.stub(Lib, "all").returns({});
 			var oRegisterChangeHandlersStub = sandbox.stub(ChangeHandlerStorage, "registerChangeHandlersForLibrary").resolves();
 
 			return ChangeHandlerRegistration.getChangeHandlersOfLoadedLibsAndRegisterOnNewLoadedLibs().then(function() {
@@ -91,7 +90,7 @@ sap.ui.define([
 			});
 		});
 
-		QUnit.test("the registry does nothing if a library was changes, but not added", function (assert) {
+		QUnit.test("the registry does nothing if a library was changes, but not added", function(assert) {
 			var oFlChangeHandlerObject = {foo: "bar"};
 			var oMockedLibraryChangedEvent = {
 				parameters: {
@@ -103,14 +102,14 @@ sap.ui.define([
 					}
 				}
 			};
-			oMockedLibraryChangedEvent.getParameter = function (key) {
+			oMockedLibraryChangedEvent.getParameter = function(key) {
 				return oMockedLibraryChangedEvent.parameters[key];
 			};
 
-			sandbox.stub(Core, "attachLibraryChanged").callsFake(function(fnCallback) {
+			this.oAttachLibraryChangedStub.callsFake(function(fnCallback) {
 				fnCallback(oMockedLibraryChangedEvent);
 			});
-			sandbox.stub(Core, "getLoadedLibraries").returns({});
+			sandbox.stub(Lib, "all").returns({});
 			var oRegisterChangeHandlersStub = sandbox.stub(ChangeHandlerStorage, "registerChangeHandlersForLibrary").resolves();
 
 			return ChangeHandlerRegistration.getChangeHandlersOfLoadedLibsAndRegisterOnNewLoadedLibs().then(function() {
@@ -118,7 +117,7 @@ sap.ui.define([
 			});
 		});
 
-		QUnit.test("the registry does nothing if a later loaded library has no change handlers", function (assert) {
+		QUnit.test("the registry does nothing if a later loaded library has no change handlers", function(assert) {
 			var oMockedLibraryChangedEvent = {
 				parameters: {
 					operation: "add",
@@ -127,14 +126,14 @@ sap.ui.define([
 					}
 				}
 			};
-			oMockedLibraryChangedEvent.getParameter = function (key) {
+			oMockedLibraryChangedEvent.getParameter = function(key) {
 				return oMockedLibraryChangedEvent.parameters[key];
 			};
 
-			sandbox.stub(Core, "attachLibraryChanged").callsFake(function(fnCallback) {
+			this.oAttachLibraryChangedStub.callsFake(function(fnCallback) {
 				fnCallback(oMockedLibraryChangedEvent);
 			});
-			sandbox.stub(Core, "getLoadedLibraries").returns({});
+			sandbox.stub(Lib, "all").returns({});
 			var oRegisterChangeHandlersStub = sandbox.stub(ChangeHandlerStorage, "registerChangeHandlersForLibrary").resolves();
 
 			return ChangeHandlerRegistration.getChangeHandlersOfLoadedLibsAndRegisterOnNewLoadedLibs().then(function() {
@@ -143,7 +142,9 @@ sap.ui.define([
 		});
 
 		[true, false].forEach(function(bResolve) {
-			var sMsg = "addRegistrationPromise + waitForChangeHandlerRegistration - " + bResolve ? "resolving promise" : "rejecting promise";
+			var sMsg = `addRegistrationPromise + waitForChangeHandlerRegistration - ${
+				bResolve ? "resolving promise" : "rejecting promise"
+			}`;
 			QUnit.test(sMsg, function(assert) {
 				var done = assert.async();
 				var sKey = "myFancyName";
@@ -159,14 +160,14 @@ sap.ui.define([
 						}
 					}
 				};
-				oMockedLibraryChangedEvent.getParameter = function (key) {
+				oMockedLibraryChangedEvent.getParameter = function(key) {
 					return oMockedLibraryChangedEvent.parameters[key];
 				};
 
-				sandbox.stub(Core, "attachLibraryChanged").callsFake(function(fnCallback) {
+				this.oAttachLibraryChangedStub.callsFake(function(fnCallback) {
 					fnCallback(oMockedLibraryChangedEvent);
 				});
-				sandbox.stub(Core, "getLoadedLibraries").returns({});
+				sandbox.stub(Lib, "all").returns({});
 
 				var fnPromiseFunction;
 				var oPromise = new Promise(function(resolve, reject) {
@@ -208,7 +209,7 @@ sap.ui.define([
 		});
 	});
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
 });

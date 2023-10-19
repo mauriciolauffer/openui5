@@ -2,40 +2,60 @@ sap.ui.define([
 	"./GridTable.delegate",
 	"./Authors.FB.delegate",
 	"sap/ui/mdc/Field",
-	"sap/ui/mdc/enum/FieldDisplay",
-	"sap/ui/mdc/enum/EditMode",
-	"sap/ui/model/odata/type/Int32"
-], function (ODataTableDelegate, AuthorsFBDelegate, Field, FieldDisplay, EditMode, Int32Type) {
+	"sap/ui/mdc/enums/FieldDisplay",
+	"sap/ui/mdc/enums/FieldEditMode",
+	"sap/ui/model/odata/type/Int32",
+	'delegates/util/DelegateCache'
+], function (ODataTableDelegate, AuthorsFBDelegate, Field, FieldDisplay, FieldEditMode, Int32Type, DelegateCache) {
 	"use strict";
 
 	var AuthorsTableDelegate = Object.assign({}, ODataTableDelegate);
 
-	var getFullId = function(oControl, sVHId) {
-		var oView = oControl.getParent();
-		while (!oView.isA("sap.ui.core.mvc.View")) {
-			oView = oView.getParent();
-		}
-		return oView.getId() + "--" + sVHId;
-	};
-
 	AuthorsTableDelegate.fetchProperties = function (oTable) {
 		var oODataProps = ODataTableDelegate.fetchProperties.apply(this, arguments);
-		return oODataProps.then(function (aProperties) {
 
+		const oFilterSettings = {
+			"name": { "valueHelp": "fhName" },
+			"dateOfBirth": { "valueHelp": "fhAdob", "operators": ["RENAISSANCE", "MEDIEVAL", "MODERN", "CUSTOMRANGE", "NOTINRANGE"] },
+			"dateOfDeath": {maxConditions: 1},
+			"cityOfOrigin_city": { "valueHelp": "IOFFVHCity", "display": FieldDisplay.ValueDescription},
+			"countryOfOrigin_code": { "valueHelp": "IOFFVHCountry", "display": FieldDisplay.ValueDescription},
+			"regionOfOrigin_code": { "valueHelp": "IOFFVHRegion", "display": FieldDisplay.ValueDescription}
+		};
+
+		return oODataProps.then(function (aProperties) {
 			// Provide the label for the properties which are the same on the xml view. so that the column header and p13n dialog has the same names.
-			// Provide the fieldHelp for some of the properties. Without fieldHelp the filter panel will not provide the expected VH.
-			// TODO fieldHelp is not a supported property of the table propertyHelper and we will get warning logn in the console.
-			aProperties.forEach(function(oProperty){
+			// Provide the ValueHelp for some of the properties. Without ValueHelp the filter panel will not provide the expected VH.
+			// TODO ValueHelp is not a supported property of the table propertyHelper and we will get warning logn in the console.
+			aProperties.forEach(function(oProperty) {
 				if (oProperty.name === "ID") {
-					oProperty.typeConfig.typeInstance = new Int32Type({groupingEnabled: false}, {nullable: false});
+					// oProperty.dataType = new Int32Type({groupingEnabled: false}, {nullable: false});
+					oProperty.formatOptions = {groupingEnabled: false};
+					oProperty.constraints.nullable = false;
 				} else if (oProperty.name === "countryOfOrigin_code") {
 					oProperty.visualSettings = {widthCalculation: {minWidth: 15}}; // as the Name is shown
 				} else if (oProperty.name === "regionOfOrigin_code") {
 					oProperty.visualSettings = {widthCalculation: {minWidth: 15}}; // as the Name is shown
 				} else if (oProperty.name === "cityOfOrigin_city") {
 					oProperty.visualSettings = {widthCalculation: {minWidth: 15}}; // as the Name is shown
+				} else if (oProperty.name === "createdAt") {
+					oProperty.maxConditions = 1;
+				}
+
+				if (oProperty.maxConditions === -1 ) {
+					const oCurrentSettings = DelegateCache.get(oTable, oProperty.name) || oFilterSettings[oProperty.name] || {};
+					if (!oCurrentSettings.valueHelp) {
+						oFilterSettings[oProperty.name] = {...oCurrentSettings, valueHelp: "FVH_Generic_Multi"};
+					}
 				}
 			});
+
+			DelegateCache.add(oTable, oFilterSettings, "$Filters");
+			DelegateCache.add(oTable, {
+				"countryOfOrigin_code": {display: FieldDisplay.Description, additionalValue: "{countryOfOrigin/descr}"},
+				"regionOfOrigin_code": {display: FieldDisplay.Description, additionalValue: "{regionOfOrigin/text}"},
+				"cityOfOrigin_city": {display: FieldDisplay.Description, additionalValue: "{cityOfOrigin/text}"}
+			}, "$Columns");
 
 			return aProperties;
 		});
@@ -43,8 +63,8 @@ sap.ui.define([
 
 	AuthorsTableDelegate.getFilterDelegate = function() {
 		return {
-			addItem: function(sPropertyName, oTable) {
-				return AuthorsFBDelegate.addItem(sPropertyName, oTable)
+			addItem: function(oTable, sPropertyName) {
+				return AuthorsFBDelegate.addItem(oTable, sPropertyName)
 				.then(function(oFilterField) {
 
 					var oProp = oTable.getPropertyHelper().getProperty(sPropertyName);
@@ -55,26 +75,6 @@ sap.ui.define([
 					oFilterField.setDataTypeConstraints(oConstraints);
 					oFilterField.setDataTypeFormatOptions(oFormatOptions);
 
-					if (sPropertyName === "name") {
-						oFilterField.setFieldHelp(getFullId(oTable, "fhName"));
-					} else if (sPropertyName === "dateOfBirth") {
-						oFilterField.setFieldHelp(getFullId(oTable, "fhAdob"));
-					} else if (sPropertyName === "dateOfDeath") {
-						oFilterField.setMaxConditions(1);
-					} else if (sPropertyName === "countryOfOrigin_code") {
-						oFilterField.setFieldHelp(getFullId(oTable, "IOFFVHCountry"));
-						oFilterField.setDisplay(FieldDisplay.ValueDescription);
-					} else if (sPropertyName === "regionOfOrigin_code") {
-						oFilterField.setFieldHelp(getFullId(oTable, "IOFFVHRegion"));
-						oFilterField.setDisplay(FieldDisplay.ValueDescription);
-					} else if (sPropertyName === "cityOfOrigin_city") {
-						oFilterField.setFieldHelp(getFullId(oTable, "IOFFVHCity"));
-						oFilterField.setDisplay(FieldDisplay.ValueDescription);
-					}
-
-					if (oFilterField.getMaxConditions() === -1 && !oFilterField.getFieldHelp()) {
-						oFilterField.setFieldHelp(getFullId(oTable, "FVH_Generic_Multi"));
-					}
 					return oFilterField;
 				});
 			}
@@ -83,29 +83,20 @@ sap.ui.define([
 
 	AuthorsTableDelegate._createColumnTemplate = function (oTable, oProperty) {
 
-		var oCtrlProperties = {
-			id: getFullId(oTable, "F_" + oProperty.name),
-			value: {path: oProperty.path || oProperty.name, type: oProperty.typeConfig.typeInstance},
-			editMode: EditMode.Display,
-			width:"100%",
-			multipleLines: false // set always to have property not initial
-		};
 
-		if (oProperty.name === "countryOfOrigin_code") {
-			oCtrlProperties.additionalValue = "{countryOfOrigin/descr}";
-			oCtrlProperties.display = FieldDisplay.Description;
-		} else if (oProperty.name === "regionOfOrigin_code") {
-			oCtrlProperties.additionalValue = "{regionOfOrigin/text}";
-			oCtrlProperties.display = FieldDisplay.Description;
-		} else if (oProperty.name === "cityOfOrigin_city") {
-			oCtrlProperties.additionalValue = "{cityOfOrigin/text}";
-			oCtrlProperties.display = FieldDisplay.Description;
-		}
+		var oCtrlProperties = DelegateCache.merge({
+			id: "F_" + oProperty.name,
+			value: {path: oProperty.path || oProperty.name, type: oProperty.typeConfig.typeInstance},
+			editMode: FieldEditMode.Display,
+			width:"100%",
+			multipleLines: false, // set always to have property not initial,
+			delegate: {name: 'delegates/odata/v4/FieldBaseDelegate', payload: {}}
+		}, DelegateCache.get(oTable, oProperty.name, "$Columns"));
 
 		return new Field(oCtrlProperties);
 	};
 
-	AuthorsTableDelegate.addItem = function (sPropertyName, oTable, mPropertyBag) {
+	AuthorsTableDelegate.addItem = function (oTable, sPropertyName, mPropertyBag) {
 		return ODataTableDelegate.addItem.apply(this, arguments).then(function (oColumn) {
 			var oProperty = oTable.getPropertyHelper().getProperty(sPropertyName);
 

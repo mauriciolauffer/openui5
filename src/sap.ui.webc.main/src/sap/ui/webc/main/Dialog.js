@@ -4,11 +4,15 @@
 
 // Provides control sap.ui.webc.main.Dialog.
 sap.ui.define([
-	"sap/ui/webc/common/WebComponent",
+	"sap/ui/core/webc/WebComponent",
 	"./library",
+	"sap/ui/core/library",
 	"./thirdparty/Dialog"
-], function(WebComponent, library) {
+], function(WebComponent, library, coreLibrary) {
 	"use strict";
+
+	var ValueState = coreLibrary.ValueState;
+	var PopupAccessibleRole = library.PopupAccessibleRole;
 
 	/**
 	 * Constructor for a new <code>Dialog</code>.
@@ -16,12 +20,12 @@ sap.ui.define([
 	 * @param {string} [sId] ID for the new control, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new control
 	 *
-	 * @extends sap.ui.webc.common.WebComponent
+	 * @extends sap.ui.core.webc.WebComponent
 	 * @class
 	 *
 	 * <h3>Overview</h3> The <code>sap.ui.webc.main.Dialog</code> component is used to temporarily display some information in a size-limited window in front of the regular app screen. It is used to prompt the user for an action or a confirmation. The <code>sap.ui.webc.main.Dialog</code> interrupts the current app processing as it is the only focused UI element and the main screen is dimmed/blocked. The dialog combines concepts known from other technologies where the windows have names such as dialog box, dialog window, pop-up, pop-up window, alert box, or message box. <br>
 	 * <br>
-	 * The <code>sap.ui.webc.main.Dialog</code> is modal, which means that user action is required before returning to the parent window is possible. The content of the <code>sap.ui.webc.main.Dialog</code> is fully customizable.
+	 * The <code>sap.ui.webc.main.Dialog</code> is modal, which means that an user action is required before it is possible to return to the parent window. To open multiple dialogs, each dialog element should be separate in the markup. This will ensure the correct modal behavior. Avoid nesting dialogs within each other. The content of the <code>sap.ui.webc.main.Dialog</code> is fully customizable.
 	 *
 	 * <h3>Structure</h3> A <code>sap.ui.webc.main.Dialog</code> consists of a header, content, and a footer for action buttons. The <code>sap.ui.webc.main.Dialog</code> is usually displayed at the center of the screen. Its position can be changed by the user. To enable this, you need to set the property <code>draggable</code> accordingly.
 	 *
@@ -35,7 +39,8 @@ sap.ui.define([
 	 *     <li>header - Used to style the header of the component</li>
 	 *     <li>content - Used to style the content of the component</li>
 	 *     <li>footer - Used to style the footer of the component</li>
-	 * </ul>
+	 * </ul> <b>Note:</b> When a <code>ui5-bar</code> is used in the header or in the footer, you should remove the default dialog's paddings. <br>
+	 * For more information see the sample "Bar in Header/Footer".
 	 *
 	 *
 	 *
@@ -63,13 +68,23 @@ sap.ui.define([
 				 */
 				accessibleName: {
 					type: "string",
-					defaultValue: ""
+					defaultValue: undefined
+				},
+
+				/**
+				 * Allows setting a custom role.
+				 */
+				accessibleRole: {
+					type: "sap.ui.webc.main.PopupAccessibleRole",
+					defaultValue: PopupAccessibleRole.Dialog
 				},
 
 				/**
 				 * Determines whether the component is draggable. If this property is set to true, the Dialog will be draggable by its header. <br>
 				 * <br>
-				 * <b>Note:</b> The component can be draggable only in desktop mode.
+				 * <b>Note:</b> The component can be draggable only in desktop mode. <br>
+				 * <br>
+				 * <b>Note:</b> This property overrides the default HTML "draggable" attribute native behavior. When "draggable" is set to true, the native browser "draggable" behavior is prevented and only the Dialog custom logic ("draggable by its header") works.
 				 */
 				draggable: {
 					type: "boolean",
@@ -122,6 +137,15 @@ sap.ui.define([
 				},
 
 				/**
+				 * Defines the state of the <code>Dialog</code>. <br>
+				 * <b>Note:</b> If <code>"Error"</code> and <code>"Warning"</code> state is set, it will change the accessibility role to "alertdialog", if the accessibleRole property is set to <code>"Dialog"</code>.
+				 */
+				state: {
+					type: "sap.ui.core.ValueState",
+					defaultValue: ValueState.None
+				},
+
+				/**
 				 * Determines whether the component should be stretched to fullscreen. <br>
 				 * <br>
 				 * <b>Note:</b> The component will be stretched to approximately 90% of the viewport.
@@ -151,7 +175,9 @@ sap.ui.define([
 				},
 
 				/**
-				 * Defines the footer HTML Element.
+				 * Defines the footer HTML Element. <br>
+				 * <br>
+				 * <b>Note:</b> When a <code>ui5-bar</code> is used in the footer, you should remove the default dialog's paddings.
 				 */
 				footer: {
 					type: "sap.ui.core.Control",
@@ -161,6 +187,8 @@ sap.ui.define([
 
 				/**
 				 * Defines the header HTML Element. <br>
+				 * <br>
+				 * <b>Note:</b> When a <code>ui5-bar</code> is used in the header, you should remove the default dialog's paddings. <br>
 				 * <br>
 				 * <b>Note:</b> If <code>header</code> slot is provided, the labelling of the dialog is a responsibility of the application developer. <code>accessibleName</code> should be used.
 				 */
@@ -249,7 +277,7 @@ sap.ui.define([
 	 */
 
 	/**
-	 * Hides the block layer (for modal popups only)
+	 * Closes the popup.
 	 * @public
 	 * @name sap.ui.webc.main.Dialog#close
 	 * @function

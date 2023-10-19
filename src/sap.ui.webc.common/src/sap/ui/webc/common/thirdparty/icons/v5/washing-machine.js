@@ -6,7 +6,7 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
   });
   _exports.pathData = _exports.ltr = _exports.default = _exports.accData = void 0;
   const name = "washing-machine";
-  const pathData = "M416 0q35 0 57.5 23T496 80v320q0 34-22.5 57T416 480H96q-34 0-57-23t-23-57V80q0-34 23-57T96 0h320zm27 80q0-12-7.5-19.5T416 53H96q-12 0-19 7.5T70 80v320q0 12 7 19.5t19 7.5h320q12 0 19.5-7.5T443 400V80zm-187 80q22 0 41.5 8.5t34 23 23 34T363 267t-8.5 41-23 33.5-34 23T256 373t-41-8.5-33.5-23-23-33.5-8.5-41 8.5-41.5 23-34 33.5-23 41-8.5zm0 160q23 0 38.5-15.5T310 267q0-23-15.5-38.5T256 213q-22 0-37.5 15.5T203 267q0 22 15.5 37.5T256 320zM371 88q17 0 28.5 11.5T411 128t-11.5 28.5T371 168t-28.5-11.5T331 128t11.5-28.5T371 88z";
+  const pathData = "M391 480H122q-38 0-64-26t-26-64V121q0-37 26-63t64-26h269q37 0 63 26t26 63v269q0 38-26 64t-63 26zM122 83q-17 0-28 11t-11 27v269q0 17 11 28t28 11h269q16 0 27-11t11-28V121q0-16-11-27t-27-11H122zm262 77q0 14-9 23t-23 9-23-9-9-23 9-23 23-9 23 9 9 23zM256 384q-40 0-68-28t-28-68 28-68 68-28 68 28 28 68-28 68-68 28zm0-141q-19 0-32 13t-13 32 13 32 32 13 32-13 13-32-13-32-32-13z";
   _exports.pathData = pathData;
   const ltr = false;
   _exports.ltr = ltr;
@@ -20,6 +20,6 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
     collection,
     packageName
   });
-  var _default = "washing-machine";
+  var _default = "SAP-icons-v5/washing-machine";
   _exports.default = _default;
 });

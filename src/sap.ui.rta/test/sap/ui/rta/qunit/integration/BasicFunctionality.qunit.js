@@ -12,7 +12,9 @@ sap.ui.define([
 	"sap/ui/qunit/QUnitUtils",
 	"sap/ui/events/KeyCodes",
 	"sap/ui/thirdparty/sinon-4",
-	"sap/ui/core/Core"
+	"sap/ui/qunit/utils/nextUIUpdate",
+	"sap/ui/core/Element",
+	"sap/ui/core/EventBus"
 ], function(
 	RuntimeAuthoring,
 	Stack,
@@ -25,13 +27,15 @@ sap.ui.define([
 	QUnitUtils,
 	KeyCodes,
 	sinon,
-	oCore
+	nextUIUpdate,
+	Element,
+	EventBus
 ) {
 	"use strict";
 
 	var sandbox = sinon.createSandbox();
 
-	QUnit.done(function () {
+	QUnit.done(function() {
 		QUnit.config.fixture = "";
 		document.getElementById("qunit-fixture").style.display = "none";
 	});
@@ -41,18 +45,18 @@ sap.ui.define([
 	var oCompCont;
 
 	var oComponentPromise = RtaQunitUtils.renderTestAppAtAsync("qunit-fixture")
-		.then(function(oCompContainer) {
-			oCompCont = oCompContainer;
-		});
+	.then(function(oCompContainer) {
+		oCompCont = oCompContainer;
+	});
 
 	QUnit.module("Given RTA is started...", {
-		before: function () {
+		before() {
 			return oComponentPromise;
 		},
-		beforeEach: function() {
-			this.oField = oCore.byId("Comp1---idMain1--GeneralLedgerDocument.CompanyCode");
-			this.oGroup = oCore.byId("Comp1---idMain1--Dates");
-			this.oForm = oCore.byId("Comp1---idMain1--MainForm");
+		beforeEach() {
+			this.oField = Element.getElementById("Comp1---idMain1--GeneralLedgerDocument.CompanyCode");
+			this.oGroup = Element.getElementById("Comp1---idMain1--Dates");
+			this.oForm = Element.getElementById("Comp1---idMain1--MainForm");
 
 			this.oCommandStack = new Stack();
 
@@ -62,18 +66,18 @@ sap.ui.define([
 			});
 
 			return RtaQunitUtils.clear()
-			.then(this.oRta.start.bind(this.oRta)).then(function () {
+			.then(this.oRta.start.bind(this.oRta)).then(function() {
 				this.oFieldOverlay = OverlayRegistry.getOverlay(this.oField);
 				this.oGroupOverlay = OverlayRegistry.getOverlay(this.oGroup);
 			}.bind(this));
 		},
-		afterEach: function() {
+		afterEach() {
 			this.oRta.destroy();
 			this.oCommandStack.destroy();
 			sandbox.restore();
 			return RtaQunitUtils.clear();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("when removing a group using a command stack API", function(assert) {
 			var iFiredCounter = 0;
 			this.oRta.attachUndoRedoStackModified(function() {
@@ -91,8 +95,8 @@ sap.ui.define([
 				return this.oCommandStack.pushAndExecute(oRemoveCommand);
 			}.bind(this))
 
-			.then(function() {
-				oCore.applyChanges();
+			.then(async function() {
+				await nextUIUpdate();
 				assert.strictEqual(this.oGroup.getVisible(), false, "then group is hidden...");
 				assert.strictEqual(this.oRta.canUndo(), true, "after any change undo is possible");
 				assert.strictEqual(this.oRta.canRedo(), false, "after any change no redo is possible");
@@ -101,8 +105,8 @@ sap.ui.define([
 
 			.then(this.oCommandStack.undo.bind(this.oCommandStack))
 
-			.then(function() {
-				oCore.applyChanges();
+			.then(async function() {
+				await nextUIUpdate();
 				assert.strictEqual(this.oGroup.getVisible(), true, "when the undo is called, then the group is visible again");
 				assert.strictEqual(this.oRta.canUndo(), false, "after reverting a change undo is not possible");
 				assert.strictEqual(this.oRta.canRedo(), true, "after reverting a change redo is possible");
@@ -110,14 +114,14 @@ sap.ui.define([
 
 			.then(this.oRta.redo.bind(this.oRta))
 
-			.then(function() {
-				oCore.applyChanges();
+			.then(async function() {
+				await nextUIUpdate();
 				assert.strictEqual(this.oGroup.getVisible(), false, "when the redo is called, then the group is not visible again");
 				assert.strictEqual(iFiredCounter, 3, "undoRedoStackModified event of RTA is fired 3 times");
 			}.bind(this))
 
-			.catch(function (oError) {
-				assert.ok(false, "catch must never be called - Error: " + oError);
+			.catch(function(oError) {
+				assert.ok(false, `catch must never be called - Error: ${oError}`);
 			});
 		});
 
@@ -150,17 +154,17 @@ sap.ui.define([
 				assert.strictEqual(this.oForm.getTitle(), oInitialTitle, "when the undo is called, then the form's title is restored");
 			}.bind(this))
 
-			.catch(function (oError) {
-				assert.ok(false, "catch must never be called - Error: " + oError);
+			.catch(function(oError) {
+				assert.ok(false, `catch must never be called - Error: ${oError}`);
 			});
 		});
 	});
 
 	QUnit.module("Given that RuntimeAuthoring based on test-view is available and CTRL-Z/CTRL-Y are pressed...", {
-		before: function () {
+		before() {
 			return oComponentPromise;
 		},
-		beforeEach: function() {
+		beforeEach() {
 			this.bMacintoshOriginal = Device.os.macintosh;
 			Device.os.macintosh = false;
 
@@ -177,18 +181,18 @@ sap.ui.define([
 			});
 
 			return RtaQunitUtils.clear()
-			.then(this.oRta.start.bind(this.oRta)).then(function () {
+			.then(this.oRta.start.bind(this.oRta)).then(function() {
 				this.oRootControlOverlay = OverlayRegistry.getOverlay(oRootControl);
-				this.oElementOverlay = OverlayRegistry.getOverlay(oCore.byId("Comp1---idMain1--GeneralLedgerDocument.CompanyCode"));
+				this.oElementOverlay = OverlayRegistry.getOverlay(Element.getElementById("Comp1---idMain1--GeneralLedgerDocument.CompanyCode"));
 			}.bind(this));
 		},
-		afterEach: function () {
+		afterEach() {
 			sandbox.restore();
 			this.oRta.destroy();
 			Device.os.macintosh = this.bMacintoshOriginal;
 			return RtaQunitUtils.clear();
 		}
-	}, function () {
+	}, function() {
 		QUnit.test("with focus on an overlay", function(assert) {
 			this.oElementOverlay.getDomRef().focus();
 
@@ -214,24 +218,24 @@ sap.ui.define([
 			this.oElementOverlay.focus();
 			this.oElementOverlay.setSelected(true);
 
-			return RtaQunitUtils.openContextMenuWithKeyboard.call(this, this.oElementOverlay, sinon).then(function() {
+			return RtaQunitUtils.openContextMenuWithKeyboard.call(this, this.oElementOverlay, sinon).then(async function() {
 				var clock = sinon.useFakeTimers();
-				var oMenu = this.oRta.getPlugins()["contextMenu"].oContextMenuControl;
+				var oMenu = this.oRta.getPlugins().contextMenu.oContextMenuControl;
 				oMenu.getItems()[1].setEnabled(true);
 				QUnitUtils.triggerEvent("click", oMenu._getVisualParent().getItems()[1].getDomRef());
 				clock.tick(1000);
-				oCore.applyChanges();
+				await nextUIUpdate();
 				clock.restore();
 
-				var oDialog = this.oRta.getPlugins()["additionalElements"].getDialog();
-				oDialog.attachOpened(function() {
+				var oDialog = this.oRta.getPlugins().additionalElements.getDialog();
+				oDialog.attachOpened(async function() {
 					QUnitUtils.triggerKeydown(document, KeyCodes.Z, false, false, true);
 					assert.equal(this.fnUndoSpy.callCount, 0, "then _onUndo was not called");
 					QUnitUtils.triggerKeydown(document, KeyCodes.Y, false, false, true);
 					assert.equal(this.fnRedoSpy.callCount, 0, "then _onRedo was not called");
-					var oOkButton = oCore.byId(oDialog.getId() + "--" + "rta_addDialogOkButton");
+					var oOkButton = Element.getElementById(`${oDialog.getId()}--` + `rta_addDialogOkButton`);
 					QUnitUtils.triggerEvent("tap", oOkButton.getDomRef());
-					oCore.applyChanges();
+					await nextUIUpdate();
 					done();
 				}.bind(this));
 			}.bind(this));
@@ -239,7 +243,7 @@ sap.ui.define([
 
 		QUnit.test("during rename", function(assert) {
 			var fnDone = assert.async();
-			oCore.getEventBus().subscribeOnce("sap.ui.rta", "plugin.Rename.startEdit", function (sChannel, sEvent, mParams) {
+			EventBus.getInstance().subscribeOnce("sap.ui.rta", "plugin.Rename.startEdit", function(sChannel, sEvent, mParams) {
 				if (mParams.overlay === this.oElementOverlay) {
 					QUnitUtils.triggerKeydown(document, KeyCodes.Z, false, false, true);
 					assert.equal(this.fnUndoSpy.callCount, 0, "then _onUndo was not called");
@@ -252,12 +256,12 @@ sap.ui.define([
 
 			this.oElementOverlay.focus();
 			this.oElementOverlay.setSelected(true);
-			return RtaQunitUtils.openContextMenuWithKeyboard.call(this, this.oElementOverlay, sinon).then(function() {
+			return RtaQunitUtils.openContextMenuWithKeyboard.call(this, this.oElementOverlay, sinon).then(async function() {
 				var clock = sinon.useFakeTimers();
-				var oMenu = this.oRta.getPlugins()["contextMenu"].oContextMenuControl;
+				var oMenu = this.oRta.getPlugins().contextMenu.oContextMenuControl;
 				QUnitUtils.triggerEvent("click", oMenu._getVisualParent().getItems()[0].getDomRef());
 				clock.tick(1000);
-				oCore.applyChanges();
+				await nextUIUpdate();
 				clock.restore();
 			}.bind(this));
 		});

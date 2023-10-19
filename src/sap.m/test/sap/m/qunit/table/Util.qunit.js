@@ -1,5 +1,6 @@
 sap.ui.define([
 	"sap/ui/core/Core",
+	"sap/ui/core/Theming",
 	"sap/m/List",
 	"sap/m/table/Util",
 	"sap/ui/core/theming/Parameters",
@@ -7,6 +8,7 @@ sap.ui.define([
 	"sap/ui/model/odata/type/Byte",
 	"sap/ui/model/odata/type/DateTime",
 	"sap/ui/model/odata/type/DateTime",
+	"sap/ui/model/odata/type/DateTimeWithTimezone",
 	"sap/ui/model/odata/type/Decimal",
 	"sap/ui/model/odata/type/Double",
 	"sap/ui/model/odata/type/Single",
@@ -17,8 +19,9 @@ sap.ui.define([
 	"sap/ui/model/odata/type/SByte",
 	"sap/ui/model/odata/type/String",
 	"sap/ui/model/odata/type/Time",
-	"sap/ui/model/odata/type/TimeOfDay"
-], function(Core, List, Util, ThemeParameters, BooleanType, Byte, DateType, DateTime, Decimal, Double, Single, Guid, Int16, Int32, Int64, SByte, StringType, Time, TimeOfDay) {
+	"sap/ui/model/odata/type/TimeOfDay",
+	"sap/ui/core/InvisibleMessage"
+], function(Core, Theming, List, Util, ThemeParameters, BooleanType, Byte, DateType, DateTime, DateTimeWithTimezone, Decimal, Double, Single, Guid, Int16, Int32, Int64, SByte, StringType, Time, TimeOfDay, InvisibleMessage) {
 	"use strict";
 	/* global QUnit,sinon */
 
@@ -39,15 +42,15 @@ sap.ui.define([
 	}
 
 	QUnit.test("measureText", function(assert) {
-		var oThemeParametersStub, fSizeBeforeThemeChanged;
+		var oThemeParametersStub, fSizeBeforeNewThemeApplied;
 		var done = assert.async();
-		var fnThemeChanged = function() {
-			var fSizeAfterThemeChanged = Util.measureText("Text");
-			assert.ok(fSizeAfterThemeChanged > fSizeBeforeThemeChanged);
+		var fnNewThemeApplied = function() {
+			var fSizeAfterNewThemeApplied = Util.measureText("Text");
+			assert.ok(fSizeAfterNewThemeApplied > fSizeBeforeNewThemeApplied);
 
 			oThemeParametersStub.restore();
-			Core.detachThemeChanged(fnThemeChanged);
-			Core.notifyContentDensityChanged();
+			Theming.detachApplied(fnNewThemeApplied);
+			Theming.notifyContentDensityChanged();
 			done();
 		};
 		assert.ok(Util.measureText("aaa") > Util.measureText("aa"));
@@ -57,33 +60,33 @@ sap.ui.define([
 		assert.ok(Util.measureText("0") < Util.measureText("0", "bold 16px Arial"));
 		assert.ok(Util.measureText("w", "12px Arial") > Util.measureText("w", "10px Arial"));
 
-		fSizeBeforeThemeChanged = Util.measureText("Text");
+		fSizeBeforeNewThemeApplied = Util.measureText("Text");
 
 		oThemeParametersStub = sinon.stub(ThemeParameters, "get");
 		oThemeParametersStub.withArgs({ name: "sapMFontMediumSize" }).returns("1rem");
 		oThemeParametersStub.withArgs({ name: "sapUiFontFamily" }).returns("Helvetica");
-		Core.attachThemeChanged(fnThemeChanged);
-		Core.notifyContentDensityChanged();
+		Theming.notifyContentDensityChanged();
+		Theming.attachApplied(fnNewThemeApplied);
 	});
 
 	QUnit.test("calcTypeWidth - Boolean", function(assert) {
 		var done = assert.async();
 		var oThemeParametersStub = sinon.stub(ThemeParameters, "get");
-		var fnThemeChanged = function() {
-			assert.ok(Util.calcTypeWidth(new BooleanType()) > fYesBeforeThemeChanged);
+		var fYesBeforeNewThemeApplied = Util.measureText("Yes");
+		var fnNewThemeApplied = function() {
+			assert.ok(Util.calcTypeWidth(new BooleanType()) > fYesBeforeNewThemeApplied);
 
 			oThemeParametersStub.restore();
-			Core.detachThemeChanged(fnThemeChanged);
-			Core.notifyContentDensityChanged();
+			Theming.detachApplied(fnNewThemeApplied);
+			Theming.notifyContentDensityChanged();
 			done();
 		};
-		var fYesBeforeThemeChanged = Util.measureText("Yes");
-		assert.equal(Util.calcTypeWidth(new BooleanType()), fYesBeforeThemeChanged);
+		assert.equal(Util.calcTypeWidth(new BooleanType()), fYesBeforeNewThemeApplied);
 
 		oThemeParametersStub.withArgs({ name: "sapMFontMediumSize" }).returns("1rem");
 		oThemeParametersStub.withArgs({ name: "sapUiFontFamily" }).returns("Arial");
-		Core.attachThemeChanged(fnThemeChanged);
-		Core.notifyContentDensityChanged();
+		Theming.notifyContentDensityChanged();
+		Theming.attachApplied(fnNewThemeApplied);
 	});
 
 	QUnit.test("calcTypeWidth - String", function(assert) {
@@ -117,7 +120,14 @@ sap.ui.define([
 
 		assert.ok(Util.calcTypeWidth(new DateTime()) > Util.calcTypeWidth(new Time()) + Util.calcTypeWidth(new DateType(null, { displayFormat : "Date" })));
 
-		assert.equal(Util.calcTypeWidth(new TimeOfDay()), Util.measureText("10:47:58 PM"));
+		// \u202f is a Narrow No-Break Space which has been introduced with CLDR version 43
+		assert.equal(Util.calcTypeWidth(new TimeOfDay()), Util.measureText("10:47:58\u202fPM"));
+
+		assert.ok(Util.calcTypeWidth(new DateTimeWithTimezone()) > Util.calcTypeWidth(new DateTime()), "Column with timezone has a higher width");
+		assert.ok(Util.calcTypeWidth(new DateTimeWithTimezone()) > Util.calcTypeWidth(new DateTimeWithTimezone({
+			showDate: false,
+			showTime: false
+		})), "Column with timezone has a higher width");
 	});
 
 	QUnit.test("calcTypeWidth - Numeric", function(assert) {
@@ -148,15 +158,15 @@ sap.ui.define([
 	});
 
 	QUnit.test("calcHeaderWidth", function(assert) {
-		var fSizeBeforeThemeChanged, fSizeAfterThemeChanged, oThemeParametersStub;
+		var fSizeBeforeNewThemeApplied, fSizeAfterNewThemeApplied, oThemeParametersStub;
 		var done = assert.async();
-		var fnThemeChanged = function() {
-			fSizeAfterThemeChanged = Util.calcHeaderWidth("Some Long Header Text", 9);
-			assert.ok(fSizeAfterThemeChanged > fSizeBeforeThemeChanged);
+		var fnNewThemeApplied = function() {
+			fSizeAfterNewThemeApplied = Util.calcHeaderWidth("Some Long Header Text", 9);
+			assert.ok(fSizeAfterNewThemeApplied > fSizeBeforeNewThemeApplied);
 
 			oThemeParametersStub.restore();
-			Core.detachThemeChanged(fnThemeChanged);
-			Core.notifyContentDensityChanged();
+			Theming.detachApplied(fnNewThemeApplied);
+			Theming.notifyContentDensityChanged();
 			done();
 		};
 		var sFontRequired = ThemeParameters.get({ name: "sapMFontLargeSize" }) || "normal";
@@ -171,14 +181,14 @@ sap.ui.define([
 		assert.ok(Util.calcHeaderWidth("A".repeat(100), 10) > Util.calcHeaderWidth("A".repeat(100), 5));
 		assert.ok(Util.calcHeaderWidth("A".repeat(25), 15) > Util.calcHeaderWidth("A".repeat(20), 15));
 
-		fSizeBeforeThemeChanged = Util.calcHeaderWidth("Some Long Header Text", 9);
+		fSizeBeforeNewThemeApplied = Util.calcHeaderWidth("Some Long Header Text", 9);
 
 		oThemeParametersStub = sinon.stub(ThemeParameters, "get");
 		oThemeParametersStub.withArgs({ name: "sapMFontMediumSize" }).returns("0.875rem");
 		oThemeParametersStub.withArgs({ name: "sapUiFontFamily" }).returns("Arial");
 		oThemeParametersStub.withArgs({ name: "sapUiColumnHeaderFontWeight" }).returns("bold");
-		Core.attachThemeChanged(fnThemeChanged);
-		Core.notifyContentDensityChanged();
+		Theming.notifyContentDensityChanged();
+		Theming.attachApplied(fnNewThemeApplied);
 	});
 
 	QUnit.test("calcColumnWidth", function(assert) {
@@ -243,6 +253,70 @@ sap.ui.define([
 				done();
 			});
 		});
+	});
+
+	QUnit.test("announceTableUpdate", function(assert) {
+		var oRb = Core.getLibraryResourceBundle("sap.m"),
+			sText = "Testing Text",
+			fnInvisibleMessageAnnounce = sinon.spy(InvisibleMessage.prototype, "announce");
+
+		// rowCount - undefined
+		Util.announceTableUpdate(sText);
+		assert.ok(fnInvisibleMessageAnnounce.calledWith(oRb.getText("table.ANNOUNCEMENT_TABLE_UPDATED", [sText])), "Row count was not announced");
+
+		// rowCount > 1
+		var iRowCount = 10;
+		Util.announceTableUpdate(sText, iRowCount);
+		assert.ok(fnInvisibleMessageAnnounce.calledWith(oRb.getText("table.ANNOUNCEMENT_TABLE_UPDATED_MULT", [sText, iRowCount])), "Multiple updated rows were announced");
+
+		// rowCount == 1
+		iRowCount = 1;
+		Util.announceTableUpdate(sText, iRowCount);
+		assert.ok(fnInvisibleMessageAnnounce.calledWith(oRb.getText("table.ANNOUNCEMENT_TABLE_UPDATED_SING", [sText, iRowCount])), "Row update was announced");
+
+		// rowCount == 0
+		iRowCount = 0;
+		Util.announceTableUpdate(sText, iRowCount);
+		assert.ok(fnInvisibleMessageAnnounce.calledWith(oRb.getText("table.ANNOUNCEMENT_TABLE_UPDATED_NOITEMS", [sText])), "No updated items was announced");
+
+		fnInvisibleMessageAnnounce.restore();
+	});
+
+	QUnit.test("isEmpty", function(assert) {
+		var iLength = 0,
+			sType = "",
+			bIsFinal = true;
+		var oRowBinding = {
+			getLength: function() { return iLength; },
+			isA: function(sClass) { return sType == sClass; },
+			isLengthFinal: function() { return bIsFinal; }
+		};
+
+		assert.ok(Util.isEmpty(oRowBinding), "Row binding is empty");
+
+		// bConsiderTotal - false, not AnalyticalBinding
+		iLength = 10;
+		assert.notOk(Util.isEmpty(oRowBinding), "Row binding is not empty");
+
+		// bConsiderTotal - false, AnalyticalBinding. Provides no grand total and has totaled measures.
+		sType = "sap.ui.model.analytics.AnalyticalBinding";
+		oRowBinding.providesGrandTotal = function() {
+			return false;
+		};
+		oRowBinding.hasTotaledMeasures = function() { return false; };
+
+		assert.notOk(Util.isEmpty(oRowBinding), "Row binding is not empty");
+
+		// bConsiderTotal - false, AnalyticalBinding. Only grand total is available.
+		iLength = 1;
+		oRowBinding.providesGrandTotal = function() {
+			return true;
+		};
+		oRowBinding.hasTotaledMeasures = function() {
+			return true;
+		};
+
+		assert.ok(Util.isEmpty(oRowBinding), "Row binding is empty");
 	});
 
 });

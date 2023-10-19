@@ -3,29 +3,29 @@
  */
 sap.ui.define([
 	"sap/m/library",
-	"sap/ui/mdc/enum/ContentMode"
+	"sap/ui/mdc/enums/ContentMode"
 ], function(
 	mLibrary,
 	ContentMode
 ) {
 	"use strict";
 
-	var EmptyIndicatorMode = mLibrary.EmptyIndicatorMode;
-	var TokenizerRenderMode = mLibrary.TokenizerRenderMode;
+	const EmptyIndicatorMode = mLibrary.EmptyIndicatorMode;
+	const TokenizerRenderMode = mLibrary.TokenizerRenderMode;
 
 	/**
 	 * Object-based definition of the default content type that is used in the {@link sap.ui.mdc.field.content.ContentFactory}.
 	 * Default content can be overwritten to create new content types.
-	 * This defines which controls to load and create for a given {@link sap.ui.mdc.enum.ContentMode}.
+	 * This defines which controls to load and create for a given {@link sap.ui.mdc.enums.ContentMode}.
+	 * @namespace
 	 * @author SAP SE
 	 * @private
 	 * @ui5-restricted sap.ui.mdc
 	 * @experimental As of version 1.87
 	 * @since 1.87
 	 * @alias sap.ui.mdc.field.content.DefaultContent
-	 * @MDC_PUBLIC_CANDIDATE
 	 */
-	var DefaultContent = {
+	const DefaultContent = {
 		getDisplay: function() {
 			return ["sap/m/Text"];
 		},
@@ -53,17 +53,17 @@ sap.ui.define([
 		getUseDefaultEnterHandler: function() {
 			return true;
 		},
-		getUseDefaultFieldHelp: function() {
+		getUseDefaultValueHelp: function() {
 			return { name: "defineConditions", oneOperatorSingle: false, oneOperatorMulti: false, single: true, multi: true };
 		},
 		/**
-		 * Determines which controls to return for a given {@link sap.ui.mdc.enum.ContentMode}.
-		 * @param {sap.ui.mdc.enum.ContentMode} sContentMode The given content mode
+		 * Determines which controls to return for a given {@link sap.ui.mdc.enums.ContentMode}.
+		 * @param {sap.ui.mdc.enums.ContentMode} sContentMode The given content mode
 		 * @param {string} sOperator Name of the operator if the <code>EditOperator</code> content mode is used
 		 * @returns {string[]} aControlNames Names of the determined controls
 		 */
 		getControlNames: function(sContentMode, sOperator) {
-			var aControlNames;
+			let aControlNames;
 			switch (sContentMode) {
 				case ContentMode.Display:
 					aControlNames = this.getDisplay();
@@ -99,8 +99,8 @@ sap.ui.define([
 			throw new Error("No control defined for content mode " + sContentMode);
 		},
 		/**
-		 * Determines if formatting of all conditions to a single value is supported for a {@link sap.ui.mdc.enum.ContentMode}.
-		 * @param {sap.ui.mdc.enum.ContentMode} sContentMode The given content mode
+		 * Determines if formatting of all conditions to a single value is supported for a {@link sap.ui.mdc.enums.ContentMode}.
+		 * @param {sap.ui.mdc.enums.ContentMode} sContentMode The given content mode
 		 * @returns {boolean} If set, the conditions will not be formatted (MultiInput value-property case)
 		 */
 		getNoFormatting: function(sContentMode) {
@@ -113,7 +113,7 @@ sap.ui.define([
 		/**
 		 * Creates the suitable controls for the given content mode and returns the control instances.
 		 * @param {sap.ui.mdc.field.content.ContentFactory} oContentFactory The content factory that calls this function
-		 * @param {sap.ui.mdc.enum.ContentMode} sContentMode a given content mode
+		 * @param {sap.ui.mdc.enums.ContentMode} sContentMode a given content mode
 		 * @param {string} sOperator Name of the operator if the <code>EditOperator</code> content mode is used
 		 * @param {Object[]} aControls Array containing the control classes that are to be created
 		 * @param {string} sId ID of the {@link sap.ui.mdc.field.FieldBase}
@@ -150,9 +150,9 @@ sap.ui.define([
 		 * @returns {sap.ui.core.Control[]} Array containing the created controls
 		 */
 		createEdit: function(oContentFactory, aControlClasses, sId) {
-			var Input = aControlClasses[0];
-			var oConditionsType = oContentFactory.getConditionsType();
-			var oInput = new Input(sId, {
+			const Input = aControlClasses[0];
+			const oConditionsType = oContentFactory.getConditionsType();
+			const oInput = new Input(sId, {
 				value: { path: "$field>/conditions", type: oConditionsType },
 				placeholder: "{$field>/placeholder}",
 				textAlign: "{$field>/textAlign}",
@@ -162,10 +162,11 @@ sap.ui.define([
 				enabled: { path: "$field>/editMode", formatter: oContentFactory.getMetadata()._oClass._getEnabled },
 				valueState: "{$field>/valueState}",
 				valueStateText: "{$field>/valueStateText}",
-				valueHelpIconSrc: oContentFactory.getFieldHelpIcon(),
-				showValueHelp: "{$field>/_fieldHelpEnabled}",
+				valueHelpIconSrc: oContentFactory.getValueHelpIcon(),
+				showValueHelp: "{$field>/_valueHelpEnabled}",
 				ariaAttributes: "{$field>/_ariaAttributes}",
 				width: "100%",
+				// fieldGroupIds: are taken from parent if not automatically set (see Element.prototype._getFieldGroupIds) -> so no binding needed
 				tooltip: "{$field>/tooltip}",
 				autocomplete: false,
 				change: oContentFactory.getHandleContentChange(),
@@ -186,18 +187,18 @@ sap.ui.define([
 		 * @returns {sap.ui.core.Control[]} Array containing the created controls
 		 */
 		createEditMultiValue: function(oContentFactory, aControlClasses, sId) {
-			var Input = aControlClasses[0];
-			var Token = aControlClasses[1];
-			var oConditionType = oContentFactory.getConditionType();
-			var oConditionsType = oContentFactory.getConditionsType();
-			var oToken = new Token(sId + "-token", {
+			const Input = aControlClasses[0];
+			const Token = aControlClasses[1];
+			const oConditionType = oContentFactory.getConditionType();
+			const oConditionsType = oContentFactory.getConditionsType();
+			const oToken = new Token(sId + "-token", {
 				text: {
 					path: '$field>',
 					type: oConditionType
 				}
 			});
 
-			var oMultiInput = new Input(sId, {
+			const oMultiInput = new Input(sId, {
 				value: { path: "$field>/conditions", type: oConditionsType }, // only for parsing
 				placeholder: "{$field>/placeholder}",
 				textAlign: "{$field>/textAlign}",
@@ -207,10 +208,11 @@ sap.ui.define([
 				enabled: { path: "$field>/editMode", formatter: oContentFactory.getMetadata()._oClass._getEnabled },
 				valueState: "{$field>/valueState}",
 				valueStateText: "{$field>/valueStateText}",
-				showValueHelp: "{$field>/_fieldHelpEnabled}",
-				valueHelpIconSrc: oContentFactory.getFieldHelpIcon(),
+				showValueHelp: "{$field>/_valueHelpEnabled}",
+				valueHelpIconSrc: oContentFactory.getValueHelpIcon(),
 				ariaAttributes: "{$field>/_ariaAttributes}",
 				width: "100%",
+				// fieldGroupIds: are taken from parent if not automatically set (see Element.prototype._getFieldGroupIds) -> so no binding needed
 				tooltip: "{$field>/tooltip}",
 				tokens: { path: "$field>/conditions", template: oToken },
 				dependents: [oToken], // to destroy it if MultiInput is destroyed
@@ -235,9 +237,9 @@ sap.ui.define([
 		 * @returns {sap.ui.core.Control[]} Array containing the created controls
 		 */
 		createEditMultiLine: function(oContentFactory, aControlClasses, sId) {
-			var TextArea = aControlClasses[0];
-			var oConditionsType = oContentFactory.getConditionsType();
-			var oTextArea = new TextArea(sId, {
+			const TextArea = aControlClasses[0];
+			const oConditionsType = oContentFactory.getConditionsType();
+			const oTextArea = new TextArea(sId, {
 				value: { path: "$field>/conditions", type: oConditionsType },
 				placeholder: "{$field>/placeholder}",
 				textAlign: "{$field>/textAlign}",
@@ -249,6 +251,7 @@ sap.ui.define([
 				valueStateText: "{$field>/valueStateText}",
 				width: "100%",
 				rows: 4,
+				// fieldGroupIds: are taken from parent if not automatically set (see Element.prototype._getFieldGroupIds) -> so no binding needed
 				tooltip: "{$field>/tooltip}",
 				change: oContentFactory.getHandleContentChange(),
 				liveChange: oContentFactory.getHandleContentLiveChange()
@@ -267,14 +270,15 @@ sap.ui.define([
 		 * @returns {sap.ui.core.Control[]} Array containing the created controls
 		 */
 		createDisplay: function(oContentFactory, aControlClasses, sId) {
-			var Text = aControlClasses[0];
-			var oConditionsType = oContentFactory.getConditionsType();
-			var oText = new Text(sId, {
+			const Text = aControlClasses[0];
+			const oConditionsType = oContentFactory.getConditionsType();
+			const oText = new Text(sId, {
 				text: { path: "$field>/conditions", type: oConditionsType },
 				textAlign: "{$field>/textAlign}",
 				textDirection: "{$field>/textDirection}",
 				wrapping: "{$field>/multipleLines}",
 				width: "100%",
+				// fieldGroupIds: are taken from parent if not automatically set (see Element.prototype._getFieldGroupIds) -> so no binding needed
 				tooltip: "{$field>/tooltip}",
 				emptyIndicatorMode: EmptyIndicatorMode.Auto
 			});
@@ -290,12 +294,13 @@ sap.ui.define([
 		 * @since 1.91
 		 */
 		createDisplayMultiLine: function(oContentFactory, aControlClasses, sId) {
-			var ExpandableText = aControlClasses[0];
-			var oConditionsType = oContentFactory.getConditionsType();
-			var oExpandableText = new ExpandableText(sId, {
+			const ExpandableText = aControlClasses[0];
+			const oConditionsType = oContentFactory.getConditionsType();
+			const oExpandableText = new ExpandableText(sId, {
 				text: { path: "$field>/conditions", type: oConditionsType },
 				textAlign: "{$field>/textAlign}",
 				textDirection: "{$field>/textDirection}",
+				// fieldGroupIds: are taken from parent if not automatically set (see Element.prototype._getFieldGroupIds) -> so no binding needed
 				tooltip: "{$field>/tooltip}",
 				emptyIndicatorMode: EmptyIndicatorMode.Auto
 			});
@@ -311,22 +316,23 @@ sap.ui.define([
 		 * @since 1.96
 		 */
 		createDisplayMultiValue: function(oContentFactory, aControlClasses, sId) {
-			var Tokenizer = aControlClasses[0];
-			var Token = aControlClasses[1];
-			var oConditionType = oContentFactory.getConditionType();
-			var oToken = new Token(sId + "-token", {
+			const Tokenizer = aControlClasses[0];
+			const Token = aControlClasses[1];
+			const oConditionType = oContentFactory.getConditionType();
+			const oToken = new Token(sId + "-token", {
 				text: {
 					path: '$field>',
 					type: oConditionType
 				}
 			});
 
-			var oTokenizer = new Tokenizer(sId, {
+			const oTokenizer = new Tokenizer(sId, {
 				editable: false,
 				// textAlign: "{$field>/textAlign}",
 				emptyIndicatorMode: EmptyIndicatorMode.Auto,
 				renderMode: TokenizerRenderMode.Narrow,
 				width: "100%",
+				// fieldGroupIds: are taken from parent if not automatically set (see Element.prototype._getFieldGroupIds) -> so no binding needed
 				tooltip: "{$field>/tooltip}",
 				tokens: { path: "$field>/conditions", template: oToken },
 				dependents: [oToken] // to destroy it if Control is destroyed
@@ -343,6 +349,9 @@ sap.ui.define([
 		 * @since 1.96
 		 */
 		createEditForHelp: function(oContentFactory, aControlClasses, sId) {
+			if (oContentFactory.getDataType() && oContentFactory.getDataType().isA("sap.ui.model.CompositeType")) {
+				oContentFactory.setIsMeasure(true); // handle only Number or Unit (in single Field)
+			}
 			return this.createEdit(oContentFactory, aControlClasses, sId); // In normal cases there is no difference between EditForHelp and Edit.
 		}
 	};

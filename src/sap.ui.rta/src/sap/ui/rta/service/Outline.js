@@ -15,7 +15,7 @@ sap.ui.define([
 	"sap/base/util/restricted/_omit",
 	"sap/ui/core/mvc/View",
 	"sap/base/Log",
-	"sap/ui/core/Configuration"
+	"sap/ui/base/DesignTime"
 ], function(
 	OverlayRegistry,
 	ElementOverlay,
@@ -29,7 +29,7 @@ sap.ui.define([
 	_omit,
 	View,
 	Log,
-	Configuration
+	DesignTime
 ) {
 	"use strict";
 
@@ -40,7 +40,6 @@ sap.ui.define([
 	 * @namespace
 	 * @name sap.ui.rta.service.Outline
 	 * @author SAP SE
-	 * @experimental Since 1.56
 	 * @since 1.56
 	 * @version ${version}
 	 * @private
@@ -55,6 +54,7 @@ sap.ui.define([
 	 * @private
 	 * @ui5-restricted
 	 * @property {string[]} defaultContent - List of control IDs that belong to the default content of an extension point
+	 * @property {string[]} createdControls - List of control IDs that were created in an extension point
 	 */
 
 	/**
@@ -102,10 +102,10 @@ sap.ui.define([
 
 		oOutline._aConsideredExtensionPoints = [];
 
-		oOutline._attachNotConsideredExtensionPoints = function (oOverlay, oData) {
+		oOutline._attachNotConsideredExtensionPoints = function(oOverlay, oData) {
 			var sViewId = FlUtils.getViewForControl(oOverlay.getElement()).getId();
 			var mExtensionPointInfos = getExtensionPointsForView(sViewId, this._aConsideredExtensionPoints);
-			Object.keys(mExtensionPointInfos).forEach(function (sExtensionPointName, iIndex) {
+			Object.keys(mExtensionPointInfos).forEach(function(sExtensionPointName, iIndex) {
 				var mExtensionPointInfo = mExtensionPointInfos[sExtensionPointName];
 				var mExtensionPointData = this._getExtensionPointData(mExtensionPointInfo);
 				mExtensionPointData.id = sViewId;
@@ -123,11 +123,11 @@ sap.ui.define([
 		 * @param {int} [iDepth] - Depth of <code>childNode</code> levels that should be returned based on the given control
 		 * @returns {OutlineObject[]} Array containing outline data for each root control
 		 */
-		oOutline._getOutline = function (sId, iDepth) {
+		oOutline._getOutline = function(sId, iDepth) {
 			var oResponse;
 			// Fix parameters if provided in different order
 			if (!iDepth && DtUtil.isInteger(sId)) {
-				//only depth, shift and start with the root
+				// only depth, shift and start with the root
 				iDepth = sId;
 				sId = undefined;
 			}
@@ -135,21 +135,21 @@ sap.ui.define([
 			var aInitialOverlays = [];
 			if (!sId) {
 				aInitialOverlays = oRta._oDesignTime.getRootElements()
-					.map(function (sRootElementId) {
-						return OverlayRegistry.getOverlay(sRootElementId);
-					});
+				.map(function(sRootElementId) {
+					return OverlayRegistry.getOverlay(sRootElementId);
+				});
 			} else {
 				var oPassedOverlay = OverlayRegistry.getOverlay(sId);
 				if (!oPassedOverlay) {
 					throw DtUtil.createError(
 						"services.Outline#get",
-						"Cannot find element with id= " + sId + ". A valid or empty value for the initial element id should be provided.", "sap.ui.rta"
+						`Cannot find element with id= ${sId}. A valid or empty value for the initial element id should be provided.`, "sap.ui.rta"
 					);
 				}
 				aInitialOverlays.push(oPassedOverlay);
 			}
 
-			oResponse = aInitialOverlays.map(function (oInitialOverlay) {
+			oResponse = aInitialOverlays.map(function(oInitialOverlay) {
 				return this._getChildrenNodes(oInitialOverlay, iDepth);
 			}, this);
 
@@ -157,16 +157,16 @@ sap.ui.define([
 			return oResponse;
 		};
 
-		oOutline._getExtensionPoints = function (oData) {
+		oOutline._getExtensionPoints = function(oData) {
 			var sParentId = oData.id;
 			var sAggregationName = oData.technicalName;
 			return ExtensionPointRegistryAPI.getExtensionPointInfoByParentId({parentId: sParentId})
-				.filter(function (mExtenstionPoint) {
-					return mExtenstionPoint.aggregationName === sAggregationName;
-				});
+			.filter(function(mExtensionPoint) {
+				return mExtensionPoint.aggregationName === sAggregationName;
+			});
 		};
 
-		oOutline._getExtensionPointData = function (mExtensionPoint) {
+		oOutline._getExtensionPointData = function(mExtensionPoint) {
 			return {
 				id: mExtensionPoint.targetControl.getId(),
 				name: mExtensionPoint.name,
@@ -174,24 +174,25 @@ sap.ui.define([
 				type: "extensionPoint",
 				icon: this.mExtensionPointMetadata.palette.icons.svg,
 				extensionPointInfo: {
-					defaultContent: mExtensionPoint.defaultContent.map(function (oControl) {
+					defaultContent: mExtensionPoint.defaultContent.map(function(oControl) {
 						return oControl.getId();
-					})
+					}),
+					createdControls: mExtensionPoint.createdControls || []
 				}
 			};
 		};
 
-		oOutline._enrichExtensionPointData = function (oData, oOverlay) {
-			var bIsDesignMode = Configuration.getDesignMode();
+		oOutline._enrichExtensionPointData = function(oData, oOverlay) {
+			var bIsDesignMode = DesignTime.isDesignModeEnabled();
 			if (!bIsDesignMode) {
 				return undefined;
 			}
 			if (oData.type === "aggregation") {
 				var aExtensionPoints = this._getExtensionPoints(oData)
-					.sort(function (mExtensionPointA, mExtensionPointB) {
-						return mExtensionPointB.index - mExtensionPointA.index;
-					});
-				aExtensionPoints.forEach(function (mExtensionPoint) {
+				.sort(function(mExtensionPointA, mExtensionPointB) {
+					return mExtensionPointB.index - mExtensionPointA.index;
+				});
+				aExtensionPoints.forEach(function(mExtensionPoint) {
 					var mExtensionPointData = this._getExtensionPointData(mExtensionPoint);
 					oData.elements.splice(mExtensionPoint.index, 0, mExtensionPointData);
 					this._aConsideredExtensionPoints.push(mExtensionPointData.name);
@@ -212,28 +213,28 @@ sap.ui.define([
 					}, mInnerTemplateData[sAggregationName]);
 				}
 				return ((mTemplateData && mTemplateData.elements) || [])
-					.map(function(oElement) {
-						// Template
-						if (
-							oElement.type === "aggregationBindingTemplate"
+				.map(function(oElement) {
+					// Template
+					if (
+						oElement.type === "aggregationBindingTemplate"
 							|| oElement.parentAggregationName === sAggregationName
-						) {
-							return Object.assign({
-								templateFor: sAggregationOverlayId
-							}, oElement);
-						}
-						// Regular aggregation
-						return oElement.technicalName === sAggregationName && oElement;
-					})
-					.filter(Boolean)[0];
+					) {
+						return Object.assign({
+							templateFor: sAggregationOverlayId
+						}, oElement);
+					}
+					// Regular aggregation
+					return oElement.technicalName === sAggregationName && oElement;
+				})
+				.filter(Boolean)[0];
 			}
 			// Template root element
 			var aAggregationTemplateOverlays = (
 				oChildOverlay.getParentElementOverlay().getAggregationBindingTemplateOverlays
 				&& oChildOverlay.getParentElementOverlay().getAggregationBindingTemplateOverlays()
-					.reduce(function (aAllRootElementOverlaysInsideTemplates, oAggregationOverlay) {
-						return aAllRootElementOverlaysInsideTemplates.concat(oAggregationOverlay.getChildren());
-					}, [])
+				.reduce(function(aAllRootElementOverlaysInsideTemplates, oAggregationOverlay) {
+					return aAllRootElementOverlaysInsideTemplates.concat(oAggregationOverlay.getChildren());
+				}, [])
 			) || [];
 			if (aAggregationTemplateOverlays.includes(oChildOverlay)) {
 				return undefined;
@@ -261,7 +262,7 @@ sap.ui.define([
 		 * @param {object} [mTemplateData] - Propagates template data to the aggregation template clones
 		 * @returns {OutlineObject} Outline model data
 		 */
-		oOutline._getChildrenNodes = function (oOverlay, iDepth, oParentOverlay, mTemplateData) {
+		oOutline._getChildrenNodes = function(oOverlay, iDepth, oParentOverlay, mTemplateData) {
 			var bValidDepth = DtUtil.isInteger(iDepth);
 			var mAggregationTemplates = {};
 
@@ -269,11 +270,11 @@ sap.ui.define([
 				return {};
 			}
 
-			//get necessary properties from overlay
+			// get necessary properties from overlay
 			var oData = this._getNodeProperties(oOverlay, oParentOverlay, mTemplateData) || {};
 
 			var aChildren = oOverlay.getChildren();
-			//find aggregation binding template overlays
+			// find aggregation binding template overlays
 			var aAggregationTemplateOverlays = (
 				oOverlay.getAggregationBindingTemplateOverlays
 				&& oOverlay.getAggregationBindingTemplateOverlays()
@@ -287,30 +288,30 @@ sap.ui.define([
 				}, aChildren);
 			}
 
-			//check if the tree should be traversed deeper and children overlays are present
+			// check if the tree should be traversed deeper and children overlays are present
 			if ((!bValidDepth || (bValidDepth && iDepth > 0))
 				&& aChildren.length > 0
 				&& !isEmptyObject(oData)
 			) {
-				//decrement depth for children nodes
+				// decrement depth for children nodes
 				iDepth = bValidDepth ? iDepth - 1 : iDepth;
 
 				var mInnerTemplateData = {};
 				oData.elements = aChildren
-					.map(function (oChildOverlay) {
-						var mNextTemplateData = getTemplateData(oChildOverlay, mTemplateData, mInnerTemplateData);
-						var oNextData = this._getChildrenNodes(oChildOverlay, iDepth, oChildOverlay.getParent(), mNextTemplateData);
-						if (oNextData.type === "aggregationBindingTemplate") {
-							var sAggregationName = mAggregationTemplates[oChildOverlay.getId()];
-							mInnerTemplateData[sAggregationName] = merge({}, oNextData);
-						}
-						return oNextData;
-					}, this)
-					.filter(function (oChildNode) {
-						return !isEmptyObject(oChildNode);
-					});
+				.map(function(oChildOverlay) {
+					var mNextTemplateData = getTemplateData(oChildOverlay, mTemplateData, mInnerTemplateData);
+					var oNextData = this._getChildrenNodes(oChildOverlay, iDepth, oChildOverlay.getParent(), mNextTemplateData);
+					if (oNextData.type === "aggregationBindingTemplate") {
+						var sAggregationName = mAggregationTemplates[oChildOverlay.getId()];
+						mInnerTemplateData[sAggregationName] = merge({}, oNextData);
+					}
+					return oNextData;
+				}, this)
+				.filter(function(oChildNode) {
+					return !isEmptyObject(oChildNode);
+				});
 
-				//get extension point information if available
+				// get extension point information if available
 				this._enrichExtensionPointData(oData, oOverlay);
 			}
 
@@ -329,6 +330,9 @@ sap.ui.define([
 				editable: oOverlay.getEditable(),
 				bIsView: oOverlay.getElement() instanceof View
 			};
+			if (oElement.isA("sap.ui.core.Component")) {
+				oData.component = true;
+			}
 			if (typeof oOverlay.isVisible() === "boolean") {
 				oData.visible = oOverlay.isVisible();
 			}
@@ -409,7 +413,7 @@ sap.ui.define([
 		 * @param {object} [mTemplateData] - Template data
 		 * @returns {object} Data containing applicable properties
 		 */
-		 oOutline._getNodeProperties = function (oOverlay, oParentOverlay, mTemplateData) {
+		 oOutline._getNodeProperties = function(oOverlay, oParentOverlay, mTemplateData) {
 			var oElement = oOverlay.getElement();
 			var oDtMetadata = oOverlay.getDesignTimeMetadata();
 			var oData = getDefaultData(oElement, oDtMetadata, mTemplateData);
@@ -457,7 +461,7 @@ sap.ui.define([
 					// Only send new root overlays as updates; children elements are part of their outlines already
 					if (mParams.elementOverlay.isRoot()) {
 						var sRootElementId = mParams.elementOverlay.getElement().getId();
-						oResponse.element = oOutline._getOutline(sRootElementId)[0];
+						[oResponse.element] = oOutline._getOutline(sRootElementId);
 						oResponse.type = "new";
 						break;
 					}
@@ -465,13 +469,13 @@ sap.ui.define([
 
 				case "elementOverlayAdded":
 					// Overlays added to existing aggregations
-					oResponse.element = oOutline._getOutline(sElementId)[0];
+					[oResponse.element] = oOutline._getOutline(sElementId);
 					oResponse.targetId = sTargetId;
 					oResponse.type = "new";
 					break;
 
 				case "elementOverlayMoved":
-					oResponse.element = oOutline._getOutline(sElementId, 0)[0];
+					[oResponse.element] = oOutline._getOutline(sElementId, 0);
 					oResponse.targetId = sTargetId;
 					oResponse.type = "move";
 					break;
@@ -492,7 +496,8 @@ sap.ui.define([
 						oResponse.element.id =
 							oResponse.elementOverlay.getElement()
 								? oResponse.elementOverlay.getElement().getId()
-								: oResponse.elementOverlay.getAssociation("element"); // Triggered via DesignTime elementOverlayDestroyed event
+								// Triggered via DesignTime elementOverlayDestroyed event
+								: oResponse.elementOverlay.getAssociation("element");
 						oResponse.type = "destroy";
 						break;
 					}
@@ -509,7 +514,7 @@ sap.ui.define([
 
 				case "elementPropertyChanged":
 					// Trigger origin is ManagedObjectObserver
-					oResponse.element = oOutline._getOutline(sElementId, 0)[0];
+					[oResponse.element] = oOutline._getOutline(sElementId, 0);
 					oResponse.type = "elementPropertyChange";
 					break;
 
@@ -520,13 +525,13 @@ sap.ui.define([
 			// Remove unwanted properties
 			oResponse = _omit(oResponse, ["elementOverlay", "editable", "target", "id", "elementId"]);
 
-			//Check if the new update already exists - if present remove the previous occurrence
+			// Check if the new update already exists - if present remove the previous occurrence
 			this.aUpdates = oOutline._removeDuplicate(this.aUpdates, oResponse);
 
 			this.aUpdates.push(oResponse);
 
 			if (this.sStatus === "initial") {
-				setTimeout(function () {
+				setTimeout(function() {
 					// need to check this.aUpdates still exists as destroy() can be called when setTimeout is still waiting
 					if (Array.isArray(this.aUpdates) && this.aUpdates.length > 0) {
 						this.sStatus = "initial";
@@ -541,7 +546,7 @@ sap.ui.define([
 		/**
 		 * Detaches all event listeners that were attached from the outline service and performs a clean up.
 		 */
-		oOutline.destroy = function () {
+		oOutline.destroy = function() {
 			oRta._oDesignTime.detachEvent("elementOverlayCreated", this._updatesHandler, this);
 			oRta._oDesignTime.detachEvent("elementOverlayAdded", this._updatesHandler, this);
 			oRta._oDesignTime.detachEvent("elementOverlayMoved", this._updatesHandler, this);

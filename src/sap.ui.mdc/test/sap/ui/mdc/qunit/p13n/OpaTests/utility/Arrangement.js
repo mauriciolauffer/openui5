@@ -4,15 +4,14 @@
 
 sap.ui.define([
 	"sap/ui/test/Opa5",
-	"sap/ui/fl/FakeLrepConnectorLocalStorage",
 	"test-resources/sap/ui/mdc/qunit/p13n/OpaTests/utility/Util",
 	"sap/ui/test/matchers/PropertyStrictEquals",
 	"sap/ui/test/matchers/Ancestor",
 	"sap/ui/test/actions/Press"
-], function(Opa5, FakeLrepConnectorLocalStorage, TestUtil, PropertyStrictEquals, Ancestor, Press) {
+], function(Opa5, TestUtil, PropertyStrictEquals, Ancestor, Press) {
 	"use strict";
 
-	var Arrangement = Opa5.extend("sap.ui.mdc.qunit.p13n.test.Arrangement", {
+	const Arrangement = Opa5.extend("sap.ui.mdc.qunit.p13n.test.Arrangement", {
 
 		closeAllPopovers: function() {
 			return this.waitFor({
@@ -38,7 +37,7 @@ sap.ui.define([
 			return this.waitFor({
 				controlType: "sap.m.Dialog",
 				success: function(aControls) {
-					var oDialog = aControls[0];
+					const oDialog = aControls[0];
 					return this.waitFor({
 						controlType: "sap.m.Button",
 						matchers: [
@@ -54,7 +53,18 @@ sap.ui.define([
 			});
 		},
 		enableAndDeleteLrepLocalStorage: function() {
-            FakeLrepConnectorLocalStorage.forTesting.synchronous.clearAll();
+			const oStorage = window.localStorage;
+			const fnRemoveItem = function(sKey) {
+				const bIsFlexObject = sKey.includes("sap.ui.fl");
+
+				if (!bIsFlexObject) {
+					return;
+				}
+
+				oStorage.removeItem(sKey);
+			};
+
+			Object.keys(oStorage).map(fnRemoveItem);
 
 			// Note: prevent app restart for different layer
 			// (--> check why there are tests that are not cleaned up correctly)

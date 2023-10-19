@@ -10,8 +10,8 @@ sap.ui.define([
 	"sap/ui/mdc/condition/Condition",
 	"sap/ui/mdc/condition/FilterOperatorUtil",
 	"sap/ui/mdc/condition/Operator",
-	"sap/ui/mdc/enum/SelectType",
-	"sap/ui/mdc/enum/ConditionValidated",
+	"sap/ui/mdc/enums/ValueHelpSelectionType",
+	"sap/ui/mdc/enums/ConditionValidated",
 	"sap/ui/core/Icon",
 	"sap/ui/model/json/JSONModel",
 	"sap/m/library",
@@ -22,7 +22,7 @@ sap.ui.define([
 		Condition,
 		FilterOperatorUtil,
 		Operator,
-		SelectType,
+		ValueHelpSelectionType,
 		ConditionValidated,
 		Icon,
 		JSONModel,
@@ -31,9 +31,9 @@ sap.ui.define([
 	) {
 	"use strict";
 
-	var oContent;
+	let oContent;
 
-	var _teardown = function() {
+	const _teardown = function() {
 		oContent.destroy();
 		oContent = null;
 	};
@@ -46,7 +46,7 @@ sap.ui.define([
 	});
 
 	QUnit.test("EQ operator determination", function(assert) {
-		var aConditions = [
+		const aConditions = [
 			Condition.createItemCondition("A", "Validated A"),
 			Condition.createItemCondition("B", "Validated B"),
 			Condition.createItemCondition("C")

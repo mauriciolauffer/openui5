@@ -4,14 +4,13 @@
 sap.ui.define([
 	"sap/base/Log",
 	"sap/ui/core/library",
+	"sap/ui/core/Messaging",
 	"sap/ui/core/message/Message",
 	"sap/ui/model/odata/MessageScope",
 	"sap/ui/model/odata/ODataMessageParser",
 	"sap/ui/model/odata/ODataMetadata",
-	"sap/ui/model/odata/ODataUtils",
-	"sap/ui/test/TestUtils"
-], function (Log, coreLibrary, Message, MessageScope, ODataMessageParser, ODataMetadata, ODataUtils,
-		 TestUtils) {
+	"sap/ui/model/odata/ODataUtils"
+], function (Log, coreLibrary, Messaging, Message, MessageScope, ODataMessageParser, ODataMetadata, ODataUtils) {
 	/*global QUnit,sinon*/
 	/*eslint camelcase: 0, max-nested-callbacks: 0, no-warning-comments: 0*/
 	"use strict";
@@ -26,10 +25,6 @@ sap.ui.define([
 			this.oLogMock = this.mock(Log);
 			this.oLogMock.expects("error").never();
 			this.oLogMock.expects("warning").never();
-		},
-
-		afterEach : function (assert) {
-			return TestUtils.awaitRendering();
 		}
 	});
 
@@ -189,10 +184,15 @@ sap.ui.define([
 				new Message({message : "keep", persistent : true, target : "/As(1)/toBs(2)/x"})
 			]),
 			oMessageProcessor = {
-				fireMessageChange : function () {}
+				getId : function() { return "myID"; },
+				fireEvent : function () {},
+				setMessages : function () {}
 			},
 			// placeholder for messages; mAffectedTargets is computed based on new messages
-			aMessages = ["{sap.ui.core.message.Message} oMessage..."],
+			aMessages = [new Message({
+				message : "{sap.ui.core.message.Message} oMessage...",
+				processor: oMessageProcessor
+			})],
 			aNewLastMessages = [],
 			oODataMessageParser = {
 				_getAffectedTargets : function () {},
@@ -224,14 +224,8 @@ sap.ui.define([
 			.withExactArgs(sinon.match.same(aMessages), sinon.match.same(mRequestInfo),
 				mGetEntities, mChangeEntities)
 			.returns(oFixture.mAffectedTargets);
-		this.mock(oODataMessageParser).expects("getProcessor").withExactArgs()
-			.returns(oMessageProcessor);
-		this.mock(oMessageProcessor).expects("fireMessageChange")
-			.withExactArgs(sinon.match({
-				newMessages : sinon.match.same(aMessages),
-				oldMessages : sinon.match(aExpectedMessagesToBeRemoved)
-			}))
-			.returns(oMessageProcessor);
+		this.mock(Messaging).expects("updateMessages")
+			.withExactArgs(sinon.match(aExpectedMessagesToBeRemoved), sinon.match.same(aMessages));
 
 		// code under test
 		ODataMessageParser.prototype._propagateMessages.call(oODataMessageParser, aMessages,
@@ -444,10 +438,15 @@ sap.ui.define([
 				new Message({message : "keep", persistent : true, target : "/As(1)/toBs(2)/x"})
 			]),
 			oMessageProcessor = {
-				fireMessageChange : function () {}
+				getId : function() { return "myID"; },
+				fireEvent : function () {},
+				setMessages : function () {}
 			},
 			// placeholder for messages; mAffectedTargets is computed based on new messages
-			aMessages = ["{sap.ui.core.message.Message} oMessage..."],
+			aMessages = [new Message({
+				message : "{sap.ui.core.message.Message} oMessage...",
+				processor: oMessageProcessor
+			})],
 			aNewLastMessages = [],
 			oODataMessageParser = {
 				_getAffectedTargets : function () {},
@@ -480,14 +479,8 @@ sap.ui.define([
 			.withExactArgs(sinon.match.same(aMessages), sinon.match.same(mRequestInfo),
 				mGetEntities, mChangeEntities)
 			.returns(oFixture.mAffectedTargets);
-		this.mock(oODataMessageParser).expects("getProcessor").withExactArgs()
-			.returns(oMessageProcessor);
-		this.mock(oMessageProcessor).expects("fireMessageChange")
-			.withExactArgs(sinon.match({
-				newMessages : sinon.match.same(aMessages),
-				oldMessages : sinon.match(aExpectedMessagesToBeRemoved)
-			}))
-			.returns(oMessageProcessor);
+		this.mock(Messaging).expects("updateMessages")
+			.withExactArgs(sinon.match(aExpectedMessagesToBeRemoved), sinon.match.same(aMessages));
 
 		// code under test
 		ODataMessageParser.prototype._propagateMessages.call(oODataMessageParser, aMessages,
@@ -1129,9 +1122,6 @@ sap.ui.define([
 }].forEach(function (oFixture, i) {
 	QUnit.test("_propagateMessages: sap-messages=transientOnly, " + i, function (assert) {
 		var oLastMessage = new Message({message : "keep"}),
-			oMessageProcessor = {
-				fireMessageChange : function () {}
-			},
 			aMessages = oFixture.oMessage ? [oFixture.oMessage] : [],
 			aNewLastMessages = [oLastMessage],
 			oODataMessageParser = {
@@ -1157,14 +1147,8 @@ sap.ui.define([
 				+ "response, but requested only transition messages", undefined, sClassName);
 		}
 		this.mock(oODataMessageParser).expects("_getAffectedTargets").never();
-		this.mock(oODataMessageParser).expects("getProcessor").withExactArgs()
-			.returns(oMessageProcessor);
-		this.mock(oMessageProcessor).expects("fireMessageChange")
-			.withExactArgs(sinon.match({
-				oldMessages : [],
-				newMessages : sinon.match.same(aMessages)
-			}))
-			.returns(oMessageProcessor);
+		this.mock(Messaging).expects("updateMessages")
+			.withExactArgs(sinon.match([]), sinon.match.same(aMessages));
 
 		// code under test
 		ODataMessageParser.prototype._propagateMessages.call(oODataMessageParser,
@@ -1177,10 +1161,14 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("_propagateMessages: Messages belong to collections", function (assert) {
 		var mGetEntities = {"Foo('1')" : true},
-			oLastMessage1 = new Message({message : "delete", fullTarget : "/Foo('1')"}),
-			oLastMessage2 = new Message({message : "keep", fullTarget : "/Foo('2')"}),
-			oMessageProcessor = {fireMessageChange : function () {}},
-			oNewMessage = new Message({message : "new", fullTarget : "/Foo('1')"}),
+			oMessageProcessor = {
+				getId : function() { return "myID"; },
+				fireEvent : function () {},
+				setMessages : function () {}
+			},
+			oLastMessage1 = new Message({message : "delete", fullTarget : "/Foo('1')", processor: oMessageProcessor}),
+			oLastMessage2 = new Message({message : "keep", fullTarget : "/Foo('2')", processor: oMessageProcessor}),
+			oNewMessage = new Message({message : "new", fullTarget : "/Foo('1')", processor: oMessageProcessor}),
 			aMessages = [oNewMessage],
 			aNewLastMessages = [oLastMessage2, oNewMessage],
 			oODataMessageParser = {
@@ -1203,14 +1191,8 @@ sap.ui.define([
 			.withExactArgs(mRequestInfo.request.functionMetadata).returns(true);
 		this.mock(oODataMessageParser).expects("_getAffectedTargets")
 			.withExactArgs(aMessages, mRequestInfo, mGetEntities, "~mChangeEntities");
-		this.mock(oODataMessageParser).expects("getProcessor").withExactArgs()
-			.returns(oMessageProcessor);
-		this.mock(oMessageProcessor).expects("fireMessageChange")
-			.withExactArgs(sinon.match({
-				oldMessages : sinon.match([oLastMessage1]),
-				newMessages : sinon.match.same(aMessages)
-			}))
-			.returns(oMessageProcessor);
+			this.mock(Messaging).expects("updateMessages")
+			.withExactArgs(sinon.match([oLastMessage1]), sinon.match.same(aMessages));
 
 		// code under test
 		ODataMessageParser.prototype._propagateMessages.call(oODataMessageParser,
@@ -1224,7 +1206,6 @@ sap.ui.define([
 	QUnit.test("_propagateMessages: mGetEntities: " + mGetEntities, function (assert) {
 		var oLastMessage1 = new Message({message : "keep", fullTarget : "/Foo('1')"}),
 			oLastMessage2 = new Message({message : "keep", fullTarget : "/Foo('2')"}),
-			oMessageProcessor = {fireMessageChange : function () {}},
 			aMessages = [],
 			aNewLastMessages = [oLastMessage1, oLastMessage2],
 			oODataMessageParser = {
@@ -1248,14 +1229,8 @@ sap.ui.define([
 		this.mock(oODataMessageParser).expects("_getAffectedTargets")
 			.withExactArgs(sinon.match.same(aMessages), sinon.match.same(mRequestInfo),
 				{}, "~mChangeEntities");
-		this.mock(oODataMessageParser).expects("getProcessor").withExactArgs()
-			.returns(oMessageProcessor);
-		this.mock(oMessageProcessor).expects("fireMessageChange")
-			.withExactArgs(sinon.match({
-				oldMessages : [],
-				newMessages : []
-			}))
-			.returns(oMessageProcessor);
+		this.mock(Messaging).expects("updateMessages")
+			.withExactArgs(sinon.match([]), sinon.match.same(aMessages));
 
 		// code under test
 		ODataMessageParser.prototype._propagateMessages.call(oODataMessageParser,
@@ -1268,9 +1243,13 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("_propagateMessages: return type is no collection", function (assert) {
 		var mGetEntities = {"Foo('1')" : true},
-			oLastMessage1 = new Message({message : "delete", fullTarget : "/Foo('1')"}),
-			oMessageProcessor = {fireMessageChange : function () {}},
-			oNewMessage = new Message({message : "new", fullTarget : "/Foo('1')"}),
+			oMessageProcessor = {
+				getId : function() { return "myID"; },
+				fireEvent : function () {},
+				setMessages : function () {}
+			},
+			oLastMessage1 = new Message({message : "delete", fullTarget : "/Foo('1')", processor: oMessageProcessor}),
+			oNewMessage = new Message({message : "new", fullTarget : "/Foo('1')", processor: oMessageProcessor}),
 			aMessage = [oNewMessage],
 			aNewLastMessages = [oNewMessage],
 			oODataMessageParser = {
@@ -1294,14 +1273,8 @@ sap.ui.define([
 		this.mock(oODataMessageParser).expects("_getAffectedTargets")
 			.withExactArgs(sinon.match.same(aMessage), sinon.match.same(mRequestInfo),
 				sinon.match.same(mGetEntities), "~mChangeEntities");
-		this.mock(oODataMessageParser).expects("getProcessor").withExactArgs()
-			.returns(oMessageProcessor);
-		this.mock(oMessageProcessor).expects("fireMessageChange")
-			.withExactArgs(sinon.match({
-				oldMessages : sinon.match([oLastMessage1]),
-				newMessages : sinon.match.same(aMessage)
-			}))
-			.returns(oMessageProcessor);
+		this.mock(Messaging).expects("updateMessages")
+			.withExactArgs(sinon.match([oLastMessage1]), sinon.match.same(aMessage));
 
 		// code under test
 		ODataMessageParser.prototype._propagateMessages.call(oODataMessageParser,
@@ -1428,17 +1401,22 @@ sap.ui.define([
 		assert.strictEqual(oMessage.code, oExpectedMessage.code);
 		assert.strictEqual(oMessage.description, oExpectedMessage.description);
 		assert.strictEqual(oMessage.descriptionUrl, oExpectedMessage.descriptionUrl);
-		assert.strictEqual(oMessage.fullTarget, "~fullTargetFrom_createTarget0");
 		assert.deepEqual(oMessage.aFullTargets, aDeepPaths);
 		assert.strictEqual(oMessage.message, oExpectedMessage.message);
 		assert.strictEqual(oMessage.persistent, oExpectedMessage.persistent);
 		assert.strictEqual(oMessage.processor, "~_processor");
-		assert.strictEqual(oMessage.target, "~targetFrom_createTarget0");
 		assert.deepEqual(oMessage.aTargets, aTargets);
 		assert.strictEqual(oMessage.technical, bIsTechnical);
 		assert.deepEqual(oMessage.technicalDetails,
 			{headers : "~headers", statusCode : "~statusCode"});
 		assert.strictEqual(oMessage.type, oExpectedMessage.type);
+		/**
+		 * @deprecated As of version 1.79.0
+		*/
+		(function () {
+			assert.strictEqual(oMessage.fullTarget, "~fullTargetFrom_createTarget0");
+			assert.strictEqual(oMessage.target, "~targetFrom_createTarget0");
+		}());
 	});
 });
 
@@ -1773,20 +1751,21 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.test("_parseBodyJSON: plain text", function (assert) {
-		var oError = new Error("~error"),
+		var oJSONSpy = sinon.spy(JSON, "parse"),
 			oMessageParser = new ODataMessageParser("/foo"),
 			oResponse = {body : "~foo"},
 			mRequestInfo = {
 				response : oResponse
 			};
 
-		this.mock(JSON).expects("parse").withExactArgs("~foo").throws(oError);
 		this.mock(oMessageParser).expects("_createGenericError").never();
 
 		// code under test
 		assert.throws(function () {
 			oMessageParser._parseBodyJSON(oResponse, mRequestInfo);
-		}, oError);
+		}, SyntaxError);
+
+		assert.ok(oJSONSpy.calledWith("~foo"));
 	});
 
 	//*********************************************************************************************
@@ -2321,6 +2300,7 @@ sap.ui.define([
 				targets : "~targets1",
 				type : "~type1"
 			}],
+			oJSONSpy = sinon.spy(JSON, "stringify"),
 			oMessageParser = new ODataMessageParser("/foo"),
 			oMessage0 = {
 				getCode : function () {},
@@ -2348,14 +2328,16 @@ sap.ui.define([
 		this.mock(oMessage1).expects("getPersistent").withExactArgs().returns("~persistent1");
 		this.mock(oMessage1).expects("getTargets").withExactArgs().returns("~targets1");
 		this.mock(oMessage1).expects("getType").withExactArgs().returns("~type1");
-		this.mock(JSON).expects("stringify")
-			.withExactArgs(aExpectedMessageLogDetails)
-			.returns("~details");
 		this.oLogMock.expects("error")
-			.withExactArgs("Request failed with status code ~statusCode: ~method ~uri", "~details",
+			.withExactArgs("Request failed with status code ~statusCode: ~method ~uri",
+				'[{"code":"~code0","message":"~message0","persistent":"~persistent0",'
+				+ '"targets":"~targets0","type":"~type0"},{"code":"~code1","message":"~message1",'
+				+ '"persistent":"~persistent1","targets":"~targets1","type":"~type1"}]',
 				sClassName);
 
 		// code under test
 		oMessageParser._logErrorMessages([oMessage0, oMessage1], oRequest, "~statusCode");
+
+		assert.ok(oJSONSpy.calledWith(aExpectedMessageLogDetails));
 	});
 });

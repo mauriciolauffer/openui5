@@ -9,17 +9,16 @@ sap.ui.define(['sap/ui/core/Control'
 
 	/**
 	 * Constructor for a new filterBar/p13n/FilterGroupLayout.
-	 * Displays the label above the FilterField
 	 * @param {string} [sId] ID for the new control, generated automatically if no ID is given
 	 * @param {object} [mSettings] Initial settings for the new control
-	 * @class Represents a filter item on the UI.
+	 * @class Represents a filter item on the UI and displays the label above the FilterField
 	 * @extends sap.ui.core.Control
 	 * @constructor
 	 * @private
 	 * @since 1.82.0
 	 * @alias sap.ui.mdc.filterbar.p13n.FilterGroupLayout
 	 */
-	var FilterGroupLayout = Control.extend("sap.ui.mdc.filterbar.p13n.FilterGroupLayout", {
+	const FilterGroupLayout = Control.extend("sap.ui.mdc.filterbar.p13n.FilterGroupLayout", {
 		renderer: {
 			apiVersion: 2,
 			render: function(oRm, oControl) {
@@ -33,12 +32,11 @@ sap.ui.define(['sap/ui/core/Control'
 	});
 
 	FilterGroupLayout.prototype._getFieldPath = function () {
-		return this._sFieldPath;
+		return this._oFilterField ? this._oFilterField.getPropertyKey() : null;
 	};
 
 	FilterGroupLayout.prototype.setFilterField = function (oFilterField) {
 		this._oFilterField = oFilterField;
-		this._sFieldPath = oFilterField.getFieldPath();
 	};
 
 	FilterGroupLayout.prototype.getIdForLabel = function () {
@@ -52,7 +50,7 @@ sap.ui.define(['sap/ui/core/Control'
 	};
 
 	FilterGroupLayout.prototype.getItems = function () {
-		var aContent = [];
+		const aContent = [];
 		aContent.push(this._oFilterField);
 		return aContent;
 	};
@@ -60,7 +58,6 @@ sap.ui.define(['sap/ui/core/Control'
 	FilterGroupLayout.prototype.exit = function () {
 		Control.prototype.exit.apply(this, arguments);
 		this._oFilterField = null;
-		this._sFieldPath = null;
 	};
 
 	return FilterGroupLayout;

@@ -639,6 +639,56 @@ sap.ui.define([
 		Core.getMessageManager().removeAllMessages();
 	});
 
+	QUnit.test("When all messages from model are removed, MessageView / Popover should return to home page", function (assert) {
+		var oMessagePopover = new MessagePopover();
+		var fnAddMessage = function() {
+			Core.getMessageManager().addMessages(
+				new Message({
+					message: "Something wrong happend!",
+					description: "Some Description",
+					type: MessageType.Warning,
+					processor: new JSONModel()
+				})
+			);
+		};
+		var fnClearMessages = function() {
+			Core.getMessageManager().removeAllMessages();
+		};
+
+		var oBtn = new Button({
+			press: function (oEvent) {
+				oMessagePopover.openBy(oEvent.oSource);
+			}
+		}).placeAt("qunit-fixture");
+		Core.applyChanges();
+
+		fnClearMessages();
+		oBtn.firePress();
+		Core.applyChanges();
+		this.clock.tick(500);
+
+		// store pages
+		var oMessagePopoverCurrentPage = oMessagePopover._oMessageView._navContainer.getCurrentPage();
+		assert.strictEqual(oMessagePopover._oMessageView._listPage, oMessagePopoverCurrentPage, "List Page should be visible");
+
+		fnAddMessage();
+		Core.applyChanges();
+
+		// store pages
+		oMessagePopoverCurrentPage = oMessagePopover._oMessageView._navContainer.getCurrentPage();
+		assert.strictEqual(oMessagePopover._oMessageView._detailsPage, oMessagePopoverCurrentPage, "Details Page should be visible");
+
+		fnClearMessages();
+		Core.applyChanges();
+
+		// store pages
+		oMessagePopoverCurrentPage = oMessagePopover._oMessageView._navContainer.getCurrentPage();
+		assert.strictEqual(oMessagePopover._oMessageView._listPage, oMessagePopoverCurrentPage, "List Page should be visible");
+
+		oBtn.destroy();
+		oMessagePopover.destroy();
+	});
+
 	QUnit.test("Filtering after resize should not reset the height of the Popover", function(assert) {
 		this.oMessagePopover.openBy(this.oButton);
 		this.clock.tick(500);
@@ -688,35 +738,6 @@ sap.ui.define([
 		this.clock.tick(100);
 
 		assert.ok(oActiveTitlePressStub.called, "Event should be forwarded");
-	});
-
-	/**
-	 * @deprecated Since version 1.46, public API of successor is tested in MessageItem.qumit.js
-	 */
-	QUnit.module("MessageItem Public API", {
-		beforeEach: function(assert) {
-			var done = assert.async();
-			// load MessageItem dynamically to decouple the remainder of the test from it
-			sap.ui.require(["sap/m/MessageItem"], function(MessageItem) {
-				this.oMessageItem = new MessageItem();
-				done();
-			}.bind(this));
-		}, afterEach: function() {
-			this.oMessageItem.destroy();
-		}
-	});
-
-	QUnit.test("setType() should set the correct type to the item", function(assert) {
-		this.oMessageItem.setType(MessageType.Error);
-		assert.strictEqual(this.oMessageItem.getType(), "Error", "Error type should be set");
-		this.oMessageItem.setType(MessageType.Warning);
-		assert.strictEqual(this.oMessageItem.getType(), "Warning", "Warning type should be set");
-		this.oMessageItem.setType(MessageType.Success);
-		assert.strictEqual(this.oMessageItem.getType(), "Success", "Success type should be set");
-		this.oMessageItem.setType(MessageType.Information);
-		assert.strictEqual(this.oMessageItem.getType(), "Information", "Information type should be set");
-		this.oMessageItem.setType(MessageType.None);
-		assert.strictEqual(this.oMessageItem.getType(), "Information", "Information type should be set, None is not supported");
 	});
 
 	QUnit.module("HTML representation", {

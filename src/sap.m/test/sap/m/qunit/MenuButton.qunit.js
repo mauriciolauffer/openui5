@@ -933,6 +933,28 @@ sap.ui.define([
 		assert.strictEqual(fnHandleMenuItemSelected.calledTwice, true, "_menuItemSelected handler is notified in split Mode");
 	});
 
+	QUnit.test('Regular mode beforeMenuOpen event', function (assert) {
+		this.sut.destroy();
+		this.sut = null;
+		this.sut = new MenuButton({
+			beforeMenuOpen : function () {}
+		});
+		this.sut.setButtonMode(MenuButtonMode.Regular);
+		this.sut.placeAt("content");
+		oCore.applyChanges();
+
+		var fnFireBeforeMenuOpen = sinon.spy(this.sut, "fireBeforeMenuOpen");
+		this.sut.getAggregation('_button').firePress();
+
+		this.clock.tick(1000);
+
+		assert.strictEqual(this.sut.getAggregation('_button').getMetadata().getName() === 'sap.m.Button', true, 'Normal sap m button.');
+		assert.strictEqual(jQuery('.sapMMenuBtnSplit').length, 0, 'Split button not rendered');
+		assert.strictEqual(jQuery('.sapMMenuBtn').length, 1, 'Normal button rendered');
+		assert.strictEqual(fnFireBeforeMenuOpen.calledOnce, true, 'BeforeMenuOpen event fired.');
+
+	});
+
 	QUnit.test('SplitButton mode', function (assert) {
 		this.sut.destroy();
 		this.sut = null;
@@ -1291,22 +1313,27 @@ sap.ui.define([
 	QUnit.module("Other");
 
 	QUnit.test("Focus is returned back the the opener DOM ref, when the menu is closed with F4", function(assert) {
-		//arrange
+		// arrange
 		var oMenu = new UnifiedMenu(),
 			oMenuItem = new UnifiedMenuItemBase();
 
 		oMenuItem.setParent(oMenu);
-		oMenu.bOpen = true;
+		oMenu.open(true);
+		oCore.applyChanges();
 
-		//act
+		assert.ok(oMenu.isOpen(), "Menu has been opened by keyboard");
+
+		// act
 		oMenuItem.onsapshow({
 			preventDefault: function() {}
 		});
 
-		//assert
-		assert.equal(oMenu.bIgnoreOpenerDOMRef, undefined , "Focused is returned to the opener DOM ref");
+		oCore.applyChanges();
 
-		//clean
+		// assert
+		assert.equal(oMenu.bIgnoreOpenerDOMRef, false , "Focused is returned to the opener DOM ref");
+
+		// clean
 		oMenu.destroy();
 		oMenuItem.destroy();
 	});

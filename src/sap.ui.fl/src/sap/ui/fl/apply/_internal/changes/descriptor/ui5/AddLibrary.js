@@ -10,7 +10,6 @@ sap.ui.define([
 ) {
 	"use strict";
 
-
 	/**
 	 * Merges already existing library.
 	 * If a min version is specified by the existing or new dependency the highest version is taken over.
@@ -44,8 +43,8 @@ sap.ui.define([
 	 *
 	 * Available for both runtime and build {@link sap.ui.fl.apply._internal.changes.descriptor.Registration}.
 	 *
-	 * @namespace sap.ui.fl.apply._internal.changes.descriptor.ui5.AddLibrary
-	 * @experimental
+	 * @namespace
+	 * @alias sap.ui.fl.apply._internal.changes.descriptor.ui5.AddLibrary
 	 * @since 1.74
 	 * @version ${version}
 	 * @private
@@ -55,20 +54,19 @@ sap.ui.define([
 
 		/**
 		 * Method to apply the <code>appdescr_ui5_addLibraries</code> change to the manifest.
-		 * @param {object} oManifest Original manifest
-		 * @param {object} oChange Change with type <code>appdescr_ui5_addLibraries</code>
-		 * @param {object} oChange.content.libraries Change content containing libraries names and minVersion
+		 * @param {object} oManifest - Original manifest
+		 * @param {sap.ui.fl.apply._internal.flexObjects.AppDescriptorChange} oChange - Change with type <code>appdescr_ui5_addLibraries</code>
+		 * @param {object} oChange.content - Details of the change
+		 * @param {object} oChange.content.libraries - Change content containing libraries names and minVersion
 		 * @returns {object} Updated manifest with merged dependencies
 		 *
 		 * @private
 		 * @ui5-restricted sap.ui.fl.apply._internal
 		 */
-		applyChange: function(oManifest, oChange) {
+		applyChange(oManifest, oChange) {
 			// sap.ui5/dependencies node is mandatory in manifest
-			if (!oManifest["sap.ui5"]["dependencies"]["libs"]) {
-				oManifest["sap.ui5"]["dependencies"]["libs"] = {};
-			}
-			var oManifestLibs = oManifest["sap.ui5"]["dependencies"]["libs"];
+			oManifest["sap.ui5"].dependencies.libs ||= {};
+			var oManifestLibs = oManifest["sap.ui5"].dependencies.libs;
 			var oChangeLibs = oChange.getContent().libraries;
 
 			Object.keys(oChangeLibs).forEach(function(sLibName) {
@@ -80,7 +78,6 @@ sap.ui.define([
 			});
 			return oManifest;
 		}
-
 
 	};
 

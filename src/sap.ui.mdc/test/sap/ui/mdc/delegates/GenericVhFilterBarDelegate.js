@@ -49,7 +49,8 @@ sap.ui.define([
 			if (!bSearchExists) {
 				oFilterBar.__aProperties.push({
 					name: "$search",
-					typeConfig: FilterBarDelegate.getTypeUtil().getTypeConfig("Edm.String", null, null)
+					label: "Search",
+					dataType: "Edm.String"
 				});
 			}
 			fResolve(oFilterBar.__aProperties);
@@ -68,15 +69,14 @@ sap.ui.define([
 		aProperties.push({
 			name: sFieldPath,
 			label: oFF.getLabel() || sFieldPath,
-			type: oFF.getDataType(),
+			dataType: oFF.getDataType(),
 			formatOptions: oFF.getDataTypeFormatOptions(),
 			constraints: oFF.getDataTypeConstraints(),
-			typeConfig: this.getTypeUtil().getTypeConfig(oFF.getDataType(), oFF.getDataTypeFormatOptions(), oFF.getDataTypeConstraints()),
 			required: oFF.getRequired(),
 			hiddenFilter: false,
 			visible: oFF.getVisible(),
-			maxConditions : oFF.getMaxConditions(),
-			fieldHelp: oFF.getFieldHelp()
+			maxConditions : oFF.getMaxConditions()//,
+			// valueHelp: oFF._getValueHelp()
 		});
 	}
 

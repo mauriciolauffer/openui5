@@ -2,7 +2,7 @@
  * ${copyright}
  */
 
-sap.ui.define(function () {
+sap.ui.define(function() {
 	"use strict";
 
 	/**
@@ -11,23 +11,22 @@ sap.ui.define(function () {
 	 * @namespace
 	 * @name sap.ui.rta.service.Selection
 	 * @author SAP SE
-	 * @experimental Since 1.58
 	 * @since 1.58
 	 * @version ${version}
 	 * @private
 	 * @ui5-restricted
 	*/
 
-	return function (oRta, fnPublish) {
+	return function(oRta, fnPublish) {
 		var oSelectionManager = oRta._oDesignTime.getSelectionManager();
 
 		function getControlIds(aElementOverlays) {
-			return aElementOverlays.map(function (oElementOverlay) {
+			return aElementOverlays.map(function(oElementOverlay) {
 				return oElementOverlay.getElement().getId();
 			});
 		}
 
-		oSelectionManager.attachEvent("change", function (oEvent) {
+		oSelectionManager.attachEvent("change", function(oEvent) {
 			fnPublish("change", getControlIds(oEvent.getParameter("selection")));
 		});
 
@@ -46,7 +45,7 @@ sap.ui.define(function () {
 				 * @return {string[]} Selected control IDs
 				 * @public
 				 */
-				get: function () {
+				get() {
 					return getControlIds(oSelectionManager.get());
 				},
 

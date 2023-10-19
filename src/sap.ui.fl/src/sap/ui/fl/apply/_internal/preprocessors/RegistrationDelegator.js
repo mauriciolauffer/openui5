@@ -11,12 +11,11 @@ sap.ui.define([
 	"sap/ui/fl/apply/_internal/changes/descriptor/Preprocessor",
 	"sap/ui/fl/apply/_internal/flexState/ManifestUtils",
 	"sap/ui/fl/apply/_internal/preprocessors/EventHistory",
+	"sap/ui/fl/apply/_internal/preprocessors/ComponentLifecycleHooks",
 	"sap/ui/fl/apply/_internal/DelegateMediator",
 	"sap/ui/fl/apply/api/DelegateMediatorAPI",
 	"sap/ui/fl/initial/_internal/changeHandlers/ChangeHandlerRegistration",
-	"sap/ui/fl/ChangePersistenceFactory",
-	"sap/ui/fl/FlexControllerFactory",
-	"sap/ui/core/Configuration",
+	"sap/ui/base/DesignTime",
 	// the lower 2 are set as a callback in the "register...Processors" which are not detected as dependencies from the preload-building
 	"sap/ui/fl/apply/_internal/preprocessors/ControllerExtension",
 	"sap/ui/fl/apply/_internal/preprocessors/XmlPreprocessor"
@@ -28,12 +27,11 @@ sap.ui.define([
 	Preprocessor,
 	ManifestUtils,
 	EventHistory,
+	ComponentLifecycleHooks,
 	DelegateMediator,
-	DelegateMadiatorAPI,
+	DelegateMediatorAPI,
 	ChangeHandlerRegistration,
-	ChangePersistenceFactory,
-	FlexControllerFactory,
-	Configuration
+	DesignTime
 ) {
 	"use strict";
 
@@ -45,13 +43,13 @@ sap.ui.define([
 	 * @constructor
 	 * @author SAP SE
 	 * @version ${version}
-	 * @experimental Since 1.43.0
+	 * @since 1.43.0
+	 * @private
 	 */
 	var RegistrationDelegator = {};
 
-
 	function registerChangesInComponent() {
-		Component._fnOnInstanceCreated = FlexControllerFactory.getChangesAndPropagate;
+		Component._fnOnInstanceCreated = ComponentLifecycleHooks.instanceCreatedHook;
 	}
 
 	function registerChangeHandlers() {
@@ -60,7 +58,7 @@ sap.ui.define([
 	}
 
 	function registerLoadComponentEventHandler() {
-		Component._fnLoadComponentCallback = ChangePersistenceFactory._onLoadComponent.bind(ChangePersistenceFactory);
+		Component._fnLoadComponentCallback = ComponentLifecycleHooks.componentLoadedHook;
 	}
 
 	function registerExtensionProvider() {
@@ -69,7 +67,7 @@ sap.ui.define([
 
 	function registerXMLPreprocessor() {
 		if (XMLView.registerPreprocessor) {
-			XMLView.registerPreprocessor("viewxml", "sap.ui.fl.apply._internal.preprocessors.XmlPreprocessor", true);
+			XMLView.registerPreprocessor("viewxml", "sap.ui.fl.apply._internal.preprocessors.XmlPreprocessor");
 		}
 	}
 
@@ -85,7 +83,7 @@ sap.ui.define([
 		if (ManifestUtils.isFlexExtensionPointHandlingEnabled(oView)) {
 			return "sap/ui/fl/apply/_internal/extensionPoint/Processor";
 		}
-		if (Configuration.getDesignMode()) {
+		if (DesignTime.isDesignModeEnabled()) {
 			return "sap/ui/fl/write/_internal/extensionPoint/Processor";
 		}
 		return undefined;
@@ -96,7 +94,7 @@ sap.ui.define([
 	}
 
 	function registerDefaultDelegate() {
-		DelegateMadiatorAPI.registerDefaultDelegate({
+		DelegateMediatorAPI.registerDefaultDelegate({
 			modelType: "sap.ui.model.odata.v4.ODataModel",
 			delegate: "sap/ui/fl/write/_internal/delegates/ODataV4ReadDelegate",
 			delegateType: DelegateMediator.types.READONLY

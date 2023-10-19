@@ -6,7 +6,7 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
   });
   _exports.pathData = _exports.ltr = _exports.default = _exports.accData = void 0;
   const name = "ipad";
-  const pathData = "M395.5 1q29 0 49.5 20t20.5 50v371q0 30-20.5 50t-49.5 20h-279q-29 0-49-20t-20-50V71q0-30 20-50t49-20h279zm23 441V71h-325v371h325z";
+  const pathData = "M405 0q31 0 53 21t22 51v368q0 30-22 51t-53 21H107q-31 0-53-21t-22-51V72q0-30 22-51t53-21h298zm24 438V74H83v364h346z";
   _exports.pathData = pathData;
   const ltr = false;
   _exports.ltr = ltr;
@@ -21,6 +21,6 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/asset-registries/I
     collection,
     packageName
   });
-  var _default = "ipad";
+  var _default = "SAP-icons-v5/ipad";
   _exports.default = _default;
 });
