@@ -48,7 +48,8 @@
     "webc:build": "npm-run-all webc:build.common webc:build.main webc:build.fiori",
     "webc:generate.main": "cd src/sap.ui.webc.main && npm run generate",
     "webc:generate.fiori": "cd src/sap.ui.webc.fiori && npm run generate",
-    "webc:generate": "npm-run-all webc:generate.main webc:generate.fiori"
+    "webc:generate": "npm-run-all webc:generate.main webc:generate.fiori",
+    "lint:jquery": "eslint --no-eslintrc --quiet -c ./.eslintrc-nojquery.json src"
   },
   "keywords": [
     "openui5",
@@ -85,6 +86,7 @@
     "cookie": "^0.4.2",
     "decompress": "^4.2.1",
     "eslint": "^8.51.0",
+    "eslint-plugin-no-jquery": "^2.7.0",
     "glob": "^7.2.3",
     "grunt": "~1.5.3",
     "grunt-contrib-clean": "^1.0.0",
