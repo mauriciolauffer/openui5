@@ -66,7 +66,8 @@ sap.ui.define([
 			"sap.ui.mdc.MultiValueField",
 			"sap.ui.mdc.link.Panel",
 			"sap.ui.mdc.Chart",
-			"sap.ui.mdc.p13n.PersistenceProvider"
+			"sap.ui.mdc.p13n.PersistenceProvider",
+			"sap.ui.mdc.Geomap"
 		],
 		elements: [
 			"sap.ui.mdc.table.Column",
@@ -104,7 +105,8 @@ sap.ui.define([
 			"sap.ui.mdc.valuehelp.content.FixedList",
 			"sap.ui.mdc.valuehelp.content.FixedListItem",
 			"sap.ui.mdc.valuehelp.content.MDCTable",
-			"sap.ui.mdc.valuehelp.content.MTable"
+			"sap.ui.mdc.valuehelp.content.MTable",
+            "sap.ui.mdc.geomap.Item"
 		],
 		extensions: {
 			flChangeHandlers: {
