@@ -925,6 +925,10 @@ sap.ui.define([
 				},
 				at: oResult.at || oTokens.at
 			};
-		}
+		},
+		/**
+		 * An object containing variables that can be used as global variables in an expression.
+		 */
+		_globals: mDefaultGlobals
 	};
 }, /* bExport= */ true);
