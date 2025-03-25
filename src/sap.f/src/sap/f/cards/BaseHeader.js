@@ -195,8 +195,7 @@ sap.ui.define([
 
 		this._oToolbarDelegate = {
 			onfocusin: this._onToolbarFocusin,
-			onfocusout: this._onToolbarFocusout,
-			onAfterRendering: this._addMarginToHeaderText
+			onfocusout: this._onToolbarFocusout
 		};
 	};
 
@@ -235,8 +234,6 @@ sap.ui.define([
 		if (oToolbar) {
 			oToolbar.addEventDelegate(this._oToolbarDelegate, this);
 		}
-
-		this._addMarginToHeaderText();
 
 		this.getBannerLines()?.forEach((oText) => {
 			this._enhanceText(oText);
@@ -333,23 +330,6 @@ sap.ui.define([
 	 */
 	BaseHeader.prototype._onToolbarFocusout = function () {
 		this.removeStyleClass("sapFCardHeaderToolbarFocused");
-	};
-
-	/**
-	 * Adds margin to the header text, which ensures the text will be visible under the toolbar.
-	 * @private
-	 */
-	BaseHeader.prototype._addMarginToHeaderText = function () {
-		const oToolbar = this.getToolbar();
-		const oHeaderText = this.getDomRef().getElementsByClassName("sapFCardHeaderText")[0];
-
-		if (oHeaderText && oToolbar) {
-			if (oToolbar.getVisible()) {
-				oHeaderText.style.marginInlineEnd = oToolbar.getDomRef().offsetWidth + "px";
-			} else {
-				oHeaderText.style.marginInlineEnd = 0;
-			}
-		}
 	};
 
 	/*
