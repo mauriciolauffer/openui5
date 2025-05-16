@@ -54,7 +54,8 @@ sap.ui.define([
 	"sap/ui/mdc/enums/ConditionValidated",
 	"sap/ui/mdc/enums/OperatorName",
 	"sap/m/Menu",
-	"sap/ui/fl/variants/VariantManagement"
+	"sap/ui/fl/variants/VariantManagement",
+	"sap/ui/table/rowmodes/Fixed"
 ], function(
 	TableQUnitUtils,
 	Element,
@@ -108,7 +109,8 @@ sap.ui.define([
 	ConditionValidated,
 	OperatorName,
 	Menu,
-	VariantManagement
+	VariantManagement,
+	FixedRowMode
 ) {
 	"use strict";
 
@@ -2651,17 +2653,14 @@ sap.ui.define([
 
 		function testScroll(iIndex) {
 			return oTable.scrollToIndex(iIndex).then(function() {
-				if (oTable._isOfType(TableType.Table, true) && iIndex === -1) {
-					iIndex = 0;
-				}
-
 				assert.ok(oScrollStub.calledOnceWithExactly(iIndex), "Call to " + oScrollStub.propName + " with index " + iIndex);
 				oScrollStub.resetHistory();
 			});
 		}
 
 		return oTable.initialized().then(function() {
-			oScrollStub = sinon.stub(oTable._oTable, "_setFirstVisibleRowIndex");
+			oScrollStub = sinon.stub(oTable._oTable, "_scrollToIndex");
+			oScrollStub.resolves();
 		}).then(function() {
 			return testScroll(0);
 		}).then(function() {
@@ -2688,10 +2687,8 @@ sap.ui.define([
 	});
 
 	QUnit.test("test focusRow", function(assert) {
-		const done = assert.async(); const
-oTable = this.oTable;
-		let oScrollStub; let oFocusStub; let
-n = 0;
+		const done = assert.async(); const oTable = this.oTable;
+		let oScrollStub; let oFocusStub; let n = 0;
 
 		function testFocusRow(iIndex, bFirstInteractiveElement) {
 			return new Promise(function(resolve) {
