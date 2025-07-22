@@ -33532,6 +33532,7 @@ sap.ui.define([
 	// If a $batch with DELETE fails, the count is unchanged (JIRA: CPOUI5ODATAV4-3066)
 	// Wait for pending count promise with requestProperty("$count") (JIRA: CPOUI5ODATAV4-3067)
 	// Combine delete with a side-effects refresh in one $batch (JIRA: CPOUI5ODATAV4-3070)
+	// Update bound $count (header context) when deleting nodes (JIRA: CPOUI5ODATAV4-3063)
 [false, true].forEach(function (bExpanded) {
 	const sState = bExpanded ? "expanded" : "collapsed";
 	QUnit.test(`Recursive Hierarchy: delete single ${sState} child`, async function (assert) {
@@ -33539,6 +33540,7 @@ sap.ui.define([
 
 		const oModel = this.createTeaBusiModel({autoExpandSelect : true});
 		const sView = `
+<Text id="count" text="{$count}"/>
 <Table id="table" items="{path : '/EMPLOYEES',
 		parameters : {
 			$$aggregation : {
@@ -33601,6 +33603,7 @@ sap.ui.define([
 					Name : "Delta"
 				}]
 			})
+			.expectChange("count")
 			.expectChange("expanded", [false, false])
 			.expectChange("name", ["Alpha", "Delta"]);
 
@@ -33611,6 +33614,12 @@ sap.ui.define([
 
 		// code under test (JIRA: CPOUI5ODATAV4-3049)
 		assert.strictEqual(oListBinding.getCount(), 4);
+
+		this.expectChange("count", "4");
+
+		this.oView.byId("count").setBindingContext(oListBinding.getHeaderContext());
+
+		await this.waitForChanges(assert, "initial $count");
 
 		this.expectRequest("EMPLOYEES"
 				+ "?$apply=descendants($root/EMPLOYEES,OrgChart,ID,filter(ID eq '0'),1)"
@@ -33698,6 +33707,7 @@ sap.ui.define([
 		this.expectRequest("#5 DELETE EMPLOYEES('1')")
 			.expectRequest("#5 EMPLOYEES/$count",
 				42) // dummy to show #getCount takes its value from here
+			.expectChange("count", "42")
 			.expectChange("expanded", [undefined]) // Alpha is now a leaf
 			.expectChange("name", [, "Delta"]);
 
@@ -33739,7 +33749,8 @@ sap.ui.define([
 					MANAGER_ID : null,
 					Name : "Alpha"
 				}]
-			});
+			})
+			.expectChange("count", "1");
 
 		await Promise.all([
 			// code under test (JIRA: CPOUI5ODATAV4-3070)
@@ -33763,9 +33774,11 @@ sap.ui.define([
 	// ODLB#getCount, provide updated $count after deleting nodes (JIRA: CPOUI5ODATAV4-3049)
 	// If a $batch with multiple DELETE fails, the count is unchanged (JIRA: CPOUI5ODATAV4-3066)
 	// Only one $count request for multiple deletes in one $batch (JIRA: CPOUI5ODATAV4-3065)
+	// Update bound $count (header context) when deleting nodes (JIRA: CPOUI5ODATAV4-3063)
 	QUnit.test("Recursive Hierarchy: delete multiple nodes", async function (assert) {
 		const oModel = this.createTeaBusiModel({autoExpandSelect : true});
 		const sView = `
+<Text id="count" text="{$count}"/>
 <Table id="table" items="{path : '/EMPLOYEES',
 		parameters : {
 			$$aggregation : {
@@ -33796,7 +33809,8 @@ sap.ui.define([
 					MANAGER_ID : null,
 					Name : "Alpha"
 				}]
-			});
+			})
+			.expectChange("count");
 
 		await this.createView(assert, sView, oModel);
 
@@ -33805,6 +33819,12 @@ sap.ui.define([
 
 		// code under test (JIRA: CPOUI5ODATAV4-3049)
 		assert.strictEqual(oListBinding.getCount(), 4);
+
+		this.expectChange("count", "4");
+
+		this.oView.byId("count").setBindingContext(oListBinding.getHeaderContext());
+
+		await this.waitForChanges(assert, "initial $count");
 
 		this.expectRequest("EMPLOYEES"
 				+ "?$apply=descendants($root/EMPLOYEES,OrgChart,ID,filter(ID eq '0'),1)"
@@ -33871,7 +33891,8 @@ sap.ui.define([
 
 		this.expectRequest("#4 DELETE EMPLOYEES('1')")
 			.expectRequest("#4 DELETE EMPLOYEES('2')")
-			.expectRequest("#4 EMPLOYEES/$count", 2);
+			.expectRequest("#4 EMPLOYEES/$count", 2)
+			.expectChange("count", "2");
 
 		await Promise.all([
 			// code under test
