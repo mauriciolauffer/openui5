@@ -264,6 +264,14 @@ sap.ui.define([
 		return !!this.getHref();
 	};
 
+	/**
+	 * If the header must have tile accessibility.
+	 * @returns {boolean} True if card related attributes should not be rendered.
+	 */
+	BaseHeader.prototype.isTile = function () {
+		return !!this.getProperty("useTileLayout");
+	};
+
 	BaseHeader.prototype.onkeydown = function (oEvent) {
 
 		if ((oEvent.which === KeyCodes.SPACE || oEvent.which === KeyCodes.ENTER || oEvent.which === KeyCodes.ESCAPE || oEvent.which === KeyCodes.SHIFT)
@@ -298,7 +306,7 @@ sap.ui.define([
 
 	BaseHeader.prototype.ontap = function (oEvent) {
 		if (this.isLink() && oEvent.ctrlKey) {
-			// ctrl + click should open the link in a new tab
+			//Ctrl + click opens the link in a new tab.
 			return;
 		}
 
@@ -507,6 +515,11 @@ sap.ui.define([
 	 * @ui5-restricted
 	 */
 	BaseHeader.prototype.getAriaRoleDescription = function () {
+		if (this.isTile()) {
+
+			return null;
+		}
+
 		return this.hasListeners("press") ? this._oRb.getText("ARIA_ROLEDESCRIPTION_INTERACTIVE_CARD_HEADER") : this._oRb.getText("ARIA_ROLEDESCRIPTION_CARD_HEADER");
 	};
 
