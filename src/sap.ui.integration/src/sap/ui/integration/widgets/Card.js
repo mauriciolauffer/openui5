@@ -1853,11 +1853,20 @@ sap.ui.define([
 			this._oDataProviderFactory.destroy();
 		}
 
-		this._oDestinations = new Destinations({
-			host: this.getHostInstance(),
-			card: this,
-			manifestConfig: this._oCardManifest.get(MANIFEST_PATHS.DESTINATIONS)
-		});
+		try {
+			this._oDestinations = Destinations.create(this, this.getMainCard());
+		} catch (oError) {
+			this.getMainCard()._handleError({
+				illustrationType: IllustratedMessageType.UnableToLoad,
+				title: oResourceBundle.getText("CARD_ERROR_CONFIGURATION_TITLE"),
+				description: oResourceBundle.getText("CARD_ERROR_CONFIGURATION_DESCRIPTION"),
+				details: " ",
+				originalError: oError
+			});
+
+			return Promise.reject(oError);
+		}
+
 		this._oIconFormatter = new IconFormatter({
 			card: this
 		});
@@ -3504,6 +3513,21 @@ sap.ui.define([
 	 */
 	Card.prototype.isDataReady = function () {
 		return !!this._bDataReady;
+	};
+
+	/**
+	 * @private
+	 * @ui5-restricted sap.ui.integration
+	 * @returns {sap.ui.integration.widgets.Card} The main card of the current card.
+	 */
+	Card.prototype.getMainCard = function () {
+		let oParentCard = Element.getElementById(this.getAssociation("openerReference"));
+
+		while (oParentCard && oParentCard.getAssociation("openerReference")) {
+			oParentCard = Element.getElementById(oParentCard.getAssociation("openerReference"));
+		}
+
+		return oParentCard || this;
 	};
 
 	return Card;
