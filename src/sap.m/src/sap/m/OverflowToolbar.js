@@ -1703,7 +1703,11 @@ sap.ui.define([
 	 * @private
 	 */
 	OverflowToolbar._getControlMargins = function (oControl) {
-		return oControl.$().outerWidth(true) - oControl.$().outerWidth();
+		if (oControl.$().length) {
+			return oControl.$().outerWidth(true) - oControl.$().outerWidth();
+		}
+
+		return 0;
 	};
 
 	/**
