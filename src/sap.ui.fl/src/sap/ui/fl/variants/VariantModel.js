@@ -59,22 +59,23 @@ sap.ui.define([
 
 	var _mUShellServices = {};
 	const { SharingMode } = mobileLibrary;
+
 	/**
 	 * Adds the passed function to the variant switch promise and returns the whole promise chain.
 	 *
 	 * @param {function():Promise} fnCallback - Callback function returning a promise
-	 * @param {sap.ui.fl.variants.VariantModel} oModel - Variant model
+	 * @param {string} sFlexReference - Flex reference of the app
 	 * @param {string} sVMReference - Variant Management reference
 	 * @returns {Promise} Resolves when the variant model is not busy anymore
 	 * @private
 	 */
-	function executeAfterSwitch(fnCallback, oModel, sVMReference) {
+	function executeAfterSwitch(fnCallback, sFlexReference, sVMReference) {
 		// if there are multiple switches triggered very quickly this makes sure that they are being executed one after another
-		oModel._oVariantSwitchPromises[sVMReference] = oModel._oVariantSwitchPromises[sVMReference]
+		const oNewPromise = VariantManagementState.waitForVariantSwitch(sFlexReference, sVMReference)
 		.catch(function() {})
 		.then(fnCallback);
-		VariantManagementState.setVariantSwitchPromise(oModel.sFlexReference, oModel._oVariantSwitchPromises[sVMReference], sVMReference);
-		return oModel._oVariantSwitchPromises[sVMReference];
+		VariantManagementState.setVariantSwitchPromise(sFlexReference, sVMReference, oNewPromise);
+		return oNewPromise;
 	}
 
 	/**
@@ -232,7 +233,6 @@ sap.ui.define([
 			this.sFlexReference = ManifestUtils.getFlexReferenceForControl(mPropertyBag.appComponent);
 			this.oAppComponent = mPropertyBag.appComponent;
 			this._oResourceBundle = Lib.getResourceBundleFor("sap.ui.fl");
-			this._oVariantSwitchPromises = {};
 
 			// set variant model data
 			this.fnUpdateListener = this.updateData.bind(this);
@@ -295,10 +295,6 @@ sap.ui.define([
 		}.bind(this));
 	};
 
-	VariantModel.prototype.waitForAllVMSwitchPromises = function() {
-		return Promise.all(Object.values(this._oVariantSwitchPromises));
-	};
-
 	/**
 	 * Updates the storage of the current variant for a given variant management control.
 	 * @param {object} mPropertyBag - Object with parameters as properties
@@ -326,7 +322,7 @@ sap.ui.define([
 		}
 		return executeAfterSwitch(
 			switchVariantAndUpdateModel.bind(this, mProperties, mPropertyBag.scenario),
-			this,
+			this.sFlexReference,
 			mPropertyBag.variantManagementReference
 		);
 	};
@@ -994,7 +990,11 @@ sap.ui.define([
 			reference: this.sFlexReference,
 			vmReference: sVariantManagementReference
 		};
-		this._oVariantSwitchPromises[sVariantManagementReference] = waitForInitialVariantChanges(mParameters);
+		VariantManagementState.setVariantSwitchPromise(
+			this.sFlexReference,
+			sVariantManagementReference,
+			waitForInitialVariantChanges(mParameters)
+		);
 
 		if (this.oData[sVariantManagementReference].initPromise) {
 			this.oData[sVariantManagementReference].initPromise.resolveFunction();
