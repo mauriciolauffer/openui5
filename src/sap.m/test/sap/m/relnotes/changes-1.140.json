@@ -1,7 +1,22 @@
 {
   "1.140.0": {
-    "date": "July 2025",
+    "date": "August 2025",
     "notes": [
+      {
+        "id": "11748d569ba5525020062cd3dcf0e6eb002de337",
+        "type": "FIX",
+        "text": " sap.m.RadioButton: Fixed Safari rendering issue with zoom behavior"
+      },
+      {
+        "id": "c7195a7fbbe274318716ccd27ecc072406786d8b",
+        "type": "FIX",
+        "text": " sap.m.IconTabBar: Unnecessary bold on tab text is now removed"
+      },
+      {
+        "id": "f000ac580b805834a9b6fcdf6a51216bd56681b1",
+        "type": "FIX",
+        "text": " sap.m.Popover: Calculate correct placement on resize"
+      },
       {
         "id": "1848ae222c7eb599d6cfff9b8b18cdece9aa35b6",
         "type": "FIX",
