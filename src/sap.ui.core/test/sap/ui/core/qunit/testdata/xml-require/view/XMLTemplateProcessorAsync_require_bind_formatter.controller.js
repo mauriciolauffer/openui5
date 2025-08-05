@@ -18,9 +18,17 @@ sap.ui.define([
 			if (this.getId().endsWith("btn_5")) {
 				sinon.assert.pass("btn_5: formatter called with the correct 'this' context.");
 			} else {
-				sinon.assert.pass(`btn_5: formatter called with the wrong 'this' context: ${this.toString()}`);
+				sinon.assert.fail(`btn_5: formatter called with the wrong 'this' context: ${this.toString()}`);
 			}
 			return `${text} formatted by $controller but with control as this context`;
+		},
+		customDataFormatter: function(text) {
+			if (this.isA("sap.ui.core.CustomData")) {
+				sinon.assert.pass("customDataFormatter called with the correct 'this' context (sap.ui.core.CustomData).");
+			} else {
+				sinon.assert.fail("customDataFormatter called with the wrong 'this' context.");
+			}
+			return `${text} (formatted by customDataFormatter)`;
 		}
 	});
 });
