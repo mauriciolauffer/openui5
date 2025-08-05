@@ -948,7 +948,6 @@ sap.ui.define([
 				"then initially current variant was correct before updating"
 			);
 
-			this.oModel._oVariantSwitchPromises[sVMReference] = Promise.resolve();
 			this.oModel.oData[sVMReference].updateVariantInURL = true;
 			return this.oModel.updateCurrentVariant({
 				variantManagementReference: sVMReference,
@@ -978,7 +977,6 @@ sap.ui.define([
 			sandbox.stub(Element, "getElementById").returns(oVMControl);
 			sandbox.stub(oVMControl, "_executeAllVariantAppliedListeners");
 
-			this.oModel._oVariantSwitchPromises[sVMReference] = Promise.resolve();
 			this.oModel.oData[sVMReference].updateVariantInURL = true;
 			await this.oModel.updateCurrentVariant({
 				variantManagementReference: sVMReference,
@@ -1005,7 +1003,6 @@ sap.ui.define([
 				"variant1",
 				"then initially current variant was correct before updating"
 			);
-			this.oModel._oVariantSwitchPromises[sVMReference] = Promise.resolve();
 
 			const oSetVariantSwitchPromiseStub = sandbox.stub(VariantManagementState, "setVariantSwitchPromise");
 			const oVMControl = new VariantManagement(sVMReference);
@@ -1033,7 +1030,7 @@ sap.ui.define([
 				newVariantReference: "variant0",
 				appComponent: this.oModel.oAppComponent
 			});
-			await this.oModel._oVariantSwitchPromises[sVMReference];
+			await VariantManagementState.waitForVariantSwitch(sReference, sVMReference);
 			assert.strictEqual(oSwitchVariantStub.callCount, 2, "then Switcher.switchVariant() was called twice");
 			assert.strictEqual(
 				oSetVariantSwitchPromiseStub.callCount,
@@ -1054,7 +1051,6 @@ sap.ui.define([
 				"variant1",
 				"then initially current variant was correct before updating"
 			);
-			this.oModel._oVariantSwitchPromises[sVMReference] = Promise.resolve();
 
 			var oSetVariantSwitchPromiseStub = sandbox.stub(VariantManagementState, "setVariantSwitchPromise");
 			var SwitchVariantStub = sandbox.stub(Switcher, "switchVariant")
@@ -1766,7 +1762,7 @@ sap.ui.define([
 				false,
 				"showExecuteOnSelection is set to false"
 			);
-			await this.oModel._oVariantSwitchPromises[this.sVMReference];
+			await VariantManagementState.waitForVariantSwitch(sReference, this.sVMReference);
 			assert.strictEqual(
 				FlexObjectState.waitForFlexObjectsToBeApplied.callCount, 1,
 				"the initial changes promise was added to the variant switch promise"
@@ -2160,7 +2156,7 @@ sap.ui.define([
 			const oVariantManagement3 = new VariantManagement(sVMReference3);
 			oVariantManagement3.setModel(this.oModel, ControlVariantApplyAPI.getVariantModelName());
 
-			await this.oModel.waitForAllVMSwitchPromises();
+			await VariantManagementState.waitForAllVariantSwitches(sReference);
 			assert.ok(true, "the variant switch promise was resolved");
 			oControl.destroy();
 			oVariantManagement2.destroy();
@@ -2296,7 +2292,8 @@ sap.ui.define([
 				var sSelectedVariantReference = oEvent.getParameters().key;
 				this.oVariantModel.updateCurrentVariant.onFirstCall().callsFake(function(mPropertyBag) {
 					// update call will make variant model busy, which will be resolved after the whole update process has taken place
-					this.oVariantModel._oVariantSwitchPromises[sSelectedVariantReference].then(function() {
+					VariantManagementState.waitForVariantSwitch(sReference, this.sVMReference)
+					.then(function() {
 						assert.strictEqual(oCallListenerStub.callCount, 0, "the listeners are not notified again");
 						assert.deepEqual(mPropertyBag, {
 							variantManagementReference: sSelectedVariantReference,
