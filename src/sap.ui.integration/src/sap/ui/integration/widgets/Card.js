@@ -2241,24 +2241,44 @@ sap.ui.define([
 	};
 
 	/**
-	 * Creates specific type of card content based on sap.card/content part of the manifest
+	 * Generates accessibility texts based on the rendering style of the card.
+	 *
+	 * @private
+	 */
+	Card.prototype._applyAriaTexts = function () {
+		const sCardType = this._oCardManifest.get(MANIFEST_PATHS.TYPE);
+		const bIsTileDisplayVariant = this.isTileDisplayVariant();
+		let sAriaText;
+
+
+		if (sCardType  && !bIsTileDisplayVariant) {
+			sAriaText = this._oIntegrationRb.getText("ARIA_DESCRIPTION_CARD_TYPE_" + sCardType.toUpperCase());
+
+			// @TODO: This adds the same text to the card. The region has an aria-describedby = card type. Group has aria-labelledby with the card type. Leads to duplicate hidden text.
+			// Suggestion for a fix: delete _ariaText and add _describedByCardTypeText to aria-labelled by of the region.
+			this._describedByCardTypeText.setText(sAriaText);
+		} else if (bIsTileDisplayVariant) {
+			sAriaText = this._oIntegrationRb.getText("ARIA_LABELLEDBY_DISPLAY_VARIANT_TILE");
+		} else {
+			sAriaText = this._oRb.getText("ARIA_ROLEDESCRIPTION_CARD");
+		}
+
+		this._ariaText.setText(sAriaText);
+	};
+
+	/**
+	 * Creates specific type of card content based on sap.card/content part of the manifest.
 	 *
 	 * @private
 	 */
 	Card.prototype._applyContentManifestSettings = function () {
 		var sCardType = this._oCardManifest.get(MANIFEST_PATHS.TYPE),
 			oContentManifest = this.getContentManifest(),
-			sAriaText,
 			oContent;
 
-		if (sCardType) {
-			sAriaText = this._oIntegrationRb.getText("ARIA_DESCRIPTION_CARD_TYPE_" + sCardType.toUpperCase());
-		} else {
-			sAriaText = this._oRb.getText("ARIA_ROLEDESCRIPTION_CARD");
-		}
 		this.destroyAggregation("_content");
-		this._ariaText.setText(sAriaText);
-		this._describedByCardTypeText.setText(sAriaText);
+
+		this._applyAriaTexts();
 
 		if (this._shouldIgnoreContent()) {
 			this.fireEvent("_contentReady");
