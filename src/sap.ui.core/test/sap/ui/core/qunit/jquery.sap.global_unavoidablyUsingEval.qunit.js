@@ -3,9 +3,8 @@ sap.ui.define([
 	"jquery.sap.global",
 	"sap/ui/core/Theming",
 	"sap/ui/qunit/utils/createAndAppendDiv",
-	"sap/ui/thirdparty/URI",
-	"sap/ui/test/utils/waitForThemeApplied"
-], function(jQuery, Theming, createAndAppendDiv, URI, themeApplied) {
+	"sap/ui/thirdparty/URI"
+], function(jQuery, Theming, createAndAppendDiv, URI) {
 	"use strict";
 
 	/* !!! MOVE TO HEAD - DUE TO SAFARI ISSUES DURING TEST SETUP !!! */
@@ -23,7 +22,7 @@ sap.ui.define([
 	link.rel = 'stylesheet';
 	link.href = `resources/sap/ui/layout/themes/${Theming.getTheme()}/library.css`;
 	link.setAttribute("data-marker",'42');
-	document.body.appendChild(link);
+	document.head.appendChild(link);
 
 	var div = createAndAppendDiv("includeStyleSheetTest");
 	div.className = "sap-jsunitIncludeStyleSheetTest";
@@ -31,14 +30,12 @@ sap.ui.define([
 
 	a.push(jQuery.sap.includeScript({
 		url: sPath + "testdata/sapjsunittestvalueincrementor.js",
-		id: "jsunitIncludeScriptTestScript",
-		promisify: true
+		id: "jsunitIncludeScriptTestScript"
 	}));
 
 	a.push(jQuery.sap.includeStyleSheet({
 		url: sPath + "testdata/testA.css",
-		id: "jsunitIncludeStyleSheetTest",
-		promisify: true
+		id: "jsunitIncludeStyleSheetTest"
 	}));
 
 	function jQueryById(id) {
@@ -146,8 +143,7 @@ sap.ui.define([
 			var iScriptCnt = document.getElementsByTagName("SCRIPT").length;
 			return jQuery.sap.includeScript({
 				url: sPath + "testdata/sapjsunittestvalueincrementor.js",
-				id: "jsunitIncludeScriptTestScript",
-				promisify: true
+				id: "jsunitIncludeScriptTestScript"
 			}).then(function() {
 				assert.strictEqual(iBefore + 1, sap.jsunittestvalue, "testvalue should have been incremented");
 				assert.strictEqual(iScriptCnt, document.getElementsByTagName("SCRIPT").length, "no new script element should have been created");
@@ -304,8 +300,7 @@ sap.ui.define([
 			var iLinkCnt = document.getElementsByTagName("LINK").length;
 			return jQuery.sap.includeStyleSheet({
 				url: sPath + "testdata/testC.css",
-				id: "jsunitIncludeStyleSheetTest",
-				promisify: true
+				id: "jsunitIncludeStyleSheetTest"
 			}).then(function() {
 				assert.notStrictEqual(jQuery(oTestArea).css("backgroundColor"), sBefore, "background-color should have changed");
 				assert.strictEqual(document.getElementsByTagName("LINK").length, iLinkCnt, "no new link element should have been created");
@@ -343,8 +338,7 @@ sap.ui.define([
 
 		});
 
-		QUnit.test("stylesheet count", async function(assert) {
-			await themeApplied();
+		QUnit.test("stylesheet count", function(assert) {
 
 			function getStyleId(i) {
 				return "style" + (i + 1);
@@ -356,9 +350,6 @@ sap.ui.define([
 					jQuery.sap.includeStyleSheet(sStyleBaseUrl + sStyleId + '.css', sStyleId, fnResolve, fnReject);
 				});
 			}
-
-			// remember initial stylesheet count
-			var iInitialStylesheets = document.styleSheets.length;
 
 			// include 40 stylesheets
 			var iNewStylesheets = 40;
@@ -373,12 +364,10 @@ sap.ui.define([
 
 			}
 
-			// all new stylesheets should be added
-			var iExpectedStylesheets = iInitialStylesheets + iNewStylesheets;
-
 			// wait until all stylesheets are loaded
 			return Promise.all(aPromises).then(function() {
-				assert.equal(document.styleSheets.length, iExpectedStylesheets, "Overall stylesheet count should be like expected");
+				var iExpectedStylesheets = [...document.styleSheets].filter((styleSheet) => styleSheet.ownerNode.getAttribute("id")?.startsWith("style")).length;
+				assert.strictEqual(iExpectedStylesheets, iNewStylesheets, "Overall stylesheet count should be like expected");
 
 				// remove all added stylesheets again
 				for (i = 0; i < iNewStylesheets; i++) {
