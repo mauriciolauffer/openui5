@@ -214,14 +214,12 @@ sap.ui.define([
 	}
 
 	function getThemeBaseUrlForId (libInfo) {
-		// read inline parameters from css style rule
-		// (can be switched off for testing purposes via private URI parameter "sap-ui-xx-no-inline-theming-parameters=true")
-		if (!libInfo.getUrl() && !libInfo.cssLinkElement) {
+		if (!libInfo.getUrl().url && !libInfo.cssLinkElement) {
 			future.warningThrows(`sap.ui.core.theming.Parameters: Could not find stylesheet element with ID "${libInfo.id}"`);
 			return undefined;
 		}
 
-		var sStyleSheetUrl = libInfo.getUrl() || libInfo.cssLinkElement?.getAttribute("href");
+		var sStyleSheetUrl = libInfo.getUrl().url || libInfo.cssLinkElement?.getAttribute("href");
 
 		// Remove CSS file name and query to create theme base url (to resolve relative urls)
 		return {
