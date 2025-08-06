@@ -1330,7 +1330,7 @@ sap.ui.define([
 
 		await nextUIUpdate(this.clock);
 
-		var $item = jQuery(".sapTntNL .sapTntNLIFirstLevel a").first();
+		var $item = jQuery(".sapTntNL .sapTntNLIFirstLevel a").eq(2);
 		$item.trigger("tap");
 
 		await nextUIUpdate(this.clock);
@@ -2072,6 +2072,49 @@ sap.ui.define([
 
 		QUnitUtils.triggerEvent("mouseout", oTarget);
 		assert.ok(oTooltipElement.getAttribute("title"), "Test", "The user provided tooltip is available");
+	});
+
+	QUnit.module("SPACE/ENTER Key Interaction Tests", {
+		beforeEach: async function () {
+			this.navigationList = getSecondNavigationList();
+			this.navigationList.placeAt("qunit-fixture");
+			this.clock = sinon.useFakeTimers();
+			await nextUIUpdate();
+		},
+		afterEach: async function () {
+			this.navigationList.destroy();
+			this.navigationList = null;
+			await clearPendingUIUpdates(this.clock);
+			this.clock.restore();
+		}
+	});
+
+	QUnit.test("Non-selectable item does not toggle expansion on SPACE key", async function (assert) {
+		const oItem = this.navigationList.getItems()[0];
+		const oDomRef = oItem.getDomRef().querySelector(".sapTntNLI");
+
+		assert.strictEqual(oItem.getExpanded(), true, "Item is initially expanded");
+
+		QUnitUtils.triggerKeyup(oDomRef, KeyCodes.SPACE);
+
+		await nextUIUpdate(this.clock);
+		this.clock.tick(50);
+
+		assert.strictEqual(oItem.getExpanded(), true, "Item remains expanded after SPACE key (not selectable)");
+	});
+
+	QUnit.test("Non-selectable item does not toggle expansion on ENTER key", async function (assert) {
+		const oItem = this.navigationList.getItems()[0];
+		const oDomRef = oItem.getDomRef().querySelector(".sapTntNLI");
+
+		assert.strictEqual(oItem.getExpanded(), true, "Item is initially expanded");
+
+		QUnitUtils.triggerKeydown(oDomRef, KeyCodes.ENTER);
+
+		await nextUIUpdate(this.clock);
+		this.clock.tick(50);
+
+		assert.strictEqual(oItem.getExpanded(), true, "Item remains expanded after ENTER key (not selectable)");
 	});
 
 	return waitForThemeApplied();
