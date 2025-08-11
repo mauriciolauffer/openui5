@@ -3,6 +3,26 @@
     "date": "August 2025",
     "notes": [
       {
+        "id": "b446a278cc3fdfd2ad6ef6cea03eb3d619db8927",
+        "type": "FEATURE",
+        "text": " sap.m.MessagePopover: enable title in header"
+      },
+      {
+        "id": "cdf37be479b5470c986196bdae9d989e36280e48",
+        "type": "FIX",
+        "text": " sap.m.IconTabHeader: Tests are stabilized"
+      },
+      {
+        "id": "5b4a446c2cc04d8b21587455896cc0da166a06e6",
+        "type": "FIX",
+        "text": " sap.m.Popover: Deprecated enum values are marked in code"
+      },
+      {
+        "id": "23255d4ae0d5965c358b4ff0e6c3b9cb4ff9917d",
+        "type": "FIX",
+        "text": " sap.m.OverflowToolbar: Fix failing test on 2.0"
+      },
+      {
         "id": "11748d569ba5525020062cd3dcf0e6eb002de337",
         "type": "FIX",
         "text": " sap.m.RadioButton: Fixed Safari rendering issue with zoom behavior"

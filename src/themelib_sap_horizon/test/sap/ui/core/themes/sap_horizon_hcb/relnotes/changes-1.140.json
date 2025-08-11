@@ -3,6 +3,21 @@
     "date": "August 2025",
     "notes": [
       {
+        "id": "0c2a3c8451bc7f2fc5853dcbd7e4a5678111e04a",
+        "type": "FIX",
+        "text": " Form: title in toolbar wrong weight"
+      },
+      {
+        "id": "b2e982ed88f0b6b4b483c7b7a40782c80c8b368d",
+        "type": "FIX",
+        "text": " sap.m.Select: Correct CSS variable for error state background"
+      },
+      {
+        "id": "62ae6e432deda3d8ba04fa0ebf82fef503fa0a48",
+        "type": "FIX",
+        "text": " TokenizerDisplay: show focus on more-indicatior like on Link"
+      },
+      {
         "id": "c7195a7fbbe274318716ccd27ecc072406786d8b",
         "type": "FIX",
         "text": " sap.m.IconTabBar: Unnecessary bold on tab text is now removed"
