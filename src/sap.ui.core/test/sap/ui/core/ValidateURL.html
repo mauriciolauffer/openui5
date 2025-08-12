@@ -6,7 +6,7 @@
 		<script src="shared-config.js"></script>
 		<script id="sap-ui-bootstrap"
 				src="../../../../resources/sap-ui-core.js"
-				data-sap-ui-libs="sap.m"
+				data-sap-ui-libs="sap.m,sap.ui.layout"
 				data-sap-ui-theme="sap_bluecrystal">
 		</script>
 
@@ -120,13 +120,13 @@
 					var oButton2 = new sap.m.Button("Button2",{
 						text: "Remove",
 						width: "7em",
-						style: sap.m.ButtonType.Reject,
+						type: sap.m.ButtonType.Reject,
 						press: removeFromAllowlist
 					});
 					var oButton3 = new sap.m.Button("Button3",{
 						text: "Clear",
 						width: "7em",
-						style: sap.m.ButtonType.Reject,
+						type: sap.m.ButtonType.Reject,
 						press: clearAllowlist
 					});
 					var oLayout = new sap.ui.layout.HorizontalLayout("Layout1", {
@@ -192,7 +192,7 @@
 
 							new sap.m.Button("Button4",{
 								text: "Add",
-								style: sap.m.ButtonType.Accept,
+								type: sap.m.ButtonType.Accept,
 								press: addToAllowlist,
 								layoutData: new sap.ui.layout.GridData({
 									span: "L1 M1 S1"
