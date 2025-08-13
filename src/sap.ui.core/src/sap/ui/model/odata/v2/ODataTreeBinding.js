@@ -84,9 +84,9 @@ sap.ui.define([
 	 *  @param {boolean} [mParameters.usePreliminaryContext]
 	 *    Whether a preliminary context is used
 	 * @param {string} [mParameters.batchGroupId]
-	 *   <b>Deprecated</b>, use <code>groupId</code> instead
+	 *   <b>Deprecated as of version 1.31.0</b>, use <code>groupId</code> instead
 	 * @param {object} [mParameters.navigation]
-	 *   <b>Deprecated since 1.44:</b> A map describing the navigation properties between entity
+	 *   <b>Deprecated as of version 1.44</b>. A map describing the navigation properties between entity
 	 *   sets, which is used for constructing and paging the tree
 	 * @param {sap.ui.model.Sorter[]|sap.ui.model.Sorter} [vSorters=[]]
 	 *   The sorters used initially; call {@link #sort} to replace them

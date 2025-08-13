@@ -175,7 +175,7 @@ sap.ui.define([
 	 *   Enable/disable automatic refresh after change operations
 	 * @param {boolean} [mParameters.sequentializeRequests=false]
 	 *   Whether to sequentialize all requests, needed in case the service cannot handle parallel
-	 *   requests. <b>Deprecated</b> as of version 1.128.0, the concept has been discarded.
+	 *   requests. <b>Deprecated as of version 1.128.0</b>, the concept has been discarded.
 	 * @param {string} [mParameters.serviceUrl]
 	 *   Base URI of the service to request data from; this property is mandatory when the first
 	 *   method parameter <code>serviceUrl</code> is omitted, but ignored otherwise
@@ -196,16 +196,16 @@ sap.ui.define([
 	 *   If set to <code>true</code>, the user credentials are included in a cross-origin request. <b>Note:</b> This
 	 *   only works if all requests are asynchronous.
 	 * @param {string} [mParameters.password]
-	 *   <b>Deprecated</b> for security reasons. Use strong server side authentication instead.
+	 *   <b>Deprecated as of version 1.75.0</b> for security reasons. Use strong server side authentication instead.
 	 *   Password for the service.
 	 * @param {boolean} [mParameters.skipMetadataAnnotationParsing]
-	 *   <b>Deprecated</b> This parameter does not prevent creation of annotations from the metadata
-	 *   document in this model's metamodel.
+	 *   <b>Deprecated as of version 1.112.0</b> This parameter does not prevent creation of annotations from the
+	 *   metadata document in this model's metamodel.
 	 *   Whether to skip the automated loading of annotations from the metadata document. Loading
 	 *   annotations from metadata does not have any effects (except the lost performance by
 	 *   invoking the parser) if there are no annotations inside the metadata document
 	 * @param {string} [mParameters.user]
-	 *   <b>Deprecated</b> for security reasons. Use strong server side authentication instead.
+	 *   <b>Deprecated as of version 1.75.0</b> for security reasons. Use strong server side authentication instead.
 	 *   UserID for the service.
 	 *
 	 * @class
@@ -2102,10 +2102,10 @@ sap.ui.define([
 	 *   {@link topic:6c47b2b39db9404582994070ec3d57a2#loio62149734b5c24507868e722fe87a75db
 	 *   Optimizing Dependent Bindings}.
 	 * @param {string} [mParameters.batchGroupId]
-	 *   <b>Deprecated</b>, use <code>groupId</code> instead. Sets the batch group id to be used for
-	 *   requests originating from the binding.
+	 *   <b>Deprecated as of version 1.31.0</b>, use <code>groupId</code> instead. Sets the batch group id to be used
+	 *   for requests originating from the binding.
 	 * @param {int} [mParameters.threshold]
-	 *   Deprecated since 1.102.0, as {@link sap.ui.model.odata.OperationMode.Auto} is deprecated;
+	 *   <b>Deprecated as of version 1.102.0</b>, as {@link sap.ui.model.odata.OperationMode.Auto} is deprecated;
 	 *   the threshold that defines how many entries should be fetched at least by the binding if
 	 *   <code>operationMode</code> is set to <code>Auto</code>.
 	 * @throws {Error} If one of the filters uses an operator that is not supported by the underlying model
@@ -2135,7 +2135,7 @@ sap.ui.define([
 	 * single initial OData request.
 	 *
 	 * For services without the <code>hierarchy-node-descendant-count-for</code> annotation, the
-	 * <code>numberOfExpandedLevels</code> property is not supported and deprecated.
+	 * <code>numberOfExpandedLevels</code> property is not supported and deprecated since 1.44.5.
 	 *
 	 * <h3>Operation Modes</h3>
 	 * For a full definition and explanation of all OData binding operation modes, see
@@ -2202,8 +2202,8 @@ sap.ui.define([
 	 *   the referenced property has to be an integer type
 	 * @param {number} [mParameters.numberOfExpandedLevels=0]
 	 *   The number of levels that are auto-expanded initially. Setting this property might lead to
-	 *   multiple back-end requests. The auto-expand feature is <b>deprecated for services without
-	 *   the <code>hierarchy-node-descendant-count-for</code> annotation</b>
+	 *   multiple back-end requests. The auto-expand feature is <b>deprecated as of Version 1.44.5
+	 *   for services without the <code>hierarchy-node-descendant-count-for</code> annotation</b>
 	 * @param {number} [mParameters.rootLevel=0]
 	 *   The level of the topmost tree nodes
 	 * @param {string} [mParameters.groupId]
@@ -2251,14 +2251,14 @@ sap.ui.define([
 	 *    <code>preliminaryContext</code> given on construction of the binding's model, see
 	 *    {@link sap.ui.model.odata.v2.ODataModel}
 	 * @param {string} [mParameters.batchGroupId]
-	 *   <b>Deprecated</b>, use <code>groupId</code> instead. Sets the batch group id to be used
+	 *   <b>Deprecated as of version 1.31.0</b>, use <code>groupId</code> instead. Sets the batch group id to be used
 	 *   for requests originating from this binding
 	 * @param {object} [mParameters.navigation]
 	 *   A map describing the navigation properties between entity sets, which is used for
 	 *   constructing and paging the tree. Keys in this object are entity names, whereas the values
 	 *   name the navigation properties.
 	 *
-	 *   <b>Deprecated: since 1.44</b> The use of navigation properties to build up the hierarchy
+	 *   <b>Deprecated as of version 1.44</b> The use of navigation properties to build up the hierarchy
 	 *   structure is deprecated. It is recommended to use the hierarchy annotations mentioned above
 	 *   instead.
 	 * @param {sap.ui.model.Sorter[]|sap.ui.model.Sorter} [vSorters=[]]
@@ -2783,8 +2783,8 @@ sap.ui.define([
 	 *   see {@link topic:6c47b2b39db9404582994070ec3d57a2#loio62149734b5c24507868e722fe87a75db
 	 *   Optimizing Dependent Bindings}.
 	 * @param {string} [mParameters.batchGroupId]
-	 *   <b>Deprecated</b>, use <code>groupId</code> instead. Sets the batch group id to be used for
-	 *   requests originating from the binding.
+	 *   <b>Deprecated as of version 1.31.0</b>, use <code>groupId</code> instead. Sets the batch group id to be used
+	 *   for requests originating from the binding.
 	 * @returns {sap.ui.model.odata.v2.ODataContextBinding} The new context binding
 	 * @see sap.ui.model.Model.prototype.bindContext
 	 * @public
@@ -2965,8 +2965,8 @@ sap.ui.define([
 	 * @param {string} sPath Path/name of the property
 	 * @param {object} [oContext] Context if available to access the property value
 	 * @param {boolean} [bIncludeExpandEntries=false]
-	 *   Deprecated, use {@link #getObject} function with 'select' and 'expand' parameters instead.
-	 *   Whether entities for navigation properties of this property which have been read via
+	 *   <b>Deprecated as of version 1.41.0</b>, use {@link #getObject} function with 'select' and 'expand' parameters
+	 *   instead. Whether entities for navigation properties of this property which have been read via
 	 *   <code>$expand</code> are part of the return value.
 	 * @returns {any} Value of the property
 	 * @throws {Error}
@@ -5304,7 +5304,7 @@ sap.ui.define([
 	 *   sure that the request is completed before the data is processed any further.
 	 * @param {Object<string,string>} [mParameters.urlParameters] A map containing the parameters that will be passed as query strings
 	 * @param {Object<string,string>} [mParameters.headers] A map of headers for this request
-	 * @param {string} [mParameters.batchGroupId] Deprecated - use <code>groupId</code> instead
+	 * @param {string} [mParameters.batchGroupId] <b>Deprecated as of version 1.31.0</b>, use <code>groupId</code> instead
 	 * @param {string} [mParameters.groupId] ID of a request group; requests belonging to the same group will be bundled in one batch request
 	 * @param {string} [mParameters.changeSetId] ID of the <code>ChangeSet</code> that this request should belong to
 	 * @param {boolean} [mParameters.refreshAfterChange] Since 1.46; defines whether to update all bindings after submitting this change operation.
@@ -5389,7 +5389,7 @@ sap.ui.define([
 	 *   <code>true</code>.
 	 * @param {Object<string,string>} [mParameters.urlParameters] A map containing the parameters that will be passed as query strings
 	 * @param {Object<string,string>} [mParameters.headers] A map of headers for this request
-	 * @param {string} [mParameters.batchGroupId] Deprecated - use <code>groupId</code> instead
+	 * @param {string} [mParameters.batchGroupId] <b>Deprecated as of version 1.31.0</b>, use <code>groupId</code> instead
 	 * @param {string} [mParameters.groupId] ID of a request group; requests belonging to the same group will be bundled in one batch request
 	 * @param {string} [mParameters.changeSetId] ID of the <code>ChangeSet</code> that this request should belong to
 	 * @param {boolean} [mParameters.refreshAfterChange] Since 1.46; defines whether to update all bindings after submitting this change operation.
@@ -5477,7 +5477,7 @@ sap.ui.define([
 	 * @param {Object<string,string>} [mParameters.headers]
 	 *   A map of headers for this request
 	 * @param {string} [mParameters.batchGroupId]
-	 *   Deprecated - use <code>groupId</code> instead
+	 *   <b>Deprecated as of version 1.31.0</b>, use <code>groupId</code> instead
 	 * @param {string} [mParameters.groupId]
 	 *   ID of a request group; requests belonging to the same group will be bundled in one batch
 	 *   request
@@ -5659,7 +5659,7 @@ sap.ui.define([
 	 *   Maps the function import parameter name as specified in the function import's metadata to
 	 *   its value; the value is formatted based on the parameter's type as specified in the metadata
 	 * @param {string} [mParameters.batchGroupId]
-	 *   <b>Deprecated - use <code>groupId</code> instead</b>
+	 *   <b>Deprecated as of version 1.31.0</b>, use <code>groupId</code> instead
 	 *
 	 * @return {object}
 	 *   An object which has a <code>contextCreated</code> function that returns a
@@ -5958,7 +5958,7 @@ sap.ui.define([
 	 *   failed. The handler can have the parameter: <code>oError</code> which contains additional error information.
 	 *   If the <code>GET</code> request has been aborted, the error has an <code>aborted</code> flag set to
 	 *   <code>true</code>.
-	 * @param {string} [mParameters.batchGroupId] Deprecated - use <code>groupId</code> instead
+	 * @param {string} [mParameters.batchGroupId] <b>Deprecated as of version 1.31.0</b>, use <code>groupId</code> instead
 	 * @param {string} [mParameters.groupId] ID of a request group; requests belonging to the same group will be bundled in one batch request
 	 * @param {boolean} [mParameters.updateAggregatedMessages]
 	 *   Whether messages for child entities belonging to the same business object as the requested
@@ -6393,9 +6393,9 @@ sap.ui.define([
 	 *   If all contained requests have been aborted, the error has an <code>aborted</code> flag set to
 	 *   <code>true</code>.
 	 * @param {string} [mParameters.batchGroupId]
-	 *   <b>Deprecated</b>, use <code>groupId</code> instead
+	 *   <b>Deprecated as of version 1.31.0</b>, use <code>groupId</code> instead
 	 * @param {boolean} [mParameters.merge]
-	 *   <b>Deprecated</b> since 1.38.0; use the <code>defaultUpdateMethod</code> constructor parameter instead.
+	 *   <b>Deprecated as of version 1.38.0</b>, use the <code>defaultUpdateMethod</code> constructor parameter instead.
 	 *   If unset, the update method is determined from the <code>defaultUpdateMethod</code> constructor parameter.
 	 *   If <code>true</code>, <code>sap.ui.model.odata.UpdateMethod.MERGE</code> is used for update operations;
 	 *   if set to <code>false</code>, <code>sap.ui.model.odata.UpdateMethod.PUT</code> is used.
@@ -6429,10 +6429,10 @@ sap.ui.define([
 	 * @param {function} [mParameters.success]
 	 *   A callback function which is called when the request has been successful
 	 * @param {string} [mParameters.batchGroupId]
-	 *   <b>Deprecated</b>, use <code>groupId</code> instead
+	 *   <b>Deprecated as of version 1.31.0</b>, use <code>groupId</code> instead
 	 * @param {boolean} [mParameters.merge]
-	 *   <b>Deprecated</b> since 1.38.0; whether the update method
-	 *   <code>sap.ui.model.odata.UpdateMethod.MERGE</code> is used
+	 *   <b>Deprecated as of version 1.38.0</b>, use the <code>defaultUpdateMethod</code> constructor parameter instead.
+	 *   Whether the update method <code>sap.ui.model.odata.UpdateMethod.MERGE</code> is used
 	 * @returns {object}
 	 *   An object which has an <code>abort</code> function
 	 * @throws {Error}
@@ -7341,7 +7341,7 @@ sap.ui.define([
 	 * @param {object} mParameters
 	 *   A map of the following parameters:
 	 * @param {string} [mParameters.batchGroupId]
-	 *   Deprecated - use <code>groupId</code> instead
+	 *   <b>Deprecated as of version 1.31.0</b>, use <code>groupId</code> instead
 	 * @param {string} [mParameters.changeSetId]
 	 *   The ID of the <code>ChangeSet</code> that this request should belong to
 	 * @param {sap.ui.model.Context} [mParameters.context]
