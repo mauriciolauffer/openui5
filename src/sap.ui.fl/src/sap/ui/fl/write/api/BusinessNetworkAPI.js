@@ -161,6 +161,7 @@ sap.ui.define([
 
 	/**
 	 * Deletes a list of control variants and their associated changes, and saves.
+	 * This API method does not need a running application.
 	 *
 	 * @param {object} mPropertyBag - Object with parameters as properties
 	 * @param {string} mPropertyBag.reference - Flex reference of the app the variant belongs to
@@ -194,6 +195,25 @@ sap.ui.define([
 			reference: mPropertyBag.reference,
 			allChanges: aDeletedVariants,
 			condensedChanges: aDeletedVariants
+		});
+	};
+
+	/**
+	 * Deletes all USER layer variants for a given variant management.
+	 * This API method does not need a running application.
+	 *
+	 * @param {object} mPropertyBag - Object with parameters as properties
+	 * @param {string} mPropertyBag.reference - Flex reference of the app
+	 * @param {string} mPropertyBag.variantManagementReference - Reference of the variant management control
+	 * @returns {Promise<undefined>} Resolves when all variants are deleted
+	 * @private
+	 * @ui5-restricted SAP Business Network
+	 */
+	BusinessNetworkAPI.resetPersonalizationVariants = function(mPropertyBag) {
+		return Storage.deleteUserVariantsForVM({
+			flexReference: mPropertyBag.reference,
+			variantManagementReferences: [mPropertyBag.variantManagementReference],
+			layer: Layer.USER
 		});
 	};
 

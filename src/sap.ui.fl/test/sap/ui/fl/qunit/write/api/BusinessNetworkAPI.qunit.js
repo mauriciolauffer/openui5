@@ -166,6 +166,24 @@ sap.ui.define([
 			assert.equal(oStorageStub.getCall(0).args[0].allChanges[1].getState(), States.LifecycleState.DELETED, "change 2 has correct lifecycle state");
 			assert.deepEqual(oStorageStub.getCall(0).args[0].condensedChanges.length, 2, "condense changes have 2 objects");
 		});
+
+		QUnit.test("when resetPersonalizationVariants is called", async function(assert) {
+			const oStorageDeleteStub = sandbox.stub(Storage, "deleteUserVariantsForVM").resolves();
+			await BusinessNetworkAPI.resetPersonalizationVariants({
+				reference: "testReference",
+				variantManagementReference: "vm1"
+			});
+			assert.ok(oStorageDeleteStub.calledOnce, "then Storage.deleteUserVariantsForVM is called once");
+			assert.deepEqual(
+				oStorageDeleteStub.lastCall.args[0],
+				{
+					flexReference: "testReference",
+					variantManagementReferences: ["vm1"],
+					layer: Layer.USER
+				},
+				"then Storage.deleteUserVariantsForVM is called with the correct parameters"
+			);
+		});
 	});
 
 	QUnit.done(function() {
