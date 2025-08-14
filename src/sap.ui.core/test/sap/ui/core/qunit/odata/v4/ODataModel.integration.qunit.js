@@ -29838,6 +29838,8 @@ sap.ui.define([
 	// as the request for getting the binding's content. If there are entries that do not match any
 	// more to the current filter / search, the selection state of them is reset.
 	// JIRA: CPOUI5ODATAV4-2946
+	//
+	// When creating a node the count is requested again (JIRA: CPOUI5ODATAV4-3081)
 ["refresh", "requestSideEffects", "sort", "changeParameters"].forEach((sMethod) => {
 	QUnit.test("Recursive Hierarchy: validate selection via " + sMethod, async function (assert) {
 		const oModel = this.createTeaBusiModel({autoExpandSelect : true});
@@ -29860,11 +29862,12 @@ sap.ui.define([
 </t:Table>`;
 		const sAncestors = "ancestors($root/EMPLOYEES,OrgChart,ID,filter(ID ge '0')/search(covfefe)"
 			+ ",keep start)";
+		const sCountUrl = "EMPLOYEES/$count?$filter=ID ge '0'&custom=baz&$search=covfefe";
 		const sTopLevels = "com.sap.vocabularies.Hierarchy.v1.TopLevels("
 			+ "HierarchyNodes=$root/EMPLOYEES,HierarchyQualifier='OrgChart',NodeProperty='ID'"
 			+ ",Levels=1)";
 
-		this.expectRequest("EMPLOYEES/$count?$filter=ID ge '0'&custom=baz&$search=covfefe", 2)
+		this.expectRequest(sCountUrl, 2)
 			.expectRequest("EMPLOYEES?$expand=EMPLOYEE_2_MANAGER($select=TEAM_ID)&custom=baz"
 				+ "&$apply=" + sAncestors + "/orderby(Name)/" + sTopLevels
 				+ "&$select=DrillState,ID&$count=true&$skip=0&$top=3",
@@ -29886,10 +29889,12 @@ sap.ui.define([
 
 		this.expectChange("selected", [,, undefined])
 			.expectRequest({
+				batchNo : 2,
 				method : "POST",
 				payload : {ID : "New"},
 				url : "EMPLOYEES?custom=baz"
-			}, {ID : "New"});
+			}, {ID : "New"})
+			.expectRequest("#2 " + sCountUrl, 3);
 
 		await Promise.all([
 			oNodeNew.created(),
@@ -29938,7 +29943,7 @@ sap.ui.define([
 			case "changeParameters": sOrderby = "/orderby(ID)/"; break;
 			default: sOrderby = "/orderby(Name)/";
 		}
-		this.expectRequest("#3 EMPLOYEES/$count?$filter=ID ge '0'&custom=baz&$search=covfefe", 2)
+		this.expectRequest("#3 " + sCountUrl, 2)
 			// request for reloading the binding's content
 			.expectRequest("#3 EMPLOYEES?$expand=EMPLOYEE_2_MANAGER($select=TEAM_ID)&custom=baz"
 				+ "&$apply=" + sAncestors + sOrderby + sTopLevels
@@ -30502,6 +30507,8 @@ sap.ui.define([
 	// Use LimitedRank after #create (JIRA: CPOUI5ODATAV4-2430)
 	// Get previous or next sibling (JIRA: CPOUI5ODATAV4-2558)
 	// Siblings and move down of out-of-place nodes (JIRA: CPOUI5ODATAV4-2652)
+	//
+	// When creating a node the count is requested again. (JIRA: CPOUI5ODATAV4-3081)
 	QUnit.test("Recursive Hierarchy: expand to 2, collapse & expand root etc.", function (assert) {
 		var oCollapsed,
 			oListBinding,
@@ -30886,12 +30893,14 @@ sap.ui.define([
 					MANAGER_ID : null,
 					Name : "Aleph: ℵ" // side effect
 				})
+				.expectRequest("#6 EMPLOYEES/$count", 25)
 				.expectRequest("#6 EMPLOYEES?$select=AGE,ID&$filter=ID eq '0'", {
 					value : [{
 						AGE : 160,
 						ID : "0"
 					}]
 				})
+				.expectChange("count", "25")
 				.expectRequest("#7 " + sTopLevelsUrl + "&$filter=ID eq '9'&$select=LimitedRank", {
 					value : [{
 						LimitedRank : "6" // Edm.Int64
@@ -30925,6 +30934,7 @@ sap.ui.define([
 				[false, 1, "0", "", "Alpha", 160]
 			]);
 			checkCreatedPersisted(assert, oNewRoot, oNewRootCreated);
+			assert.strictEqual(oListBinding.getCount(), 25);
 
 			// code under test (JIRA: CPOUI5ODATAV4-2652)
 			checkSiblingOrder(assert, /*in place*/[oRoot], /*out of place*/[oNewRoot]);
@@ -31072,7 +31082,7 @@ sap.ui.define([
 						Name : "copy of Aleph w/ no effect"
 					}]
 				})
-				.expectRequest("#10 EMPLOYEES/$count", 24 + 1)
+				.expectRequest("#10 EMPLOYEES/$count", 25)
 				.expectRequest("#10 " + sTopLevelsUrl.slice(0, -1) + ",ExpandLevels="
 						+ JSON.stringify([{NodeID : "1", Levels : 1}, {NodeID : "0", Levels : 0}])
 						+ ")" + sSelect + "&$count=true&$skip=0&$top=3", {
@@ -31094,8 +31104,7 @@ sap.ui.define([
 						MANAGER_ID : null,
 						Name : "Alpha"
 					}]
-				})
-				.expectChange("count", "25");
+				});
 
 			assert.strictEqual(oNewRoot.getParent(), null, "parent readily available");
 			assert.strictEqual(oNewRoot.getSibling(+1), oRoot, "next sibling readily available");
@@ -31134,6 +31143,8 @@ sap.ui.define([
 					MANAGER_ID : null,
 					Name : "Beth, not Beta" // side effect
 				})
+				.expectRequest("#11 EMPLOYEES/$count", 26)
+				.expectChange("count", "26")
 				.expectRequest("#12 " + sTopLevelsUrl.slice(0, -1) + ",ExpandLevels="
 					+ JSON.stringify([{NodeID : "1", Levels : 1}, {NodeID : "0", Levels : 0}])
 					+ ")&$filter=ID eq '10'&$select=LimitedRank", {
@@ -31158,6 +31169,7 @@ sap.ui.define([
 				[undefined, 1, "9", "", "Aleph", 299],
 				[false, 1, "0", "", "Alpha", 260]
 			]);
+			assert.strictEqual(oListBinding.getCount(), 26);
 
 			// code under test (JIRA: CPOUI5ODATAV4-2652)
 			checkSiblingOrder(assert, /*in*/[oNewRoot, oRoot], /*out*/[oOutOfPlaceRoot]);
@@ -39630,6 +39642,8 @@ sap.ui.define([
 	// Siblings of out-of-place nodes (JIRA: CPOUI5ODATAV4-2652)
 	//
 	// ODLB#getCount, provide updated $count after deleting nodes (JIRA: CPOUI5ODATAV4-3049)
+	//
+	// When creating a node the count is requested again (JIRA: CPOUI5ODATAV4-3081)
 	QUnit.test("Recursive Hierarchy: out of place", async function (assert) {
 		const oModel = this.createSpecialCasesModel({autoExpandSelect : true});
 		const sFriend = "Artists(ArtistID='99',IsActiveEntity=false)/_Friend";
@@ -39671,6 +39685,7 @@ sap.ui.define([
 	<Text text="{Name}"/>
 </t:Table>`;
 
+		let iCount = 4;
 		// Server:               UI:
 		// 1 Alpha               1 Alpha
 		//   12 New2               13 New3
@@ -39682,7 +39697,7 @@ sap.ui.define([
 		// 3 Gamma               3 Gamma
 		//   15 New5               15 New5
 		// 4 Delta               4 Delta
-		this.expectRequest(sCountUrl, 4)
+		this.expectRequest(sCountUrl, iCount)
 			.expectRequest(baseUrl()
 				+ "&$select=ArtistID,IsActiveEntity,Name,_/DrillState,_/NodeID"
 				+ "&$count=true&$skip=0&$top=3", {
@@ -39767,6 +39782,7 @@ sap.ui.define([
 
 		const create = async (sId, sName, oParent) => {
 			const sParentId = oParent.getProperty("ArtistID");
+			iCount += 1;
 			this.expectRequest({
 					method : "POST",
 					url : sFriend + "?custom=foo",
@@ -39781,6 +39797,7 @@ sap.ui.define([
 					Name : sName,
 					_ : null // not available w/ RAP for a non-hierarchical request
 				})
+				.expectRequest(sCountUrl, iCount)
 				// no sFilterSearchPrefix (SNOW: DINC0087713)
 				.expectRequest(sFriend + "?custom=foo&$apply=descendants($root/" + sFriend
 					+ ",OrgChart,_/NodeID,filter(ArtistID eq '" + sParentId
@@ -40745,6 +40762,8 @@ sap.ui.define([
 	//
 	// Siblings of out-of-place nodes (JIRA: CPOUI5ODATAV4-2652)
 	// Simulate TreeBindingProxy#getContextByIndex (JIRA: CPOUI5ODATAV4-2729)
+	//
+	// When creating a node the count is requested again (JIRA: CPOUI5ODATAV4-3081)
 	QUnit.test("Recursive Hierarchy: out of place, root, expandTo > 1", async function (assert) {
 		const oModel = this.createTeaBusiModel({autoExpandSelect : true});
 		const sCountUrl = "EMPLOYEES/$count?$filter=AGE gt 20&custom=foo&$search=covfefe";
@@ -40837,11 +40856,15 @@ sap.ui.define([
 			[undefined, 1, "Epsilon"]
 		], 4);
 
-		this.expectRequest(
-				{method : "POST", url : "EMPLOYEES?custom=foo", payload : {Name : "Zeta"}},
-				{ID : "6", Name : "Zeta"})
+		this.expectRequest({
+				batchNo : 3,
+				method : "POST",
+				url : "EMPLOYEES?custom=foo",
+				payload : {Name : "Zeta"}
+			}, {ID : "6", Name : "Zeta"})
+			.expectRequest("#3 " + sCountUrl, 6)
 			// Beta becomes visible, but oFirstLevel reads more due to the transient element Zeta
-			.expectRequest(sUrl
+			.expectRequest("#3 " + sUrl
 				+ "&$select=DescendantCount,DistanceFromRoot,DrillState,ID,Name&$skip=0&$top=2", {
 				value : [{
 					DescendantCount : "0",
@@ -40867,9 +40890,13 @@ sap.ui.define([
 			this.waitForChanges(assert, "(2a) create Zeta")
 		]);
 
-		this.expectRequest(
-				{method : "POST", url : "EMPLOYEES?custom=foo", payload : {Name : "Eta"}},
-				{ID : "7", Name : "Eta"})
+		this.expectRequest({
+				batchNo : 5,
+				method : "POST",
+				url : "EMPLOYEES?custom=foo",
+				payload : {Name : "Eta"}
+			}, {ID : "7", Name : "Eta"})
+			.expectRequest("#5 " + sCountUrl, 7)
 			.expectRequest(sUrl + "&$filter=ID eq '7'&$select=LimitedRank",
 				{value : [{LimitedRank : "6"}]});
 
@@ -40881,6 +40908,7 @@ sap.ui.define([
 		]);
 
 		this.expectRequest({
+				batchNo : 7,
 				method : "POST",
 				url : "EMPLOYEES?custom=foo",
 				payload : {
@@ -40888,6 +40916,7 @@ sap.ui.define([
 					Name : "Theta"
 				}
 			}, {ID : "8", Name : "Theta"})
+			.expectRequest("#7 " + sCountUrl, 8)
 			.expectRequest(sUrl + "&$filter=ID eq '8'&$select=LimitedRank",
 				{value : [{LimitedRank : "1"}]});
 
@@ -41052,6 +41081,179 @@ sap.ui.define([
 		// code under test (JIRA: CPOUI5ODATAV4-2652)
 		checkSiblingOrder(assert, /*in place*/[], /*out of place*/[oTheta]);
 		checkSiblingOrder(assert, /*in*/[oAlpha, oBeta, oGamma, oEpsilon], /*out*/[oEta, oZeta]);
+	});
+
+	//*********************************************************************************************
+	// Scenario: Create nodes in a recursive hierarchy. The count is updated when the
+	// createCompleted event is fired, from that point onwards, ODLB#getCount provides the updated
+	// value. A binding to $count updates automatically.
+	// If the creation is cancelled, no count request is sent. If the creation fails, the count
+	// request is also retried together with the creation.
+	// JIRA: CPOUI5ODATAV4-3081
+	QUnit.test("Recursive Hierarchy: create updates count", async function (assert) {
+		const oModel = this.createTeaBusiModel({autoExpandSelect : true});
+		const sCountUrl = "EMPLOYEES/$count";
+		const sUrl = "EMPLOYEES"
+			+ "?$apply=com.sap.vocabularies.Hierarchy.v1.TopLevels(HierarchyNodes=$root/EMPLOYEES"
+			+ ",HierarchyQualifier='OrgChart',NodeProperty='ID',Levels=1)";
+		const sView = `
+<Text id="count" text="{$count}"/>
+<t:Table id="table" rows="{
+		path : '/EMPLOYEES',
+		parameters : {
+			$$aggregation : {
+				expandTo : 1,
+				hierarchyQualifier : 'OrgChart'
+			},
+			$count : true
+		}}" threshold="0" visibleRowCount="2">
+	<Text text="{= %{@$ui5.node.isExpanded} }"/>
+	<Text text="{= %{@$ui5.node.level} }"/>
+	<Text text="{Name}"/>
+</t:Table>`;
+
+		// UI:                     Server:
+		// 4 Delta (created)       1 Alpha
+		// 1 Alpha                   2 Beta
+		// 3 Gamma                 3 Gamma
+		//                         4 Delta
+		this.expectRequest(sCountUrl, 3)
+			.expectRequest(sUrl + "&$select=DrillState,ID,Name&$count=true&$skip=0&$top=2", {
+				"@odata.count" : "2",
+				value : [
+					{DrillState : "collapsed", ID : "1", Name : "Alpha"},
+					{DrillState : "leaf", ID : "3", Name : "Gamma"}
+				]
+			})
+			.expectChange("count");
+
+		await this.createView(assert, sView, oModel);
+
+		const oTable = this.oView.byId("table");
+		const oBinding = oTable.getBinding("rows");
+		let iCountAtCreateCompleted;
+		oBinding.attachCreateCompleted(() => {
+			iCountAtCreateCompleted = oBinding.getCount();
+		});
+		assert.strictEqual(oBinding.getCount(), 3);
+		assert.strictEqual(iCountAtCreateCompleted, undefined);
+		checkTable("initial page", assert, oTable, [
+			"/EMPLOYEES('1')",
+			"/EMPLOYEES('3')"
+		], [
+			[false, 1, "Alpha"],
+			[undefined, 1, "Gamma"]
+		], 2);
+
+		this.expectChange("count", "3");
+
+		const oHeaderContext = oBinding.getHeaderContext();
+		this.oView.byId("count").setBindingContext(oHeaderContext);
+
+		await this.waitForChanges(assert, "bind $count");
+
+		// code under test - create node
+		let oDelta = oBinding.create({Name : "Foo"}, /*bSkipRefresh*/true);
+
+		assert.strictEqual(oBinding.getCount(), 3);
+		assert.strictEqual(iCountAtCreateCompleted, undefined, "not yet updated");
+
+		// code under test - and cancel creation immediatly
+		oModel.resetChanges();
+
+		await Promise.all([
+			checkCanceled(assert, oDelta.created()),
+			this.waitForChanges(assert, "Create and immediately cancel Foo")
+		]);
+
+		checkTable("After cancelled creation of Foo", assert, oTable, [
+			"/EMPLOYEES('1')",
+			"/EMPLOYEES('3')"
+		], [
+			[false, 1, "Alpha"],
+			[undefined, 1, "Gamma"]
+		], 2);
+
+		this.oLogMock.expects("error")
+			.withExactArgs("POST on 'EMPLOYEES' failed; will be repeated automatically",
+				sinon.match("Request intentionally failed"), sODLB);
+		this.expectRequest({
+				batchNo : 2,
+				method : "POST",
+				url : "EMPLOYEES",
+				payload : {Name : "Delta"}
+			}, createErrorInsideBatch())
+			.expectRequest("#2 " + sCountUrl) // no response required
+			.expectMessages([{
+				code : "CODE",
+				message : "Request intentionally failed",
+				persistent : true,
+				technical : true,
+				type : "Error"
+			}]);
+
+		// code under test - create another node; creation fails
+		oDelta = oBinding.create({Name : "Delta"}, /*bSkipRefresh*/true);
+
+		assert.strictEqual(oBinding.getCount(), 3);
+		assert.strictEqual(iCountAtCreateCompleted, undefined, "not yet updated");
+
+		await this.waitForChanges(assert, "Creation of Delta failed");
+
+		checkTable("After failed creation of Delta", assert, oTable, [
+			"/EMPLOYEES($uid=...)",
+			"/EMPLOYEES('1')",
+			"/EMPLOYEES('3')"
+		], [
+			[undefined, 1, "Delta"],
+			[false, 1, "Alpha"]
+		], 3);
+		assert.strictEqual(oBinding.getCount(), 3);
+		assert.strictEqual(iCountAtCreateCompleted, 3, "failed creation calls createCompleted");
+
+		this.expectRequest({
+				batchNo : 3,
+				method : "POST",
+				url : "EMPLOYEES",
+				payload : {Name : "Delta"}
+			}, {ID : "4", Name : "Delta"})
+			.expectRequest("#3 " + sCountUrl, 4)
+			.expectChange("count", "4");
+
+		assert.strictEqual(oBinding.getCount(), 3);
+		assert.strictEqual(iCountAtCreateCompleted, 3);
+		oHeaderContext.requestProperty("$count").then((iCount) => {
+			assert.strictEqual(iCount, 3, "count request failed -> old value; count will be"
+				+ " requested again when creation is retried");
+		});
+
+		// code under test
+		const oPromise = oModel.submitBatch("$auto");
+
+		assert.strictEqual(oBinding.getCount(), 3);
+		assert.strictEqual(iCountAtCreateCompleted, 3, "still the old value");
+
+		await Promise.all([
+			oPromise,
+			oDelta.created().then(() => {
+				// As long as the creation is pending the getCount returns the old value, wait
+				// until the creation is completed to get the new count.
+				// TODO: oHeaderContext.requestProperty("$count") should resolve only if the
+				// creation is completed and the count is updated.
+				assert.strictEqual(oBinding.getCount(), 4, "count is updated after creation");
+				assert.strictEqual(iCountAtCreateCompleted, 4);
+			}),
+			this.waitForChanges(assert, "Repeat creation of Delta")
+		]);
+
+		checkTable("After successful creation of Delta", assert, oTable, [
+			"/EMPLOYEES('4')",
+			"/EMPLOYEES('1')",
+			"/EMPLOYEES('3')"
+		], [
+			[undefined, 1, "Delta"],
+			[false, 1, "Alpha"]
+		], 3);
 	});
 
 	//*********************************************************************************************
@@ -43294,7 +43496,10 @@ make root = ${bMakeRoot}`;
 	// JIRA: CPOUI5ODATAV4-2586
 	//
 	// The created contexts always become "persisted" (SNOW: DINC0194277)
+	//
+	// When creating a node the count is requested again (JIRA: CPOUI5ODATAV4-3081)
 	QUnit.test("Recursive Hierarchy: createInPlace", async function (assert) {
+		const sCountUrl = "EMPLOYEES/$count?$filter=Is_Manager";
 		const oModel = this.createTeaBusiModel({autoExpandSelect : true});
 		const sSelect = "&$select=DescendantCount,DistanceFromRoot,DrillState,ID,Name";
 		const sUrl = "EMPLOYEES"
@@ -43302,6 +43507,7 @@ make root = ${bMakeRoot}`;
 			+ "/com.sap.vocabularies.Hierarchy.v1.TopLevels(HierarchyNodes=$root/EMPLOYEES"
 			+ ",HierarchyQualifier='OrgChart',NodeProperty='ID',Levels=3)";
 		const sView = `
+<Text id="count" text="{$count}"/>
 <t:Table id="table" rows="{path : '/EMPLOYEES',
 		parameters : {
 			$$aggregation : {
@@ -43326,8 +43532,8 @@ make root = ${bMakeRoot}`;
 		//         7 Eta (created)
 		// 2 Beta
 		// (42 FilteredOut (created, but filtered out))
-		this.expectRequest("EMPLOYEES/$count?$filter=Is_Manager", 3)
-			.expectRequest(sUrl + sSelect + "&$count=true&$skip=0&$top=2", {
+		this.expectRequest("#1 " + sCountUrl, 3)
+			.expectRequest("#1 " + sUrl + sSelect + "&$count=true&$skip=0&$top=2", {
 				"@odata.count" : "3",
 				value : [{
 					DescendantCount : "1",
@@ -43342,7 +43548,8 @@ make root = ${bMakeRoot}`;
 					ID : "3",
 					Name : "Gamma"
 				}]
-			});
+			})
+			.expectChange("count");
 
 		await this.createView(assert, sView, oModel);
 
@@ -43355,9 +43562,18 @@ make root = ${bMakeRoot}`;
 			[undefined, 2, "3", "Gamma"]
 		], 3);
 		const oListBinding = oTable.getBinding("rows");
+		assert.strictEqual(oListBinding.getCount(), 3);
+
+		this.expectChange("count", "3");
+
+		this.oView.byId("count").setBindingContext(oListBinding.getHeaderContext());
+
+		await this.waitForChanges(assert, "$count");
+
 		const [oAlpha, oGamma] = oListBinding.getAllCurrentContexts();
 
 		this.expectRequest({
+				batchNo : 2,
 				method : "POST",
 				url : "EMPLOYEES",
 				payload : {
@@ -43368,6 +43584,7 @@ make root = ${bMakeRoot}`;
 				ID : "42",
 				Name : "FilteredOut"
 			})
+			.expectRequest("#2 " + sCountUrl, 3) // filtered out node is not counted
 			.expectRequest(sUrl + "&$filter=ID eq '42'&$select=LimitedRank", {
 				value : [] // filtered out
 			});
@@ -43388,10 +43605,12 @@ make root = ${bMakeRoot}`;
 			[true, 1, "1", "Alpha"],
 			[undefined, 2, "3", "Gamma"]
 		], 3);
-		assert.strictEqual(oListBinding.getCount(), 3);
+		assert.strictEqual(oListBinding.getCount(), 3,
+			"count is requested and promise is not yet fulfilled -> return the old value");
 
 		await oFilteredOut.created();
 
+		assert.strictEqual(oListBinding.getCount(), 3);
 		assert.strictEqual(oFilteredOut.getIndex(), undefined, "not part of the hierarchy");
 		assert.strictEqual(oFilteredOut.isTransient(), undefined);
 		assert.strictEqual(oFilteredOut.getPath(), "/EMPLOYEES('42')");
@@ -43409,7 +43628,6 @@ make root = ${bMakeRoot}`;
 			[true, 1, "1", "Alpha"],
 			[undefined, 2, "3", "Gamma"]
 		], 3);
-		assert.strictEqual(oListBinding.getCount(), 3);
 
 		this.expectRequest(sUrl + sSelect + "&$skip=2&$top=1", {
 				value : [{
@@ -43434,6 +43652,8 @@ make root = ${bMakeRoot}`;
 			Name : "n/a"
 		}, /*bSkipRefresh*/true);
 
+		assert.strictEqual(oListBinding.getCount(), 3);
+
 		// code under test
 		oModel.resetChanges();
 
@@ -43442,6 +43662,7 @@ make root = ${bMakeRoot}`;
 			this.waitForChanges(assert, "cancel creation")
 		]);
 
+		assert.strictEqual(oListBinding.getCount(), 3);
 		checkTable("after cancel creation", assert, oTable, [
 			oAlpha,
 			oGamma,
@@ -43450,9 +43671,9 @@ make root = ${bMakeRoot}`;
 			[true, 1, "1", "Alpha"],
 			[undefined, 2, "3", "Gamma"]
 		]);
-		assert.strictEqual(oListBinding.getCount(), 3);
 
 		this.expectRequest({
+				batchNo : 5,
 				method : "POST",
 				url : "EMPLOYEES",
 				payload : {
@@ -43463,6 +43684,8 @@ make root = ${bMakeRoot}`;
 				ID : "4",
 				Name : "Delta"
 			})
+			.expectRequest("#5 " + sCountUrl, 4)
+			.expectChange("count", "4")
 			.expectRequest(sUrl + "&$filter=ID eq '4'&$select=LimitedRank", {
 				value : [{LimitedRank : "2"}]
 			});
@@ -43488,6 +43711,7 @@ make root = ${bMakeRoot}`;
 
 		await oDeltaCreated;
 
+		assert.strictEqual(oListBinding.getCount(), 4);
 		assert.strictEqual(oDelta.getIndex(), 2);
 		checkPersisted(assert, oDelta);
 
@@ -43500,9 +43724,9 @@ make root = ${bMakeRoot}`;
 				[undefined, 2, "4", "Delta"],
 				[undefined, 1, "2", "Beta"]
 			]);
-		assert.strictEqual(oListBinding.getCount(), 3); // TODO: update $count; CPOUI5ODATAV4-2245
 
 		this.expectRequest({
+				batchNo : 7,
 				method : "POST",
 				url : "EMPLOYEES",
 				payload : {
@@ -43513,6 +43737,8 @@ make root = ${bMakeRoot}`;
 				ID : "5",
 				Name : "Epsilon"
 			})
+			.expectRequest("#7 " + sCountUrl, 5)
+			.expectChange("count", "5")
 			.expectRequest(sUrl + "&$filter=ID eq '5'&$select=LimitedRank", {
 				value : [{LimitedRank : "3"}]
 			});
@@ -43535,10 +43761,11 @@ make root = ${bMakeRoot}`;
 			[true, 1, "1", "Alpha"],
 			[undefined, 2, "3", "Gamma"]
 		]);
-		assert.strictEqual(oListBinding.getCount(), 3);
+		assert.strictEqual(oListBinding.getCount(), 4);
 
 		await oEpsilonCreated;
 
+		assert.strictEqual(oListBinding.getCount(), 5);
 		assert.strictEqual(oEpsilon.getIndex(), 3);
 		checkPersisted(assert, oEpsilon);
 
@@ -43552,7 +43779,6 @@ make root = ${bMakeRoot}`;
 				[undefined, 3, "5", "Epsilon"],
 				[undefined, 1, "2", "Beta"]
 			]);
-		assert.strictEqual(oListBinding.getCount(), 3); // TODO: update $count; CPOUI5ODATAV4-2245
 
 		oTable.setFirstVisibleRow(oEpsilon.getIndex()); // scroll to Epsilon
 		await resolveLater(); // table update takes a moment
@@ -43580,7 +43806,9 @@ make root = ${bMakeRoot}`;
 				ID : "6",
 				Name : "Zeta"
 			})
-			.expectRequest("#9 EMPLOYEES/$count?$filter=Is_Manager", 6)
+			// Note: side-effects refresh is needed to enhance ExpandLevels, but still count is
+			// requested only once
+			.expectRequest("#9 " + sCountUrl, 6)
 			.expectRequest("#9 " + sUrl.slice(0, -1)
 				+ ",ExpandLevels=" + JSON.stringify([{NodeID : "5", Levels : 1}]) + ")"
 				+ sSelect + "&$count=true&$skip=3&$top=2", {
@@ -43599,6 +43827,7 @@ make root = ${bMakeRoot}`;
 					Name : "Zeta"
 				}]
 			})
+			.expectChange("count", "6")
 			.expectRequest("#10 " + sUrl.slice(0, -1)
 				+ ",ExpandLevels=" + JSON.stringify([{NodeID : "5", Levels : 1}]) + ")"
 				+ "&$filter=ID eq '6'&$select=LimitedRank", {
@@ -43611,8 +43840,13 @@ make root = ${bMakeRoot}`;
 			Name : "Zeta"
 		}, /*bSkipRefresh*/true);
 
+		// TODO: Even if a side-effects refresh to enhance ExpandLevels is needed, getCount must
+		// not return undefined but the old count value
+		assert.strictEqual(oListBinding.getCount(), undefined);
+
 		await oZeta.created();
 
+		assert.strictEqual(oListBinding.getCount(), 6);
 		assert.strictEqual(oZeta.getIndex(), 4);
 		assert.strictEqual(oZeta.getPath(), "/EMPLOYEES('6')");
 		assert.strictEqual(oZeta.getBinding(), undefined, "oZeta is destroyed");
@@ -43642,7 +43876,7 @@ make root = ${bMakeRoot}`;
 				ID : "7",
 				Name : "Eta"
 			})
-			.expectRequest("#11 EMPLOYEES/$count?$filter=Is_Manager", 7)
+			.expectRequest("#11 " + sCountUrl, 7)
 			.expectRequest("#11 " + sUrl.slice(0, -1) + ",ExpandLevels="
 				+ JSON.stringify([{NodeID : "5", Levels : 1}, {NodeID : "6", Levels : 1}]) + ")"
 				+ sSelect + "&$count=true&$skip=3&$top=2", {
@@ -43661,6 +43895,7 @@ make root = ${bMakeRoot}`;
 					Name : "Zeta"
 				}]
 			})
+			.expectChange("count", "7")
 			.expectRequest("#12 " + sUrl.slice(0, -1) + ",ExpandLevels="
 				+ JSON.stringify([{NodeID : "5", Levels : 1}, {NodeID : "6", Levels : 1}]) + ")"
 				+ "&$filter=ID eq '7'&$select=LimitedRank", {
@@ -43673,8 +43908,13 @@ make root = ${bMakeRoot}`;
 			Name : "Eta"
 		}, /*bSkipRefresh*/true);
 
+		// TODO: Even if a side-effects refresh to enhance ExpandLevels is needed, getCount must
+		// not return undefined but the old count value
+		assert.strictEqual(oListBinding.getCount(), undefined);
+
 		await oEta.created();
 
+		assert.strictEqual(oListBinding.getCount(), 7);
 		assert.strictEqual(oEta.getIndex(), 5);
 		assert.strictEqual(oEta.getPath(), "/EMPLOYEES('7')");
 		assert.strictEqual(oEta.getBinding(), undefined, "oEta is destroyed");
@@ -43682,7 +43922,6 @@ make root = ${bMakeRoot}`;
 
 		await this.waitForChanges(assert, "create Eta");
 
-		assert.strictEqual(oListBinding.getCount(), 7);
 		checkTable("after create Eta", assert, oTable, [
 			oEpsilon,
 			"/EMPLOYEES('6')"
@@ -44005,7 +44244,10 @@ make root = ${bMakeRoot}`;
 	// JIRA: CPOUI5ODATAV4-2560
 	//
 	// The created contexts always become "persisted" (SNOW: DINC0194277)
+	//
+	// When creating a node the count is requested again (JIRA: CPOUI5ODATAV4-3081)
 	QUnit.test("Recursive Hierarchy: createInPlace, root", async function (assert) {
+		const sCountUrl = "Artists/$count?$filter=sendsAutographs";
 		const sUrl = "Artists?$apply=ancestors($root/Artists,OrgChart,_/NodeID"
 				+ ",filter(sendsAutographs),keep start)"
 				+ "/com.sap.vocabularies.Hierarchy.v1.TopLevels(HierarchyNodes=$root/Artists"
@@ -44034,7 +44276,7 @@ make root = ${bMakeRoot}`;
 		// 2 Beta
 		//   4 Delta
 
-		this.expectRequest("Artists/$count?$filter=sendsAutographs", 3)
+		this.expectRequest(sCountUrl, 3)
 			.expectRequest(sUrl + sSelect + "&$count=true&$skip=0&$top=10", {
 				"@odata.count" : "2",
 				value : [{
@@ -44069,6 +44311,7 @@ make root = ${bMakeRoot}`;
 		const oListBinding = oTable.getBinding("rows");
 
 		this.expectRequest({
+				batchNo : 2,
 				method : "POST",
 				url : "Artists",
 				payload : {
@@ -44080,6 +44323,7 @@ make root = ${bMakeRoot}`;
 				Name : "FilteredOut",
 				_ : null // not available w/ RAP for a non-hierarchical request
 			})
+			.expectRequest("#2 " + sCountUrl, 3)
 			.expectRequest(sUrl
 				+ "&$filter=ArtistID eq '42' and IsActiveEntity eq false"
 				+ "&$select=_/Limited_Rank,_/NodeID", {
@@ -44091,8 +44335,11 @@ make root = ${bMakeRoot}`;
 			Name : "FilteredOut"
 		}, /*bSkipRefresh*/true);
 
+		assert.strictEqual(oListBinding.getCount(), 3);
+
 		await oFilteredOut.created();
 
+		assert.strictEqual(oListBinding.getCount(), 3);
 		assert.strictEqual(oFilteredOut.getIndex(), undefined, "not part of the hierarchy");
 		assert.strictEqual(oFilteredOut.isTransient(), undefined);
 		assert.strictEqual(oFilteredOut.getPath(), "/Artists(ArtistID='42',IsActiveEntity=false)");
@@ -44107,9 +44354,9 @@ make root = ${bMakeRoot}`;
 			[undefined, 1, "1", "Alpha", "1,false"],
 			[false, 1, "2", "Beta", "2,false"]
 		]);
-		assert.strictEqual(oListBinding.getCount(), 3);
 
 		this.expectRequest({
+				batchNo : 4,
 				method : "POST",
 				url : "Artists",
 				payload : {
@@ -44121,6 +44368,7 @@ make root = ${bMakeRoot}`;
 				Name : "Gamma",
 				_ : null // not available w/ RAP for a non-hierarchical request
 			})
+			.expectRequest("#4 " + sCountUrl, 4)
 			.expectRequest(sUrl + "&$filter=ArtistID eq '3' and IsActiveEntity eq false"
 				+ "&$select=_/Limited_Rank,_/NodeID", {
 				value : [{
@@ -44137,6 +44385,7 @@ make root = ${bMakeRoot}`;
 		}, /*bSkipRefresh*/true);
 		const oGammaCreated = oGamma.created();
 
+		assert.strictEqual(oListBinding.getCount(), 3);
 		assert.strictEqual(oGamma.getIndex(), undefined);
 		assert.strictEqual(oGamma.isTransient(), true);
 		checkTable("while create Gamma is pending", assert, oTable, [
@@ -44146,10 +44395,10 @@ make root = ${bMakeRoot}`;
 			[undefined, 1, "1", "Alpha", "1,false"],
 			[false, 1, "2", "Beta", "2,false"]
 		]);
-		assert.strictEqual(oListBinding.getCount(), 3);
 
 		await oGammaCreated;
 
+		assert.strictEqual(oListBinding.getCount(), 4);
 		assert.strictEqual(oGamma.getIndex(), 1);
 		checkPersisted(assert, oGamma);
 
@@ -44164,10 +44413,9 @@ make root = ${bMakeRoot}`;
 			[undefined, 1, "3", "Gamma", "3,false"],
 			[false, 1, "2", "Beta", "2,false"]
 		]);
-		assert.strictEqual(oListBinding.getCount(), 3); // TODO: update $count; CPOUI5ODATAV4-2245
 		const oBeta = oListBinding.getCurrentContexts()[2];
 
-		this.expectRequest("Artists/$count?$filter=sendsAutographs", 4)
+		this.expectRequest(sCountUrl, 4)
 			.expectRequest(sUrl.slice(0, -1)
 				+ ",ExpandLevels=" + JSON.stringify([{NodeID : "2,false", Levels : 1}]) + ")"
 				+ sSelect.replace(",Name,", ",Name,_/DescendantCount,_/DistanceFromRoot,")
