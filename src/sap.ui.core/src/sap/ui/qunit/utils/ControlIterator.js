@@ -61,7 +61,6 @@ sap.ui.define(['sap/ui/core/Core', "sap/ui/VersionInfo", "sap/ui/core/Lib"],
 
 	var aControlsThatCannotBeRenderedGenerically = [
 		"sap.chart.Chart",
-		"sap.m.ColumnHeaderPopover",
 		"sap.m.FacetFilterItem",
 		"sap.m.internal.NumericInput",
 		"sap.m.IconTabBarSelectList",
