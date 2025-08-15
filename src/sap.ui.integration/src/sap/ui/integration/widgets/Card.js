@@ -383,6 +383,16 @@ sap.ui.define([
 				},
 
 				/**
+				 * @since 1.140
+				 */
+				isPaginationCard: {
+					type: "boolean",
+					group: "Behavior",
+					defaultValue: false,
+					visibility: "hidden"
+				},
+
+				/**
 				 * Defines if the card is interactive.
 				 */
 				interactive: {
@@ -1854,7 +1864,11 @@ sap.ui.define([
 		}
 
 		try {
-			this._oDestinations = Destinations.create(this, this.getMainCard());
+			this._oDestinations = Destinations.create({
+				card: this,
+				mainCard: this.getMainCard(),
+				isPaginationCard: this.getProperty("isPaginationCard")
+		});
 		} catch (oError) {
 			this.getMainCard()._handleError({
 				illustrationType: IllustratedMessageType.UnableToLoad,
@@ -3365,6 +3379,7 @@ sap.ui.define([
 
 		oChildCard.setAssociation("openerReference", this);
 		oChildCard.setProperty("showCloseButton", !!oParameters.showCloseButton);
+		oChildCard.setProperty("isPaginationCard", !!oParameters.isPaginationCard);
 
 		if (oData) {
 			each(oData, function (sModelName, oModelData) {
