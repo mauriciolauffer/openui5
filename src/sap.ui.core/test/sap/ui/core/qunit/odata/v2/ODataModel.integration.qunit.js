@@ -23375,6 +23375,7 @@ ToProduct/ToSupplier/BusinessPartnerID\'}}">\
 						dataRequested: dataRequested,
 						dataReceived: dataReceived
 					},
+					//FIXME fix to filters... -> open issue in BLI
 					filter: [new Filter("GrossAmount", FilterOperator.GT, 500)],
 					path: "/SalesOrderSet",
 					sorter: [new Sorter("CompanyCode", true)]
@@ -25873,6 +25874,7 @@ ToProduct/ToSupplier/BusinessPartnerID\'}}">\
 					},
 					dataRequested: () => {iDataRequested += 1;}
 				},
+				//FIXME fix to filters... -> open issue in BLI
 				filter: [new Filter("OrderOperationRowLevel", FilterOperator.EQ, 1)],
 				parameters: {
 					countMode: CountMode.Inline,
@@ -25968,6 +25970,7 @@ ToProduct/ToSupplier/BusinessPartnerID\'}}">\
 					},
 					dataRequested: () => {iDataRequested += 1;}
 				},
+				//FIXME fix to filters... -> open issue in BLI
 				filter: [new Filter("OrderOperationRowLevel", FilterOperator.EQ, 0)], // must not be in URL params
 				parameters: {
 					countMode: CountMode.Inline,
@@ -25998,6 +26001,54 @@ ToProduct/ToSupplier/BusinessPartnerID\'}}">\
 
 			return this.waitForChanges(assert);
 		});
+	});
+
+	//*********************************************************************************************
+	// Scenario: The tree binding includes application filters in request for operation mode Client iff
+	// useServersideApplicationFilters is true.
+	// JIRA: CPOUI5MODELS-1050
+	QUnit.test("ODataTreeBinding: operation model Client with serverside application filters", async function (assert) {
+		const oModel = createSpecialCasesModel();
+		const sView = `
+<t:TreeTable id="table" visibleRowCount="2">
+	<Text text="{MaintenanceOrder}" />
+</t:TreeTable>`;
+		await this.createView(assert, sView, oModel);
+		this.expectHeadRequest()
+			.expectRequest("C_RSHMaintSchedSmltdOrdAndOp?"
+					+ "$filter=(MaintenanceOrder%20eq%20%271%27)&"
+					+ "$select=MaintenanceOrder,OrderOperationRowLevel,OrderOperationParentRowID,"
+					+ "OrderOperationRowID,OrderOperationIsExpanded", {
+				results : [{
+					__metadata: {uri: "C_RSHMaintSchedSmltdOrdAndOp('id1')"},
+					MaintenanceOrder: "1",
+					OrderOperationIsExpanded: "leaf",
+					OrderOperationParentRowID: "",
+					OrderOperationRowID: "id1",
+					OrderOperationRowLevel: 0
+				}]
+			});
+		const oTable = this.oView.byId("table");
+		oTable.bindRows({
+			filters: [new Filter("MaintenanceOrder", FilterOperator.EQ, "1")],
+			parameters: {
+				countMode: CountMode.Inline,
+				operationMode: "Client",
+				select: "MaintenanceOrder",
+				treeAnnotationProperties: {
+					hierarchyDrillStateFor: "OrderOperationIsExpanded",
+					hierarchyLevelFor: "OrderOperationRowLevel",
+					hierarchyNodeFor: "OrderOperationRowID",
+					hierarchyParentNodeFor : "OrderOperationParentRowID"
+				},
+				useServersideApplicationFilters: true
+			},
+			path: "/C_RSHMaintSchedSmltdOrdAndOp"
+		});
+
+		await this.waitForChanges(assert);
+
+		assert.deepEqual(getTableContent(oTable), [["1"], [""]]);
 	});
 
 	//*********************************************************************************************

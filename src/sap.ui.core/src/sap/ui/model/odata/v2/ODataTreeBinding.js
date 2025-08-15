@@ -73,10 +73,10 @@ sap.ui.define([
 	 *   the threshold that defines how many entries should be fetched at least by the binding if
 	 *   <code>operationMode</code> is set to <code>Auto</code>
 	 * @param {boolean} [mParameters.useServersideApplicationFilters]
-	 *   Deprecated since 1.102.0, as {@link sap.ui.model.odata.OperationMode.Auto} is deprecated;
-	 *   whether <code>$filter</code> statements should be used for the <code>$count</code> /
+	 *   Whether <code>$filter</code> statements should be used for the <code>$count</code> /
 	 *   <code>$inlinecount</code> requests and for the data request if the operation mode is
-	 *   {@link sap.ui.model.odata.OperationMode.Auto OperationMode.Auto}
+	 *   {@link sap.ui.model.odata.OperationMode.Auto OperationMode.Auto} or
+	 *   {@link sap.ui.model.odata.OperationMode.Client OperationMode.Client}
 	 * @param {any} [mParameters.treeState]
 	 *   A tree state handle
 	 *  @param {sap.ui.model.odata.CountMode} [mParameters.countMode]

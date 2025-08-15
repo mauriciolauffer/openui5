@@ -2219,16 +2219,10 @@ sap.ui.define([
 	 *   the threshold that defines how many entries should be fetched at least by the binding if
 	 *   <code>operationMode</code> is set to <code>Auto</code>
 	 * @param {boolean} [mParameters.useServersideApplicationFilters]
-	 *   Deprecated since 1.102.0, as {@link sap.ui.model.odata.OperationMode.Auto} is deprecated;
-	 *   whether <code>$filter</code> statements should be used for the <code>$count</code> /
+	 *   Whether <code>$filter</code> statements should be used for the <code>$count</code> /
 	 *   <code>$inlinecount</code> requests and for the data request if the operation mode is
-	 *   {@link sap.ui.model.odata.OperationMode.Auto OperationMode.Auto}. Use this feature only
-	 *   if your back end supports pre-filtering the tree and is capable of responding with
-	 *   a complete tree hierarchy, including all inner nodes. To construct the hierarchy on the
-	 *   client, it is mandatory that all filter matches include their complete parent chain up to
-	 *   the root level. If {@link sap.ui.model.odata.OperationMode.Client OperationMode.Client} is
-	 *   used, the complete collection without filters is requested; filters are applied on the
-	 *   client side.
+	 *   {@link sap.ui.model.odata.OperationMode.Auto OperationMode.Auto} or
+	 *   {@link sap.ui.model.odata.OperationMode.Client OperationMode.Client}
 	 * @param {any} [mParameters.treeState]
 	 *   A tree state handle can be given to the <code>ODataTreeBinding</code> when two conditions
 	 *   are met: <ul>
