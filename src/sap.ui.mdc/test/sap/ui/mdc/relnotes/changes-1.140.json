@@ -3,6 +3,11 @@
     "date": "August 2025",
     "notes": [
       {
+        "id": "4b4a4d8c17f1264900844e9d216056da01b88168",
+        "type": "FIX",
+        "text": " ActionToolbarAction: implement IToolbarInteractiveControl"
+      },
+      {
         "id": "016ff647046c190004db7c296fcb3fc2df9267ab",
         "type": "FIX",
         "text": " mdc.FilterBar: Preserve whitespaces for labels"

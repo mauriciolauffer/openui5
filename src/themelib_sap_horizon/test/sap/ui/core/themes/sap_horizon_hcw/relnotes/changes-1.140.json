@@ -3,6 +3,21 @@
     "date": "August 2025",
     "notes": [
       {
+        "id": "9ac2bbd9384bd89bd5be0566c01b786752221110",
+        "type": "FIX",
+        "text": " sap.m.Switch: removed horizontal paddings"
+      },
+      {
+        "id": "9bc7cc82b8adcf859c98786fb3ef1c082f4b1af0",
+        "type": "FIX",
+        "text": " sap.m.Input: Align read-only input border"
+      },
+      {
+        "id": "f3238bbac4952f65aa96a55bae6d1f3af3772dce",
+        "type": "FIX",
+        "text": " sap.m.Checkbox: Correct non-editable checkbox alignment"
+      },
+      {
         "id": "0c2a3c8451bc7f2fc5853dcbd7e4a5678111e04a",
         "type": "FIX",
         "text": " Form: title in toolbar wrong weight"

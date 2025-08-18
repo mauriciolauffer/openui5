@@ -3,6 +3,11 @@
     "date": "August 2025",
     "notes": [
       {
+        "id": "9bc7cc82b8adcf859c98786fb3ef1c082f4b1af0",
+        "type": "FIX",
+        "text": " sap.m.Input: Align read-only input border"
+      },
+      {
         "id": "0c2a3c8451bc7f2fc5853dcbd7e4a5678111e04a",
         "type": "FIX",
         "text": " Form: title in toolbar wrong weight"

@@ -3,6 +3,36 @@
     "date": "August 2025",
     "notes": [
       {
+        "id": "58d8fdebca03ae428052dba275f56446121da181",
+        "type": "FIX",
+        "text": " sap.m.DynamicDateRange: Empty custom option doesn't log error"
+      },
+      {
+        "id": "34cb36977e9d03487fd296607d17c80dbd9678a7",
+        "type": "FIX",
+        "text": " VariantManagement: Indicate version for setCurrentVariantKey"
+      },
+      {
+        "id": "9bc7cc82b8adcf859c98786fb3ef1c082f4b1af0",
+        "type": "FIX",
+        "text": " sap.m.Input: Align read-only input border"
+      },
+      {
+        "id": "85a7cf9b9c6f07d71931264b797f6a0487f9d5be",
+        "type": "FIX",
+        "text": " sap.m.DynamicDateFormat: Sanitizing a pattern when creating a regex"
+      },
+      {
+        "id": "f3238bbac4952f65aa96a55bae6d1f3af3772dce",
+        "type": "FIX",
+        "text": " sap.m.Checkbox: Correct non-editable checkbox alignment"
+      },
+      {
+        "id": "a7c11c393d564cdf22eb136a6179a618c251f144",
+        "type": "FIX",
+        "text": " SelectionPanel: Adjust \"deselect all\" to take all list items into account"
+      },
+      {
         "id": "b446a278cc3fdfd2ad6ef6cea03eb3d619db8927",
         "type": "FEATURE",
         "text": " sap.m.MessagePopover: enable title in header"
@@ -21,6 +51,11 @@
         "id": "23255d4ae0d5965c358b4ff0e6c3b9cb4ff9917d",
         "type": "FIX",
         "text": " sap.m.OverflowToolbar: Fix failing test on 2.0"
+      },
+      {
+        "id": "5a91bf42f5b77f2080ebc82fa58923e16fe63578",
+        "type": "FIX",
+        "text": " sap.m.Link: has smaller offset when in Table in condensed mode"
       },
       {
         "id": "11748d569ba5525020062cd3dcf0e6eb002de337",

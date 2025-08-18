@@ -3,6 +3,11 @@
     "date": "August 2025",
     "notes": [
       {
+        "id": "40ec3fa0b5d013c78258a829fec6625632ab4f9e",
+        "type": "FIX",
+        "text": " sap.uxap.ObjectPageSection: Invalid aria-labelledBy fixed"
+      },
+      {
         "id": "f690c5cd56ec4f095f267ac745fb0b4be6f76dfc",
         "type": "FIX",
         "text": " sap.uxap.ObjectPageLayout: Prevent focus loss when header expanded"
