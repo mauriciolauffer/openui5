@@ -6,7 +6,13 @@ sap.ui.define(function() {
 		name: "TestSuite for sap.ui.core: GTP testcase CORE/DATABINDING",
 		defaults: {
 			qunit: {
-				version: 2
+				version : "2.18",
+				versions : {
+					"2.18" : {
+						module : "test-resources/sap/ui/core/qunit/thirdparty/qunit-2.18",
+						css : "test-resources/sap/ui/core/qunit/thirdparty/qunit-2.18.css"
+					}
+				}
 			},
 			sinon: {
 				version: 4,
@@ -77,11 +83,17 @@ sap.ui.define(function() {
 					+ " (ODataTreeBindingNoFakeService.qunit)"
 			},
 			ODataV2ListBinding: {
-				title: "sap.ui.model.odata.v2.ODataListBinding - QUnit tests"
+				title: "sap.ui.model.odata.v2.ODataListBinding - QUnit tests",
+				qunit : {
+					version : 2
+				}
 			},
 			/** @deprecated As of version 1.22.0, reason sap.ui.model.odata.Filter */
 			ODataV2ListBinding_Filter_legacyAPIs: {
-				title: "sap.ui.model.odata.v2.ODataListBinding_Filter - QUnit tests"
+				title: "sap.ui.model.odata.v2.ODataListBinding_Filter - QUnit tests",
+				qunit : {
+					version : 2
+				}
 			},
 			ODataV2ListBinding_Paging: {
 				title: "sap.ui.model.odata.v2.ODataListBinding_Paging - QUnit tests"
@@ -94,7 +106,10 @@ sap.ui.define(function() {
 					+ " (ODataPropertyBindingNoFakeService.qunit)"
 			},
 			ODataV2Model: {
-				title: "sap.ui.model.odata.v2.ODataModel - Sinon QUnit tests"
+				title: "sap.ui.model.odata.v2.ODataModel - Sinon QUnit tests",
+				qunit : {
+					version : 2
+				}
 			},
 			ODataV2TreeBinding: {
 				title: "sap.ui.model.odata.v2.ODataTreeBinding - QUnit tests",
@@ -105,10 +120,16 @@ sap.ui.define(function() {
 			},
 			ODataV2TreeBindingFlat_MockSrv: {
 				title: "sap.ui.model.odata.ODataTreeBindingFlat - MockServer based QUnit tests",
+				qunit : {
+					version : 2
+				},
 				sinon: 1 // because MockServer is used which has a hard dependency to sinon V1
 			},
 			ODataV2TreeBindingFlat_FakeSrv: {
-				title: "sap.ui.model.odata.ODataTreeBindingFlat - Fake service QUnit tests"
+				title: "sap.ui.model.odata.ODataTreeBindingFlat - Fake service QUnit tests",
+				qunit : {
+					version : 2
+				}
 			},
 			V2ODataModel: {
 				title: "sap.ui.model.odata.v2.ODataModel - Mockserver QUnit tests",
