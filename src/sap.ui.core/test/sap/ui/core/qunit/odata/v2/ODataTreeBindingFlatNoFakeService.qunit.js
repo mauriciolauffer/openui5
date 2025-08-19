@@ -655,31 +655,25 @@ sap.ui.define([
 	});
 });
 
-[{
-	binding : {_bRestoreTreeStateAfterChange : undefined, aApplicationFilters : undefined},
-	result : undefined
-}, {
-	binding : {_bRestoreTreeStateAfterChange : false, aApplicationFilters : undefined},
-	result : false
-}, {
-	binding : {_bRestoreTreeStateAfterChange : false, aApplicationFilters : []},
-	result : false
-}, {
-	binding : {_bRestoreTreeStateAfterChange : true, aApplicationFilters : ["~foo"]},
-	result : false
-}, {
-	binding : {_bRestoreTreeStateAfterChange : true, aApplicationFilters : undefined},
-	result : true
-}, {
-	binding : {_bRestoreTreeStateAfterChange : true, aApplicationFilters : []},
-	result : true
-}].forEach(function (oFixture, i) {
 	//*********************************************************************************************
+[
+	{restoreTreeStateAfterChange: undefined, combinedFilter: undefined, result: undefined},
+	{restoreTreeStateAfterChange: false, combinedFilter: undefined, result: false},
+	{restoreTreeStateAfterChange: true, combinedFilter: undefined, result: true},
+	{restoreTreeStateAfterChange: true, combinedFilter: {}, result: false}
+].forEach(({restoreTreeStateAfterChange, combinedFilter, result}, i) => {
 	QUnit.test("_isRestoreTreeStateSupported: #" + i, function (assert) {
+		const oBinding = {
+			_bRestoreTreeStateAfterChange: restoreTreeStateAfterChange,
+			getCombinedFilter () {}
+		};
+
+		if (restoreTreeStateAfterChange) {
+			this.mock(oBinding).expects("getCombinedFilter").withExactArgs().returns(combinedFilter);
+		}
+
 		// code under test
-		assert.strictEqual(
-			ODataTreeBindingFlat.prototype._isRestoreTreeStateSupported.call(oFixture.binding),
-			oFixture.result);
+		assert.strictEqual(ODataTreeBindingFlat.prototype._isRestoreTreeStateSupported.call(oBinding), result);
 	});
 });
 
@@ -2164,7 +2158,20 @@ sap.ui.define([
 	});
 
 	//*********************************************************************************************
-	QUnit.test("_requestServerIndexNodes: calls _getHeaders", function (assert) {
+[{
+	combinedFilter: undefined,
+	expectedReadFilters: [new Filter({
+		filters: [new Filter("~hierarchy-level-for", "LE", 13)],
+		and: true
+	})]
+ }, {
+	combinedFilter: new Filter("~customer", "EQ", "foo"),
+	expectedReadFilters: [new Filter({
+		filters: [new Filter("~hierarchy-level-for", "LE", 13), new Filter("~customer", "EQ", "foo")],
+		and: true
+	})]
+}].forEach(({combinedFilter, expectedReadFilters}, i) => {
+	QUnit.test("_requestServerIndexNodes: calls _getHeaders: #" + i, function (assert) {
 		const oBinding = {
 			_aPendingRequests: [],
 			oModel: {
@@ -2173,18 +2180,22 @@ sap.ui.define([
 			oTreeProperties: {
 				"hierarchy-level-for": "~hierarchy-level-for"
 			},
+			_checkFilterForTreeProperties() {},
 			_getHeaders() {},
+			getCombinedFilter() {},
 			getNumberOfExpandedLevels() {},
 			getResolvedPath() {}
 		};
 		const oBindingMock = this.mock(oBinding);
 		oBindingMock.expects("getNumberOfExpandedLevels").withExactArgs().returns(13);
+		oBindingMock.expects("_checkFilterForTreeProperties").withExactArgs();
+		oBindingMock.expects("getCombinedFilter").withExactArgs().returns(combinedFilter);
 		oBindingMock.expects("getResolvedPath").withExactArgs().returns("~sAbsolutePath");
 		oBindingMock.expects("_getHeaders").withExactArgs().returns("~headers");
 		const oReadExpectation = this.mock(oBinding.oModel).expects("read")
 			.withExactArgs("~sAbsolutePath", {
 				error: sinon.match.func,
-				filters: [new Filter({filters: [new Filter("~hierarchy-level-for", "LE", 13)], and: true})],
+				filters: expectedReadFilters,
 				groupId: undefined, // not relevant for this test
 				headers: "~headers",
 				sorters: [],
@@ -2208,6 +2219,7 @@ sap.ui.define([
 			assert.deepEqual(oBinding._aPendingRequests, []);
 		});
 	});
+});
 
 	//*********************************************************************************************
 	QUnit.test("_requestChildren: calls _getHeaders", function (assert) {
@@ -2268,7 +2280,27 @@ sap.ui.define([
 	});
 
 	//*********************************************************************************************
-	QUnit.test("_requestSubTree: calls _getHeaders", function (assert) {
+[{
+	combinedFilter: undefined,
+	expectedReadFilters: [new Filter({
+		filters: [
+			new Filter("~hierarchy-node-for", "EQ", "~sHierarchyNodeForProperty"),
+			new Filter("~hierarchy-level-for", "LE", "~iLevel")
+		],
+		and: true
+	})]
+ }, {
+	combinedFilter: new Filter("~customer", "EQ", "foo"),
+	expectedReadFilters: [new Filter({
+		filters: [
+			new Filter("~hierarchy-node-for", "EQ", "~sHierarchyNodeForProperty"),
+			new Filter("~hierarchy-level-for", "LE", "~iLevel"),
+			new Filter("~customer", "EQ", "foo")
+		],
+		and: true
+	})]
+}].forEach((oFixture, i) => {
+	QUnit.test("_requestSubTree: calls _getHeaders: #" + i, function (assert) {
 		const oBinding = {
 			_aPendingSubtreeRequests: [],
 			oModel: {
@@ -2278,7 +2310,9 @@ sap.ui.define([
 				"hierarchy-level-for": "~hierarchy-level-for",
 				"hierarchy-node-for": "~hierarchy-node-for"
 			},
+			_checkFilterForTreeProperties() {},
 			_getHeaders() {},
+			getCombinedFilter() {},
 			getResolvedPath() {}
 		};
 		const oParentNode = {
@@ -2290,14 +2324,14 @@ sap.ui.define([
 		this.mock(oParentNode.context).expects("getProperty")
 			.withExactArgs("~hierarchy-node-for")
 			.returns("~sHierarchyNodeForProperty");
+		this.mock(oBinding).expects("_checkFilterForTreeProperties").withExactArgs();
+		this.mock(oBinding).expects("getCombinedFilter").withExactArgs().returns(oFixture.combinedFilter);
 		this.mock(oBinding).expects("getResolvedPath").withExactArgs().returns("~sAbsolutePath");
-		const oExpectedNodeFilter = new Filter("~hierarchy-node-for", "EQ", "~sHierarchyNodeForProperty");
-		const oExpectedLevelFilter = new Filter("~hierarchy-level-for", "LE", "~iLevel");
 		this.mock(oBinding).expects("_getHeaders").withExactArgs().returns("~headers");
 		const oReadExpectation = this.mock(oBinding.oModel).expects("read")
 			.withExactArgs("~sAbsolutePath", {
 				error: sinon.match.func,
-				filters: [new Filter({filters: [oExpectedNodeFilter, oExpectedLevelFilter], and: true})],
+				filters: oFixture.expectedReadFilters,
 				groupId: undefined, // not relevant for this test
 				headers: "~headers",
 				sorters: [],
@@ -2321,6 +2355,7 @@ sap.ui.define([
 			assert.deepEqual(oBinding._aPendingSubtreeRequests, []);
 		});
 	});
+});
 
 	//*********************************************************************************************
 	QUnit.test("_generateSiblingsPositionRequest: calls _getHeaders", function (assert) {
