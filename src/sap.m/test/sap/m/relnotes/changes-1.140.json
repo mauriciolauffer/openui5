@@ -3,9 +3,29 @@
     "date": "August 2025",
     "notes": [
       {
+        "id": "11ecfa412c64f2ac9db290119a3e0f638cb99e6d",
+        "type": "FIX",
+        "text": " sap.m.SinglePlanningCalendarMonthGrid: fixed Month view layout (320-340px)"
+      },
+      {
+        "id": "8f102c55ebb70b4643160c8e87cf4f65284cdb42",
+        "type": "FIX",
+        "text": " BasePanel: SelectAll/DeselectAll should respect filters"
+      },
+      {
+        "id": "bbab9273a8192186379d322c6c460b51600a5cb7",
+        "type": "FIX",
+        "text": " sap.m.SplitApp: busy indicator layer is now also over the master container"
+      },
+      {
         "id": "58d8fdebca03ae428052dba275f56446121da181",
         "type": "FIX",
         "text": " sap.m.DynamicDateRange: Empty custom option doesn't log error"
+      },
+      {
+        "id": "cf4ac960eb8f52129f2fe4168ecc832337af7c5e",
+        "type": "FIX",
+        "text": " sap.m.Carousel: use logical margin to correctly render RTL layouts"
       },
       {
         "id": "34cb36977e9d03487fd296607d17c80dbd9678a7",

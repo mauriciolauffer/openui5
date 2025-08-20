@@ -3,6 +3,11 @@
     "date": "August 2025",
     "notes": [
       {
+        "id": "8f102c55ebb70b4643160c8e87cf4f65284cdb42",
+        "type": "FIX",
+        "text": " BasePanel: SelectAll/DeselectAll should respect filters"
+      },
+      {
         "id": "4b4a4d8c17f1264900844e9d216056da01b88168",
         "type": "FIX",
         "text": " ActionToolbarAction: implement IToolbarInteractiveControl"
