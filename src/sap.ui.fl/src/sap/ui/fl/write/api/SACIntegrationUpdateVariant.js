@@ -7,7 +7,8 @@ sap.ui.define([
 	"sap/ui/fl/apply/_internal/flexState/compVariants/Utils",
 	"sap/ui/fl/apply/_internal/flexState/FlexState",
 	"sap/ui/fl/initial/_internal/ManifestUtils",
-	"sap/ui/fl/Layer"
+	"sap/ui/fl/Layer",
+	"sap/ui/fl/write/_internal/init"
 ], function(
 	CompVariantManager,
 	CompVariantUtils,
