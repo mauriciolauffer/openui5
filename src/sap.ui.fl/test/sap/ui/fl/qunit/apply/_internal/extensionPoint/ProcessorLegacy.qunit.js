@@ -7,6 +7,7 @@ sap.ui.define([
 	"sap/ui/fl/apply/_internal/extensionPoint/Processor",
 	"sap/ui/fl/apply/_internal/extensionPoint/Registry",
 	"sap/ui/fl/apply/_internal/flexState/changes/UIChangesState",
+	"sap/ui/fl/apply/_internal/flexState/FlexState",
 	"sap/ui/fl/changeHandler/AddXMLAtExtensionPoint",
 	"sap/ui/thirdparty/sinon-4",
 	"test-resources/sap/ui/fl/qunit/FlQUnitUtils"
@@ -17,6 +18,7 @@ sap.ui.define([
 	ExtensionPointProcessor,
 	ExtensionPointRegistry,
 	UIChangesState,
+	FlexState,
 	AddXMLAtExtensionPoint,
 	sinon,
 	FlQUnitUtils
@@ -118,6 +120,7 @@ sap.ui.define([
 	function destroyComponentAndContainer() {
 		oComponent.destroy();
 		oComponentContainer.destroy();
+		FlexState.clearState();
 		sandbox.restore();
 	}
 
