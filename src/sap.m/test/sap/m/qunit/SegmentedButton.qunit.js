@@ -598,6 +598,8 @@ sap.ui.define([
 	 * @deprecated Since version 1.28.
 	 */
 	QUnit.test("Mixed content buttons width calculation when in bar (all buttons should have the same width)", function(assert) {
+		assert.expect(3);
+		var done = assert.async();
 
 		// Arrange
 		var oButton1 = new Button({text: "All"}),
@@ -616,27 +618,35 @@ sap.ui.define([
 		oBar.placeAt("qunit-fixture");
 		oCore.applyChanges();
 
-		// Using native getBoundingClientRect() method because jQuery.width|outerWidth report rounded widths and
-		// the test becomes unstable.
-		iControlWidth = oSegmentedButton.getDomRef().getBoundingClientRect().width;
-		iButton1Width = oButton1.getDomRef().getBoundingClientRect().width;
-		iButton2Width = oButton2.getDomRef().getBoundingClientRect().width;
-		iButton3Width = oButton3.getDomRef().getBoundingClientRect().width;
+		if (document.fonts && document.fonts.ready) {
+			document.fonts.ready.then(function() {
+				// Using native getBoundingClientRect() method because jQuery.width|outerWidth report rounded widths and
+				// the test becomes unstable.
+				iControlWidth = oSegmentedButton.getDomRef().getBoundingClientRect().width;
+				iButton1Width = oButton1.getDomRef().getBoundingClientRect().width;
+				iButton2Width = oButton2.getDomRef().getBoundingClientRect().width;
+				iButton3Width = oButton3.getDomRef().getBoundingClientRect().width;
 
-		// Assert
-		assert.strictEqual(Math.floor(iButton2Width), Math.floor(iButton1Width), 'Second button width should be equal to the ' +
-				'first button width (mind here we add 1px to the expected result because of the 2 borders of middle' +
-				'buttons)');
+				// Assert
+				assert.strictEqual(Math.floor(iButton2Width), Math.floor(iButton1Width), 'Second button width should be equal to the ' +
+						'first button width (mind here we add 1px to the expected result because of the 2 borders of middle' +
+						'buttons)');
 
-		assert.strictEqual(Math.floor(iButton3Width), Math.floor(iButton1Width), 'Third button width should be equal to the ' +
-				'first button width');
+				assert.strictEqual(Math.floor(iButton3Width), Math.floor(iButton1Width), 'Third button width should be equal to the ' +
+						'first button width');
 
-		assert.strictEqual(Math.round(iControlWidth), Math.round(iButton1Width + iButton2Width + iButton3Width), "The sum of all buttons width " +
-				"should be the same as the control width");
+				assert.strictEqual(Math.round(iControlWidth), Math.round(iButton1Width + iButton2Width + iButton3Width), "The sum of all buttons width " +
+						"should be the same as the control width");
 
-		// Cleanup
-		oBar.destroy();
-		oCore.applyChanges();
+				// Cleanup
+				oBar.destroy();
+				oCore.applyChanges();
+
+				done();
+			});
+		}
+
+
 	});
 
 	QUnit.test("Initialize with items aggregation", async function(assert) {

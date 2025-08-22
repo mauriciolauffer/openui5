@@ -195,6 +195,9 @@ function(
 		// Used to store individual button widths
 		this._aWidths = [];
 
+		// Used to store previous button width
+		this._previousWidth = undefined;
+
 		// Delegate keyboard processing to ItemNavigation, see commons.SegmentedButton
 		this._oItemNavigation = new ItemNavigation();
 		this._oItemNavigation.setCycling(false);
@@ -237,8 +240,7 @@ function(
 	};
 
 	SegmentedButton.prototype.onAfterRendering = function () {
-		var aButtons = this._getVisibleButtons(),
-			oParentDom;
+		var oParentDom;
 
 		//register resize listener on parent
 		if (!this._sResizeListenerId) {
@@ -252,8 +254,23 @@ function(
 		// Keyboard
 		this._setItemNavigation();
 
-		// Calculate and apply widths
-		this._aWidths = this._getRenderedButtonWidths(aButtons);
+		// Use fonts.ready Promise to detect when fonts are loaded
+		// to avoid getting incorrect button widths
+		if (document.fonts && document.fonts.ready && document.fonts.status !== "loaded") {
+			document.fonts.ready.then(() => {
+				this._adjustButtonWidth();
+			});
+		} else {
+			this._adjustButtonWidth();
+		}
+    };
+
+	/**
+	 * Calculates and applies button width.
+	 * @private
+	 */
+	SegmentedButton.prototype._adjustButtonWidth = function () {
+		this._aWidths = this._getRenderedButtonWidths(this._getVisibleButtons());
 		this._updateWidth();
 	};
 
