@@ -53,8 +53,7 @@
 					"control/ChartWrapper.js",
 					"model/Products.json",
 					"model/PropertyInfos.json",
-					"Component.js",
-					"index.html"
+					"Component.js"
 				]
 			}
 		},
