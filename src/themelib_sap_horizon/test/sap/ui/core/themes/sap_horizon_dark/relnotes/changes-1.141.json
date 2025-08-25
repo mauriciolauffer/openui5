@@ -1,0 +1,12 @@
+{
+  "1.141.0": {
+    "date": "August 2025",
+    "notes": [
+      {
+        "id": "154c1cb8b9f8423d13c8801855a68acee782d077",
+        "type": "FIX",
+        "text": " sap.m.Button: has correct css parameters for active Emphasized"
+      }
+    ]
+  }
+}

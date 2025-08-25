@@ -1,0 +1,27 @@
+{
+  "1.141.0": {
+    "date": "August 2025",
+    "notes": [
+      {
+        "id": "62175dc1a9bc1d2c9e90e5f246b610d351c6a98f",
+        "type": "FIX",
+        "text": " sap.m.Menu: Fix binding of menu items"
+      },
+      {
+        "id": "968d863a30025100d10957636b88ae93b6c886f7",
+        "type": "FIX",
+        "text": " sap.m.DatePicker: adjust picker accessible name"
+      },
+      {
+        "id": "bcd027e345f1cf1f5a94380fa4906328ca0591ef",
+        "type": "FIX",
+        "text": " sap.m.SuggestionsPopover: Correct text color for additional info"
+      },
+      {
+        "id": "154c1cb8b9f8423d13c8801855a68acee782d077",
+        "type": "FIX",
+        "text": " sap.m.Button: has correct css parameters for active Emphasized"
+      }
+    ]
+  }
+}

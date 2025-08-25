@@ -1,0 +1,22 @@
+{
+  "1.141.0": {
+    "date": "August 2025",
+    "notes": [
+      {
+        "id": "c0d646cfd2b93fc5a2b584e90561ed929beafebb",
+        "type": "FIX",
+        "text": " sap/ui/core/LocaleData: getAllCurrencyDigits ignores CLDR in case of custom currencies with DEFAULT"
+      },
+      {
+        "id": "7669cb3e6bb5c7e7a78bf399c953f64443baf059",
+        "type": "FIX",
+        "text": " Lib.js: fix loading of '-lazy' bundles"
+      },
+      {
+        "id": "573421499d02b01a269d647dc3930d8529da7337",
+        "type": "FIX",
+        "text": " F6Navigation: Correctly identify active element in nested web components"
+      }
+    ]
+  }
+}
