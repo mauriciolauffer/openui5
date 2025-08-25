@@ -25,15 +25,14 @@ builder:
           - mode: preload
             name: sap-ui-integration
             filters:
+              - sap/ui/core/boot/
               - sap/ui/core/Core.js
               - sap/ui/core/CustomData.js
               - sap/ui/core/UIComponent.js
-              - sap/ui/core/boot/FieldHelpEndpoint.js
-              - sap/ui/core/boot/KeyboardInteractionEndpoint.js
               - sap/ui/core/mvc/XMLView.js
               - sap/ui/integration/
               - sap/f/cards/
-              - sap/ui/core/date/Gregorian.js
+              - sap/ui/core/date/
               - "!sap/ui/integration/sap-ui-integration-config.js"
               - "!sap/ui/integration/customElements/CustomElementCardEditor.js"
               - "!sap/ui/integration/customElements/CustomElementEditor.js"
@@ -90,15 +89,14 @@ builder:
         sections:
           - mode: provided
             filters:
+              - sap/ui/core/boot/
               - sap/ui/core/Core.js
               - sap/ui/core/CustomData.js
               - sap/ui/core/UIComponent.js
-              - sap/ui/core/boot/FieldHelpEndpoint.js
-              - sap/ui/core/boot/KeyboardInteractionEndpoint.js
               - sap/ui/core/mvc/XMLView.js
               - sap/ui/integration/
               - sap/f/cards/
-              - sap/ui/core/date/Gregorian.js
+              - sap/ui/core/date/
               - "!sap/ui/integration/sap-ui-integration-config.js"
               - "!sap/ui/integration/customElements/CustomElementCardEditor.js"
               - "!sap/ui/integration/customElements/CustomElementEditor.js"
@@ -161,16 +159,15 @@ builder:
           - mode: preload
             name: sap-ui-integration
             filters:
+              - sap/ui/core/boot/
               - sap/ui/thirdparty/jquery-compat.js
               - sap/ui/core/Core.js
               - sap/ui/core/CustomData.js
               - sap/ui/core/UIComponent.js
-              - sap/ui/core/boot/FieldHelpEndpoint.js
-              - sap/ui/core/boot/KeyboardInteractionEndpoint.js
               - sap/ui/core/mvc/XMLView.js
               - sap/ui/integration/
               - sap/f/cards/
-              - sap/ui/core/date/Gregorian.js
+              - sap/ui/core/date/
               - "!sap/ui/thirdparty/jquery.js"
               - "!sap/ui/thirdparty/jquery-mobile-custom.js"
               - "!sap/ui/integration/sap-ui-integration-config.js"
@@ -203,6 +200,7 @@ builder:
             name: sap-ui-integration-nojQuery-ext.js
             filters:
                - sap/ui/core/
+               - "!sap/ui/thirdparty/jquery*"
                - "!sap/ui/core/support/"
                - "!sap/ui/core/plugin/"
                - sap/ui/integration/
@@ -229,16 +227,15 @@ builder:
         sections:
           - mode: provided
             filters:
+              - sap/ui/core/boot/
               - sap/ui/thirdparty/jquery-compat.js
               - sap/ui/core/Core.js
               - sap/ui/core/CustomData.js
               - sap/ui/core/UIComponent.js
-              - sap/ui/core/boot/FieldHelpEndpoint.js
-              - sap/ui/core/boot/KeyboardInteractionEndpoint.js
               - sap/ui/core/mvc/XMLView.js
               - sap/ui/integration/
               - sap/f/cards/
-              - sap/ui/core/date/Gregorian.js
+              - sap/ui/core/date/
               - "!sap/ui/thirdparty/jquery.js"
               - "!sap/ui/thirdparty/jquery-mobile-custom.js"
               - "!sap/ui/integration/sap-ui-integration-config.js"
@@ -268,6 +265,7 @@ builder:
             name: sap-ui-integration-nojQuery-ext.js
             filters:
               - sap/ui/core/
+              - "!sap/ui/thirdparty/jquery*"
               - "!sap/ui/core/support/"
               - "!sap/ui/core/plugin/"
               - sap/ui/integration/
