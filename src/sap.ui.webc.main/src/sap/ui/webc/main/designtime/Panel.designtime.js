@@ -12,6 +12,9 @@ sap.ui.define([],
 			singular: "PANEL_NAME",
 			plural: "PANEL_NAME_PLURAL"
 		},
+		getLabel: function(oControl) {
+			return oControl.getDomRef().shadowRoot.querySelector(".ui5-panel-header-title").textContent;
+		},
 		actions: {
 			remove: {
 				changeType: "hideControl"
@@ -26,9 +29,6 @@ sap.ui.define([],
 				changeType: "rename",
 				domRef: function (oControl) {
 					return oControl.getDomRef().shadowRoot.querySelector(".ui5-panel-header-title");
-				},
-				getLabel: function(oControl) {
-					return oControl.getDomRef().shadowRoot.querySelector(".ui5-panel-header-title").textContent;
 				}
 			}
 		},
