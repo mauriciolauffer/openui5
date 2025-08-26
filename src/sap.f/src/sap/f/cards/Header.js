@@ -5,18 +5,22 @@ sap.ui.define([
 	"./BaseHeader",
 	"sap/m/library",
 	"sap/f/library",
+	"sap/ui/core/library",
 	"sap/m/Text",
 	"sap/m/Avatar",
 	"sap/f/cards/HeaderRenderer",
-	"sap/ui/core/InvisibleText"
+	"sap/ui/core/InvisibleText",
+	"sap/base/Log"
 ], function (
 	BaseHeader,
 	mLibrary,
 	library,
+	coreLibrary,
 	Text,
 	Avatar,
 	HeaderRenderer,
-	InvisibleText
+	InvisibleText,
+	Log
 ) {
 	"use strict";
 
@@ -24,6 +28,7 @@ sap.ui.define([
 	const AvatarColor = mLibrary.AvatarColor;
 	const AvatarImageFitType = mLibrary.AvatarImageFitType;
 	const AvatarSize = mLibrary.AvatarSize;
+	const ValueState = coreLibrary.ValueState;
 
 	/**
 	 * Constructor for a new <code>Header</code>.
@@ -134,7 +139,14 @@ sap.ui.define([
 				 *
 				 * @since 1.130
 				 */
-				iconFitType: { type: "sap.m.AvatarImageFitType", defaultValue: AvatarImageFitType.Cover }
+				iconFitType: { type: "sap.m.AvatarImageFitType", defaultValue: AvatarImageFitType.Cover },
+
+				/**
+				 * Defines a status-colored, non-interactive message icon in the icon area.
+				 *
+				 * @since 1.141
+				 */
+				iconState: { type: "sap.ui.core.ValueState", defaultValue: ValueState.None }
 			},
 			aggregations: {
 
@@ -234,14 +246,50 @@ sap.ui.define([
 
 		this._enhanceText(this._getSubtitle());
 
-		this._getAvatar()
-			.setDisplayShape(this.getIconDisplayShape())
-			.setSrc(this.getIconSrc())
-			.setInitials(this.getIconInitials())
-			.setTooltip(this.getIconAlt())
-			.setBackgroundColor(this.getIconBackgroundColor())
-			.setDisplaySize(this.getIconSize())
-			.setImageFitType(this.getIconFitType());
+		if (this.getIconState() != ValueState.None) {
+			const icon = this._getIconForState();
+			this._getAvatar()
+				.setSrc(icon)
+				.setTooltip(this.getIconAlt());
+		} else {
+			this._getAvatar()
+				.setDisplayShape(this.getIconDisplayShape())
+				.setSrc(this.getIconSrc())
+				.setInitials(this.getIconInitials())
+				.setTooltip(this.getIconAlt())
+				.setBackgroundColor(this.getIconBackgroundColor())
+				.setDisplaySize(this.getIconSize())
+				.setImageFitType(this.getIconFitType());
+		}
+
+		this._validateIconProperties();
+	};
+
+	/**
+	 * Helper function used to get the appropriate icon for the state.
+	 *
+	 * @private
+	 * @returns {string} The URI of the icon corresponding to the state.
+	 */
+	Header.prototype._getIconForState = function () {
+		switch (this.getIconState()) {
+			case ValueState.Success:
+				return "sap-icon://sys-enter-2";
+			case ValueState.Error:
+				return "sap-icon://error";
+			case ValueState.Warning:
+				return "sap-icon://warning";
+			case ValueState.Information:
+				return "sap-icon://information";
+			default:
+				return "";
+		}
+	};
+
+	Header.prototype._validateIconProperties = function () {
+		if ((this.getIconSrc() || this.getIconInitials()) && this.getIconState() != ValueState.None) {
+			Log.warning("Invalid Icon configuration: You cannot set an icon with both src/initials and a state simultaneously. The Icon supports only one at a time. Remove either the src/initials or the state.");
+		}
 	};
 
 	/**
@@ -298,7 +346,7 @@ sap.ui.define([
 			aIds.push(this.getId() + "-dataTimestamp");
 		}
 
-		if (this.getIconSrc() || this.getIconInitials()) {
+		if (this.getIconSrc() || this.getIconInitials() || this.getIconState() !== ValueState.None) {
 			aIds.push(this._getAvatar().getId());
 		}
 
