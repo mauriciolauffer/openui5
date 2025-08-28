@@ -333,10 +333,18 @@ function(
 				if (sWidth) {
 					if (sWidth.indexOf("%") !== -1) {
 						// Width in Percent
-						iSumPercents += parseInt(sWidth.slice(0, -1));
-					} else {
+						iSumPercents += parseFloat(sWidth.slice(0, -1));
+					} else if (sWidth.indexOf("px") !== -1) {
 						// Width in Pixels
 						iSumPixels += parseInt(sWidth.slice(0, -2));
+					} else {
+						// Handle other units (em, rem, vw, vh, etc.)
+						var oButtonDomRef = aButtons[i].getDomRef();
+						if (oButtonDomRef) {
+							var oComputedStyle = window.getComputedStyle(oButtonDomRef);
+							var iComputedWidth = parseFloat(oComputedStyle.width);
+							iSumPixels += iComputedWidth;
+						}
 					}
 				} else {
 					iNoWidths++;
@@ -344,7 +352,7 @@ function(
 				i++;
 			}
 
-			// If there are no buttons without width setted return
+			// If there are no buttons without width set, return
 			if (iNoWidths === 0) {
 				return false;
 			}
@@ -352,7 +360,7 @@ function(
 			iPercent = (100 - iSumPercents) / iNoWidths;
 			iPixels = (iSumPixels / iNoWidths);
 
-			// Handle invalid negative numbers or other button occupying more than 100% of the width
+			// Handle invalid negative numbers or other buttons occupying more than 100% of the width
 			if (iPercent < 0) {
 				iPercent = 0;
 			}
