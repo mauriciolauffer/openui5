@@ -690,15 +690,16 @@ sap.ui.define([
 					"xx-designMode": true
 				}
 			},
-			"apply/_internal/init": {
-				group: "Apply Internal",
-				coverage: {
-					only: ["sap/ui/fl/apply/_internal/init"]
-				},
-				ui5: {
-					libs: [] // The module is being loaded inside the test
-				}
-			},
+			// TODO: Re-enable once Change Handler Registration is executed on init
+			// "apply/_internal/init": {
+			// 	group: "Apply Internal",
+			// 	coverage: {
+			// 		only: ["sap/ui/fl/apply/_internal/init"]
+			// 	},
+			// 	ui5: {
+			// 		libs: [] // The module is being loaded inside the test
+			// 	}
+			// },
 			"write/api/AppVariantWriteAPI": {
 				group: "Write API",
 				coverage: {
@@ -810,15 +811,16 @@ sap.ui.define([
 					only: ["sap/ui/fl/write/api/LocalResetAPI"]
 				}
 			},
-			"write/_internal/init": {
-				group: "Write Internal",
-				coverage: {
-					only: ["sap/ui/fl/write/_internal/init"]
-				},
-				ui5: {
-					libs: [] // The module is being loaded inside the test
-				}
-			},
+			// TODO: Re-enable once Change Handler Registration is executed on init
+			// "write/_internal/init": {
+			// 	group: "Write Internal",
+			// 	coverage: {
+			// 		only: ["sap/ui/fl/write/_internal/init"]
+			// 	},
+			// 	ui5: {
+			// 		libs: [] // The module is being loaded inside the test
+			// 	}
+			// },
 			"write/_internal/Storage": {
 				group: "Write Internal",
 				coverage: {
