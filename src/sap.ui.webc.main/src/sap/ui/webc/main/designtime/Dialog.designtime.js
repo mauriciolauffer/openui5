@@ -12,6 +12,9 @@ sap.ui.define([],
 				singular: "DIALOG_NAME",
 				plural: "DIALOG_NAME_PLURAL"
 			},
+			getLabel: function(oControl) {
+				return oControl.getDomRef().getAttribute("header-text");
+			},
 			actions: {
 				remove: {
 					changeType: "hideControl"
@@ -23,9 +26,6 @@ sap.ui.define([],
 					changeType: "rename",
 					domRef: function (oControl) {
 						return oControl.getDomRef().shadowRoot.querySelector(".ui5-popup-header-text");
-					},
-					getLabel: function(oControl) {
-						return oControl.getDomRef().getAttribute("header-text");
 					}
 				}
 			}
