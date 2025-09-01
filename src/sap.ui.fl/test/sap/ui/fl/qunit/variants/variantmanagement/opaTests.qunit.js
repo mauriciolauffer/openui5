@@ -13,7 +13,7 @@ sap.ui.require([
 ) {
 	"use strict";
 
-	var VM_ID = "Comp1---IDView--idVariantManagementCtrl";
+	const VM_ID = "Comp1---IDView--idVariantManagementCtrl";
 
 	Opa5.extendConfig({
 		viewName: "VariantManagement",
@@ -35,10 +35,6 @@ sap.ui.require([
 				window.sessionStorage.removeItem("sap.ui.rta.restart.USER");
 				localStorage.clear();
 			}
-		}),
-		actions: new Opa5({
-		}),
-		assertions: new Opa5({
 		})
 	});
 
@@ -151,5 +147,7 @@ sap.ui.require([
 		Given.iTeardownMyAppFrame();
 	});
 
-	QUnit.start();
+	QUnit.done(function() {
+		document.getElementById("qunit-fixture").style.display = "none";
+	});
 });
