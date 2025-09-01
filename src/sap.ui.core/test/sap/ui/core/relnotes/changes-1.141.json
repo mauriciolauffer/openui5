@@ -1,7 +1,17 @@
 {
   "1.141.0": {
-    "date": "August 2025",
+    "date": "September 2025",
     "notes": [
+      {
+        "id": "5aae4d4342cd656366eee344441eecbeabd69384",
+        "type": "FIX",
+        "text": " sap/base/security/sanitizeHTML: Add support for modern CSS display values"
+      },
+      {
+        "id": "cc73ed0658931b85ec625d864603c09f33746995",
+        "type": "FIX",
+        "text": " routing/History: avoid creating history entry when same hash is applied"
+      },
       {
         "id": "c0d646cfd2b93fc5a2b584e90561ed929beafebb",
         "type": "FIX",
