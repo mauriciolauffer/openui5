@@ -77,6 +77,9 @@ sap.ui.define(function() {
 				bootCore: false,
 				beforeBootstrap: "test-resources/sap/ui/core/qunit/jquery-mobile-custom.beforeBootstrap"
 			},
+			"util/_URL": {
+				title: "sap/ui/util/isCrossOriginURL"
+			},
 			"util/isCrossOriginURL": {
 				title: "sap/ui/util/isCrossOriginURL"
 			},
