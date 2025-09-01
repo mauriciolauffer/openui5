@@ -1306,6 +1306,12 @@ sap.ui.define([
 					only: ["sap/ui/fl/variants/context/"]
 				}
 			},
+			"variants/variantmanagement/opaTests": {
+				group: "Variants",
+				coverage: {
+					only: ["sap/ui/fl/variants/"]
+				}
+			},
 
 			// CLOUD IOI tests:
 			library: {
