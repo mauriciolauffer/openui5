@@ -529,7 +529,9 @@ sap.ui.define([
 			aIds.push(this.getId() + "-dataTimestamp");
 		}
 
-		aIds.push(this._getUnitOfMeasurement().getId());
+		if (this.getAggregation("_unitOfMeasurement").getText()) {
+			aIds.push(this._getUnitOfMeasurement().getId());
+		}
 
 		if (this.getIconSrc() || this.getIconInitials()) {
 			aIds.push(this._getAvatar().getId());
