@@ -309,6 +309,13 @@ sap.ui.define([
 				},
 				sinon: false
 			},
+			"util/CardMergerWithChildCard": {
+				coverage: {
+					only: [
+						"sap/ui/integration/util/CardMerger"
+					]
+				}
+			},
 			"util/CardMergerWithObjectPropertyTranslations": {
 				coverage: {
 					only: [
