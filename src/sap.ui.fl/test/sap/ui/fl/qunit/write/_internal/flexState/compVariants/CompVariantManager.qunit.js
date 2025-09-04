@@ -2,13 +2,10 @@
 
 sap.ui.define([
 	"sap/ui/core/Control",
-	"sap/ui/core/Element",
 	"sap/ui/core/Lib",
 	"sap/ui/core/UIComponent",
-	"sap/ui/fl/apply/_internal/flexObjects/CompVariant",
 	"sap/ui/fl/apply/_internal/flexObjects/FlexObjectFactory",
 	"sap/ui/fl/apply/_internal/flexObjects/States",
-	"sap/ui/fl/apply/_internal/flexObjects/UpdatableChange",
 	"sap/ui/fl/apply/_internal/flexState/compVariants/Utils",
 	"sap/ui/fl/apply/_internal/flexState/FlexState",
 	"sap/ui/fl/initial/_internal/ManifestUtils",
@@ -25,13 +22,10 @@ sap.ui.define([
 	"sap/ui/thirdparty/sinon-4"
 ], function(
 	Control,
-	Element,
 	Lib,
 	UIComponent,
-	CompVariant,
 	FlexObjectFactory,
 	States,
-	UpdatableChange,
 	CompVariantUtils,
 	FlexState,
 	ManifestUtils,
@@ -383,6 +377,9 @@ sap.ui.define([
 				},
 				getUserId() {
 					return "userA";
+				},
+				getIsVariantAuthorNameAvailable() {
+					return false;
 				}
 			});
 
