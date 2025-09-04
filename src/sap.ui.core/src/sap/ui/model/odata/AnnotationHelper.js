@@ -148,7 +148,7 @@ sap.ui.define([
 								}
 								aParts[i] = vPart = vPropertySetting;
 							}
-							// falls through
+							// fall through
 						case "object":
 							// merge is needed if some parts are constants or again have parts
 							// Note: a binding info object has either "path" or "parts"
