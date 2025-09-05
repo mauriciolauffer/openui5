@@ -35,28 +35,28 @@
 									new Label({text: "Delivery Date", required: true}),
 									new DatePicker({width: "100%"})
 								]
-							}).addStyleClass("sapUiCompFilterBarItem"),
+							}).addStyleClass("sapUiMdcFilterBarLayoutItem"),
 
 							new VerticalLayout({
 								content: [
 									new Label({text: "Region", required: true}),
 									new Select({width: "100%"})
 								]
-							}).addStyleClass("sapUiCompFilterBarItem"),
+							}).addStyleClass("sapUiMdcFilterBarLayoutItem"),
 
 							new VerticalLayout({
 								content: [
 									new Label({text: "Other Date"}),
 									new DatePicker({width: "100%"})
 								]
-							}).addStyleClass("sapUiCompFilterBarItem"),
+							}).addStyleClass("sapUiMdcFilterBarLayoutItem"),
 
 							new VerticalLayout({
 								content: [
 									new Label({text: "Other State"}),
 									new Select({width: "100%"})
 								]
-							}).addStyleClass("sapUiCompFilterBarItem")
+							}).addStyleClass("sapUiMdcFilterBarLayoutItem")
 
 						],
 						endContent: [
@@ -89,13 +89,13 @@
 				});
 		</script>
 		<style>
-			.sapUiVlt.sapUiCompFilterBarItem { /* TODO: only in filterbar usage */
+			.sapUiVlt.sapUiMdcFilterBarLayoutItem { /* TODO: only in filterbar usage */
 				display: block;
 				padding-right: 1rem;
 				padding-top: 0.5rem;
 			}
 
-			.sapUiVlt.sapUiCompFilterBarItem > .sapUiVltCell { /* TODO: only in filterbar usage */
+			.sapUiVlt.sapUiMdcFilterBarLayoutItem > .sapUiVltCell { /* TODO: only in filterbar usage */
 				display: block;
 			}
 		</style>
