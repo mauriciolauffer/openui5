@@ -1,0 +1,12 @@
+{
+  "1.141.0": {
+    "date": "September 2025",
+    "notes": [
+      {
+        "id": "bf2e9fbec72141ac050967b60b0cf8e3cb1c181e",
+        "type": "FIX",
+        "text": " sap.ui.unified.Month: removed redundant \"selected\" announce"
+      }
+    ]
+  }
+}

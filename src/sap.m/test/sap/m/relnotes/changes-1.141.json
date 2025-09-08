@@ -3,6 +3,36 @@
     "date": "September 2025",
     "notes": [
       {
+        "id": "dbec5e70e7fe80e5a9a5d8c8f6e9324ec3202b4a",
+        "type": "FIX",
+        "text": " sap.m.MenuWraper: respects content density"
+      },
+      {
+        "id": "0f426d9dad7fc27eed8c5b97e915ee6a24728a26",
+        "type": "FIX",
+        "text": " sap.m.Avatar: Fix image not visible, when initials are incorrect"
+      },
+      {
+        "id": "21f714be781d467ee1db256d055ca312765eb97a",
+        "type": "FIX",
+        "text": " sap.m.Dialog/Popover: Styles are fixed when integrated with WebC"
+      },
+      {
+        "id": "aa8486530eb91a17e124b139d76d57c0fd1a1947",
+        "type": "FIX",
+        "text": " sap.m.DynamicDateRange: set label to correct elements"
+      },
+      {
+        "id": "b11239a55fedadf6738dd6a865931efe9ae8cda3",
+        "type": "FIX",
+        "text": " sap.m.ColorPalette: adjust keyboard interactions"
+      },
+      {
+        "id": "d4eb7431a51f0ebff5023c7c696c584d45756de4",
+        "type": "FIX",
+        "text": " We've now fixed the issue of tiles not scrolling left or right when buttons are pressed on the slideTile control"
+      },
+      {
         "id": "3f57f3785e13380b2ab000c30c473414c6e02bb5",
         "type": "FIX",
         "text": " sap.m.SegmentedButton: fixed initial truncation of some button texts"
