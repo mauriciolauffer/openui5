@@ -67389,6 +67389,44 @@ make root = ${bMakeRoot}`;
 });
 
 	//*********************************************************************************************
+	// Scenario: Evaluate "ValueListRelevantQualifiers" annotation with addt'l :1 navigation.
+	// SNOW: DINC0604127
+[1, 11].forEach(function (iValue) {
+	var sTitle = "DINC0604127: ValueListRelevantQualifiers, value=" + iValue;
+
+	QUnit.test(sTitle, function (assert) {
+		var oModel = this.createSpecialCasesModel({autoExpandSelect : true}),
+			sView = '\
+<FlexBox id="form" binding="{/Bs(1)}">\
+	<Text id="aid" text="{BtoA/AID}"/>\
+</FlexBox>',
+			that = this;
+
+		this.expectRequest("Bs(1)?$select=BID&$expand=BtoA($select=AID)", {
+				BID : 2,
+				BtoA : {
+					AID : 1
+				}
+			})
+			.expectChange("aid", "1");
+
+		return this.createView(assert, sView, oModel).then(function () {
+			that.expectRequest("Bs(1)/BtoA?$select=AID,AValue", {
+					AID : 1,
+					AValue : iValue // Edm.Int16
+				});
+
+			// code under test
+			return that.oView.byId("aid").getBinding("text").requestValueListInfo();
+		}).then(function (mQualifier2ValueListType) {
+			assert.deepEqual(
+				Object.keys(mQualifier2ValueListType),
+				iValue > 10 ? ["in", "maybe"] : ["in"]);
+		});
+	});
+});
+
+	//*********************************************************************************************
 	// Scenario: Evaluate "ValueListRelevantQualifiers" annotation even when
 	// "ValueListWithFixedValues" is present.
 	// JIRA: CPOUI5ODATAV4-1251
@@ -67429,7 +67467,9 @@ make root = ${bMakeRoot}`;
 	// Scenario: Evaluate "ValueListRelevantQualifiers" annotation with Partner NavigationProperty.
 	// BCP: 2380132332
 [0, 1].forEach(function (iValue) {
-	QUnit.test("BCP: 2380132332, value=" + iValue, async function (assert) {
+	const sTitle = "BCP: 2380132332, ValueListRelevantQualifiers, value=" + iValue;
+
+	QUnit.test(sTitle, async function (assert) {
 		const oModel = this.createSpecialCasesModel({autoExpandSelect : true});
 		const sView = `
 <FlexBox id="outer" binding="{/As(0)}">
