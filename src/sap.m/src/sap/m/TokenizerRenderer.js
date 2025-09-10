@@ -38,7 +38,11 @@ sap.ui.define(['sap/ui/Device', 'sap/ui/core/InvisibleText'],
 
 		oRm.class("sapMTokenizer");
 
-		if (!oControl.getEditable()) {
+		if (oControl._bInForm){
+			oRm.class("sapMTokenizerHeightMargin");
+		}
+
+		if (!oControl.getEditable() || oControl.getDisplayOnly()) {
 			oRm.class("sapMTokenizerReadonly");
 		}
 
@@ -47,7 +51,7 @@ sap.ui.define(['sap/ui/Device', 'sap/ui/core/InvisibleText'],
 
 		}
 
-		if (!aTokens.length) {
+		if (!aTokens.length && !oControl._bInForm) {
 			oRm.class("sapMTokenizerEmpty");
 			oRm.attr("aria-hidden", "true");
 		}
