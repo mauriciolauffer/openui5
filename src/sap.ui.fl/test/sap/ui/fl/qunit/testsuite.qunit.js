@@ -109,6 +109,17 @@ sap.ui.define([
 					only: ["sap/ui/fl/initial/_internal/ManifestUtils"]
 				}
 			},
+			"initial/_internal/preprocessors/ControllerExtension": {
+				group: "Initial Internal",
+				coverage: {
+					only: ["sap/ui/fl/initial/_internal/preprocessors/ControllerExtension"]
+				},
+				ui5: {
+					resourceroots: {
+						"sap.ui.fl.ControllerExtension.testResources": "test-resources/sap/ui/fl/qunit/testResources"
+					}
+				}
+			},
 			"initial/_internal/preprocessors/RegistrationDelegator": {
 				group: "Initial Internal",
 				coverage: {
@@ -116,6 +127,12 @@ sap.ui.define([
 				},
 				ui5: {
 					libs: [] // The fl library is being loaded inside the test
+				}
+			},
+			"initial/_internal/preprocessors/XmlPreprocessor": {
+				group: "Initial Internal",
+				coverage: {
+					only: ["sap/ui/fl/initial/_internal/preprocessors/XmlPreprocessor"]
 				}
 			},
 			"initial/_internal/Settings": {
@@ -633,17 +650,6 @@ sap.ui.define([
 					only: ["sap/ui/fl/apply/_internal/flexState/compVariants/CompVariantManagementState"]
 				}
 			},
-			"apply/_internal/preprocessors/ControllerExtension": {
-				group: "Apply Internal",
-				coverage: {
-					only: ["sap/ui/fl/apply/_internal/preprocessors/ControllerExtension"]
-				},
-				ui5: {
-					resourceroots: {
-						"sap.ui.fl.ControllerExtension.testResources": "test-resources/sap/ui/fl/qunit/testResources"
-					}
-				}
-			},
 			"apply/_internal/preprocessors/ComponentLifecycleHooks": {
 				group: "Apply Internal",
 				coverage: {
@@ -653,12 +659,6 @@ sap.ui.define([
 					resourceroots: {
 						"rta/qunit": "test-resources/sap/ui/rta/qunit/"
 					}
-				}
-			},
-			"apply/_internal/preprocessors/XmlPreprocessor": {
-				group: "Apply Internal",
-				coverage: {
-					only: ["sap/ui/fl/apply/_internal/preprocessors/XmlPreprocessor"]
 				}
 			},
 			"apply/_internal/extensionPoint/Processor": {
