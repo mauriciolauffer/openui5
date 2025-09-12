@@ -36,12 +36,15 @@ sap.ui.define([
 	"use strict";
 	const sandbox = sinon.createSandbox();
 
-	function openContextMenu(oOverlay, oEvent) {
+	function openContextMenu(oOverlay, oEvent, oFocusOverlay) {
 		return new Promise(function(resolve) {
 			this.oContextMenuPlugin.attachEventOnce("openedContextMenu", resolve);
 			const oTriggerEvent = oEvent || new MouseEvent("contextmenu");
 			oOverlay.setSelected(true);
 			oOverlay.getDomRef().dispatchEvent(oTriggerEvent);
+			if (oFocusOverlay) {
+				oFocusOverlay.focus();
+			}
 		}.bind(this));
 	}
 
@@ -931,26 +934,17 @@ sap.ui.define([
 			assert.equal(oAddMenuItemStub.args[1][0], oPropagatedMenuItem, "then addMenuItems is called with the propagated menu item");
 		});
 
-		QUnit.test("When context menu is opened with mouse and closed, but the clicked element is not the overlay responsible for the menu", function(assert) {
-			const done = assert.async();
-
-			const onOpenedContextMenu = function(oEvent) {
-				const oMenu = oEvent.getSource().oContextMenuControl;
-				oMenu.close();
-				assert.ok(this.oButton2Overlay.hasFocus(), "then the focus is back on the overlay");
-				done();
-			};
-			this.oContextMenuPlugin.attachEventOnce("openedContextMenu", onOpenedContextMenu.bind(this));
-
+		QUnit.test("When context menu is opened with mouse and closed, but the clicked element is not the overlay responsible for the menu", async function(assert) {
 			// open the context menu with mouse click
-			this.oButton2Overlay.setSelected(true);
-			this.oButton2Overlay.getDomRef().dispatchEvent(new MouseEvent("click", {
+			const oMouseEvent = new MouseEvent("click", {
 				clientX: 100,
 				clientY: 100
-			}));
-			// Simulate focus being on another control when menu is opened - e.g. the label of a group element
-			this.oButton1Overlay.focus();
-			this.clock.tick(50);
+			});
+			// set the focus to another overlay before opening the context menu (parameter this.oButton1Overlay)
+			await openContextMenu.call(this, this.oButton2Overlay, oMouseEvent, this.oButton1Overlay);
+			const oMenu = this.oContextMenuPlugin.oContextMenuControl;
+			oMenu.close();
+			assert.ok(this.oButton2Overlay.hasFocus(), "then the focus is back on the overlay");
 		});
 	});
 
