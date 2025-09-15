@@ -64,7 +64,7 @@ sap.ui.define([
 		};
 
 		var oManifest = new Manifest(oDescriptor);
-		return {
+		const oAppComponent = {
 			name: "customer.reference.app.id",
 			getManifest() {
 				return oManifest;
@@ -74,6 +74,9 @@ sap.ui.define([
 			},
 			getLocalId() {}
 		};
+		sandbox.stub(FlexUtils, "getAppComponentForControl").returns(oAppComponent);
+		sandbox.stub(FlexUtils, "getComponentForControl").returns(oAppComponent);
+		return oAppComponent;
 	}
 
 	function simulateSystemConfig(bIsCloudSystem) {
@@ -282,7 +285,6 @@ sap.ui.define([
 			simulateSystemConfig(false);
 			sandbox.stub(FeaturesAPI, "isVersioningEnabled").resolves(false);
 			sandbox.stub(ManifestUtils, "getFlexReferenceForControl").returns(sReference);
-			sandbox.stub(FlexUtils, "getAppComponentForControl").withArgs(oAppComponent).returns(oAppComponent);
 			sandbox.stub(FlexUtils, "getAppDescriptor").returns(oAppComponent.getManifest());
 			sandbox.stub(ChangeHandlerStorage, "getChangeHandler").resolves({
 				completeChangeContent() {
@@ -373,7 +375,6 @@ sap.ui.define([
 
 			sandbox.stub(FeaturesAPI, "isVersioningEnabled").resolves(false);
 			sandbox.stub(ManifestUtils, "getFlexReferenceForControl").returns(sReference);
-			sandbox.stub(FlexUtils, "getAppComponentForControl").withArgs(oAppComponent).returns(oAppComponent);
 			sandbox.stub(FlexUtils, "getAppDescriptor").returns(oAppComponent.getManifest());
 			sandbox.stub(ChangeHandlerStorage, "getChangeHandler").resolves({
 				completeChangeContent() {
@@ -458,7 +459,6 @@ sap.ui.define([
 
 			sandbox.stub(FeaturesAPI, "isVersioningEnabled").resolves(false);
 			sandbox.stub(ManifestUtils, "getFlexReferenceForControl").returns(sReference);
-			sandbox.stub(FlexUtils, "getAppComponentForControl").withArgs(oAppComponent).returns(oAppComponent);
 			sandbox.stub(FlexUtils, "getAppDescriptor").returns(oAppComponent.getManifest());
 			sandbox.stub(ChangeHandlerStorage, "getChangeHandler").resolves({
 				completeChangeContent() {
@@ -548,7 +548,6 @@ sap.ui.define([
 
 			sandbox.stub(FeaturesAPI, "isVersioningEnabled").resolves(false);
 			sandbox.stub(ManifestUtils, "getFlexReferenceForControl").returns(sReference);
-			sandbox.stub(FlexUtils, "getAppComponentForControl").withArgs(oAppComponent).returns(oAppComponent);
 			sandbox.stub(FlexUtils, "getAppDescriptor").returns(oAppComponent.getManifest());
 			sandbox.stub(ChangeHandlerStorage, "getChangeHandler").resolves({
 				completeChangeContent() {
@@ -1227,16 +1226,15 @@ sap.ui.define([
 			simulateSystemConfig(false);
 
 			var oGetFlexReferenceStub = sandbox.stub(ManifestUtils, "getFlexReferenceForControl").returns("customer.reference.app.id");
-			var getAppComponentForControlStub = sandbox.stub(FlexUtils, "getAppComponentForControl");
 			var oGetAppDescriptorStub = sandbox.stub(FlexUtils, "getAppDescriptor");
 
 			oGetFlexReferenceStub.withArgs(oAppComponent).returns(sReference);
 			oGetAppDescriptorStub.withArgs(oAppComponent).returns(oAppComponent.getManifest());
-			getAppComponentForControlStub.withArgs(oAppComponent).returns(oAppComponent);
 
 			oGetFlexReferenceStub.withArgs(oAppVariantComponent).returns("customer.reference.app.variant.id_123456");
 			oGetAppDescriptorStub.withArgs(oAppVariantComponent).returns(oAppVariantComponent.getManifest());
-			getAppComponentForControlStub.withArgs(oAppVariantComponent).returns(oAppVariantComponent);
+			FlexUtils.getAppComponentForControl.withArgs(oAppVariantComponent).returns(oAppVariantComponent);
+			FlexUtils.getComponentForControl.withArgs(oAppVariantComponent).returns(oAppVariantComponent);
 
 			sandbox.stub(ChangeHandlerStorage, "getChangeHandler").resolves({
 				completeChangeContent() {},
