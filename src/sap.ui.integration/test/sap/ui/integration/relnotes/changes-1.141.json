@@ -3,6 +3,11 @@
     "date": "September 2025",
     "notes": [
       {
+        "id": "b9cbf22e109317e065fa4a6da11dcaeeb4322c0c",
+        "type": "FIX",
+        "text": " sap.ui.integration.widgets.Card: Update ACC test page"
+      },
+      {
         "id": "7144180474f77d64b6e5fb1634cc7bf6099b98fa",
         "type": "FIX",
         "text": " Integration Cards: Rendering of unit of measurement in the Numeric Header"

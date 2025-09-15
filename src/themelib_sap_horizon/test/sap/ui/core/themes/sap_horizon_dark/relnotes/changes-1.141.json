@@ -3,6 +3,11 @@
     "date": "September 2025",
     "notes": [
       {
+        "id": "e7b4ccb0627c6268267dd910731127e092e657b3",
+        "type": "FIX",
+        "text": " sap.m.ObjectNumber: removed text shadow on hover in Horizon HC themes"
+      },
+      {
         "id": "154c1cb8b9f8423d13c8801855a68acee782d077",
         "type": "FIX",
         "text": " sap.m.Button: has correct css parameters for active Emphasized"

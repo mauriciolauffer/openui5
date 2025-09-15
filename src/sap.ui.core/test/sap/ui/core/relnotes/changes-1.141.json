@@ -3,6 +3,16 @@
     "date": "September 2025",
     "notes": [
       {
+        "id": "224f5b8a62ab4d98a4816e60162fc1a1cfdc7888",
+        "type": "FIX",
+        "text": " Enable multiple DraftEnabledMockServer"
+      },
+      {
+        "id": "a7c1b7248270988110950dd088543eaec1b91d33",
+        "type": "FEATURE",
+        "text": " sap.ui.model.odata.v4.ODataModel#setContinueOnError: made public"
+      },
+      {
         "id": "5aae4d4342cd656366eee344441eecbeabd69384",
         "type": "FIX",
         "text": " sap/base/security/sanitizeHTML: Add support for modern CSS display values"

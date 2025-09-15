@@ -3,6 +3,11 @@
     "date": "September 2025",
     "notes": [
       {
+        "id": "0e327e5a544f4f7a3775796b960a52a12aa9aae9",
+        "type": "FIX",
+        "text": " sap.f.DynamicPage: Header visibility issue fixed"
+      },
+      {
         "id": "72ce04846fde00786e2ef7069faddd0843b3d7dc",
         "type": "FIX",
         "text": " sap.f.FlexibleColumnLayout: prevent animation when initially shown"

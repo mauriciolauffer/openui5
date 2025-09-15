@@ -3,6 +3,46 @@
     "date": "September 2025",
     "notes": [
       {
+        "id": "dc9ba6c0ab80fcc5327dc9eedf28491bb5bb2452",
+        "type": "FIX",
+        "text": " sap.m.TabContainer propagate tooltip to TabStrip items when binding data is updated"
+      },
+      {
+        "id": "52b391032a8541cb0de0f160bd84ebf088d0d64d",
+        "type": "FIX",
+        "text": " sap.m.ToggleButton: fixed hover colors for ToggleButton of type Ghost"
+      },
+      {
+        "id": "fa0eaf1ce2d32e372f4416362824575b4c36b898",
+        "type": "FIX",
+        "text": " sap.m.Wizard: Next button is now hidden on mobile devices when disabled"
+      },
+      {
+        "id": "2e97bfed4295a4e755362db4c55fc4fd90cd7358",
+        "type": "FIX",
+        "text": " sap.m.NavContainer: Fix wrong navigation result"
+      },
+      {
+        "id": "e2571a2b25946a4623037977a8be5b9bcec2bf48",
+        "type": "FIX",
+        "text": " sap.ui.unified.CalendarAppointment: added 'ariaLabelledBy' association"
+      },
+      {
+        "id": "01db08063e2de38746d54fe90c551d2319fb1348",
+        "type": "FIX",
+        "text": " sap.m.SegmentedButton improve aria attributes"
+      },
+      {
+        "id": "5f15bf210746f35330a788e29791ed3e9dbcc00d",
+        "type": "FIX",
+        "text": " sap.m.TimePickerClocks: fix appearance on first open of control"
+      },
+      {
+        "id": "19837bf51ba91aba09c48a912153bd842c7102d9",
+        "type": "FIX",
+        "text": " AdaptFiltersPanel: Skip updateFinished logic, if in group view"
+      },
+      {
         "id": "dbec5e70e7fe80e5a9a5d8c8f6e9324ec3202b4a",
         "type": "FIX",
         "text": " sap.m.MenuWraper: respects content density"
@@ -16,6 +56,16 @@
         "id": "21f714be781d467ee1db256d055ca312765eb97a",
         "type": "FIX",
         "text": " sap.m.Dialog/Popover: Styles are fixed when integrated with WebC"
+      },
+      {
+        "id": "8be91a2f025e535c208819bedbc1dbefb8a06476",
+        "type": "FIX",
+        "text": " We've now fixed the SAP gateway issues for PDFViewer"
+      },
+      {
+        "id": "de27c10ee9534930500f58a232c0c10717590490",
+        "type": "FIX",
+        "text": " sap.m.Toolbar: Prevent navigation on modifier key press"
       },
       {
         "id": "aa8486530eb91a17e124b139d76d57c0fd1a1947",

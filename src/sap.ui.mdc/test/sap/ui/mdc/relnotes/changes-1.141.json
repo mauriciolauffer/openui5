@@ -3,6 +3,11 @@
     "date": "September 2025",
     "notes": [
       {
+        "id": "19837bf51ba91aba09c48a912153bd842c7102d9",
+        "type": "FIX",
+        "text": " AdaptFiltersPanel: Skip updateFinished logic, if in group view"
+      },
+      {
         "id": "5add9d3ea91469a584178f828102c4bafbde4e56",
         "type": "FIX",
         "text": " MultiValueField not working after upgrading to 1.136.1"
