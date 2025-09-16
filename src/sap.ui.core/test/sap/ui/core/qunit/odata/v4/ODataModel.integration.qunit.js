@@ -1169,7 +1169,7 @@ sap.ui.define([
 		},
 
 		/**
-		 * Checks that exactly the expected messages have been reported, the order doesn't matter.
+		 * Checks that exactly the expected messages have been reported, the order does not matter.
 		 *
 		 * @param {object} assert The QUnit assert object
 		 */
@@ -1331,7 +1331,9 @@ sap.ui.define([
 		 * Removes the found request from the list.
 		 *
 		 * @param {object} oActualRequest The actual request
-		 * @returns {object} The matching expected request or undefined if none was found
+		 * @returns {Array<object,number>} An array with two elements:
+		 *   - The matching expected request or undefined if none was found
+		 *   - The index where the request was found in the list
 		 */
 		consumeExpectedRequest : function (oActualRequest) {
 			var oExpectedRequest, i;
@@ -1340,11 +1342,11 @@ sap.ui.define([
 				oExpectedRequest = this.aRequests[i];
 				if (oExpectedRequest.url === oActualRequest.url) {
 					this.aRequests.splice(i, 1);
-					return oExpectedRequest;
+					return [oExpectedRequest, i];
 				}
 			}
 
-			return this.aRequests.shift(); // consume the first candidate to get a diff
+			return [this.aRequests.shift(), 0]; // consume the first candidate to get a diff
 		},
 
 		/**
@@ -1969,7 +1971,8 @@ sap.ui.define([
 						headers : _Helper.resolveIfMatchHeader(mHeaders),
 						payload : typeof vPayload === "string" ? JSON.parse(vPayload) : vPayload
 					},
-					oExpectedRequest = that.consumeExpectedRequest(oActualRequest),
+					oExpectedRequest,
+					iFoundAt,
 					oResponse,
 					mResponseHeaders,
 					bWaitForResponse = true;
@@ -1988,6 +1991,7 @@ sap.ui.define([
 				delete oActualRequest.headers["Accept"];
 				delete oActualRequest.headers["Accept-Language"];
 				delete oActualRequest.headers["Content-Type"];
+				[oExpectedRequest, iFoundAt] = that.consumeExpectedRequest(oActualRequest);
 				if (oExpectedRequest) {
 					if (!oExpectedRequest.headers) {
 						oExpectedRequest.headers = {};
@@ -2009,14 +2013,14 @@ sap.ui.define([
 						if (bHasBatchNo === false) {
 							assert.ok(false, "A previous request within this $batch did not have"
 								+ " batchNo : " + oActualRequest.batchNo
-								+ ", but this one has");
+								+ ", but this one has: " + sUrl);
 						}
 						bHasBatchNo = true;
 					} else if (iBatchNo !== undefined) {
 						if (bHasBatchNo === true) {
 							assert.ok(false, "All previous requests within this $batch did have"
-								+ " batchNo : " + oActualRequest.batchNo
-								+ ", but this one doesn't");
+								+ " batchNo : " + iBatchNo
+								+ ", but this one doesn't: " + sUrl);
 						}
 						bHasBatchNo = false;
 					} // else: $direct/$single
@@ -2025,6 +2029,9 @@ sap.ui.define([
 					}
 					if ("$ContentID" in oExpectedRequest) {
 						oActualRequest.$ContentID = sContentID;
+					}
+					if (iFoundAt > 0 && sMethod !== "GET") {
+						oActualRequest.__error__ = `Request is ${iFoundAt} step(s) ahead!`;
 					}
 					assert.deepEqual(oActualRequest, oExpectedRequest,
 						`${sMethod} ${TestUtils.makeUrlReadable(sUrl)} (batchNo: ${iBatchNo})`);
@@ -16831,7 +16838,7 @@ sap.ui.define([
 		this.oModel.setSizeLimit(1025);
 		const oBinding = this.oModel.bindList("/EMPLOYEES");
 
-		this.expectRequest("EMPLOYEES?$skip=0&$top=1025", {value : [/*doesn't matter*/]});
+		this.expectRequest("EMPLOYEES?$skip=0&$top=1025", {value : [/*does not matter*/]});
 
 		// code under test
 		oBinding.requestContexts();
@@ -57412,16 +57419,8 @@ make root = ${bMakeRoot}`;
 		});
 	}, function (_assert, oForm0Binding) {
 		// Context#requestSideEffects restarts all PATCHes within the same $batch as the side effect
+		// Note: order of PATCHes not preserved, but should not be critical
 		this.expectRequest({
-				batchNo : 4,
-				headers : {"If-Match" : "ETag3"},
-				method : "PATCH",
-				payload : {
-					ROOM_ID : "31" // <-- retry
-				},
-				url : "EMPLOYEES('3')"
-			}, {/* don't care */})
-			.expectRequest({
 				batchNo : 4,
 				headers : {"If-Match" : "ETag4"},
 				method : "PATCH",
@@ -57429,6 +57428,15 @@ make root = ${bMakeRoot}`;
 					ROOM_ID : "41" // <-- retry
 				},
 				url : "EMPLOYEES('4')"
+			}, {/* don't care */})
+			.expectRequest({
+				batchNo : 4,
+				headers : {"If-Match" : "ETag3"},
+				method : "PATCH",
+				payload : {
+					ROOM_ID : "31" // <-- retry
+				},
+				url : "EMPLOYEES('3')"
 			}, {/* don't care */})
 			.expectRequest("#4 EMPLOYEES('3')?$select=STATUS", {
 				STATUS : "Busy"
@@ -64399,6 +64407,7 @@ make root = ${bMakeRoot}`;
 	// SNOW: DINC0032238
 	//
 	// ODM#setContinueOnError must not violate constraints w.r.t. change sets (SNOW: DINC0512589)
+	// See that side effects can be properly repeated (SNOW: DINC0614013)
 [true, false].forEach(function (bConfirm) {
 	[true, false].forEach(function (bDifferentContentIDs) {
 		const sTitle = "CPOUI5ODATAV4-943: handling=strict, confirm=" + bConfirm
@@ -64429,6 +64438,7 @@ make root = ${bMakeRoot}`;
 				}]
 			},
 			oError,
+			oListBinding,
 			oModel = this.createSalesOrdersModel({autoExpandSelect : true}),
 			fnResolve0,
 			fnResolve1,
@@ -64531,7 +64541,7 @@ make root = ${bMakeRoot}`;
 					method : "POST",
 					url : "SalesOrderList('1')/" + sAction,
 					payload : {}
-				}/*response does not matter*/)
+				}) // no response required
 				.expectRequest({
 					batchNo : 2,
 					changeSetNo : 1,
@@ -64541,26 +64551,57 @@ make root = ${bMakeRoot}`;
 					method : "POST",
 					url : "SalesOrderList('2')/" + sAction,
 					payload : {}
-				}/*response does not matter*/);
+				}) // no response required
+				.expectRequest({
+					batchNo : 2,
+					changeSetNo : 2,
+					method : "POST",
+					url : "RegenerateEPMData",
+					payload : {}
+				}) // no response required
+				.expectRequest("#2 SalesOrderList?$select=LifecycleStatus,SalesOrderID"
+					+ "&$skip=0&$top=100"); // no response required
+			that.oLogMock.expects("error")
+				.withExactArgs("Failed to invoke /RegenerateEPMData(...)",
+					sinon.match(sPreviousFailed), sODCB);
+			that.oLogMock.expects("error")
+				.withExactArgs("Failed to get contexts for " + sSalesOrderService + "SalesOrderList"
+					+ " with start index 0 and length 100", sinon.match(sPreviousFailed), sODLB);
 
-			const oListBinding = that.oView.byId("table").getBinding("items");
+			oListBinding = that.oView.byId("table").getBinding("items");
 			const aContexts = oListBinding.getCurrentContexts();
 
 			// code under test
-			oAction0Promise = that.oModel.bindContext(sAction + "(...)", aContexts[0])
+			oAction0Promise = oModel.bindContext(sAction + "(...)", aContexts[0])
 				.invoke("$auto", false, onStrictHandlingFailed0);
-			oAction1Promise = that.oModel.bindContext(sAction + "(...)", aContexts[1])
+			oAction1Promise = oModel.bindContext(sAction + "(...)", aContexts[1])
 				.invoke("$auto", false, onStrictHandlingFailed1);
 			assert.throws(function () {
 				// code under test (SNOW: DINC0512589; no effect on 3rd action!)
-				that.oModel.setContinueOnError("$auto");
+				oModel.setContinueOnError("$auto");
 			}, new Error("Each request with strict handling must belong to its own change set due"
 				+ ' to the "odata.continue-on-error" preference'));
-			oAction2Promise = that.oModel.bindContext(sAction + "(...)", aContexts[2])
+			oAction2Promise = oModel.bindContext(sAction + "(...)", aContexts[2])
 				.invoke("$auto", false, onStrictHandlingFailed2);
 
-			return that.waitForChanges(assert);
+			return Promise.all([
+				// code under test (DINC0614013): side effects in separate change set
+				oModel.submitBatch("$auto"),
+				// Note: API call for GET intentionally before POST
+				oListBinding.getHeaderContext().requestSideEffects([""]).then(function () {
+					assert.ok(false);
+				}, function (oError0) {
+					assert.strictEqual(oError0.message, sPreviousFailed);
+				}),
+				oModel.bindContext("/RegenerateEPMData(...)").invoke("$auto").then(function () {
+					assert.ok(false);
+				}, function (oError0) {
+					assert.strictEqual(oError0.message, sPreviousFailed);
+				}),
+				that.waitForChanges(assert)
+			]);
 		}).then(function () {
+			let aPromises = [];
 			if (bConfirm) {
 				that.expectRequest({
 						batchNo : 3,
@@ -64592,7 +64633,36 @@ make root = ${bMakeRoot}`;
 						LifecycleStatus : "C2",
 						SalesOrderID : "2"
 					})
-					.expectChange("status", ["C0", "C1", "C2"]);
+					.expectRequest({
+						batchNo : 3,
+						changeSetNo : 2,
+						method : "POST",
+						url : "RegenerateEPMData",
+						payload : {}
+					}, {/*does not matter*/})
+					.expectRequest("#3 SalesOrderList?$select=LifecycleStatus,SalesOrderID"
+						+ "&$skip=0&$top=100", {
+						// Note: bDifferentContentIDs is misused to show whether side effects win
+						value : [{
+								LifecycleStatus : bDifferentContentIDs ? "N0" : "C0",
+								SalesOrderID : "0"
+							}, {
+								LifecycleStatus : bDifferentContentIDs ? "N1" : "C1",
+								SalesOrderID : "1"
+							}, {
+								LifecycleStatus : bDifferentContentIDs ? "N2" : "C2",
+								SalesOrderID : "2"
+						}]
+					})
+					.expectChange("status",
+						/*TODO bDifferentContentIDs ? ["N0", "N1", "N2"] :*/ ["C0", "C1", "C2"]);
+
+				// code under test (DINC0614013) - repeat side effects in separate change set
+				aPromises = [
+					oModel.submitBatch("$auto"),
+					oListBinding.getHeaderContext().requestSideEffects([""]),
+					oModel.bindContext("/RegenerateEPMData(...)").invoke("$auto")
+				];
 			} else {
 				that.expectCanceledError("Failed to invoke /SalesOrderList('0')/" + sAction
 						+ "(...)", "Action canceled due to strict handling");
@@ -64608,6 +64678,7 @@ make root = ${bMakeRoot}`;
 			fnResolve2(bConfirm);
 
 			return Promise.all([
+				...aPromises,
 				oAction0Promise.then(function () {
 					assert.ok(bConfirm);
 				}, function (oError0) {
@@ -64630,7 +64701,7 @@ make root = ${bMakeRoot}`;
 					assert.strictEqual(oError0.canceled, true);
 				}),
 				that.waitForChanges(assert)
-			]);
+]);
 		});
 	});
 	});
@@ -65890,12 +65961,7 @@ make root = ${bMakeRoot}`;
 		this.expectChange("name", []);
 
 		return this.createView(assert, sView, oModel).then(function () {
-			// Note: GET invoked by 1st #create - one transient taken into account for prefetch
-			that.expectRequest("EMPLOYEES?$count=true&$select=ID,Name&$skip=0&$top=3", {
-					"@odata.count" : "1",
-					value : [{ID : "1", Name : "Frederic Fall"}]
-				})
-				.expectRequest({
+			that.expectRequest({
 					method : "POST",
 					url : "EMPLOYEES",
 					payload : {Name : "John Doe"}
@@ -65910,6 +65976,11 @@ make root = ${bMakeRoot}`;
 				}, {
 					ID : "new2",
 					Name : "Jane Doe"
+				})
+				// Note: GET invoked by 1st #create - one transient taken into account for prefetch
+				.expectRequest("EMPLOYEES?$count=true&$select=ID,Name&$skip=0&$top=3", {
+					"@odata.count" : "1",
+					value : [{ID : "1", Name : "Frederic Fall"}]
 				})
 				.expectChange("name", ["Frederic Fall", "John Doe"]);
 
@@ -69182,6 +69253,7 @@ make root = ${bMakeRoot}`;
 // patchNo: the batchNo of the $batch with the PATCH and the side effect request
 [
 	{list : 1, page : 2, patchNo : 5, title : "(1) first list, then object page"},
+	// Note: #expectRequest out-of-order here!
 	{list : 1, page : 1, patchNo : 4, title : "(2) list and object page in the same batch"},
 	{list : 2, page : 1, patchNo : 5, title : "(3) first object page, then list, then tests"},
 	{list : 7, page : 1, patchNo : 4, title : "(4) first object page, then tests, then list"}
@@ -77000,7 +77072,7 @@ make root = ${bMakeRoot}`;
 			oDummyContext = oModel.bindContext("/Artists(ArtistID='41',IsActiveEntity=true)")
 				.getBoundContext();
 
-			that.expectRequest("Artists(ArtistID='41',IsActiveEntity=true)", {/*doesn't matter*/});
+			that.expectRequest("Artists(ArtistID='41',IsActiveEntity=true)", {/*does not matter*/});
 
 			return Promise.all([
 				oDummyContext.requestObject(""),
@@ -80773,7 +80845,7 @@ make root = ${bMakeRoot}`;
 		let fnResolveBestFriend;
 		let fnResolveSiblingEntity;
 		this.expectRequest({
-				batchNo : bAutoExpandSelect ? 3 : 1,
+				batchNo : bAutoExpandSelect ? 3 : 1, // Note: #expectRequest out-of-order here!
 				url : sMainUrl + "&$skip=0&$top=2"
 			}, {
 				"@odata.count" : "8",
@@ -81351,6 +81423,33 @@ make root = ${bMakeRoot}`;
 
 		assert.strictEqual(sCity, "Heidelberg");
 
+		this.expectRequest({
+				batchNo : 4,
+				groupId : "$single",
+				url : sFriendUrl + "&$skip=0&$top=2"
+			}, {
+				value : [{
+					"@odata.etag" : "etag.10.1",
+					ArtistID : "10",
+					BestFriend : {
+						"@odata.etag" : "etag.F1.1",
+						ArtistID : "F1",
+						IsActiveEntity : true,
+						Name : "Friend A #1"
+					},
+					IsActiveEntity : true
+				}, {
+					"@odata.etag" : "etag.20.1",
+					ArtistID : "20",
+					BestFriend : {
+						"@odata.etag" : "etag.F2.1",
+						ArtistID : "F2",
+						IsActiveEntity : true,
+						Name : "Friend B #1"
+					},
+					IsActiveEntity : true
+				}]
+			});
 		if (bReset) {
 			// reset requests kept-alive element
 			this.expectRequest({
@@ -81382,33 +81481,6 @@ make root = ${bMakeRoot}`;
 			oArtistA.setKeepAlive(true); // set kept-alive to reset (instead of recreate) the cache
 		}
 		this.expectRequest({
-				batchNo : 4,
-				groupId : "$single",
-				url : sFriendUrl + "&$skip=0&$top=2"
-			}, {
-				value : [{
-					"@odata.etag" : "etag.10.1",
-					ArtistID : "10",
-					BestFriend : {
-						"@odata.etag" : "etag.F1.1",
-						ArtistID : "F1",
-						IsActiveEntity : true,
-						Name : "Friend A #1"
-					},
-					IsActiveEntity : true
-				}, {
-					"@odata.etag" : "etag.20.1",
-					ArtistID : "20",
-					BestFriend : {
-						"@odata.etag" : "etag.F2.1",
-						ArtistID : "F2",
-						IsActiveEntity : true,
-						Name : "Friend B #1"
-					},
-					IsActiveEntity : true
-				}]
-			})
-			.expectRequest({
 				batchNo : 5,
 				groupId : "$auto",
 				url : sMainUrl + "&$skip=0&$top=2"
