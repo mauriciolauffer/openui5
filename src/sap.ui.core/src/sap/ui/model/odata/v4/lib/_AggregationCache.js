@@ -518,8 +518,11 @@ sap.ui.define([
 		const iIndex = aElements.indexOf(oParentNode) + 1; // 0 w/o oParentNode :-)
 		if (this.oCountPromise) {
 			const fnOldSubmitCallback = fnSubmitCallback;
+			// create a new count promise early, that a synchronous call to
+			// oHeaderContext.requestProperty("$count") waits until the creation was successful or
+			// has been cancelled; cancellation of the creation will restore the old count promise
+			this.createCountPromise(true);
 			fnSubmitCallback = () => {
-				this.createCountPromise();
 				this.readCount(oGroupLock)?.catch(
 					this.oRequestor.getModelInterface().getReporter());
 				fnOldSubmitCallback();
@@ -528,6 +531,7 @@ sap.ui.define([
 		const oPromise = oCache.create(oGroupLock, oPostPathPromise, sPath, sTransientPredicate,
 			oEntityData, bAtEndOfCreated, fnErrorCallback, fnSubmitCallback, /*onCancel*/() => {
 				_Helper.removeByPath(this.mPostRequests, sTransientPredicate, oEntityData);
+				this.oCountPromise?.$restore();
 				if (this.oAggregation.createInPlace) {
 					return;
 				}
@@ -626,9 +630,12 @@ sap.ui.define([
 	 * to be resolved by a following {@link #readCount} call. If the old count promise is still
 	 * pending, no new promise is created in order to avoid duplicate $count requests.
 	 *
+	 * @param {boolean} [bRetryIfFailed]
+	 *   Whether a count request which fails due to a previous request will be retried
+	 *
 	 * @private
 	 */
-	_AggregationCache.prototype.createCountPromise = function () {
+	_AggregationCache.prototype.createCountPromise = function (bRetryIfFailed) {
 		const oOldCountPromise = this.oCountPromise;
 		if (oOldCountPromise?.isPending()) {
 			return;
@@ -646,6 +653,7 @@ sap.ui.define([
 			fnResolve(oOldCountPromise);
 		};
 		this.oCountPromise.$old = oOldCountPromise;
+		this.oCountPromise.$retryIfFailed = bRetryIfFailed;
 	};
 
 	/**
@@ -1974,7 +1982,11 @@ sap.ui.define([
 					_Helper.fireChange(this.mChangeListeners, "./$count", iCount);
 				})
 				.catch((oError) => {
-					this.oCountPromise.$restore();
+					if (oError.cause && this.oCountPromise.$retryIfFailed) {
+						this.oCountPromise.$resolve = fnResolve; // allow another readCount call
+					} else {
+						this.oCountPromise.$restore();
+					}
 					throw oError;
 				});
 		}
