@@ -3250,7 +3250,7 @@
 
 	/**
 	 * @private
-	 * @ui5-restricted bundles created with UI5 tooling
+	 * @ui5-restricted bundles created with UI5 CLI
 	 * @function
 	 * @ui5-global-only
 	 * @name sap.ui.predefine

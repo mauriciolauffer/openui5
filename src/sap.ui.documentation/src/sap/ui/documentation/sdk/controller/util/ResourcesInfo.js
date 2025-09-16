@@ -23,8 +23,8 @@ sap.ui.define([],
 			// #2 Category: Development Tools
 			{
 				"id": "tooling",
-				"text": "UI5 Tooling",
-				"href": "https://sap.github.io/ui5-tooling/"
+				"text": "UI5 CLI",
+				"href": "https://ui5.github.io/cli/"
 			},
 			{
 				"id": "fioriTools",
