@@ -39,10 +39,8 @@ sap.ui.define(["sap/ui/core/Lib"],
 				bHeaderRoleSet = !!(oLandmarkInfo && oLandmarkInfo.getHeaderRole()),
 				bHeaderLabelSet = !!(oLandmarkInfo && oLandmarkInfo.getHeaderLabel()),
 				bRootRoleSet = !!(oLandmarkInfo && oLandmarkInfo.getRootRole()),
-				bNavigationRoleSet = !!(oLandmarkInfo && oLandmarkInfo.getNavigationRole()),
 				sRootRole = bRootRoleSet ? oLandmarkInfo.getRootRole() : undefined,
 				sHeaderRole = bHeaderRoleSet ? oLandmarkInfo.getHeaderRole() : undefined,
-				sNavigationRole = bNavigationRoleSet ? oLandmarkInfo.getNavigationRole() : undefined,
 				bRootLabelSet = !!(oLandmarkInfo && oLandmarkInfo.getRootLabel()),
 				bShowFooter = oControl.getShowFooter();
 
@@ -54,11 +52,9 @@ sap.ui.define(["sap/ui/core/Lib"],
 			if (!bRootRoleSet) {
 				oRm.attr("role", "main");
 			}
-			if (sRootRole !== "None") {
-				oRm.attr("aria-roledescription", oRb.getText("ROOT_ROLE_DESCRIPTION"));
-			}
+
 			if (!bRootLabelSet && sRootRole !== "None") {
-				oRm.attr("aria-label", sRootAriaLabelText);
+				oRm.attr("aria-label", sRootAriaLabelText + " " + oRb.getText("ROOT_ROLE_DESCRIPTION"));
 			}
 			oRm.class("sapUxAPObjectPageLayout");
 			if (bShowFooter) {
@@ -86,12 +82,8 @@ sap.ui.define(["sap/ui/core/Lib"],
 				oRm.attr("role", "banner");
 			}
 
-			if (sHeaderRole !== "None") {
-				oRm.attr("aria-roledescription", oRb.getText("HEADER_ROLE_DESCRIPTION"));
-			}
-
 			if (!bHeaderLabelSet && sHeaderRole !== "None") {
-				oRm.attr("aria-label", sHeaderAriaLabelText);
+				oRm.attr("aria-label", sHeaderAriaLabelText + " " + oRb.getText("HEADER_ROLE_DESCRIPTION"));
 			}
 			oRm.attr("data-sap-ui-customfastnavgroup", true)
 				.class("sapUxAPObjectPageHeaderTitle")
@@ -109,10 +101,6 @@ sap.ui.define(["sap/ui/core/Lib"],
 			// Sticky anchorBar placeholder
 			oRm.openStart("div", oControl.getId() + "-stickyAnchorBar");
 			oRm.attr("data-sap-ui-customfastnavgroup", true);
-
-			if (sNavigationRole !== "None") {
-				oRm.attr("aria-roledescription", oRb.getText("NAVIGATION_ROLE_DESCRIPTION"));
-			}
 
 			if (!oControl._bHeaderInTitleArea) {
 				oRm.attr("aria-hidden", "true");
@@ -155,10 +143,6 @@ sap.ui.define(["sap/ui/core/Lib"],
 			// Anchor Bar
 			oRm.openStart("section", oControl.getId() + "-anchorBar");
 			oRm.attr("data-sap-ui-customfastnavgroup", true);
-
-			if (sNavigationRole !== "None") {
-				oRm.attr("aria-roledescription", oRb.getText("NAVIGATION_ROLE_DESCRIPTION"));
-			}
 
 			oRm.class("sapUxAPObjectPageNavigation")
 				.class("ui-helper-clearfix")
@@ -318,7 +302,7 @@ sap.ui.define(["sap/ui/core/Lib"],
 			}
 
 			if (sFooterRole !== "None") {
-				oRm.attr("aria-roledescription", oRb.getText("FOOTER_ROLE_DESCRIPTION"));
+				oRm.attr("aria-label", oRb.getText("FOOTER_ROLE_DESCRIPTION"));
 			}
 
 			oRm.accessibilityState(oObjectPageLayout, oObjectPageLayout._formatLandmarkInfo(oLandmarkInfo, "Footer"));
