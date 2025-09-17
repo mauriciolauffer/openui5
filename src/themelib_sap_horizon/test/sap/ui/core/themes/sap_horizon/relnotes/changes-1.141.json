@@ -3,6 +3,11 @@
     "date": "September 2025",
     "notes": [
       {
+        "id": "936c040443a059d4b0f491cbcfe0ae9def1f16a2",
+        "type": "FEATURE",
+        "text": " sap.ui.core.IconPool: Update icon font v5.13 and v4.24"
+      },
+      {
         "id": "e7b4ccb0627c6268267dd910731127e092e657b3",
         "type": "FIX",
         "text": " sap.m.ObjectNumber: removed text shadow on hover in Horizon HC themes"

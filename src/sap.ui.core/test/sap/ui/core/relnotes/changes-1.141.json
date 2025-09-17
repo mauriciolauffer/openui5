@@ -3,6 +3,11 @@
     "date": "September 2025",
     "notes": [
       {
+        "id": "936c040443a059d4b0f491cbcfe0ae9def1f16a2",
+        "type": "FEATURE",
+        "text": " sap.ui.core.IconPool: Update icon font v5.13 and v4.24"
+      },
+      {
         "id": "224f5b8a62ab4d98a4816e60162fc1a1cfdc7888",
         "type": "FIX",
         "text": " Enable multiple DraftEnabledMockServer"

@@ -3,6 +3,11 @@
     "date": "September 2025",
     "notes": [
       {
+        "id": "936c040443a059d4b0f491cbcfe0ae9def1f16a2",
+        "type": "FEATURE",
+        "text": " sap.ui.core.IconPool: Update icon font v5.13 and v4.24"
+      },
+      {
         "id": "dc9ba6c0ab80fcc5327dc9eedf28491bb5bb2452",
         "type": "FIX",
         "text": " sap.m.TabContainer propagate tooltip to TabStrip items when binding data is updated"
@@ -21,6 +26,21 @@
         "id": "2e97bfed4295a4e755362db4c55fc4fd90cd7358",
         "type": "FIX",
         "text": " sap.m.NavContainer: Fix wrong navigation result"
+      },
+      {
+        "id": "f92f3032e1de12e60930b25d66d8fd6d1d1d29ab",
+        "type": "FIX",
+        "text": " sap.m.Popover: Added proper aria-labelledby for custom headers"
+      },
+      {
+        "id": "38ce39b1901e85fce51b08d32a3d8a537412a976",
+        "type": "FIX",
+        "text": " p13n.SelectionPanel: fix spacing for hide unselected button"
+      },
+      {
+        "id": "4c5666da928804d24b6c83cc8c5ae52115ed2288",
+        "type": "FIX",
+        "text": "sap.m.MessageView: subtitle updates are now reflected in details"
       },
       {
         "id": "e2571a2b25946a4623037977a8be5b9bcec2bf48",
