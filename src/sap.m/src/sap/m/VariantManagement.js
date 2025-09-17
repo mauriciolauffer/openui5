@@ -533,6 +533,8 @@ sap.ui.define([
 		}
 	});
 
+	const AriaHasPopup = coreLibrary.aria.HasPopup;
+
 	VariantManagement.INNER_MODEL_NAME = "$sapMInnerVariants";
 	VariantManagement.MAX_NAME_LEN = 100;
 	VariantManagement.COLUMN_FAV_IDX = 0;
@@ -752,7 +754,8 @@ sap.ui.define([
 				formatter: function(bValue) {
 					return !bValue;
 				}
-			}
+			},
+			ariaHasPopup: AriaHasPopup.Dialog
 		});
 
 		this.oVariantPopoverTrigger.addAriaLabelledBy(this.oVariantInvisibleText);
@@ -1067,6 +1070,11 @@ sap.ui.define([
 				this.oVariantPopoverTrigger.removeStyleClass("sapMVarMngmtTriggerBtnHover");
 			}.bind(this));
 		}
+
+		// Set initial aria-expanded state after rendering
+		if (this.oVariantPopoverTrigger && this.oVariantPopoverTrigger.$().length > 0) {
+			this.oVariantPopoverTrigger.$().attr("aria-expanded", "false");
+		}
 	};
 
 	// ERROR LIST
@@ -1118,6 +1126,7 @@ sap.ui.define([
 					if (this.bPopoverOpen) {
 						setTimeout(function() {
 							this.bPopoverOpen = false;
+							this.oVariantPopoverTrigger?.$().attr("aria-expanded", "false");
 						}.bind(this), 200);
 					}
 				}.bind(this),
@@ -1331,6 +1340,7 @@ sap.ui.define([
 				if (this.bPopoverOpen) {
 					setTimeout(function() {
 						this.bPopoverOpen = false;
+						this.oVariantPopoverTrigger.$().attr("aria-expanded", "false");
 					}.bind(this), 200);
 				}
 			}.bind(this),
@@ -1394,6 +1404,7 @@ sap.ui.define([
 			this._openInErrorState();
 			return;
 		}
+		this.oVariantPopoverTrigger.$().attr("aria-expanded", "true");
 
 		if (this.bPopoverOpen) {
 			return;
