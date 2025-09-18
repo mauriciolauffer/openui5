@@ -25,7 +25,7 @@ module.exports = function(grunt) {
 
 	grunt.log.error('!!! WARNING !!!');
 	grunt.log.error('The Grunt.js-based development setup is deprecated!');
-	grunt.log.error('Please use the UI5 Tooling-based development setup!');
+	grunt.log.error('Please use the UI5 CLI-based development setup!');
 	if (!configExtensionFile) {
 		grunt.log.error([
 			'For more information about the OpenUI5 development setup, check here:',
