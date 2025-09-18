@@ -1559,6 +1559,7 @@ sap.ui.define([
 	QUnit.test("_getCountForCollection: calls _getHeaders", function () {
 		const oBinding = {
 			sCountMode: CountMode.Inline,
+			sCustomParams : "foo=bar",
 			bHasTreeAnnotations: true,
 			oModel: {
 				read() {}
@@ -1575,7 +1576,7 @@ sap.ui.define([
 				groupId: undefined, // not relevant for this test
 				headers: "~headers",
 				success: sinon.match.func,
-				urlParameters: ["$top=0", "$inlinecount=allpages"]
+				urlParameters: ["$top=0", "$inlinecount=allpages", "foo=bar"]
 			});
 
 		// code under test
@@ -1627,6 +1628,31 @@ sap.ui.define([
 		// code under test
 		ODataTreeBinding.prototype._getCountForNodeId.call(oBinding, "~sNodeId");
 	});
+
+	//*********************************************************************************************
+[false, true].forEach((bHasCustomParams) => {
+	QUnit.test("_getCountForNodeId: custom url params: " + bHasCustomParams, function () {
+		const oBinding = {
+			oModel: {
+				read() {}
+			},
+			sCustomParams: bHasCustomParams ? "foo=bar" : undefined,
+			getFilterParams() {}
+		};
+		this.mock(oBinding).expects("getFilterParams").withExactArgs().returns(undefined);
+		this.mock(oBinding.oModel).expects("read")
+			.withExactArgs("~sNodeId/$count", {
+				error: sinon.match.func,
+				groupId: undefined, // not relevant for this test
+				sorters: undefined, // not relevant for this test
+				success: sinon.match.func,
+				urlParameters: bHasCustomParams ? ["foo=bar"] : []
+			});
+
+		// code under test
+		ODataTreeBinding.prototype._getCountForNodeId.call(oBinding, "~sNodeId");
+	});
+});
 
 	//*********************************************************************************************
 [
