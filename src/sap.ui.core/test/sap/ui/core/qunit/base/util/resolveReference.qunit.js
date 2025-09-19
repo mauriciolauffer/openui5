@@ -197,7 +197,7 @@ sap.ui.define(['sap/base/util/resolveReference'], function(resolveReference) {
 		assert.strictEqual(oContext, oModule, "correct context was bound");
 
 		/**
-		 * @deprecated As of Version 1.141
+		 * @deprecated
 		 */
 		(() => {
 			window.module2 = {
@@ -271,7 +271,7 @@ sap.ui.define(['sap/base/util/resolveReference'], function(resolveReference) {
 	});
 
 	/**
-	 * @deprecated As of Version 1.141
+	 * @deprecated
 	 */
 	QUnit.test("resolve function from global scope - fallback", function(assert) {
 		var oContext;
@@ -303,7 +303,7 @@ sap.ui.define(['sap/base/util/resolveReference'], function(resolveReference) {
 		assert.strictEqual(fn, undefined, "The function should be taken from module even when the module value is defined with undefined and shouldn't fallback to global");
 
 		/**
-		 * @deprecated As of Version 1.141
+		 * @deprecated
 		 */
 		(() => {
 			var oContext;
