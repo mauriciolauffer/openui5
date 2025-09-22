@@ -1,0 +1,27 @@
+{
+  "1.142.0": {
+    "date": "September 2025",
+    "notes": [
+      {
+        "id": "e0efd5838fd48f1872776b59a19c4731763c1baa",
+        "type": "FIX",
+        "text": " SelectionPanel: (De)select all should ignore hidden items"
+      },
+      {
+        "id": "f0dccd881cd4fa70f85ae7eb518b5a510d6dea26",
+        "type": "FIX",
+        "text": " m.VariantManagement: add aria-expanded & aria-haspopup"
+      },
+      {
+        "id": "287e8eeba043dae45199254f35702608a66a62c5",
+        "type": "FIX",
+        "text": " We've now updated the tab reading order for the FeedListItem control and fixed the disappearance of action button in FeedListItem"
+      },
+      {
+        "id": "47b0a485878c7b921abb09783966fbfecde890ac",
+        "type": "FIX",
+        "text": " sap.m.DynamicDateRange: Improve accessibility in Last/Next Options"
+      }
+    ]
+  }
+}
