@@ -1743,7 +1743,7 @@ sap.ui.define([
 
 				return Promise.all([
 					oCreatedContext.created(),
-					that.oModel.submitBatch("update"),
+					oModel.submitBatch("update"),
 					that.waitForChanges(assert)
 				]);
 			}).then(function () {
@@ -1766,7 +1766,7 @@ sap.ui.define([
 
 				return Promise.all([
 					oCreatedContext.created(),
-					that.oModel.submitBatch("update"),
+					oModel.submitBatch("update"),
 					that.waitForChanges(assert)
 				]);
 			});
@@ -3524,7 +3524,7 @@ sap.ui.define([
 			that = this;
 
 		return this.createView(assert, "", oModel).then(function () {
-			var oBinding = that.oModel.bindList("/SalesOrderList", undefined, undefined, undefined,
+			var oBinding = oModel.bindList("/SalesOrderList", undefined, undefined, undefined,
 					{$select : ["Note", "SalesOrderID"]});
 
 			// code under test
@@ -3550,7 +3550,7 @@ sap.ui.define([
 
 			return Promise.all([
 				oPromise,
-				that.oModel.submitBatch("group"),
+				oModel.submitBatch("group"),
 				that.waitForChanges(assert)
 			]);
 		});
@@ -9212,7 +9212,7 @@ sap.ui.define([
 
 			return Promise.all([
 				oPromise,
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert, "submitBatch")
 			]);
 		}).then(function () {
@@ -9284,7 +9284,7 @@ sap.ui.define([
 			that.expectChange("text", "Jonathan Schmidt");
 
 			// code under test
-			that.oModel.setIgnoreETag(true);
+			oModel.setIgnoreETag(true);
 
 			// code under test
 			that.oView.byId("text").getBinding("value").setValue("Jonathan Schmidt");
@@ -9352,7 +9352,7 @@ sap.ui.define([
 			var aContexts = that.oView.byId("table").getBinding("items").getCurrentContexts();
 
 			// code under test
-			that.oModel.setIgnoreETag(true);
+			oModel.setIgnoreETag(true);
 
 			that.expectChange("name", ["Frederick Fall", "Jonathan Schmidt"]);
 
@@ -11130,7 +11130,7 @@ sap.ui.define([
 
 				return Promise.all([
 					oCreatedContext.created(),
-					that.oModel.submitBatch("update"),
+					oModel.submitBatch("update"),
 					that.waitForChanges(assert)
 				]);
 			}).then(function () {
@@ -11256,7 +11256,7 @@ sap.ui.define([
 			return Promise.all([
 				oCreatedContext0.created(),
 				oCreatedContext1.created(),
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
@@ -11598,7 +11598,7 @@ sap.ui.define([
 				oCreatedContext0.created(),
 				oCreatedContext1.created(),
 				oCreatedContext2.created(),
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
@@ -11668,7 +11668,7 @@ sap.ui.define([
 
 			return Promise.all([
 				oCreatedContext0.created(),
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
@@ -11733,7 +11733,7 @@ sap.ui.define([
 
 			return Promise.all([
 				oCreatedContext2.created(),
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
@@ -11826,7 +11826,7 @@ sap.ui.define([
 				oCreatedContext0.created(),
 				oCreatedContext1.created(),
 				oCreatedContext2.created(),
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
@@ -11949,7 +11949,7 @@ sap.ui.define([
 			return Promise.all([
 				oCreatedContext0.created(),
 				oCreatedContext1.created(),
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
@@ -12062,7 +12062,7 @@ sap.ui.define([
 				oCreatedContext0.created(),
 				oCreatedContext1.created(),
 				oCreatedContext2.created(),
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
@@ -12088,7 +12088,7 @@ sap.ui.define([
 			oTable.getItems()[0].getCells()[1].getBinding("value").setValue("New 3 - Changed");
 
 			return Promise.all([
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
@@ -12193,7 +12193,7 @@ sap.ui.define([
 			return Promise.all([
 				oCreatedContext0.created(),
 				oCreatedContext1.created(),
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
@@ -12372,7 +12372,7 @@ sap.ui.define([
 
 			return Promise.all([
 				oCreatedContext0.created(),
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
@@ -12614,7 +12614,7 @@ sap.ui.define([
 
 			return Promise.all([
 				oCreatedContext0.created(),
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
@@ -12775,7 +12775,7 @@ sap.ui.define([
 
 			return Promise.all([
 				oCreatedContext0.created(),
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
@@ -12878,7 +12878,7 @@ sap.ui.define([
 			return Promise.all([
 				oCreatedContext0.created(),
 				oCreatedContext1.created(),
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
@@ -13013,7 +13013,7 @@ sap.ui.define([
 				oCreatedContext0.created(),
 				oCreatedContext1.created(),
 				oCreatedContext2.created(),
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
@@ -13167,7 +13167,7 @@ sap.ui.define([
 
 			return Promise.all([
 				oCreatedContext0.created(),
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
@@ -13180,7 +13180,7 @@ sap.ui.define([
 			return that.waitForChanges(assert);
 		}).then(function () {
 			// no change event: getContexts with E.C.D. returns a diff containing two deletes only
-			that.oModel.resetChanges();
+			oModel.resetChanges();
 
 			return Promise.all([
 				checkCanceled(assert, oCreatedContext1.created()),
@@ -13275,7 +13275,7 @@ sap.ui.define([
 				oCreatedContext0.created(),
 				oCreatedContext1.created(),
 				oCreatedContext2.created(),
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
@@ -13360,7 +13360,7 @@ sap.ui.define([
 
 			return Promise.all([
 				oCreatedContext0.created(),
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
@@ -13468,7 +13468,7 @@ sap.ui.define([
 			return Promise.all([
 				oCreatedContext0.created(),
 				oCreatedContext1.created(),
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
@@ -13580,7 +13580,7 @@ sap.ui.define([
 				.expectChange("longitude", ["8.690000000000"]);
 
 			return Promise.all([
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		});
@@ -13654,7 +13654,7 @@ sap.ui.define([
 				});
 
 			return Promise.all([
-				that.oModel.submitBatch("update").then(
+				oModel.submitBatch("update").then(
 					function () {
 						assert.notOk(oModel.hasPendingChanges("update"),
 							"Model: No pending changes when submitBatch promise resolves");
@@ -13906,7 +13906,7 @@ sap.ui.define([
 			that.oView.byId("note").getBinding("value").setValue("Changed Note");
 
 			return Promise.all([
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		});
@@ -14307,7 +14307,7 @@ sap.ui.define([
 				.expectChange("note", "Changed Note");
 
 			oBinding.setValue("Changed Note");
-			oSubmitBatchPromise = that.oModel.submitBatch("update");
+			oSubmitBatchPromise = oModel.submitBatch("update");
 
 			return that.waitForChanges(assert);
 		}).then(function () {
@@ -14329,7 +14329,7 @@ sap.ui.define([
 			fnRespond();
 
 			return Promise.all([
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert),
 				oSubmitBatchPromise
 			]);
@@ -14386,7 +14386,7 @@ sap.ui.define([
 
 			oBinding.setValue("Jonathan Mueller");
 
-			oSubmitBatchPromise = that.oModel.submitBatch("update");
+			oSubmitBatchPromise = oModel.submitBatch("update");
 
 			return that.waitForChanges(assert);
 		}).then(function () {
@@ -14413,7 +14413,7 @@ sap.ui.define([
 				.expectChange("teamId", "42");
 
 			return Promise.all([
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				oInvokePromise.then(function (oReturnValueContext) {
 					assert.strictEqual(oReturnValueContext, undefined,
 						"no R.V.C. w/o key predicate");
@@ -14549,7 +14549,7 @@ sap.ui.define([
 				.expectChange("note", "Changed Note");
 
 			oBinding.setValue("Changed Note");
-			aPromises.push(that.oModel.submitBatch("update"));
+			aPromises.push(oModel.submitBatch("update"));
 
 			return that.waitForChanges(assert);
 		}).then(function () {
@@ -14569,7 +14569,7 @@ sap.ui.define([
 				});
 
 			oBinding.setValue("(1) Changed Note while $batch is running");
-			aPromises.push(that.oModel.submitBatch("update"));
+			aPromises.push(oModel.submitBatch("update"));
 
 			oMetaModelMock.restore();
 
@@ -14578,7 +14578,7 @@ sap.ui.define([
 			that.expectChange("note", "(2) Changed Note while $batch is running");
 
 			oBinding.setValue("(2) Changed Note while $batch is running");
-			aPromises.push(that.oModel.submitBatch("update"));
+			aPromises.push(oModel.submitBatch("update"));
 
 			return that.waitForChanges(assert);
 		}).then(function () {
@@ -14666,7 +14666,7 @@ sap.ui.define([
 				.expectChange("note42", "42Changed Note");
 
 			oBinding42.setValue("42Changed Note");
-			aPromises.push(that.oModel.submitBatch("update"));
+			aPromises.push(oModel.submitBatch("update"));
 
 			return that.waitForChanges(assert);
 		}).then(function () {
@@ -14675,14 +14675,14 @@ sap.ui.define([
 
 			oBinding42.setValue("(1) 42Changed Note while $batch is running");
 			oBinding77.setValue("(1) 77Changed Note while $batch is running");
-			aPromises.push(that.oModel.submitBatch("update"));
+			aPromises.push(oModel.submitBatch("update"));
 
 			return that.waitForChanges(assert);
 		}).then(function () {
 			that.expectChange("note77", "77Changed Note");
 
 			oBinding77.setValue("77Changed Note");
-			aPromises.push(that.oModel.submitBatch("update"));
+			aPromises.push(oModel.submitBatch("update"));
 
 			return that.waitForChanges(assert);
 		}).then(function () {
@@ -14794,7 +14794,7 @@ sap.ui.define([
 
 				that.oView.byId("note").getBinding("value").setValue("Changed Note");
 				if (sUpdateGroupId === "update") {
-					oBatchPromise0 = that.oModel.submitBatch(sUpdateGroupId);
+					oBatchPromise0 = oModel.submitBatch(sUpdateGroupId);
 				}
 
 				return that.waitForChanges(assert);
@@ -14847,7 +14847,7 @@ sap.ui.define([
 				that.oView.byId("lifecycleStatus").getBinding("value").setValue("P");
 
 				if (sUpdateGroupId === "update") {
-					oBatchPromise1 = that.oModel.submitBatch(sUpdateGroupId);
+					oBatchPromise1 = oModel.submitBatch(sUpdateGroupId);
 				}
 
 				return that.waitForChanges(assert);
@@ -15660,7 +15660,7 @@ sap.ui.define([
 
 			return Promise.all([
 				// code under test
-				that.oModel.bindContext("special.cases.GetDefaults(...)", oHeaderContext).invoke(),
+				oModel.bindContext("special.cases.GetDefaults(...)", oHeaderContext).invoke(),
 				that.waitForChanges(assert)
 			]);
 		}).then(function (aResults) {
@@ -15709,7 +15709,7 @@ sap.ui.define([
 					type : "Success"
 				}]);
 
-			oAction = that.oModel.bindContext("special.cases.Create(...)", oHeaderContext,
+			oAction = oModel.bindContext("special.cases.Create(...)", oHeaderContext,
 					{$$inheritExpandSelect : true})
 				.setParameter("ArtistID", oDefaults.getObject("ArtistID"))
 				.setParameter("IsActiveEntity", oDefaults.getObject("IsActiveEntity"))
@@ -16885,7 +16885,7 @@ sap.ui.define([
 				});
 
 			return Promise.all([
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
@@ -17456,7 +17456,7 @@ sap.ui.define([
 			});
 
 		return this.createView(assert, "", oModel).then(function () {
-			var oListBinding = that.oModel.bindList("/Products");
+			var oListBinding = oModel.bindList("/Products");
 
 			that.expectRequest({
 					url : "POST Products",
@@ -20778,7 +20778,7 @@ sap.ui.define([
 
 		return this.createView(assert, sView, oModel).then(function () {
 			// code under test
-			that.oModel.refresh("foo");
+			oModel.refresh("foo");
 
 			return that.waitForChanges(assert);
 		});
@@ -22646,7 +22646,7 @@ sap.ui.define([
 			oKeptContext2.setKeepAlive(true);
 
 			return Promise.all([
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				oKeptPromise.then(mustFail(assert), function (oError) {
 					assert.strictEqual(oError.message, "Request intentionally failed");
 				}),
@@ -23432,7 +23432,7 @@ sap.ui.define([
 
 		return this.createView(assert, sView, oModel).then(function () {
 			var oParentBinding = that.oView.byId("form").getElementBinding(),
-				oListBinding = that.oModel.bindList("SO_2_SOITEM", oParentBinding.getBoundContext(),
+				oListBinding = oModel.bindList("SO_2_SOITEM", oParentBinding.getBoundContext(),
 					undefined, undefined, {$$updateGroupId : "update"});
 
 			that.expectRequest({
@@ -23451,7 +23451,7 @@ sap.ui.define([
 			oListBinding.create();
 
 			return Promise.all([
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		});
@@ -23473,7 +23473,7 @@ sap.ui.define([
 
 			return Promise.all([
 				that.oView.byId("form").getElementBinding().invoke("update"),
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		});
@@ -23506,10 +23506,10 @@ sap.ui.define([
 				})
 				.expectChange("company", "SAP SE");
 
-			that.oModel.refresh("update");
+			oModel.refresh("update");
 
 			return Promise.all([
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		});
@@ -23536,7 +23536,7 @@ sap.ui.define([
 			.expectChange("note", ["Note"]);
 
 		return this.createView(assert, sView, oModel).then(function () {
-			that.oModel.bindList("/BusinessPartnerList"); // a list binding w/ no control behind
+			oModel.bindList("/BusinessPartnerList"); // a list binding w/ no control behind
 
 			that.expectRequest("SalesOrderList?$select=Note,SalesOrderID&$skip=0&$top=100", {
 					value : [{
@@ -23546,10 +23546,10 @@ sap.ui.define([
 				})
 				.expectChange("note", ["Note updated"]);
 
-			that.oModel.refresh("update");
+			oModel.refresh("update");
 
 			return Promise.all([
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		});
@@ -23674,7 +23674,7 @@ sap.ui.define([
 			oListBinding.resume();
 
 			return Promise.all([
-				that.oModel.submitBatch("api"),
+				oModel.submitBatch("api"),
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
@@ -23692,7 +23692,7 @@ sap.ui.define([
 			oListBinding.filter(new Filter("EQUIPMENT_2_PRODUCT/ID", "EQ", 42));
 
 			return Promise.all([
-				that.oModel.submitBatch("api"),
+				oModel.submitBatch("api"),
 				that.waitForChanges(assert)
 			]);
 		});
@@ -26993,7 +26993,7 @@ sap.ui.define([
 			that = this;
 
 		return this.createView(assert, "", oModel).then(function () {
-			var oListBinding = that.oModel.bindList("/BusinessPartners", null, null, [
+			var oListBinding = oModel.bindList("/BusinessPartners", null, null, [
 					new Filter("Name", FilterOperator.EQ, "Foo"),
 					new Filter("SalesNumber", FilterOperator.GT, 0)
 				], {
@@ -27058,7 +27058,7 @@ sap.ui.define([
 			that = this;
 
 		return this.createView(assert, "", oModel).then(function () {
-			var oListBinding = that.oModel.bindList("/BusinessPartners", null, null, [
+			var oListBinding = oModel.bindList("/BusinessPartners", null, null, [
 					new Filter("Name", FilterOperator.EQ, "Foo"),
 					oFixture.oFilter
 				], {
@@ -27173,7 +27173,7 @@ sap.ui.define([
 			that = this;
 
 		return this.createView(assert, "", oModel).then(function () {
-			var oListBinding = that.oModel.bindList("/BusinessPartners", null, null, [
+			var oListBinding = oModel.bindList("/BusinessPartners", null, null, [
 					new Filter("Name", FilterOperator.EQ, "Foo"),
 					new Filter("SalesNumber", FilterOperator.GT, 0)
 				], {
@@ -27221,7 +27221,7 @@ sap.ui.define([
 			that = this;
 
 		return this.createView(assert, "", oModel).then(function () {
-			oListBinding = that.oModel.bindList("/BusinessPartners", null, [
+			oListBinding = oModel.bindList("/BusinessPartners", null, [
 				new Sorter("Region")
 			], [
 				new Filter("Name", FilterOperator.EQ, "Foo"),
@@ -27302,7 +27302,7 @@ sap.ui.define([
 			that = this;
 
 		return this.createView(assert, "", oModel).then(function () {
-			oListBinding = that.oModel.bindList("/BusinessPartners", null, [], [
+			oListBinding = oModel.bindList("/BusinessPartners", null, [], [
 				new Filter("Name", FilterOperator.EQ, "Foo")
 			], {
 				$$aggregation : {
@@ -50137,7 +50137,7 @@ make root = ${bMakeRoot}`;
 				.expectChange("salary", ["997"]);
 
 			return Promise.all([
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				oContext.created(),
 				that.waitForChanges(assert, "no private annotation in request")
 			]);
@@ -50892,8 +50892,8 @@ make root = ${bMakeRoot}`;
 
 				return that.waitForChanges(assert);
 			}).then(function () {
-				oOperation = that.oModel.bindContext("special.cases." + oFixture.operation
-					+ "(...)", that.oView.getBindingContext(), {
+				oOperation = oModel.bindContext("special.cases." + oFixture.operation + "(...)",
+					that.oView.getBindingContext(), {
 						$select : "Address/City,ArtistID,IsActiveEntity,Name,Messages"
 					});
 
@@ -51100,8 +51100,8 @@ make root = ${bMakeRoot}`;
 				//   chain of bindings that we never release as long as we switch between draft and
 				//   active entity. -> CPOUI5UISERVICESV3-1746
 				oEntityContext = oObjectPage.getBindingContext(),
-				oAction = that.oModel.bindContext("special.cases." + sAction + "(...)",
-					oEntityContext, {$$inheritExpandSelect : true}),
+				oAction = oModel.bindContext("special.cases." + sAction + "(...)", oEntityContext,
+					{$$inheritExpandSelect : true}),
 				bReplaceWithRVC = sId === "42" && oFixture.keepAlive;
 
 			that.expectRequest({
@@ -51149,11 +51149,11 @@ make root = ${bMakeRoot}`;
 
 			if (typeof vSource === "string") {
 				if (oFixture.hiddenBinding) {
-					oHiddenBinding.setContext(that.oModel.createBindingContext(vSource));
+					oHiddenBinding.setContext(oModel.createBindingContext(vSource));
 					oBinding = oHiddenBinding;
 				} else {
 					// create an absolute binding for that path
-					oBinding = that.oModel.bindContext(vSource, undefined,
+					oBinding = oModel.bindContext(vSource, undefined,
 						{$$patchWithoutSideEffects : true});
 				}
 				oContext = oBinding.getBoundContext();
@@ -51187,7 +51187,7 @@ make root = ${bMakeRoot}`;
 			oPublications = that.oView.byId("publication").getBinding("items");
 			if (oFixture.hiddenBinding) {
 				// create the hidden binding when creating the controller
-				oHiddenBinding = that.oModel.bindContext("", undefined,
+				oHiddenBinding = oModel.bindContext("", undefined,
 					{$$patchWithoutSideEffects : true});
 				expectArtistRequest("42", true);
 			} else {
@@ -51348,8 +51348,8 @@ make root = ${bMakeRoot}`;
 		function action(sAction) {
 			var bIsActive = sAction === "ActivationAction", // The resulting artist's bIsActive
 				oEntityContext = oObjectPage.getBindingContext(),
-				oAction = that.oModel.bindContext("special.cases." + sAction + "(...)",
-					oEntityContext, {$$inheritExpandSelect : true});
+				oAction = oModel.bindContext("special.cases." + sAction + "(...)", oEntityContext,
+					{$$inheritExpandSelect : true});
 
 			that.expectRequest({
 					url : "POST Artists(ArtistID='42',IsActiveEntity=" + !bIsActive
@@ -51405,7 +51405,7 @@ make root = ${bMakeRoot}`;
 			// 1. Start with the given context and show it within the object page
 
 			// 2. Within the controller code create the hidden binding
-			oHiddenBinding = that.oModel.bindContext("", fnGetParentContext.call(that),
+			oHiddenBinding = oModel.bindContext("", fnGetParentContext.call(that),
 					{$$patchWithoutSideEffects : true, $select : "Messages"});
 
 			oObjectPage = that.oView.byId("objectPage");
@@ -51485,8 +51485,8 @@ make root = ${bMakeRoot}`;
 		}).then(function () {
 			// 5. Show the creation row of a creation row binding [...]
 
-			oCreationRowContext = that.oModel.bindList("_Publication", oReturnValueContext,
-				undefined, undefined, {$$updateGroupId : "doNotSubmit"}).create();
+			oCreationRowContext = oModel.bindList("_Publication", oReturnValueContext, undefined,
+				undefined, {$$updateGroupId : "doNotSubmit"}).create();
 			oCreationRowContext.setProperty("Price", "47"); // BCP: 2270087626
 
 			that.expectChange("price", "47")
@@ -51636,8 +51636,8 @@ make root = ${bMakeRoot}`;
 			]);
 		}).then(function () {
 			// 3. Show the creation row of a creation row binding
-			oCreationRowContext = that.oModel.bindList("_Publication", oReturnValueContext,
-				undefined, undefined, {$$updateGroupId : "doNotSubmit"}).create({Price : "47"});
+			oCreationRowContext = oModel.bindList("_Publication", oReturnValueContext, undefined,
+				undefined, {$$updateGroupId : "doNotSubmit"}).create({Price : "47"});
 
 			that.expectChange("price", "47");
 			that.expectChange("artistName", "DJ Bobo");
@@ -51668,7 +51668,7 @@ make root = ${bMakeRoot}`;
 			]);
 		}).then(function () {
 			// 5. Switch back to active version.
-			var oAction = that.oModel.bindContext("special.cases.ActivationAction(...)",
+			var oAction = oModel.bindContext("special.cases.ActivationAction(...)",
 					oReturnValueContext, {$$inheritExpandSelect : true});
 
 			that.expectRequest({
@@ -51939,7 +51939,7 @@ make root = ${bMakeRoot}`;
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			var oOperation = that.oModel.bindContext("special.cases.EditAction(...)",
+			var oOperation = oModel.bindContext("special.cases.EditAction(...)",
 					oActiveArtistContext, {$$inheritExpandSelect : true});
 
 			that.expectRequest({
@@ -52007,7 +52007,7 @@ make root = ${bMakeRoot}`;
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			var oOperation = that.oModel.bindContext("special.cases.ActivationAction(...)",
+			var oOperation = oModel.bindContext("special.cases.ActivationAction(...)",
 					oInactiveArtistContext, {$$inheritExpandSelect : true});
 
 			that.expectRequest({
@@ -52214,7 +52214,7 @@ make root = ${bMakeRoot}`;
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			var oOperation = that.oModel.bindContext("special.cases.EditAction(...)",
+			var oOperation = oModel.bindContext("special.cases.EditAction(...)",
 					that.oView.getBindingContext(), {$$inheritExpandSelect : true});
 
 			oOperation.attachDataReceived(fnDataReceived);
@@ -52314,7 +52314,7 @@ make root = ${bMakeRoot}`;
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			var oOperation = that.oModel.bindContext("special.cases.ActivationAction(...)",
+			var oOperation = oModel.bindContext("special.cases.ActivationAction(...)",
 					that.oView.getBindingContext(), {$$inheritExpandSelect : true});
 
 			assert.strictEqual(fnDataReceived.callCount, 1, "dataReceived");
@@ -52382,7 +52382,7 @@ make root = ${bMakeRoot}`;
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			var oOperation = that.oModel.bindContext("special.cases.EditAction(...)", oContext,
+			var oOperation = oModel.bindContext("special.cases.EditAction(...)", oContext,
 					{$$inheritExpandSelect : true});
 
 			assert.deepEqual(oContext.getObject(), {
@@ -52529,8 +52529,7 @@ make root = ${bMakeRoot}`;
 				});
 
 			return Promise.all([
-				that.oModel
-					.bindContext("special.cases.EditAction(...)", that.oView.getBindingContext())
+				oModel.bindContext("special.cases.EditAction(...)", that.oView.getBindingContext())
 					.invoke(),
 				that.waitForChanges(assert)
 			]);
@@ -52710,7 +52709,7 @@ make root = ${bMakeRoot}`;
 		}).then(function () {
 			var bAction = sDraftOperation === "EditAction";
 
-			oDraftOperation = that.oModel.bindContext("special.cases." + sDraftOperation + "(...)",
+			oDraftOperation = oModel.bindContext("special.cases." + sDraftOperation + "(...)",
 				oActiveArtistContext, {$$inheritExpandSelect : true});
 
 			that.expectRequest({
@@ -52783,7 +52782,7 @@ make root = ${bMakeRoot}`;
 				sValue = "*".repeat(256);
 
 			if (!bCancel) {
-				oActivationAction = that.oModel.bindContext("special.cases.ActivationAction(...)",
+				oActivationAction = oModel.bindContext("special.cases.ActivationAction(...)",
 					oInactiveArtistContext, {$$inheritExpandSelect : true});
 
 				that.expectChange("name", ["Mrs Eliot"])
@@ -52954,8 +52953,8 @@ make root = ${bMakeRoot}`;
 					return that.waitForChanges(assert, "replaceWith");
 				}
 
-				oSiblingEntity = that.oModel.bindContext("SiblingEntity(...)",
-					oInactiveArtistContext, {$$inheritExpandSelect : true});
+				oSiblingEntity = oModel.bindContext("SiblingEntity(...)", oInactiveArtistContext,
+					{$$inheritExpandSelect : true});
 
 				that.expectRequest("Artists(ArtistID='42',IsActiveEntity=false)"
 						+ "/SiblingEntity?$select=ArtistID,IsActiveEntity,Messages,Name", {
@@ -53247,7 +53246,7 @@ make root = ${bMakeRoot}`;
 
 			return Promise.all([oCreatedContext.created(), that.waitForChanges(assert)]);
 		}).then(function () {
-			var oAction = that.oModel.bindContext(
+			var oAction = oModel.bindContext(
 					"com.sap.gateway.default.iwbep.tea_busi.v0001.AcChangeTeamOfEmployee(...)",
 					oCreatedContext);
 
@@ -54349,7 +54348,7 @@ make root = ${bMakeRoot}`;
 
 			// simulate navigation to a detail page if only a key property is given
 			that.oView.byId("detail").setBindingContext(
-				that.oModel.bindContext("/TEAMS('TEAM_01')").getBoundContext());
+				oModel.bindContext("/TEAMS('TEAM_01')").getBoundContext());
 
 			return that.waitForChanges(assert);
 		}).then(function () {
@@ -54394,7 +54393,7 @@ make root = ${bMakeRoot}`;
 			// to a deleted entity; all bindings have to read data again and fail because entity is
 			// deleted
 			that.oView.byId("detail").setBindingContext(
-				that.oModel.bindContext("/TEAMS('TEAM_01')").getBoundContext());
+				oModel.bindContext("/TEAMS('TEAM_01')").getBoundContext());
 
 			return that.waitForChanges(assert);
 		});
@@ -55968,7 +55967,7 @@ make root = ${bMakeRoot}`;
 
 			return Promise.all([
 				oCreatedContext0.created(),
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
@@ -55979,7 +55978,7 @@ make root = ${bMakeRoot}`;
 			return Promise.all([
 				// code under test: request side effects on "not-created" entity from server
 				oTable.getRows()[1].getBindingContext().requestSideEffects(["Price"]),
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
@@ -55994,7 +55993,7 @@ make root = ${bMakeRoot}`;
 			return Promise.all([
 				// code under test: request side effects on non-transient created entity
 				oTable.getRows()[0].getBindingContext().requestSideEffects([""]),
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
@@ -56026,7 +56025,7 @@ make root = ${bMakeRoot}`;
 			return Promise.all([
 				// code under test: call on header context loads side effects for the whole binding
 				oTable.getBinding("rows").getHeaderContext().requestSideEffects(["Price"]),
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert)
 			]);
 		});
@@ -57328,7 +57327,7 @@ make root = ${bMakeRoot}`;
 				}, {/* don't care */});
 
 			// bound action waits for PATCHes and invokes retry
-			oPromise = that.oModel.bindContext(sAction + "(...)", oRoomIdBinding.getContext())
+			oPromise = oModel.bindContext(sAction + "(...)", oRoomIdBinding.getContext())
 				.setParameter("TeamID", "23")
 				.invoke("$auto");
 
@@ -58553,8 +58552,8 @@ make root = ${bMakeRoot}`;
 
 		return this.createView(assert, sView, oModel).then(function () {
 			var oContext = that.oView.byId("form").getObjectBinding().getBoundContext(),
-				oOperation = that.oModel.bindContext("special.cases.PreparationAction(...)",
-					oContext, {$$inheritExpandSelect : true});
+				oOperation = oModel.bindContext("special.cases.PreparationAction(...)", oContext,
+					{$$inheritExpandSelect : true});
 
 			that.expectRequest({
 				url : "POST " + sResourcePath + "/special.cases.PreparationAction"
@@ -58613,10 +58612,10 @@ make root = ${bMakeRoot}`;
 			.expectChange("name");
 
 		return this.createView(assert, sView, oModel).then(function () {
-			var oListBinding = that.oModel.bindList("/Artists"),
+			var oListBinding = oModel.bindList("/Artists"),
 				oHeaderContext = oListBinding.getHeaderContext(),
-				oOperationBinding = that.oModel.bindContext("special.cases.Create(...)",
-					oHeaderContext, {$$patchWithoutSideEffects : true});
+				oOperationBinding = oModel.bindContext("special.cases.Create(...)", oHeaderContext,
+					{$$patchWithoutSideEffects : true});
 
 			that.expectRequest({
 				payload : {},
@@ -58768,7 +58767,7 @@ make root = ${bMakeRoot}`;
 				.expectChange("id", [""])
 				.expectChange("name", [""]);
 			oContext = that.oView.byId("table").getBinding("items").create({}, true);
-			oSubmitBatchPromise = that.oModel.submitBatch("update");
+			oSubmitBatchPromise = oModel.submitBatch("update");
 
 			return that.waitForChanges(assert);
 		}).then(function () {
@@ -59957,11 +59956,10 @@ make root = ${bMakeRoot}`;
 
 		const oEmployeesBinding = this.oView.byId("employees").getBinding("items");
 		const oEmployeeContext = oEmployeesBinding.getCurrentContexts()[0];
-		const oActionBinding = this.oModel.bindContext(sChangeTeamAction + "(...)",
-			oEmployeeContext, {
-				$select : ["Age"],
-				$$inheritExpandSelect : bInheritExpandSelect
-			});
+		const oActionBinding = oModel.bindContext(sChangeTeamAction + "(...)", oEmployeeContext, {
+			$select : ["Age"],
+			$$inheritExpandSelect : bInheritExpandSelect
+		});
 
 		this.expectRequest({
 				payload : {
@@ -60319,7 +60317,7 @@ make root = ${bMakeRoot}`;
 
 			// create and initialize creation row
 			oTableBinding = oTable.getBinding("items");
-			oCreationRowListBinding = that.oModel.bindList(oTableBinding.getPath(),
+			oCreationRowListBinding = oModel.bindList(oTableBinding.getPath(),
 				oTableBinding.getContext(), undefined, undefined,
 				{$$updateGroupId : "doNotSubmit"});
 			oCreationRowContext = oCreationRowListBinding.create();
@@ -62888,7 +62886,7 @@ make root = ${bMakeRoot}`;
 		this.expectChange("teamId", []);
 
 		return this.createView(assert, sView, oModel).then(function () {
-			var oRootContext = that.oModel.createBindingContext("/"),
+			var oRootContext = oModel.createBindingContext("/"),
 				oTable = that.oView.byId("table"),
 				oListBinding = oTable.getBinding("items");
 
@@ -65466,7 +65464,7 @@ make root = ${bMakeRoot}`;
 			oBinding = that.oView.byId("table").getBinding("items");
 			// code under test (JIRA: CPOUI5ODATAV4-2408)
 			oBinding.changeParameters({$count : true});
-			oBinding.setContext(that.oModel.createBindingContext("/"));
+			oBinding.setContext(oModel.createBindingContext("/"));
 
 			// code under test
 			return Promise.all([
@@ -67994,7 +67992,7 @@ make root = ${bMakeRoot}`;
 				.expectChange("category", ["Electronics"]);
 
 			return Promise.all([
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				oContext.created(),
 				that.waitForChanges(assert)
 			]);
@@ -68048,7 +68046,7 @@ make root = ${bMakeRoot}`;
 				.expectChange("teamId", ["1"]);
 
 			return Promise.all([
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				oContext.created(),
 				that.waitForChanges(assert)
 			]);
@@ -68835,7 +68833,7 @@ make root = ${bMakeRoot}`;
 				}]);
 			expectDataEvents(2);
 
-			oActiveContext = that.oModel.getKeepAliveContext(
+			oActiveContext = oModel.getKeepAliveContext(
 				"/Artists(ArtistID='A1',IsActiveEntity=true)", true,
 				{$$patchWithoutSideEffects : true});
 			oObjectPage.setBindingContext(oActiveContext);
@@ -68877,7 +68875,7 @@ make root = ${bMakeRoot}`;
 				that.waitForChanges(assert, "(2) initialization")
 			]);
 		}).then(function () {
-			var oActionBinding = that.oModel.bindContext("special.cases.EditAction(...)",
+			var oActionBinding = oModel.bindContext("special.cases.EditAction(...)",
 					oObjectPage.getBindingContext(), {$$inheritExpandSelect : true}),
 				oResponse = {
 					"@odata.etag" : "etag.draft1",
@@ -69008,7 +69006,7 @@ make root = ${bMakeRoot}`;
 		}).then(function () {
 			if (oFixture.list === 7) {
 				oActiveContext.setKeepAlive(false);
-				oActiveContext = that.oModel.getKeepAliveContext(
+				oActiveContext = oModel.getKeepAliveContext(
 					"/Artists(ArtistID='A1',IsActiveEntity=true)", true,
 					{$$patchWithoutSideEffects : true});
 				initializeList(6);
@@ -71782,7 +71780,7 @@ make root = ${bMakeRoot}`;
 					assert.ok(oError.canceled);
 				}),
 				oContextC.created(),
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert, "submit")
 			]);
 		}).then(function () {
@@ -71878,7 +71876,7 @@ make root = ${bMakeRoot}`;
 			return Promise.all([
 				oContextA.created(),
 				oContextB.created(),
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert, "2x created persisted")
 			]);
 		}).then(function () {
@@ -72015,7 +72013,7 @@ make root = ${bMakeRoot}`;
 			return Promise.all([
 				oContextC.created(),
 				oContextD.created(),
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert, "submit")
 			]);
 		}).then(function () {
@@ -72770,7 +72768,7 @@ make root = ${bMakeRoot}`;
 			return Promise.all([
 				// code under test
 				oBinding.getHeaderContext().requestSideEffects([""]),
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				oContextA.created(),
 				oContextB.created(),
 				oContextC.created().catch(function (oError) {
@@ -72985,7 +72983,7 @@ make root = ${bMakeRoot}`;
 			return Promise.all([
 				// code under test
 				oBinding.getHeaderContext().requestSideEffects([""]),
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				oContextA.created(),
 				oContextB.created(),
 				oContextC.created(),
@@ -73662,7 +73660,7 @@ make root = ${bMakeRoot}`;
 
 		return this.createView(assert, sView, oModel).then(function () {
 			var oBinding = that.oView.byId("table").getBinding("rows"),
-				oRootContext = that.oModel.createBindingContext("/");
+				oRootContext = oModel.createBindingContext("/");
 
 			function addInlineCreationRows() {
 				oBinding.create({Team_Id : "TEAM_A"}, true, true, /*bInactive*/true);
@@ -76815,7 +76813,7 @@ make root = ${bMakeRoot}`;
 			]);
 		}).then(function () {
 			var oActionBinding
-				= that.oModel.bindContext("special.cases.ActivationAction(...)", oDraftContext);
+				= oModel.bindContext("special.cases.ActivationAction(...)", oDraftContext);
 
 			assert.strictEqual(oDraftContext.isTransient(), false);
 
@@ -76920,7 +76918,7 @@ make root = ${bMakeRoot}`;
 			]);
 		}).then(function () {
 			var oActionBinding
-				= that.oModel.bindContext("special.cases.ActivationAction(...)", oDraftContext);
+				= oModel.bindContext("special.cases.ActivationAction(...)", oDraftContext);
 
 			that.expectRequest({
 					url : "POST Artists(ArtistID='23',IsActiveEntity=false)"
@@ -77011,7 +77009,7 @@ make root = ${bMakeRoot}`;
 			]);
 		}).then(function () {
 			var oActionBinding
-				= that.oModel.bindContext("special.cases.ActivationAction(...)", oDraftContext);
+				= oModel.bindContext("special.cases.ActivationAction(...)", oDraftContext);
 
 			that.expectRequest({
 					url : "POST Artists(ArtistID='23',IsActiveEntity=false)"
@@ -77050,7 +77048,7 @@ make root = ${bMakeRoot}`;
 			]);
 		}).then(function () {
 			var oActionBinding
-				= that.oModel.bindContext("special.cases.EditAction(...)", oActiveContext);
+				= oModel.bindContext("special.cases.EditAction(...)", oActiveContext);
 
 			assert.notOk(fnOnBeforeDestroy.called, "still alive");
 
@@ -78047,8 +78045,8 @@ make root = ${bMakeRoot}`;
 		}).then(function () {
 			return that.checkValueState(assert, that.oView.byId("name"), "Success", sMessage1);
 		}).then(function () {
-			var oSiblingEntity = that.oModel.bindContext("SiblingEntity(...)",
-					oDraftContext, {$$inheritExpandSelect : true});
+			var oSiblingEntity = oModel.bindContext("SiblingEntity(...)", oDraftContext,
+					{$$inheritExpandSelect : true});
 
 			that.expectRequest("Artists(ArtistID='42',IsActiveEntity=false)"
 					+ "/SiblingEntity?$select=ArtistID,IsActiveEntity,Messages,Name", {
@@ -78631,7 +78629,7 @@ make root = ${bMakeRoot}`;
 
 		this.expectChange("selectAll", "Yes"); // for setBindingContext
 
-		const oNewListBinding = this.oModel.bindList("/SalesOrderList");
+		const oNewListBinding = oModel.bindList("/SalesOrderList");
 		oNewListBinding.getHeaderContext().setSelected(true);
 		oSelectAllInput.setBindingContext(oNewListBinding.getHeaderContext());
 
@@ -79489,10 +79487,10 @@ make root = ${bMakeRoot}`;
 				that.waitForChanges(assert, "reset all changes below order '2'")
 			]);
 		}).then(function () {
-			assert.notOk(that.oModel.hasPendingChanges());
+			assert.notOk(oModel.hasPendingChanges());
 
 			return Promise.all([
-				that.oModel.submitBatch("update"),
+				oModel.submitBatch("update"),
 				that.waitForChanges(assert, "no patch request")
 			]);
 		});
