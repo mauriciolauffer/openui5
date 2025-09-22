@@ -21,7 +21,7 @@ sap.ui.define([
 				},
 				content: {
 					libraries: {
-						"sap.me": {
+						"sap.tnt": {
 							minVersion: "1.44",
 							lazy: true
 						}
@@ -40,7 +40,7 @@ sap.ui.define([
 					dependencies: {
 						minUI5Version: "1.32.0",
 						libs: {
-							"sap.me": {
+							"sap.tnt": {
 								minVersion: "1.40.0",
 								lazy: true
 							}
@@ -50,8 +50,8 @@ sap.ui.define([
 			};
 			var oNewManifest = AddLibrary.applyChange(oManifest, this.oChange);
 
-			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.me"].minVersion, "1.44", "the sap.me minVersion is updated correctly.");
-			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.me"].lazy, true, "the sap.me lazy is updated correctly.");
+			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.tnt"].minVersion, "1.44", "the sap.tnt minVersion is updated correctly.");
+			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.tnt"].lazy, true, "the sap.tnt lazy is updated correctly.");
 		});
 
 		QUnit.test("when calling '_applyChange' with a change containing one library and no manifest libs", function(assert) {
@@ -65,8 +65,8 @@ sap.ui.define([
 			};
 			var oNewManifest = AddLibrary.applyChange(oManifest, this.oChange);
 
-			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.me"].minVersion, "1.44", "the sap.me minVersion is updated correctly.");
-			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.me"].lazy, true, "the sap.me lazy is updated correctly.");
+			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.tnt"].minVersion, "1.44", "the sap.tnt minVersion is updated correctly.");
+			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.tnt"].lazy, true, "the sap.tnt lazy is updated correctly.");
 		});
 
 		QUnit.test("when calling 'applyChange' with a change containing one library update and lazy false", function(assert) {
@@ -76,7 +76,7 @@ sap.ui.define([
 					dependencies: {
 						minUI5Version: "1.32.0",
 						libs: {
-							"sap.me": {
+							"sap.tnt": {
 								minVersion: "1.40",
 								lazy: false
 							}
@@ -87,8 +87,8 @@ sap.ui.define([
 
 			var oNewManifest = AddLibrary.applyChange(oManifest, this.oChange);
 
-			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.me"].minVersion, "1.44", "the sap.me minVersion is updated correctly.");
-			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.me"].lazy, false, "the sap.me lazy is updated correctly.");
+			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.tnt"].minVersion, "1.44", "the sap.tnt minVersion is updated correctly.");
+			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.tnt"].lazy, false, "the sap.tnt lazy is updated correctly.");
 		});
 
 		QUnit.test("when calling 'applyChange' with a change containing one library update and lazy missing", function(assert) {
@@ -98,7 +98,7 @@ sap.ui.define([
 					dependencies: {
 						minUI5Version: "1.32.0",
 						libs: {
-							"sap.me": {
+							"sap.tnt": {
 								minVersion: "1.100.0"
 							}
 						}
@@ -108,8 +108,8 @@ sap.ui.define([
 
 			var oNewManifest = AddLibrary.applyChange(oManifest, this.oChange);
 
-			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.me"].minVersion, "1.100.0", "the sap.me minVersion is updated correctly.");
-			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.me"].lazy, false, "the sap.me lazy is updated correctly.");
+			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.tnt"].minVersion, "1.100.0", "the sap.tnt minVersion is updated correctly.");
+			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.tnt"].lazy, false, "the sap.tnt lazy is updated correctly.");
 		});
 
 		QUnit.test("when calling 'applyChange' with a change containing one library update and minVersion and lazy missing", function(assert) {
@@ -119,7 +119,7 @@ sap.ui.define([
 					dependencies: {
 						minUI5Version: "1.32.0",
 						libs: {
-							"sap.me": {
+							"sap.tnt": {
 							}
 						}
 					}
@@ -128,8 +128,8 @@ sap.ui.define([
 
 			var oNewManifest = AddLibrary.applyChange(oManifest, this.oChange);
 
-			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.me"].minVersion, "1.44", "the sap.me minVersion is updated correctly.");
-			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.me"].lazy, false, "the sap.me lazy is updated correctly.");
+			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.tnt"].minVersion, "1.44", "the sap.tnt minVersion is updated correctly.");
+			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.tnt"].lazy, false, "the sap.tnt lazy is updated correctly.");
 		});
 
 		QUnit.test("when calling 'applyChange' with a change containing one library downgrade", function(assert) {
@@ -139,7 +139,7 @@ sap.ui.define([
 					dependencies: {
 						minUI5Version: "1.32.0",
 						libs: {
-							"sap.me": {
+							"sap.tnt": {
 								minVersion: "1.58",
 								lazy: true
 							}
@@ -150,8 +150,8 @@ sap.ui.define([
 
 			var oNewManifest = AddLibrary.applyChange(oManifest, this.oChange);
 
-			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.me"].minVersion, "1.58", "the sap.me minVersion is not downgraded correctly.");
-			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.me"].lazy, true, "the sap.me lazy is not downgraded correctly.");
+			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.tnt"].minVersion, "1.58", "the sap.tnt minVersion is not downgraded correctly.");
+			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.tnt"].lazy, true, "the sap.tnt lazy is not downgraded correctly.");
 		});
 
 		QUnit.test("when calling 'applyChange' with a change containing one new library", function(assert) {
@@ -171,11 +171,11 @@ sap.ui.define([
 
 			var oNewManifest = AddLibrary.applyChange(oManifest, this.oChange);
 
-			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.ushell"].minVersion, "1.35", "the sap.me minVersion is not changed correctly.");
-			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.ushell"].lazy, undefined, "the sap.me lazy is not changed correctly.");
+			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.ushell"].minVersion, "1.35", "the sap.tnt minVersion is not changed correctly.");
+			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.ushell"].lazy, undefined, "the sap.tnt lazy is not changed correctly.");
 
-			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.me"].minVersion, "1.44", "the sap.me minVersion is added  correctly.");
-			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.me"].lazy, true, "the sap.me lazy is added correctly.");
+			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.tnt"].minVersion, "1.44", "the sap.tnt minVersion is added  correctly.");
+			assert.strictEqual(oNewManifest["sap.ui5"].dependencies.libs["sap.tnt"].lazy, true, "the sap.tnt lazy is added correctly.");
 		});
 
 		QUnit.test("when calling 'applyChange' on a more complicated change", function(assert) {
@@ -188,7 +188,7 @@ sap.ui.define([
 							"sap.m": {
 								minVersion: "1.30"
 							},
-							"sap.me": {
+							"sap.tnt": {
 								minVersion: "1.30",
 								lazy: true
 							},
@@ -214,7 +214,7 @@ sap.ui.define([
 						"sap.m": {
 							minVersion: "1.24"
 						},
-						"sap.me": {
+						"sap.tnt": {
 							minVersion: "1.44",
 							lazy: true
 						}
@@ -231,7 +231,7 @@ sap.ui.define([
 							"sap.m": {
 								minVersion: "1.30"
 							},
-							"sap.me": {
+							"sap.tnt": {
 								minVersion: "1.44",
 								lazy: true
 							},
@@ -267,11 +267,11 @@ sap.ui.define([
 			assert.strictEqual(oExistingSapM.minVersion, oExpectedSapM.minVersion, "sap.m.minversion is updated correctly");
 			assert.strictEqual(oExistingSapM.lazy, oExpectedSapM.lazy, "sap.m.lazy is updated correctly");
 
-			var oExistingSapMe = oNewManifest["sap.ui5"].dependencies.libs["sap.me"];
-			var oExpectedSapMe = oExpectedManifest["sap.ui5"].dependencies.libs["sap.me"];
-			assert.ok(oNewLib, "library sap.me was updated");
-			assert.strictEqual(oExistingSapMe.minVersion, oExpectedSapMe.minVersion, "sap.me.minversion is updated correctly");
-			assert.strictEqual(oExistingSapMe.lazy, oExpectedSapMe.lazy, "sap.me.lazy is updated correctly");
+			var oExistingSapMe = oNewManifest["sap.ui5"].dependencies.libs["sap.tnt"];
+			var oExpectedSapMe = oExpectedManifest["sap.ui5"].dependencies.libs["sap.tnt"];
+			assert.ok(oNewLib, "library sap.tnt was updated");
+			assert.strictEqual(oExistingSapMe.minVersion, oExpectedSapMe.minVersion, "sap.tnt.minversion is updated correctly");
+			assert.strictEqual(oExistingSapMe.lazy, oExpectedSapMe.lazy, "sap.tnt.lazy is updated correctly");
 		});
 	});
 

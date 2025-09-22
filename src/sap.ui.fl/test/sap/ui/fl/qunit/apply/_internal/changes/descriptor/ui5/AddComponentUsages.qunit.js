@@ -47,7 +47,7 @@ sap.ui.define([
 					dependencies: {
 						minUI5Version: "1.86.0",
 						libs: {
-							"sap.me": {
+							"sap.tnt": {
 								minVersion: "1.40.0",
 								lazy: true
 							}
@@ -76,7 +76,7 @@ sap.ui.define([
 					dependencies: {
 						minUI5Version: "1.86.0",
 						libs: {
-							"sap.me": {
+							"sap.tnt": {
 								minVersion: "1.40.0",
 								lazy: true
 							}
