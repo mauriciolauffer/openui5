@@ -709,7 +709,8 @@
 		  "category": "User Input",
 		  "since": "1.133",
 		  "samples": [
-			"sap.m.sample.TokenizerBasic"
+			"sap.m.sample.TokenizerBasic",
+			"sap.m.sample.TokenizerMultiLine"
 		  ]
 		},
 		{
@@ -2770,6 +2771,11 @@
 			"id": "sap.m.sample.TokenizerBasic",
 			"name": "Basic Tokenizer",
 			"description": "Basic Tokenizer with tokens"
+		},
+		{
+			"id": "sap.m.sample.TokenizerMultiLine",
+			"name": "Tokenizer Multi-line and Clear All",
+			"description": "Tokenizer with Multi-line support and Clear All button"
 		},
 		{
 			"id": "sap.m.sample.OverflowToolbarTokenizer",

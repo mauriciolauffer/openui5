@@ -35,8 +35,13 @@ sap.ui.define(['sap/ui/Device', 'sap/ui/core/InvisibleText'],
 	 */
 	TokenizerRenderer.renderInnerContent = function(oRm, oControl) {
 		var aTokens = oControl.getTokens();
+		var bMultiLine = oControl.getMultiLine();
 
 		oRm.class("sapMTokenizer");
+
+		if (bMultiLine) {
+			oRm.class("sapMTokenizerMultiLine");
+		}
 
 		if (oControl._bInForm){
 			oRm.class("sapMTokenizerHeightMargin");
@@ -89,7 +94,7 @@ sap.ui.define(['sap/ui/Device', 'sap/ui/core/InvisibleText'],
 		}
 
 		oRm.openStart("div", oControl.getId() + "-scrollContainer");
-		oRm.class("sapMTokenizerScrollContainer");
+		oRm.class(bMultiLine ? "sapMTokenizerMultiLineContainer" : "sapMTokenizerScrollContainer");
 
 		if (oControl.getHiddenTokensCount() === oControl.getTokens().length) {
 			oRm.class("sapMTokenizerScrollContainerNoVisibleTokens");
@@ -97,6 +102,7 @@ sap.ui.define(['sap/ui/Device', 'sap/ui/core/InvisibleText'],
 
 		oRm.openEnd();
 		this._renderTokens(oRm, oControl);
+		this._renderClearAll(oRm, oControl);
 
 		oRm.close("div");
 		this._renderIndicator(oRm, oControl);
@@ -160,6 +166,23 @@ sap.ui.define(['sap/ui/Device', 'sap/ui/core/InvisibleText'],
 		}
 
 		oRm.openEnd().close("span");
+	};
+
+	/**
+	 * Renders the Clear All button
+	 *
+	 * @param {sap.ui.core.RenderManager} oRm the RenderManager that can be used for writing to the render output buffer
+	 * @param {sap.m.Tokenizer} oControl an object representation of the control that should be rendered
+	 */
+	TokenizerRenderer._renderClearAll = function(oRm, oControl){
+		if (oControl.showEffectiveClearAll()) {
+			oRm.openStart("span", oControl.getId() + "-clearAll")
+				.class("sapMTokenizerClearAll")
+				.attr("role", "button")
+				.openEnd();
+			oRm.text(oControl._getClearAllText());
+			oRm.close("span");
+		}
 	};
 
 	/**
