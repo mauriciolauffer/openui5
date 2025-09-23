@@ -35,6 +35,9 @@ sap.ui.define([],
 				oRm.style("width", oControl.getWidth());
 			}
 			oRm.openEnd();
+
+			oControl.getAggregation("invisibleTexts")?.forEach((oInvisibleText) => oRm.renderControl(oInvisibleText));
+
 			const oInnerLayout = oControl.getAggregation("layout") ? oControl.getAggregation("layout").getInner() : null;
 			oRm.renderControl(oInnerLayout);
 			oRm.close("div");
