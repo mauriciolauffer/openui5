@@ -1126,9 +1126,11 @@ sap.ui.define([
 					if (this.bPopoverOpen) {
 						setTimeout(function() {
 							this.bPopoverOpen = false;
-							this.oVariantPopoverTrigger?.$().attr("aria-expanded", "false");
 						}.bind(this), 200);
 					}
+				}.bind(this),
+				beforeClose: function() {
+					this.oVariantPopoverTrigger?.$().attr("aria-expanded", "false");
 				}.bind(this),
 				contentHeight: "300px"
 			});
@@ -1340,9 +1342,11 @@ sap.ui.define([
 				if (this.bPopoverOpen) {
 					setTimeout(function() {
 						this.bPopoverOpen = false;
-						this.oVariantPopoverTrigger.$().attr("aria-expanded", "false");
 					}.bind(this), 200);
 				}
+			}.bind(this),
+			beforeClose: function() {
+				this.oVariantPopoverTrigger?.$().attr("aria-expanded", "false");
 			}.bind(this),
 			contentHeight: "300px"
 		});
