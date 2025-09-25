@@ -1,0 +1,22 @@
+{
+  "1.142.0": {
+    "date": "September 2025",
+    "notes": [
+      {
+        "id": "67133b806604afc076ff48027bd565bcbdd3c67b",
+        "type": "FIX",
+        "text": " core/Popup: Use activeElement of both light and shadow DOM to determine focus loss"
+      },
+      {
+        "id": "4cfc1ff9849e637d6ba317aa4253c861bf7ea0c3",
+        "type": "FIX",
+        "text": " sap/ui/util/_URL: Resolve URL correctly absolut when host differs"
+      },
+      {
+        "id": "db40b2b3f8602a1dcbe2f4098f09ca69c06aa561",
+        "type": "FIX",
+        "text": " core/interaction: Cache failed requests to avoid retry attempts"
+      }
+    ]
+  }
+}

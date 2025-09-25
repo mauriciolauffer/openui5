@@ -3,6 +3,21 @@
     "date": "September 2025",
     "notes": [
       {
+        "id": "67133b806604afc076ff48027bd565bcbdd3c67b",
+        "type": "FIX",
+        "text": " core/Popup: Use activeElement of both light and shadow DOM to determine focus loss"
+      },
+      {
+        "id": "3b520de1940df5afbde9de8906cd87a31b3624ee",
+        "type": "FIX",
+        "text": " sap.m.Tokenizer: first token is now not truncated when not needed"
+      },
+      {
+        "id": "df947a9e514d57eab0437fd7fa3f38841396cd3b",
+        "type": "FIX",
+        "text": " xConfig: Remove correct value"
+      },
+      {
         "id": "e0efd5838fd48f1872776b59a19c4731763c1baa",
         "type": "FIX",
         "text": " SelectionPanel: (De)select all should ignore hidden items"
@@ -21,6 +36,11 @@
         "id": "47b0a485878c7b921abb09783966fbfecde890ac",
         "type": "FIX",
         "text": " sap.m.DynamicDateRange: Improve accessibility in Last/Next Options"
+      },
+      {
+        "id": "33d26b17f9816180f3a0246179415ad36d8a7339",
+        "type": "FIX",
+        "text": " sap.m.Popover: Removed invalidate on resize"
       }
     ]
   }

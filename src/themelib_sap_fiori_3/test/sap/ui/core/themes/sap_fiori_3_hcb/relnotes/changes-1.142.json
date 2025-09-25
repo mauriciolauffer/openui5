@@ -1,0 +1,12 @@
+{
+  "1.142.0": {
+    "date": "September 2025",
+    "notes": [
+      {
+        "id": "c50e46d2126c4b353ab3026a1fbab8be9b0b9849",
+        "type": "FIX",
+        "text": " sap.m.SegmentedButton: Correct active color on regular state"
+      }
+    ]
+  }
+}

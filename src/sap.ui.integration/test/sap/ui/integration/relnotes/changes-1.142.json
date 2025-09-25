@@ -1,0 +1,12 @@
+{
+  "1.142.0": {
+    "date": "September 2025",
+    "notes": [
+      {
+        "id": "1267bd65567e890a04ec09e6486f2dc862cb2d53",
+        "type": "FIX",
+        "text": " Integration Cards: Improved error handling when destination url is undefined"
+      }
+    ]
+  }
+}
