@@ -634,6 +634,8 @@ sap.ui.define([
 			oParent.setProperty("selectedKey", sSelectedKey, true);
 		}
 
+		this._initItemNavigation();
+
 		if (bIsParentIconTabBar) {
 			bAPIChange = bAPIChange && !oParent._bFireSelectEvent;
 		} else {
