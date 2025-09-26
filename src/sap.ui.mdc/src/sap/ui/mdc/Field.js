@@ -774,7 +774,7 @@ sap.ui.define([
 				// map message to inner control, if needed
 				const oBinding = this.getBinding("value"); // only check value binding
 				let sControlId = this.getId();
-				if (oBinding.isA("sap.ui.model.CompositeBinding") && this.getContentFactory().isMeasure()) {
+				if (oBinding?.isA("sap.ui.model.CompositeBinding") && this.getContentFactory().isMeasure()) {
 					const aContent = this.getCurrentContent();
 					if (aContent.length > 0) {
 						if (oMessage.getMessageProcessor().isA("sap.ui.model.Model")) {
