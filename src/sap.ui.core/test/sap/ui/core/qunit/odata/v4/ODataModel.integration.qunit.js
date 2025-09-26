@@ -1811,7 +1811,10 @@ sap.ui.define([
 		 * @returns {ODataModel} The model
 		 */
 		createSpecialCasesModel : function (mModelParameters, mAdditionalFixture) {
-			return this.createModel("/special/cases/", mModelParameters,
+			return this.createModel("/special/cases/", {
+					...mModelParameters,
+					odataVersion : "4.01"
+				},
 				Object.assign({
 					"/special/cases/$metadata"
 						: {source : "odata/v4/data/metadata_special_cases.xml"}
@@ -7544,6 +7547,24 @@ sap.ui.define([
 </FlexBox>');
 
 	//*********************************************************************************************
+	// Scenario: 4.01 DECFLOAT via templating with AnnotationHelper
+	// JIRA: CPOUI5ODATAV4-3141
+	testXMLTemplating(
+		"4.01 DECFLOAT via templating with AnnotationHelper",
+		"createSpecialCasesModel",
+' template:require="{\'AnnotationHelper\':\'sap/ui/model/odata/v4/AnnotationHelper\'}">\
+<template:alias name="format" value="AnnotationHelper.format">\
+	<Text text="{meta>/Publications/Price@@format}"/>\
+</template:alias>',
+"<Text text=\"{mode:'TwoWay',parts:[\
+{path:'Price',type:'sap.ui.model.odata.type.Decimal',\
+constraints:{'precision':13,'scale':'floating'}\
+},{path:'CurrencyCode',type:'sap.ui.model.odata.type.String',\
+constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
+},{mode:'OneTime',path:'/##@@requestCurrencyCodes',targetType:'any'}\
+],type:'sap.ui.model.odata.type.Currency'}\"/>");
+
+	//*********************************************************************************************
 	// Scenario: Display the two coordinates of an Edm.GeographyPoint along with other (optional)
 	// properties.
 	// JIRA: CPOUI5ODATAV4-2877
@@ -7913,8 +7934,8 @@ sap.ui.define([
 </FlexBox>`;
 
 		this.oLogMock.expects("warning")
-			.withExactArgs("[FUTURE FATAL] Custom query option ToP will not be supported with"
-				+ " OData 4.01, see https://sdk.openui5.org/topic/cda632b01c1e4a988ccecab759d19380",
+			.withExactArgs("[FUTURE FATAL] Custom query option ToP not supported with OData 4.01"
+				+ ", see https://sdk.openui5.org/topic/cda632b01c1e4a988ccecab759d19380",
 				undefined, "sap.ui.model.odata.v4.ODataModel");
 		this.expectRequest("EMPLOYEES('2')?ToP=42", {Name : "Jonathan Smith"})
 			.expectChange("text", "Jonathan Smith");
@@ -7922,8 +7943,8 @@ sap.ui.define([
 		await this.createView(assert, sView);
 
 		this.oLogMock.expects("warning")
-			.withExactArgs("[FUTURE FATAL] Custom query option aPPly will not be supported with"
-				+ " OData 4.01, see https://sdk.openui5.org/topic/cda632b01c1e4a988ccecab759d19380",
+			.withExactArgs("[FUTURE FATAL] Custom query option aPPly not supported with OData 4.01"
+				+ ", see https://sdk.openui5.org/topic/cda632b01c1e4a988ccecab759d19380",
 				undefined, "sap.ui.model.odata.v4.ODataModel");
 		this.expectRequest("EMPLOYEES('2')?aPPly=foo", {Name : "Jonathan Schmidt"})
 			.expectChange("text", "Jonathan Schmidt");
@@ -17171,21 +17192,22 @@ sap.ui.define([
 	});
 
 	//*********************************************************************************************
-	// Scenario: stream property with @mediaReadLink or @odata.mediaReadLink
+	// Scenario: stream property with @odata.mediaReadLink
 	// JIRA: CPOUI5UISERVICESV3-821
 	//
 	// Property annotations contribute to $select and do not cause a "Failed to drill-down".
 	// BCP: 2170245436
 	// Setting stream property to undefined leads to implicit value.
 	// BCP: 2280039562
-["@mediaReadLink", "@odata.mediaReadLink"].forEach(function (sAnnotation) {
-	[undefined, null, "image/jpeg"].forEach(function (vMediaContentType) {
-		var sTitle = "stream property with " + sAnnotation + "=" + vMediaContentType;
+[undefined, null, "image/jpeg"].forEach(function (vMediaContentType) {
+	var sTitle = "stream property with " + vMediaContentType;
 
 	QUnit.test(sTitle, function (assert) {
 		var oContext,
 			oModel = this.createTeaBusiModel({autoExpandSelect : true}),
-			oResponse = {},
+			oResponse = {
+				"Picture@odata.mediaReadLink" : "ProductPicture('42')"
+			},
 			sView = '\
 <FlexBox binding="{/Equipments(\'1\')/EQUIPMENT_2_PRODUCT}">\
 	<Text id="url" text="{ProductPicture/Picture}"/>\
@@ -17195,7 +17217,6 @@ sap.ui.define([
 </FlexBox>',
 			that = this;
 
-		oResponse["Picture" + sAnnotation] = "ProductPicture('42')";
 		if (vMediaContentType !== undefined) {
 			oResponse["Picture@odata.mediaContentType"] = vMediaContentType;
 		}
@@ -17237,7 +17258,6 @@ sap.ui.define([
 
 			return that.waitForChanges(assert);
 		});
-	});
 	});
 });
 
@@ -55672,7 +55692,10 @@ make root = ${bMakeRoot}`;
 </FlexBox>',
 			that = this;
 
-		oModel = this.createModel("/special/cases/?sap-client=123", {autoExpandSelect : true}, {
+		oModel = this.createModel("/special/cases/?sap-client=123", {
+				autoExpandSelect : true,
+				odataVersion : "4.01"
+			}, {
 			"/special/cases/$metadata?sap-client=123"
 				: {source : "odata/v4/data/metadata_special_cases.xml"}
 		});
@@ -76264,7 +76287,7 @@ make root = ${bMakeRoot}`;
 	oProductPicture : {},
 	sResult : sTeaBusi + "Equipments('1')/EQUIPMENT_2_PRODUCT/ProductPicture/Picture"
 }, {
-	oProductPicture : {"Picture@mediaReadLink" : "/foo/bar"},
+	oProductPicture : {"Picture@odata.mediaReadLink" : "/foo/bar"},
 	sResult : "/foo/bar"
 }].forEach(function (oFixture, i) {
 	QUnit.test("CPOUI5ODATAV4-1290: complex type, Edm.Stream: " + i, function (assert) {
@@ -76339,7 +76362,7 @@ make root = ${bMakeRoot}`;
 			sProductPath = "TEAM_2_EMPLOYEES('1')/"
 				+ "EMPLOYEE_2_EQUIPMENTS(Category='Electronics',ID=1)"
 				+ "/EQUIPMENT_2_PRODUCT/",
-			oProductPicture = {"Picture@mediaReadLink" : "/foo/bar"},
+			oProductPicture = {"Picture@odata.mediaReadLink" : "/foo/bar"},
 			sView = '\
 <FlexBox id="form" binding="{path : \'/TEAMS(\\\'TEAM_01\\\')\',\
 	parameters : {\
@@ -76363,7 +76386,7 @@ make root = ${bMakeRoot}`;
 			that = this;
 
 		if (sSelect === "*") { // test fallback to service URL + property path
-			delete oProductPicture["Picture@mediaReadLink"];
+			delete oProductPicture["Picture@odata.mediaReadLink"];
 			sExpectedUrl = sTeaBusi + "TEAMS('TEAM_01')/TEAM_2_EMPLOYEES('1')"
 				+ "/EMPLOYEE_2_EQUIPMENTS(Category='Electronics',ID=1)"
 				+ "/EQUIPMENT_2_PRODUCT/ProductPicture/Picture";
