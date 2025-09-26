@@ -60,7 +60,7 @@
 		"rootView": {
 			"viewName": "sap.ui.mdc.demokit.sample.Chart.ChartJS.view.Demo",
 			"type": "XML",
-			"async": false,
+			"async": true,
 			"id": "app"
 		},
 		"dependencies": {
