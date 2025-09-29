@@ -1,0 +1,12 @@
+{
+  "1.142.0": {
+    "date": "September 2025",
+    "notes": [
+      {
+        "id": "a9440860537942a7ffb81bb24d7de8d633a70bc9",
+        "type": "FIX",
+        "text": " sap.f.DynamicPage: Layout issue prevented"
+      }
+    ]
+  }
+}

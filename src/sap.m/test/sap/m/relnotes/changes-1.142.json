@@ -3,9 +3,19 @@
     "date": "September 2025",
     "notes": [
       {
+        "id": "9ef8f1474a8be62233c9d79ca202186aa3d3a40a",
+        "type": "FIX",
+        "text": " sap.m.Breadcrumbs: Correct role applied"
+      },
+      {
         "id": "67133b806604afc076ff48027bd565bcbdd3c67b",
         "type": "FIX",
         "text": " core/Popup: Use activeElement of both light and shadow DOM to determine focus loss"
+      },
+      {
+        "id": "5fa3e2540a1cb54e8fb66d58404f6f413e0552dd",
+        "type": "FIX",
+        "text": " sap.m.IconTabHeader: Move the focus to selected tab after selectedKey is updated"
       },
       {
         "id": "3b520de1940df5afbde9de8906cd87a31b3624ee",
@@ -36,6 +46,11 @@
         "id": "47b0a485878c7b921abb09783966fbfecde890ac",
         "type": "FIX",
         "text": " sap.m.DynamicDateRange: Improve accessibility in Last/Next Options"
+      },
+      {
+        "id": "ea34fd01792975ad91008897ac38203ec9d64523",
+        "type": "FIX",
+        "text": " sap.tnt.SideNavigation: Added border to overflow popover"
       },
       {
         "id": "33d26b17f9816180f3a0246179415ad36d8a7339",
