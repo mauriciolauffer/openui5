@@ -388,6 +388,127 @@ sap.ui.define([
 				});
 			});
 
+			QUnit.test("versioning: create a two comp variants, then activate the draft, then delete one variant base on the activate version, switch to last activated version", function(assert) {
+				const sReference = "sap.ui.fl.test";
+				const mPropertyBag = {
+					reference: sReference,
+					layer: Layer.CUSTOMER,
+					storage: oConnector.storage
+				};
+				var oVariant1 = {
+					creation: "2024-05-04T12:57:32.231Z",
+					fileName: "oVariant1",
+					fileType: "variant",
+					reference: sReference,
+					layer: Layer.CUSTOMER,
+					selector: {
+						id: "selector"
+					},
+					changeType: "type"
+				};
+				var oVariant2 = {
+					creation: "2024-06-04T12:57:32.231Z",
+					fileName: "oVariant2",
+					fileType: "variant",
+					reference: sReference,
+					layer: Layer.CUSTOMER,
+					selector: {
+						id: "selector"
+					},
+					changeType: "type"
+				};
+				var aFlexObjects = [
+					oVariant1
+				].map(function(oChangeJson) {
+					return FlexObjectFactory.createFromFileContent(oChangeJson);
+				});
+				var mPropertyBagDelete = {
+					layer: Layer.CUSTOMER,
+					reference: sReference,
+					allChanges: aFlexObjects,
+					condensedChanges: [],
+					flexObjects: {
+						namespace: "",
+						layer: "",
+						"delete": {
+							variant: [
+								"oVariant1"
+							]
+						}
+					}
+				};
+				return oConnector.write({
+					flexObjects: [oVariant1, oVariant2],
+					layer: Layer.CUSTOMER
+				})
+				.then(function() {
+					return oConnector.loadFlexData({reference: sReference, version: Version.Number.Draft});
+				})
+				.then(function(aResponses) {
+					assert.strictEqual(aResponses.length, 1, "load draft data has a response");
+					assert.strictEqual(aResponses[0].comp.variants.length, 2, "two variant is save");
+					assert.strictEqual(aResponses[0].comp.variants[0].fileName, "oVariant1", "the file name is correct");
+					assert.strictEqual(aResponses[0].comp.variants[1].fileName, "oVariant2", "the file name is correct");
+					return loadVersionFromStorage(mPropertyBag);
+				})
+				.then(function(aResponses) {
+					assert.strictEqual(aResponses.length, 1, "load version has a response");
+					const oVersion = aResponses[0].changeDefinition;
+					assert.strictEqual(oVersion.isDraft, true, "isDraft is true");
+					assert.strictEqual(oVersion.version, Version.Number.Draft, "version is a draft");
+					assert.strictEqual(oVersion.filenames[0], "oVariant1", "draft file name is correct");
+					assert.strictEqual(oVersion.filenames[1], "oVariant2", "draft file name is correct");
+					mPropertyBag.version = Version.Number.Draft;
+					return oConnector.versions.activate.call(oConnector, mPropertyBag);
+				})
+				.then(function(aResponses) {
+					assert.notEqual(aResponses.version, Version.Number.Draft, "activated version is not a draft anymore");
+					assert.equal(aResponses.isDraft, false, "isDraft is false");
+					return oConnector.loadFlexData({reference: sReference});
+				})
+				.then(function(aResponses) {
+					assert.strictEqual(aResponses.length, 1, "load data has a response");
+					assert.strictEqual(aResponses[0].comp.variants.length, 2, "there are two variants");
+					assert.strictEqual(aResponses[0].comp.variants[0].fileName, "oVariant1", "the file name is correct");
+					assert.strictEqual(aResponses[0].comp.variants[1].fileName, "oVariant2", "the file name is correct");
+					return loadVersionFromStorage(mPropertyBag);
+				})
+				.then(function(aResponses) {
+					assert.strictEqual(aResponses.length, 1, "load version has a response");
+					const oVersion = aResponses[0].changeDefinition;
+					assert.strictEqual(oVersion.isDraft, false, "isDraft is false");
+					assert.notEqual(oVersion.version, Version.Number.Draft, "version is not a draft");
+					mPropertyBagDelete.parentVersion = oVersion.version;
+					return oConnector.condense(mPropertyBagDelete);
+				})
+				.then(function(oResponses) {
+					assert.strictEqual(oResponses.response.length, 0, "delete variant1 is success");
+					return oConnector.loadFlexData({reference: sReference, version: Version.Number.Draft});
+				})
+				.then(function(aResponses) {
+					assert.strictEqual(aResponses.length, 1, "load draft data has a response");
+					assert.strictEqual(aResponses[0].comp.variants.length, 1, "a change and a draft change is save");
+					assert.strictEqual(aResponses[0].comp.variants[0].fileName, "oVariant2", "the file name is correct");
+					return loadVersionFromStorage(mPropertyBag);
+				})
+				.then(function(aResponses) {
+					assert.strictEqual(aResponses.length, 2, "load version has a two response");
+					const oActiveVersion = aResponses.find((oVersion) => oVersion.changeDefinition.isDraft === false).changeDefinition;
+					const oDraftVersion = aResponses.find((oVersion) => oVersion.changeDefinition.isDraft === true).changeDefinition;
+					assert.strictEqual(oDraftVersion.isDraft, true, "isDraft is true");
+					assert.equal(oDraftVersion.version, Version.Number.Draft, "version is a draft");
+					assert.strictEqual(oDraftVersion.filenames[0], "oVariant1_hide", "draft file name is correct");
+					assert.notEqual(oActiveVersion.version, Version.Number.Draft, "active version is not a draft");
+					return oConnector.loadFlexData({reference: sReference, version: oActiveVersion.version});
+				})
+				.then(function(aResponses) {
+					assert.strictEqual(aResponses.length, 1, "load draft data has a response");
+					assert.strictEqual(aResponses[0].comp.variants.length, 2, "a change is save");
+					assert.strictEqual(aResponses[0].comp.variants[0].fileName, "oVariant1", "the file name is correct");
+					assert.strictEqual(aResponses[0].comp.variants[1].fileName, "oVariant2", "the file name is correct");
+				});
+			});
+
 			QUnit.test("when loadFeatures is called", function(assert) {
 				return oConnector.loadFeatures().then(function(oFeatures) {
 					if (bPublicLayer) {
