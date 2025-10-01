@@ -2,8 +2,12 @@
  * ${copyright}
  */
 sap.ui.define([
-	"sap/ui/support/library"
-], function(SupportLibrary) {
+	"sap/ui/support/library",
+	"sap/base/Log"
+], (
+	SupportLibrary,
+	Log
+) => {
 	"use strict";
 
 	const Categories = SupportLibrary.Categories;
@@ -174,6 +178,42 @@ sap.ui.define([
 		}
 	};
 
-	return [oHeaderVisibleFalseAndHiddenToolbar, oHeaderSet, oIllustratedMessageForNoData, oRowCountDisabled, oActionsAndVariantsAndQuickFilterNotUsed, oExportDisabled];
+	const oStateValidation = {
+		id: "StateValidation",
+		audiences: [Audiences.Control],
+		categories: [Categories.Functionality],
+		enabled: true,
+		minversion: "1.141",
+		title: "Table reports invalid state modifications",
+		description: "The table contains state modifications, for example sort conditions, for non-existent PropertyInfo properties",
+		resolution: "Remove the invalid state modifications or add the missing PropertyInfo properties",
+		check: function(oIssueManager, oCoreFacade, oScope) {
+			oScope.getElementsByClassName("sap.ui.mdc.Table").forEach((oTable) => {
+				Log.getLogEntries().filter((oLogEntry) =>
+					oLogEntry.details === oTable.toString()
+					&& oLogEntry.level === Log.Level.ERROR
+					&& oLogEntry.message.startsWith("Invalid state:")
+				).forEach((oLogEntry) => {
+					oIssueManager.addIssue({
+						severity: Severity.High,
+						details: oLogEntry.message,
+						context: {
+							id: oTable.getId()
+						}
+					});
+				});
+			});
+		}
+	};
+
+	return [
+		oHeaderVisibleFalseAndHiddenToolbar,
+		oHeaderSet,
+		oIllustratedMessageForNoData,
+		oRowCountDisabled,
+		oActionsAndVariantsAndQuickFilterNotUsed,
+		oExportDisabled,
+		oStateValidation
+	];
 
 }, true);
