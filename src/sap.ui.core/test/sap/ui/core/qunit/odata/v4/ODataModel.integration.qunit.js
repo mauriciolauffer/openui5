@@ -965,6 +965,7 @@ sap.ui.define([
 			// {map<string, true>}
 			// If an ID is in this.mIgnoredChanges, change events with null are ignored
 			this.mIgnoredChanges = {};
+			this.bIgnoreOrder4GET = false; // whether GET request order is (exceptionally) ignored
 			// {map<string, boolean|undefined>}
 			// whether a control is part of a list or not; used when expecting changes;
 			// undefined means we don't know yet because a null change is expected w/o index
@@ -1172,6 +1173,7 @@ sap.ui.define([
 					|| Messaging.getMessageModel().getObject("/").length < this.aMessages.length) {
 				setTimeout(this.checkFinish.bind(this, assert), 4);
 			} else if (this.resolve) {
+				this.bIgnoreOrder4GET = false;
 				this.resolve();
 				this.resolve = null;
 			}
@@ -1340,9 +1342,7 @@ sap.ui.define([
 		 * Removes the found request from the list.
 		 *
 		 * @param {object} oActualRequest The actual request
-		 * @returns {Array<object,number>} An array with two elements:
-		 *   - The matching expected request or undefined if none was found
-		 *   - The index where the request was found in the list
+		 * @returns {object} The matching expected request or undefined if none was found
 		 */
 		consumeExpectedRequest : function (oActualRequest) {
 			var oExpectedRequest, i;
@@ -1351,11 +1351,11 @@ sap.ui.define([
 				oExpectedRequest = this.aRequests[i];
 				if (oExpectedRequest.url === oActualRequest.url) {
 					this.aRequests.splice(i, 1);
-					return [oExpectedRequest, i];
+					return oExpectedRequest;
 				}
 			}
 
-			return [this.aRequests.shift(), 0]; // consume the first candidate to get a diff
+			return this.aRequests.shift(); // consume the first candidate to get a diff
 		},
 
 		/**
@@ -1977,8 +1977,9 @@ sap.ui.define([
 						headers : _Helper.resolveIfMatchHeader(mHeaders),
 						payload : typeof vPayload === "string" ? JSON.parse(vPayload) : vPayload
 					},
-					oExpectedRequest,
-					iFoundAt,
+					oExpectedRequest = that.bIgnoreOrder4GET && sMethod === "GET"
+						? that.consumeExpectedRequest(oActualRequest)
+						: that.aRequests.shift(),
 					oResponse,
 					mResponseHeaders,
 					bWaitForResponse = true;
@@ -1997,7 +1998,6 @@ sap.ui.define([
 				delete oActualRequest.headers["Accept"];
 				delete oActualRequest.headers["Accept-Language"];
 				delete oActualRequest.headers["Content-Type"];
-				[oExpectedRequest, iFoundAt] = that.consumeExpectedRequest(oActualRequest);
 				if (oExpectedRequest) {
 					if (!oExpectedRequest.headers) {
 						oExpectedRequest.headers = {};
@@ -2035,9 +2035,6 @@ sap.ui.define([
 					}
 					if ("$ContentID" in oExpectedRequest) {
 						oActualRequest.$ContentID = sContentID;
-					}
-					if (iFoundAt > 0 && sMethod !== "GET") {
-						oActualRequest.__error__ = `Request is ${iFoundAt} step(s) ahead!`;
 					}
 					assert.deepEqual(oActualRequest, oExpectedRequest,
 						`${sMethod} ${TestUtils.makeUrlReadable(sUrl)} (batchNo: ${iBatchNo})`);
@@ -5006,9 +5003,6 @@ sap.ui.define([
 					CompanyName : "TECUM*2"
 				})
 				.expectChange("companyName", "TECUM*2")
-				.expectRequest("SalesOrderList('SO1')?sap-client=123&$select=SalesOrderID", {
-					SalesOrderID : "SO1"
-				})
 				.expectRequest("SalesOrderList('SO1')/SO_2_SOITEM?sap-client=123"
 					+ "&$select=GrossAmount,ItemPosition,Note,Quantity,SalesOrderID"
 					+ "&$skip=0&$top=100", {
@@ -5025,6 +5019,9 @@ sap.ui.define([
 						Quantity : "2",
 						SalesOrderID : "SO1"
 					}]
+				})
+				.expectRequest("SalesOrderList('SO1')?sap-client=123&$select=SalesOrderID", {
+					SalesOrderID : "SO1"
 				})
 				.expectChange("grossAmount", ["42.1", "23.1"])
 				.expectChange("note", ["Note 0010*2", "Note 0020*2"])
@@ -8926,8 +8923,6 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					["PropertyBinding: /SalesOrderList('0500000001')|Note", "change",
 						{reason : "refresh"}]
 				])
-				.expectRequest("SalesOrderList('0500000001')?$select=Note,SalesOrderID",
-					{SalesOrderID : "0500000001", Note : "refreshed"})
 				.expectRequest("SalesOrderList('0500000001')/SO_2_SOITEM?$select=ItemPosition,"
 					+ "SalesOrderID&$skip=0&$top=100", {
 					value : [
@@ -8936,6 +8931,8 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 						{ItemPosition : "0000000030"}
 					]
 				})
+				.expectRequest("SalesOrderList('0500000001')?$select=Note,SalesOrderID",
+					{SalesOrderID : "0500000001", Note : "refreshed"})
 				.expectChange("count", "3")
 				.expectChange("note", "refreshed")
 				.expectChange("item", [,, "0000000030"]);
@@ -10443,7 +10440,19 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 </FlexBox>',
 			that = this;
 
-		this.expectRequest("SalesOrderList('42')?$select=Messages,SalesOrderID", {
+		this.expectRequest("SalesOrderList('42')/SO_2_SOITEM"
+				+ "?$select=ItemPosition,Quantity,SalesOrderID&$skip=0&$top=100", {
+				value : [{
+					ItemPosition : "0010",
+					SalesOrderID : "42",
+					Quantity : "1"
+				}, {
+					ItemPosition : "0020",
+					SalesOrderID : "42",
+					Quantity : "3"
+				}]
+			})
+			.expectRequest("SalesOrderList('42')?$select=Messages,SalesOrderID", {
 				Messages : [{
 					code : "23",
 					message : "Enter a minimum quantity of 2",
@@ -10456,18 +10465,6 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					target : "SO_2_SOITEM"
 				}],
 				SalesOrderID : "42"
-			})
-			.expectRequest("SalesOrderList('42')/SO_2_SOITEM"
-				+ "?$select=ItemPosition,Quantity,SalesOrderID&$skip=0&$top=100", {
-				value : [{
-					ItemPosition : "0010",
-					SalesOrderID : "42",
-					Quantity : "1"
-				}, {
-					ItemPosition : "0020",
-					SalesOrderID : "42",
-					Quantity : "3"
-				}]
 			})
 			.expectChange("salesOrderID", "42")
 			.expectChange("quantity", ["1.000", "3.000"])
@@ -21303,11 +21300,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 </FlexBox>',
 			that = this;
 
-		this.expectRequest("MANAGERS('1')?$select=ID,TEAM_ID", {
-				ID : "1",
-				TEAM_ID : "TEAM_03"
-			})
-			.expectRequest("MANAGERS('1')/" + sFunctionName + "()?$select=ID,Name", {
+		this.expectRequest("MANAGERS('1')/" + sFunctionName + "()?$select=ID,Name", {
 				value : [{
 					ID : "3",
 					Name : "Jonathan Smith"
@@ -21317,6 +21310,10 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				}]
 			}, {
 				"sap-messages" : JSON.stringify([oMessage])
+			})
+			.expectRequest("MANAGERS('1')?$select=ID,TEAM_ID", {
+				ID : "1",
+				TEAM_ID : "TEAM_03"
 			})
 			.expectMessages([{
 				code : "foo-42",
@@ -30576,11 +30573,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			oTable = that.oView.byId("table");
 
-			that.expectRequest("TEAMS('42')?$select=MEMBER_COUNT,Team_Id", {
-					MEMBER_COUNT : 10,
-					Team_Id : "42"
-				})
-				.expectRequest("TEAMS('42')/TEAM_2_EMPLOYEES"
+			that.expectRequest("TEAMS('42')/TEAM_2_EMPLOYEES"
 					+ "?$apply=com.sap.vocabularies.Hierarchy.v1.TopLevels("
 						+ "HierarchyNodes=$root/TEAMS('42')/TEAM_2_EMPLOYEES"
 						+ ",HierarchyQualifier='OrgChart',NodeProperty='ID',Levels=1)"
@@ -30598,6 +30591,10 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 						},
 						TEAM_ID : "42"
 					}]
+				})
+				.expectRequest("TEAMS('42')?$select=MEMBER_COUNT,Team_Id", {
+					MEMBER_COUNT : 10,
+					Team_Id : "42"
 				});
 
 			const oBinding = oTable.getBinding("rows");
@@ -31182,13 +31179,13 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					MANAGER_ID : null,
 					Name : "Aleph: ℵ" // side effect
 				})
-				.expectRequest("#6 EMPLOYEES/$count", 25)
 				.expectRequest("#6 EMPLOYEES?$select=AGE,ID&$filter=ID eq '0'", {
 					value : [{
 						AGE : 160,
 						ID : "0"
 					}]
 				})
+				.expectRequest("#6 EMPLOYEES/$count", 25)
 				.expectChange("count", "25")
 				.expectRequest("#7 " + sTopLevelsUrl + "&$filter=ID eq '9'&$select=LimitedRank", {
 					value : [{
@@ -41045,7 +41042,6 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		this.expectRequest("#3 POST EMPLOYEES?custom=foo", {
 				payload : {Name : "Zeta"}
 			}, {ID : "6", Name : "Zeta"})
-			.expectRequest("#3 " + sCountUrl, 6)
 			// Beta becomes visible, but oFirstLevel reads more due to the transient element Zeta
 			.expectRequest("#3 " + sUrl
 				+ "&$select=DescendantCount,DistanceFromRoot,DrillState,ID,Name&$skip=0&$top=2", {
@@ -41063,6 +41059,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					Name : "Beta"
 				}]
 			})
+			.expectRequest("#3 " + sCountUrl, 6)
 			.expectRequest(sUrl + "&$filter=ID eq '6'&$select=LimitedRank",
 				{value : [{LimitedRank : "5"}]});
 
@@ -51493,7 +51490,7 @@ make root = ${bMakeRoot}`;
 			// code under test
 			return Promise.all([
 				oAction.invoke(undefined, undefined, undefined, bReplaceWithRVC),
-				that.waitForChanges(assert)
+				that.waitForChanges(assert, sAction)
 			]).then(function (aPromiseResults) {
 				var oContext = aPromiseResults[0]; // the return value context
 
@@ -51620,8 +51617,13 @@ make root = ${bMakeRoot}`;
 		}).then(function () {
 			return action("ActivationAction", "42", "The Beatles (modified)");
 		}).then(function () {
-			expectArtistRequest("23", false);
-			expectPublicationRequest("23", false);
+			if (oFixture.hiddenBinding) {
+				expectArtistRequest("23", false);
+				expectPublicationRequest("23", false);
+			} else {
+				expectPublicationRequest("23", false);
+				expectArtistRequest("23", false);
+			}
 
 			// now start directly with the entity
 			return bindObjectPage("/Artists(ArtistID='23',IsActiveEntity=false)");
@@ -52484,17 +52486,17 @@ make root = ${bMakeRoot}`;
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest("EMPLOYEES('43')/EMPLOYEE_2_EQUIPMENTS?$select=Category,ID"
+			that.expectRequest("EMPLOYEES('43')?$select=ID&$expand=EMPLOYEE_2_MANAGER($select=ID)",
+				{
+					ID : "43",
+					EMPLOYEE_2_MANAGER : {ID : "2"}
+				})
+				.expectRequest("EMPLOYEES('43')/EMPLOYEE_2_EQUIPMENTS?$select=Category,ID"
 					+ "&$skip=0&$top=100", {
 					value : [
 						{Category : "Electronics", ID : 97},
 						{Category : "Electronics", ID : 96}
 					]
-				})
-				.expectRequest("EMPLOYEES('43')?$select=ID&$expand=EMPLOYEE_2_MANAGER($select=ID)",
-				{
-					ID : "43",
-					EMPLOYEE_2_MANAGER : {ID : "2"}
 				})
 				.expectChange("managerId", "2")
 				.expectChange("equipmentId", ["97", "96"]);
@@ -54687,9 +54689,9 @@ make root = ${bMakeRoot}`;
 				.withExactArgs("Failed to get contexts for " + sTeaBusi
 						+ "TEAMS('TEAM_01')/TEAM_2_EMPLOYEES with start index 0 and length 100",
 					sinon.match.string, sODLB);
-			that.expectRequest("TEAMS('TEAM_01')?$select=Team_Id", oError1)
-				.expectRequest("TEAMS('TEAM_01')/TEAM_2_EMPLOYEES?$select=ID,Name"
+			that.expectRequest("TEAMS('TEAM_01')/TEAM_2_EMPLOYEES?$select=ID,Name"
 					+ "&$skip=0&$top=100", oError2)
+				.expectRequest("TEAMS('TEAM_01')?$select=Team_Id", oError1)
 				.expectMessages([{
 					message : "404 Not Found",
 					persistent : true,
@@ -56355,7 +56357,17 @@ make root = ${bMakeRoot}`;
 </FlexBox>',
 			that = this;
 
-		this.expectRequest("Artists(ArtistID='42',IsActiveEntity=true)"
+		this.expectRequest("Artists(ArtistID='42',IsActiveEntity=true)/BestFriend/_Publication"
+				+ "?$select=CurrencyCode,PublicationID&$skip=0&$top=100", {
+				value : [{
+					CurrencyCode : "EUR",
+					PublicationID : "1"
+				}, {
+					CurrencyCode : "USD",
+					PublicationID : "2"
+				}]
+			})
+			.expectRequest("Artists(ArtistID='42',IsActiveEntity=true)"
 				+ "?$select=ArtistID,IsActiveEntity"
 				+ "&$expand=BestFriend($select=ArtistID,IsActiveEntity,Name;"
 					+ "$expand=BestPublication($select=CurrencyCode,PublicationID))", {
@@ -56370,16 +56382,6 @@ make root = ${bMakeRoot}`;
 					IsActiveEntity : true,
 					Name : "Best Friend"
 				}
-			})
-			.expectRequest("Artists(ArtistID='42',IsActiveEntity=true)/BestFriend/_Publication"
-				+ "?$select=CurrencyCode,PublicationID&$skip=0&$top=100", {
-				value : [{
-					CurrencyCode : "EUR",
-					PublicationID : "1"
-				}, {
-					CurrencyCode : "USD",
-					PublicationID : "2"
-				}]
 			})
 			.expectChange("currency", ["EUR", "USD"])
 			.expectChange("bestPublication::currency", "JPY")
@@ -57934,8 +57936,19 @@ make root = ${bMakeRoot}`;
 		}
 
 		function expectDetailRequests() {
-			// Note: this is requested anyway by autoExpandSelect, thus we might as well show it
-			that.expectRequest("BusinessPartnerList('0500000000')/BP_2_SO('42')"
+			that.expectRequest("SalesOrderList('42')/SO_2_BP/BP_2_SO('23')"
+					+ "?$select=BillingStatus,SalesOrderID", {
+					BillingStatus : "UNKNOWN",
+					Messages : [{
+						code : "00",
+						message : "Unknown billing status",
+						numericSeverity : 3,
+						target : "BillingStatus"
+					}],
+					SalesOrderID : "23"
+				})
+				// Note: this is requested anyway by autoExpandSelect, thus we might as well show it
+				.expectRequest("BusinessPartnerList('0500000000')/BP_2_SO('42')"
 					+ "?$select=SalesOrderID", {
 					SalesOrderID : "42"
 				})
@@ -57958,17 +57971,6 @@ make root = ${bMakeRoot}`;
 						ProductID : "HT-1007",
 						SalesOrderID : "42"
 					}]
-				})
-				.expectRequest("SalesOrderList('42')/SO_2_BP/BP_2_SO('23')"
-					+ "?$select=BillingStatus,SalesOrderID", {
-					BillingStatus : "UNKNOWN",
-					Messages : [{
-						code : "00",
-						message : "Unknown billing status",
-						numericSeverity : 3,
-						target : "BillingStatus"
-					}],
-					SalesOrderID : "23"
 				})
 				.expectMessages([{
 					code : "23",
@@ -58052,8 +58054,10 @@ make root = ${bMakeRoot}`;
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			// set context for details again - don't use cached data
+			// Note: #expectRequest out-of-order here! SO_2_SOITEM is requested first now
+			that.bIgnoreOrder4GET = true;
 			expectDetailRequests();
+			// set context for details again - don't use cached data
 			selectFirst();
 
 			return that.waitForChanges(assert);
@@ -59975,7 +59979,10 @@ make root = ${bMakeRoot}`;
 </FlexBox>',
 			that = this;
 
-		this.expectRequest("Artists(ArtistID='1',IsActiveEntity=true)/BestFriend"
+		this.expectRequest("Artists(ArtistID='1',IsActiveEntity=true)/BestFriend/_Publication"
+				+ "?$select=Price,PublicationID&$skip=0&$top=100",
+				{value : [{Price : "19.99", PublicationID : "P1"}]})
+			.expectRequest("Artists(ArtistID='1',IsActiveEntity=true)/BestFriend"
 				+ "?$select=ArtistID,IsActiveEntity,Messages,Name", {
 				ArtistID : "2",
 				IsActiveEntity : true,
@@ -59986,9 +59993,6 @@ make root = ${bMakeRoot}`;
 				}],
 				Name : "The Beatles"
 			})
-			.expectRequest("Artists(ArtistID='1',IsActiveEntity=true)/BestFriend/_Publication"
-				+ "?$select=Price,PublicationID&$skip=0&$top=100",
-				{value : [{Price : "19.99", PublicationID : "P1"}]})
 			.expectChange("id", "2")
 			.expectChange("name", "The Beatles")
 			.expectChange("price", ["19.99"])
@@ -60637,11 +60641,7 @@ make root = ${bMakeRoot}`;
 </FlexBox>',
 			that = this;
 
-		this.expectRequest("As(1)?$select=AID,AValue", {
-				AID : 1,
-				AValue : 42
-			})
-			.expectRequest("As(1)/AtoB?$select=BID,BValue", {
+		this.expectRequest("As(1)/AtoB?$select=BID,BValue", {
 				BID : 2,
 				BValue : 102
 			})
@@ -60650,6 +60650,10 @@ make root = ${bMakeRoot}`;
 					{DID : 3, DValue : 103},
 					{DID : 4, DValue : 104}
 				]
+			})
+			.expectRequest("As(1)?$select=AID,AValue", {
+				AID : 1,
+				AValue : 42
 			})
 			.expectChange("aValue", ["42", "42"]);
 
@@ -60872,15 +60876,7 @@ make root = ${bMakeRoot}`;
 	</Table>\
 </FlexBox>';
 
-		this.expectRequest("Bs(1)?$select=BID,BValue&$expand=BtoDs($select=DID)", {
-				BID : 1,
-				BValue : 101,
-				BtoDs : [
-					{DID : 2},
-					{DID : 3}
-				]
-			})
-			.expectRequest("Bs(1)/BtoDs?$select=DID&$expand=DtoB($select=BID,BValue)"
+		this.expectRequest("Bs(1)/BtoDs?$select=DID&$expand=DtoB($select=BID,BValue)"
 				+ "&$skip=0&$top=100", {
 				value : [{
 					DID : 2,
@@ -60889,6 +60885,14 @@ make root = ${bMakeRoot}`;
 					DID : 3,
 					DtoB : {BID : 1, BValue : 101}
 				}]
+			})
+			.expectRequest("Bs(1)?$select=BID,BValue&$expand=BtoDs($select=DID)", {
+				BID : 1,
+				BValue : 101,
+				BtoDs : [
+					{DID : 2},
+					{DID : 3}
+				]
 			})
 			.expectChange("bValue", "101")
 			.expectChange("bValue::table1", ["101", "101"])
@@ -61944,11 +61948,9 @@ make root = ${bMakeRoot}`;
 </FlexBox>',
 			that = this;
 
-		this.expectRequest("SalesOrderList('42')?$select=Messages,Note,SalesOrderID", {
-				Note : "Note",
-				SalesOrderID : "42"
-			})
-			.expectChange("note", "Note")
+		this.expectRequest("SalesOrderList('42')/SO_2_SCHDL?$select=ScheduleKey&$skip=0&$top=100",
+				{value : [{ScheduleKey : "A"}]})
+			.expectChange("key", ["A"])
 			.expectRequest("SalesOrderList('42')/SO_2_SOITEM?$select=GrossAmount,ItemPosition"
 				+ ",SalesOrderID&$skip=0&$top=100", {
 				value : [
@@ -61958,9 +61960,11 @@ make root = ${bMakeRoot}`;
 			})
 			.expectChange("position", ["0010", "0020"])
 			.expectChange("amount", ["3.14", "2.72"])
-			.expectRequest("SalesOrderList('42')/SO_2_SCHDL?$select=ScheduleKey&$skip=0&$top=100",
-				{value : [{ScheduleKey : "A"}]})
-			.expectChange("key", ["A"]);
+			.expectRequest("SalesOrderList('42')?$select=Messages,Note,SalesOrderID", {
+				Note : "Note",
+				SalesOrderID : "42"
+			})
+			.expectChange("note", "Note");
 
 		return this.createView(assert, sView, oModel).then(function () {
 			oContext = that.oView.byId("items").getItems()[0].getBindingContext();
@@ -63046,11 +63050,11 @@ make root = ${bMakeRoot}`;
 		return this.createView(assert, sView, oModel).then(function () {
 			var oContext = that.oView.byId("table").getItems()[0].getBindingContext();
 
-			that.expectRequest("TEAMS('TEAM_01')/TEAM_2_EMPLOYEES?$select=ID,Name&$skip=0&$top=100",
+			that.expectRequest("TEAMS('TEAM_01')?$select=MANAGER_ID", {MANAGER_ID : "5"})
+				.expectChange("managerId", "5")
+				.expectRequest("TEAMS('TEAM_01')/TEAM_2_EMPLOYEES?$select=ID,Name&$skip=0&$top=100",
 					{value : [{ID : "2", Name : "Frederic Fall"}]})
-				.expectChange("name", ["Frederic Fall"])
-				.expectRequest("TEAMS('TEAM_01')?$select=MANAGER_ID", {MANAGER_ID : "5"})
-				.expectChange("managerId", "5");
+				.expectChange("name", ["Frederic Fall"]);
 
 			// code under test: bindings inside "detail" form need to send their own requests
 			that.oView.byId("detail").setBindingContext(oContext);
@@ -64614,13 +64618,13 @@ make root = ${bMakeRoot}`;
 
 		this.expectRequest("EMPLOYEES('1')?$select=ID,Name", {ID : "1", Name : "Frederic Fall"})
 			.expectChange("name1", "Frederic Fall")
-			.expectRequest("EMPLOYEES('2')?$select=ID,Name", {ID : "2", Name : "Jonathan Smith"})
-			.expectChange("name2", "Jonathan Smith")
 			.expectRequest("MANAGERS?$select=ID&$skip=0&$top=3", {
 				value : [{ID : "M1"}, {ID : "M2"}, {ID : "M3"}]
 			})
 			.expectChange("id1", ["M1", "M2", "M3"])
-			.expectChange("id2", ["M1", "M2", "M3"]);
+			.expectChange("id2", ["M1", "M2", "M3"])
+			.expectRequest("EMPLOYEES('2')?$select=ID,Name", {ID : "2", Name : "Jonathan Smith"})
+			.expectChange("name2", "Jonathan Smith");
 
 		return this.createView(assert, sView, oModel).then(function () {
 			that.expectRequest("MANAGERS?$select=ID&$orderby=ID desc&$skip=0&$top=3", {
@@ -67084,9 +67088,9 @@ make root = ${bMakeRoot}`;
 	text="{/Artists(ArtistUUID=xyz,IsActiveEntity=false)/BestPublication/CurrencyCode}"/>';
 
 		this.expectRequest("Artists(ArtistUUID=xyz,IsActiveEntity=false)/BestPublication"
-				+ "?$select=Price,PublicationID", oNO_CONTENT)
-			.expectRequest("Artists(ArtistUUID=xyz,IsActiveEntity=false)/BestPublication"
 				+ "/CurrencyCode", oNO_CONTENT)
+			.expectRequest("Artists(ArtistUUID=xyz,IsActiveEntity=false)/BestPublication"
+				+ "?$select=Price,PublicationID", oNO_CONTENT)
 			.expectChange("price", null)
 			.expectChange("currency", sGroupId === "$direct" ? null : "");
 
@@ -68731,7 +68735,14 @@ make root = ${bMakeRoot}`;
 </FlexBox>',
 			that = this;
 
-			this.expectRequest("Artists(ArtistID='A1',IsActiveEntity=true)"
+			this.expectRequest("Artists(ArtistID='A1',IsActiveEntity=true)/_Publication"
+					+ "?$select=Price,PublicationID&$skip=0&$top=100", {
+					value : [
+						{PublicationID : "P1", Price : "7.99"},
+						{PublicationID : "P2", Price : "12.99"}
+					]
+				})
+				.expectRequest("Artists(ArtistID='A1',IsActiveEntity=true)"
 					+ "?$select=ArtistID,IsActiveEntity,Messages", {
 					ArtistID : "1",
 					IsActiveEntity : true,
@@ -68740,13 +68751,6 @@ make root = ${bMakeRoot}`;
 						numericSeverity : 1,
 						target : "_Publication('P1')/Price"
 					}]
-				})
-				.expectRequest("Artists(ArtistID='A1',IsActiveEntity=true)/_Publication"
-					+ "?$select=Price,PublicationID&$skip=0&$top=100", {
-					value : [
-						{PublicationID : "P1", Price : "7.99"},
-						{PublicationID : "P2", Price : "12.99"}
-					]
 				})
 				.expectChange("id", "1")
 				.expectChange("listPrice", ["7.99", "12.99"])
@@ -68997,6 +69001,9 @@ make root = ${bMakeRoot}`;
 		});
 
 		return this.createView(assert, sView, oModel).then(function () {
+			if (oFixture.title.startsWith("(2)")) {
+				that.bIgnoreOrder4GET = true;
+			}
 			oObjectPage = that.oView.byId("objectPage");
 
 			if (oFixture.list === 1) {
@@ -69530,12 +69537,7 @@ make root = ${bMakeRoot}`;
 
 			return that.waitForChanges(assert, "resume");
 		}).then(function () {
-			that.expectRequest("Artists(ArtistID='3',IsActiveEntity=false)"
-					+ "?$select=ArtistID,IsActiveEntity", {
-					ArtistID : "3",
-					IsActiveEntity : false
-				}) // Note: key properties for kept-alive contexts are always requested
-				.expectRequest("Artists?$select=ArtistID,IsActiveEntity,Name,defaultChannel,"
+			that.expectRequest("Artists?$select=ArtistID,IsActiveEntity,Name,defaultChannel,"
 					// BCP 2380040680: the filter is not invalid because of missing key for '3'
 					+ "lastUsedChannel&$filter=ArtistID eq '1' and IsActiveEntity eq false", {
 					value : [{
@@ -69553,7 +69555,12 @@ make root = ${bMakeRoot}`;
 						Name : "The Beatles (changed)",
 						defaultChannel : "01"
 					}]
-				});
+				})
+				.expectRequest("Artists(ArtistID='3',IsActiveEntity=false)"
+					+ "?$select=ArtistID,IsActiveEntity", {
+					ArtistID : "3",
+					IsActiveEntity : false
+				}); // Note: key properties for kept-alive contexts are always requested
 
 			oContext = oModel.getKeepAliveContext("/Artists(ArtistID='3',IsActiveEntity=false)");
 
@@ -71281,12 +71288,12 @@ make root = ${bMakeRoot}`;
 
 			oCountBinding2.setContext(oContext);
 
-			that.expectRequest("SalesOrderList/$count?$apply=A.P.P.L.E.&$filter=GrossAmount gt 123"
+			that.expectRequest("SalesOrderList/$count?$apply=A.P.P.L.E.&$filter=GrossAmount gt 789"
+					+ "&$search=covfefe", 789)
+				.expectRequest("SalesOrderList/$count?$apply=A.P.P.L.E.&$filter=GrossAmount gt 123"
 					+ "&$search=covfefe", 123)
 				.expectRequest("SalesOrderList/$count?$apply=A.P.P.L.E.&$filter=GrossAmount gt 456"
-					+ "&$search=covfefe", 456)
-				.expectRequest("SalesOrderList/$count?$apply=A.P.P.L.E.&$filter=GrossAmount gt 789"
-					+ "&$search=covfefe", 789);
+					+ "&$search=covfefe", 456);
 
 			return Promise.all([
 				oCountBinding0.requestValue(),
@@ -75882,17 +75889,17 @@ make root = ${bMakeRoot}`;
 					Note : "Note*",
 					SalesOrderID : "new"
 				})
-				.expectChange("note", "Note*")
-				.expectRequest("SalesOrderList('new')/SO_2_SOITEM?$select=ItemPosition,SalesOrderID"
-					+ "&$skip=0&$top=100",
-					{value : []}
-				);
+				.expectChange("note", "Note*");
 			if (bOwnRequest) {
 				that.expectRequest("SalesOrderList('new')?$select=Note,SalesOrderID", {
 						Note : "Note*",
 						SalesOrderID : "new"
 					});
 			}
+			that.expectRequest("SalesOrderList('new')/SO_2_SOITEM?$select=ItemPosition,SalesOrderID"
+					+ "&$skip=0&$top=100",
+					{value : []}
+				);
 
 			return Promise.all([
 				oOrderContext.created(),
@@ -76033,17 +76040,17 @@ make root = ${bMakeRoot}`;
 			this.waitForChanges(assert)
 		]);
 
-		this.expectRequest("TEAMS('TEAM_01')/TEAM_2_EMPLOYEES?$select=ID,Name&$skip=0&$top=100", {
+		this.expectRequest("TEAMS('TEAM_01')?$select=Name", {
+				Name : "Team #1 (updated)"
+			})
+			.expectChange("teamName", "Team #1 (updated)")
+			.expectRequest("TEAMS('TEAM_01')/TEAM_2_EMPLOYEES?$select=ID,Name&$skip=0&$top=100", {
 				value : [{
 					ID : "2",
 					Name : "Frederic Summer"
 				}]
 			})
-			.expectChange("employeeName", ["Frederic Summer"])
-			.expectRequest("TEAMS('TEAM_01')?$select=Name", {
-				Name : "Team #1 (updated)"
-			})
-			.expectChange("teamName", "Team #1 (updated)");
+			.expectChange("employeeName", ["Frederic Summer"]);
 
 		const oHeaderContext = oEmployeeContext.getBinding().getHeaderContext();
 
@@ -80199,8 +80206,11 @@ make root = ${bMakeRoot}`;
 		}
 		let fnResolveBestFriend;
 		let fnResolveSiblingEntity;
+		if (bAutoExpandSelect) { // Note: #expectRequest out-of-order below!
+			this.bIgnoreOrder4GET = true;
+		}
 		this.expectRequest(sMainUrl + "&$skip=0&$top=2", {
-				batchNo : bAutoExpandSelect ? 3 : 1 // Note: #expectRequest out-of-order here!
+				batchNo : bAutoExpandSelect ? 3 : 1
 			}, {
 				"@odata.count" : "8",
 				value : [{
@@ -81099,7 +81109,13 @@ make root = ${bMakeRoot}`;
 
 		await this.waitForChanges(assert, "load keep alive context 0");
 
-		this.expectRequest("EMPLOYEES?$expand=EMPLOYEE_2_TEAM($select=Name,Team_Id)&$select=ID"
+		this.expectRequest("EMPLOYEES?$select=ID,Name&$skip=0&$top=1", {
+				value : [{ // ETag irrelevant
+					ID : "0",
+					Name : "Frederic Fall"
+				}]
+			})
+			.expectRequest("EMPLOYEES?$expand=EMPLOYEE_2_TEAM($select=Name,Team_Id)&$select=ID"
 				+ "&$skip=0&$top=1", {
 				value : [{
 					EMPLOYEE_2_TEAM : {
@@ -81108,12 +81124,6 @@ make root = ${bMakeRoot}`;
 						Team_Id : "A"
 					},
 					ID : "0"
-				}]
-			})
-			.expectRequest("EMPLOYEES?$select=ID,Name&$skip=0&$top=1", {
-				value : [{ // ETag irrelevant
-					ID : "0",
-					Name : "Frederic Fall"
 				}]
 			})
 			.expectChange("name", ["Frederic Fall"])
