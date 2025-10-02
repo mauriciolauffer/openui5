@@ -1155,6 +1155,7 @@ sap.ui.define([
 		assert.strictEqual($InteractiveElements[1], $RowActionIcons[1], "(HTMLElement) The second returned element is the correct row action icon");
 
 		oTable.setRowActionCount(1);
+		oTable.setRowActionTemplate(TableQUnitUtils.createRowAction([{type: "Navigation"}]));
 		await nextUIUpdate();
 		$RowActionCell = getRowAction(0);
 		$RowActionIcons = $RowActionCell.find(".sapUiTableActionIcon:visible");
