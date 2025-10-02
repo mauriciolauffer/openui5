@@ -225,7 +225,9 @@ sap.ui.define([
 	FilterableListContent.prototype._findConditionsForContext = function(oContext, aConditions) {
 		const oDelegate = this.isValueHelpDelegateInitialized() && this.getValueHelpDelegate();
 		if (oContext && oDelegate) {
-			// <!-- Support for deprecated delegate method isFilterableListItemSelected
+			/**
+			 *  @deprecated since 1.118.0
+			 */
 			if (oDelegate.isFilterableListItemSelected) {
 				Log.warning("MDC.ValueHelp", "Delegate method 'isFilterableListItemSelected' is deprecated, please implement 'findConditionsForContext' instead.");
 
@@ -245,7 +247,6 @@ sap.ui.define([
 				}
 				return [];
 			}
-			// -->
 			return oDelegate.findConditionsForContext(this.getValueHelpInstance(), this, oContext, aConditions);
 		}
 		return [];
