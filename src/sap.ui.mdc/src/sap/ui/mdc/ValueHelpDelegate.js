@@ -413,6 +413,9 @@ sap.ui.define([
 	 * @since 1.106.0
 	 */
 	ValueHelpDelegate.getFilterConditions = function (oValueHelp, oContent, oConfig) {
+		/**
+		 *  @deprecated since 1.106.0
+		 */
 		if (this.getInitialFilterConditions) {
 			return this.getInitialFilterConditions(oValueHelp, oContent, (oConfig && oConfig.control) || (oContent && oContent.getControl()));
 		}
