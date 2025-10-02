@@ -1326,16 +1326,6 @@
 			]
 		},
 		{
-		  "id": "sap.m.P13nDialog",
-		  "name": "Personalization Dialog",
-		  "category": "Personalization",
-		  "since": "1.26",
-		  "samples": [
-			"sap.m.sample.P13nDialog",
-			"sap.m.sample.P13nDialogWithDimMeasurePanel"
-		  ]
-		},
-		{
 		  "id": "sap.m.MultiInput",
 		  "name": "Multi Input",
 		  "category": "User Input",
