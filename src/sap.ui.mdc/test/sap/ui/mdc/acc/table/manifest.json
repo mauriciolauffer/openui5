@@ -1,0 +1,37 @@
+{
+	"sap.app" : {
+		"id": "Employees",
+		"version" : "1.0",
+		"type" : "application",
+		"title": "MDC Sample",
+		"description": "MDC Sample Application"
+	},
+	"sap.ui" : {
+		"technology" : "UI5"
+	},
+	"sap.ui5" : {
+		"handleValidation": true,
+		"rootView": {
+			"type": "XML",
+			"viewName": "sap.ui.mdc.acc.table.Table",
+			"id": "MyView",
+			"height": "100%",
+			"async": true
+		},
+		"dependencies": {
+			"libs" : {
+				"sap.ui.core": {},
+				"sap.ui.mdc": {},
+				"sap.m": {},
+				"sap.ui.table": {},
+				"sap.ui.fl": {}
+			}
+		},
+		"models": {
+			"": {
+				"type": "sap.ui.model.json.JSONModel",
+				"uri": "mockdata/employees.json"
+			}
+		}
+	}
+}
