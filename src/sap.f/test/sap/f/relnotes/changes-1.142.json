@@ -1,7 +1,12 @@
 {
   "1.142.0": {
-    "date": "September 2025",
+    "date": "October 2025",
     "notes": [
+      {
+        "id": "d7e2f03984483332bfb315e91fe4cc8b8727cf09",
+        "type": "FIX",
+        "text": " sap.f.DynamicPageTitle: Fix flaky focus test in Safari"
+      },
       {
         "id": "a9440860537942a7ffb81bb24d7de8d633a70bc9",
         "type": "FIX",

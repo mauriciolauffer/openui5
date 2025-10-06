@@ -1,0 +1,12 @@
+{
+  "1.142.0": {
+    "date": "October 2025",
+    "notes": [
+      {
+        "id": "da4caef581079437f6b47110fbd79c75cb89b0a7",
+        "type": "FIX",
+        "text": " SortFlex: Take sortOrder into account for affectedControl during condensing"
+      }
+    ]
+  }
+}

@@ -1,7 +1,17 @@
 {
   "1.142.0": {
-    "date": "September 2025",
+    "date": "October 2025",
     "notes": [
+      {
+        "id": "20bc49d16261231151434c881d45109fe0010d1b",
+        "type": "FEATURE",
+        "text": " sap.m.Tokenizer: allow tokenizer in forms"
+      },
+      {
+        "id": "acb82158ab32de8669a1cf34cfc0b8a54f581b80",
+        "type": "FIX",
+        "text": " SelectionController: Check for key or item in getPropertySetterChanges"
+      },
       {
         "id": "9ef8f1474a8be62233c9d79ca202186aa3d3a40a",
         "type": "FIX",

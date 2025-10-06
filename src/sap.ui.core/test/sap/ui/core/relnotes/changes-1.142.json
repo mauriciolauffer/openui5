@@ -1,7 +1,22 @@
 {
   "1.142.0": {
-    "date": "September 2025",
+    "date": "October 2025",
     "notes": [
+      {
+        "id": "dad8a245340df07f3d5f435577a42bc26e8651c3",
+        "type": "FIX",
+        "text": " sap/ui/core/Theming: Ensure to fully await ThemeManager"
+      },
+      {
+        "id": "dc418e963807d03a37cfb298d8e8169c89520efe",
+        "type": "FIX",
+        "text": " sap/ui/core/Theming: Fix order of library.css"
+      },
+      {
+        "id": "54e59ba3f6629da166c7ce0708aba078856cf887",
+        "type": "FEATURE",
+        "text": " sap/ui/test/starter: document configuration types"
+      },
       {
         "id": "67133b806604afc076ff48027bd565bcbdd3c67b",
         "type": "FIX",
