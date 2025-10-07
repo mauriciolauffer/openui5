@@ -20933,6 +20933,8 @@ sap.ui.define([
 		this.expectChange("role", []);
 
 		await this.createView(assert, sView, oModel);
+		// avoid that the metadata request disturbs the timing
+		await oModel.getMetaModel().requestObject("/");
 
 		const oBinding = this.oView.byId("table").getBinding("items");
 
