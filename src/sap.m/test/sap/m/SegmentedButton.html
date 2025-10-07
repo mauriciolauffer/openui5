@@ -1121,6 +1121,31 @@
 		page2.addContent(vBox);
 		app.addPage(page, true).addPage(page2, false);
 
+		vBox.addItem(createLabel("Content Modes:"));
+
+		var oSegBtnContentFit = new sap.m.SegmentedButton({
+				contentMode: "ContentFit",
+				items: [
+					new sap.m.SegmentedButtonItem({key: "large", text: "This is a very large text for demonstration purposes"}),
+					new sap.m.SegmentedButtonItem({key: "medium", text: "Medium text"}),
+					new sap.m.SegmentedButtonItem({key: "small", text: "Small"}),
+					new sap.m.SegmentedButtonItem({key: "icon", icon: "sap-icon://attachment"})
+				]
+			});
+		vBox.addItem(oSegBtnContentFit);
+
+		var oSegBtnEqualSized = new sap.m.SegmentedButton({
+				contentMode: "EqualSized",
+				items: [
+					new sap.m.SegmentedButtonItem({key: "large", text: "This is a very large text for demonstration purposes"}),
+					new sap.m.SegmentedButtonItem({key: "medium", text: "Medium text"}),
+					new sap.m.SegmentedButtonItem({key: "small", text: "Small"}),
+					new sap.m.SegmentedButtonItem({key: "icon", icon: "sap-icon://attachment"})
+				]
+		});
+
+		vBox.addItem(oSegBtnEqualSized)
+
 	})();
 })();
 </script>

@@ -1209,7 +1209,8 @@
 			"sap.m.sample.SegmentedButton",
 			"sap.m.sample.SegmentedButtonVSD",
 			"sap.m.sample.SegmentedButtonDialog",
-			"sap.m.sample.SegmentedButtonLI"
+			"sap.m.sample.SegmentedButtonLI",
+			"sap.m.sample.SegmentedButtonContentModes"
 		  ]
 		},
 		{
@@ -2656,6 +2657,11 @@
 		  "id": "sap.m.sample.SegmentedButtonLI",
 		  "name": "Segmented Button in Input List Item",
 		  "description": "Segmented Button used in Input List Item component"
+		},
+		{
+		  "id": "sap.m.sample.SegmentedButtonContentModes",
+		  "name": "Segmented Button Content Modes",
+		  "description": "Segmented Button different Content Modes"
 		},
 		{
 		  "id": "sap.m.sample.Select",
