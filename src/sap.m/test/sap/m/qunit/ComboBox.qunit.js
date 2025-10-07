@@ -11805,6 +11805,7 @@ sap.ui.define([
 
 		assert.ok(this.oComboBox.isOpen(), "The combo box's picker is opened.");
 		qutils.triggerKeydown(oFocusDomRef, KeyCodes.ARROW_UP);
+		this.clock.tick(10); // Allow setTimeout in updateAriaActiveDescendant to execute
 
 		oGroupHeaderListItem = this.oComboBox._getList().getItems()[0];
 		oInvisibleText = Element.getElementById(oGroupHeaderListItem.getAriaLabelledBy()[0]);
