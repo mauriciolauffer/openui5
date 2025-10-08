@@ -64793,8 +64793,8 @@ make root = ${bMakeRoot}`;
 		<Input value="{Name}"/>');
 
 	//*********************************************************************************************
-	// Scenario: You want to use AnnotationHelper.value inside a "14.5.12 Expression edm:Path" or
-	// "14.5.13 Expression edm:PropertyPath"
+	// Scenario: You want to use AnnotationHelper.value inside a "14.4.1.7 Expression edm:Path" or
+	// "14.4.1.6 Expression edm:PropertyPath"
 	// JIRA: CPOUI5ODATAV4-104
 	testXMLTemplating("AnnotationHelper#value inside path object",
 		"createSpecialCasesModel",
@@ -64840,8 +64840,8 @@ make root = ${bMakeRoot}`;
 			constraints:{\'maxLength\':255},formatOptions:{\'parseKeepsEmptyString\':true}}"/>');
 
 	//*********************************************************************************************
-	// Scenario: You want to use AnnotationHelper.format inside a "14.5.12 Expression edm:Path" or
-	// "14.5.13 Expression edm:PropertyPath"
+	// Scenario: You want to use AnnotationHelper.format inside a "14.4.1.7 Expression edm:Path" or
+	// "14.4.1.6 Expression edm:PropertyPath"
 	// JIRA: CPOUI5ODATAV4-104
 	testXMLTemplating("AnnotationHelper#format inside path object",
 		"createSpecialCasesModel",
