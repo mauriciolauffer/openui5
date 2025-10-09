@@ -4249,7 +4249,6 @@ sap.ui.define(['exports', 'sap/f/thirdparty/Icons'], (function (exports, Icons) 
 
   exports.A = A;
   exports.C = C$2;
-  exports.C$1 = C;
   exports.Co = Co;
   exports.D = D$1;
   exports.D$1 = D$2;
