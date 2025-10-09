@@ -3003,7 +3003,7 @@ function(
 	 * @since 1.76
 	 * @public
 	 */
-	ListBase.prototype.scrollToIndex = function(iIndex) {
+	ListBase.prototype.scrollToIndex = function(iIndex, _lastChance) {
 		return new Promise(function(resolve, reject) {
 			var oItem, oScrollDelegate;
 
@@ -3014,19 +3014,24 @@ function(
 			}
 
 			oItem = getItemAtIndex(this, iIndex);
-			if (!oItem) {
+			if (!oItem && _lastChance) {
 				return reject();
 			}
-
-			// adding timeout of 0 ensures the DOM is ready in case of rerendering
-			setTimeout(function() {
-				try {
-					oScrollDelegate.scrollToElement(oItem.getDomRef(), null, [0, this._getStickyAreaHeight() * -1], true);
-					resolve();
-				} catch (e) {
-					reject(e);
-				}
-			}.bind(this), 0);
+			if (!oItem || !oItem.getDomRef()) {
+				this.attachEventOnce("updateFinished", () => {
+					this.scrollToIndex(iIndex, true).then(resolve).catch(reject);
+				});
+			} else {
+				// adding timeout of 0 ensures the DOM is ready in case of rerendering
+				setTimeout(() => {
+					try {
+						oScrollDelegate.scrollToElement(oItem.getDomRef(), null, [0, this._getStickyAreaHeight() * -1], true);
+						resolve();
+					} catch (e) {
+						reject(e);
+					}
+				}, 0);
+			}
 		}.bind(this));
 	};
 
