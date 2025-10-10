@@ -438,7 +438,9 @@ sap.ui.define([
 			getValueStateForContent: (sContentId) => {return null;},
 			isInvalidateSuppressed: () => {return true;},
 			getDisplay: () => {return FieldDisplay.Description;},
-			_getValueHelp: () => {return "VH1";},
+			getValueHelp: () => {return "VH1";},
+			/** @deprecated As of version 1.114 */
+			_getValueHelp: () => {return oFakeField.getValueHelp();},
 			isA: (sName) => {return sName === "sap.ui.mdc.field.FieldBase";},
 			getParent: () => {return null;}
 		};

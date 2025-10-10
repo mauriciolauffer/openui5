@@ -635,7 +635,12 @@ sap.ui.define([
 				"contentEdit",
 				"contentDisplay"
 			],
-			associations: ["fieldHelp", "valueHelp", "ariaLabelledBy"]
+			associations: [
+				/** @deprecated As of version 1.114 */
+				"fieldHelp",
+				"valueHelp",
+				"ariaLabelledBy"
+			]
 		});
 
 		this.attachEvent("modelContextChange", this.handleModelContextChange, this);
@@ -1416,7 +1421,13 @@ sap.ui.define([
 			this.getContentFactory().updateConditionType();
 		}
 
-		if ((oChanges.name === "fieldHelp" || oChanges.name === "valueHelp") && oChanges.ids) {
+		if (oChanges.name === "valueHelp" && oChanges.ids) {
+			_valueHelpChanged.call(this, oChanges.ids, oChanges.mutation);
+			this.getContentFactory().updateConditionType();
+		}
+
+		/** @deprecated As of version 1.114 */
+		if (oChanges.name === "fieldHelp" && oChanges.ids) {
 			_valueHelpChanged.call(this, oChanges.ids, oChanges.mutation);
 			this.getContentFactory().updateConditionType();
 		}
@@ -2127,6 +2138,9 @@ sap.ui.define([
 
 	};
 
+	/**
+	 * @this {sap.ui.mdc.field.FieldBase}
+	 */
 	function _createInternalContent() {
 
 		if (this.isFieldDestroyed()) {
@@ -2909,13 +2923,20 @@ sap.ui.define([
 		}
 	}
 
-	// TODO: remove this function and replace by getValueHelp once FieldHelp association is completetly removed.
+	/**
+	 * @deprecated As of 1.114.0, together with `fieldHelp` association
+	 * @ui5-transform-hint replace-call getValueHelp
+	 * @private
+	 */
 	FieldBase.prototype._getValueHelp = function() {
 
 		return this.getValueHelp() || (this.getFieldHelp && this.getFieldHelp()); // as getFieldHelp not exist in legacy-free UI5
 
 	};
 
+	/**
+	 * @this {sap.ui.mdc.field.FieldBase}
+	 */
 	function _getValueHelp() {
 
 		let sId = this._getValueHelp();

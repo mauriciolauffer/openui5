@@ -756,7 +756,11 @@ sap.ui.define([
 			return oCtrl;
 		},
 
-		// TODO: remove this function and replace by getValueHelp once FieldHelp association is completetly removed.
+		/**
+		 * @deprecated As of 1.114.0, together with `fieldHelp` association
+		 * @ui5-transform-hint replace-call getValueHelp
+		 * @private
+		 */
 		_getValueHelp: function() {
 
 			return this.getValueHelp() || (this.getFieldHelp && this.getFieldHelp()); // as getFieldHelp not exist in legacy-free UI5
@@ -871,6 +875,9 @@ sap.ui.define([
 		// return aValueHelpSupportedOperators.length === 0 || aValueHelpSupportedOperators.indexOf(sKey) >= 0;
 	}
 
+	/**
+	 * @this {sap.ui.mdc.valuehelp.base.DefineConditionPanel}
+	 */
 	function _operatorChanged(oField, sKey, sOldKey) {
 		oField._sOldKey = sOldKey; // to know in change event
 
@@ -960,6 +967,9 @@ sap.ui.define([
 		this.onChange(undefined);
 	}
 
+	/**
+	 * @this {sap.ui.mdc.valuehelp.base.DefineConditionPanel}
+	 */
 	function _createControl(oCondition, iIndex, sId, oBindingContext) {
 
 		const oOperator = FilterOperatorUtil.getOperator(oCondition.operator);
@@ -1772,6 +1782,9 @@ sap.ui.define([
 		}
 	}
 
+	/**
+	 * @this {sap.ui.mdc.valuehelp.base.DefineConditionPanel}
+	 */
 	function _updateRow(oCondition, oGrid, iIndex, oBindingContext, iRow) {
 
 		const sIdPrefix = this.getId() + "--" + iRow;
