@@ -119,6 +119,17 @@
 				"config": "test-resources/sap/m/demokit/sample/UXCIntegration/demoapp.json"
 			},
 			{
+				"icon": "sap-ui5",
+				"text": "AI Integration",
+				"ref": "https://sap-samples.github.io/ai-seamless-integration/",
+				"desc": "This sample project demonstrates the seamless integration of UI5 Web Components into the OpenUI5 framework showing AI use cases",
+				"links": {
+					"View Source Code": "https://github.com/SAP-samples/ai-seamless-integration"
+				},
+				"category": "Showcase",
+				"config": "test-resources/sap/m/demokit/sample/AIIntegration/demoapp.json"
+			},
+			{
 				"icon": "source-code",
 				"text": "TypeScript Hello World",
 				"ref": "https://sap-samples.github.io/ui5-typescript-helloworld/",
@@ -1804,6 +1815,18 @@
 			"samples": [
 				"sap.m.sample.TsHelloWorld"
 			]
+		},
+		{
+			"id": "sap.m.sample.AIIntegration",
+			"name": "AI Integration",
+			"category": "Showcase",
+			"since": "1.142",
+			"formFactors": "-",
+			"description": "This sample project demonstrates the seamless integration of UI5 Web Components into the OpenUI5 framework showing AI use cases",
+			"samples": [
+				"sap.m.sample.AIIntegration"
+			],
+			"hidden": true
 		}
 	],
 	  "samples": [
@@ -4107,6 +4130,15 @@
 			"id": "sap.m.sample.UploadSetwithTablePlugin.TreeTableWithFolderHierarchy",
 			"name": "Plugin for Tree Table with folder hierarchy & folder uploads",
 			"description": "This example demonstrates the usage of UploadSetwithTable plugin with a tree table featuring folder hierarchy, folder creation, folder uploads, folder navigation with breadcrumbs and folder management"
+		},
+		{
+			"id": "sap.m.sample.AIIntegration",
+			"name": "AI Integration",
+			"description": "This sample project demonstrates the seamless integration of UI5 Web Components into the OpenUI5 framework showing AI use cases",
+			"external": true,
+			"externalAppRef": "https://sap-samples.github.io/ai-seamless-integration/",
+			"externalSourceRef": "https://github.com/SAP-samples/ai-seamless-integration",
+			"externalResourceRef": "https://github.com/SAP-samples/ai-seamless-integration/archive/refs/heads/main.zip"
 		}
 	]
 	}
