@@ -23592,8 +23592,10 @@ ToProduct/ToSupplier/BusinessPartnerID\'}}">\
 	});
 
 	//*********************************************************************************************
-	// Scenario: ODataTreeBinding: custom query options (like search) are included in $count requests
+	// Scenario 1: ODataTreeBinding: custom query options (like search) are included in $count requests
 	// SNOW: DINC0621482
+	// Scenario 2: ODataTreeBinding: $expand and $select are not included in the $count requests
+	// SNOW: CS20250010803423
 	QUnit.test("ODataTreeBinding: custom query options in $count requests", async function (assert) {
 		const oModel = createSpecialCasesModel();
 		const sView = `
@@ -23606,6 +23608,7 @@ ToProduct/ToSupplier/BusinessPartnerID\'}}">\
 				search: 'Product',
 				foo: 'bar'
 			},
+			select: 'CreatedByUser',
 			treeAnnotationProperties: {
 				hierarchyDrillStateFor: 'OrderOperationIsExpanded',
 				hierarchyLevelFor: 'OrderOperationRowLevel',
@@ -23624,7 +23627,9 @@ ToProduct/ToSupplier/BusinessPartnerID\'}}">\
 			.expectRequest("C_RSHMaintSchedSmltdOrdAndOp/$count?$filter=OrderOperationRowLevel eq 0"
 				+ "&search=Product&foo=bar", "2")
 			.expectRequest("C_RSHMaintSchedSmltdOrdAndOp?$filter=OrderOperationRowLevel eq 0"
-				+ "&search=Product&foo=bar&$skip=0&$top=2", {
+				+ "&search=Product&foo=bar"
+				+ "&$select=CreatedByUser,OrderOperationRowLevel,OrderOperationParentRowID,OrderOperationRowID,"
+				+ "OrderOperationIsExpanded&$skip=0&$top=2", {
 				results: [{
 					__metadata: {uri: "C_RSHMaintSchedSmltdOrdAndOp('A00')"},
 					OrderOperationRowID: "A00",
@@ -23646,7 +23651,9 @@ ToProduct/ToSupplier/BusinessPartnerID\'}}">\
 		this.expectRequest("C_RSHMaintSchedSmltdOrdAndOp/$count?"
 				+ "$filter=OrderOperationParentRowID eq 'A00'&search=Product&foo=bar", "1")
 			.expectRequest("C_RSHMaintSchedSmltdOrdAndOp?$filter=OrderOperationParentRowID eq 'A00'"
-				+ "&search=Product&foo=bar&$skip=0&$top=2", {
+				+ "&search=Product&foo=bar"
+				+ "&$select=CreatedByUser,OrderOperationRowLevel,OrderOperationParentRowID,OrderOperationRowID,"
+				+ "OrderOperationIsExpanded&$skip=0&$top=2", {
 				results: [{
 					__metadata: {uri: "C_RSHMaintSchedSmltdOrdAndOp('A01')"},
 					OrderOperationRowID: "A01",
