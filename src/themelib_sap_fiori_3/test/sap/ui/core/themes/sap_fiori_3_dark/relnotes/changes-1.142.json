@@ -3,6 +3,11 @@
     "date": "October 2025",
     "notes": [
       {
+        "id": "f430089b7367a76755e30e835ee7f75ff2b332bb",
+        "type": "FIX",
+        "text": " sap.uxap.ObjectPageSubSection: fix aligment of Forms"
+      },
+      {
         "id": "c50e46d2126c4b353ab3026a1fbab8be9b0b9849",
         "type": "FIX",
         "text": " sap.m.SegmentedButton: Correct active color on regular state"

@@ -3,6 +3,26 @@
     "date": "October 2025",
     "notes": [
       {
+        "id": "aa7e14ab4e2427fa275360568d8ccb6772334e23",
+        "type": "FIX",
+        "text": " sap.m.Avatar: fix wrong display of icon"
+      },
+      {
+        "id": "a3dc73e7f48e13d35855ede83457698b20961b3f",
+        "type": "FIX",
+        "text": " sap.m.Dialog: correct reverse F6 focus navigation"
+      },
+      {
+        "id": "437015d4bbab79c6499bf757cb4e7c3a337e1090",
+        "type": "FIX",
+        "text": " sap.m.MessageBox: fix typing of onClose callback"
+      },
+      {
+        "id": "f6df6170c2d8bf007ef415f0441e84aa610d1bdf",
+        "type": "FIX",
+        "text": " sap.m.Dialog: fix ESC handling when closing nested dialogs"
+      },
+      {
         "id": "20bc49d16261231151434c881d45109fe0010d1b",
         "type": "FEATURE",
         "text": " sap.m.Tokenizer: allow tokenizer in forms"

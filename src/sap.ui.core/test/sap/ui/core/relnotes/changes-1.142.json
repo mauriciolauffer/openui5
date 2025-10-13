@@ -3,6 +3,11 @@
     "date": "October 2025",
     "notes": [
       {
+        "id": "92d0d7aa6d1bb1cc548aa9cc01460ba05c73d74e",
+        "type": "FIX",
+        "text": " sap/ui/model/odata/v2/ODataTreeBinding: $count requests must not contain $expand or $select"
+      },
+      {
         "id": "dad8a245340df07f3d5f435577a42bc26e8651c3",
         "type": "FIX",
         "text": " sap/ui/core/Theming: Ensure to fully await ThemeManager"
@@ -31,6 +36,11 @@
         "id": "db40b2b3f8602a1dcbe2f4098f09ca69c06aa561",
         "type": "FIX",
         "text": " core/interaction: Cache failed requests to avoid retry attempts"
+      },
+      {
+        "id": "0977bd0d2c419bd3d5bbff13c40e67dbebe8c9eb",
+        "type": "FIX",
+        "text": " ManagedObjectModel: Use original binding's length if no filters are applied"
       }
     ]
   }
