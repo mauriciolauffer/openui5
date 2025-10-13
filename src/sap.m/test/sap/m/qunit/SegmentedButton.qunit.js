@@ -2353,6 +2353,8 @@ sap.ui.define([
 
 		await nextUIUpdate(this.clock);
 
+		oSB._previousWidth = 100; // hardcode previous width, because it is set initially after the promise with the fonts is resolved, we cannot await it
+
 		// Assert
 		assert.equal(oSB.fireEvent.callCount, 0, "FireEvent is not called on first rendering");
 
@@ -3782,5 +3784,50 @@ sap.ui.define([
 		// Assert
 		assert.strictEqual(this.oSB.getButtons()[0].$().data(this.oCD.getKey()), undefined,
 			"There should be new CustomData with key 'yours' rendered on the first button");
+	});
+
+	QUnit.module("contentMode property", {
+		beforeEach: function () {
+			this.oSegmentedButton = new sap.m.SegmentedButton({
+				buttons: [
+					new sap.m.Button({ text: "Short" }),
+					new sap.m.Button({ text: "A much longer button text" }),
+					new sap.m.Button({ text: "Medium" })
+				]
+			});
+			this.oSegmentedButton.placeAt("qunit-fixture");
+			oCore.applyChanges();
+		},
+		afterEach: function () {
+			this.oSegmentedButton.destroy();
+		}
+	});
+
+	QUnit.test("Default contentMode is EqualSized", function (assert) {
+		assert.strictEqual(this.oSegmentedButton.getContentMode(), "EqualSized", "Default contentMode is 'EqualSized'");
+		assert.ok(this.oSegmentedButton.$().hasClass("sapMSegBEqualSized"), "Root element has class for EqualSized mode");
+	});
+
+	QUnit.test("contentMode 'ContentFit' applies correct class", function (assert) {
+		this.oSegmentedButton.setContentMode("ContentFit");
+		oCore.applyChanges();
+		assert.strictEqual(this.oSegmentedButton.getContentMode(), "ContentFit", "contentMode is set to 'ContentFit'");
+		assert.ok(this.oSegmentedButton.$().hasClass("sapMSegBContentFit"), "Root element has class for ContentFit mode");
+	});
+
+	QUnit.test("contentMode 'EqualSized' makes all buttons equal width", function (assert) {
+		this.oSegmentedButton.setContentMode("EqualSized");
+		oCore.applyChanges();
+		var buttons = this.oSegmentedButton.$().find(".sapMSegBBtn").toArray();
+		var widths = buttons.map(function (el) { return jQuery(el).outerWidth(); });
+		assert.ok(widths.every(function (w) { return w === widths[0]; }), "All buttons have equal width in EqualSized mode");
+	});
+
+	QUnit.test("contentMode 'ContentFit' makes buttons fit their content", function (assert) {
+		this.oSegmentedButton.setContentMode("ContentFit");
+		oCore.applyChanges();
+		var buttons = this.oSegmentedButton.$().find(".sapMSegBBtn").toArray();
+		var widths = buttons.map(function (el) { return jQuery(el).outerWidth(); });
+		assert.notOk(widths.every(function (w) { return w === widths[0]; }), "Buttons have different widths in ContentFit mode");
 	});
 });
