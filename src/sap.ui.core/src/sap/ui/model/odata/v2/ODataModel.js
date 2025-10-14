@@ -1977,6 +1977,10 @@ sap.ui.define([
 	 *   Map of changed entities
 	 * @param {boolean} bMetaModelOnly
 	 *   Whether to only update metamodel bindings
+	 * @returns {number|undefined}
+	 *   The number of bindings which were checked synchronously for updates; 0 if <code>bAsync</code> is set.
+	 *   Subclasses overwriting this method may also return <code>undefined</code>.
+	 *
 	 * @private
 	 */
 	ODataModel.prototype.checkUpdate = function(bForceUpdate, bAsync, mChangedEntities, bMetaModelOnly) {
@@ -1988,7 +1992,7 @@ sap.ui.define([
 					this.checkUpdate(this.bForceUpdate, false, this.mChangedEntities4checkUpdate);
 				}.bind(this), 0);
 			}
-			return;
+			return 0;
 		}
 		bForceUpdate = this.bForceUpdate || bForceUpdate;
 		if (this.sUpdateTimer) {
@@ -2004,6 +2008,8 @@ sap.ui.define([
 			}
 		}.bind(this));
 		this._processAfterUpdate();
+
+		return aBindings.length;
 	};
 
 	/**
@@ -7022,7 +7028,8 @@ sap.ui.define([
 		});
 
 		mChangedEntities[sKey] = true;
-		this.checkUpdate(false, bAsyncUpdate, mChangedEntities);
+		const iUpdatedBindings = this.checkUpdate(false, bAsyncUpdate, mChangedEntities);
+		this.checkPerformanceOfUpdate(iUpdatedBindings, bAsyncUpdate);
 		return true;
 	};
 
