@@ -2492,9 +2492,11 @@ sap.ui.define([
 		 * @param {object} [vRequest.payload]
 		 *   The payload of the request
 		 * @param {string} vRequest.url
-		 *   The request URL in the following format "#<batchNo> <method> <URL>"; "#<batchNo> " and
-		 *   "<method> " are optional; spaces, double quotes, square brackets, and curly brackets
-		 *   inside the URL are percent-encoded automatically
+		 *   The request URL in the following format "#<batchNo>.<changeSetNo> <method> <URL>";
+		 *   "#<batchNo>.<changeSetNo> ", ".<changeSetNo>" and "<method> " are optional;
+		 *   "#.<changeSetNo> " can be used if a change set number is given without a batch number;
+		 *   spaces, double quotes, square brackets, and curly brackets inside the URL are
+		 *   percent-encoded automatically
 		 * @param {object|string|number|Error|Promise|function} [vResponse]
 		 *   The response message to be returned from the requestor or a promise on it or a function
 		 *   (invoked "just in time" when the request is actually sent) returning the response
@@ -2536,8 +2538,18 @@ sap.ui.define([
 				};
 			}
 			if (vRequest.url.startsWith("#")) { // "#batchNo ..."
+				if (vRequest.batchNo || vRequest.changeSetNo) {
+					throw new Error("Don't mix property usage and compact URL notation of batchNo"
+						+ " and changeSetNo");
+				}
 				const iSpace = vRequest.url.indexOf(" ");
-				vRequest.batchNo = parseInt(vRequest.url.slice(1, iSpace));
+				const aNumbers = vRequest.url.slice(1, iSpace).split(".");
+				if (aNumbers[0]) {
+					vRequest.batchNo = parseInt(aNumbers[0]);
+				}
+				if (aNumbers[1]) {
+					vRequest.changeSetNo = parseInt(aNumbers[1]);
+				}
 				vRequest.url = vRequest.url.slice(iSpace + 1);
 			}
 			const aURLParts = rStartsWithMethod.exec(vRequest.url);
@@ -3030,18 +3042,15 @@ sap.ui.define([
 
 			that.expectChange("note", ["Note 1 changed", "Note 2 changed", "Note 3 changed"])
 				.expectRequest({
-					changeSetNo : 1,
-					url : "PATCH SalesOrderList('1')",
+					url : "#.1 PATCH SalesOrderList('1')",
 					payload : {Note : "Note 1 changed"}
 				}, oError)
 				.expectRequest({
-					changeSetNo : 2,
-					url : "PATCH SalesOrderList('2')",
+					url : "#.2 PATCH SalesOrderList('2')",
 					payload : {Note : "Note 2 changed"}
 				}, oNO_RESPONSE)
 				.expectRequest({
-					changeSetNo : 2,
-					url : "PATCH SalesOrderList('3')",
+					url : "#.2 PATCH SalesOrderList('3')",
 					payload : {Note : "Note 3 changed"}
 				}, oNO_RESPONSE)
 				.expectRequest("BusinessPartnerList('1')/CompanyName", oNO_RESPONSE)
@@ -14100,16 +14109,12 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				oBindingAmount1 = aTableItems[1].getCells()[0].getBinding("value");
 
 			that.expectRequest({
-					batchNo : 2,
-					changeSetNo : 1,
-					url : "PATCH SalesOrderList('41')",
+					url : "#2.1 PATCH SalesOrderList('41')",
 					headers : {"If-Match" : "ETag0"},
 					payload : {GrossAmount : "4.11"}
 				}, oNO_RESPONSE)
 				.expectRequest({
-					batchNo : 2,
-					changeSetNo : 1,
-					url : "PATCH SalesOrderList('42')",
+					url : "#2.1 PATCH SalesOrderList('42')",
 					headers : {"If-Match" : "ETag1"},
 					payload : {GrossAmount : "4.22"}
 				}, oError)
@@ -14273,15 +14278,13 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			that.expectChange("amount", ["4.11", "4.22"])
 				.expectRequest({
-					changeSetNo : 1,
 					$ContentID : "0.0",
-					url : "PATCH SalesOrderList('41')",
+					url : "#.1 PATCH SalesOrderList('41')",
 					payload : {GrossAmount : "4.11"}
 				}, oError)
 				.expectRequest({
-					changeSetNo : 1,
 					$ContentID : "1.0",
-					url : "PATCH SalesOrderList('42')",
+					url : "#.1 PATCH SalesOrderList('42')",
 					payload : {GrossAmount : "4.22"}
 				}, oNO_RESPONSE)
 				.expectMessages([{
@@ -14651,8 +14654,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		}).then(function () {
 			that.expectChange("note", "Changed Note From Server")
 				.expectRequest({
-					changeSetNo : 1,
-					url : "PATCH SalesOrderList('42')",
+					url : "#.1 PATCH SalesOrderList('42')",
 					headers : {"If-Match" : "ETag1"},
 					payload : {Note : "(1) Changed Note while $batch is running"}
 				}, {
@@ -14660,8 +14662,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					Note : "(1) Changed Note From Server - 2"
 				})
 				.expectRequest({
-					changeSetNo : 2,
-					url : "PATCH SalesOrderList('42')",
+					url : "#.2 PATCH SalesOrderList('42')",
 					headers : {"If-Match" : "ETag1"},
 					payload : {Note : "(2) Changed Note while $batch is running"}
 				}, {
@@ -14756,8 +14757,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			//TODO suppress change event for outdated value "42Changed Note From Server"
 			that.expectChange("note42", "42Changed Note From Server")
 				.expectRequest({
-					changeSetNo : 1,
-					url : "PATCH SalesOrderList('42')",
+					url : "#.1 PATCH SalesOrderList('42')",
 					headers : {"If-Match" : "42ETag1"},
 					payload : {Note : "(1) 42Changed Note while $batch is running"}
 				}, {
@@ -14765,8 +14765,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					Note : "42Changed Note From Server - 1"
 				})
 				.expectRequest({
-					changeSetNo : 1,
-					url : "PATCH SalesOrderList('77')",
+					url : "#.1 PATCH SalesOrderList('77')",
 					headers : {"If-Match" : "77ETag0"},
 					payload : {Note : "(1) 77Changed Note while $batch is running"}
 				}, {
@@ -14774,8 +14773,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					Note : "(1) 77Changed Note From Server - 1"
 				})
 				.expectRequest({
-					changeSetNo : 2,
-					url : "PATCH SalesOrderList('77')",
+					url : "#.2 PATCH SalesOrderList('77')",
 					headers : {"If-Match" : "77ETag0"},
 					payload : {Note : "77Changed Note"}
 				}, {
@@ -57189,36 +57187,30 @@ make root = ${bMakeRoot}`;
 	}, function () { // ODataModel#submitBatch restarts all PATCHes
 		this.expectRequest({
 				$ContentID : "0.0",
-				batchNo : 4,
-				changeSetNo : 1,
 				groupId : "$auto",
 				headers : {"If-Match" : "ETag4"},
 				payload : {
 					ROOM_ID : "41" // <-- retry
 				},
-				url : "PATCH EMPLOYEES('4')"
+				url : "#4.1 PATCH EMPLOYEES('4')"
 			}, {/* don't care */})
 			.expectRequest({
 				$ContentID : "1.0",
-				batchNo : 4,
-				changeSetNo : 1,
 				groupId : "$auto",
 				headers : {"If-Match" : "ETag3"},
 				payload : {
 					ROOM_ID : "31" // <-- retry
 				},
-				url : "PATCH EMPLOYEES('3')"
+				url : "#4.1 PATCH EMPLOYEES('3')"
 			}, {/* don't care */})
 			.expectRequest({
 				$ContentID : undefined,
-				batchNo : 4,
-				changeSetNo : 2, // new changeset via submitBatch("$auto")
 				groupId : "$auto",
 				payload : {
 					Budget : "1234.1234",
 					TeamID : "TEAM_01"
 				},
-				url : "POST ChangeTeamBudgetByID"
+				url : "#4.2 POST ChangeTeamBudgetByID" // new changeset via submitBatch("$auto")
 			}, {/* don't care */});
 
 		return Promise.all([
@@ -59083,9 +59075,7 @@ make root = ${bMakeRoot}`;
 			assert.strictEqual(oBinding.getLength(), 2, "length of the table");
 
 			that.expectRequest({
-					batchNo : 2,
-					changeSetNo : 2,
-					url : "BusinessPartnerList?$count=true&$select=BusinessPartnerID"
+					url : "#2.2 BusinessPartnerList?$count=true&$select=BusinessPartnerID"
 						+ "&$filter=not (BusinessPartnerID eq '4710')" //TODO this is missing!
 						+ "&$skip=2&$top=1"
 				}, {
@@ -59097,10 +59087,9 @@ make root = ${bMakeRoot}`;
 
 			that.expectChange("count", "4")
 				.expectRequest({
-					batchNo : 2,
-					changeSetNo : 1, //TODO maybe this "reordering" is wrong (here)?
 					payload : {},
-					url : "POST BusinessPartnerList"
+					//TODO maybe this "reordering" is wrong (here)?
+					url : "#2.1 POST BusinessPartnerList"
 				}, {BusinessPartnerID : "4710"})
 				.expectChange("id", ["4710",,, "4713"]);
 			oContext = oBinding.create({}, true);
@@ -64267,38 +64256,30 @@ make root = ${bMakeRoot}`;
 
 		return this.createView(assert, sView, oModel).then(function () {
 			that.expectRequest({
-					batchNo : 2,
-					changeSetNo : 1,
 					headers : {
 						Prefer : "handling=strict"
 					},
-					url : "POST SalesOrderList('0')/" + sAction,
+					url : "#2.1 POST SalesOrderList('0')/" + sAction,
 					payload : {}
 				}, oError, {
 					"Preference-Applied" : "handling=strict"
 				})
 				.expectRequest({
-					batchNo : 2,
-					changeSetNo : 1,
 					headers : {
 						Prefer : "handling=strict"
 					},
-					url : "POST SalesOrderList('1')/" + sAction,
+					url : "#2.1 POST SalesOrderList('1')/" + sAction,
 					payload : {}
 				}, oNO_RESPONSE)
 				.expectRequest({
-					batchNo : 2,
-					changeSetNo : 1,
 					headers : {
 						Prefer : "handling=strict"
 					},
-					url : "POST SalesOrderList('2')/" + sAction,
+					url : "#2.1 POST SalesOrderList('2')/" + sAction,
 					payload : {}
 				}, oNO_RESPONSE)
 				.expectRequest({
-					batchNo : 2,
-					changeSetNo : 2,
-					url : "POST RegenerateEPMData",
+					url : "#2.2 POST RegenerateEPMData",
 					payload : {}
 				}, oNO_RESPONSE)
 				.expectRequest("#2 SalesOrderList?$select=LifecycleStatus,SalesOrderID"
@@ -64346,36 +64327,28 @@ make root = ${bMakeRoot}`;
 			let aPromises = [];
 			if (bConfirm) {
 				that.expectRequest({
-						batchNo : 3,
-						changeSetNo : 1,
-						url : "POST SalesOrderList('0')/" + sAction,
+						url : "#3.1 POST SalesOrderList('0')/" + sAction,
 						payload : {}
 					}, {
 						LifecycleStatus : "C0",
 						SalesOrderID : "0"
 					})
 					.expectRequest({
-						batchNo : 3,
-						changeSetNo : 1,
-						url : "POST SalesOrderList('1')/" + sAction,
+						url : "#3.1 POST SalesOrderList('1')/" + sAction,
 						payload : {}
 					}, {
 						LifecycleStatus : "C1",
 						SalesOrderID : "1"
 					})
 					.expectRequest({
-						batchNo : 3,
-						changeSetNo : 1,
-						url : "POST SalesOrderList('2')/" + sAction,
+						url : "#3.1 POST SalesOrderList('2')/" + sAction,
 						payload : {}
 					}, {
 						LifecycleStatus : "C2",
 						SalesOrderID : "2"
 					})
 					.expectRequest({
-						batchNo : 3,
-						changeSetNo : 2,
-						url : "POST RegenerateEPMData",
+						url : "#3.2 POST RegenerateEPMData",
 						payload : {}
 					}, oDONT_CARE)
 					.expectRequest("#3 SalesOrderList?$select=LifecycleStatus,SalesOrderID"
@@ -65925,11 +65898,9 @@ make root = ${bMakeRoot}`;
 
 			that.expectRequest({
 					$ContentID : undefined,
-					batchNo : 3,
-					changeSetNo : 1,
 					groupId : sGroupId,
 					payload : {Note : "Note 1"},
-					url : "POST SalesOrderList('42')/SO_2_SOITEM"
+					url : "#3.1 POST SalesOrderList('42')/SO_2_SOITEM"
 				}, {
 					SalesOrderID : "42",
 					ItemPosition : "0020",
@@ -65937,11 +65908,9 @@ make root = ${bMakeRoot}`;
 				})
 				.expectRequest({
 					$ContentID : undefined,
-					batchNo : 3,
-					changeSetNo : 2, // new changeset via submitBatch("$auto")
 					groupId : sGroupId,
 					payload : {},
-					url : "POST RegenerateEPMData"
+					url : "#3.2 POST RegenerateEPMData" // new changeset via submitBatch("$auto")
 				}, {/* don't care */})
 				.expectChange("position", [, "0020"]);
 
@@ -73212,27 +73181,21 @@ make root = ${bMakeRoot}`;
 			]);
 
 			that.expectRequest({
-					batchNo : 3,
-					changeSetNo : 1,
 					groupId : "update",
-					url : "POST TEAMS",
+					url : "#3.1 POST TEAMS",
 					payload : {Name : "New A", Team_Id : "TEAM_A"}
 				}, {Name : "'A' Team", Team_Id : "TEAM_A"})
 				// Note: GET not yet processed, binding still "empty"
 				.expectChange("name", ["'A' Team"])
 				.expectRequest({
-					batchNo : 3,
-					changeSetNo : 1,
 					groupId : "update",
-					url : "POST TEAMS",
+					url : "#3.1 POST TEAMS",
 					payload : {Name : "New B", Team_Id : "TEAM_B"}
 				}, {"@odata.etag" : "b", Name : "'B' Team", Team_Id : "TEAM_B"})
 				.expectChange("name", [, "'B' Team"])
 				.expectRequest({
-					batchNo : 3,
-					changeSetNo : 1,
 					groupId : "update",
-					url : "POST TEAMS",
+					url : "#3.1 POST TEAMS",
 					payload : {Name : "New C", Team_Id : "TEAM_C"}
 				}, {Name : "n/c", Team_Id : "TEAM_C"})
 				.expectChange("name", [,, "'C' Team"])
@@ -76885,18 +76848,14 @@ make root = ${bMakeRoot}`;
 				.withArgs("Failed to update path /SalesOrderList('1')/SO_2_BP/Address/PostalCode");
 
 			that.expectRequest({
-					batchNo : 2,
-					changeSetNo : 1,
-					url : "PATCH SalesOrderList('1')",
+					url : "#2.1 PATCH SalesOrderList('1')",
 					payload : {
 						GrossAmount : "400",
 						Note : "RAISE_ERROR"
 					}
 				}, createErrorInsideBatch())
 				.expectRequest({
-					batchNo : 2,
-					changeSetNo : 1,
-					url : "PATCH BusinessPartnerList('23')",
+					url : "#2.1 PATCH BusinessPartnerList('23')",
 					payload : {
 						Address : {
 							City : "Trill",
