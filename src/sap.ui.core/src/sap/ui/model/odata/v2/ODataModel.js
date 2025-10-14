@@ -2237,6 +2237,7 @@ sap.ui.define([
 	 *     or provided via <code>treeAnnotationProperties.hierarchyNodeDescendantCountFor</code></li>
 	 *   <li>The <code>"hierarchy-preorder-rank-for"</code> annotation must be present in the service metadata or
 	 *     provided via <code>treeAnnotationProperties.hierarchyPreorderRankFor</code></li>
+	 *   <li>The hierarchy maintenance is performed on the client side</li>
 	 *   </ul>
 	 * @param {sap.ui.model.odata.CountMode} [mParameters.countMode]
 	 *   Defines the count mode of this binding; if not specified, the default count mode of the
