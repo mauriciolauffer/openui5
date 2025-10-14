@@ -1347,6 +1347,7 @@ sap.ui.define([
 		if (this.getEnableColumnResize() !== bOldEnableColumnResize) {
 			this._updateColumnResize();
 			this._updateAdaptation();
+			updateColumnMenu(this);
 		}
 
 		return this;
@@ -1460,6 +1461,8 @@ sap.ui.define([
 
 		if (!deepEqual(aOldP13nMode.sort(), this.getP13nMode().sort())) {
 			updateP13nSettings(this);
+			updateColumnMenu(this);
+			this.invalidate(); // Inner columns must update aria-haspopup
 		}
 
 		return this;
@@ -1504,6 +1507,16 @@ sap.ui.define([
 
 		this.getEngine().register(this, oRegisterConfig);
 	};
+
+	function updateColumnMenu(oTable) {
+		const bIsColumnMenuEnabled = oTable.getActiveP13nModes().length > 0 || oTable.getEnableColumnResize();
+
+		if (bIsColumnMenuEnabled) {
+			oTable._createColumnHeaderMenu();
+		} else {
+			oTable._destroyColumnHeaderMenu();
+		}
+	}
 
 	function updateP13nSettings(oTable) {
 		oTable._updateP13nButton();
@@ -2784,25 +2797,33 @@ sap.ui.define([
 			insertFilterInfoBar(this);
 		}
 
-		if (this._isColumnMenuEnabled() && !this._oColumnHeaderMenu) {
-			this._oQuickActionContainer = new QuickActionContainer({table: this});
-			this._oColumnHeaderMenu = new ColumnMenu({
-				id: this.getId() + "-columnHeaderMenu",
-				showTableSettingsButton: true
-			});
-			this._oColumnHeaderMenu.addAggregation("_quickActions", this._oQuickActionContainer);
-			this.addDependent(this._oColumnHeaderMenu);
-
-			FESRHelper.setSemanticStepname(this._oColumnHeaderMenu, "beforeOpen", "mdc:tbl:p13n:col");
-
-			this._oColumnHeaderMenu.attachBeforeOpen(this._createColumnMenuContent, this);
-		}
+		updateColumnMenu(this);
 
 		this._updateInvisibleTitle();
 	};
 
-	Table.prototype._isColumnMenuEnabled = function() {
-		return this.getActiveP13nModes().length > 0 || this.getEnableColumnResize();
+	Table.prototype._createColumnHeaderMenu = function() {
+		if (this._oColumnHeaderMenu) {
+			return;
+		}
+
+		this._oQuickActionContainer = new QuickActionContainer({table: this});
+		this._oColumnHeaderMenu = new ColumnMenu({
+			id: this.getId() + "-columnHeaderMenu",
+			showTableSettingsButton: true
+		});
+		this._oColumnHeaderMenu.addAggregation("_quickActions", this._oQuickActionContainer);
+		this.addDependent(this._oColumnHeaderMenu);
+
+		FESRHelper.setSemanticStepname(this._oColumnHeaderMenu, "beforeOpen", "mdc:tbl:p13n:col");
+
+		this._oColumnHeaderMenu.attachBeforeOpen(this._createColumnMenuContent, this);
+	};
+
+	Table.prototype._destroyColumnHeaderMenu = function() {
+		this._oColumnHeaderMenu?.destroy();
+		delete this._oColumnHeaderMenu;
+		delete this._oQuickActionContainer;
 	};
 
 	Table.prototype._createColumnMenuContent = function(oEvent) {
