@@ -1440,6 +1440,24 @@ sap.ui.define([
 					only: ["sap/ui/fl/support"]
 				}
 			},
+			"support/diagnostics/Flexibility.controller": {
+				group: "Support",
+				coverage: {
+					only: ["sap/ui/fl/support/diagnostics/Flexibility.controller"]
+				}
+			},
+			"support/diagnostics/FlexibilityPlugin": {
+				group: "Support",
+				coverage: {
+					only: ["sap/ui/fl/support/diagnostics/FlexibilityPlugin"]
+				}
+			},
+			"support/diagnostics/FlexibilityDataExtractor": {
+				group: "Support",
+				coverage: {
+					only: ["sap/ui/fl/support/diagnostics/FlexibilityDataExtractor"]
+				}
+			},
 
 			// transport
 			"write/_internal/transport/TransportDialog": {
