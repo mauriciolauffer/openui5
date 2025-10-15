@@ -3,14 +3,49 @@
     "date": "October 2025",
     "notes": [
       {
+        "id": "80f8709b2113d2aee12dddbffe7e5449f83bf62a",
+        "type": "FEATURE",
+        "text": " add AIIntegration sample to demokit"
+      },
+      {
+        "id": "2a5a1c510d646e572c997ea6d8e8f1d7ccab87dc",
+        "type": "FEATURE",
+        "text": " sap.m.SegmentedButton: contentMode property for width behavior is now introduced"
+      },
+      {
+        "id": "ebc794322502d436b2492864d0bf9ddd129d5154",
+        "type": "FIX",
+        "text": " sap.m.Avatar: prevent failing request when src=nullable value"
+      },
+      {
         "id": "aa7e14ab4e2427fa275360568d8ccb6772334e23",
         "type": "FIX",
         "text": " sap.m.Avatar: fix wrong display of icon"
       },
       {
+        "id": "a8ab27b63a050e1bf4f8ad77e4f93fe08687abd6",
+        "type": "FIX",
+        "text": " sap.m.Popover: Scrollbars are now displayed on Safari"
+      },
+      {
         "id": "a3dc73e7f48e13d35855ede83457698b20961b3f",
         "type": "FIX",
         "text": " sap.m.Dialog: correct reverse F6 focus navigation"
+      },
+      {
+        "id": "55b12b936378aea5697e4ebb7b5853d9533a5151",
+        "type": "FEATURE",
+        "text": " We've now added an itemRenameCanceled event for canceling the renaming activity of any document within UploadSetwithTable"
+      },
+      {
+        "id": "756e46143e92410151aa09814d24fcf091305fec",
+        "type": "FIX",
+        "text": " ContextMenuSetting: Missing content opacity in popin"
+      },
+      {
+        "id": "6abf07ab3ebd14a98488d84db275f4b2699b94a2",
+        "type": "FIX",
+        "text": " sap.m.Select: Enable immediate selection of initially highlighted item"
       },
       {
         "id": "437015d4bbab79c6499bf757cb4e7c3a337e1090",

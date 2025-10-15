@@ -3,6 +3,11 @@
     "date": "October 2025",
     "notes": [
       {
+        "id": "40bf1167212fb827f7320a425275ea594b8f0460",
+        "type": "FEATURE",
+        "text": " Integration Cards: Added dateTimeWithTimezone formatter"
+      },
+      {
         "id": "fbc678d775e127bca73838cbe708085e3aa49080",
         "type": "FIX",
         "text": " CardHeader: headers inherit binding path from \"sap.card\""

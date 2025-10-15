@@ -3,6 +3,16 @@
     "date": "October 2025",
     "notes": [
       {
+        "id": "1c4d74b0da8c7988ea0544888ee9db268f4c7558",
+        "type": "FIX",
+        "text": " qunit/Ownstatics.qunit: enhance the error message check for Safari"
+      },
+      {
+        "id": "17df8d520f5abf0f5cd497e908deb75d33e8b332",
+        "type": "FIX",
+        "text": " core/Router: improve the type definition for component target"
+      },
+      {
         "id": "92d0d7aa6d1bb1cc548aa9cc01460ba05c73d74e",
         "type": "FIX",
         "text": " sap/ui/model/odata/v2/ODataTreeBinding: $count requests must not contain $expand or $select"
