@@ -441,19 +441,26 @@ sap.ui.define([
 			}
 		};
 
-		oForm._origOnLayoutDataChange = oForm.onLayoutDataChange;
-		oForm.onLayoutDataChange = function(oEvent) {
-			this._origOnLayoutDataChange(oEvent);
+		/**
+		 * @deprecated Since version 1.93.0
+		 */
+		// eslint-disable-next-line no-lone-blocks
+		{
+			oForm._origOnLayoutDataChange = oForm.onLayoutDataChange;
+			oForm.onLayoutDataChange = function(oEvent) {
+				this._origOnLayoutDataChange(oEvent);
 
-			var oSimpleForm = this.getParent();
-			if (oSimpleForm) {
-				oSimpleForm._onLayoutDataChange(oEvent);
-			}
-		};
+				var oSimpleForm = this.getParent();
+				if (oSimpleForm) {
+					oSimpleForm._onLayoutDataChange(oEvent);
+				}
+			};
+
+			this._aLayouts = [];
+		}
 
 		this.setAggregation("form",oForm);
 		this._aElements = null;
-		this._aLayouts = [];
 		this._changedFormContainers = [];
 		this._changedFormElements = [];
 
@@ -468,13 +475,19 @@ sap.ui.define([
 
 		_removeResize.call(this);
 
-		for (var i = 0; i < this._aLayouts.length; i++) {
-			var oLayout = Element.getElementById(this._aLayouts[i]);
-			if (oLayout && oLayout.destroy) {
-				oLayout.destroy();
+		/**
+	 	 * @deprecated Since version 1.93.0
+	 	 */
+		// eslint-disable-next-line no-lone-blocks
+		{
+			for (var i = 0; i < this._aLayouts.length; i++) {
+				var oLayout = Element.getElementById(this._aLayouts[i]);
+				if (oLayout && oLayout.destroy) {
+					oLayout.destroy();
+				}
 			}
+			this._aLayouts = [];
 		}
-		this._aLayouts = [];
 		this._aElements = null;
 		this._changedFormContainers = [];
 		this._changedFormElements = [];
@@ -1155,6 +1168,10 @@ sap.ui.define([
 			this._oObserver.unobserve(oElement);
 			var oElementClone = oElement.clone(sIdSuffix);
 			this._oObserver.observe(oElement, {properties: ["visible"]});
+
+			/**
+			 * @deprecated Since version 1.93.0
+			 */
 			if (oLayoutData) {
 				// mark private LayoutData
 				if (oLayoutData.isA("sap.ui.core.VariantLayoutData")) {
@@ -1328,6 +1345,9 @@ sap.ui.define([
 
 	}
 
+	/**
+	 * @deprecated Since version 1.93.0
+	 */
 	function _removeOldLayoutData() {
 
 		this._bChangedByMe = true;
@@ -1366,6 +1386,9 @@ sap.ui.define([
 
 	}
 
+	/**
+	 * @deprecated Since version 1.93.0
+	 */
 	function _addLayoutData() {
 
 		this._bChangedByMe = true;
@@ -1459,11 +1482,12 @@ sap.ui.define([
 
 	}
 
-	/*
+	/**
 	 * Checks whether the given LayoutData is created and added by this SimpleForm
-	 * @param { sap.ui.layout.ResponsiveFlowLayoutData} optional (interface) The layout data
+	 * @param { sap.ui.layout.ResponsiveFlowLayoutData} oLayoutData The layout data
 	 * @returns {boolean} Whether the given layout was created by this SimpleForm
 	 * @private
+ 	 * @deprecated Since version 1.93.0
 	 */
 	function _isMyLayoutData(oLayoutData) {
 
@@ -1473,13 +1497,15 @@ sap.ui.define([
 
 	}
 
-	/*
+	/**
 	 * Creates new sap.ui.layout.ResponsiveFlowLayoutData with the given parameters
 	 * @param {int} iWeight the weight for the layout data
 	 * @param {boolean} bLinebreak Whether the layout data has a linebreak
 	 * @param {boolean} bLinebreakable Whether the layout data is linebreakable
+	 * @param {int} iMinWidth the minimal width of the layout data
 	 * @returns {sap.ui.layout.ResponsiveFlowLayoutData} The newly created ResponsiveFlowLayoutData
 	 * @private
+ 	 * @deprecated Since version 1.93.0
 	 */
 	function _createRFLayoutData(iWeight, bLinebreak, bLinebreakable, iMinWidth) {
 
@@ -1545,6 +1571,15 @@ sap.ui.define([
 
 	}
 
+	/**
+	 * @param {sap.ui.core.Control} oField content control
+	 * @param {int} iWeight the weight for the layout data
+	 * @param {boolean} bLinebreak Whether the layout data has a linebreak
+	 * @param {boolean} bLinebreakable Whether the layout data is linebreakable
+	 * @param {int} iMinWidth the minimal width of the layout data
+	 * @private
+ 	 * @deprecated Since version 1.93.0
+	 */
 	function _createFieldLayoutData(oField, iWeight, bLinebreak, bLinebreakable, iMinWidth) {
 
 		if (this.getLayout() != SimpleFormLayout.ResponsiveLayout) {
@@ -1574,6 +1609,10 @@ sap.ui.define([
 
 	}
 
+	/**
+	 * @param {sap.ui.layout.form.FormElement} oElement The FormElement
+	 * @deprecated Since version 1.93.0
+	 */
 	function _createElementLayoutData(oElement) {
 
 		if (this.getLayout() != SimpleFormLayout.ResponsiveLayout) {
@@ -1593,6 +1632,10 @@ sap.ui.define([
 
 	}
 
+	/**
+	 * @param {sap.ui.layout.form.FormContainer} oContainer The form container
+	 * @deprecated Since version 1.93.0
+	 */
 	function _createContainerLayoutData(oContainer) {
 
 		var sLayout = this.getLayout();
@@ -1626,6 +1669,10 @@ sap.ui.define([
 
 	}
 
+	/**
+	 * @param {sap.ui.core.Control} oElement Label or Field
+ 	 * @deprecated Since version 1.93.0
+	 */
 	function _removeLayoutData(oElement) {
 
 		this._bLayoutDataChangedByMe = true;
@@ -1685,6 +1732,9 @@ sap.ui.define([
 			mSettings["label"] = oLabel;
 		} else {
 			sId = oFormContainer.getId() + "--FE-NoLabel"; // There can be only one FormElement without Label in a FomContainer (first one)
+			/**
+			 * @deprecated Since version 1.93.0
+			 */
 			if (Element.getElementById(sId)) {
 				// if ResponsiveLayout and ResponsiveFlowLayoutdata with Linebreak is used multiple FormElements without Label can exist
 				// as already deprecated just keep generatied ID in this very special case.
@@ -1756,10 +1806,11 @@ sap.ui.define([
 
 	}
 
-	/*
+	/**
 	 * Applies the weight property for the fields in the responsive layout.
 	 * @param {sap.ui.layout.form.FormElement} oElement The FormElement where the weight is applied.
 	 * @private
+	 * @deprecated Since version 1.93.0
 	 */
 	function _applyFieldWeight(oElement){
 
@@ -1812,9 +1863,10 @@ sap.ui.define([
 		this._bLayoutDataChangedByMe = false;
 	}
 
-	/*
+	/**
 	 * Applies the linebreaks of FormContainers according to the minWidth and maxContainerCol settings of the SimpleForm
 	 * @private
+	 * @deprecated Since version 1.93.0
 	 */
 	SimpleForm.prototype._applyLinebreaks = function(){
 
@@ -1857,10 +1909,11 @@ sap.ui.define([
 
 	};
 
-	/*
+	/**
 	 * Applies size of the FormContainers in GridLayout: if only one container is in the last line -> make it full size
 	 * adapt all containers because container can be inserted or added later on
 	 * @private
+	 * @deprecated Since version 1.67.0
 	 */
 	function _applyContainerSize(){
 
@@ -1879,9 +1932,11 @@ sap.ui.define([
 		this._bLayoutDataChangedByMe = false;
 	}
 
-	/*
+	/**
 	 * Handles the resize event
+	 * @param {sap.ui.base.Event} oEvent resize event
 	 * @private
+	 * @deprecated Since version 1.93.0
 	 */
 	SimpleForm.prototype._resize = function(oEvent){
 
@@ -1897,6 +1952,9 @@ sap.ui.define([
 
 	};
 
+	/**
+	 * @deprecated Since version 1.93.0
+	 */
 	function _removeResize() {
 
 		if (this._sResizeListenerId) {
@@ -2020,6 +2078,11 @@ sap.ui.define([
 
 	};
 
+	/**
+	 * @param {sap.ui.base.Event} oEvent layout data change event
+	 * @private
+	 * @deprecated Since version 1.93.0
+	 */
 	SimpleForm.prototype._onLayoutDataChange = function(oEvent){
 
 		if (!this._bLayoutDataChangedByMe && !this._bIsBeingDestroyed) {
