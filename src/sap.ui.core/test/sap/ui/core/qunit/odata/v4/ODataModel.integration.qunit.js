@@ -55,10 +55,13 @@ sap.ui.define([
 		rCountTrue = /[?&]\$count=true/, // $count=true, but not inside $expand
 		rCountUrl = /\/\$count(?:\?|$)/, // URL for ".../$count?..."
 		sDefaultLanguage = Localization.getLanguage(),
+		oDONT_CARE = {}, // a response which does not matter
 		rDuplicatePredicate = /,\$duplicate=[-\w]+\)/g,
 		fnFireEvent = EventProvider.prototype.fireEvent,
 		sNextSiblingAction
 			= "/com.sap.gateway.default.iwbep.tea_busi.v0001.__FAKE__AcChangeNextSibling",
+		oNO_CONTENT = Symbol("a response for 204 No Content"),
+		oNO_RESPONSE = {}, // a response which MUST not be used in the end
 		sODataMetaModel = "sap.ui.model.odata.v4.ODataMetaModel",
 		sODCB = "sap.ui.model.odata.v4.ODataContextBinding",
 		sODLB = "sap.ui.model.odata.v4.ODataListBinding",
@@ -2058,7 +2061,9 @@ sap.ui.define([
 						throw oResponseBody;
 					}
 
-					if (typeof oResponseBody === "number") {
+					if (oResponseBody === oNO_CONTENT) { // late conversion in case of Promise
+						oResponseBody = undefined;
+					} else if (typeof oResponseBody === "number") {
 						oResponseBody = String(oResponseBody);
 					} else if (oResponseBody !== undefined && typeof oResponseBody !== "object"
 						&& typeof oResponseBody !== "string") {
@@ -2066,6 +2071,8 @@ sap.ui.define([
 					}
 
 					if ("ETag" in mResponseHeaders) {
+						// "it must be possible to insert the ETag from the header"
+						oResponseBody ??= {};
 						oResponseBody["@odata.etag"] = mResponseHeaders.ETag;
 					}
 					return {
@@ -2491,14 +2498,18 @@ sap.ui.define([
 		 * @param {object|string|number|Error|Promise|function} [vResponse]
 		 *   The response message to be returned from the requestor or a promise on it or a function
 		 *   (invoked "just in time" when the request is actually sent) returning the response
-		 *   message (object, string, number, error, or promise). May be omitted in case it does not
-		 *   matter. For content type "application/json", an object is expected in the end, and for
-		 *   "text/plain", a string - but a number is automatically converted to a string to
-		 *   facilitate requests for ".../$count".
+		 *   message (object, string, number, error, or promise). Use <code>oDONT_MATTER</code> in
+		 *   case it does not matter. For content type "application/json", an object is expected in
+		 *   the end, and for "text/plain", a string - but a number is automatically converted to a
+		 *   string to facilitate requests for ".../$count". The response message needs to be
+		 *   omitted for successful DELETE and PATCH with "Prefer: return=minimal" (unless
+		 *   "$$patchWithoutSideEffects ignores this" is contained). It needs to be given otherwise.
 		 * @param {object} [mResponseHeaders]
 		 *   The response headers to be returned from the requestor
 		 * @returns {object} The test instance for chaining
-		 * @throws {Error} In case some sanity check around "@odata.count" and $count fails
+		 * @throws {Error} In case some sanity check fails, for example around "@odata.count" and
+		 *   $count, or in case the response is missing or unexpected (depending on the method and
+		 *   "Prefer" header)
 		 */
 		expectRequest : function (vRequest, vResponse, mResponseHeaders) {
 			var iCount,
@@ -2506,6 +2517,18 @@ sap.ui.define([
 				aMatches,
 				iSkip = 0,
 				iTop;
+
+			function isIgnoredResponse() {
+				return JSON.stringify(vResponse).includes("$$patchWithoutSideEffects ignores this");
+			}
+			function missingResponse() {
+				throw new Error(`Missing response for ${vRequest.method} ${vRequest.url}`);
+			}
+
+			function unexpectedResponse() {
+				throw new Error(
+					`Unexpected response for ${vRequest.method} ${vRequest.url}: ${vResponse}`);
+			}
 
 			if (typeof vRequest === "string") {
 				vRequest = {
@@ -2525,13 +2548,32 @@ sap.ui.define([
 			vRequest.method ??= "GET";
 			vRequest.payload ??= undefined;
 			vRequest.responseHeaders = mResponseHeaders || {};
-			vRequest.response = vResponse
-					// With GET it must be visible that there is no content, with the other
-					// methods it must be possible to insert the ETag from the header
-					|| (vRequest.method === "GET" ? null : {});
+			vRequest.response = vResponse;
 			vRequest.url = TestUtils.encodeReadableUrl(vRequest.url);
+			this.aRequests.push(vRequest);
+
+			if (vResponse === oNO_CONTENT) { // early conversion for $direct
+				vResponse = vRequest.response = undefined; // 204 No Content
+			} else if (vRequest.method === "DELETE") {
+				if (vResponse && !(vResponse instanceof Error || vResponse instanceof Promise)) {
+					// Note: oNO_CONTENT and oNO_RESPONSE MUST not be used for DELETE
+					unexpectedResponse();
+				}
+			} else if (vRequest.method === "PATCH") {
+				if (vRequest.headers?.Prefer === "return=minimal") {
+					if (vResponse && !(vResponse instanceof Error || isIgnoredResponse())) {
+						unexpectedResponse();
+					}
+				} else if (!vResponse) {
+					missingResponse();
+				}
+			} else if (!vResponse) {
+				missingResponse();
+			}
+
 			if (vResponse && !(vResponse instanceof Error || vResponse instanceof Promise
-					|| typeof vResponse === "function")) { // vResponse may be inspected
+					|| typeof vResponse === "function" || vResponse === oNO_RESPONSE)) {
+				// vResponse may be inspected
 				if (rCountTrue.test(vRequest.url)) { // $count=true
 					if (!("@odata.count" in vResponse)) {
 						throw new Error('Missing "@odata.count" in response for ' + vRequest.method
@@ -2570,7 +2612,6 @@ sap.ui.define([
 					}
 				}
 			}
-			this.aRequests.push(vRequest);
 
 			return this;
 		},
@@ -2896,7 +2937,7 @@ sap.ui.define([
 		this.oLogMock.expects("error").withArgs("Failed to read path /EMPLOYEES('2')/Name");
 
 		this.expectRequest("EMPLOYEES('1')/ID", createErrorInsideBatch())
-			.expectRequest("EMPLOYEES('2')/Name") // no response required
+			.expectRequest("EMPLOYEES('2')/Name", oNO_RESPONSE)
 			.expectMessages([{
 				code : "CODE",
 				message : "Request intentionally failed",
@@ -2997,13 +3038,13 @@ sap.ui.define([
 					changeSetNo : 2,
 					url : "PATCH SalesOrderList('2')",
 					payload : {Note : "Note 2 changed"}
-				}) // no response required
+				}, oNO_RESPONSE)
 				.expectRequest({
 					changeSetNo : 2,
 					url : "PATCH SalesOrderList('3')",
 					payload : {Note : "Note 3 changed"}
-				}) // no response required
-				.expectRequest("BusinessPartnerList('1')/CompanyName") // no response required
+				}, oNO_RESPONSE)
+				.expectRequest("BusinessPartnerList('1')/CompanyName", oNO_RESPONSE)
 				.expectChange("name", null)
 				.expectMessages([{
 					code : "CODE",
@@ -4585,7 +4626,7 @@ sap.ui.define([
 					headers : {"If-Match" : "ETag"},
 					url : "PATCH BusinessPartnerList('4')?sap-client=123",
 					payload : {CompanyName : "changed"}
-				});
+				}, oDONT_CARE);
 
 			// code under test
 			that.oView.byId("bp").getBinding("value").setValue("changed");
@@ -5089,7 +5130,8 @@ sap.ui.define([
 
 			that.expectRequest("TEAMS('T1')?$select=Team_Id,__CT__FAKE__Message/__FAKE__Messages",
 					createErrorInsideBatch())
-				.expectRequest("TEAMS('T1')/TEAM_2_EMPLOYEES?$select=ID&$skip=0&$top=100")
+				.expectRequest("TEAMS('T1')/TEAM_2_EMPLOYEES?$select=ID&$skip=0&$top=100",
+					oNO_RESPONSE)
 				.expectMessages([{
 					code : "CODE",
 					message : "Request intentionally failed",
@@ -5826,7 +5868,7 @@ sap.ui.define([
 					url : "PATCH EMPLOYEES('0')?foo=bar",
 					headers : {"If-Match" : "ETag0"},
 					payload : {AGE : 10}
-				}) // 204 No Content
+				}, oNO_CONTENT)
 				.expectChange("age", ["10"]); // caused by setValue
 
 			oTable.getItems()[0].getCells()[1].getBinding("value").setValue(10);
@@ -6604,7 +6646,7 @@ sap.ui.define([
 				.expectRequest({
 					url : "PATCH ProductList('HT-1000')",
 					payload : {Name : "Notebook Basic 15.2"}
-				});
+				}, oDONT_CARE);
 
 			oTable.getItems()[0].getCells()[0].getBinding("value").setValue("Notebook Basic 15.2");
 
@@ -7296,7 +7338,7 @@ sap.ui.define([
 						Budget : "1234.1234",
 						TeamID : "TEAM_01"
 					}
-				}); // response does not matter here
+				}, oDONT_CARE);
 
 			oOperationBinding.invoke();
 
@@ -7400,7 +7442,7 @@ sap.ui.define([
 					Budget : "4321.1234",
 					TeamID : "TEAM_01"
 				}
-			}, {/* response does not matter here */});
+			}, oDONT_CARE);
 
 			// code under test
 			oOperation.invoke();
@@ -7762,7 +7804,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 						Salary : 54321
 					}
 				}
-			}); // 204 No Content
+			}, oNO_CONTENT);
 
 			// code under test
 			return Promise.all([oOperation.invoke(), that.waitForChanges(assert)]);
@@ -7804,7 +7846,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 						Salary : 54321
 					}
 				}
-			}); // 204 No Content
+			}, oNO_CONTENT);
 
 			return Promise.all([
 				// code under test
@@ -8447,8 +8489,8 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		this.oLogMock.expects("error").withArgs("Failed to delete /TEAMS('1')");
 		this.oLogMock.expects("error").withArgs("Failed to request side effects");
 		this.expectRequest("DELETE TEAMS('1')", createErrorInsideBatch())
-			// side effects: not requesting team '1' (although kept alive) -  no response required
-			.expectRequest("TEAMS?$select=Name,Team_Id&$filter=Team_Id eq '2'")
+			// side effects: not requesting team '1' (although kept alive)
+			.expectRequest("TEAMS?$select=Name,Team_Id&$filter=Team_Id eq '2'", oNO_RESPONSE)
 			.expectMessages([{
 				code : "CODE",
 				message : "Request intentionally failed",
@@ -9301,7 +9343,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			// that.expectRequest({
 			//         url : "PATCH EMPLOYEES('2')",
 			//         payload : {Name : "Jonathan Schmidt"}
-			//     }) // 204 No Content
+			//     }, oNO_CONTENT)
 			that.expectChange("text", "Jonathan Schmidt");
 
 			// code under test
@@ -9417,7 +9459,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			.expectRequest({
 				url : "PATCH TEAMS('TEAM')",
 				payload : {Name : "Team*"}
-			}, undefined, {
+			}, oDONT_CARE, {
 				"sap-messages" : JSON.stringify([{
 					code : "CODE",
 					message : "Just a message",
@@ -10963,9 +11005,9 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				.expectRequest({
 					url : "POST SalesOrderList",
 					payload : {Note : "new4"}
-				}/* response does not matter here */)
-				.expectRequest("SalesOrderList?$select=Note,SalesOrderID&$skip=0&$top=99"
-					/* response does not matter here */)
+				}, oNO_RESPONSE)
+				.expectRequest("SalesOrderList?$select=Note,SalesOrderID&$skip=0&$top=99",
+					oNO_RESPONSE)
 				.expectMessages([{
 					code : "CODE",
 					descriptionUrl : sSalesOrderService + "longtext",
@@ -14058,11 +14100,15 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				oBindingAmount1 = aTableItems[1].getCells()[0].getBinding("value");
 
 			that.expectRequest({
+					batchNo : 2,
+					changeSetNo : 1,
 					url : "PATCH SalesOrderList('41')",
 					headers : {"If-Match" : "ETag0"},
 					payload : {GrossAmount : "4.11"}
-				}) // no response required since the 2nd request fails
+				}, oNO_RESPONSE)
 				.expectRequest({
+					batchNo : 2,
+					changeSetNo : 1,
 					url : "PATCH SalesOrderList('42')",
 					headers : {"If-Match" : "ETag1"},
 					payload : {GrossAmount : "4.22"}
@@ -14237,7 +14283,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					$ContentID : "1.0",
 					url : "PATCH SalesOrderList('42')",
 					payload : {GrossAmount : "4.22"}
-				}) // no response required
+				}, oNO_RESPONSE)
 				.expectMessages([{
 					code : "CODE",
 					descriptionUrl : sSalesOrderService + "Messages(1)/LongText",
@@ -16764,7 +16810,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		this.oModel.setSizeLimit(1025);
 		const oBinding = this.oModel.bindList("/EMPLOYEES");
 
-		this.expectRequest("EMPLOYEES?$skip=0&$top=1025", {value : [/*does not matter*/]});
+		this.expectRequest("EMPLOYEES?$skip=0&$top=1025", {value : [/*oDONT_CARE*/]});
 
 		// code under test
 		oBinding.requestContexts();
@@ -16921,7 +16967,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					headers : {"If-Match" : "ETag"},
 					payload : {Name : "foo"},
 					url : "PATCH EMPLOYEES('01')"
-				});
+				}, oDONT_CARE);
 
 			return Promise.all([
 				oModel.submitBatch("update"),
@@ -17246,7 +17292,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 							Picture : null
 						}
 					}
-				}, {/* response does not matter here */});
+				}, oDONT_CARE);
 
 			oContext.setProperty("ProductPicture/Picture", null);
 
@@ -17449,7 +17495,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				.expectRequest({
 					url : "PATCH Artists(ArtistID='42',IsActiveEntity=true)",
 					payload : {Picture : null}
-				})
+				}, oDONT_CARE)
 				.expectRequest("Artists(ArtistID='42',IsActiveEntity=true)?$select=Picture", {
 					// Picture (Edm.Stream) missing here
 					"Picture@odata.mediaContentType" : null
@@ -17512,18 +17558,18 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			]);
 		}).then(function () {
 			that.expectRequest({
-				url : "PATCH Products(42)",
-				payload : {
-					"@annotation" : "baz*",
-					"@annotation@annotation" : "bazbaz*",
-					"@complexAnnotation" : {
-						sub : "bar**"
-					},
-					ProductPicture : {
-						"Picture@odata.mediaEditLink" : "foo*"
+					url : "PATCH Products(42)",
+					payload : {
+						"@annotation" : "baz*",
+						"@annotation@annotation" : "bazbaz*",
+						"@complexAnnotation" : {
+							sub : "bar**"
+						},
+						ProductPicture : {
+							"Picture@odata.mediaEditLink" : "foo*"
+						}
 					}
-				}
-			});
+				}, oDONT_CARE);
 
 			return Promise.all([
 				// code under test
@@ -17682,7 +17728,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					payload : {
 						QuantityUnit : "DZ"
 					}
-				});
+				}, oDONT_CARE);
 
 			// code under test
 			oLock.unlock();
@@ -17725,7 +17771,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					url : "PATCH EMPLOYEES('1')",
 					headers : {"If-Match" : "ETag"},
 					payload : {ROOM_ID : "1.02"}
-				})
+				}, oDONT_CARE)
 				.expectChange("room", ["1.02"]);
 
 			that.oView.byId("table").getItems()[0].getCells()[0].getBinding("value")
@@ -21567,7 +21613,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 						headers : {"If-Match" : "ETag4"},
 						url : "PATCH SalesOrderList('0500000000')",
 						payload : {Note : "Note (changed)"}
-					});
+					}, oDONT_CARE);
 				}
 				that.expectRequest({
 						headers : {"If-Match" : bChange ? "*" : "ETag4"},
@@ -21732,7 +21778,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 						headers : {"If-Match" : "etag"},
 						url : "PATCH SalesOrderList('1')",
 						payload : {Note : "Note (changed)"}
-					})
+					}, oDONT_CARE)
 					.expectRequest({
 						headers : {"If-Match" : "*"},
 						url : "DELETE SalesOrderList('1')"
@@ -22028,8 +22074,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				.expectRequest("SalesOrderList?$count=true&$select=SalesOrderID"
 					+ "&$filter=not (SalesOrderID eq '2' or SalesOrderID eq '3'"
 						+ " or SalesOrderID eq '4')"
-					+ "&$skip=4&$top=1")
-					// no response required
+					+ "&$skip=4&$top=1", oNO_RESPONSE)
 				.expectChange("count", "18")
 				.expectMessages([{
 					code : "CODE",
@@ -22072,7 +22117,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				that.expectRequest({
 						url : "PATCH SalesOrderList('2')",
 						payload : {Note : "Note 2 (changed)"}
-					})
+					}, oDONT_CARE)
 					.expectRequest("DELETE SalesOrderList('2')")
 					.expectRequest("DELETE SalesOrderList('4')");
 			} else {
@@ -30454,7 +30499,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 							YEARLY_BONUS_AMOUNT : "2345"
 						}
 					}
-				}) // 204 No Content
+				}, oNO_CONTENT)
 				.expectRequest({
 					url : "PATCH EMPLOYEES('1')",
 					payload : {
@@ -30463,7 +30508,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 							YEARLY_BONUS_AMOUNT : "700"
 						}
 					}
-				}); // 204 No Content
+				}, oNO_CONTENT);
 
 			// code under test
 			oRootAmountBinding.setValue("2345");
@@ -30771,7 +30816,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					},
 					url : "#3 PATCH EMPLOYEES('2')",
 					payload : {Name : "κ (Kappa)"}
-				}) // 204 No Content
+				}, oNO_CONTENT)
 				.expectRequest("#3 EMPLOYEES('2')?$select=AGE,ID,Name", {
 					AGE : 66, // artificial side effect
 					ID : "2",
@@ -31129,7 +31174,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 						"EMPLOYEE_2_MANAGER@odata.bind" : null
 					},
 					url : "#10 PATCH EMPLOYEES('9')"
-				}) // 204 No Content
+				}, oNO_CONTENT)
 				.expectRequest({
 					headers : {
 						Prefer : "return=minimal"
@@ -31138,7 +31183,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 						NextSibling : {ID : "0"}
 					},
 					url : "#10 POST EMPLOYEES('9')" + sNextSiblingAction
-				}) // 204 No Content
+				}, oNO_CONTENT)
 				.expectRequest("#10 " + sTopLevelsUrl.slice(0, -1) + ",ExpandLevels="
 					+ JSON.stringify([{NodeID : "1", Levels : 1}, {NodeID : "0", Levels : 0}])
 					+ ")&$filter=ID eq '9'&$select=LimitedRank", {
@@ -31361,7 +31406,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('0')"
 				}
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest({
 				headers : {
 					Prefer : "return=minimal"
@@ -31370,7 +31415,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				payload : {
 					NextSibling : {ID : "1"}
 				}
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest("#5 " + sBaseUrl + "&$filter=ID eq '2'&$select=LimitedRank", {
 				value : [{
 					LimitedRank : "1" // now in place
@@ -33751,7 +33796,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 		this.oLogMock.expects("error").withArgs("Failed to delete /EMPLOYEES('1')");
 		this.expectRequest("#4 DELETE EMPLOYEES('1')", createErrorInsideBatch())
-			.expectRequest("#4 EMPLOYEES/$count") // no response required
+			.expectRequest("#4 EMPLOYEES/$count", oNO_RESPONSE)
 			.expectMessages([{
 				code : "CODE",
 				message : "Request intentionally failed",
@@ -33942,8 +33987,8 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		this.oLogMock.expects("error").withArgs("Failed to delete /EMPLOYEES('1')");
 		this.oLogMock.expects("error").withArgs("Failed to delete /EMPLOYEES('2')");
 		this.expectRequest("#3 DELETE EMPLOYEES('1')", createErrorInsideBatch())
-			.expectRequest("#3 DELETE EMPLOYEES('2')") // no response required
-			.expectRequest("#3 EMPLOYEES/$count") // no response required
+			.expectRequest("#3 DELETE EMPLOYEES('2')"/*, oNO_RESPONSE*/)
+			.expectRequest("#3 EMPLOYEES/$count", oNO_RESPONSE)
 			.expectMessages([{
 				code : "CODE",
 				message : "Request intentionally failed",
@@ -35063,7 +35108,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					payload : {
 						"BestFriend@odata.bind" : "Artists(ArtistID='1',IsActiveEntity=false)"
 					}
-				}, null, {ETag : "n/a"}) // 204 No Content
+				}, oNO_CONTENT, {ETag : "n/a"})
 				// side-effects refresh
 				.expectRequest("#7 " + sBaseUrl
 					+ "&$filter=ArtistID eq '2' and IsActiveEntity eq false"
@@ -35193,7 +35238,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					payload : {
 						"BestFriend@odata.bind" : "Artists(ArtistID='0',IsActiveEntity=false)"
 					}
-				}, null, {ETag : "etag2.2"}) // 204 No Content
+				}, oNO_CONTENT, {ETag : "etag2.2"})
 				.expectRequest("#8 " + sBaseUrl
 					+ "&$filter=ArtistID eq '2' and IsActiveEntity eq false"
 					+ "&$select=_/Limited_Rank", {
@@ -35529,7 +35574,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					payload : {
 						"BestFriend@odata.bind" : "Artists(ArtistID='2',IsActiveEntity=false)"
 					}
-				}, null, {ETag : "etag1.5"}) // 204 No Content
+				}, oNO_CONTENT, {ETag : "etag1.5"})
 				.expectRequest("#14 " + sBaseUrl
 					+ "&$filter=ArtistID eq '1' and IsActiveEntity eq false"
 					+ "&$select=_/Limited_Rank", {
@@ -35749,7 +35794,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					payload : {
 						"BestFriend@odata.bind" : null
 					}
-				}, null, {ETag : "etag1.7"}) // 204 No Content
+				}, oNO_CONTENT, {ETag : "etag1.7"})
 				.expectRequest("#19 " + sBaseUrl
 					+ "&$filter=ArtistID eq '1' and IsActiveEntity eq false"
 					+ "&$select=_/Limited_Rank", {
@@ -35792,7 +35837,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					payload : {
 						"BestFriend@odata.bind" : "Artists(ArtistID='0',IsActiveEntity=false)"
 					}
-				}, null, {ETag : "etag2.6"}) // 204 No Content
+				}, oNO_CONTENT, {ETag : "etag2.6"})
 				.expectRequest("#20 " + sBaseUrl
 					+ "&$filter=ArtistID eq '2' and IsActiveEntity eq false"
 					+ "&$select=_/Limited_Rank", {
@@ -36934,8 +36979,8 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 						"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('9')"
 					}
 				}, createErrorInsideBatch())
-				.expectRequest("#2 " + sBaseUrl + "&$filter=ID eq '0'&$select=LimitedRank");
-					// no response required
+				.expectRequest("#2 " + sBaseUrl + "&$filter=ID eq '0'&$select=LimitedRank",
+					oNO_RESPONSE);
 
 			await Promise.all([
 				oAlpha.move({parent : oOmega}).then(mustFail(assert), function (oError) {
@@ -36987,7 +37032,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('9')"
 				}
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest({
 				batchNo : bMoveCollapsed ? 2 : 3,
 				url : sBaseUrl + "&$filter=ID eq '0'&$select=LimitedRank"
@@ -37056,7 +37101,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('1')"
 				}
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest({
 				batchNo : bMoveCollapsed ? 3 : 4,
 				url : sBaseUrl + "&$filter=ID eq '2'&$select=LimitedRank"
@@ -37126,7 +37171,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('9')"
 				}
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest({
 				batchNo : bMoveCollapsed ? 4 : 5,
 				url : sBaseUrl + "&$filter=ID eq '0'&$select=LimitedRank"
@@ -37321,7 +37366,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('1')"
 				}
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest("#3 " + sBaseUrl.slice(0, -1) + ",ExpandLevels="
 				+ JSON.stringify([{NodeID : "8", Levels : 0}, {NodeID : "1", Levels : 1}])
 				+ ")&$filter=ID eq '3'&$select=LimitedRank", {
@@ -37422,7 +37467,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('8')"
 				}
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest("#4 " + sBaseUrl.slice(0, -1) + ",ExpandLevels="
 				+ JSON.stringify([{NodeID : "1", Levels : 1}])
 				+ ")&$filter=ID eq '1'&$select=LimitedRank", {
@@ -37534,7 +37579,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('9')"
 				}
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest("#5 " + sBaseUrl.slice(0, -1) + ",ExpandLevels="
 				+ JSON.stringify([{NodeID : "1", Levels : 1}, {NodeID : "9", Levels : 1}])
 				+ ")&$filter=ID eq '1'&$select=LimitedRank", {
@@ -37659,7 +37704,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('9')"
 				}
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest("#6 " + sBaseUrl.slice(0, -1) + ",ExpandLevels=" // Note: Levels=2
 				+ JSON.stringify([{NodeID : "1", Levels : 1}, {NodeID : "9", Levels : 1}])
 				+ ")&$filter=ID eq '0'&$select=LimitedRank", {
@@ -37856,7 +37901,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 							"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('3.1.1')"
 						},
 						url : "#10 PATCH EMPLOYEES('1')"
-					}) // 204 No Content
+					}, oNO_CONTENT)
 					.expectRequest("#10 " + sBaseUrl + "&$filter=ID eq '1'&$select=LimitedRank", {
 						value : [{
 							LimitedRank : "5" // Edm.Int64
@@ -37952,7 +37997,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 							"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('1')"
 						},
 						url : "#10 PATCH EMPLOYEES('3')"
-					}) // 204 No Content
+					}, oNO_CONTENT)
 					.expectRequest("#10 " + sBaseUrl + "&$filter=ID eq '3'&$select=LimitedRank", {
 						value : [{
 							LimitedRank : "2" // Edm.Int64
@@ -38048,7 +38093,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 							"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('1')"
 						},
 						url : "#10 PATCH EMPLOYEES('3.1')"
-					}) // 204 No Content
+					}, oNO_CONTENT)
 					.expectRequest("#10 " + sBaseUrl + "&$filter=ID eq '3.1'&$select=LimitedRank", {
 						value : [{
 							LimitedRank : "2" // Edm.Int64
@@ -38191,7 +38236,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 							"EMPLOYEE_2_MANAGER@odata.bind" : null
 						},
 						url : "#10 PATCH EMPLOYEES('3.1')"
-					}) // 204 No Content
+					}, oNO_CONTENT)
 					.expectRequest("#10 " + sBaseUrl + "&$filter=ID eq '3.1'&$select=LimitedRank", {
 						value : [{
 							LimitedRank : "5" // Edm.Int64
@@ -38328,7 +38373,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 							"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('3.2')"
 						},
 						url : "#10 PATCH EMPLOYEES('3.1')"
-					}) // 204 No Content
+					}, oNO_CONTENT)
 					.expectRequest("#10 " + sBaseUrl + "&$filter=ID eq '3.1'&$select=LimitedRank", {
 						value : [{
 							LimitedRank : "5" // Edm.Int64
@@ -38424,7 +38469,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 							"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('3.2')"
 						},
 						url : "#10 PATCH EMPLOYEES('3.1')"
-					}) // 204 No Content
+					}, oNO_CONTENT)
 					.expectRequest("#10 " + sBaseUrl + "&$filter=ID eq '3.1'&$select=LimitedRank", {
 						value : [] // filtered out
 					})
@@ -38491,7 +38536,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 							"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('0')"
 						},
 						url : "#10 PATCH EMPLOYEES('1')"
-					}) // 204 No Content
+					}, oNO_CONTENT)
 					.expectRequest({
 						headers : {
 							Prefer : "return=minimal"
@@ -38500,7 +38545,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 							NextSibling : {ID : "3"}
 						},
 						url : "#10 POST EMPLOYEES('1')" + sNextSiblingAction
-					}) // 204 No Content
+					}, oNO_CONTENT)
 					.expectRequest("#10 " + sBaseUrl + "&$filter=ID eq '1'&$select=LimitedRank", {
 						value : [{
 							LimitedRank : "2" // Edm.Int64
@@ -38659,7 +38704,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					"EMPLOYEE_2_MANAGER@odata.bind" : null
 				},
 				url : "#2 PATCH EMPLOYEES('2')"
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest("#2 " + sUrl + "&$filter=ID eq '2'&$select=LimitedRank", {
 				value : [{
 					LimitedRank : "3"
@@ -41195,7 +41240,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				url : "#2 POST EMPLOYEES",
 				payload : {Name : "Bar"}
 			}, createErrorInsideBatch())
-			.expectRequest("#2 " + sCountUrl) // no response required
+			.expectRequest("#2 " + sCountUrl, oNO_RESPONSE)
 			.expectMessages([{
 				code : "CODE",
 				message : "Request intentionally failed",
@@ -41256,7 +41301,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				url : "#3 POST EMPLOYEES",
 				payload : {Name : "Delta"}
 			}, createErrorInsideBatch())
-			.expectRequest("#3 " + sCountUrl) // no response required
+			.expectRequest("#3 " + sCountUrl, oNO_RESPONSE)
 			.expectMessages([{
 				code : "CODE",
 				message : "Request intentionally failed",
@@ -41991,7 +42036,7 @@ make root = ${bMakeRoot}`;
 				payload : {
 					"BestFriend@odata.bind" : "Artists(ArtistID='3',IsActiveEntity=false)"
 				}
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest("#3 " + sBaseUrl + "&$filter=ArtistID eq '1' and IsActiveEntity eq false"
 				+ "&$select=_/" + sLimitedRank, {
 				value : [{
@@ -42196,7 +42241,7 @@ make root = ${bMakeRoot}`;
 				payload : {
 					"BestFriend@odata.bind" : "Artists(ArtistID='9',IsActiveEntity=false)"
 				}
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest("#6 " + sBaseUrl
 				+ "&$filter=ArtistID eq '10' and IsActiveEntity eq false"
 				+ "&$select=_/" + sLimitedRank, {
@@ -42230,7 +42275,7 @@ make root = ${bMakeRoot}`;
 				payload : {
 					"BestFriend@odata.bind" : "Artists(ArtistID='9',IsActiveEntity=false)"
 				}
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest("#7 " + sBaseUrl
 				+ "&$filter=ArtistID eq '10.1' and IsActiveEntity eq false"
 				+ "&$select=_/" + sLimitedRank, {
@@ -42278,7 +42323,7 @@ make root = ${bMakeRoot}`;
 				payload : {
 					"BestFriend@odata.bind" : "Artists(ArtistID='0',IsActiveEntity=false)"
 				}
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest("#8 " + sBaseUrl
 				+ "&$filter=ArtistID eq '10.1' and IsActiveEntity eq false"
 				+ "&$select=_/" + sLimitedRank, {
@@ -42343,7 +42388,7 @@ make root = ${bMakeRoot}`;
 					payload : {
 						"BestFriend@odata.bind" : null
 					}
-				}) // 204 No Content
+				}, oNO_CONTENT)
 				.expectRequest("#9 " + sBaseUrl
 					+ "&$filter=ArtistID eq '1' and IsActiveEntity eq false"
 					+ "&$select=_/" + sLimitedRank, {
@@ -42498,7 +42543,7 @@ make root = ${bMakeRoot}`;
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('1')"
 				},
 				url : "#2 PATCH EMPLOYEES('4')"
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest({
 				headers : {
 					"If-Match" : "Delta's ETag",
@@ -42508,7 +42553,7 @@ make root = ${bMakeRoot}`;
 					NextSibling : {ID : "3"}
 				},
 				url : "#2 POST EMPLOYEES('4')" + sNextSiblingAction
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest("#2 " + sUrl + "&$filter=ID eq '4'&$select=LimitedRank", {
 				value : [{
 					LimitedRank : "2"
@@ -42574,7 +42619,7 @@ make root = ${bMakeRoot}`;
 					"EMPLOYEE_2_MANAGER@odata.bind" : null
 				},
 				url : "#3 PATCH EMPLOYEES('4')"
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest({
 				headers : {
 					Prefer : "return=minimal"
@@ -42583,7 +42628,7 @@ make root = ${bMakeRoot}`;
 					NextSibling : null
 				},
 				url : "#3 POST EMPLOYEES('4')" + sNextSiblingAction
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest("#3 " + sUrl + "&$filter=ID eq '4'&$select=LimitedRank", {
 				value : [{
 					LimitedRank : "4"
@@ -42771,7 +42816,7 @@ make root = ${bMakeRoot}`;
 					"EMPLOYEE_2_MANAGER@odata.bind" : null
 				},
 				url : "#3 PATCH EMPLOYEES('2')"
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest({
 				headers : {
 					Prefer : "return=minimal"
@@ -42780,7 +42825,7 @@ make root = ${bMakeRoot}`;
 					NextSibling : null
 				},
 				url : "#3 POST EMPLOYEES('2')" + sNextSiblingAction
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest("#3 " + sUrl.slice(0, -1) + ",ExpandLevels="
 				+ JSON.stringify([{NodeID : "1", Levels : 1}])
 				+ ")" + "&$filter=ID eq '2'&$select=LimitedRank", {
@@ -42964,7 +43009,7 @@ make root = ${bMakeRoot}`;
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('1')"
 				},
 				url : "#4 PATCH EMPLOYEES('2')"
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest({
 				headers : {
 					Prefer : "return=minimal"
@@ -42973,7 +43018,7 @@ make root = ${bMakeRoot}`;
 					NextSibling : null
 				},
 				url : "#4 POST EMPLOYEES('2')" + sNextSiblingAction
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest("#4 " + sUrl + "&$filter=ID eq '2'&$select=LimitedRank", {
 				value : [{
 					LimitedRank : "3"
@@ -43079,7 +43124,7 @@ make root = ${bMakeRoot}`;
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('3')"
 				},
 				url : "#6 PATCH EMPLOYEES('2')"
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest("#6 " + sUrl + "&$filter=ID eq '2'&$select=LimitedRank", {
 				value : [{
 					LimitedRank : "2"
@@ -43122,7 +43167,7 @@ make root = ${bMakeRoot}`;
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('1')"
 				},
 				url : "#7 PATCH $-1"
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest("#7 " + sUrl + "&$filter=ID eq '5'&$select=LimitedRank", {
 				value : [{
 					LimitedRank : "5" // Edm.Int64
@@ -43218,7 +43263,7 @@ make root = ${bMakeRoot}`;
 					"EMPLOYEE_2_MANAGER@odata.bind" : null
 				},
 				url : "#9 PATCH $-1"
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest("#9 " + sUrl + "&$filter=ID eq '5'&$select=LimitedRank", {
 				value : [{
 					LimitedRank : "6" // Edm.Int64
@@ -43308,7 +43353,7 @@ make root = ${bMakeRoot}`;
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('5')"
 				},
 				url : "#11 PATCH $-1"
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest("#11 " + sUrl + "&$filter=ID eq '5'&$select=LimitedRank", {
 				value : [{
 					LimitedRank : "6" // Edm.Int64
@@ -43428,7 +43473,7 @@ make root = ${bMakeRoot}`;
 					"BestFriend@odata.bind" : null
 				},
 				url : "#2 PATCH Artists(ArtistID='2',IsActiveEntity=false)"
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest({
 				headers : {
 					Prefer : "return=minimal"
@@ -43439,7 +43484,7 @@ make root = ${bMakeRoot}`;
 				},
 				url : "#2 POST " + sFriend.slice(1)
 					+ "(ArtistID='2',IsActiveEntity=false)/special.cases.ChangeNextSibling"
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest("#2 " + sUrl
 				+ "&$filter=ArtistID eq '2' and IsActiveEntity eq false&$select=_/Limited_Rank", {
 				value : [{
@@ -44159,7 +44204,7 @@ make root = ${bMakeRoot}`;
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('1')"
 				},
 				url : "#2 PATCH EMPLOYEES('1.1')"
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest("#2 " + sUrl + "&$filter=ID eq '1.1'&$select=LimitedRank", {
 				value : [{
 					LimitedRank : "4" // Edm.Int64
@@ -46092,7 +46137,7 @@ make root = ${bMakeRoot}`;
 					"BestFriend@odata.bind" : "Artists(ArtistID='0',IsActiveEntity=false)"
 				},
 				url : "#8 PATCH Artists(ArtistID='4',IsActiveEntity=false)"
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest({
 				headers : {
 					"If-Match" : "etag4.1",
@@ -46104,7 +46149,7 @@ make root = ${bMakeRoot}`;
 				},
 				url : "#8 POST " + sFriend.slice(1)
 					+ "(ArtistID='4',IsActiveEntity=false)/special.cases.ChangeNextSibling"
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest("#8 " + sBaseUrl + "&$filter=ArtistID eq '4' and IsActiveEntity eq false"
 				+ "&$select=_/Limited_Rank", {
 				value : [{
@@ -50136,7 +50181,7 @@ make root = ${bMakeRoot}`;
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('9')"
 				},
 				url : "#2 PATCH $-1" // Note: "$-1" references the previous request
-			}) // 204 No Content
+			}, oNO_CONTENT)
 			.expectRequest("#2 " + sBaseUrl + "&$filter=ID eq '1'&$select=LimitedRank", {
 				value : [{ // Note: Beta's position did change
 					LimitedRank : "3" // Edm.Int64
@@ -51006,11 +51051,11 @@ make root = ${bMakeRoot}`;
 		this.expectRequest({
 				url : "POST SalesOrderList('1')/" + sAction,
 				payload : {}
-			})
+			}, oDONT_CARE)
 			.expectRequest({
 				url : "POST SalesOrderList('2')/" + sAction,
 				payload : {}
-			})
+			}, oDONT_CARE)
 			.expectRequest("SalesOrderList?$select=SalesOrderID"
 				+ "&$filter=SalesOrderID eq '1' or SalesOrderID eq '2'&$top=2",
 				{value : []}) // ODLB#refreshKeptElements
@@ -51445,7 +51490,7 @@ make root = ${bMakeRoot}`;
 					headers : {Prefer : "return=minimal"},
 					url : "PATCH Artists(ArtistID='42',IsActiveEntity=false)",
 					payload : {Name : "The Beatles (modified)"}
-				}); // 204 No Content
+				}, oNO_CONTENT);
 
 			that.oView.byId("name").getBinding("value").setValue("The Beatles (modified)");
 			return that.waitForChanges(assert, "PATCH");
@@ -51666,7 +51711,7 @@ make root = ${bMakeRoot}`;
 					headers : {Prefer : "return=minimal"},
 					url : "PATCH Artists(ArtistID='23',IsActiveEntity=true)",
 					payload : {Name : "Sgt. Pepper (modified)"}
-				}); // 204 No Content
+				}, oNO_CONTENT);
 
 			that.oView.byId("bestFriend").getBinding("value").setValue("Sgt. Pepper (modified)");
 
@@ -52471,7 +52516,7 @@ make root = ${bMakeRoot}`;
 					url : "PATCH Artists(ArtistID='42',IsActiveEntity=false)",
 					headers : {"If-Match" : "ETag0"},
 					payload : {Name : "TAFKAP"}
-				}, {/* response does not matter here */});
+				}, oDONT_CARE);
 
 			that.oView.byId("name").getBinding("value").setValue("TAFKAP");
 
@@ -52997,7 +53042,7 @@ make root = ${bMakeRoot}`;
 						},
 						payload : {Name : "Mrs Eliot"},
 						url : "#6 PATCH Artists(ArtistID='42',IsActiveEntity=false)"
-					}, null, {ETag : "inactivETag*"}) // 204 No Content
+					}, oNO_CONTENT, {ETag : "inactivETag*"})
 					.expectRequest({
 						headers : {
 							"If-Match" : "inactivETag"
@@ -53209,7 +53254,7 @@ make root = ${bMakeRoot}`;
 							"If-Match" : "inactivETag"
 						},
 						url : "DELETE Artists(ArtistID='42',IsActiveEntity=false)"
-					}) // 204 No Content
+					})
 					.expectMessages([{
 						message : sMessage1,
 						target : "/Artists(ArtistID='42',IsActiveEntity=true)/Name",
@@ -53399,7 +53444,7 @@ make root = ${bMakeRoot}`;
 					url : "POST TEAMS('newer')/com.sap.gateway.default.iwbep.tea_busi.v0001."
 						+ "AcChangeManagerOfTeam",
 					payload : {ManagerID : "01"}
-			});
+				}, oDONT_CARE);
 			oAction.setParameter("ManagerID", "01");
 
 			return Promise.all([
@@ -54957,8 +55002,8 @@ make root = ${bMakeRoot}`;
 					headers : {"If-Match" : "ETag0", Prefer : "return=minimal"},
 					payload : {NetAmount : "-1"}
 				}, createErrorInsideBatch({message : "Value -1 not allowed"}))
-				.expectRequest("#2 SalesOrderList('42')?sap-client=123&$select=GrossAmount")
-					// no response required since the PATCH fails
+				.expectRequest("#2 SalesOrderList('42')?sap-client=123&$select=GrossAmount",
+					oNO_RESPONSE)
 				.expectMessages([{
 					code : "CODE",
 					message : "Value -1 not allowed",
@@ -54994,7 +55039,7 @@ make root = ${bMakeRoot}`;
 					url : "#3 PATCH SalesOrderList('42')?sap-client=123",
 					headers : {"If-Match" : "ETag0", Prefer : "return=minimal"},
 					payload : {NetAmount : "200"}
-				}, null, {ETag : "ETag1"}); // 204 No Content
+				}, oNO_CONTENT, {ETag : "ETag1"});
 
 			that.oView.byId("netAmount").getBinding("value").setValue("200");
 
@@ -55111,7 +55156,7 @@ make root = ${bMakeRoot}`;
 					url : "PATCH SalesOrderList('42')",
 					headers : {"If-Match" : "ETag0", Prefer : "return=minimal"},
 					payload : {Note : "Note (entered)"}
-				}); // 204 No Content
+				}, oNO_CONTENT);
 
 			oTable.getItems()[0].getCells()[0].getBinding("value").setValue("Note (entered)");
 
@@ -55135,7 +55180,7 @@ make root = ${bMakeRoot}`;
 					url : "PATCH SalesOrderList('42')",
 					headers : {"If-Match" : "ETag1", Prefer : "return=minimal"},
 					payload : {Note : "Note (entered)"}
-				}); // 204 No Content
+				}, oNO_CONTENT);
 
 			that.oView.byId("formNote").getBinding("value").setValue("Note (entered)");
 
@@ -55198,7 +55243,7 @@ make root = ${bMakeRoot}`;
 					url : "#2 PATCH Artists(ArtistID='42',IsActiveEntity=true)",
 					headers : {"If-Match" : "ETag0"},
 					payload : {Name : "TAFKAP"}
-				}, {/* response does not matter here */})
+				}, oDONT_CARE)
 				.expectRequest("#2 Artists(ArtistID='42',IsActiveEntity=true)"
 					+ "?$select=DraftAdministrativeData"
 					+ "&$expand=DraftAdministrativeData($select=DraftID,InProcessByUser)", {
@@ -55370,7 +55415,7 @@ make root = ${bMakeRoot}`;
 					headers : {"If-Match" : "ETag"},
 					payload : {CompanyName : "changed"},
 					url : "PATCH BusinessPartnerList('42')"
-				});
+				}, oDONT_CARE);
 
 			that.oView.byId("company").getBinding("value").setValue("changed");
 
@@ -55516,7 +55561,7 @@ make root = ${bMakeRoot}`;
 				},
 				url : "#2 PATCH TEAMS('TEAM_01')",
 				payload : {Name : "New Team"}
-			}, null, {ETag : "etag1.1"}) // no response required
+			}, oNO_CONTENT, {ETag : "etag1.1"})
 			.expectRequest("#2 TEAMS?$select=Budget,Name,Team_Id&$filter=Team_Id eq 'TEAM_01'", {
 				value : [{
 					"@odata.etag" : "etag1.1",
@@ -56589,8 +56634,7 @@ make root = ${bMakeRoot}`;
 				.withArgs(sinon.match.string, sinon.match(sPreviousFailed));
 			that.expectRequest("SalesOrderList?$select=SalesOrderID&$filter=SalesOrderID eq '42'",
 					createErrorInsideBatch())
-				// no response required
-				.expectRequest("SalesOrderList?$select=SalesOrderID&$skip=0&$top=100")
+				.expectRequest("SalesOrderList?$select=SalesOrderID&$skip=0&$top=100", oNO_RESPONSE)
 				.expectMessages([{
 					code : "CODE",
 					message : "Request intentionally failed",
@@ -56667,7 +56711,7 @@ make root = ${bMakeRoot}`;
 				.withArgs(sinon.match.string, sinon.match(sPreviousFailed));
 			that.expectRequest("SalesOrderList?$select=SalesOrderID&$skip=0&$top=100",
 					createErrorInsideBatch())
-				.expectRequest("SalesOrderList('42')?$select=Note,SalesOrderID") // no reponse req.
+				.expectRequest("SalesOrderList('42')?$select=Note,SalesOrderID", oNO_RESPONSE)
 				.expectMessages([{
 					code : "CODE",
 					message : "Request intentionally failed",
@@ -56867,7 +56911,7 @@ make root = ${bMakeRoot}`;
 			that.expectRequest("SalesOrderList('1')?$select=Messages,Note,SalesOrderID",
 					createErrorInsideBatch())
 				.expectRequest("SalesOrderList('1')/SO_2_SOITEM"
-					+ "?$select=ItemPosition,SalesOrderID&$skip=0&$top=100") // no response required
+					+ "?$select=ItemPosition,SalesOrderID&$skip=0&$top=100", oNO_RESPONSE)
 				.expectChange("note", null) // temporary data loss due to failed request
 				.expectChange("note", "Good-bye") // "keep cache on error"
 				// Note: there is proof that "Just A Message" would be gone on success
@@ -57045,7 +57089,7 @@ make root = ${bMakeRoot}`;
 					url : "#2 POST SalesOrderList('1')/" + sAction,
 					headers : {"If-Match" : "ETag"},
 					payload : {}
-				})
+				}, oDONT_CARE)
 				.expectRequest("#2 SalesOrderList('1')?$select=SO_2_SOITEM"
 					+ "&$expand=SO_2_SOITEM($select=ItemPosition,SalesOrderID)", {
 					"@odata.etag" : "ETag",
@@ -57280,7 +57324,7 @@ make root = ${bMakeRoot}`;
 						url : "PATCH EMPLOYEES('4')",
 						headers : {"If-Match" : "ETag4"},
 						payload : {ROOM_ID : "41"}
-					}) // no response required
+					}, oNO_RESPONSE)
 					.expectMessages([{
 						code : "CODE",
 						message : "Request intentionally failed",
@@ -58311,7 +58355,7 @@ make root = ${bMakeRoot}`;
 					url : "PATCH ProductList('HT-1000')?sap-client=123",
 					headers : {"If-Match" : "ETag"},
 					payload : {WeightMeasure : "23.4", WeightUnit : "KG"}
-				});
+				}, oDONT_CARE);
 
 			oControl.getBinding("value").setRawValue(["23.4", "KG"]);
 
@@ -58338,7 +58382,7 @@ make root = ${bMakeRoot}`;
 					url : "PATCH ProductList('HT-1000')?sap-client=123",
 					headers : {"If-Match" : "ETag"},
 					payload : {WeightMeasure : "34.51", WeightUnit : "KG"}
-				});
+				}, oDONT_CARE);
 
 			// code under test: for amount change the event for "weight" happens only once
 			oControl.getBinding("value").setRawValue(["34.51", "KG"]);
@@ -58352,7 +58396,7 @@ make root = ${bMakeRoot}`;
 					url : "PATCH ProductList('HT-1000')?sap-client=123",
 					headers : {"If-Match" : "ETag"},
 					payload : {WeightMeasure : "0", WeightUnit : "KG"}
-				});
+				}, oDONT_CARE);
 
 			// remove the formatter so that we can call setValue at the control
 			oControl.getBinding("value").setFormatter(null);
@@ -58507,7 +58551,7 @@ make root = ${bMakeRoot}`;
 					url : "PATCH ProductList('HT-1000')?sap-client=123",
 					headers : {"If-Match" : "ETag"},
 					payload : {Price : "42", CurrencyCode : "JPY"}
-				});
+				}, oDONT_CARE);
 
 			that.oView.byId("price").getBinding("value").setRawValue(["42", "JPY"]);
 
@@ -58520,7 +58564,7 @@ make root = ${bMakeRoot}`;
 					url : "PATCH ProductList('HT-1000')?sap-client=123",
 					headers : {"If-Match" : "ETag"},
 					payload : {Price : "0", CurrencyCode : "JPY"}
-				});
+				}, oDONT_CARE);
 
 			oControl = that.oView.byId("price");
 			// remove the formatter so that we can call setValue at the control
@@ -59228,7 +59272,7 @@ make root = ${bMakeRoot}`;
 					}
 				},
 				url : "PATCH TEAMS('42')/TEAM_2_EMPLOYEES('1')"
-			}, {/* response does not matter here */});
+			}, oDONT_CARE);
 
 		// code under test
 		this.oView.byId("salary").getBinding("value").setValue("1234.89");
@@ -59236,7 +59280,7 @@ make root = ${bMakeRoot}`;
 		await this.waitForChanges(assert, "PATCH salary");
 
 		this.expectChange("salary", null)
-			.expectRequest("DELETE TEAMS('42')/TEAM_2_EMPLOYEES('1')"); // 204 No Content
+			.expectRequest("DELETE TEAMS('42')/TEAM_2_EMPLOYEES('1')");
 
 		await Promise.all([
 			// code under test
@@ -59683,7 +59727,7 @@ make root = ${bMakeRoot}`;
 			that.expectRequest({
 					payload : {Name : "Foo"},
 					url : "PATCH TEAMS('TEAM_01')"
-				});
+				}, oDONT_CARE);
 
 			return Promise.all([
 				// code under test
@@ -59730,12 +59774,12 @@ make root = ${bMakeRoot}`;
 					headers : {"If-Match" : "*"},
 					payload : {MEMBER_COUNT : 99, Name : "Best Team Ever"},
 					url : "PATCH TEAMS('TEAM_01')"
-				})
+				}, oDONT_CARE)
 				.expectRequest({
 					headers : {"If-Match" : "*"},
 					payload : {Name : "Yet another team!"},
 					url : "PATCH TEAMS('TEAM_02')"
-				});
+				}, oDONT_CARE);
 
 			return Promise.all([
 				// code under test (BCP: 2170193264)
@@ -59916,7 +59960,7 @@ make root = ${bMakeRoot}`;
 			that.expectRequest({
 					url : "PATCH SalesOrderList('3')",
 					payload : {Note : "Note 3 (changed)"}
-				});
+				}, oDONT_CARE);
 
 			return Promise.all([
 				oModel.submitBatch("update"),
@@ -61522,9 +61566,9 @@ make root = ${bMakeRoot}`;
 			.expectRequest({
 				payload : {Note : "Created as well"},
 				url : "#3 POST BusinessPartnerList('4711')/BP_2_SO"
-			}) // no response required
+			}, oNO_RESPONSE)
 			.expectRequest("#3 BusinessPartnerList('4711')?$select=BP_2_SO"
-				+ "&$expand=BP_2_SO($select=Note,SalesOrderID)") // no response required
+				+ "&$expand=BP_2_SO($select=Note,SalesOrderID)", oNO_RESPONSE)
 			.expectMessages([{
 				message : "Communication error: 500 ",
 				persistent : true,
@@ -61576,7 +61620,7 @@ make root = ${bMakeRoot}`;
 				.expectRequest({
 					payload : {Note : "Created as well"},
 					url : "#2 POST BusinessPartnerList('4711')/BP_2_SO"
-				}) // no response required
+				}, oNO_RESPONSE)
 				.expectMessages([{
 					message : "Communication error: 500 ",
 					persistent : true,
@@ -61713,8 +61757,8 @@ make root = ${bMakeRoot}`;
 					payload : {Note : "Created"},
 					url : "#3 POST SalesOrderList"
 				}, oError)
-				.expectRequest("#3 SalesOrderList?$select=Note,SalesOrderID&$skip=1&$top=2")
-					// no response required
+				.expectRequest("#3 SalesOrderList?$select=Note,SalesOrderID&$skip=1&$top=2",
+					oNO_RESPONSE)
 				.expectMessages([{
 					code : "CODE",
 					message : "Request intentionally failed",
@@ -61900,7 +61944,7 @@ make root = ${bMakeRoot}`;
 				.expectRequest({
 					payload : {CompanyName : "SAP SE"},
 					url : "#3 PATCH BusinessPartnerList('4711')"
-				}, {/* response does not matter here */})
+				}, oDONT_CARE)
 				.expectRequest("#3 BusinessPartnerList('4711')"
 					+ "?$select=BusinessPartnerID,CompanyName", {
 					BusinessPartnerID : "4711",
@@ -63372,7 +63416,7 @@ make root = ${bMakeRoot}`;
 				.expectRequest({
 					payload : {Name : "Palpatine"},
 					url : "PATCH TEAMS('TEAM_02')"
-				}, {/* response does not matter here */});
+				}, oDONT_CARE);
 
 			oInput.getBinding("value").setValue("Palpatine");
 
@@ -63462,7 +63506,7 @@ make root = ${bMakeRoot}`;
 				.expectRequest({
 					payload : {Name : "Palpatine"},
 					url : "PATCH EMPLOYEES('2')"
-				}, {/* response does not matter here */});
+				}, oDONT_CARE);
 
 			oInput.getBinding("value").setValue("Palpatine");
 
@@ -64028,7 +64072,7 @@ make root = ${bMakeRoot}`;
 			that.expectRequest({
 					url : "POST People",
 					payload : {}
-				})
+				}, oNO_RESPONSE)
 				.expectMessages([{
 					message : "Could not load metadata: 500 Internal Server Error",
 					persistent : true,
@@ -64241,7 +64285,7 @@ make root = ${bMakeRoot}`;
 					},
 					url : "POST SalesOrderList('1')/" + sAction,
 					payload : {}
-				}) // no response required
+				}, oNO_RESPONSE)
 				.expectRequest({
 					batchNo : 2,
 					changeSetNo : 1,
@@ -64250,15 +64294,15 @@ make root = ${bMakeRoot}`;
 					},
 					url : "POST SalesOrderList('2')/" + sAction,
 					payload : {}
-				}) // no response required
+				}, oNO_RESPONSE)
 				.expectRequest({
 					batchNo : 2,
 					changeSetNo : 2,
 					url : "POST RegenerateEPMData",
 					payload : {}
-				}) // no response required
+				}, oNO_RESPONSE)
 				.expectRequest("#2 SalesOrderList?$select=LifecycleStatus,SalesOrderID"
-					+ "&$skip=0&$top=100"); // no response required
+					+ "&$skip=0&$top=100", oNO_RESPONSE);
 			that.oLogMock.expects("error")
 				.withExactArgs("Failed to invoke /RegenerateEPMData(...)",
 					sinon.match(sPreviousFailed), sODCB);
@@ -64333,7 +64377,7 @@ make root = ${bMakeRoot}`;
 						changeSetNo : 2,
 						url : "POST RegenerateEPMData",
 						payload : {}
-					}, {/*does not matter*/})
+					}, oDONT_CARE)
 					.expectRequest("#3 SalesOrderList?$select=LifecycleStatus,SalesOrderID"
 						+ "&$skip=0&$top=100", {
 						// Note: bDifferentContentIDs is misused to show whether side effects win
@@ -65620,7 +65664,7 @@ make root = ${bMakeRoot}`;
 				.expectRequest({
 					url : "POST EMPLOYEES",
 					payload : {Name : "John Doe"}
-				}, {/*response does not matter here*/});
+				}, oDONT_CARE);
 
 			return Promise.all([
 				// code under test
@@ -67168,11 +67212,11 @@ make root = ${bMakeRoot}`;
 	text="{/Artists(ArtistUUID=xyz,IsActiveEntity=false)/BestPublication/CurrencyCode}"/>';
 
 		this.expectRequest("Artists(ArtistUUID=xyz,IsActiveEntity=false)/BestPublication"
-				+ "?$select=Price,PublicationID")
+				+ "?$select=Price,PublicationID", oNO_CONTENT)
 			.expectRequest("Artists(ArtistUUID=xyz,IsActiveEntity=false)/BestPublication"
-				+ "/CurrencyCode")
+				+ "/CurrencyCode", oNO_CONTENT)
 			.expectChange("price", null)
-			.expectChange("currency", "");
+			.expectChange("currency", sGroupId === "$direct" ? null : "");
 
 		return this.createView(assert, sView, oModel);
 	});
@@ -67357,8 +67401,8 @@ make root = ${bMakeRoot}`;
 					url : "#4 DELETE SalesOrderList('1')"
 				}, createErrorInsideBatch(null, 404))
 				.expectRequest("#4 SalesOrderList?$count=true"
-					+ "&$filter=(GrossAmount gt 123) and not (SalesOrderID eq '1')&$top=0"
-				) // response does not matter, fails with DELETE in same $batch
+					+ "&$filter=(GrossAmount gt 123) and not (SalesOrderID eq '1')&$top=0",
+					oNO_RESPONSE)
 				.expectChange("objectPageGrossAmount", null)
 				.expectChange("objectPageNote", null)
 				.expectRequest("#5 SalesOrderList?$count=true"
@@ -67708,7 +67752,7 @@ make root = ${bMakeRoot}`;
 				.expectChange("objectPageNote", "After refresh")
 				.expectRequest("SalesOrderList('1')/SO_2_SOITEM"
 					+ "?$select=ItemPosition,SalesOrderID&$skip=0&$top=100", {
-					value : [/*does not matter*/]
+					value : [/*oDONT_CARE*/]
 				});
 
 			oKeptContext = oKeptContext0;
@@ -67786,7 +67830,7 @@ make root = ${bMakeRoot}`;
 				.expectChange("grossAmount", [, "120.00"])
 				.expectRequest("#4 SalesOrderList('1')/SO_2_SOITEM"
 					+ "?$select=ItemPosition,SalesOrderID&$skip=0&$top=100", {
-					value : [/*does not matter*/]
+					value : [/*oDONT_CARE*/]
 				});
 
 			// code under test
@@ -67824,7 +67868,7 @@ make root = ${bMakeRoot}`;
 				.expectChange("grossAmount", ["140.00"])
 				.expectRequest("#4 SalesOrderList('1')/SO_2_SOITEM"
 					+ "?$select=ItemPosition,SalesOrderID&$skip=0&$top=100", {
-					value : [/*does not matter*/]
+					value : [/*oDONT_CARE*/]
 				});
 
 			// code under test
@@ -69179,7 +69223,7 @@ make root = ${bMakeRoot}`;
 						defaultChannel : "Channel 3"
 					},
 					url : "PATCH Artists(ArtistID='A1',IsActiveEntity=false)"
-				}) // 204 No Content - no need to update the ETag when requesting side effects
+				}, oNO_CONTENT) // no need to update the ETag when requesting side effects
 				.expectRequest({
 					batchNo : oFixture.patchNo,
 					url : "Artists(ArtistID='A1',IsActiveEntity=false)"
@@ -69605,7 +69649,7 @@ make root = ${bMakeRoot}`;
 				.expectRequest({
 					url : "PATCH Artists(ArtistID='1',IsActiveEntity=false)",
 					payload : {Name : "The Beatles (changed)"}
-				}); // no response required
+				}, oDONT_CARE);
 
 			that.oView.byId("name").getBinding("value").setValue("The Beatles (changed)");
 
@@ -70403,7 +70447,7 @@ make root = ${bMakeRoot}`;
 						ItemPosition : "0111"
 					},
 					url : "POST SalesOrderList('42')/SO_2_SOITEM"
-				}); // response does not matter here
+				}, oDONT_CARE);
 
 			// code under test
 			oInactiveCreationRow.setProperty("ItemPosition", "0111");
@@ -70485,7 +70529,7 @@ make root = ${bMakeRoot}`;
 						Note : "update"
 					},
 					url : "PATCH SalesOrderList('42')"
-				}); // no response required
+				}, oDONT_CARE);
 
 			return Promise.all([
 				// code under test
@@ -70633,7 +70677,7 @@ make root = ${bMakeRoot}`;
 					payload : {},
 					url : "POST TEAMS"
 				}, new Promise(function (resolve) {
-					fnResolveCreate0 = resolve.bind(null, {/* response does not matter here */});
+					fnResolveCreate0 = resolve.bind(null, oDONT_CARE);
 				}));
 
 			// code under test
@@ -70645,7 +70689,7 @@ make root = ${bMakeRoot}`;
 					payload : {},
 					url : "POST TEAMS"
 				}, new Promise(function (resolve) {
-					fnResolveCreate1 = resolve.bind(null, {/* response does not matter here */});
+					fnResolveCreate1 = resolve.bind(null, oDONT_CARE);
 				}));
 
 			// code under test
@@ -70789,7 +70833,7 @@ make root = ${bMakeRoot}`;
 					payload : {EmployeeID : "1"},
 					url : "POST FireEmployee"
 				}, new Promise(function (resolve) {
-					fnResolveOperation0 = resolve; // 204 No Content
+					fnResolveOperation0 = resolve.bind(null, oNO_CONTENT);
 				}));
 
 			// code under test
@@ -70805,7 +70849,7 @@ make root = ${bMakeRoot}`;
 					payload : {EmployeeID : "2"},
 					url : "POST FireEmployee"
 				}, new Promise(function (resolve) {
-					fnResolveOperation1 = resolve; // 204 No Content
+					fnResolveOperation1 = resolve.bind(null, oNO_CONTENT);
 				}));
 
 			// code under test
@@ -71716,8 +71760,7 @@ make root = ${bMakeRoot}`;
 					payload : {Note : "modified"}
 				}, new Promise(function (_resolve, reject) { fnReject = reject; }))
 				.expectRequest("SalesOrderList('1')?$select=SO_2_SOITEM"
-					+ "&$expand=SO_2_SOITEM($select=ItemPosition,Note,SalesOrderID)"
-				); // no response required since the PATCH fails
+					+ "&$expand=SO_2_SOITEM($select=ItemPosition,Note,SalesOrderID)", oNO_RESPONSE);
 
 			// code under test
 			oPromise = that.oView.byId("form").getBindingContext()
@@ -74542,8 +74585,8 @@ make root = ${bMakeRoot}`;
 			}, createErrorInsideBatch({target : "Price"}))
 			.expectRequest("#2 Artists(ArtistID='1',IsActiveEntity=false)?$select=BestFriend"
 				+ "&$expand=BestFriend($select=ArtistID,IsActiveEntity"
-					+ ";$expand=BestPublication($select=CurrencyCode,Price,PublicationID))")
-				// no response required
+					+ ";$expand=BestPublication($select=CurrencyCode,Price,PublicationID))",
+				oNO_RESPONSE)
 			.expectMessages([{
 				code : "CODE",
 				message : "Request intentionally failed",
@@ -74646,7 +74689,7 @@ make root = ${bMakeRoot}`;
 						Price : bMerge ? "11" : "12",
 						PublicationID : "2"
 					}
-				}, null, {ETag : "etag3"}) // 204 No Content
+				}, oNO_CONTENT, {ETag : "etag3"})
 				.expectRequest("#3 Artists(ArtistID='1',IsActiveEntity=false)?$select=BestFriend"
 					+ "&$expand=BestFriend($select=ArtistID,IsActiveEntity"
 					+ ";$expand=BestPublication($select=CurrencyCode,Price,PublicationID))", {
@@ -74781,7 +74824,7 @@ make root = ${bMakeRoot}`;
 				},
 				url : "#2 PATCH SalesOrderList('1')/SO_2_BP",
 				payload : {Address : {City : "Heidelberg"}}
-			}, null, {ETag : "etag2"}); // 204 No Content
+			}, oNO_CONTENT, {ETag : "etag2"});
 		const oSalesOrder = {
 			"@odata.etag" : "etag1",
 			BuyerID : "2",
@@ -74858,7 +74901,7 @@ make root = ${bMakeRoot}`;
 				},
 				url : "PATCH BusinessPartnerList('2')",
 				payload : {Address : {City : "Walldorf"}}
-			}, null, {ETag : "etag3"}); // 204 No Content
+			}, oNO_CONTENT, {ETag : "etag3"});
 
 		await Promise.all([
 			// code under test
@@ -75118,7 +75161,7 @@ make root = ${bMakeRoot}`;
 					url : "PATCH SalesOrderList('new')"
 						+ "/SO_2_SOITEM(SalesOrderID='new',ItemPosition='0010')",
 					payload : {Note : "AAAA"}
-				});
+				}, oDONT_CARE);
 
 			return Promise.all([
 				// code under test
@@ -75470,7 +75513,7 @@ make root = ${bMakeRoot}`;
 					url : "PATCH SalesOrderList('new')"
 						+ "/SO_2_SOITEM(SalesOrderID='new',ItemPosition='0020')",
 					payload : {Note : "BBBB"}
-				});
+				}, oDONT_CARE);
 
 			// code under test
 			oItemsTable.getItems()[1].getCells()[0].getBinding("value").setValue("BBBB");
@@ -76701,7 +76744,7 @@ make root = ${bMakeRoot}`;
 			oDummyContext = oModel.bindContext("/Artists(ArtistID='41',IsActiveEntity=true)")
 				.getBoundContext();
 
-			that.expectRequest("Artists(ArtistID='41',IsActiveEntity=true)", {/*does not matter*/});
+			that.expectRequest("Artists(ArtistID='41',IsActiveEntity=true)", oDONT_CARE);
 
 			return Promise.all([
 				oDummyContext.requestObject(""),
@@ -76842,6 +76885,8 @@ make root = ${bMakeRoot}`;
 				.withArgs("Failed to update path /SalesOrderList('1')/SO_2_BP/Address/PostalCode");
 
 			that.expectRequest({
+					batchNo : 2,
+					changeSetNo : 1,
 					url : "PATCH SalesOrderList('1')",
 					payload : {
 						GrossAmount : "400",
@@ -76849,6 +76894,8 @@ make root = ${bMakeRoot}`;
 					}
 				}, createErrorInsideBatch())
 				.expectRequest({
+					batchNo : 2,
+					changeSetNo : 1,
 					url : "PATCH BusinessPartnerList('23')",
 					payload : {
 						Address : {
@@ -76856,7 +76903,7 @@ make root = ${bMakeRoot}`;
 							PostalCode : "23"
 						}
 					}
-				}) // no response required since the 1st PATCH fails
+				}, oNO_RESPONSE)
 				.expectMessages([{
 					code : "CODE",
 					message : "Request intentionally failed",
@@ -78011,8 +78058,8 @@ make root = ${bMakeRoot}`;
 				oContext2.resetChanges();
 			}, new Error("Cannot reset the changes, the batch request is running"));
 
-			fnResolvePatch(); // 204 No Content
-			fnResolveDelete(); // 204 No Content
+			fnResolvePatch(oNO_CONTENT);
+			fnResolveDelete();
 
 			return Promise.all([
 				oPatchPromise2,
@@ -78205,7 +78252,7 @@ make root = ${bMakeRoot}`;
 					url : "PATCH SalesOrderList('2')"
 						+ "/SO_2_SOITEM(SalesOrderID='2',ItemPosition='20')",
 					payload : {Note : "Item 2.20 changed"}
-				});// response does not matter here
+				}, oDONT_CARE);
 
 			return Promise.all([
 				oModel.submitBatch("update"),
@@ -78397,7 +78444,7 @@ make root = ${bMakeRoot}`;
 				payload : {},
 				url : "POST EMPLOYEES"
 			}, new Promise(function (resolve) {
-				fnResolveCreate = resolve.bind(null, {/* response does not matter here */});
+				fnResolveCreate = resolve.bind(null, oDONT_CARE);
 			}));
 
 		const oBinding = oModel.bindList("/EMPLOYEES");
@@ -78452,16 +78499,16 @@ make root = ${bMakeRoot}`;
 				groupId : "$single",
 				payload : {},
 				url : "#2 POST SalesOrderList('1')/" + sAction
-			})
+			}, oDONT_CARE)
 			.expectRequest({
 				groupId : "$single",
 				payload : {},
 				url : "#3 POST SalesOrderList('2')/" + sAction
-			})
+			}, oDONT_CARE)
 			.expectRequest({
 				payload : {},
 				url : "#-4 POST SalesOrderList('3')/" + sAction
-		});
+			}, oDONT_CARE);
 
 		const oListBinding = this.oView.byId("orders").getBinding("items");
 		const [oContext0, oContext1, oContext2] = oListBinding.getAllCurrentContexts();
@@ -79555,7 +79602,7 @@ make root = ${bMakeRoot}`;
 		this.expectRequest({
 				url : "PATCH SalesOrderList('2')?custom=foo",
 				payload : {LifecycleStatus : "P"}
-			})
+			}, oDONT_CARE)
 			.expectChange("status", [, "P"]);
 
 		await Promise.all([
@@ -79800,7 +79847,7 @@ make root = ${bMakeRoot}`;
 			this.expectRequest({
 					url : "POST SalesOrderList",
 					payload : {ID : "N"}
-				}); // no response required
+				}, oDONT_CARE);
 
 			const oCreatedContext = oTable.getBinding("rows").create({ID : "N"},
 				/*bSkipRefresh*/true, /*bAtEnd*/true);
