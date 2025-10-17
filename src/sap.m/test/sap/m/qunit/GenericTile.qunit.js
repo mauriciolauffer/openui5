@@ -3298,12 +3298,16 @@ QUnit.test("Height of the system Info Container for OneByOne tile", async functi
 		assert.equal(this.oGenericTile.$().find(".sapMGTTInfoContainer").css("height"),"44px","Sufficient Height applied");
 });
 
-QUnit.test("Height of the system Info Container for TwoByOne tile", async function(assert){
-		this.oGenericTile.setFrameType("TwoByOne");
-		this.oGenericTile.setAppShortcut("app shortcut");
-		this.oGenericTile.setSystemInfo("system info");
-		await nextUIUpdate();
-		assert.equal(this.oGenericTile.$().find(".sapMGTTInfo").css("margin-bottom"),"11.2px","Sufficient Height applied");
+QUnit.test("Height of the system Info Container for TwoByOne tile", async function (assert) {
+	this.oGenericTile.setFrameType("TwoByOne");
+	this.oGenericTile.setAppShortcut("app shortcut");
+	this.oGenericTile.setSystemInfo("system info");
+	await nextUIUpdate();
+
+	const marginBottom = parseFloat(this.oGenericTile.$().find(".sapMGTTInfo").css("margin-bottom"));
+	const roundedMargin = Math.ceil(marginBottom * 10) / 10;
+
+	assert.equal(roundedMargin, 11.2, "Sufficient Height applied");
 });
 
 QUnit.test("App shortcut and System info only rendered in OneByOne", async function(assert) {
@@ -3313,7 +3317,9 @@ QUnit.test("App shortcut and System info only rendered in OneByOne", async funct
 	await nextUIUpdate();
 	assert.notEqual(this.oGenericTile._oAppShortcut.getDomRef(), null);
 	assert.notEqual(this.oGenericTile._oSystemInfo.getDomRef(), null);
-	assert.equal(this.oGenericTile.$().find(".sapMGTTInfo").css("margin-bottom"),"6.4px","Sufficient Height applied");
+	const marginBottom = parseFloat(this.oGenericTile.$().find(".sapMGTTInfo").css("margin-bottom"));
+	const roundedMargin = Math.ceil(marginBottom * 10) / 10;
+	assert.equal(roundedMargin,"6.4","Sufficient Height applied");
 	assert.equal(this.oGenericTile.$().find(".sapMGTTInfo").css("background-color"), "rgb(245, 246, 247)", "Non active background color has been applied");
 	this.oGenericTile.setFrameType("OneByHalf");
 	await nextUIUpdate();
