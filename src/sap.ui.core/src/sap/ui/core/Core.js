@@ -1412,6 +1412,9 @@ sap.ui.define([
 		this.startPlugins();
 		Log.info("Plugins started",null,METHOD);
 
+		// informs native JavaScript that UI5 is initialized
+		document.dispatchEvent(new CustomEvent("sap-ui-core-ready"));
+
 		/**
 		 * @deprecated As ofVersion 1.120
 		 */
