@@ -473,13 +473,13 @@ sap.ui.define([
 		var oForm = this.getAggregation("form");
 		oForm.invalidate = oForm._origInvalidate;
 
-		_removeResize.call(this);
-
 		/**
 	 	 * @deprecated Since version 1.93.0
 	 	 */
 		// eslint-disable-next-line no-lone-blocks
 		{
+			_removeResize.call(this);
+
 			for (var i = 0; i < this._aLayouts.length; i++) {
 				var oLayout = Element.getElementById(this._aLayouts[i]);
 				if (oLayout && oLayout.destroy) {
@@ -502,6 +502,9 @@ sap.ui.define([
 	 */
 	SimpleForm.prototype.onBeforeRendering = function() {
 
+		/**
+		 * @deprecated Since version 1.93.0
+		 */
 		_removeResize.call(this);
 
 		var oForm = this.getAggregation("form");
@@ -684,6 +687,9 @@ sap.ui.define([
 				oFormElement = _addFormElement.call(this, oFormContainer);
 			}
 
+			/**
+			 * @deprecated Since version 1.93.0
+			 */
 			_createFieldLayoutData.call(this, oElement, 5, false, true);
 
 			oFormElement.addField(oElement);
@@ -912,6 +918,9 @@ sap.ui.define([
 			}
 			_markFormElementForUpdate(this._changedFormElements, oFormElement);
 
+			/**
+			 * @deprecated Since version 1.93.0
+			 */
 			_createFieldLayoutData.call(this, oElement, 5, false, true);
 		}
 
@@ -1055,6 +1064,9 @@ sap.ui.define([
 			this._aElements.splice(iIndex, 1);
 			oElement.setParent(null);
 			this._oObserver.unobserve(oElement);
+			/**
+			 * @deprecated Since version 1.93.0
+			 */
 			_removeLayoutData.call(this, oElement);
 
 			this.invalidate();
@@ -1089,6 +1101,9 @@ sap.ui.define([
 
 			for (i = 0; i < this._aElements.length; i++) {
 				var oElement = this._aElements[i];
+				/**
+				 * @deprecated Since version 1.93.0
+				 */
 				_removeLayoutData.call(this, oElement);
 				this._oObserver.unobserve(oElement);
 			}
@@ -1135,6 +1150,9 @@ sap.ui.define([
 
 		var sOldLayout = this.getLayout();
 		var bDefault = this.isPropertyInitial("layout"); // if default is used and layout not defined setLayout is not called
+		/**
+		 * @deprecated Since version 1.93.0
+		 */
 		if (sLayout != sOldLayout) {
 			_removeOldLayoutData.call(this);
 		}
@@ -1144,6 +1162,9 @@ sap.ui.define([
 		if (sLayout != sOldLayout || bDefault) { // Layout changed or default set explicit -> we know what layout is used and can create the Control
 			var bSet = _setFormLayout.call(this);
 
+			/**
+			 * @deprecated Since version 1.93.0
+			 */
 			if (bSet) {
 				_addLayoutData.call(this);
 			}
@@ -1199,6 +1220,9 @@ sap.ui.define([
 			if (oForm.getLayout()) {
 				this._bChangedByMe = true;
 				oForm.destroyLayout();
+				/**
+				 * @deprecated Since version 1.93.0
+				 */
 				_removeResize.call(this);
 				this._bChangedByMe = false;
 			}
@@ -1333,6 +1357,10 @@ sap.ui.define([
 
 		if (!this._bIsBeingDestroyed) {
 			_setFormLayout.call(this);
+
+			/**
+			 * @deprecated Since version 1.93.0
+			 */
 			_addLayoutData.call(this);
 			if (this.getDomRef()) {
 				_updateLayout.call(this);
@@ -1726,6 +1754,9 @@ sap.ui.define([
 		if (oLabel) {
 			sId = this.getId() + "--" + oLabel.getId() + "--FE";
 			oLabel.addStyleClass("sapUiFormLabel-CTX");
+			/**
+			 * @deprecated Since version 1.93.0
+			 */
 			if (!_getFieldLayoutData.call(this, oLabel)) {
 				_createFieldLayoutData.call(this, oLabel, this._iLabelWeight, false, true, this.getLabelMinWidth());
 			}
@@ -1743,6 +1774,9 @@ sap.ui.define([
 		}
 
 		var oElement = new FormElement(sId, mSettings);
+		/**
+		 * @deprecated Since version 1.93.0
+		 */
 		_createElementLayoutData.call(this, oElement);
 
 		oElement.isVisible = function(){
@@ -1790,6 +1824,9 @@ sap.ui.define([
 		}
 
 		var oContainer = new FormContainer(sId, mSettings);
+		/**
+		 * @deprecated Since version 1.93.0
+		 */
 		_createContainerLayoutData.call(this, oContainer);
 
 		oContainer.getAriaLabelledBy = function() {
