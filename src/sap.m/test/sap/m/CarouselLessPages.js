@@ -1,4 +1,4 @@
-sap.ui.define(["sap/m/Image", "sap/m/Carousel", "sap/m/App", "sap/m/Page"], function(MImage, Carousel, App, Page) {
+sap.ui.define(["sap/m/Image", "sap/m/Carousel", "sap/m/App", "sap/m/Page", "sap/m/Title"], function(MImage, Carousel, App, Page, Title) {
 	"use strict";
 
 			// Create Images
@@ -27,7 +27,9 @@ sap.ui.define(["sap/m/Image", "sap/m/Carousel", "sap/m/App", "sap/m/Page"], func
 			});
 
 
+			var carouselTitle = new Title("carouselLabel", {text: "Nature Pictures"});
 			var carousel = new Carousel("myCarousel", {
+				ariaLabelledBy: "carouselLabel",
 				width: "50%",
 				height: "50%",
 				pages: [imgDesert, imgPrairie, imgWaterfall]
@@ -41,9 +43,8 @@ sap.ui.define(["sap/m/Image", "sap/m/Carousel", "sap/m/App", "sap/m/Page"], func
 				enableScrolling: false }
 			);
 
+			carouselPage.addContent(carouselTitle);
 			carouselPage.addContent(carousel);
 			appCarousel.addPage(carouselPage);
 			appCarousel.placeAt("body");
-
-			sap.ui.getCore().applyChanges();
 });
