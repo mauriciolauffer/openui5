@@ -1,0 +1,12 @@
+{
+  "1.143.0": {
+    "date": "October 2025",
+    "notes": [
+      {
+        "id": "f68e74b2a63acf0cf0d95cde5443943a4b6d5603",
+        "type": "FIX",
+        "text": " mdc.Field: Implement IToolbarInteractiveControl interface"
+      }
+    ]
+  }
+}

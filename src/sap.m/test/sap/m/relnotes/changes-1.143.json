@@ -1,0 +1,37 @@
+{
+  "1.143.0": {
+    "date": "October 2025",
+    "notes": [
+      {
+        "id": "11ec5f3cde26b717cd5e167019e20739566de285",
+        "type": "FIX",
+        "text": " sap.m.DatePicker: close picker on context change"
+      },
+      {
+        "id": "ec811beba4d3495486ce69e990f6c81cfd4d9784",
+        "type": "FIX",
+        "text": " sap.m.Select: Correct dropdown width when wrapItemsText enabled"
+      },
+      {
+        "id": "116aac130838542f07a2d795a00624152404283f",
+        "type": "FIX",
+        "text": " sap.m.SegmentedButton: the build is fixed"
+      },
+      {
+        "id": "68f5cb39d5a0b265fe1101dc86ca8e0190cfac07",
+        "type": "FIX",
+        "text": " sap.m.ViewSettingsDialog: add a view settings dialog items active announcement"
+      },
+      {
+        "id": "3b28e36406ae8d7a45b93ff1e0148322ffca57b8",
+        "type": "FIX",
+        "text": " sap.m.Menu: Fixed Menu Title left padding in mobile view"
+      },
+      {
+        "id": "fde6970be65b141bbc6a3a0e8dfca46eba00d933",
+        "type": "FIX",
+        "text": " sap.m.ObjectAttribute: Empty indicator is displayed correctly"
+      }
+    ]
+  }
+}

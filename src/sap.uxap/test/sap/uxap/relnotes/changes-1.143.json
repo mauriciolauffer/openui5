@@ -1,0 +1,12 @@
+{
+  "1.143.0": {
+    "date": "October 2025",
+    "notes": [
+      {
+        "id": "1eb9964eadaa28248b532d46821ef16d587c7376",
+        "type": "FIX",
+        "text": " sap.uxap.ObjectPageLayout: prevent flickering on scroll"
+      }
+    ]
+  }
+}
