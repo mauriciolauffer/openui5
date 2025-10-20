@@ -2342,6 +2342,9 @@ sap.ui.define([
 			}
 		}
 		assert.ok(oGD, "sap.ui.layout.GridData used");
+		/**
+		 * @deprecated Since version 1.93.0
+		 */
 		assert.equal(oClone._aLayouts.length, 0, "Clone has no own LayoutData");
 
 		//visibility change
