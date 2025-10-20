@@ -110,7 +110,7 @@
   },
   "overrides": {
     "grunt-jsdoc": {
-      "jsdoc": "^4.0.4"
+      "jsdoc": "^4.0.5"
     }
   },
   "workspaces": [
