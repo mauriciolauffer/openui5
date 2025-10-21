@@ -2490,7 +2490,8 @@ sap.ui.define([
 		 * @param {"DELETE"|"GET"|"PATCH"|"POST"|"PUT"} [vRequest.method="GET"]
 		 *   The HTTP method, see also "vRequest.url"
 		 * @param {object} [vRequest.payload]
-		 *   The payload of the request
+		 *   The payload of the request; in case of a "POST" request the "payload" is defaulted to
+		 *   an empty object if no "payload" property is given
 		 * @param {string} vRequest.url
 		 *   The request URL in the following format "#<batchNo>.<changeSetNo> <method> <URL>";
 		 *   "#<batchNo>.<changeSetNo> ", ".<changeSetNo>" and "<method> " are optional;
@@ -2555,6 +2556,9 @@ sap.ui.define([
 			const aURLParts = rStartsWithMethod.exec(vRequest.url);
 			if (aURLParts) {
 				[, vRequest.method, vRequest.url] = aURLParts;
+			}
+			if (vRequest.method === "POST" && !("payload" in vRequest)) {
+				vRequest.payload = {};
 			}
 			// ensure that these properties are defined (required for deepEqual)
 			vRequest.method ??= "GET";
@@ -4127,10 +4131,7 @@ sap.ui.define([
 			.expectChange("legalForm");
 
 		return this.createView(assert, sView, oModel).then(function () {
-			that.expectRequest({
-				url : "POST SalesOrderList('1')/" + sAction,
-				payload : {}
-			}, {
+			that.expectRequest("POST SalesOrderList('1')/" + sAction, {
 				SalesOrderID : "1"
 			});
 
@@ -4360,11 +4361,9 @@ sap.ui.define([
 			.expectChange("note");
 
 		return this.createView(assert, sView, oModel).then(function () {
-			that.expectRequest({
-					url : "POST SalesOrderList('1')/" + sAction + "?$select=Messages,SalesOrderID"
-						+ "&$expand=SO_2_SOITEM($select=ItemPosition,Messages,SalesOrderID)",
-					payload : {}
-				}, {
+			that.expectRequest("POST SalesOrderList('1')/" + sAction
+					+ "?$select=Messages,SalesOrderID"
+					+ "&$expand=SO_2_SOITEM($select=ItemPosition,Messages,SalesOrderID)", {
 					SalesOrderID : "1",
 					SO_2_SOITEM : [
 						{ItemPosition : "10", SalesOrderID : "1"}
@@ -6589,12 +6588,9 @@ sap.ui.define([
 			.expectChange("name", []);
 
 		return this.createView(assert, sView, this.createSalesOrdersModel()).then(function () {
-			that.expectRequest({
-					url : "POST SalesOrderList('1')/"
-						+ "com.sap.gateway.default.zui5_epm_sample.v0002.SalesOrder_Confirm"
-						+ "?$expand=SO_2_SOITEM($expand=SOITEM_2_PRODUCT)",
-					payload : {}
-				}, {
+			that.expectRequest("POST SalesOrderList('1')/"
+					+ "com.sap.gateway.default.zui5_epm_sample.v0002.SalesOrder_Confirm"
+					+ "?$expand=SO_2_SOITEM($expand=SOITEM_2_PRODUCT)", {
 					SalesOrderID : "1",
 					SO_2_SOITEM : [{
 						ItemPosition : "0010",
@@ -10278,10 +10274,8 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					+ "will be repeated automatically",
 					sinon.match("Request intentionally failed"), sODLB);
 			that.expectChange("item", ["", "Baz", "Foo", "Bar"])
-				.expectRequest({
-					url : "POST EntitiesWithComplexKey",
-					payload : {}
-				}, createErrorInsideBatch({target : "Value"}))
+				.expectRequest("POST EntitiesWithComplexKey",
+					createErrorInsideBatch({target : "Value"}))
 				.expectMessages([{
 					message : "Foo error",
 					target : "/EntitiesWithComplexKey(Key1='f%2Fo''o',Key2=42)/Value",
@@ -13772,8 +13766,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					+ "will be repeated automatically", sinon.match(oError.message), sODLB);
 			that.expectRequest({
 					headers : {/*NO "sap-cancel-on-close"*/},
-					url : "POST SalesOrderList('42')/SO_2_SOITEM",
-					payload : {}
+					url : "POST SalesOrderList('42')/SO_2_SOITEM"
 				}, oError)
 				.expectMessages([{
 					code : "CODE",
@@ -19199,10 +19192,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			var oContext = that.oView.byId("form").getObjectBinding().getBoundContext();
 
 			oActionBinding = oModel.bindContext(sActionName + "(...)", oContext);
-			that.expectRequest({
-					payload : {},
-					url : "POST EMPLOYEES('2')/" + sActionName
-				}, {ID : "2"})
+			that.expectRequest("POST EMPLOYEES('2')/" + sActionName, {ID : "2"})
 				.expectChange("enabled", 0)
 				.expectChange("title", null);
 
@@ -19212,10 +19202,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
-			that.expectRequest({
-					payload : {},
-					url : "POST EMPLOYEES('2')/" + sActionName
-				}, {
+			that.expectRequest("POST EMPLOYEES('2')/" + sActionName, {
 					"#com.sap.gateway.default.iwbep.tea_busi.v0001.AcSetIsAvailable" : {
 						title : "Second Title"
 					},
@@ -19547,9 +19534,12 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		return this.createView(assert, "", oModel).then(function () {
 			oContextBinding = oModel.bindContext("/__FAKE__ActionImport(...)");
 
-			that.expectRequest("POST __FAKE__ActionImport?carrid='AA'"
+			that.expectRequest({
+					payload : undefined,
+					url : "POST __FAKE__ActionImport?carrid='AA'"
 					+ "&guid=guid'0050568D-393C-1ED4-9D97-E65F0F3FCC23'"
-					+ "&fldate=datetime'2017-08-10T00:00:00'&flightTime=42", {
+					+ "&fldate=datetime'2017-08-10T00:00:00'&flightTime=42"
+				}, {
 					d : {
 						__metadata : {type : "RMTSAMPLEFLIGHT.Flight"},
 						carrid : "AA",
@@ -19612,7 +19602,10 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		return this.createView(assert, sView, oModel).then(function () {
 			var oContextBinding = that.oView.byId("action").getObjectBinding();
 
-			that.expectRequest("POST SalesOrder_Confirm?SalesOrderID='0815'", {
+			that.expectRequest({
+					payload : undefined,
+					url : "POST SalesOrder_Confirm?SalesOrderID='0815'"
+				}, {
 					d : {
 						__metadata : {type : "GWSAMPLE_BASIC.SalesOrder"},
 						SalesOrderID : "08/15",
@@ -22366,10 +22359,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 		return this.createView(assert, sView, oModel).then(function () {
 			that.expectChange("id", [""])
-				.expectRequest({
-					url : "POST SalesOrderList",
-					payload : {}
-				}, {SalesOrderID : "new"})
+				.expectRequest("POST SalesOrderList", {SalesOrderID : "new"})
 				.expectChange("id", ["new"]);
 
 			oBinding = that.oView.byId("list").getBinding("items");
@@ -22605,10 +22595,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		return this.createView(assert, sView, oModel).then(function () {
 			that.expectChange("id", [, ""])
 				.expectChange("active", [, null])
-				.expectRequest({
-					url : "POST Artists",
-					payload : {}
-				}, {ArtistID : "new", IsActiveEntity : false})
+				.expectRequest("POST Artists", {ArtistID : "new", IsActiveEntity : false})
 				.expectChange("id", [, "new"])
 				.expectChange("active", [, "No"]);
 
@@ -22623,10 +22610,8 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		}).then(function () {
 			var oAction = oModel.bindContext(sAction + "(...)", oContext);
 
-			that.expectRequest({
-					url : "POST Artists(ArtistID='new',IsActiveEntity=false)/" + sAction,
-					payload : {}
-				}, {ArtistID : "new", IsActiveEntity : true})
+			that.expectRequest("POST Artists(ArtistID='new',IsActiveEntity=false)/" + sAction,
+					{ArtistID : "new", IsActiveEntity : true})
 				.expectChange("active", [, "Yes"]);
 
 			return Promise.all([
@@ -23606,10 +23591,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				oListBinding = oModel.bindList("SO_2_SOITEM", oParentBinding.getBoundContext(),
 					undefined, undefined, {$$updateGroupId : "update"});
 
-			that.expectRequest({
-					url : "POST SalesOrderList('0500000000')/SO_2_SOITEM",
-					payload : {}
-				}, {
+			that.expectRequest("POST SalesOrderList('0500000000')/SO_2_SOITEM", {
 					SalesOrderID : "0500000000",
 					ItemPosition : "0010"
 				})
@@ -23637,10 +23619,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			that = this;
 
 		return this.createView(assert, sView, oModel).then(function () {
-			that.expectRequest({
-					url : "POST " + sAction,
-					payload : {}
-				}, {SalesOrderID : "0500000000"});
+			that.expectRequest("POST " + sAction, {SalesOrderID : "0500000000"});
 
 			return Promise.all([
 				that.oView.byId("form").getElementBinding().invoke("update"),
@@ -25899,7 +25878,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			that = this;
 
 		this.expectRequest("BusinessPartners?$apply=groupby((Country))&$count=true&$skip=0"
-					+ "&$top=4", {
+				+ "&$top=4", {
 				"@odata.count" : "2",
 				value : [
 					{Country : "US", SalesAmount : "100"},
@@ -43152,11 +43131,9 @@ make root = ${bMakeRoot}`;
 		//   4 Delta
 		//   _6 Copy of 5 Epsilon
 		// 5 Epsilon
-		this.expectRequest({
-				payload : {},
-				url : "#7 POST EMPLOYEES('5')/"
-					+ "com.sap.gateway.default.iwbep.tea_busi.v0001.__FAKE__AcCopy?$select=ID"
-			}, {ID : "_6"})
+		this.expectRequest("#7 POST EMPLOYEES('5')/"
+				+ "com.sap.gateway.default.iwbep.tea_busi.v0001.__FAKE__AcCopy?$select=ID",
+				{ID : "_6"})
 			.expectRequest({
 				headers : {
 					Prefer : "return=minimal"
@@ -43248,11 +43225,9 @@ make root = ${bMakeRoot}`;
 		//   _6 Copy of 5 Epsilon
 		// _7 Copy of 5 Epsilon
 		// 5 Epsilon
-		this.expectRequest({
-				payload : {},
-				url : "#9 POST EMPLOYEES('5')"
-					+ "/com.sap.gateway.default.iwbep.tea_busi.v0001.__FAKE__AcCopy?$select=ID"
-			}, {ID : "_7"})
+		this.expectRequest("#9 POST EMPLOYEES('5')"
+				+ "/com.sap.gateway.default.iwbep.tea_busi.v0001.__FAKE__AcCopy?$select=ID",
+				{ID : "_7"})
 			.expectRequest({
 				headers : {
 					Prefer : "return=minimal"
@@ -43338,11 +43313,9 @@ make root = ${bMakeRoot}`;
 		// _7 Copy of 5 Epsilon
 		// 5 Epsilon
 		//   _8 Copy of 5 Epsilon
-		this.expectRequest({
-				payload : {},
-				url : "#11 POST EMPLOYEES('5')"
-					+ "/com.sap.gateway.default.iwbep.tea_busi.v0001.__FAKE__AcCopy?$select=ID"
-			}, {ID : "_8"})
+		this.expectRequest("#11 POST EMPLOYEES('5')"
+				+ "/com.sap.gateway.default.iwbep.tea_busi.v0001.__FAKE__AcCopy?$select=ID",
+				{ID : "_8"})
 			.expectRequest({
 				headers : {
 					Prefer : "return=minimal"
@@ -47661,7 +47634,7 @@ make root = ${bMakeRoot}`;
 		const oDelta = oTable.getRows()[2].getBindingContext();
 
 		this.expectRequest(sUrl + ",ExpandLevels=" + JSON.stringify([{NodeID : "2", Levels : 2}])
-					+ sSelect + "&$count=true&$skip=0&$top=5", {
+				+ sSelect + "&$count=true&$skip=0&$top=5", {
 				"@odata.count" : "5",
 				value : [{
 					DescendantCount : "4",
@@ -50166,11 +50139,9 @@ make root = ${bMakeRoot}`;
 		const oListBinding = oTable.getBinding("rows");
 		const [oZeta, oAlpha, oBeta, oEpsilon] = oListBinding.getCurrentContexts();
 
-		this.expectRequest({
-				payload : {},
-				url : "#2 POST EMPLOYEES('1')"
-					+ "/com.sap.gateway.default.iwbep.tea_busi.v0001.__FAKE__AcCopy?$select=ID"
-			}, {ID : "_1"})
+		this.expectRequest("#2 POST EMPLOYEES('1')"
+				+ "/com.sap.gateway.default.iwbep.tea_busi.v0001.__FAKE__AcCopy?$select=ID",
+				{ID : "_1"})
 			.expectRequest({
 				headers : {
 					Prefer : "return=minimal"
@@ -50987,7 +50958,6 @@ make root = ${bMakeRoot}`;
 				headers : {
 					"If-Match" : "*"
 				},
-				payload : {},
 				url : "POST SalesOrderList('1')/" + sAction + "?$select=Note,SalesOrderID"
 			}, {
 				"@odata.etag" : "etag1.1",
@@ -51046,14 +51016,8 @@ make root = ${bMakeRoot}`;
 
 		const sSchema = "com.sap.gateway.default.zui5_epm_sample.v0002";
 		const sAction = sSchema + ".SalesOrder_Confirm";
-		this.expectRequest({
-				url : "POST SalesOrderList('1')/" + sAction,
-				payload : {}
-			}, oDONT_CARE)
-			.expectRequest({
-				url : "POST SalesOrderList('2')/" + sAction,
-				payload : {}
-			}, oDONT_CARE)
+		this.expectRequest("POST SalesOrderList('1')/" + sAction, oDONT_CARE)
+			.expectRequest("POST SalesOrderList('2')/" + sAction, oDONT_CARE)
 			.expectRequest("SalesOrderList?$select=SalesOrderID"
 				+ "&$filter=SalesOrderID eq '1' or SalesOrderID eq '2'&$top=2",
 				{value : []}) // ODLB#refreshKeptElements
@@ -51351,11 +51315,8 @@ make root = ${bMakeRoot}`;
 					{$$inheritExpandSelect : true}),
 				bReplaceWithRVC = sId === "42" && oFixture.keepAlive;
 
-			that.expectRequest({
-					url : "POST Artists(ArtistID='" + sId + "',IsActiveEntity=" + !bIsActive
-						+ ")/special.cases." + sAction + "?$select=ArtistID,IsActiveEntity,Name",
-					payload : {}
-				}, {
+			that.expectRequest("POST Artists(ArtistID='" + sId + "',IsActiveEntity=" + !bIsActive
+					+ ")/special.cases." + sAction + "?$select=ArtistID,IsActiveEntity,Name", {
 					ArtistID : sId,
 					IsActiveEntity : bIsActive,
 					Name : sName || mNames[sId]
@@ -51598,13 +51559,10 @@ make root = ${bMakeRoot}`;
 				oAction = oModel.bindContext("special.cases." + sAction + "(...)", oEntityContext,
 					{$$inheritExpandSelect : true});
 
-			that.expectRequest({
-					url : "POST Artists(ArtistID='42',IsActiveEntity=" + !bIsActive
-						+ ")/special.cases." + sAction
-						+ "?$select=ArtistID,IsActiveEntity,Messages,Name"
-						+ "&$expand=BestFriend($select=ArtistID,IsActiveEntity,Name)",
-					payload : {}
-				}, {
+			that.expectRequest("POST Artists(ArtistID='42',IsActiveEntity=" + !bIsActive
+					+ ")/special.cases." + sAction
+					+ "?$select=ArtistID,IsActiveEntity,Messages,Name"
+					+ "&$expand=BestFriend($select=ArtistID,IsActiveEntity,Name)", {
 					ArtistID : "42",
 					BestFriend : {
 						ArtistID : "23",
@@ -51826,10 +51784,7 @@ make root = ${bMakeRoot}`;
 					oModel.bindList("/Artists").getHeaderContext(),
 					{$$patchWithoutSideEffects : true, $select : "Messages"});
 
-			that.expectRequest({
-					payload : {},
-					url : "POST Artists/special.cases.Create?$select=Messages"
-				}, {
+			that.expectRequest("POST Artists/special.cases.Create?$select=Messages", {
 					ArtistID : "23",
 					IsActiveEntity : false,
 					Messages : []
@@ -51918,13 +51873,10 @@ make root = ${bMakeRoot}`;
 			var oAction = oModel.bindContext("special.cases.ActivationAction(...)",
 					oReturnValueContext, {$$inheritExpandSelect : true});
 
-			that.expectRequest({
-					url : "POST Artists(ArtistID='23',IsActiveEntity=false)"
-						+ "/special.cases.ActivationAction"
-						+ "?$select=ArtistID,IsActiveEntity,Messages,Name"
-						+ "&$expand=BestFriend($select=ArtistID,IsActiveEntity,Name)",
-					payload : {}
-				}, {
+			that.expectRequest("POST Artists(ArtistID='23',IsActiveEntity=false)"
+					+ "/special.cases.ActivationAction"
+					+ "?$select=ArtistID,IsActiveEntity,Messages,Name"
+					+ "&$expand=BestFriend($select=ArtistID,IsActiveEntity,Name)", {
 					ArtistID : "23",
 					IsActiveEntity : true,
 					Messages : [],
@@ -52189,11 +52141,8 @@ make root = ${bMakeRoot}`;
 			var oOperation = oModel.bindContext("special.cases.EditAction(...)",
 					oActiveArtistContext, {$$inheritExpandSelect : true});
 
-			that.expectRequest({
-					url : "POST Artists(ArtistID='42',IsActiveEntity=true)/special.cases.EditAction"
-						+ "?$select=ArtistID,IsActiveEntity,Name",
-					payload : {}
-				}, {
+			that.expectRequest("POST Artists(ArtistID='42',IsActiveEntity=true)"
+					+ "/special.cases.EditAction?$select=ArtistID,IsActiveEntity,Name", {
 					ArtistID : "42",
 					IsActiveEntity : false,
 					Name : "Hour Frustrated"
@@ -52257,11 +52206,8 @@ make root = ${bMakeRoot}`;
 			var oOperation = oModel.bindContext("special.cases.ActivationAction(...)",
 					oInactiveArtistContext, {$$inheritExpandSelect : true});
 
-			that.expectRequest({
-					url : "POST Artists(ArtistID='42',IsActiveEntity=false)"
-						+ "/special.cases.ActivationAction?$select=ArtistID,IsActiveEntity,Name",
-					payload : {}
-				}, {
+			that.expectRequest("POST Artists(ArtistID='42',IsActiveEntity=false)"
+					+ "/special.cases.ActivationAction?$select=ArtistID,IsActiveEntity,Name", {
 					ArtistID : "42",
 					IsActiveEntity : true,
 					Name : "Hour Frustrated"
@@ -52466,12 +52412,9 @@ make root = ${bMakeRoot}`;
 
 			oOperation.attachDataReceived(fnDataReceived);
 			oOperation.attachDataRequested(fnDataRequested);
-			that.expectRequest({
-					url : "POST Artists(ArtistID='42',IsActiveEntity=true)/special.cases.EditAction"
-						+ "?$select=ArtistID,IsActiveEntity,Messages,Name"
-						+ "&$expand=DraftAdministrativeData($select=DraftID,InProcessByUser)",
-					payload : {}
-				}, {
+			that.expectRequest("POST Artists(ArtistID='42',IsActiveEntity=true)"
+					+ "/special.cases.EditAction?$select=ArtistID,IsActiveEntity,Messages,Name"
+					+ "&$expand=DraftAdministrativeData($select=DraftID,InProcessByUser)", {
 					"@odata.etag" : "ETag0",
 					ArtistID : "42",
 					DraftAdministrativeData : {
@@ -52566,13 +52509,10 @@ make root = ${bMakeRoot}`;
 
 			assert.strictEqual(fnDataReceived.callCount, 1, "dataReceived");
 			assert.strictEqual(fnDataRequested.callCount, 1, "dataRequested");
-			that.expectRequest({
-					url : "POST Artists(ArtistID='42',IsActiveEntity=false)"
-						+ "/special.cases.ActivationAction"
-						+ "?$select=ArtistID,IsActiveEntity,Messages,Name"
-						+ "&$expand=DraftAdministrativeData($select=DraftID,InProcessByUser)",
-					payload : {}
-				}, {
+			that.expectRequest("POST Artists(ArtistID='42',IsActiveEntity=false)"
+					+ "/special.cases.ActivationAction"
+					+ "?$select=ArtistID,IsActiveEntity,Messages,Name"
+					+ "&$expand=DraftAdministrativeData($select=DraftID,InProcessByUser)", {
 					ArtistID : "42",
 					DraftAdministrativeData : {
 						DraftID : "1",
@@ -52638,11 +52578,8 @@ make root = ${bMakeRoot}`;
 				"Picture@$ui5.noData" : true
 			});
 
-			that.expectRequest({
-					url : "POST Artists(ArtistID='42',IsActiveEntity=true)/special.cases.EditAction"
-						+ "?$select=ArtistID,IsActiveEntity,Picture",
-					payload : {}
-				}, {
+			that.expectRequest("POST Artists(ArtistID='42',IsActiveEntity=true)"
+					+ "/special.cases.EditAction?$select=ArtistID,IsActiveEntity,Picture", {
 					ArtistID : "42",
 					IsActiveEntity : false
 					// Picture property not seen here -> "Picture@$ui5.noData" : true
@@ -52706,13 +52643,10 @@ make root = ${bMakeRoot}`;
 		return this.createView(assert, sView, oModel).then(function () {
 			var oOperation = that.oView.byId("action").getObjectBinding();
 
-			that.expectRequest({
-					url : "POST SalesOrderList('42')/"
-						+ "com.sap.gateway.default.zui5_epm_sample.v0002.SalesOrder_Confirm"
-						+ "?$select=LifecycleStatusDesc,SalesOrderID"
-						+ "&$expand=SO_2_BP($select=BusinessPartnerID,CompanyName)",
-					payload : {}
-				}, {
+			that.expectRequest("POST SalesOrderList('42')/"
+					+ "com.sap.gateway.default.zui5_epm_sample.v0002.SalesOrder_Confirm"
+					+ "?$select=LifecycleStatusDesc,SalesOrderID"
+					+ "&$expand=SO_2_BP($select=BusinessPartnerID,CompanyName)", {
 					SalesOrderID : "42",
 					LifecycleStatusDesc : "Confirmed",
 					SO_2_BP : {
@@ -52765,11 +52699,8 @@ make root = ${bMakeRoot}`;
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "POST Artists(ArtistID='42',IsActiveEntity=true)"
-						+ "/special.cases.EditAction",
-					payload : {}
-				}, {
+			that.expectRequest("POST Artists(ArtistID='42',IsActiveEntity=true)"
+					+ "/special.cases.EditAction", {
 					ArtistID : "42",
 					IsActiveEntity : false,
 					Name : "Hour Frustrated"
@@ -52817,11 +52748,8 @@ make root = ${bMakeRoot}`;
 
 			return that.createView(assert, "", oModel);
 		}).then(function () {
-			that.expectRequest({
-					url : "POST Artists(ArtistID='4%2F2',IsActiveEntity=true)"
-						+ "/special.cases.EditAction",
-					payload : {}
-				}, {
+			that.expectRequest("POST Artists(ArtistID='4%2F2',IsActiveEntity=true)"
+					+ "/special.cases.EditAction", {
 					ArtistID : "4/2",
 					IsActiveEntity : false
 				});
@@ -53047,8 +52975,7 @@ make root = ${bMakeRoot}`;
 						},
 						url : "#6 POST Artists(ArtistID='42',IsActiveEntity=false)"
 							+ "/special.cases.ActivationAction"
-							+ "?$select=ArtistID,IsActiveEntity,Messages,Name",
-						payload : {}
+							+ "?$select=ArtistID,IsActiveEntity,Messages,Name"
 					}, {
 						"@odata.etag" : "activETag*",
 						ArtistID : "42",
@@ -53304,10 +53231,8 @@ make root = ${bMakeRoot}`;
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "POST SalesOrderList('1')/" + sAction + "?$select=Messages,SalesOrderID",
-					payload : {}
-				}, {
+			that.expectRequest("POST SalesOrderList('1')/" + sAction
+					+ "?$select=Messages,SalesOrderID", {
 					SalesOrderID : "1"
 				});
 
@@ -53365,11 +53290,8 @@ make root = ${bMakeRoot}`;
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "POST Artists(ArtistID='1',IsActiveEntity=true)/BestFriend/" + sAction
-						+ "?$select=ArtistID,IsActiveEntity,Messages",
-					payload : {}
-				}, {
+			that.expectRequest("POST Artists(ArtistID='1',IsActiveEntity=true)/BestFriend/"
+					+ sAction + "?$select=ArtistID,IsActiveEntity,Messages", {
 					ArtistID : "2",
 					IsActiveEntity : false,
 					Messages : [{
@@ -53606,11 +53528,9 @@ make root = ${bMakeRoot}`;
 			var oAction = oModel.bindContext("com.sap.gateway.default.zui5_epm_sample"
 					+ ".v0002.SalesOrder_Confirm(...)", oCreatedSOContext);
 
-			that.expectRequest({
-					url : "POST SalesOrderList('43')"
-						+ "/com.sap.gateway.default.zui5_epm_sample.v0002.SalesOrder_Confirm",
-					payload : {}
-				}, {SalesOrderID : "43"});
+			that.expectRequest("POST SalesOrderList('43')"
+					+ "/com.sap.gateway.default.zui5_epm_sample.v0002.SalesOrder_Confirm",
+					{SalesOrderID : "43"});
 
 			return Promise.all([
 				// code under test
@@ -56859,11 +56779,8 @@ make root = ${bMakeRoot}`;
 					= oModel.bindContext(sOperation + "(...)", oParentContext,
 						{$$inheritExpandSelect : true, $select : ["Messages"]});
 
-			that.expectRequest({
-					payload : {},
-					url : "POST SalesOrderList('1')/" + sOperation
-						+ "?$select=Messages,Note,SalesOrderID"
-				}, {
+			that.expectRequest("POST SalesOrderList('1')/" + sOperation
+					+ "?$select=Messages,Note,SalesOrderID", {
 					Messages : [{
 						message : "Just A Message",
 						numericSeverity : 1,
@@ -57085,8 +57002,7 @@ make root = ${bMakeRoot}`;
 		return this.createView(assert, sView, oModel).then(function () {
 			that.expectRequest({
 					url : "#2 POST SalesOrderList('1')/" + sAction,
-					headers : {"If-Match" : "ETag"},
-					payload : {}
+					headers : {"If-Match" : "ETag"}
 				}, oDONT_CARE)
 				.expectRequest("#2 SalesOrderList('1')?$select=SO_2_SOITEM"
 					+ "&$expand=SO_2_SOITEM($select=ItemPosition,SalesOrderID)", {
@@ -57611,10 +57527,7 @@ make root = ${bMakeRoot}`;
 
 		return this.createView(assert, sView, oModel).then(function () {
 			// create a new team
-			that.expectRequest({
-					url : "POST TEAMS",
-					payload : {}
-				}, {Team_Id : "23"});
+			that.expectRequest("POST TEAMS", {Team_Id : "23"});
 
 			oTeamCreatedContext = oModel.bindList("/TEAMS").create({}, true);
 
@@ -58798,11 +58711,8 @@ make root = ${bMakeRoot}`;
 				oOperation = oModel.bindContext("special.cases.PreparationAction(...)", oContext,
 					{$$inheritExpandSelect : true});
 
-			that.expectRequest({
-				url : "POST " + sResourcePath + "/special.cases.PreparationAction"
-					+ "?$select=Messages,Price,PublicationID",
-				payload : {}
-			}, {
+			that.expectRequest("POST " + sResourcePath + "/special.cases.PreparationAction"
+					+ "?$select=Messages,Price,PublicationID", {
 				Messages : [{
 					code : "23",
 					message : "Just A Message",
@@ -58860,10 +58770,7 @@ make root = ${bMakeRoot}`;
 				oOperationBinding = oModel.bindContext("special.cases.Create(...)", oHeaderContext,
 					{$$patchWithoutSideEffects : true});
 
-			that.expectRequest({
-				payload : {},
-				url : "POST Artists/special.cases.Create"
-			}, {
+			that.expectRequest("POST Artists/special.cases.Create", {
 				ArtistID : "42",
 				IsActiveEntity : false
 			});
@@ -58998,10 +58905,7 @@ make root = ${bMakeRoot}`;
 			.expectChange("name", ["Foo", "Bar"]);
 
 		return this.createView(assert, sView, oModel).then(function () {
-			that.expectRequest({
-					payload : {},
-					url : "POST BusinessPartnerList"
-				}, new Promise(function (resolve) {
+			that.expectRequest("POST BusinessPartnerList", new Promise(function (resolve) {
 					fnRespond = resolve.bind(null, {
 						BusinessPartnerID : "4710",
 						CompanyName : "Baz"
@@ -59086,11 +58990,8 @@ make root = ${bMakeRoot}`;
 			that.oView.byId("table").requestItems();
 
 			that.expectChange("count", "4")
-				.expectRequest({
-					payload : {},
-					//TODO maybe this "reordering" is wrong (here)?
-					url : "#2.1 POST BusinessPartnerList"
-				}, {BusinessPartnerID : "4710"})
+				//TODO maybe this "reordering" is wrong (here)?
+				.expectRequest("#2.1 POST BusinessPartnerList", {BusinessPartnerID : "4710"})
 				.expectChange("id", ["4710",,, "4713"]);
 			oContext = oBinding.create({}, true);
 
@@ -59406,10 +59307,7 @@ make root = ${bMakeRoot}`;
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "#2 POST SalesOrderList('1')/SO_2_SOITEM",
-					payload : {}
-				}, {
+			that.expectRequest("#2 POST SalesOrderList('1')/SO_2_SOITEM", {
 					SalesOrderID : "1",
 					ItemPosition : "20"
 				})
@@ -60088,11 +59986,8 @@ make root = ${bMakeRoot}`;
 			var oOperationBinding = oModel.bindContext("special.cases.EditAction(...)",
 					oForm.getBindingContext(), {$$inheritExpandSelect : true});
 
-			that.expectRequest({
-					payload : {},
-					url : "POST Artists(ArtistID='1',IsActiveEntity=true)/special.cases.EditAction"
-						+ "?$select=ArtistID,IsActiveEntity,Messages"
-				}, {
+			that.expectRequest("POST Artists(ArtistID='1',IsActiveEntity=true)"
+					+ "/special.cases.EditAction?$select=ArtistID,IsActiveEntity,Messages", {
 					ArtistID : "1",
 					IsActiveEntity : false,
 					Messages : [{
@@ -60799,8 +60694,7 @@ make root = ${bMakeRoot}`;
 			that.expectRequest({
 					url : "POST SalesOrderList('1')/SO_2_SOITEM(SalesOrderID='1',ItemPosition='10')"
 						+ "/SOITEM_2_SO/" + sAction, // TODO reduce operation path
-					headers : {"If-Match" : "ETag"},
-					payload : {}
+					headers : {"If-Match" : "ETag"}
 				}, {
 					LifecycleStatus : "C",
 					SalesOrderID : "1"
@@ -62443,10 +62337,7 @@ make root = ${bMakeRoot}`;
 		this.expectChange("note");
 
 		return this.createView(assert, sView, oModel).then(function () {
-			that.expectRequest({
-					url : "POST SalesOrderList",
-					payload : {}
-				}, {
+			that.expectRequest("POST SalesOrderList", {
 					Note : "New",
 					SalesOrderID : "43"
 				})
@@ -64058,10 +63949,7 @@ make root = ${bMakeRoot}`;
 			that.oLogMock.expects("error")
 				.withExactArgs("POST on 'People' failed; will be repeated automatically",
 					sinon.match("Could not load metadata: 500 Internal Server Error"), sODLB);
-			that.expectRequest({
-					url : "POST People",
-					payload : {}
-				}, oNO_RESPONSE)
+			that.expectRequest("POST People", oNO_RESPONSE)
 				.expectMessages([{
 					message : "Could not load metadata: 500 Internal Server Error",
 					persistent : true,
@@ -64107,10 +63995,7 @@ make root = ${bMakeRoot}`;
 			.expectChange("status", "N");
 
 		return this.createView(assert, sView, oModel).then(function () {
-			that.expectRequest({
-					url : "POST SalesOrderList('1')/" + sAction,
-					payload : {}
-				}, {
+			that.expectRequest("POST SalesOrderList('1')/" + sAction, {
 					LifecycleStatus : "N", // Note: wrong response, should be "C"
 					SalesOrderID : "1"
 				})
@@ -64259,8 +64144,7 @@ make root = ${bMakeRoot}`;
 					headers : {
 						Prefer : "handling=strict"
 					},
-					url : "#2.1 POST SalesOrderList('0')/" + sAction,
-					payload : {}
+					url : "#2.1 POST SalesOrderList('0')/" + sAction
 				}, oError, {
 					"Preference-Applied" : "handling=strict"
 				})
@@ -64268,20 +64152,15 @@ make root = ${bMakeRoot}`;
 					headers : {
 						Prefer : "handling=strict"
 					},
-					url : "#2.1 POST SalesOrderList('1')/" + sAction,
-					payload : {}
+					url : "#2.1 POST SalesOrderList('1')/" + sAction
 				}, oNO_RESPONSE)
 				.expectRequest({
 					headers : {
 						Prefer : "handling=strict"
 					},
-					url : "#2.1 POST SalesOrderList('2')/" + sAction,
-					payload : {}
+					url : "#2.1 POST SalesOrderList('2')/" + sAction
 				}, oNO_RESPONSE)
-				.expectRequest({
-					url : "#2.2 POST RegenerateEPMData",
-					payload : {}
-				}, oNO_RESPONSE)
+				.expectRequest("#2.2 POST RegenerateEPMData", oNO_RESPONSE)
 				.expectRequest("#2 SalesOrderList?$select=LifecycleStatus,SalesOrderID"
 					+ "&$skip=0&$top=100", oNO_RESPONSE);
 			that.oLogMock.expects("error")
@@ -64326,31 +64205,19 @@ make root = ${bMakeRoot}`;
 		}).then(function () {
 			let aPromises = [];
 			if (bConfirm) {
-				that.expectRequest({
-						url : "#3.1 POST SalesOrderList('0')/" + sAction,
-						payload : {}
-					}, {
+				that.expectRequest("#3.1 POST SalesOrderList('0')/" + sAction, {
 						LifecycleStatus : "C0",
 						SalesOrderID : "0"
 					})
-					.expectRequest({
-						url : "#3.1 POST SalesOrderList('1')/" + sAction,
-						payload : {}
-					}, {
+					.expectRequest("#3.1 POST SalesOrderList('1')/" + sAction, {
 						LifecycleStatus : "C1",
 						SalesOrderID : "1"
 					})
-					.expectRequest({
-						url : "#3.1 POST SalesOrderList('2')/" + sAction,
-						payload : {}
-					}, {
+					.expectRequest("#3.1 POST SalesOrderList('2')/" + sAction, {
 						LifecycleStatus : "C2",
 						SalesOrderID : "2"
 					})
-					.expectRequest({
-						url : "#3.2 POST RegenerateEPMData",
-						payload : {}
-					}, oDONT_CARE)
+					.expectRequest("#3.2 POST RegenerateEPMData", oDONT_CARE)
 					.expectRequest("#3 SalesOrderList?$select=LifecycleStatus,SalesOrderID"
 						+ "&$skip=0&$top=100", {
 						// Note: bDifferentContentIDs is misused to show whether side effects win
@@ -64459,8 +64326,7 @@ make root = ${bMakeRoot}`;
 					headers : {
 						Prefer : "handling=strict"
 					},
-					url : "POST SalesOrderList('0')/" + sAction,
-					payload : {}
+					url : "POST SalesOrderList('0')/" + sAction
 				}, {
 					LifecycleStatus : "C",
 					SalesOrderID : "0"
@@ -64469,8 +64335,7 @@ make root = ${bMakeRoot}`;
 					headers : {
 						Prefer : "handling=strict"
 					},
-					url : "POST RegenerateEPMData",
-					payload : {}
+					url : "POST RegenerateEPMData"
 				}, {})
 				.expectRequest("GetProductStock()", {})
 				.expectChange("status", "C")
@@ -64584,10 +64449,8 @@ make root = ${bMakeRoot}`;
 				return Promise.resolve(false);
 			}
 
-			that.expectRequest({ // No `Prefer : "handling=strict"` header
-					url : "POST SalesOrderList('42')/" + sConfirmAction,
-					payload : {}
-				}, {
+				// No `Prefer : "handling=strict"` header
+			that.expectRequest("POST SalesOrderList('42')/" + sConfirmAction, {
 					LifecycleStatus : "C",
 					SalesOrderID : "42",
 					Messages : [{
@@ -64603,8 +64466,7 @@ make root = ${bMakeRoot}`;
 					headers : {
 						Prefer : "handling=strict"
 					},
-					url : "POST SalesOrderList('42')/" + sGoodsAction,
-					payload : {}
+					url : "POST SalesOrderList('42')/" + sGoodsAction
 				}, oError, {
 					"Preference-Applied" : "handling=strict"
 				})
@@ -65729,9 +65591,9 @@ make root = ${bMakeRoot}`;
 		await this.createView(assert, sView, oModel);
 
 		this.expectChange("managerId", ["", "", ""])
-			.expectRequest({url : "POST EMPLOYEES", payload : {}}, {ID : "0"})
-			.expectRequest({url : "POST EMPLOYEES", payload : {}}, {ID : "1"})
-			.expectRequest({url : "POST EMPLOYEES", payload : {}}, {ID : "2"})
+			.expectRequest("POST EMPLOYEES", {ID : "0"})
+			.expectRequest("POST EMPLOYEES", {ID : "1"})
+			.expectRequest("POST EMPLOYEES", {ID : "2"})
 			.expectRequest("EMPLOYEES('0')?$select=ID&$expand=EMPLOYEE_2_MANAGER($select=ID)",
 				{ID : "0", EMPLOYEE_2_MANAGER : {ID : "10"}})
 			.expectRequest("EMPLOYEES('1')?$select=ID&$expand=EMPLOYEE_2_MANAGER($select=ID)",
@@ -65909,7 +65771,6 @@ make root = ${bMakeRoot}`;
 				.expectRequest({
 					$ContentID : undefined,
 					groupId : sGroupId,
-					payload : {},
 					url : "#3.2 POST RegenerateEPMData" // new changeset via submitBatch("$auto")
 				}, {/* don't care */})
 				.expectChange("position", [, "0020"]);
@@ -66770,10 +66631,7 @@ make root = ${bMakeRoot}`;
 		}).then(function () {
 			that.expectChange("count", "4")
 				.expectChange("id", ["", ""])
-				.expectRequest({
-					payload : {},
-					url : "POST BusinessPartnerList"
-				}, {BusinessPartnerID : "new1"})
+				.expectRequest("POST BusinessPartnerList", {BusinessPartnerID : "new1"})
 				.expectChange("id", [, "new1"]);
 
 			oContext = oBinding.create({}, true);
@@ -67272,10 +67130,7 @@ make root = ${bMakeRoot}`;
 			that.checkMoreButton(assert, oFixture.bFilter ? "[3/42]" : "[3/102]");
 
 			that.expectChange("id", ["", ""])
-				.expectRequest({
-					url : "POST SalesOrderList",
-					payload : {}
-				}, {SalesOrderID : "new"})
+				.expectRequest("POST SalesOrderList", {SalesOrderID : "new"})
 				.expectChange("count", oFixture.bFilter ? "43" : "103")
 				.expectChange("id", [, "new"]);
 
@@ -69148,8 +69003,7 @@ make root = ${bMakeRoot}`;
 			}
 			that.expectRequest({
 					url : "POST " + sUrl,
-					headers : {"If-Match" : "etag.active1"},
-					payload : {}
+					headers : {"If-Match" : "etag.active1"}
 				}, oResponse)
 				.expectMessages([{
 					message : "Active message",
@@ -70642,10 +70496,7 @@ make root = ${bMakeRoot}`;
 		return this.createView(assert).then(function () {
 			oListBinding = that.oModel.bindList("/TEAMS");
 
-			that.expectRequest({
-					payload : {},
-					url : "POST TEAMS"
-				}, new Promise(function (resolve) {
+			that.expectRequest("POST TEAMS", new Promise(function (resolve) {
 					fnResolveCreate0 = resolve.bind(null, oDONT_CARE);
 				}));
 
@@ -70654,10 +70505,7 @@ make root = ${bMakeRoot}`;
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					payload : {},
-					url : "POST TEAMS"
-				}, new Promise(function (resolve) {
+			that.expectRequest("POST TEAMS", new Promise(function (resolve) {
 					fnResolveCreate1 = resolve.bind(null, oDONT_CARE);
 				}));
 
@@ -71617,11 +71465,9 @@ make root = ${bMakeRoot}`;
 					that.oView.byId("table").getItems()[0].getBindingContext(),
 					{$$inheritExpandSelect : true, $select : "Note,Messages,LifecycleStatus"});
 
-			that.expectRequest({
-					url : "POST SalesOrderList('42')/" + sAction
-						+ "?$select=LifecycleStatus,Messages,Note,SalesOrderID",
-					payload : {}
-				}, {SalesOrderID : "42", LifecycleStatus : "B", Messages : [], Note : "some note"})
+			that.expectRequest("POST SalesOrderList('42')/" + sAction
+					+ "?$select=LifecycleStatus,Messages,Note,SalesOrderID",
+					{SalesOrderID : "42", LifecycleStatus : "B", Messages : [], Note : "some note"})
 				.expectChange("lifecycleStatus", ["B"]);
 
 			return Promise.all([
@@ -71697,10 +71543,7 @@ make root = ${bMakeRoot}`;
 
 		return this.createView(assert, sView, oModel).then(function () {
 			that.expectChange("note", [""])
-				.expectRequest({
-					url : "POST SalesOrderList('1')/SO_2_SOITEM",
-					payload : {}
-				}, {
+				.expectRequest("POST SalesOrderList('1')/SO_2_SOITEM", {
 					ItemPosition : "10",
 					Note : "initial",
 					SalesOrderID : "1"
@@ -77032,10 +76875,7 @@ make root = ${bMakeRoot}`;
 
 			that.expectChange("artistID", ["", "42"])
 				.expectChange("isActiveEntity", [null, "Yes"])
-				.expectRequest({
-					url : "POST Artists",
-					payload : {}
-				}, {
+				.expectRequest("POST Artists", {
 					ArtistID : "23",
 					IsActiveEntity : false
 				})
@@ -77056,11 +76896,8 @@ make root = ${bMakeRoot}`;
 
 			assert.strictEqual(oDraftContext.isTransient(), false);
 
-			that.expectRequest({
-					url : "POST Artists(ArtistID='23',IsActiveEntity=false)"
-						+ "/special.cases.ActivationAction",
-					payload : {}
-				}, {
+			that.expectRequest("POST Artists(ArtistID='23',IsActiveEntity=false)"
+					+ "/special.cases.ActivationAction", {
 					ArtistID : "23",
 					IsActiveEntity : true
 				})
@@ -77141,10 +76978,7 @@ make root = ${bMakeRoot}`;
 				that.waitForChanges(assert, "make length final")
 			]);
 		}).then(function () {
-			that.expectRequest({
-					url : "POST Artists",
-					payload : {}
-				}, {
+			that.expectRequest("POST Artists", {
 					ArtistID : "23",
 					IsActiveEntity : false
 				});
@@ -77159,11 +76993,8 @@ make root = ${bMakeRoot}`;
 			var oActionBinding
 				= oModel.bindContext("special.cases.ActivationAction(...)", oDraftContext);
 
-			that.expectRequest({
-					url : "POST Artists(ArtistID='23',IsActiveEntity=false)"
-						+ "/special.cases.ActivationAction",
-					payload : {}
-				}, {
+			that.expectRequest("POST Artists(ArtistID='23',IsActiveEntity=false)"
+					+ "/special.cases.ActivationAction", {
 					ArtistID : "23",
 					IsActiveEntity : true
 				});
@@ -77232,10 +77063,7 @@ make root = ${bMakeRoot}`;
 			oListBinding = oModel.bindList("/Artists", null, [],
 				[new Filter("sendsAutographs", FilterOperator.EQ, true)]);
 
-			that.expectRequest({
-					url : "POST Artists",
-					payload : {}
-				}, {
+			that.expectRequest("POST Artists", {
 					ArtistID : "23",
 					IsActiveEntity : false
 				});
@@ -77250,11 +77078,8 @@ make root = ${bMakeRoot}`;
 			var oActionBinding
 				= oModel.bindContext("special.cases.ActivationAction(...)", oDraftContext);
 
-			that.expectRequest({
-					url : "POST Artists(ArtistID='23',IsActiveEntity=false)"
-						+ "/special.cases.ActivationAction",
-					payload : {}
-				}, {
+			that.expectRequest("POST Artists(ArtistID='23',IsActiveEntity=false)"
+					+ "/special.cases.ActivationAction", {
 					ArtistID : "23",
 					IsActiveEntity : true
 				});
@@ -77291,11 +77116,8 @@ make root = ${bMakeRoot}`;
 
 			assert.notOk(fnOnBeforeDestroy.called, "still alive");
 
-			that.expectRequest({
-					url : "POST Artists(ArtistID='23',IsActiveEntity=true)"
-						+ "/special.cases.EditAction",
-					payload : {}
-				}, {/* This page intentionally left blank. */})
+			that.expectRequest("POST Artists(ArtistID='23',IsActiveEntity=true)"
+					+ "/special.cases.EditAction", {/* This page intentionally left blank. */})
 				.expectMessages([{
 					message : "Cannot replace w/o return value context",
 					persistent : true,
@@ -77482,13 +77304,11 @@ make root = ${bMakeRoot}`;
 			var oAction = oModel.bindContext("special.cases.EditAction(...)",
 					that.oView.byId("artist").getBindingContext());
 
-			that.expectRequest({
-				url : "POST Artists(ArtistID='1',IsActiveEntity=true)/special.cases.EditAction",
-				payload : {}
-			}, {
-				ArtistID : "1",
-				IsActiveEntity : false
-			});
+			that.expectRequest("POST Artists(ArtistID='1',IsActiveEntity=true)"
+					+ "/special.cases.EditAction", {
+					ArtistID : "1",
+					IsActiveEntity : false
+				});
 
 			return Promise.all([
 				oAction.invoke(),
@@ -78400,7 +78220,6 @@ make root = ${bMakeRoot}`;
 		let fnResolveCreate;
 		this.expectRequest({
 				headers : {/*NO "sap-cancel-on-close"*/},
-				payload : {},
 				url : "POST EMPLOYEES"
 			}, new Promise(function (resolve) {
 				fnResolveCreate = resolve.bind(null, oDONT_CARE);
@@ -78456,18 +78275,13 @@ make root = ${bMakeRoot}`;
 		const sAction = "com.sap.gateway.default.zui5_epm_sample.v0002.SalesOrder_Confirm";
 		this.expectRequest({
 				groupId : "$single",
-				payload : {},
 				url : "#2 POST SalesOrderList('1')/" + sAction
 			}, oDONT_CARE)
 			.expectRequest({
 				groupId : "$single",
-				payload : {},
 				url : "#3 POST SalesOrderList('2')/" + sAction
 			}, oDONT_CARE)
-			.expectRequest({
-				payload : {},
-				url : "#-4 POST SalesOrderList('3')/" + sAction
-			}, oDONT_CARE);
+			.expectRequest("#-4 POST SalesOrderList('3')/" + sAction, oDONT_CARE);
 
 		const oListBinding = this.oView.byId("orders").getBinding("items");
 		const [oContext0, oContext1, oContext2] = oListBinding.getAllCurrentContexts();
