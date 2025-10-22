@@ -18905,7 +18905,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					url : "PATCH BusinessPartnerList('1')",
 					headers : {"If-Match" : "ETag"},
 					payload : {CompanyName : "Bar, Inc"}
-				}, {});
+				}, oDONT_CARE);
 
 			oText.getBinding("value").setValue("Bar, Inc");
 
@@ -57041,7 +57041,7 @@ make root = ${bMakeRoot}`;
 					ROOM_ID : "31", // <-- retry
 					STATUS : "Busy"
 				}
-			}, {/* don't care */});
+			}, oDONT_CARE);
 
 		oStatusBinding.setValue("Busy");
 	}, function () { // Context#setProperty restarts only PATCHes for the same entity (same field)
@@ -57054,7 +57054,7 @@ make root = ${bMakeRoot}`;
 				payload : {
 					ROOM_ID : "32" // <-- new change wins over retry
 				}
-			}, {/* don't care */});
+			}, oDONT_CARE);
 
 		oRoomIdBinding.setValue("32");
 	}, function (assert) { // ODCB#invoke restarts only PATCHes for the same entity
@@ -57067,12 +57067,12 @@ make root = ${bMakeRoot}`;
 				payload : {
 					ROOM_ID : "31" // <-- retry
 				}
-			}, {/* don't care */})
+			}, oDONT_CARE)
 			.expectRequest({
 				headers : {"If-Match" : "ETag3"},
 				url : "POST EMPLOYEES('3')/" + sAction,
 				payload : {TeamID : "23"}
-			}, {/* don't care */});
+			}, oDONT_CARE);
 
 		// bound action also invokes retry
 		return this.oModel.bindContext(sAction + "(...)", oRoomIdBinding.getContext())
@@ -57093,7 +57093,7 @@ make root = ${bMakeRoot}`;
 				payload : {
 					ROOM_ID : "31" // <-- retry
 				}
-			}, {/* don't care */})
+			}, oDONT_CARE)
 			.expectRequest({
 				url : "DELETE EMPLOYEES('3')",
 				headers : {"If-Match" : "*"}
@@ -57109,7 +57109,7 @@ make root = ${bMakeRoot}`;
 					ROOM_ID : "41" // <-- retry
 				},
 				url : "#4.1 PATCH EMPLOYEES('4')"
-			}, {/* don't care */})
+			}, oDONT_CARE)
 			.expectRequest({
 				$ContentID : "1.0",
 				groupId : "$auto",
@@ -57118,7 +57118,7 @@ make root = ${bMakeRoot}`;
 					ROOM_ID : "31" // <-- retry
 				},
 				url : "#4.1 PATCH EMPLOYEES('3')"
-			}, {/* don't care */})
+			}, oDONT_CARE)
 			.expectRequest({
 				$ContentID : undefined,
 				groupId : "$auto",
@@ -57127,7 +57127,7 @@ make root = ${bMakeRoot}`;
 					TeamID : "TEAM_01"
 				},
 				url : "#4.2 POST ChangeTeamBudgetByID" // new changeset via submitBatch("$auto")
-			}, {/* don't care */});
+			}, oDONT_CARE);
 
 		return Promise.all([
 			this.oModel.submitBatch("$auto"),
@@ -57167,14 +57167,14 @@ make root = ${bMakeRoot}`;
 					ROOM_ID : "41" // <-- retry
 				},
 				url : "#4 PATCH EMPLOYEES('4')"
-			}, {/* don't care */})
+			}, oDONT_CARE)
 			.expectRequest({
 				headers : {"If-Match" : "ETag3"},
 				payload : {
 					ROOM_ID : "31" // <-- retry
 				},
 				url : "#4 PATCH EMPLOYEES('3')"
-			}, {/* don't care */})
+			}, oDONT_CARE)
 			.expectRequest("#4 EMPLOYEES('3')?$select=STATUS", {
 				STATUS : "Busy"
 			})
@@ -57392,7 +57392,7 @@ make root = ${bMakeRoot}`;
 						url : "PATCH EMPLOYEES('3')",
 						headers : {"If-Match" : "ETag1"},
 						payload : {STATUS : "Busy"}
-					}, {/* don't care */});
+					}, oDONT_CARE);
 
 				oStatusBinding.setValue("Busy"); // a different field is changed
 
@@ -57478,12 +57478,12 @@ make root = ${bMakeRoot}`;
 						AGE : 67,
 						ROOM_ID : "42"
 					}
-				}, {/* don't care */})
+				}, oDONT_CARE)
 				.expectRequest({
 					headers : {"If-Match" : "ETag0"},
 					url : "#3 POST EMPLOYEES('3')/" + sAction,
 					payload : {TeamID : "23"}
-				}, {/* don't care */});
+				}, oDONT_CARE);
 
 			// bound action waits for PATCHes and invokes retry
 			oPromise = oModel.bindContext(sAction + "(...)", oRoomIdBinding.getContext())
@@ -65772,7 +65772,7 @@ make root = ${bMakeRoot}`;
 					$ContentID : undefined,
 					groupId : sGroupId,
 					url : "#3.2 POST RegenerateEPMData" // new changeset via submitBatch("$auto")
-				}, {/* don't care */})
+				}, oDONT_CARE)
 				.expectChange("position", [, "0020"]);
 
 			return Promise.all([
@@ -78406,7 +78406,7 @@ make root = ${bMakeRoot}`;
 				headers : {"If-Match" : "*"},
 				payload : {TeamID : "42"},
 				url : "#1 POST EMPLOYEES('0')/" + sAction
-			}, {/* don't care */})
+			}, oDONT_CARE)
 			.expectRequest("#1 EMPLOYEES('0')?$select=ID", {ID : "0"});
 
 		await Promise.all([
@@ -78444,7 +78444,7 @@ make root = ${bMakeRoot}`;
 				url : "POST EMPLOYEES('0')/" + sAction
 					+ "?$select=__CT__FAKE__Message/__FAKE__Messages",
 				payload : {TeamID : "42"}
-			}, {/* don't care */});
+			}, oDONT_CARE);
 
 		await Promise.all([
 			oAction.setParameter("TeamID", "42")
