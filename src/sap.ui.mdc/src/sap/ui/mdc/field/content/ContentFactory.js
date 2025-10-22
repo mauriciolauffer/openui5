@@ -322,6 +322,9 @@ sap.ui.define([
 		return sEditMode === FieldEditMode.Editable;
 	};
 
+	/**
+	 * @returns {sap.ui.mdc.field.FieldBase}
+	 */
 	ContentFactory.prototype.getField = function() {
 		return this._oField;
 	};

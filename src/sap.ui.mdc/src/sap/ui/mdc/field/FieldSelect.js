@@ -143,6 +143,9 @@ sap.ui.define([
 
 	function _formatConditions(aConditions) {
 
+		/**
+		 * @type {sap.ui.mdc.field.FieldBase}
+		 */
 		const oField = this.getParent();
 
 		if (!oField?.isA("sap.ui.mdc.field.FieldBase")) { // called from generic tests
@@ -436,6 +439,9 @@ sap.ui.define([
 
 	function _getValueHelp() {
 
+		/**
+		 * @type {sap.ui.mdc.field.FieldBase}
+		 */
 		const oField = this.getParent();
 		let sId = oField?._getValueHelp();
 		let oValueHelp;
