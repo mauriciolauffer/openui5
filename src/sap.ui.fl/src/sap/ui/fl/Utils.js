@@ -533,7 +533,6 @@ sap.ui.define([
 		 * @private
 		 * @ui5-restricted
 		 */
-		// eslint-disable-next-line object-shorthand
 		FakePromise: function(vInitialValue, vError, sInitialPromiseIdentifier) {
 			Utils.FakePromise.fakePromiseIdentifier = "sap.ui.fl.Utils.FakePromise";
 			this.vValue = vInitialValue;
