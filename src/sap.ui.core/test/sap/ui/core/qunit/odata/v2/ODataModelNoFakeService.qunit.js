@@ -5728,7 +5728,7 @@ sap.ui.define([
 		ODataModel.prototype._parseResponse.call(oModel, "~oResponse", "~oRequest", "~mGetEntities",
 			"~mChangeEntities");
 
-		assert.strictEqual(oModel.oMessageParser._serviceUrl, "/service/");
+		assert.strictEqual(oModel.oMessageParser._sRelativeServerUrl, "/service/");
 		assert.strictEqual(oModel.oMessageParser._metadata, "~oMetadata");
 		assert.strictEqual(oModel.oMessageParser._bPersistTechnicalMessages, oFixture.bExpected);
 	});
