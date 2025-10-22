@@ -80196,6 +80196,9 @@ make root = ${bMakeRoot}`;
 	// Messages contained in a successful $$separate response are handled automatically and they are
 	// not passed to the "separateReceived" event handler.
 	// JIRA: CPOUI5ODATAV4-2878
+	//
+	// $$separate property 'DraftAdministrativeData' is ignored as it is not expanded.
+	// SNOW: DINC0671730
 [false, true].forEach(function (bAutoExpandSelect) {
 	QUnit.test("$$separate: autoExpandSelect=" + bAutoExpandSelect, async function (assert) {
 		const oModel = this.createSpecialCasesModel({autoExpandSelect : bAutoExpandSelect});
@@ -80219,7 +80222,7 @@ make root = ${bMakeRoot}`;
 		items="{
 			path : '/Artists',
 			parameters : {
-				$$separate : ['BestFriend', 'SiblingEntity'],
+				$$separate : ['BestFriend', 'DraftAdministrativeData', 'SiblingEntity'],
 				${bAutoExpandSelect ? "" : sExpandSelect}
 				$count : true,
 				$filter : 'IsActiveEntity eq true',
