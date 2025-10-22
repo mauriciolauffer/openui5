@@ -10182,4 +10182,17 @@ sap.ui.define([
 			bIgnoreExpandSelect ? "search=baz" : "$expand=foo&$select=bar&search=baz");
 	});
 });
+
+	//*********************************************************************************************
+	QUnit.test("_getServerUrl", function (assert) {
+		const oModel = {sServiceUrl: "/foo/bar/baz/TEST_SERVICE"};
+		const oURLStub = this.stub(window, "URL");
+
+		// code under test
+		ODataModel.prototype._getServerUrl.call(oModel);
+
+		assert.strictEqual(oURLStub.callCount, 2);
+		assert.deepEqual(oURLStub.firstCall.args, [oModel.sServiceUrl, document.baseURI]);
+		assert.deepEqual(oURLStub.secondCall.args, ["/", oURLStub.firstCall.returnValue]);
+	});
 });
