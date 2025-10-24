@@ -130,7 +130,7 @@ sap.ui.define([
 	}
 
 	async function removeFlexObjectsFromStorage(oStorage) {
-		const aList = await ObjectStorageUtils.getAllFlexObjects({storage: oStorage});
+		const aList = await ObjectStorageUtils.getAllFlexObjects({ storage: oStorage });
 		var aPromises = aList.map(function(oFlexObject) {
 			return oStorage.removeItem(oFlexObject.key);
 		});
@@ -156,7 +156,7 @@ sap.ui.define([
 
 	function getNumberOfFlexObjects(oConnector) {
 		var iCount = 0;
-		return ObjectStorageUtils.forEachObjectInStorage({storage: oConnector.storage}, function() {
+		return ObjectStorageUtils.forEachObjectInStorage({ storage: oConnector.storage }, function() {
 			iCount++;
 		})
 		.then(function() {
@@ -188,16 +188,16 @@ sap.ui.define([
 					return Promise.all([assertFileWritten(assert, oConnector.storage, oTestData, " was written")]);
 				})
 				.then(function() {
-					return oConnector.loadFlexData({reference: "sap.ui.fl.test", version: Version.Number.Original});
+					return oConnector.loadFlexData({ reference: "sap.ui.fl.test", version: Version.Number.Original });
 				})
 				.then(function(aResponses) {
 					assert.strictEqual(aResponses.length, 0, "the response is empty when called original version");
-					return oConnector.loadFlexData({reference: "sap.ui.fl.test", version: Version.Number.Draft});
+					return oConnector.loadFlexData({ reference: "sap.ui.fl.test", version: Version.Number.Draft });
 				})
 				.then(function(aFlexData) {
 					assert.strictEqual(aFlexData[0].changes.length, 3, "three changes are returned");
 					assert.ok(aFlexData[0].cacheKey, "the cacheKey got calculated");
-					return loadVersionFromStorage({reference: "sap.ui.fl.test", storage: oConnector.storage});
+					return loadVersionFromStorage({ reference: "sap.ui.fl.test", storage: oConnector.storage });
 				})
 				.then(function(aVersion) {
 					assert.equal(aVersion.length, 1, "there is one version in stoarage");
@@ -227,7 +227,7 @@ sap.ui.define([
 					});
 				})
 				.then(function() {
-					return oConnector.loadFlexData({reference: "sap.ui.fl.test", version: Version.Number.Draft});
+					return oConnector.loadFlexData({ reference: "sap.ui.fl.test", version: Version.Number.Draft });
 				})
 				.then(function(aFlexData) {
 					assert.strictEqual(aFlexData[0].changes.length, 3, "three changes are returned");
@@ -307,7 +307,7 @@ sap.ui.define([
 					layer: Layer.CUSTOMER
 				})
 				.then(function() {
-					return oConnector.loadFlexData({reference: sReference, version: Version.Number.Draft});
+					return oConnector.loadFlexData({ reference: sReference, version: Version.Number.Draft });
 				})
 				.then(function(aResponses) {
 					assert.strictEqual(aResponses.length, 1, "load draft data has a response");
@@ -327,7 +327,7 @@ sap.ui.define([
 				.then(function(aResponses) {
 					assert.notEqual(aResponses.version, Version.Number.Draft, "activated version is not a draft anymore");
 					assert.equal(aResponses.isDraft, false, "isDraft is false");
-					return oConnector.loadFlexData({reference: sReference});
+					return oConnector.loadFlexData({ reference: sReference });
 				})
 				.then(function(aResponses) {
 					assert.strictEqual(aResponses.length, 1, "load data has a response");
@@ -348,7 +348,7 @@ sap.ui.define([
 				})
 				.then(function(oResponses) {
 					assert.strictEqual(oResponses.response.length, 1, "write change2 is success");
-					return oConnector.loadFlexData({reference: sReference, version: Version.Number.Draft});
+					return oConnector.loadFlexData({ reference: sReference, version: Version.Number.Draft });
 				})
 				.then(function(aResponses) {
 					assert.strictEqual(aResponses.length, 1, "load draft data has a response");
@@ -371,7 +371,7 @@ sap.ui.define([
 				})
 				.then(function(oResponses) {
 					assert.strictEqual(oResponses.response.length, 1, "write change3 is success");
-					return oConnector.loadFlexData({reference: sReference, version: Version.Number.Draft});
+					return oConnector.loadFlexData({ reference: sReference, version: Version.Number.Draft });
 				})
 				.then(function(aResponses) {
 					assert.strictEqual(aResponses.length, 1, "load draft data has a response");
@@ -442,7 +442,7 @@ sap.ui.define([
 					layer: Layer.CUSTOMER
 				})
 				.then(function() {
-					return oConnector.loadFlexData({reference: sReference, version: Version.Number.Draft});
+					return oConnector.loadFlexData({ reference: sReference, version: Version.Number.Draft });
 				})
 				.then(function(aResponses) {
 					assert.strictEqual(aResponses.length, 1, "load draft data has a response");
@@ -464,7 +464,7 @@ sap.ui.define([
 				.then(function(aResponses) {
 					assert.notEqual(aResponses.version, Version.Number.Draft, "activated version is not a draft anymore");
 					assert.equal(aResponses.isDraft, false, "isDraft is false");
-					return oConnector.loadFlexData({reference: sReference});
+					return oConnector.loadFlexData({ reference: sReference });
 				})
 				.then(function(aResponses) {
 					assert.strictEqual(aResponses.length, 1, "load data has a response");
@@ -483,7 +483,7 @@ sap.ui.define([
 				})
 				.then(function(oResponses) {
 					assert.strictEqual(oResponses.response.length, 0, "delete variant1 is success");
-					return oConnector.loadFlexData({reference: sReference, version: Version.Number.Draft});
+					return oConnector.loadFlexData({ reference: sReference, version: Version.Number.Draft });
 				})
 				.then(function(aResponses) {
 					assert.strictEqual(aResponses.length, 1, "load draft data has a response");
@@ -499,7 +499,7 @@ sap.ui.define([
 					assert.equal(oDraftVersion.version, Version.Number.Draft, "version is a draft");
 					assert.strictEqual(oDraftVersion.filenames[0], "oVariant1_hide", "draft file name is correct");
 					assert.notEqual(oActiveVersion.version, Version.Number.Draft, "active version is not a draft");
-					return oConnector.loadFlexData({reference: sReference, version: oActiveVersion.version});
+					return oConnector.loadFlexData({ reference: sReference, version: oActiveVersion.version });
 				})
 				.then(function(aResponses) {
 					assert.strictEqual(aResponses.length, 1, "load draft data has a response");
@@ -529,7 +529,7 @@ sap.ui.define([
 			});
 
 			QUnit.test("when getFlexInfo is called without changes present", function(assert) {
-				return oConnector.getFlexInfo({storage: oConnector.storage}).then(function(oFlexInfo) {
+				return oConnector.getFlexInfo({ storage: oConnector.storage }).then(function(oFlexInfo) {
 					var oExpectedFlexInfo = {
 						isResetEnabled: false
 					};
@@ -541,7 +541,7 @@ sap.ui.define([
 				await saveListWithConnector(oConnector, [
 					oTestData.oChange1
 				]);
-				const oFlexInfo = await oConnector.getFlexInfo({storage: oConnector.storage});
+				const oFlexInfo = await oConnector.getFlexInfo({ storage: oConnector.storage });
 				var oExpectedFlexInfo = {
 					isResetEnabled: true
 				};
@@ -591,7 +591,7 @@ sap.ui.define([
 						return oFlexObjectFileContent.fileName;
 					});
 					assert.ok(aIds.indexOf("oChange5") > -1, "the change was added");
-					return oConnector.loadFlexData({reference: "sap.ui.fl.test"});
+					return oConnector.loadFlexData({ reference: "sap.ui.fl.test" });
 				})
 				.then(function(aResponses) {
 					var aFlexObjectsFileContent = aResponses[0].changes;
@@ -601,7 +601,7 @@ sap.ui.define([
 						return oFlexObjectFileContent.fileName;
 					});
 					assert.ok(aIds.indexOf("oChange5") > -1, "the change was added");
-					return oConnector.loadFlexData({reference: "sap.ui.fl.test"});
+					return oConnector.loadFlexData({ reference: "sap.ui.fl.test" });
 				});
 			});
 
@@ -658,7 +658,7 @@ sap.ui.define([
 
 				return oConnector.condense(mPropertyBag)
 				.then(function() {
-					return oConnector.loadFlexData({reference: "sap.ui.fl.test", version: Version.Number.Draft});
+					return oConnector.loadFlexData({ reference: "sap.ui.fl.test", version: Version.Number.Draft });
 				})
 				.then(function(aResponses) {
 					var aFlexObjectsFileContent = aResponses[0].changes;
@@ -668,7 +668,7 @@ sap.ui.define([
 						return oFlexObjectFileContent.fileName;
 					});
 					assert.ok(aIds.indexOf("oChange5") > -1, "the change was added");
-					ObjectStorageUtils.forEachObjectInStorage({reference: "sap.ui.fl.test", storage: oConnector.storage}, function(mFlexObject) {
+					ObjectStorageUtils.forEachObjectInStorage({ reference: "sap.ui.fl.test", storage: oConnector.storage }, function(mFlexObject) {
 						if (mFlexObject.key.includes("version")) {
 							assert.equal(mFlexObject.changeDefinition.filienames.length, 1, "there is one filename in the draft version");
 							assert.equal(mFlexObject.changeDefinition.fileName[0], "oChange5", "the draft filename is correct");
@@ -678,7 +678,7 @@ sap.ui.define([
 				})
 				.then(function(aResponses) {
 					assert.strictEqual(aResponses.response.length, 0, "there is no change in the condense response");
-					return ObjectStorageUtils.getAllFlexObjects({storage: oConnector.storage});
+					return ObjectStorageUtils.getAllFlexObjects({ storage: oConnector.storage });
 				})
 				.then(function(aList) {
 					assert.strictEqual(aList.length, 0, "there is no change in the storage");
@@ -878,10 +878,10 @@ sap.ui.define([
 						id: "oVariant1"
 					}
 				};
-				var oUpdatedChange = merge({}, oTestData.oChange1, {content: {
+				var oUpdatedChange = merge({}, oTestData.oChange1, { content: {
 					foo: "foobar",
 					bar: "foo"
-				}});
+				} });
 				var oUpdatedVariantMngtChange = merge({}, oTestData.oVariantManagementChange);
 				oUpdatedVariantMngtChange.content = {
 					bar: "foo"
@@ -951,7 +951,7 @@ sap.ui.define([
 					}
 				};
 
-				return loadVersionFromStorage({reference: "sap.ui.fl.test", storage: oConnector.storage})
+				return loadVersionFromStorage({ reference: "sap.ui.fl.test", storage: oConnector.storage })
 				.then(function(aVersion) {
 					assert.equal(aVersion.length, 1, "there is one version in the storage");
 					assert.equal(aVersion[0].changeDefinition.filenames.length, 9, "there is one filename in the draft version");
@@ -988,7 +988,7 @@ sap.ui.define([
 					assert.ok(aIds.indexOf("oVariantChange1") > -1, "the variant change was reordered");
 					assert.ok(aIds.indexOf("oChange4") > -1, "the change was reordered");
 
-					return oConnector.loadFlexData({reference: "sap.ui.fl.test", version: Version.Number.Draft});
+					return oConnector.loadFlexData({ reference: "sap.ui.fl.test", version: Version.Number.Draft });
 				})
 				.then(function(aResponses) {
 					var aFlexObjectsFileContent = aResponses[0].changes.concat(aResponses[0].variantChanges, aResponses[0].variantManagementChanges, aResponses[0].variants);
@@ -1022,7 +1022,7 @@ sap.ui.define([
 					assert.ok(aIds.indexOf("oChange4") < aIds.indexOf("oChange6"), "the changes were reordered");
 					assert.ok(aIds.indexOf("oChange6") < aIds.indexOf("oChange5"), "the changes were reordered");
 
-					return loadVersionFromStorage({reference: "sap.ui.fl.test", storage: oConnector.storage});
+					return loadVersionFromStorage({ reference: "sap.ui.fl.test", storage: oConnector.storage });
 				})
 				.then(function(aVersion) {
 					assert.equal(aVersion.length, 1, "there is one version in the storage");

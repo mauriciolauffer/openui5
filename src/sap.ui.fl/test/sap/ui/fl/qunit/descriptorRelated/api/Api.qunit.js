@@ -825,7 +825,7 @@ sap.ui.define([
 			const oParsedHash = {
 				semanticObject: "testSemanticObject",
 				action: "testAction",
-				params: {par: "testpar"}
+				params: { par: "testpar" }
 			};
 			return DescriptorVariantFactory.createNew({
 				id: "a.id",
@@ -1666,13 +1666,13 @@ sap.ui.define([
 				id: "a.id",
 				reference: "a.reference"
 			}).then(function(oDescriptorVariant) {
-				return DescriptorInlineChangeFactory.createNew("changeType", {param: "value"}, {a: "b"}).then(function(oDescriptorInlineChange) {
+				return DescriptorInlineChangeFactory.createNew("changeType", { param: "value" }, { a: "b" }).then(function(oDescriptorInlineChange) {
 					return oDescriptorVariant.addDescriptorInlineChange(oDescriptorInlineChange).then(function() {
 						assert.notEqual(oDescriptorVariant.getDefinition().content, null);
 						assert.equal(oDescriptorVariant.getDefinition().content.length, 1);
 						assert.equal(oDescriptorVariant.getDefinition().content[0].changeType, "changeType");
-						assert.deepEqual(oDescriptorVariant.getDefinition().content[0].content, {param: "value"});
-						assert.deepEqual(oDescriptorVariant.getDefinition().content[0].texts, {a: "b"});
+						assert.deepEqual(oDescriptorVariant.getDefinition().content[0].content, { param: "value" });
+						assert.deepEqual(oDescriptorVariant.getDefinition().content[0].texts, { a: "b" });
 					});
 				});
 			});
@@ -1962,7 +1962,7 @@ sap.ui.define([
 		}
 	}, function() {
 		QUnit.test("default package", function(assert) {
-			return DescriptorInlineChangeFactory.createNew("changeType", {param: "value"}, {a: "b"}).then(function(oDescriptorInlineChange) {
+			return DescriptorInlineChangeFactory.createNew("changeType", { param: "value" }, { a: "b" }).then(function(oDescriptorInlineChange) {
 				return new DescriptorChangeFactory().createNew("a.reference", oDescriptorInlineChange);
 			}).then(function(oDescriptorChange) {
 				assert.equal(oDescriptorChange._getChangeToSubmit().getFlexObjectMetadata().packageName, "");
@@ -1972,7 +1972,7 @@ sap.ui.define([
 		QUnit.test("submit", function(assert) {
 			const sResponse = "response";
 			sandbox.stub(FlexObjectManager, "saveFlexObjects").resolves(sResponse);
-			return DescriptorInlineChangeFactory.createNew("changeType", {param: "value"}, {a: "b"})
+			return DescriptorInlineChangeFactory.createNew("changeType", { param: "value" }, { a: "b" })
 			.then(function(oDescriptorInlineChange) {
 				return new DescriptorChangeFactory().createNew("a.reference", oDescriptorInlineChange);
 			}).then(function(oDescriptorChange) {
@@ -1983,7 +1983,7 @@ sap.ui.define([
 		});
 
 		QUnit.test("createNew - w/o layer, check default", function(assert) {
-			return DescriptorInlineChangeFactory.createNew("changeType", {param: "value"}, {a: "b"}).then(function(oDescriptorInlineChange) {
+			return DescriptorInlineChangeFactory.createNew("changeType", { param: "value" }, { a: "b" }).then(function(oDescriptorInlineChange) {
 				new DescriptorChangeFactory().createNew(
 					"a.reference",
 					oDescriptorInlineChange
@@ -1995,7 +1995,7 @@ sap.ui.define([
 		});
 
 		QUnit.test("createNew - with layer VENDOR", function(assert) {
-			return DescriptorInlineChangeFactory.createNew("changeType", {param: "value"}, {a: "b"}).then(function(oDescriptorInlineChange) {
+			return DescriptorInlineChangeFactory.createNew("changeType", { param: "value" }, { a: "b" }).then(function(oDescriptorInlineChange) {
 				new DescriptorChangeFactory().createNew(
 					"a.reference",
 					oDescriptorInlineChange,
@@ -2007,7 +2007,7 @@ sap.ui.define([
 		});
 
 		QUnit.test("createNew - with layer CUSTOMER", function(assert) {
-			return DescriptorInlineChangeFactory.createNew("changeType", {param: "value"}, {a: "b"}).then(function(oDescriptorInlineChange) {
+			return DescriptorInlineChangeFactory.createNew("changeType", { param: "value" }, { a: "b" }).then(function(oDescriptorInlineChange) {
 				new DescriptorChangeFactory().createNew(
 					"a.reference",
 					oDescriptorInlineChange,
@@ -2019,7 +2019,7 @@ sap.ui.define([
 		});
 
 		QUnit.test("createNew - with layer CUSTOMER_BASE", function(assert) {
-			return DescriptorInlineChangeFactory.createNew("changeType", {param: "value"}, {a: "b"}).then(function(oDescriptorInlineChange) {
+			return DescriptorInlineChangeFactory.createNew("changeType", { param: "value" }, { a: "b" }).then(function(oDescriptorInlineChange) {
 				new DescriptorChangeFactory().createNew(
 					"a.reference",
 					oDescriptorInlineChange,
@@ -2031,7 +2031,7 @@ sap.ui.define([
 		});
 
 		QUnit.test("createNew - with layer PARTNER", function(assert) {
-			return DescriptorInlineChangeFactory.createNew("changeType", {param: "value"}, {a: "b"}).then(function(oDescriptorInlineChange) {
+			return DescriptorInlineChangeFactory.createNew("changeType", { param: "value" }, { a: "b" }).then(function(oDescriptorInlineChange) {
 				new DescriptorChangeFactory().createNew(
 					"a.reference",
 					oDescriptorInlineChange,
@@ -2043,7 +2043,7 @@ sap.ui.define([
 		});
 
 		QUnit.test("getJson", function(assert) {
-			return DescriptorInlineChangeFactory.createNew("changeType", {param: "value"}, {a: "b"}).then(function(oDescriptorInlineChange) {
+			return DescriptorInlineChangeFactory.createNew("changeType", { param: "value" }, { a: "b" }).then(function(oDescriptorInlineChange) {
 				new DescriptorChangeFactory().createNew(
 					"a.reference",
 					oDescriptorInlineChange,
@@ -2059,7 +2059,7 @@ sap.ui.define([
 						content: {
 							param: "value"
 						},
-						texts: {a: "b"}
+						texts: { a: "b" }
 					};
 					var mJsonResult = oDescriptorChange.getJson();
 					assert.ok(mJsonResult);
@@ -2089,7 +2089,7 @@ sap.ui.define([
 		}
 	}, function() {
 		QUnit.test("createNew", function(assert) {
-			return DescriptorInlineChangeFactory.createNew("changeType", {param: "value"}, {a: "b"}).then(function(oDescriptorInlineChange) {
+			return DescriptorInlineChangeFactory.createNew("changeType", { param: "value" }, { a: "b" }).then(function(oDescriptorInlineChange) {
 				new DescriptorChangeFactory().createNew("a.reference", oDescriptorInlineChange).then(function(oDescriptorChange) {
 					assert.notEqual(oDescriptorChange, null);
 					assert.equal(oDescriptorChange._mChangeFile.reference, "a.reference");
@@ -2101,7 +2101,7 @@ sap.ui.define([
 		});
 
 		QUnit.test("createNew - with tool", function(assert) {
-			return DescriptorInlineChangeFactory.createNew("changeType", {param: "value"}, {a: "b"}).then(function(oDescriptorInlineChange) {
+			return DescriptorInlineChangeFactory.createNew("changeType", { param: "value" }, { a: "b" }).then(function(oDescriptorInlineChange) {
 				return new DescriptorChangeFactory().createNew("a.reference", oDescriptorInlineChange, "VENDOR", undefined, "RTA");
 			}).then(function(oDescriptorChange) {
 				assert.equal(oDescriptorChange._mChangeFile.layer, Layer.VENDOR);
@@ -2161,7 +2161,7 @@ sap.ui.define([
 
 		QUnit.test("for existing - submit - local", function(assert) {
 			var that = this;
-			var oStubOpenTransportSelection = sandbox.stub(TransportSelection.prototype, "openTransportSelection").resolves({transport: ""});
+			var oStubOpenTransportSelection = sandbox.stub(TransportSelection.prototype, "openTransportSelection").resolves({ transport: "" });
 			return DescriptorVariantFactory.createForExisting("a.id"
 			).then(function(oDescriptorVariant) {
 				return oDescriptorVariant.submit().then(function(oResponse) {
@@ -2175,7 +2175,7 @@ sap.ui.define([
 
 		QUnit.test("for existing - submit - published", function(assert) {
 			var that = this;
-			var oStubOpenTransportSelection = sandbox.stub(TransportSelection.prototype, "openTransportSelection").resolves({transport: "aTransport"});
+			var oStubOpenTransportSelection = sandbox.stub(TransportSelection.prototype, "openTransportSelection").resolves({ transport: "aTransport" });
 			return DescriptorVariantFactory.createForExisting("a.id"
 			).then(function(oDescriptorVariant) {
 				return oDescriptorVariant.submit().then(function(oResponse) {
@@ -2189,7 +2189,7 @@ sap.ui.define([
 
 		QUnit.test("delete - submit -local", function(assert) {
 			var that = this;
-			var oStubOpenTransportSelection = sandbox.stub(TransportSelection.prototype, "openTransportSelection").resolves({transport: ""});
+			var oStubOpenTransportSelection = sandbox.stub(TransportSelection.prototype, "openTransportSelection").resolves({ transport: "" });
 			return DescriptorVariantFactory.createDeletion(
 				"a.id"
 			).then(function(oDescriptorVariant) {
@@ -2203,7 +2203,7 @@ sap.ui.define([
 
 		QUnit.test("delete - submit - published", function(assert) {
 			var that = this;
-			var oStubOpenTransportSelection = sandbox.stub(TransportSelection.prototype, "openTransportSelection").resolves({transport: "aTransport"});
+			var oStubOpenTransportSelection = sandbox.stub(TransportSelection.prototype, "openTransportSelection").resolves({ transport: "aTransport" });
 			return DescriptorVariantFactory.createDeletion(
 				"a.id"
 			).then(function(oDescriptorVariant) {
@@ -2272,7 +2272,7 @@ sap.ui.define([
 
 		QUnit.test("for existing - submit", function(assert) {
 			var that = this;
-			var oStubOpenTransportSelection = sandbox.stub(TransportSelection.prototype, "openTransportSelection").resolves({transport: ""});
+			var oStubOpenTransportSelection = sandbox.stub(TransportSelection.prototype, "openTransportSelection").resolves({ transport: "" });
 			return DescriptorVariantFactory.createForExisting("a.id")
 			.then(function(oDescriptorVariant) {
 				return oDescriptorVariant.submit();
@@ -2286,7 +2286,7 @@ sap.ui.define([
 
 		QUnit.test("delete - submit", function(assert) {
 			var that = this;
-			var oStubOpenTransportSelection = sandbox.stub(TransportSelection.prototype, "openTransportSelection").resolves({transport: ""});
+			var oStubOpenTransportSelection = sandbox.stub(TransportSelection.prototype, "openTransportSelection").resolves({ transport: "" });
 			return DescriptorVariantFactory.createDeletion("a.id")
 			.then(function(oDescriptorVariant) {
 				return oDescriptorVariant.submit();
@@ -2392,7 +2392,7 @@ sap.ui.define([
 	}, function() {
 		QUnit.test("create new", function(assert) {
 			var _oDescriptorChange;
-			return DescriptorInlineChangeFactory.createNew("changeType", {param: "value"}, {a: "b"}).then(function(oDescriptorInlineChange) {
+			return DescriptorInlineChangeFactory.createNew("changeType", { param: "value" }, { a: "b" }).then(function(oDescriptorInlineChange) {
 				return new DescriptorChangeFactory().createNew("a.reference", oDescriptorInlineChange);
 			}).then(function(oDescriptorChange) {
 				_oDescriptorChange = oDescriptorChange;
@@ -2423,7 +2423,7 @@ sap.ui.define([
 	}, function() {
 		QUnit.test("create new - CUSTOMER layer", function(assert) {
 			var _oDescriptorChange;
-			return DescriptorInlineChangeFactory.createNew("changeType", {param: "value"}, {a: "b"}).then(function(oDescriptorInlineChange) {
+			return DescriptorInlineChangeFactory.createNew("changeType", { param: "value" }, { a: "b" }).then(function(oDescriptorInlineChange) {
 				return new DescriptorChangeFactory().createNew("a.reference", oDescriptorInlineChange);
 			}).then(function(oDescriptorChange) {
 				_oDescriptorChange = oDescriptorChange;
@@ -2434,7 +2434,7 @@ sap.ui.define([
 
 		QUnit.test("create new - CUSTOMER_BASE layer", function(assert) {
 			var _oDescriptorChange;
-			return DescriptorInlineChangeFactory.createNew("changeType", {param: "value"}, {a: "b"}).then(function(oDescriptorInlineChange) {
+			return DescriptorInlineChangeFactory.createNew("changeType", { param: "value" }, { a: "b" }).then(function(oDescriptorInlineChange) {
 				return new DescriptorChangeFactory().createNew("a.reference", oDescriptorInlineChange, "CUSTOMER_BASE");
 			}).then(function(oDescriptorChange) {
 				_oDescriptorChange = oDescriptorChange;

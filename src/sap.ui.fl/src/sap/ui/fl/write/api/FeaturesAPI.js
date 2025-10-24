@@ -165,7 +165,7 @@ sap.ui.define([
 			}
 			return Settings.getInstance()
 			.then(function(oSettings) {
-				return oSettings.getIsContextSharingEnabled({layer: sLayer});
+				return oSettings.getIsContextSharingEnabled({ layer: sLayer });
 			});
 		},
 

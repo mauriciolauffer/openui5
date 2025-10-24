@@ -119,12 +119,12 @@ sap.ui.define([
 		}
 	}, function() {
 		QUnit.test("when maxLayer is CUSTOMER", function(assert) {
-			sandbox.stub(FlexInfoSession, "getByReference").returns({maxLayer: Layer.CUSTOMER});
+			sandbox.stub(FlexInfoSession, "getByReference").returns({ maxLayer: Layer.CUSTOMER });
 			assert.equal(LayerUtils.isLayerFilteringRequired(), true, "maxLayer is not equal topLayer");
 		});
 
 		QUnit.test("when maxLayer is USER", function(assert) {
-			sandbox.stub(FlexInfoSession, "getByReference").returns({maxLayer: Layer.USER});
+			sandbox.stub(FlexInfoSession, "getByReference").returns({ maxLayer: Layer.USER });
 			assert.equal(LayerUtils.isLayerFilteringRequired(), false, "maxLayer is equal topLayer");
 		});
 	});
@@ -251,11 +251,11 @@ sap.ui.define([
 		QUnit.test("with max layer = ", function(assert) {
 			var oDummyURLParsingService = "DummyURLParsingService";
 			var aChangeDefinitions = [
-				{fileName: "user1", layer: Layer.USER},
-				{fileName: "customer1", layer: Layer.CUSTOMER},
-				{fileName: "customer_base1", layer: Layer.CUSTOMER_BASE},
-				{fileName: "vendor1", layer: Layer.VENDOR},
-				{fileName: "user2", layer: Layer.USER}
+				{ fileName: "user1", layer: Layer.USER },
+				{ fileName: "customer1", layer: Layer.CUSTOMER },
+				{ fileName: "customer_base1", layer: Layer.CUSTOMER_BASE },
+				{ fileName: "vendor1", layer: Layer.VENDOR },
+				{ fileName: "user2", layer: Layer.USER }
 			];
 			var oMaxLayerStub = sandbox.stub(LayerUtils, "getMaxLayer").returns(Layer.USER);
 			var aFilteredChanges = LayerUtils.filterChangeDefinitionsByMaxLayer(aChangeDefinitions, oDummyURLParsingService);
@@ -285,10 +285,10 @@ sap.ui.define([
 	QUnit.module("LayerUtils.filterChangeOrChangeDefinitionsByCurrentLayer", {
 		beforeEach() {
 			this.vChanges = [
-				{layer: Layer.USER},
-				{layer: Layer.CUSTOMER},
-				new FlexObject({layer: Layer.USER}),
-				new FlexObject({layer: Layer.CUSTOMER})
+				{ layer: Layer.USER },
+				{ layer: Layer.CUSTOMER },
+				new FlexObject({ layer: Layer.USER }),
+				new FlexObject({ layer: Layer.CUSTOMER })
 			];
 		}
 	}, function() {
