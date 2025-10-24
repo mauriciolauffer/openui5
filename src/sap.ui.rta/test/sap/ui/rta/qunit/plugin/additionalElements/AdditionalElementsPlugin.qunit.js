@@ -1738,7 +1738,7 @@ sap.ui.define([
 
 		QUnit.test("when 'registerElementOverlay' is called and the metamodel is not loaded yet", function(assert) {
 			var fnDone = assert.async();
-			var {oSibling} = this;
+			var { oSibling } = this;
 			var oSiblingOverlay = {
 				getElement() {
 					return oSibling;
@@ -1912,7 +1912,7 @@ sap.ui.define([
 		QUnit.test("when the service is up to date and addViaDelegate action is available and extensibility is enabled in the system", async function(assert) {
 			sandbox.stub(FieldExtensibility, "isServiceOutdated").resolves(false);
 			sandbox.stub(FieldExtensibility, "isExtensibilityEnabled").resolves(true);
-			sandbox.stub(FieldExtensibility, "getExtensionData").resolves({foo: "bar"});
+			sandbox.stub(FieldExtensibility, "getExtensionData").resolves({ foo: "bar" });
 			var sAggregationName = "contentLeft";
 
 			const oOverlay = await createOverlayWithAggregationActions.call(this, {
@@ -1934,7 +1934,7 @@ sap.ui.define([
 			const oEventBusPublishSpy = sandbox.spy(EventBus.getInstance(), "publish");
 			sandbox.stub(FieldExtensibility, "isServiceOutdated").resolves(true);
 			sandbox.stub(FieldExtensibility, "isExtensibilityEnabled").resolves(true);
-			sandbox.stub(FieldExtensibility, "getExtensionData").resolves({foo: "bar"});
+			sandbox.stub(FieldExtensibility, "getExtensionData").resolves({ foo: "bar" });
 			var sAggregationName = "contentLeft";
 
 			const oOverlay = await createOverlayWithAggregationActions.call(this, {
@@ -1971,7 +1971,7 @@ sap.ui.define([
 		});
 
 		QUnit.test("When showAvailableElements is called with legacy extension data", async function(assert) {
-			const oExtensibilityInfo = {headerText: "Legacy", tooltip: "LegacyTooltip" };
+			const oExtensibilityInfo = { headerText: "Legacy", tooltip: "LegacyTooltip" };
 			const oExtensibilityOptions = {
 				actionKey: undefined,
 				text: this.oRTATexts.getText("BTN_ADDITIONAL_ELEMENTS_CREATE_CUSTOM_FIELDS"),
@@ -2214,7 +2214,7 @@ sap.ui.define([
 
 	QUnit.module("Given a Plugin and a DT with one control", {
 		async beforeEach() {
-			this.oButton = new Button("control1", {text: "foo"});
+			this.oButton = new Button("control1", { text: "foo" });
 			this.oButton.placeAt("qunit-fixture");
 			await nextUIUpdate();
 			givenThePluginWithOKClosingDialog.call(this);
@@ -2260,11 +2260,11 @@ sap.ui.define([
 	//                 contentLeft                                        contentMiddle         contentRight
 	// [oSibling, <oUnsupportedInvisible>, <oInvisible1>, <oInvisible2>        EMPTY          oIrrelevantChild]
 	async function givenSomeBoundControls() {
-		this.oSibling = new Button({id: "Sibling", visible: true});
-		this.oUnsupportedInvisible = new Input({id: "UnsupportedInvisible", visible: false});
-		this.oInvisible1 = new Button({id: "Invisible1", visible: false});
-		this.oInvisible2 = new Button({id: "Invisible2", visible: false});
-		this.oIrrelevantChild = new Button({id: "Irrelevant", visible: true});
+		this.oSibling = new Button({ id: "Sibling", visible: true });
+		this.oUnsupportedInvisible = new Input({ id: "UnsupportedInvisible", visible: false });
+		this.oInvisible1 = new Button({ id: "Invisible1", visible: false });
+		this.oInvisible2 = new Button({ id: "Invisible2", visible: false });
+		this.oIrrelevantChild = new Button({ id: "Irrelevant", visible: true });
 		this.oControl = new Bar({
 			id: "bar",
 			contentLeft: [this.oSibling, this.oUnsupportedInvisible, this.oInvisible1, this.oInvisible2],
@@ -2564,7 +2564,7 @@ sap.ui.define([
 	}
 
 	function createOverlayWithoutDesignTimeMetadata(mActions, bOnSibling) {
-		var oEmptyActions = {actions: null};
+		var oEmptyActions = { actions: null };
 		var oCustomDesignTimeMetadata = {
 			"sap.m.Bar": oEmptyActions,
 			"sap.m.Input": oEmptyActions,

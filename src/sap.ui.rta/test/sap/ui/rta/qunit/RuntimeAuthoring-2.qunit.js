@@ -138,7 +138,7 @@ sap.ui.define([
 	}
 
 	function cleanInfoSessionStorage() {
-		const sFlexReference = FlexRuntimeInfoAPI.getFlexReference({element: oComp});
+		const sFlexReference = FlexRuntimeInfoAPI.getFlexReference({ element: oComp });
 		window.sessionStorage.removeItem(`sap.ui.fl.info.${sFlexReference}`);
 	}
 
@@ -146,7 +146,7 @@ sap.ui.define([
 		beforeEach() {
 			this.fnFLPNavigateStub = sandbox.spy();
 			this.fnTriggerRealoadStub = sandbox.stub();
-			givenAnFLP(this.fnFLPNavigateStub, this.fnTriggerRealoadStub, {"sap-ui-fl-version": [Version.Number.Draft]});
+			givenAnFLP(this.fnFLPNavigateStub, this.fnTriggerRealoadStub, { "sap-ui-fl-version": [Version.Number.Draft] });
 
 			this.oRta = new RuntimeAuthoring({
 				rootControl: oComp,
@@ -182,7 +182,7 @@ sap.ui.define([
 			assert.expect(3);
 			sandbox.stub(DesignTime.prototype, "addRootElement").callsFake(function() {
 				setTimeout(function() {
-					this.fireSyncFailed({error: Error("DesignTime failed")});
+					this.fireSyncFailed({ error: Error("DesignTime failed") });
 				}.bind(this), 0);
 			});
 			const oFireFailedStub = sandbox.stub(this.oRta, "fireFailed");
@@ -390,16 +390,16 @@ sap.ui.define([
 			assert.strictEqual(oSetBlockedStub.callCount, 1, "setBlocked was called");
 			assert.strictEqual(oSetBlockedStub.lastCall.args[0], false, "blocked is set to false");
 			assert.strictEqual(oFireModeChangedStub.callCount, 1, "the event ModeChanged was fired");
-			assert.deepEqual(oFireModeChangedStub.lastCall.args[0], {mode: "navigation"}, "the argument of the event is correct");
+			assert.deepEqual(oFireModeChangedStub.lastCall.args[0], { mode: "navigation" }, "the argument of the event is correct");
 			assert.strictEqual(oStopCutPasteStub.callCount, 1, "the cut paste was stopped");
 
 			// simulate mode change from toolbar
-			this.oRta.getToolbar().fireModeChange({item: { getKey() {return "adaptation";}}});
+			this.oRta.getToolbar().fireModeChange({ item: { getKey() {return "adaptation";} } });
 			assert.ok(this.oRta._oDesignTime.getEnabled(), "in adaption mode the designTime property enabled is true again");
 			assert.strictEqual(oSetBlockedStub.callCount, 2, "setBlocked was called again");
 			assert.strictEqual(oSetBlockedStub.lastCall.args[0], true, "blocked is set to true");
 			assert.equal(oFireModeChangedStub.callCount, 2, "the event ModeChanged was fired again");
-			assert.deepEqual(oFireModeChangedStub.lastCall.args[0], {mode: "adaptation"}, "the argument of the event is correct");
+			assert.deepEqual(oFireModeChangedStub.lastCall.args[0], { mode: "adaptation" }, "the argument of the event is correct");
 			assert.strictEqual(oStopCutPasteStub.callCount, 1, "the cut paste was not stopped again");
 		});
 
@@ -413,16 +413,16 @@ sap.ui.define([
 			assert.ok(this.oRta._oDesignTime.getEnabled(), "in visualization mode the designTime property enabled is true");
 			assert.strictEqual(oSetBlockedStub.callCount, 0, "setBlocked was not called");
 			assert.equal(oFireModeChangedStub.callCount, 1, "the event ModeChanged was fired");
-			assert.deepEqual(oFireModeChangedStub.lastCall.args[0], {mode: "visualization"}, "the argument of the event is correct");
+			assert.deepEqual(oFireModeChangedStub.lastCall.args[0], { mode: "visualization" }, "the argument of the event is correct");
 			assert.equal(getComputedStyle(document.querySelector(".sapUiDtOverlayMovable")).cursor, "default", "the movable overlays switched to the default cursor");
 			assert.strictEqual(oStopCutPasteStub.callCount, 1, "the cut paste was stopped");
 
 			// simulate mode change from toolbar
-			this.oRta.getToolbar().fireModeChange({item: { getKey() {return "adaptation";}}});
+			this.oRta.getToolbar().fireModeChange({ item: { getKey() {return "adaptation";} } });
 			assert.ok(this.oRta._oDesignTime.getEnabled(), "in adaption mode the designTime property enabled is true");
 			assert.strictEqual(oSetBlockedStub.callCount, 0, "setBlocked was not called");
 			assert.equal(oFireModeChangedStub.callCount, 2, "the event ModeChanged was fired again");
-			assert.deepEqual(oFireModeChangedStub.lastCall.args[0], {mode: "adaptation"}, "the argument of the event is correct");
+			assert.deepEqual(oFireModeChangedStub.lastCall.args[0], { mode: "adaptation" }, "the argument of the event is correct");
 			assert.equal(getComputedStyle(document.querySelector(".sapUiDtOverlayMovable")).cursor, "move", "the movable overlays switched back to the move cursor");
 			oComp.getRootControl().removeStyleClass("sapUiDtOverlayMovable");
 			assert.strictEqual(oStopCutPasteStub.callCount, 1, "the cut paste was not stopped again");
@@ -440,16 +440,16 @@ sap.ui.define([
 			assert.strictEqual(oSetBlockedStub.callCount, 1, "setBlocked was called");
 			assert.strictEqual(oSetBlockedStub.lastCall.args[0], false, "blocked is set to false");
 			assert.equal(oFireModeChangedStub.callCount, 1, "the event ModeChanged was fired");
-			assert.deepEqual(oFireModeChangedStub.lastCall.args[0], {mode: "navigation"}, "the argument of the event is correct");
+			assert.deepEqual(oFireModeChangedStub.lastCall.args[0], { mode: "navigation" }, "the argument of the event is correct");
 			assert.equal(getComputedStyle(document.querySelector(".sapUiDtOverlayMovable")).cursor, "move", "the movable overlays back to the move cursor");
 
 			// simulate mode change from toolbar
-			this.oRta.getToolbar().fireModeChange({item: { getKey() {return "visualization";}}});
+			this.oRta.getToolbar().fireModeChange({ item: { getKey() {return "visualization";} } });
 			assert.ok(this.oRta._oDesignTime.getEnabled(), "in visualization mode the designTime property enabled is true again");
 			assert.strictEqual(oSetBlockedStub.callCount, 2, "setBlocked was called");
 			assert.strictEqual(oSetBlockedStub.lastCall.args[0], true, "blocked is set to true");
 			assert.equal(oFireModeChangedStub.callCount, 2, "the event ModeChanged was fired again");
-			assert.deepEqual(oFireModeChangedStub.lastCall.args[0], {mode: "visualization"}, "the argument of the event is correct");
+			assert.deepEqual(oFireModeChangedStub.lastCall.args[0], { mode: "visualization" }, "the argument of the event is correct");
 			assert.equal(getComputedStyle(document.querySelector(".sapUiDtOverlayMovable")).cursor, "default", "the movable overlays switched again to the default cursor");
 			oComp.getRootControl().removeStyleClass("sapUiDtOverlayMovable");
 		});
@@ -575,12 +575,12 @@ sap.ui.define([
 			sandbox.stub(RtaUtils, "isOriginalFioriToolbarAccessible").returns(true);
 			RtaQunitUtils.stubSapUiRequire(sandbox, [{
 				name: "sap/ushell/api/RTA",
-				stub: {getLogo: oApiStub}
+				stub: { getLogo: oApiStub }
 			}]);
 			await this.oRta.start();
 
 			assert.strictEqual(this.oRta.getToolbar().isA("sap.ui.rta.toolbar.Fiori"), true, "then the toolbar is of type Fiori");
-			assert.deepEqual(this.oRta.getToolbar().getUshellApi(), {getLogo: oApiStub}, "then the api is passed to the toolbar");
+			assert.deepEqual(this.oRta.getToolbar().getUshellApi(), { getLogo: oApiStub }, "then the api is passed to the toolbar");
 		});
 
 		QUnit.test("when RTA gets started with an enabled key user translation", async function(assert) {
@@ -638,7 +638,7 @@ sap.ui.define([
 		QUnit.test("when RTA is started in the customer layer, app variant feature is available for a (key user) but the manifest of an app is not supported", async function(assert) {
 			stubToolbarButtonsVisibility(true, true);
 			sandbox.stub(AppVariantUtils, "getManifirstSupport").resolves(false);
-			sandbox.stub(FlexUtils, "getAppDescriptor").returns({"sap.app": {id: "1"}});
+			sandbox.stub(FlexUtils, "getAppDescriptor").returns({ "sap.app": { id: "1" } });
 			sandbox.stub(FlexUtils, "isVariantByStartupParameter").returns(false);
 
 			await this.oRta.start();
@@ -703,7 +703,7 @@ sap.ui.define([
 		QUnit.test("when RTA is started in the customer layer, app variant feature is available for a (key user) but the current app is a home page", async function(assert) {
 			stubToolbarButtonsVisibility(true, true);
 			sandbox.stub(AppVariantUtils, "getManifirstSupport").resolves(true);
-			sandbox.stub(FlexUtils, "getAppDescriptor").returns({"sap.app": {id: "1"}});
+			sandbox.stub(FlexUtils, "getAppDescriptor").returns({ "sap.app": { id: "1" } });
 			sandbox.stub(FlexUtils, "getUShellService")
 			.callThrough()
 			.withArgs("AppLifeCycle")
@@ -729,8 +729,8 @@ sap.ui.define([
 			ContextBasedAdaptationsAPI.clearInstances();
 			stubToolbarButtonsVisibility(true, false);
 			sandbox.stub(FeaturesAPI, "isContextBasedAdaptationAvailable").resolves(true);
-			this.oContextBasedAdaptationsAPILoadStub = sandbox.stub(ContextBasedAdaptationsAPI, "load").resolves({adaptations: [{id: "12345"}, DEFAULT_ADAPTATION]});
-			this.oFlexUtilsGetManifest = sandbox.stub(FlexUtils, "getAppDescriptor").returns({"sap.app": {id: "1"}});
+			this.oContextBasedAdaptationsAPILoadStub = sandbox.stub(ContextBasedAdaptationsAPI, "load").resolves({ adaptations: [{ id: "12345" }, DEFAULT_ADAPTATION] });
+			this.oFlexUtilsGetManifest = sandbox.stub(FlexUtils, "getAppDescriptor").returns({ "sap.app": { id: "1" } });
 			sandbox.stub(FlexUtils, "getUShellService").callThrough().withArgs("AppLifeCycle").resolves({
 				getCurrentApplication() {
 					return {
@@ -749,7 +749,7 @@ sap.ui.define([
 
 		QUnit.test("when RTA is started in the customer layer, context based adaptation feature is available for a (key user) but the current app is an overview page", async function(assert) {
 			stubCBA.call(this);
-			this.oFlexUtilsGetManifest.returns({"sap.app": {id: "1"}, "sap.ovp": {}});
+			this.oFlexUtilsGetManifest.returns({ "sap.app": { id: "1" }, "sap.ovp": {} });
 
 			await this.oRta.start();
 			assert.strictEqual(this.oRta._oToolbarControlsModel.getProperty("/contextBasedAdaptation/enabled"), false, "then the 'Context Based Adaptation' Menu Button is not enabled");
@@ -759,34 +759,34 @@ sap.ui.define([
 		QUnit.test("when RTA is started a 2nd time, context based adaptation feature is available and data has changed on the backend and another adaptation has been shown by end user", async function(assert) {
 			stubCBA.call(this);
 
-			FlexInfoSession.setByReference({adaptationId: "67890" }, sReference);
-			await ContextBasedAdaptationsAPI.initialize({control: oComp, layer: "CUSTOMER"});
-			this.oContextBasedAdaptationsAPILoadStub.resolves({adaptations: [{id: "12345"}, {id: "67890"}, DEFAULT_ADAPTATION]});
+			FlexInfoSession.setByReference({ adaptationId: "67890" }, sReference);
+			await ContextBasedAdaptationsAPI.initialize({ control: oComp, layer: "CUSTOMER" });
+			this.oContextBasedAdaptationsAPILoadStub.resolves({ adaptations: [{ id: "12345" }, { id: "67890" }, DEFAULT_ADAPTATION] });
 
 			await this.oRta.start();
 			assert.strictEqual(this.oContextBasedAdaptationsAPILoadStub.callCount, 2, "CBA Model is loaded again");
-			assert.deepEqual(this.oRta._oContextBasedAdaptationsModel.getProperty("/adaptations"), [{id: "12345", rank: 1}, {id: "67890", rank: 2}], "then the adaptations are up to date");
+			assert.deepEqual(this.oRta._oContextBasedAdaptationsModel.getProperty("/adaptations"), [{ id: "12345", rank: 1 }, { id: "67890", rank: 2 }], "then the adaptations are up to date");
 			assert.deepEqual(this.oRta._oContextBasedAdaptationsModel.getProperty("/displayedAdaptation/id"), "67890", "then the displayed adaptation is correct");
 		});
 
 		QUnit.test("when RTA is doing a restart during switch, context based adaptation feature is available", async function(assert) {
 			stubCBA.call(this);
 
-			FlexInfoSession.setByReference({adaptationId: "67890" }, sReference);
-			await ContextBasedAdaptationsAPI.initialize({control: oComp, layer: "CUSTOMER"});
-			this.oContextBasedAdaptationsAPILoadStub.resolves({adaptations: [{id: "12345"}, {id: "67890"}, DEFAULT_ADAPTATION]});
+			FlexInfoSession.setByReference({ adaptationId: "67890" }, sReference);
+			await ContextBasedAdaptationsAPI.initialize({ control: oComp, layer: "CUSTOMER" });
+			this.oContextBasedAdaptationsAPILoadStub.resolves({ adaptations: [{ id: "12345" }, { id: "67890" }, DEFAULT_ADAPTATION] });
 			sandbox.stub(ReloadManager, "needsAutomaticStart").resolves(true);
 
 			await this.oRta.start();
 			assert.strictEqual(this.oContextBasedAdaptationsAPILoadStub.callCount, 1, "CBA Model is not loaded again");
-			assert.deepEqual(this.oRta._oContextBasedAdaptationsModel.getProperty("/adaptations"), [{id: "12345", rank: 1}], "then the adaptations are still the same");
+			assert.deepEqual(this.oRta._oContextBasedAdaptationsModel.getProperty("/adaptations"), [{ id: "12345", rank: 1 }], "then the adaptations are still the same");
 			assert.deepEqual(this.oRta._oContextBasedAdaptationsModel.getProperty("/displayedAdaptation/id"), "12345", "then the displayed adaptation is correct");
 		});
 
 		QUnit.test("when RTA is started in the customer layer, app variant feature is available for a (key user) but the current app cannot be detected for home page check", async function(assert) {
 			stubToolbarButtonsVisibility(true, true);
 			sandbox.stub(AppVariantUtils, "getManifirstSupport").resolves(true);
-			sandbox.stub(FlexUtils, "getAppDescriptor").returns({"sap.app": {id: "1"}});
+			sandbox.stub(FlexUtils, "getAppDescriptor").returns({ "sap.app": { id: "1" } });
 			sandbox.stub(FlexUtils, "isVariantByStartupParameter").returns(false);
 			sandbox.stub(FlexUtils, "getUShellService")
 			.callThrough()
@@ -872,7 +872,7 @@ sap.ui.define([
 				await this.oRta.stop(false, true, true);
 			});
 
-			oAnnotationPlugin.fireElementModified({command: oAnnotationCommand});
+			oAnnotationPlugin.fireElementModified({ command: oAnnotationCommand });
 		});
 
 		function waitForSaveAndReloadEventHandler(oReloadStub) {

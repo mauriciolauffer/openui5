@@ -54,7 +54,7 @@ sap.ui.define([
 						return {
 							semanticObject: "Action",
 							action: "somestring",
-							params: {par: "testpar"}
+							params: { par: "testpar" }
 						};
 					}
 				});
@@ -192,7 +192,7 @@ sap.ui.define([
 
 			return RtaAppVariantFeature.getAppVariantManifest(oRootControl).then(function() {
 				assert.equal(oLoadAppVariantStub.callCount, 1, "then the loading app variant is called once");
-				assert.deepEqual(oLoadAppVariantStub.firstCall.args[0], {id: "customer.app.const.id"}, "the application id was passed correctly");
+				assert.deepEqual(oLoadAppVariantStub.firstCall.args[0], { id: "customer.app.const.id" }, "the application id was passed correctly");
 			});
 		});
 
@@ -462,8 +462,8 @@ sap.ui.define([
 		QUnit.test("when onDeleteFromOverviewDialog() method is called and failed", function(assert) {
 			simulateSystemConfig(true);
 
-			const oManifest = {reference: "someReference", id: "AppVarId"};
-			sandbox.stub(AppVariantFactory, "load").resolves({response: JSON.stringify(oManifest)});
+			const oManifest = { reference: "someReference", id: "AppVarId" };
+			sandbox.stub(AppVariantFactory, "load").resolves({ response: JSON.stringify(oManifest) });
 
 			const oPublishingResponse = {
 				response: {
@@ -471,7 +471,7 @@ sap.ui.define([
 					inProgress: true
 				}
 			};
-			sandbox.stub(FlUtils, "getAppDescriptor").returns({"sap.app": {id: "testId"}});
+			sandbox.stub(FlUtils, "getAppDescriptor").returns({ "sap.app": { id: "testId" } });
 			sandbox.stub(RtaAppVariantFeature, "onGetOverview").resolves();
 			const oShowMessageStub = sandbox.stub(AppVariantUtils, "showMessage").resolves();
 			const oTriggerCatalogPublishing = sandbox.stub(AppVariantManager.prototype, "triggerCatalogPublishing").resolves(oPublishingResponse);
@@ -499,8 +499,8 @@ sap.ui.define([
 		QUnit.test("when onDeleteFromOverviewDialog() method is called on S4/Hana Cloud with published catalogs", function(assert) {
 			simulateSystemConfig(true);
 
-			const oManifest = {reference: "someReference", id: "AppVarId"};
-			sandbox.stub(AppVariantFactory, "load").resolves({response: JSON.stringify(oManifest)});
+			const oManifest = { reference: "someReference", id: "AppVarId" };
+			sandbox.stub(AppVariantFactory, "load").resolves({ response: JSON.stringify(oManifest) });
 
 			const oPublishingResponse = {
 				response: {
@@ -508,7 +508,7 @@ sap.ui.define([
 					inProgress: true
 				}
 			};
-			sandbox.stub(FlUtils, "getAppDescriptor").returns({"sap.app": {id: "testId"}});
+			sandbox.stub(FlUtils, "getAppDescriptor").returns({ "sap.app": { id: "testId" } });
 			const oShowMessageStub = sandbox.stub(AppVariantUtils, "showMessage").resolves();
 			const oShowSuccessMessageStub = sandbox.stub(AppVariantManager.prototype, "showSuccessMessage").resolves();
 			const oTriggerCatalogPublishing = sandbox.stub(AppVariantManager.prototype, "triggerCatalogPublishing").resolves(oPublishingResponse);
@@ -531,8 +531,8 @@ sap.ui.define([
 
 		QUnit.test("when onDeleteFromOverviewDialog() method is called on S4/Hana Cloud with unpublished catalogs", function(assert) {
 			simulateSystemConfig(true);
-			const oManifest = {reference: "someReference", id: "AppVarId"};
-			sandbox.stub(AppVariantFactory, "load").resolves({response: JSON.stringify(oManifest)});
+			const oManifest = { reference: "someReference", id: "AppVarId" };
+			sandbox.stub(AppVariantFactory, "load").resolves({ response: JSON.stringify(oManifest) });
 
 			const oPublishingResponse = {
 				response: {
@@ -563,8 +563,8 @@ sap.ui.define([
 		QUnit.test("when onDeleteFromOverviewDialog() method is called on S4/Hana on Premise", function(assert) {
 			simulateSystemConfig(false);
 
-			const oManifest = {reference: "someReference", id: "AppVarId"};
-			sandbox.stub(AppVariantFactory, "load").resolves({response: JSON.stringify(oManifest)});
+			const oManifest = { reference: "someReference", id: "AppVarId" };
+			sandbox.stub(AppVariantFactory, "load").resolves({ response: JSON.stringify(oManifest) });
 
 			const oGetOverviewStub = sandbox.stub(RtaAppVariantFeature, "onGetOverview").resolves();
 			const oShowMessageStub = sandbox.stub(AppVariantUtils, "showMessage").resolves();
@@ -586,8 +586,8 @@ sap.ui.define([
 		QUnit.test("when onDeleteFromOverviewDialog() method is called on S4/Hana on Premise from currently adapting app variant", function(assert) {
 			simulateSystemConfig(false);
 
-			const oManifest = {reference: "someReference", id: "AppVarId"};
-			sandbox.stub(AppVariantFactory, "load").resolves({response: JSON.stringify(oManifest)});
+			const oManifest = { reference: "someReference", id: "AppVarId" };
+			sandbox.stub(AppVariantFactory, "load").resolves({ response: JSON.stringify(oManifest) });
 
 			const oGetOverviewStub = sandbox.stub(RtaAppVariantFeature, "onGetOverview").resolves();
 			const oShowMessageStub = sandbox.stub(AppVariantUtils, "showMessage");
@@ -611,8 +611,8 @@ sap.ui.define([
 		QUnit.test("when onDeleteFromOverviewDialog() method is called on S4/Hana Cloud from currently adapting app variant", function(assert) {
 			simulateSystemConfig(true);
 
-			const oManifest = {reference: "someReference", id: "AppVarId"};
-			sandbox.stub(AppVariantFactory, "load").resolves({response: JSON.stringify(oManifest)});
+			const oManifest = { reference: "someReference", id: "AppVarId" };
+			sandbox.stub(AppVariantFactory, "load").resolves({ response: JSON.stringify(oManifest) });
 
 			const oPublishingResponse = {
 				response: {
@@ -677,19 +677,19 @@ sap.ui.define([
 
 			simulateSystemConfig(true);
 
-			sandbox.stub(FlUtils, "getAppDescriptor").returns({"sap.app": {id: "TestId"}});
+			sandbox.stub(FlUtils, "getAppDescriptor").returns({ "sap.app": { id: "TestId" } });
 			const oCreateChangesSpy = sandbox.spy(ChangesWriteAPI, "create");
 			sandbox.stub(RtaAppVariantFeature, "_determineSelector").returns(this.oAppComponent);
 			const oProcessSaveAsDialog = sandbox.stub(AppVariantManager.prototype, "processSaveAsDialog").resolves(oAppVariantData);
 
-			const oSaveAsAppVariantStub = sandbox.stub(AppVariantWriteAPI, "saveAs").returns(Promise.reject({saveAsFailed: true}));
+			const oSaveAsAppVariantStub = sandbox.stub(AppVariantWriteAPI, "saveAs").returns(Promise.reject({ saveAsFailed: true }));
 			const oCatchErrorDialog = sandbox.spy(AppVariantUtils, "catchErrorDialog");
 
 			sandbox.stub(MessageBox, "show").callsFake(function(sText, mParameters) {
 				mParameters.onClose("Close");
 			});
 
-			sandbox.stub(Log, "error").callThrough().withArgs("App variant error: ", {saveAsFailed: true}).returns();
+			sandbox.stub(Log, "error").callThrough().withArgs("App variant error: ", { saveAsFailed: true }).returns();
 
 			const oGetOverviewSpy = sandbox.stub(RtaAppVariantFeature, "onGetOverview").resolves();
 
@@ -699,7 +699,7 @@ sap.ui.define([
 				assert.equal(oSaveAsAppVariantStub.callCount, 1, "then the AppVariantWriteAPI.saveAs method is called once");
 				assert.deepEqual(oSaveAsAppVariantStub.getCall(0).args[0].parsedHash, {
 					action: "somestring",
-					params: {par: "testpar"},
+					params: { par: "testpar" },
 					semanticObject: "Action"
 				}, "then the parsed hash is stored in AppVariantUtils");
 				assert.equal(oGetOverviewSpy.callCount, 1, "then the overview loads only once after the new app variant has been saved to LREP");
@@ -728,7 +728,7 @@ sap.ui.define([
 
 			simulateSystemConfig(false);
 
-			sandbox.stub(FlUtils, "getAppDescriptor").returns({"sap.app": {id: "TestId"}});
+			sandbox.stub(FlUtils, "getAppDescriptor").returns({ "sap.app": { id: "TestId" } });
 			sandbox.stub(AppVariantUtils, "showRelevantDialog").resolves();
 			const oCreateChangesSpy = sandbox.spy(ChangesWriteAPI, "create");
 			sandbox.stub(RtaAppVariantFeature, "_determineSelector").returns(this.oAppComponent);
@@ -751,7 +751,7 @@ sap.ui.define([
 				assert.equal(oSaveAsAppVariantStub.callCount, 1, "then the AppVariantWriteAPI.save method is called once");
 				assert.deepEqual(oSaveAsAppVariantStub.getCall(0).args[0].parsedHash, {
 					action: "somestring",
-					params: {par: "testpar"},
+					params: { par: "testpar" },
 					semanticObject: "Action"
 				}, "then the parsed hash is stored in AppVariantUtils");
 				assert.equal(oClearRTACommandStack.callCount, 1, "then the clearRTACommandStack method is called once");
@@ -784,7 +784,7 @@ sap.ui.define([
 
 			simulateSystemConfig(true);
 
-			sandbox.stub(FlUtils, "getAppDescriptor").returns({"sap.app": {id: "TestId"}});
+			sandbox.stub(FlUtils, "getAppDescriptor").returns({ "sap.app": { id: "TestId" } });
 			const oCreateChangesSpy = sandbox.spy(ChangesWriteAPI, "create");
 			sandbox.stub(RtaAppVariantFeature, "_determineSelector").returns(this.oAppComponent);
 
@@ -802,7 +802,7 @@ sap.ui.define([
 			oGetOverviewStub.onCall(1).resolves();
 
 			const oTriggerCatalogPublishing = sandbox.stub(AppVariantManager.prototype, "triggerCatalogPublishing").resolves({
-				response: {IAMId: "IAMId", CatalogIds: []}
+				response: { IAMId: "IAMId", CatalogIds: [] }
 			});
 			const oNotifyKeyUserWhenPublishingIsReady = sandbox.stub(AppVariantManager.prototype, "notifyKeyUserWhenPublishingIsReady").resolves();
 
@@ -813,7 +813,7 @@ sap.ui.define([
 				assert.equal(oSaveAsAppVariantStub.callCount, 1, "then the AppVariantWriteAPI.saveAs method is called once");
 				assert.deepEqual(oSaveAsAppVariantStub.getCall(0).args[0].parsedHash, {
 					action: "somestring",
-					params: {par: "testpar"},
+					params: { par: "testpar" },
 					semanticObject: "Action"
 				}, "then the parsed hash is stored in AppVariantUtils");
 				assert.equal(oClearRTACommandStack.callCount, 1, "then the clearRTACommandStack method is called once");
@@ -845,7 +845,7 @@ sap.ui.define([
 
 			simulateSystemConfig(true);
 
-			sandbox.stub(FlUtils, "getAppDescriptor").returns({"sap.app": {id: "TestId"}});
+			sandbox.stub(FlUtils, "getAppDescriptor").returns({ "sap.app": { id: "TestId" } });
 			sandbox.stub(AppVariantUtils, "showRelevantDialog").resolves();
 			const oCreateChangesSpy = sandbox.spy(ChangesWriteAPI, "create");
 			sandbox.stub(RtaAppVariantFeature, "_determineSelector").returns(this.oAppComponent);
@@ -863,7 +863,7 @@ sap.ui.define([
 			oGetOverviewStub.onCall(1).resolves();
 
 			const oTriggerCatalogPublishing = sandbox.stub(AppVariantManager.prototype, "triggerCatalogPublishing").resolves({
-				response: {IAMId: "IAMId", CatalogIds: ["catalogId1"]}
+				response: { IAMId: "IAMId", CatalogIds: ["catalogId1"] }
 			});
 			const oNotifyKeyUserWhenPublishingIsReady = sandbox.stub(AppVariantManager.prototype, "notifyKeyUserWhenPublishingIsReady").resolves();
 
@@ -873,7 +873,7 @@ sap.ui.define([
 				assert.equal(oSaveAsAppVariantStub.callCount, 1, "then the AppVariantWriteAPI.saveAs method is called once");
 				assert.deepEqual(oSaveAsAppVariantStub.getCall(0).args[0].parsedHash, {
 					action: "somestring",
-					params: {par: "testpar"},
+					params: { par: "testpar" },
 					semanticObject: "Action"
 				}, "then the parsed hash is stored in AppVariantUtils");
 				assert.equal(oClearRTACommandStack.callCount, 1, "then the clearRTACommandStack method is called once");
@@ -905,7 +905,7 @@ sap.ui.define([
 
 			simulateSystemConfig(true);
 
-			sandbox.stub(FlUtils, "getAppDescriptor").returns({"sap.app": {id: "TestId"}});
+			sandbox.stub(FlUtils, "getAppDescriptor").returns({ "sap.app": { id: "TestId" } });
 			const oCreateChangesSpy = sandbox.spy(ChangesWriteAPI, "create");
 			sandbox.stub(RtaAppVariantFeature, "_determineSelector").returns(this.oAppComponent);
 
@@ -921,7 +921,7 @@ sap.ui.define([
 			const oMessageBoxShowStub = handleShowMessageDialog();
 
 			const oTriggerCatalogPublishing = sandbox.stub(AppVariantManager.prototype, "triggerCatalogPublishing").resolves({
-				response: {IAMId: "IAMId", CatalogIds: []}
+				response: { IAMId: "IAMId", CatalogIds: [] }
 			});
 			const oNotifyKeyUserWhenPublishingIsReady = sandbox.stub(AppVariantManager.prototype, "notifyKeyUserWhenPublishingIsReady").resolves();
 
@@ -932,7 +932,7 @@ sap.ui.define([
 				assert.equal(oSaveAsAppVariantStub.callCount, 1, "then the AppVariantWriteAPI.saveAs method is called once");
 				assert.deepEqual(oSaveAsAppVariantStub.getCall(0).args[0].parsedHash, {
 					action: "somestring",
-					params: {par: "testpar"},
+					params: { par: "testpar" },
 					semanticObject: "Action"
 				}, "then the parsed hash is stored in AppVariantUtils");
 				assert.equal(oClearRTACommandStack.callCount, 1, "then the clearRTACommandStack method is called once");
@@ -964,7 +964,7 @@ sap.ui.define([
 
 			simulateSystemConfig(true);
 
-			sandbox.stub(FlUtils, "getAppDescriptor").returns({"sap.app": {id: "TestId"}});
+			sandbox.stub(FlUtils, "getAppDescriptor").returns({ "sap.app": { id: "TestId" } });
 			sandbox.stub(AppVariantUtils, "showRelevantDialog").resolves();
 			const oCreateChangesSpy = sandbox.spy(ChangesWriteAPI, "create");
 			sandbox.stub(RtaAppVariantFeature, "_determineSelector").returns(this.oAppComponent);
@@ -980,7 +980,7 @@ sap.ui.define([
 			const oGetOverviewStub = sandbox.stub(RtaAppVariantFeature, "onGetOverview").resolves();
 
 			const oTriggerCatalogPublishing = sandbox.stub(AppVariantManager.prototype, "triggerCatalogPublishing").resolves({
-				response: {IAMId: "IAMId", CatalogIds: ["catalogId1"]}
+				response: { IAMId: "IAMId", CatalogIds: ["catalogId1"] }
 			});
 			const oNotifyKeyUserWhenPublishingIsReady = sandbox.stub(AppVariantManager.prototype, "notifyKeyUserWhenPublishingIsReady").resolves();
 
@@ -990,7 +990,7 @@ sap.ui.define([
 				assert.equal(oSaveAsAppVariantStub.callCount, 1, "then the AppVariantWriteAPI.saveAs method is called once");
 				assert.deepEqual(oSaveAsAppVariantStub.getCall(0).args[0].parsedHash, {
 					action: "somestring",
-					params: {par: "testpar"},
+					params: { par: "testpar" },
 					semanticObject: "Action"
 				}, "then the parsed hash is stored in AppVariantUtils");
 				assert.equal(oClearRTACommandStack.callCount, 1, "then the clearRTACommandStack method is called once");
@@ -1023,7 +1023,7 @@ sap.ui.define([
 				inbounds: {}
 			};
 
-			sandbox.stub(FlUtils, "getAppDescriptor").returns({"sap.app": {id: "TestId"}});
+			sandbox.stub(FlUtils, "getAppDescriptor").returns({ "sap.app": { id: "TestId" } });
 			simulateSystemConfig(false);
 			sandbox.stub(AppVariantUtils, "showRelevantDialog").resolves();
 			sandbox.stub(Log, "error").callThrough().withArgs("App variant error: ", "IAM App Id: IAMId").returns();
@@ -1054,7 +1054,7 @@ sap.ui.define([
 				assert.equal(oSaveAsAppVariantStub.callCount, 1, "then the AppVariantWriteAPI.saveAs method is called once");
 				assert.deepEqual(oSaveAsAppVariantStub.getCall(0).args[0].parsedHash, {
 					action: "somestring",
-					params: {par: "testpar"},
+					params: { par: "testpar" },
 					semanticObject: "Action"
 				}, "then the parsed hash is stored in AppVariantUtils");
 				assert.equal(oClearRTACommandStack.callCount, 1, "then the clearRTACommandStack method is called once");
@@ -1085,7 +1085,7 @@ sap.ui.define([
 				inbounds: {}
 			};
 
-			sandbox.stub(FlUtils, "getAppDescriptor").returns({"sap.app": {id: "TestId"}});
+			sandbox.stub(FlUtils, "getAppDescriptor").returns({ "sap.app": { id: "TestId" } });
 			simulateSystemConfig(true);
 			sandbox.stub(Log, "error").callThrough().withArgs("App variant error: ", "IAM App Id: IAMId").returns();
 
@@ -1105,7 +1105,7 @@ sap.ui.define([
 			const oMessageBoxShowStub = handleShowMessageDialog();
 
 			const oTriggerCatalogPublishing = sandbox.stub(AppVariantManager.prototype, "triggerCatalogPublishing").resolves({
-				response: {IAMId: "IAMId", CatalogIds: []}
+				response: { IAMId: "IAMId", CatalogIds: [] }
 			});
 			const oNotifyKeyUserWhenPublishingIsReadySpy = sandbox.stub(AppVariantManager.prototype, "notifyKeyUserWhenPublishingIsReady").resolves();
 			const oNavigateToFLPHomepage = sandbox.stub(AppVariantUtils, "navigateToFLPHomepage").resolves();
@@ -1117,7 +1117,7 @@ sap.ui.define([
 				assert.equal(oSaveAsAppVariantStub.callCount, 1, "then the AppVariantWriteAPI.saveAs method is called once");
 				assert.deepEqual(oSaveAsAppVariantStub.getCall(0).args[0].parsedHash, {
 					action: "somestring",
-					params: {par: "testpar"},
+					params: { par: "testpar" },
 					semanticObject: "Action"
 				}, "then the parsed hash is stored in AppVariantUtils");
 				assert.equal(oClearRTACommandStack.callCount, 1, "then the clearRTACommandStack method is called once");
@@ -1147,7 +1147,7 @@ sap.ui.define([
 				inbounds: {}
 			};
 
-			sandbox.stub(FlUtils, "getAppDescriptor").returns({"sap.app": {id: "TestId"}});
+			sandbox.stub(FlUtils, "getAppDescriptor").returns({ "sap.app": { id: "TestId" } });
 			simulateSystemConfig(true);
 			sandbox.stub(AppVariantUtils, "showRelevantDialog").returns(Promise.resolve());
 			sandbox.stub(Log, "error").callThrough().withArgs("App variant error: ", "IAM App Id: IAMId").returns();
@@ -1166,7 +1166,7 @@ sap.ui.define([
 			const oClearRTACommandStack = sandbox.stub(AppVariantManager.prototype, "clearRTACommandStack").resolves();
 			const oShowSuccessMessageStub = sandbox.spy(AppVariantManager.prototype, "showSuccessMessage");
 			const oTriggerCatalogPublishing = sandbox.stub(AppVariantManager.prototype, "triggerCatalogPublishing").resolves({
-				response: {IAMId: "IAMId", CatalogIds: ["catalogId1"]}
+				response: { IAMId: "IAMId", CatalogIds: ["catalogId1"] }
 			});
 			const oNotifyKeyUserWhenPublishingIsReadySpy = sandbox.stub(AppVariantManager.prototype, "notifyKeyUserWhenPublishingIsReady").resolves();
 			const oNavigateToFLPHomepage = sandbox.stub(AppVariantUtils, "navigateToFLPHomepage").resolves();
@@ -1177,7 +1177,7 @@ sap.ui.define([
 				assert.equal(oSaveAsAppVariantStub.callCount, 1, "then the AppVariantWriteAPI.saveAs method is called once");
 				assert.deepEqual(oSaveAsAppVariantStub.getCall(0).args[0].parsedHash, {
 					action: "somestring",
-					params: {par: "testpar"},
+					params: { par: "testpar" },
 					semanticObject: "Action"
 				}, "then the parsed hash is stored in AppVariantUtils");
 				assert.equal(oClearRTACommandStack.callCount, 1, "then the clearRTACommandStack method is called once");
@@ -1215,7 +1215,7 @@ sap.ui.define([
 
 			simulateSystemConfig(true);
 
-			sandbox.stub(FlUtils, "getAppDescriptor").returns({"sap.app": {id: "TestId"}});
+			sandbox.stub(FlUtils, "getAppDescriptor").returns({ "sap.app": { id: "TestId" } });
 			sandbox.stub(RtaAppVariantFeature, "_determineSelector").returns(this.oAppComponent);
 			const oProcessSaveAsDialog = sandbox.stub(AppVariantManager.prototype, "processSaveAsDialog").resolves(oAppVariantData);
 
