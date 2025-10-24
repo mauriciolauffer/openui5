@@ -109,7 +109,7 @@ sap.ui.define([
 			const mPropertyBag = {
 				control: oControl,
 				id: "some_invalid_id",
-				content: {someKey: "someValue"}
+				content: { someKey: "someValue" }
 			};
 
 			return FlexState.initialize({
@@ -149,7 +149,7 @@ sap.ui.define([
 			const mPropertyBag = {
 				control: oControl,
 				id: "some_invalid_id",
-				content: {someKey: "someValue"}
+				content: { someKey: "someValue" }
 			};
 
 			return FlexState.initialize({
@@ -191,7 +191,7 @@ sap.ui.define([
 				const mPropertyBag = {
 					control: oControl,
 					id: sVariantId,
-					content: {someKey: "someValue"}
+					content: { someKey: "someValue" }
 				};
 
 				return FlexState.initialize({
@@ -236,7 +236,7 @@ sap.ui.define([
 			const mPropertyBag = {
 				control: oControl,
 				id: sVariantId,
-				content: {someKey: "someValue"}
+				content: { someKey: "someValue" }
 			};
 
 			await FlexState.initialize({
@@ -308,7 +308,7 @@ sap.ui.define([
 				}
 			});
 
-			const oContent = {someKey: "someValue"};
+			const oContent = { someKey: "someValue" };
 			const mPropertyBag = {
 				control: oControl,
 				id: sVariantId,

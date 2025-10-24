@@ -45,7 +45,7 @@ sap.ui.define([
 			}, Error("The current change value of property abstract is 'true'. Only allowed value for property abstract is boolean 'false'"),
 			"throws error");
 
-			var oManifest = { "sap.fiori": { "abstract": false }}; // abstract is not set in manifest
+			var oManifest = { "sap.fiori": { "abstract": false } }; // abstract is not set in manifest
 
 			assert.throws(function() {
 				SetAbstract.applyChange(oManifest, this.oChangeAbstractSetTrue);

@@ -536,10 +536,10 @@ sap.ui.define([
 
 		[{
 			details: "with a manifest object",
-			manifest: new Manifest({"sap.ovp": {}})
+			manifest: new Manifest({ "sap.ovp": {} })
 		}, {
 			details: "with a manifest JSON",
-			manifest: {"sap.ovp": {}}
+			manifest: { "sap.ovp": {} }
 		}].forEach(function(oTestData) {
 			QUnit.test(`when getFlexData is called with a ovp app and ${oTestData.details}`, async function(assert) {
 				var mPropertyBag = {
@@ -696,19 +696,19 @@ sap.ui.define([
 	QUnit.module("misc", {
 		beforeEach() {
 			this.oFlexDataResponse = {
-				appDescriptorChanges: [{changeType: "changeType", fileName: "appDescriptorChange1"}, {changeType: "changeType", fileName: "appDescriptorChange$"}],
-				annotationChanges: [{changeType: "changeType", fileName: "annotationChange1"}, {changeType: "changeType", fileName: "annotationChange%"}],
-				changes: [{changeType: "changeType", fileName: "change1"}, {changeType: "changeType", fileName: "change&"}],
+				appDescriptorChanges: [{ changeType: "changeType", fileName: "appDescriptorChange1" }, { changeType: "changeType", fileName: "appDescriptorChange$" }],
+				annotationChanges: [{ changeType: "changeType", fileName: "annotationChange1" }, { changeType: "changeType", fileName: "annotationChange%" }],
+				changes: [{ changeType: "changeType", fileName: "change1" }, { changeType: "changeType", fileName: "change&" }],
 				comp: {
-					variants: [{changeType: "changeType", fileName: "variant1"}, {changeType: "changeType", fileName: "variant@"}],
-					changes: [{changeType: "changeType", fileName: "compChange1"}, {changeType: "changeType", fileName: "compChange#"}],
-					defaultVariants: [{changeType: "changeType", fileName: "defaultVariant1"}, {changeType: "changeType", fileName: "defaultVariant$"}],
-					standardVariants: [{changeType: "changeType", fileName: "standardVariant1"}, {changeType: "changeType", fileName: "standardVariant%"}]
+					variants: [{ changeType: "changeType", fileName: "variant1" }, { changeType: "changeType", fileName: "variant@" }],
+					changes: [{ changeType: "changeType", fileName: "compChange1" }, { changeType: "changeType", fileName: "compChange#" }],
+					defaultVariants: [{ changeType: "changeType", fileName: "defaultVariant1" }, { changeType: "changeType", fileName: "defaultVariant$" }],
+					standardVariants: [{ changeType: "changeType", fileName: "standardVariant1" }, { changeType: "changeType", fileName: "standardVariant%" }]
 				},
-				variants: [{changeType: "changeType", fileName: "variant1"}, {changeType: "changeType", fileName: "variant@"}],
-				variantChanges: [{changeType: "changeType", fileName: "variantChange1"}, {changeType: "changeType", fileName: "variantChange#"}],
-				variantDependentControlChanges: [{changeType: "changeType", fileName: "varDepControlChange1"}, {changeType: "changeType", fileName: "varDepControlChange$"}],
-				variantManagementChanges: [{changeType: "changeType", fileName: "variantManagementChange1"}, {changeType: "changeType", fileName: "variantManagementChange%"}]
+				variants: [{ changeType: "changeType", fileName: "variant1" }, { changeType: "changeType", fileName: "variant@" }],
+				variantChanges: [{ changeType: "changeType", fileName: "variantChange1" }, { changeType: "changeType", fileName: "variantChange#" }],
+				variantDependentControlChanges: [{ changeType: "changeType", fileName: "varDepControlChange1" }, { changeType: "changeType", fileName: "varDepControlChange$" }],
+				variantManagementChanges: [{ changeType: "changeType", fileName: "variantManagementChange1" }, { changeType: "changeType", fileName: "variantManagementChange%" }]
 			};
 			this.oLoadFlexDataStub = sandbox.stub(Storage, "loadFlexData").resolves(this.oFlexDataResponse);
 			sandbox.stub(ManifestUtils, "getBaseComponentNameFromManifest").returns("baseName");

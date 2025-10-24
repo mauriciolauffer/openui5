@@ -68,7 +68,7 @@ sap.ui.define([
 	function stubSettings(sandbox) {
 		sandbox.stub(Settings, "getInstance").resolves({
 			getVersioning() {
-				return {ALL: true};
+				return { ALL: true };
 			}
 		});
 	}
@@ -152,9 +152,9 @@ sap.ui.define([
 			};
 
 			var aReturnedVersions = [
-				{version: Version.Number.Draft},
-				{version: "2"},
-				{version: "1"}
+				{ version: Version.Number.Draft },
+				{ version: "2" },
+				{ version: "1" }
 			];
 			sandbox.stub(Storage.versions, "load").resolves(aReturnedVersions);
 
@@ -170,8 +170,8 @@ sap.ui.define([
 			};
 
 			var aReturnedVersions = [
-				{version: "2"},
-				{version: "1"}
+				{ version: "2" },
+				{ version: "1" }
 			];
 			sandbox.stub(Storage.versions, "load").resolves(aReturnedVersions);
 
@@ -235,9 +235,9 @@ sap.ui.define([
 			};
 
 			var aReturnedVersions = [
-				{version: Version.Number.Draft},
-				{version: "2"},
-				{version: "1"}
+				{ version: Version.Number.Draft },
+				{ version: "2" },
+				{ version: "1" }
 			];
 			sandbox.stub(Storage.versions, "load").resolves(aReturnedVersions);
 
@@ -253,8 +253,8 @@ sap.ui.define([
 			};
 
 			var aReturnedVersions = [
-				{version: "2"},
-				{version: "1"}
+				{ version: "2" },
+				{ version: "1" }
 			];
 			sandbox.stub(Storage.versions, "load").resolves(aReturnedVersions);
 
@@ -272,8 +272,8 @@ sap.ui.define([
 			};
 
 			var aReturnedVersions = [
-				{version: "2"},
-				{version: "1"}
+				{ version: "2" },
+				{ version: "1" }
 			];
 			sandbox.stub(Storage.versions, "load").resolves(aReturnedVersions);
 			return VersionsAPI.initialize(mPropertyBag)
@@ -611,7 +611,7 @@ sap.ui.define([
 			};
 			const aReturnedVersions = [];
 			sandbox.stub(Versions, "activate").resolves(aReturnedVersions);
-			FlexInfoSession.setByReference(sReference, {version: "myVersion"});
+			FlexInfoSession.setByReference(sReference, { version: "myVersion" });
 
 			return VersionsAPI.activate(mPropertyBag)
 			.then(function(oResult) {

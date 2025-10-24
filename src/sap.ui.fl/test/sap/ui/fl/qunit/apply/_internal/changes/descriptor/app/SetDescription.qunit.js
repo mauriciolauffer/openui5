@@ -13,12 +13,12 @@ sap.ui.define([
 				"sap.app": {
 					id: "custom.app.variant",
 					description: "{{description}}"
-				}};
+				} };
 
 			this.oManifestWithoutDescription = {
 				"sap.app": {
 					id: "custom.app.variant"
-				}};
+				} };
 		}
 	}, function() {
 		QUnit.test("when calling '_applyChange' with description", function(assert) {

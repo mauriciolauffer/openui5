@@ -84,7 +84,7 @@ sap.ui.define([
 						"</items>" +
 					"</HBox>" +
 				"</mvc:View>";
-			return XMLView.create({id: "testComponent---myView", definition: sXmlString})
+			return XMLView.create({ id: "testComponent---myView", definition: sXmlString })
 			.then(function(oXMLView) {
 				this.oXMLView = oXMLView;
 				[this.oHBox, this.oPanel, this.oHBoxWithSingleEP] = this.oXMLView.getContent();
