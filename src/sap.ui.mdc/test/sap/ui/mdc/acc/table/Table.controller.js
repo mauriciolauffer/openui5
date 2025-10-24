@@ -112,7 +112,7 @@ sap.ui.define([
 		getGridTableType: function() {
 			return new GridTableType({
 				enableColumnFreeze: true,
-				rowCountMode: "{view>/gridType/rowCountMode}"
+				rowCountMode: "{tableConfig>/gridType/rowCountMode}"
 			});
 		},
 		getResponsiveTableType: function() {
@@ -123,7 +123,7 @@ sap.ui.define([
 		getTreeTableType: function() {
 			return new TreeTableType({
 				enableColumnFreeze: true,
-				rowCountMode: "{view>/treeType/rowCountMode}"
+				rowCountMode: "{tableConfig>/gridType/rowCountMode}"
 			});
 		},
 		openConfigurationDialog: async function() {
