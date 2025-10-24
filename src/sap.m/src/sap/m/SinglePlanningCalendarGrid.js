@@ -1310,9 +1310,11 @@ sap.ui.define([
 
 		SinglePlanningCalendarGrid.prototype.onmouseup = function (oEvent) {
 			var bMultiDateSelection = SinglePlanningCalendarSelectionMode.MultiSelect === this.getDateSelectionMode();
+
 			if (!bMultiDateSelection && !(oEvent.metaKey || oEvent.ctrlKey)) {
 				this.removeAllSelectedDates();
 			}
+
 			this._bMultiDateSelect = true;
 			this._fireSelectionEvent(oEvent);
 		};
@@ -1412,7 +1414,8 @@ sap.ui.define([
 
 				this.fireEvent("cellPress", {
 					startDate: this._getDateFormatter().parse(oGridCell.getAttribute("data-sap-start-date")),
-					endDate: this._getDateFormatter().parse(oGridCell.getAttribute("data-sap-end-date"))
+					endDate: this._getDateFormatter().parse(oGridCell.getAttribute("data-sap-end-date")),
+					originalEvent: oEvent.originalEvent
 				});
 
 				const bHasSelectedApps = this.getSelectedAppointments().length > 0;
