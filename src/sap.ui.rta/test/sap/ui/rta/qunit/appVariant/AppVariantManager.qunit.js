@@ -51,8 +51,8 @@ sap.ui.define([
 		beforeEach() {
 			const oRootControl = new Control();
 			const oRtaCommandStack = new Stack();
-			this.oCommandSerializer = new LREPSerializer({commandStack: oRtaCommandStack, rootControl: oRootControl});
-			this.oAppVariantManager = new AppVariantManager({commandSerializer: this.oCommandSerializer, layer: Layer.CUSTOMER});
+			this.oCommandSerializer = new LREPSerializer({ commandStack: oRtaCommandStack, rootControl: oRootControl });
+			this.oAppVariantManager = new AppVariantManager({ commandSerializer: this.oCommandSerializer, layer: Layer.CUSTOMER });
 		},
 		afterEach() {
 			sandbox.restore();
@@ -136,15 +136,15 @@ sap.ui.define([
 			this.oAppComponent = RtaQunitUtils.createAndStubAppComponent(sandbox, "TestId");
 
 			const oRtaCommandStack = new Stack();
-			this.oCommandSerializer = new LREPSerializer({commandStack: oRtaCommandStack, rootControl: this.oAppComponent});
-			this.oAppVariantManager = new AppVariantManager({commandSerializer: this.oCommandSerializer, layer: Layer.CUSTOMER});
+			this.oCommandSerializer = new LREPSerializer({ commandStack: oRtaCommandStack, rootControl: this.oAppComponent });
+			this.oAppVariantManager = new AppVariantManager({ commandSerializer: this.oCommandSerializer, layer: Layer.CUSTOMER });
 
 			oServer = sinon.fakeServer.create();
 
 			const oParsedHash = {
 				semanticObject: "testSemanticObject",
 				action: "testAction",
-				params: {par: "testpar"}
+				params: { par: "testpar" }
 			};
 			sandbox.stub(FlUtils, "getParsedURLHash").returns(oParsedHash);
 
@@ -167,7 +167,7 @@ sap.ui.define([
 			sandbox.stub(AppVariantUtils, "getParsedHash").returns(Promise.resolve({
 				semanticObject: "testSemanticObject",
 				action: "testAction",
-				params: {par: "testpar"}
+				params: { par: "testpar" }
 			}));
 			sandbox.stub(FlexRuntimeInfoAPI, "getFlexReference").returns("testComponent");
 			const fnCreateChangesSpy = sandbox.spy(ChangesWriteAPI, "create");
@@ -229,13 +229,13 @@ sap.ui.define([
 		beforeEach() {
 			this.oRootControl = new Control();
 			const oRtaCommandStack = new Stack();
-			this.oCommandSerializer = new LREPSerializer({commandStack: oRtaCommandStack, rootControl: this.oRootControl});
+			this.oCommandSerializer = new LREPSerializer({ commandStack: oRtaCommandStack, rootControl: this.oRootControl });
 
-			this.oAppVariantManager = new AppVariantManager({commandSerializer: this.oCommandSerializer, layer: Layer.CUSTOMER});
+			this.oAppVariantManager = new AppVariantManager({ commandSerializer: this.oCommandSerializer, layer: Layer.CUSTOMER });
 			this.oParsedHash = {
 				semanticObject: "testSemanticObject",
 				action: "testAction",
-				params: {par: "testpar"}
+				params: { par: "testpar" }
 			};
 			oServer = sinon.fakeServer.create();
 		},
@@ -249,7 +249,7 @@ sap.ui.define([
 
 			return this.oAppVariantManager.createAppVariant("customer.appvar.id", this.oParsedHash, this.oRootControl)
 			.then(function() {
-				assert.ok(fnSaveAsAppVariantStub.calledWithExactly({selector: this.oRootControl, id: "customer.appvar.id", parsedHash: this.oParsedHash, layer: Layer.CUSTOMER, version: "1.0.0"}));
+				assert.ok(fnSaveAsAppVariantStub.calledWithExactly({ selector: this.oRootControl, id: "customer.appvar.id", parsedHash: this.oParsedHash, layer: Layer.CUSTOMER, version: "1.0.0" }));
 			}.bind(this));
 		});
 
@@ -258,7 +258,7 @@ sap.ui.define([
 
 			return this.oAppVariantManager.deleteAppVariant("customer.app.const.id")
 			.then(function() {
-				assert.ok(fnDeleteAppVariantStub.calledWithExactly({selector: {appId: "customer.app.const.id"}, layer: Layer.CUSTOMER}), "then AppVariantWriteApi.deleteAppVariant method is called with correct parameters");
+				assert.ok(fnDeleteAppVariantStub.calledWithExactly({ selector: { appId: "customer.app.const.id" }, layer: Layer.CUSTOMER }), "then AppVariantWriteApi.deleteAppVariant method is called with correct parameters");
 			});
 		});
 
@@ -293,7 +293,7 @@ sap.ui.define([
 			const oSendRequestStub = sandbox.stub(WriteUtils, "sendRequest").resolves(oResponse);
 			const fnTriggerCatalogAssignment = sandbox.spy(AppVariantUtils, "triggerCatalogAssignment");
 
-			return AppVariantFactory.prepareCreate({id: "customer.TestId", parsedHash: this.oParsedHash, reference: "TestIdBaseApp"})
+			return AppVariantFactory.prepareCreate({ id: "customer.TestId", parsedHash: this.oParsedHash, reference: "TestIdBaseApp" })
 			.then(function(oManifest) {
 				return this.oAppVariantManager.triggerCatalogPublishing(oManifest.getId(), oManifest.getReference(), true);
 			}.bind(this))
@@ -317,7 +317,7 @@ sap.ui.define([
 			const oSendRequestStub = sandbox.stub(WriteUtils, "sendRequest").resolves(oResponse);
 			const fnTriggerCatalogUnAssignment = sandbox.spy(AppVariantUtils, "triggerCatalogUnAssignment");
 
-			return AppVariantFactory.prepareCreate({id: "customer.TestId", parsedHash: this.oParsedHash, reference: "TestIdBaseApp"})
+			return AppVariantFactory.prepareCreate({ id: "customer.TestId", parsedHash: this.oParsedHash, reference: "TestIdBaseApp" })
 			.then(function(oManifest) {
 				return this.oAppVariantManager.triggerCatalogPublishing(oManifest.getId(), oManifest.getReference(), false);
 			}.bind(this))
@@ -341,12 +341,12 @@ sap.ui.define([
 			sandbox.stub(Log, "error").callThrough().withArgs("App variant error: ", "error").returns();
 
 			const fnShowRelevantDialog = sandbox.spy(AppVariantUtils, "showRelevantDialog");
-			const oErrorInfo = {appVariantId: "customer.TestId"};
+			const oErrorInfo = { appVariantId: "customer.TestId" };
 			const fnBuildErrorInfoStub = sandbox.stub(AppVariantUtils, "buildErrorInfo").returns(oErrorInfo);
 			const fncatchErrorDialog = sandbox.spy(AppVariantUtils, "catchErrorDialog");
 			const fnTriggerCatalogAssignment = sandbox.spy(AppVariantUtils, "triggerCatalogAssignment");
 
-			return AppVariantFactory.prepareCreate({id: "customer.TestId", parsedHash: this.oParsedHash, reference: "TestIdBaseApp"})
+			return AppVariantFactory.prepareCreate({ id: "customer.TestId", parsedHash: this.oParsedHash, reference: "TestIdBaseApp" })
 			.then(function(oManifest) {
 				return this.oAppVariantManager.triggerCatalogPublishing(oManifest.getId(), oManifest.getReference(), true);
 			}.bind(this))
@@ -373,12 +373,12 @@ sap.ui.define([
 			sandbox.stub(Log, "error").callThrough().withArgs("App variant error: ", "error").returns();
 
 			const fnShowRelevantDialog = sandbox.spy(AppVariantUtils, "showRelevantDialog");
-			const oErrorInfo = {appVariantId: "customer.TestId"};
+			const oErrorInfo = { appVariantId: "customer.TestId" };
 			const fnBuildErrorInfoStub = sandbox.stub(AppVariantUtils, "buildErrorInfo").returns(oErrorInfo);
 			const fncatchErrorDialog = sandbox.spy(AppVariantUtils, "catchErrorDialog");
 			const fnTriggerCatalogUnAssignment = sandbox.spy(AppVariantUtils, "triggerCatalogUnAssignment");
 
-			return AppVariantFactory.prepareCreate({id: "customer.TestId", parsedHash: this.oParsedHash, reference: "TestIdBaseApp"})
+			return AppVariantFactory.prepareCreate({ id: "customer.TestId", parsedHash: this.oParsedHash, reference: "TestIdBaseApp" })
 			.then(function(oManifest) {
 				return this.oAppVariantManager.triggerCatalogPublishing(oManifest.getId(), oManifest.getReference(), false);
 			}.bind(this))

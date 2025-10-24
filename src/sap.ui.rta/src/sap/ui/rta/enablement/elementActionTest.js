@@ -548,7 +548,7 @@ sap.ui.define([
 			aCommands.forEach(function(oCommand) {
 				const oChange = oCommand.getPreparedChange();
 				if (oCommand.getAppComponent) {
-					aPromises.push(PersistenceWriteAPI.remove({change: oChange, selector: oCommand.getAppComponent()}));
+					aPromises.push(PersistenceWriteAPI.remove({ change: oChange, selector: oCommand.getAppComponent() }));
 				}
 			});
 			return Promise.all(aPromises);
@@ -642,7 +642,7 @@ sap.ui.define([
 			.then(function() {
 				this.aCommands = aCommands;
 				const aChanges = aCommands.map((oCommand) => oCommand.getPreparedChange());
-				return PersistenceWriteAPI.remove({flexObjects: aChanges, selector: oAppComponent});
+				return PersistenceWriteAPI.remove({ flexObjects: aChanges, selector: oAppComponent });
 			}.bind(this));
 		}
 
@@ -657,7 +657,7 @@ sap.ui.define([
 					return mOptions.after.call(this.hookContext, assert);
 				},
 				async beforeEach() {
-					await FlQUnitUtils.initializeFlexStateWithData(sandbox, UI_COMPONENT_NAME, {changes: []});
+					await FlQUnitUtils.initializeFlexStateWithData(sandbox, UI_COMPONENT_NAME, { changes: [] });
 				},
 				afterEach() {
 					this.oUiComponentContainer.destroy();
@@ -725,7 +725,7 @@ sap.ui.define([
 				return mOptions.after.call(this.hookContext, assert);
 			},
 			async beforeEach(assert) {
-				await FlQUnitUtils.initializeFlexStateWithData(sandbox, UI_COMPONENT_NAME, {changes: []});
+				await FlQUnitUtils.initializeFlexStateWithData(sandbox, UI_COMPONENT_NAME, { changes: [] });
 
 				return createViewInComponent.call(this, SYNC)
 				.then(buildAndExecuteCommands.bind(this, assert))

@@ -399,7 +399,7 @@ sap.ui.define([
 			var done = assert.async();
 			this.oPopover.oPopup.setAutoClose(true); /* Required to re-activate to check the number of calls to Popup.prototype._addFocusEventListeners() */
 			this.oPopover.attachAfterOpen(function() {
-				var {oPopup} = this.oPopover;
+				var { oPopup } = this.oPopover;
 				var vPopupElement = oPopup.getContent().getDomRef();
 
 				this.oRta.getPopupManager().fnOriginalPopupOnAfterRendering = oPopup.onAfterRendering;
@@ -467,7 +467,7 @@ sap.ui.define([
 			var done = assert.async();
 			sandbox.stub(this.oRta, "getMode").returns("adaptation");
 			var fnDefaultOnAfterRendering = this.oPopover.oPopup.onAfterRendering;
-			var {oPopup} = this.oPopover;
+			var { oPopup } = this.oPopover;
 			this.oPopover.attachAfterOpen(function() {
 				var oOverlayContainerDomRef = Overlay.getOverlayContainer();
 				this.oRta.getPopupManager().addAutoCloseArea(new Button("autoCloseButton"));
@@ -511,7 +511,7 @@ sap.ui.define([
 
 			this.oRta.getPopupManager().attachEventOnce("open", function(oEvent) {
 				this.oRta.getPopupManager()._applyPopupAttributes.restore();
-				var {oPopup} = oEvent.getParameters().getSource();
+				var { oPopup } = oEvent.getParameters().getSource();
 
 				// change mode to 'adaptation'
 				var oModeChangeEvent = new Event("testevent", this.oRta, { mode: "adaptation" });
@@ -546,7 +546,7 @@ sap.ui.define([
 
 			this.oPopover.attachAfterOpen(function() {
 				this.oRta.getPopupManager()._applyPopupAttributes.restore();
-				var {oPopup} = this.oPopover;
+				var { oPopup } = this.oPopover;
 
 				// change mode to 'adaptation'
 				var oEvent = new Event("testevent", this.oRta, { mode: "adaptation" });
