@@ -3,6 +3,36 @@
     "date": "October 2025",
     "notes": [
       {
+        "id": "77fdae672e3ba566ac0fcccc919159300e958ad2",
+        "type": "FIX",
+        "text": " SelectionPanel: Update count correctly when no filter is applied"
+      },
+      {
+        "id": "fc27cd50d2585f503d84de75bac1ee232e16f637",
+        "type": "FIX",
+        "text": " sap.m.StepInput: range validation is working properly now when there is binding for valueState but no value is provided"
+      },
+      {
+        "id": "b3557dad515a8e2ccbddae66c5fd3c0f7429204b",
+        "type": "FIX",
+        "text": " sap.m.ComboBox: Picker now closes on table scroll"
+      },
+      {
+        "id": "98fbe9f0751b23e4b370f30a1498bc3c2fd16c4b",
+        "type": "FIX",
+        "text": " sap.m.DatePicker: has correct placeholder"
+      },
+      {
+        "id": "4e3f4fe5bdfdc37c44982029cc67cc36be85e240",
+        "type": "FIX",
+        "text": " p13n.BasePanel: fix RangeSelect with keyboard handling"
+      },
+      {
+        "id": "8a9b61c0bc55f0a985505d494a8d1f7cd4f7a187",
+        "type": "FIX",
+        "text": " p13n.FilterPanel: add tooltip support for labels"
+      },
+      {
         "id": "11ec5f3cde26b717cd5e167019e20739566de285",
         "type": "FIX",
         "text": " sap.m.DatePicker: close picker on context change"

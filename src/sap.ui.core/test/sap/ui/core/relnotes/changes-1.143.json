@@ -1,0 +1,17 @@
+{
+  "1.143.0": {
+    "date": "October 2025",
+    "notes": [
+      {
+        "id": "140873979b13a7ca16c0abfc67c234ed3d13181f",
+        "type": "FIX",
+        "text": " core/Component: Propagate ownerId to onModelCreated hook"
+      },
+      {
+        "id": "d2080a6358ee7aa884fc422baaa2ffdac7f80026",
+        "type": "FIX",
+        "text": " sap/base/security/sanitizeHTML: Add support for `text-decoration-line` CSS property"
+      }
+    ]
+  }
+}
