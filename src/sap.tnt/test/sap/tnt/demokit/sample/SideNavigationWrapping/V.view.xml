@@ -10,7 +10,7 @@
 			icon="sap-icon://menu2"
 			press=".onCollapseExpandPress" />
 
-		<tnt:SideNavigation id="sideNavigation" selectedKey="home" expanded="true">
+		<tnt:SideNavigation width="20rem" id="sideNavigation" selectedKey="home" expanded="true">
 			<tnt:NavigationList>
 				<tnt:NavigationListItem text="Home" key="home" icon="sap-icon://home" />
 				<tnt:NavigationListGroup text="System &amp; Administration Management">
