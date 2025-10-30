@@ -9,6 +9,7 @@ sap.ui.define([
 	"sap/ui/fl/write/_internal/connectors/Utils",
 	"sap/ui/fl/write/_internal/flexState/FlexObjectManager",
 	"sap/ui/fl/Layer",
+	"sap/ui/fl/Utils",
 	"sap/ui/thirdparty/sinon-4"
 ], function(
 	DescriptorChangeFactory,
@@ -19,6 +20,7 @@ sap.ui.define([
 	WriteUtils,
 	FlexObjectManager,
 	Layer,
+	Utils,
 	sinon
 ) {
 	"use strict";
@@ -1972,6 +1974,7 @@ sap.ui.define([
 		QUnit.test("submit", function(assert) {
 			const sResponse = "response";
 			sandbox.stub(FlexObjectManager, "saveFlexObjects").resolves(sResponse);
+			sandbox.stub(Utils, "getComponentForControl").returns({ getId: () => "appId" });
 			return DescriptorInlineChangeFactory.createNew("changeType", { param: "value" }, { a: "b" })
 			.then(function(oDescriptorInlineChange) {
 				return new DescriptorChangeFactory().createNew("a.reference", oDescriptorInlineChange);
