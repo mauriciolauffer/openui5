@@ -45,8 +45,10 @@ function (
 				null,
 				"",
 				" ",
+				"my/image.png",
 				"./my/image.png",
 				"../my/image.png",
+				"/my/image.png",
 				"http://my/image.png",
 				"sap-icon://accept",
 				"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
@@ -55,8 +57,10 @@ function (
 				null,
 				"",
 				" ",
+				sap.ui.require.toUrl("test/app/id/my/image.png"),
 				sap.ui.require.toUrl("test/app/id/./my/image.png"),
 				sap.ui.require.toUrl("test/app/id/../my/image.png"),
+				"/my/image.png",
 				"http://my/image.png",
 				"sap-icon://accept",
 				"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
@@ -67,7 +71,7 @@ function (
 			var sSrc = this.oIconFormatter.formatSrc(sSample),
 				sExpected = aExpected[iInd];
 
-			assert.strictEqual(sSrc, sExpected, "The image src is as expected.");
+			assert.strictEqual(sSrc, sExpected, `The image src is as expected for '${sSample}'.`);
 		}.bind(this));
 	});
 
