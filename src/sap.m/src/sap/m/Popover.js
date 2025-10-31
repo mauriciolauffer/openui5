@@ -730,7 +730,9 @@ sap.ui.define([
 					oNavContent.attachEvent("afterNavigate", function (oEvent) {
 						var oDomRef = this.getDomRef();
 						if (oDomRef) {
-							var oFocusableElement = this.$().firstFocusableDomRef() || oDomRef;
+							var oFocusableElement = this.$().firstFocusableDomRef({
+								includeScroller: true
+							}) || oDomRef;
 							oFocusableElement.focus();
 						}
 					}, this);
@@ -1220,8 +1222,10 @@ sap.ui.define([
 			//If the invisible FIRST focusable element (suffix '-firstfe') has got focus, move focus to the last focusable element inside
 			if (oSourceDomRef.id === sFirstFeId) {
 				// Search for anything focusable from bottom to top
-				var oLastFocusableDomref = $this.lastFocusableDomRef();
-				if (oLastFocusableDomref){
+				var oLastFocusableDomref = $this.lastFocusableDomRef({
+					includeScroller: true
+				});
+				if (oLastFocusableDomref) {
 					oLastFocusableDomref.focus();
 				} else {
 					//force the focus to stay in the popover when the content is not focusable.
@@ -1229,8 +1233,10 @@ sap.ui.define([
 				}
 			} else if (oSourceDomRef.id === sLastFeId) {
 				// Search for anything focusable from top to bottom
-				var oFirstFocusableDomref = $this.firstFocusableDomRef();
-				if (oFirstFocusableDomref){
+				var oFirstFocusableDomref = $this.firstFocusableDomRef({
+					includeScroller: true
+				});
+				if (oFirstFocusableDomref) {
 					oFirstFocusableDomref.focus();
 				} else {
 					//force the focus to stay in the popover when the content is not focusable.
@@ -2593,7 +2599,10 @@ sap.ui.define([
 		Popover.prototype._getFirstFocusableContentElementId = function () {
 			var sResult = "";
 			var $popoverContent = this.$("cont");
-			var oFirstFocusableDomRef = $popoverContent.firstFocusableDomRef();
+			var oFirstFocusableDomRef = $popoverContent.firstFocusableDomRef({
+				includeSelf: true,
+				includeScroller: true
+			});
 
 			if (oFirstFocusableDomRef) {
 				sResult = oFirstFocusableDomRef.id;
