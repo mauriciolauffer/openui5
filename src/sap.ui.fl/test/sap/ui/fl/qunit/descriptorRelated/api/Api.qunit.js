@@ -1977,9 +1977,23 @@ sap.ui.define([
 			sandbox.stub(Utils, "getComponentForControl").returns({ getId: () => "appId" });
 			return DescriptorInlineChangeFactory.createNew("changeType", { param: "value" }, { a: "b" })
 			.then(function(oDescriptorInlineChange) {
-				return new DescriptorChangeFactory().createNew("a.reference", oDescriptorInlineChange);
+				return new DescriptorChangeFactory().createNew("a.reference", oDescriptorInlineChange, "layer", { getId: () => "appId" });
 			}).then(function(oDescriptorChange) {
 				return oDescriptorChange.submit();
+			}).then(function(oResponse) {
+				assert.equal(oResponse, sResponse);
+			});
+		});
+
+		QUnit.test("submit2", function(assert) {
+			const sResponse = "response";
+			sandbox.stub(FlexObjectManager, "saveFlexObjects").resolves(sResponse);
+			sandbox.stub(Utils, "getComponentForControl").returns({ getId: () => "appId" });
+			return DescriptorInlineChangeFactory.createNew("changeType", { param: "value" }, { a: "b" })
+			.then(function(oDescriptorInlineChange) {
+				return new DescriptorChangeFactory().createNew("a.reference", oDescriptorInlineChange);
+			}).then(function(oDescriptorChange) {
+				return oDescriptorChange.submit({ getId: () => "appId" });
 			}).then(function(oResponse) {
 				assert.equal(oResponse, sResponse);
 			});
