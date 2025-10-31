@@ -433,22 +433,16 @@ sap.ui.define([
 					only: ["sap/ui/fl/apply/_internal/changes/descriptor/fiori/SetCloudDevAdaptationStatus"]
 				}
 			},
-			"apply/_internal/changes/descriptor/Preprocessor": {
+			"apply/_internal/changes/descriptor/RawApplier": {
 				group: "Apply Internal - Descriptor Change Merger",
 				coverage: {
-					only: ["sap/ui/fl/apply/_internal/changes/descriptor/Preprocessor"]
+					only: ["sap/ui/fl/apply/_internal/changes/descriptor/RawApplier"]
 				}
 			},
 			"apply/_internal/changes/descriptor/Applier": {
 				group: "Apply Internal - Descriptor Change Merger",
 				coverage: {
 					only: ["sap/ui/fl/apply/_internal/changes/descriptor/Applier"]
-				}
-			},
-			"apply/_internal/changes/descriptor/InlineApplier": {
-				group: "Apply Internal - Descriptor Change Merger",
-				coverage: {
-					only: ["sap/ui/fl/apply/_internal/changes/descriptor/InlineApplier"]
 				}
 			},
 			"apply/_internal/changes/descriptor/ApplyStrategyFactory": {
