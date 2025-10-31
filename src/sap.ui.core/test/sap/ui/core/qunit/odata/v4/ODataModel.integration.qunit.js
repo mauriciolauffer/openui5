@@ -20295,7 +20295,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			that.expectRequest("TEAMS('TEAM_01')/TEAM_2_EMPLOYEES?custom=foo&$apply=aggregate(AGE)"
 					+ "&$orderby=Name&$filter=AGE gt 42&$skip=0&$top=100", {
-					value : [{
+					value : [{ // Note: unrealistic response in order to reduce UI changes
 						AGE : 52,
 						ID : "1",
 						Name : "Frederic Fall"
@@ -21013,6 +21013,68 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		oBinding.resume();
 
 		await this.waitForChanges(assert);
+	});
+
+	//*********************************************************************************************
+	// Scenario: Expand a group node in case of visual grouping while there is an application filter
+	// and a property binding to the header context's "@$ui5.context.isSelected" flag. Initially
+	// the binding is a suspended list binding without aggregation. Before the binding is resumed,
+	// aggregation information is set.
+	// JIRA: CPOUI5ODATAV4-2756
+	QUnit.test("Data Aggregation: edge case for CPOUI5ODATAV4-2756", async function (assert) {
+		const oModel = this.createAggregationModel({autoExpandSelect : true});
+		const sView = `
+<Text id="isSelected" text="{= %{@$ui5.context.isSelected} }"/>
+<Table id="table"
+	items="{path : '/BusinessPartners',
+		filters : {path : 'Country', operator : 'NE', value1 : ''},
+		suspended : true}">
+	<Text id="country" text="{Country}"/>
+	<Text id="region" text="{Region}"/>
+</Table>`;
+
+		this.expectChange("isSelected")
+			.expectChange("country", [])
+			.expectChange("region", []);
+
+		await this.createView(assert, sView, oModel);
+
+		this.expectChange("isSelected", false);
+		const oListBinding = this.oView.byId("table").getBinding("items");
+
+		this.oView.byId("isSelected").setBindingContext(oListBinding.getHeaderContext());
+
+		await this.waitForChanges(assert, "set header context");
+
+		this.expectCanceledError("Cache discarded as a new cache has been created")
+			.expectRequest("BusinessPartners?$apply=filter(Country ne '')"
+				+ "/groupby((Country))&$count=true&$skip=0&$top=100", {
+				"@odata.count" : "1",
+				value : [{Country : "A"}]
+			})
+			.expectChange("country", ["A"])
+			.expectChange("region", [null]);
+
+		// code under test
+		oListBinding.setAggregation({groupLevels : ["Country", "Region", "Id"]});
+		oListBinding.resume();
+
+		await this.waitForChanges(assert, "resume");
+
+		this.expectRequest("BusinessPartners?$apply=filter(Country eq 'A' and (Country ne ''))"
+				+ "/groupby((Region))&$count=true&$skip=0&$top=100", {
+				"@odata.count" : "1",
+				value : [{Region : "A1"}]
+			})
+			.expectChange("country", [, "A"])
+			.expectChange("region", [, "A1"]);
+		const oContextA = oListBinding.getCurrentContexts()[0];
+
+		await Promise.all([
+			// code under test
+			oContextA.expand(),
+			this.waitForChanges(assert, "expand 'A'")
+		]);
 	});
 
 	//*********************************************************************************************
@@ -23910,6 +23972,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 	// Support grand total w/ filter on aggregate (JIRA: CPOUI5ODATAV4-713)
 	// Multiple (additional) groups on leaf level (JIRA: CPOUI5ODATAV4-2755)
 	// Keep currency filter close to filter on aggregate (JIRA: CPOUI5ODATAV4-2796)
+	// No late property on subtotal (JIRA: CPOUI5ODATAV4-2756)
 	QUnit.test("Data Aggregation: $$aggregation w/ groupLevels, paging", function (assert) {
 		var sFilterOnAggregate // JIRA: CPOUI5ODATAV4-713, CPOUI5ODATAV4-2796
 			= "filter(CurrencyCode eq 'EUR')"
@@ -23972,7 +24035,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			.expectChange("grossAmount", ["1", "2", "3"])
 			.expectChange("lifecycleStatus", ["Z", "Y", "X"]);
 
-		return this.createView(assert, sView, oModel).then(function () {
+		return this.createView(assert, sView, oModel).then(async function () {
 			oTable = that.oView.byId("table");
 			oListBinding = oTable.getBinding("rows");
 
@@ -23994,6 +24057,14 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			});
 			assert.strictEqual(oListBinding.getHeaderContext().isAggregated(), true,
 				"JIRA: CPOUI5ODATAV4-2760");
+
+			const [oContext] = oListBinding.getCurrentContexts();
+			that.oLogMock.expects("error")
+				.withArgs("Failed to drill-down into (LifecycleStatus='Z')/Note"
+					+ ", invalid segment: Note");
+
+			// code under test (JIRA: CPOUI5ODATAV4-2756)
+			assert.strictEqual(await oContext.requestProperty("Note"), undefined);
 
 			assert.strictEqual(oListBinding.isLengthFinal(), true, "length is final");
 			assert.strictEqual(oListBinding.getLength(), 26, "flat list as currently expanded");
@@ -24105,6 +24176,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 	// Check the download URL (JIRA: CPOUI5ODATAV4-609)
 	// Test ODLB#getCount (JIRA: CPOUI5ODATAV4-958)
 	// Test v4.Context#getFilter (JIRA: CPOUI5ODATAV4-2768)
+	// No late property on aggregated leaf (JIRA: CPOUI5ODATAV4-2756)
 	QUnit.test("Data Aggregation: $$aggregation w/ grand total w/ unit", function (assert) {
 		var oModel = this.createSalesOrdersModel({autoExpandSelect : true}),
 			sView = '\
@@ -24152,7 +24224,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			.expectChange("grossAmount", ["12345", "1", "2"])
 			.expectChange("currencyCode", ["", "EUR", "GBP"]);
 
-		return this.createView(assert, sView, oModel).then(function () {
+		return this.createView(assert, sView, oModel).then(async function () {
 			var oTable = that.oView.byId("table"),
 				oListBinding = oTable.getBinding("items");
 
@@ -24202,6 +24274,15 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				oListBinding.getCurrentContexts()[2].getFilter(),
 				new Filter("LifecycleStatus", FilterOperator.EQ, "Y")
 			);
+
+			const [, oContext] = oListBinding.getCurrentContexts();
+			assert.strictEqual(oContext.isAggregated(), true, "JIRA: CPOUI5ODATAV4-2760");
+			that.oLogMock.expects("error")
+				.withArgs("Failed to drill-down into (LifecycleStatus='Z')/Note"
+					+ ", invalid segment: Note");
+
+			// code under test (JIRA: CPOUI5ODATAV4-2756)
+			assert.strictEqual(await oContext.requestProperty("Note"), undefined);
 		});
 	});
 
@@ -24210,10 +24291,14 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 	// predicates in case all key properties are available. Expect no unnecessary group levels in
 	// there!
 	// JIRA: CPOUI5ODATAV4-700
-	// Check that create, delete, refresh, and late property requests are not supported.
+	// Check that create, delete, and refresh are not supported.
 	// JIRA: CPOUI5ODATAV4-1851
+	//
+	// If key properties are known, late properties are requested (JIRA: CPOUI5ODATAV4-2756)
+	// No late property on collapsed group header (JIRA: CPOUI5ODATAV4-2756)
 	QUnit.test("Data Aggregation: leaves' key predicates", function (assert) {
-		var oModel = this.createSalesOrdersModel({autoExpandSelect : true}),
+		var oBinding,
+			oModel = this.createSalesOrdersModel({autoExpandSelect : true}),
 			sView = '\
 <Table id="table" items="{path : \'/SalesOrderList\',\
 		parameters : {\
@@ -24254,10 +24339,11 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			.expectChange("salesOrderID", [null, "26", "25"]);
 
 		return this.createView(assert, sView, oModel).then(function () {
-			var oPromise,
-				oTable = that.oView.byId("table"),
-				oBinding = oTable.getBinding("items"),
-				aCurrentContexts = oBinding.getCurrentContexts();
+			var oTable = that.oView.byId("table"),
+				aCurrentContexts;
+
+			oBinding = oTable.getBinding("items");
+			aCurrentContexts = oBinding.getCurrentContexts();
 
 			assert.deepEqual(aCurrentContexts.map(getPath), [
 				"/SalesOrderList()",
@@ -24293,22 +24379,69 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					url : "PATCH SalesOrderList('26')",
 					payload : {LifecycleStatus : "Z*"}
 				}, {GrossAmount : "1", LifecycleStatus : "*Z*", SalesOrderID : "26"})
+				.expectRequest("SalesOrderList('26')?$select=Note", {Note : "Late"})
 				.expectChange("lifecycleStatus", [, "*Z*"]);
 
-			// code under test (JIRA: CPOUI5ODATAV4-1851)
-			oPromise = aCurrentContexts[1].setProperty("LifecycleStatus", "Z*");
-
-			// Note: _Helper.isDataAggregation prevents mLateQueryOptions as intended
 			that.oLogMock.expects("error")
-				.withArgs("Failed to drill-down into (\'26\')/Note, invalid segment: Note");
+				.withArgs("Failed to drill-down into ()/Note, invalid segment: Note");
+			assert.strictEqual(aCurrentContexts[0].isAggregated(), true,
+				"JIRA: CPOUI5ODATAV4-2760");
+			assert.strictEqual(aCurrentContexts[1].isAggregated(), false,
+				"JIRA: CPOUI5ODATAV4-2760");
 
 			return Promise.all([
-				oPromise,
 				// code under test (JIRA: CPOUI5ODATAV4-1851)
+				aCurrentContexts[1].setProperty("LifecycleStatus", "Z*"),
+				// code under test (JIRA: CPOUI5ODATAV4-2756)
 				aCurrentContexts[1].requestProperty("Note").then(function (sNote) {
-					assert.strictEqual(sNote, undefined, "no late property request");
+					assert.strictEqual(sNote, "Late",
+						"If key properties are known, late properties are requested");
+				}),
+				// code under test (JIRA: CPOUI5ODATAV4-2756)
+				// BEWARE: It is intended to request a failing late property after a succesfull one!
+				aCurrentContexts[0].requestProperty("Note").then(function (sNote) {
+					assert.strictEqual(sNote, undefined, "No late property on grand total");
 				}),
 				that.waitForChanges(assert)
+			]);
+		}).then(function () {
+			that.expectRequest("SalesOrderList?$apply=groupby((LifecycleStatus))&$count=true"
+					+ "&$skip=0&$top=100", {
+					"@odata.count" : "2",
+					value : [
+						{LifecycleStatus : "Z"},
+						{LifecycleStatus : "Y"}
+					]
+				})
+				.expectChange("isExpanded", [false, false])
+				.expectChange("isTotal", [false])
+				.expectChange("level", [1])
+				.expectChange("lifecycleStatus", ["Z", "Y"])
+				.expectChange("grossAmount", [undefined, undefined])
+				.expectChange("salesOrderID", [, null]);
+
+			oBinding.setAggregation({
+				aggregate : {
+					GrossAmount : {}
+				},
+				groupLevels : ["LifecycleStatus", "SalesOrderID"]
+			});
+
+			return that.waitForChanges(assert, "show collapsed group headers");
+		}).then(function () {
+			const [oContext] = oBinding.getCurrentContexts();
+			that.oLogMock.expects("error")
+				.withArgs("Failed to drill-down into (LifecycleStatus='Z')/Note"
+					+ ", invalid segment: Note");
+			assert.strictEqual(oContext.isAggregated(), true, "JIRA: CPOUI5ODATAV4-2760");
+
+			return Promise.all([
+				// code under test (JIRA: CPOUI5ODATAV4-2756)
+				oContext.requestProperty("Note").then(function (sNote) {
+					assert.strictEqual(sNote, undefined,
+						"No late property on collapsed group header");
+				}),
+				that.waitForChanges(assert, "No late property on collapsed group header")
 			]);
 		});
 	});
@@ -27549,6 +27682,8 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 	// Scenario: Binding-specific parameter $$aggregation is used without group or groupLevels
 	// Note: usage of min/max simulates a Chart, which would actually call ODLB#updateAnalyticalInfo
 	// JIRA: CPOUI5UISERVICESV3-1479
+	//
+	// No late property with min/max (yet) (JIRA: CPOUI5ODATAV4-2756)
 	[false, true].forEach(function (bCount) {
 		var sTitle = "Data Aggregation: $$aggregation, aggregate but no group; $count : "
 				+ bCount;
@@ -27592,7 +27727,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				.expectChange("count")
 				.expectChange("grossAmount", ["1"]);
 
-			return this.createView(assert, sView, oModel).then(function () {
+			return this.createView(assert, sView, oModel).then(async function () {
 				oTable = that.oView.byId("table");
 				oListBinding = oTable.getBinding("rows");
 
@@ -27603,6 +27738,13 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				assert.strictEqual(oContext.isAggregated(), true, "JIRA: CPOUI5ODATAV4-2760");
 				assert.strictEqual(oListBinding.getHeaderContext().isAggregated(), true,
 					"JIRA: CPOUI5ODATAV4-2760");
+
+				that.oLogMock.expects("error")
+					.withArgs("Failed to drill-down into 0/Note, invalid segment: Note");
+
+				// code under test (JIRA: CPOUI5ODATAV4-2756)
+				assert.strictEqual(await oContext.requestProperty("Note"), undefined,
+					"No late property with min/max (yet)");
 
 				if (bCount) {
 					assert.strictEqual(oListBinding.isLengthFinal(), true, "length is final");
