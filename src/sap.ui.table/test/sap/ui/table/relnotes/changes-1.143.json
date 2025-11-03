@@ -6,11 +6,6 @@
         "id": "fe9703436b0fa0c2810ebdbc2a00c3a52f48de56",
         "type": "FIX",
         "text": " Table: Remove renderWhitespace restriction"
-      },
-      {
-        "id": "f68e74b2a63acf0cf0d95cde5443943a4b6d5603",
-        "type": "FIX",
-        "text": " mdc.Field: Implement IToolbarInteractiveControl interface"
       }
     ]
   }

@@ -1,7 +1,17 @@
 {
   "1.143.0": {
-    "date": "October 2025",
+    "date": "November 2025",
     "notes": [
+      {
+        "id": "794575eb56a3a0ac139179375c321c0e047c02e7",
+        "type": "FIX",
+        "text": " sap.ui.CalendarRow: Selected appointment has correct focus color"
+      },
+      {
+        "id": "2a1ea24dbffcd54948dbcf35ec6345040ba5a435",
+        "type": "FIX",
+        "text": " We've now fixed the width of slideTile and genericTile when they are placed inside a ushell section"
+      },
       {
         "id": "6ab315226451770d0d7e4150c37b56a53975f7e2",
         "type": "FIX",
