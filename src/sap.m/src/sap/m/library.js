@@ -5645,27 +5645,63 @@ sap.ui.define([
 	thisLib.IllustratedMessageSize = IllustratedMessageSize;
 	thisLib.IllustratedMessageType = IllustratedMessageType;
 
+	/**
+	 * Available color set variants for the {@link sap.m.MessageStrip} control.
+	 *
+	 * <b>Notes:</b>
+	 * <ul>
+	 * <li>The Default color set uses standard semantic colors based on the message type (Information, Success, Warning, Error).</li>
+	 * <li>ColorSet1 and ColorSet2 provide custom color palettes with 10 predefined color schemes each.</li>
+	 * <li>When using ColorSet1 or ColorSet2, the <code>colorScheme</code> property determines which color variation is applied.</li>
+	 * </ul>
+	 *
+	 * @enum {string}
+	 * @public
+	 * @alias sap.m.MessageStripColorSet
+	 * @since 1.143.0
+	 */
+	thisLib.MessageStripColorSet = {
 		/**
-		 * Wizard rendering mode.
+		 * Uses standard semantic colors based on the type property (Information, Success, Warning, Error)
 		 *
-		 * @enum {string}
-		 * @since 1.83
 		 * @public
 		 */
-		thisLib.WizardRenderMode = {
+		Default: "Default",
+		/**
+		 * Uses a custom color palette with predefined color schemes
+		 *
+		 * @public
+		 */
+		ColorSet1: "ColorSet1",
+		/**
+		 * Uses an alternative custom color palette with predefined color schemes
+		 *
+		 * @public
+		 */
+		ColorSet2: "ColorSet2"
+	};
 
-			/**
-			 * Display all steps into a scroll section.
-			 * @public
-			 */
-			Scroll: "Scroll",
+	/**
+	 * Wizard rendering mode.
+	 *
+	 * @enum {string}
+	 * @since 1.83
+	 * @public
+	 */
+	thisLib.WizardRenderMode = {
 
-			/**
-			 * Display steps as separate, single pages.
-			 * @public
-			 */
-			Page: "Page"
-		};
+		/**
+		 * Display all steps into a scroll section.
+		 * @public
+		 */
+		Scroll: "Scroll",
+
+		/**
+		 * Display steps as separate, single pages.
+		 * @public
+		 */
+		Page: "Page"
+	};
 
 	/**
 	 * Enumeration of the <code>ResetAllMode</code> that can be used in a <code>TablePersoController</code>.
@@ -6863,6 +6899,7 @@ sap.ui.define([
 	DataType.registerEnum("sap.m.UploadState", thisLib.UploadState);
 	DataType.registerEnum("sap.m.UploadType", thisLib.UploadType);
 	DataType.registerEnum("sap.m.ValueColor", thisLib.ValueColor);
+	DataType.registerEnum("sap.m.MessageStripColorSet", thisLib.MessageStripColorSet);
 	/** @deprecated since 1.135 */
 	DataType.registerEnum("sap.m.ValueCSSColor", thisLib.ValueCSSColor);
 	DataType.registerEnum("sap.m.VerticalPlacementType", thisLib.VerticalPlacementType);
