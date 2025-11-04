@@ -70,7 +70,7 @@ sap.ui.define([
 			contentWidth: "40%"
 		});
 
-		syncStyleClass("sapUiSizeCompact", jQuery(oCard.getDomRef()), this._oDetailsDialog);
+		syncStyleClass("sapUiSizeCompact", oCard, this._oDetailsDialog);
 		this._oDetailsDialog.open();
 	};
 
