@@ -183,7 +183,8 @@ sap.ui.define([
 				componentData: this.oConfig.componentData,
 				asyncHints: this.oConfig.asyncHints,
 				manifest: this.oManifest,
-				componentId: this.oConfig.id
+				componentId: this.oConfig.id,
+				forceInvalidation: true
 			}, "the passed object is correct");
 			assert.strictEqual(this.oApplyManifestChangesStub.callCount, 0, "the AppDescriptorChanges were not applied");
 		});
@@ -394,7 +395,7 @@ sap.ui.define([
 		});
 
 		QUnit.test("when getChangesAndPropagate() is called for two embedded components in parallel with no preexisting VariantModel on its application component", async function(assert) {
-			assert.expect(6);
+			assert.expect(7);
 			sandbox.spy(this.oAppComponent, "setModel");
 			this.oLoadFlexDataStub.reset();
 			this.oLoadFlexDataStub.resolves({
@@ -449,6 +450,7 @@ sap.ui.define([
 			]);
 			assert.strictEqual(this.oAppComponent.setModel.callCount, 1, "then the model is only set on the app component once");
 			assert.ok(oComponent2SetModelStub.called, "then the model is also set on the second embedded component");
+			assert.ok(this.oInitializeStub.getCalls()[0].args[0].forceInvalidation, "FlexState initialized with forceInvalidation=true");
 		});
 
 		QUnit.test("when getChangesAndPropagate() is called for an embedded component with a component not of type application", async function(assert) {
@@ -1067,6 +1069,7 @@ sap.ui.define([
 			assert.deepEqual(oManifest, this.oManifest, "the manifest is returned");
 			assert.strictEqual(this.oLoaderSpy.callCount, 2, "Loader was initialized twice");
 			assert.strictEqual(this.oFlexStateSpy.callCount, 1, "FlexState was initialized once");
+			assert.ok(this.oFlexStateSpy.getCalls()[0].args[0].forceInvalidation, "FlexState was initialized with forceInvalidation=true");
 			assert.strictEqual(this.oApplierSpy.callCount, 0, "the Applier was not called");
 		});
 	});
