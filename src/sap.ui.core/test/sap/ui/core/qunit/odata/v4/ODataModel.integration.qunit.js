@@ -27183,7 +27183,9 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 	// Scenario: Binding-specific parameter $$aggregation is used; no visual grouping, but single
 	// records where properties are "renamed" using with/as.
 	// SNOW: DINC0687517
-	QUnit.test("Data Aggregation: single records using with/as", function (assert) {
+	//
+	// If key properties are known, late properties are requested (JIRA: CPOUI5ODATAV4-2756)
+	QUnit.test("Data Aggregation: single records using with/as", async function (assert) {
 		const oModel = this.createAggregationModel({autoExpandSelect : true});
 		const sView = `
 <t:Table id="table" rows="{
@@ -27237,7 +27239,21 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			.expectChange("salesAmountSum", ["3", "2", "1"])
 			.expectChange("currency", ["EUR", "EUR", "EUR"]);
 
-		return this.createView(assert, sView, oModel);
+		await this.createView(assert, sView, oModel);
+
+		this.expectRequest("BusinessPartners(26)?$select=Industry", {Industry : "Late"});
+
+		const oListBinding = this.oView.byId("table").getBinding("rows");
+		const [oContext] = oListBinding.getCurrentContexts();
+
+		return Promise.all([
+			// code under test (JIRA: CPOUI5ODATAV4-2756)
+			oContext.requestProperty("Industry").then(function (sIndustry) {
+				assert.strictEqual(sIndustry, "Late",
+					"If key properties are known, late properties are requested");
+			}),
+			this.waitForChanges(assert)
+		]);
 	});
 
 	//*********************************************************************************************
