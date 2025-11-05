@@ -1534,6 +1534,10 @@ sap.ui.define([
 			assert.ok(aItems[0].focus.called, "First item focused");
 			assert.equal(iNavigate, 0, "Navigated Event not fired");
 
+			qutils.triggerKeydown(aItems[0].getFocusDomRef().id, KeyCodes.ARROW_LEFT, false, false, false);
+			assert.equal(iNavigate, 0, "Navigate Event not fired");
+
+
 			qutils.triggerKeydown(aItems[0].getFocusDomRef().id, KeyCodes.ARROW_UP, false, false, false);
 			assert.equal(iNavigate, 1, "Navigate event fired");
 			assert.notOk(oNavigateCondition, "Navigate condition");
@@ -1625,6 +1629,11 @@ sap.ui.define([
 					oMTable.navigate(3);
 					assert.ok(aItems[2].focus.called, "3rd item focused");
 					assert.equal(iNavigate, 0, "Navigated Event not fired");
+
+					qutils.triggerKeydown(aItems[2].getFocusDomRef().id, KeyCodes.ARROW_RIGHT, false, false, false);
+					assert.equal(iNavigate, 0, "Navigate Event not fired");
+					assert.notOk(oButton.focus.called, "Button not focused");
+
 
 					qutils.triggerKeydown(aItems[2].getFocusDomRef().id, KeyCodes.ARROW_DOWN, false, false, false);
 					assert.equal(iNavigate, 0, "Navigated Event not fired");
