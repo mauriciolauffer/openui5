@@ -27241,6 +27241,70 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 	});
 
 	//*********************************************************************************************
+	// Scenario: Binding-specific parameter $$aggregation is used; no visual grouping, but single
+	// records with additional min/max: late properties are requested.
+	// JIRA: CPOUI5ODATAV4-3209
+	QUnit.test("Data Aggregation: late properties with min/max", async function (assert) {
+		const oModel = this.createAggregationModel({autoExpandSelect : true});
+		const sView = `
+<t:Table id="table" rows="{
+			path : '/BusinessPartners',
+			parameters : {
+				$$aggregation : {
+					aggregate : {
+						SalesNumber : {
+							min : true,
+							max : true
+						}
+					},
+					group : {
+						Id : {}
+					}
+				}
+			}
+		}" threshold="0" visibleRowCount="3">
+	<Text id="id" text="{Id}"/>
+	<Text id="salesNumber" text="{SalesNumber}"/>
+</t:Table>`;
+
+		this.expectRequest("BusinessPartners?$apply=groupby((Id),aggregate(SalesNumber))"
+				+ "/concat(aggregate(SalesNumber with min as UI5min__SalesNumber"
+				+ ",SalesNumber with max as UI5max__SalesNumber),top(3))", {
+				value : [{
+					UI5min__SalesNumber : 1,
+					UI5max__SalesNumber : 3
+				}, {
+					Id : 26,
+					SalesNumber : 3
+				}, {
+					Id : 25,
+					SalesNumber : 2
+				}, {
+					Id : 24,
+					SalesNumber : 1
+				}]
+			})
+			.expectChange("id", ["26", "25", "24"])
+			.expectChange("salesNumber", ["3", "2", "1"]);
+
+		await this.createView(assert, sView, oModel);
+
+		this.expectRequest("BusinessPartners(26)?$select=Industry", {Industry : "Late"});
+
+		const oListBinding = this.oView.byId("table").getBinding("rows");
+		const [oContext] = oListBinding.getCurrentContexts();
+
+		return Promise.all([
+			// code under test (JIRA: CPOUI5ODATAV4-2756)
+			oContext.requestProperty("Industry").then(function (sIndustry) {
+				assert.strictEqual(sIndustry, "Late",
+					"If key properties are known, late properties are requested");
+			}),
+			this.waitForChanges(assert)
+		]);
+	});
+
+	//*********************************************************************************************
 	// Scenario: Calling the API functions filter, sort, changeParameters, setAggregation on an
 	// unresolved binding are stored. As soon as the binding gets resolved and requests data
 	// they reflect inside the request.
