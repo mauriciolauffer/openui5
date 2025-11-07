@@ -24,6 +24,11 @@ sap.ui.define([
 				this.oLabel.destroy();
 			}
 		},
+		beforeEach : function () {
+			this.oLogMock = this.mock(Log);
+			this.oLogMock.expects("error").never();
+			this.oLogMock.expects("warning").never();
+		},
 		/**
 		 * Gets the default model and a label having the model set as default model.
 		 * @returns {Object<sap.m.Label|sap.ui.model.json.JSONModel>}
@@ -253,8 +258,9 @@ sap.ui.define([
 	QUnit.test("test model setProperty with invalid bindingContext and relative path", function(assert) {
 		const oModel = this.createModel();
 		var oContext = oModel.createBindingContext("/teamMembers/HorstDerGrosse");
-		oModel.setProperty("firstName", "Peter", oContext);
-		assert.expect(0);
+
+		// code under test
+		assert.notOk(oModel.setProperty("firstName", "Peter", oContext));
 	});
 
 	QUnit.test("test model setProperty onlabel with bindingContext and relative path", function(assert) {
@@ -283,15 +289,14 @@ sap.ui.define([
 
 	QUnit.test("checkPerformanceOfUpdate", async function (assert) {
 		const oModel = new JSONModel();
-		const oLogMock = this.mock(Log);
-
 		const waitForLog = () => {
 			const {promise: oWaitForLog, resolve: fnResolve} = Promise.withResolvers();
 			setTimeout(fnResolve, 0); // wait for warning logged in setTimeout after last setProperty call
 			return oWaitForLog;
 		};
 
-		oLogMock.expects("warning").withExactArgs("Performance issue: 100004 (more than 100000) bindings are affected "
+		this.oLogMock.expects("warning")
+			.withExactArgs("Performance issue: 100004 (more than 100000) bindings are affected "
 				+ "by 2 consecutive synchronous calls to JSONModel#setProperty; see API documentation for details",
 			undefined, sClassName);
 
@@ -467,6 +472,7 @@ sap.ui.define([
 
 	/** @deprecated As of version 1.107, reason JSONModel#loadData, parameter bAsync */
 	QUnit.test("test JSONModel loadData: sync - error",function(assert) {
+		const done = assert.async();
 		var testModel = new JSONModel();
 		testModel.attachRequestCompleted(function(e) {
 			var mParams = e.getParameters();
@@ -476,7 +482,7 @@ sap.ui.define([
 			assert.ok(mParams.errorobject.statusText);
 			assert.ok(mParams.errorobject.responseText);
 
-			assert.equal(mParams.url, "nothingThere.json");
+			assert.equal(mParams.url, "/fake/nothingThere.json");
 			assert.notOk(mParams.async);
 		});
 
@@ -487,10 +493,15 @@ sap.ui.define([
 			assert.equal(mParams.statusCode, 404);
 			assert.ok(mParams.statusText);
 			assert.ok(mParams.responseText);
+			testModel.destroy();
+			done();
 		});
 
-		testModel.loadData("nothingThere.json", null, false);
-		testModel.destroy();
+		this.oLogMock.expects("fatal")
+			.withExactArgs("The following problem occurred: error", "~responseText,404,Not Found");
+
+		// code under test
+		testModel.loadData("/fake/nothingThere.json", null, false);
 	});
 
 	QUnit.test("test JSONModel loadData: async - error",function(assert) {
@@ -504,7 +515,7 @@ sap.ui.define([
 			assert.ok(mParams.errorobject.statusText);
 			assert.ok(mParams.errorobject.responseText);
 
-			assert.equal(mParams.url, "nothingThere.json");
+			assert.equal(mParams.url, "/fake/nothingThere.json");
 			assert.ok(mParams.async);
 		});
 
@@ -519,7 +530,12 @@ sap.ui.define([
 			done();
 		});
 
-		testModel.loadData("nothingThere.json", null, true);
+		this.oLogMock.expects("fatal")
+			.withExactArgs("The following problem occurred: error", "~responseText,404,Not Found");
+		this.oLogMock.expects("error").withExactArgs("Loading of data failed: /fake/nothingThere.json");
+
+		// code under test
+		testModel.loadData("/fake/nothingThere.json", null, true);
 	});
 
 	QUnit.test("test JSONModel loadData",function(assert){
@@ -762,15 +778,25 @@ sap.ui.define([
 	});
 
 	QUnit.test("test JSONModel loadData [async, Promise]: error during parse",function(assert){
-		assert.expect(7);
+		assert.expect(8);
 		var done = assert.async();
 		var testModel = new JSONModel();
 
+		this.oLogMock.expects("fatal").withExactArgs("The following problem occurred: parsererror", "ERROR!,200,OK");
+		this.oLogMock.expects("error").withExactArgs("Loading of data failed: /fake");
+
+		// code under test
 		var p1 = testModel.loadData("/fake").catch(function(oError) {
 			assert.equal(oError.message, "parsererror", "parse error leads to rejection - 1");
 			assert.equal(oError.responseText, "ERROR!", "parse error leads to rejection - 1");
 		});
 
+		this.oLogMock.expects("fatal")
+			.withExactArgs('The following problem occurred: parsererror',
+				'{"foo": "The quick brown fox jumps over the lazy dog.","bar": "ABCDEFGHIJ""baz": [52, 97]},200,OK');
+		this.oLogMock.expects("error").withExactArgs("Loading of data failed: /fake/broken.json");
+
+		// code under test
 		var p2 = testModel.loadData("/fake/broken.json").catch(function(oError) {
 			assert.equal(oError.message, "parsererror", "parse error leads to rejection - 2");
 			assert.equal(oError.responseText, '{"foo": "The quick brown fox jumps over the lazy dog.","bar": "ABCDEFGHIJ""baz": [52, 97]}', "parse error leads to rejection - 2");
@@ -815,8 +841,14 @@ sap.ui.define([
 		var done = assert.async();
 		var testModel = new JSONModel();
 		var loadCount = 0;
+
+		this.oLogMock.expects("fatal").withExactArgs("The following problem occurred: parsererror", "ERROR!,200,OK");
+		this.oLogMock.expects("error").withExactArgs("Loading of data failed: /fake");
+
+		// code under test
 		testModel.loadData("/fake");
 		testModel.loadData("/fake/testdata4.json");
+
 		testModel.attachRequestCompleted(function(oInfo) {
 			loadCount++;
 			if (loadCount == 1) {
@@ -912,6 +944,12 @@ sap.ui.define([
 			error = true;
 			assert.equal(oEvent.sId, "parseError", "event type");
 		});
+
+		this.oLogMock.expects("fatal")
+			.withExactArgs('The following problem occurred: JSON parse Error: '
+				+ 'SyntaxError: Unexpected token \'J\', "{"name":John}" is not valid JSON');
+
+		// code under test
 		oModel.setJSON(sJSON,false);
 		assert.ok(error, "error occurred");
 		oModel.destroy();
