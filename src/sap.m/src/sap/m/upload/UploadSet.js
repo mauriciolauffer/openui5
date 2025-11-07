@@ -1590,6 +1590,7 @@ sap.ui.define([
 		oItem._setContainsError(false);
 		oItem._setInEditMode(false);
 		this._oEditedItem = null;
+		oItem._oListItem.focus();
 	};
 
 	UploadSet.prototype.handleItemGetDisabled = function (oItem) {
