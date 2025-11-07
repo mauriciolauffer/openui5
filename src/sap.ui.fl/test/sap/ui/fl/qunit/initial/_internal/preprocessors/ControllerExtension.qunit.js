@@ -162,16 +162,25 @@ sap.ui.define([
 					controllerName: "sap.ui.fl.ControllerExtension.testResources.view1"
 				}
 			});
-			sap.ui.define(sModuleName1, ["sap/ui/core/mvc/ControllerExtension"], function(ControllerExtension) { // legacy-relevant: simulates a loaded code extension. no option to replace this regarding legacy free coding
-				return ControllerExtension.extend("ui.s2p.mm.purchorder.approve.Extension2", {
-					overrides: {
-						onInit() {
-							assert.strictEqual(this.base.getView().getId(), "testView1", "View1 is available and ID of View1 is correct");
-							done1();
+			sap.ui.define(
+				sModuleName1,
+				["sap/ui/core/mvc/ControllerExtension"],
+				// legacy-relevant: simulates a loaded code extension. no option to replace this regarding legacy free coding
+				function(ControllerExtension) {
+					return ControllerExtension.extend("ui.s2p.mm.purchorder.approve.Extension2", {
+						overrides: {
+							onInit() {
+								assert.strictEqual(
+									this.base.getView().getId(),
+									"testView1",
+									"View1 is available and ID of View1 is correct"
+								);
+								done1();
+							}
 						}
-					}
-				});
-			});
+					});
+				}
+			);
 
 			var sModuleName2 = "sap/ui/fl/qunit/ControllerExtension/1.0.0/codeExtensions/thirdCodeExt";
 			var oCodingChange2 = createCodeExtChangeContent({
@@ -184,16 +193,25 @@ sap.ui.define([
 					controllerName: "sap.ui.fl.ControllerExtension.testResources.view2"
 				}
 			});
-			sap.ui.define(sModuleName2, ["sap/ui/core/mvc/ControllerExtension"], function(ControllerExtension) { // legacy-relevant: simulates a loaded code extension. no option to replace this regarding legacy free coding
-				return ControllerExtension.extend("ui.s2p.mm.purchorder.approve.Extension3", {
-					overrides: {
-						onInit() {
-							assert.strictEqual(this.base.getView().getId(), "testView2", "View2 is available and ID of View2 is correct");
-							done2();
+			sap.ui.define(
+				sModuleName2,
+				["sap/ui/core/mvc/ControllerExtension"],
+				// legacy-relevant: simulates a loaded code extension. no option to replace this regarding legacy free coding
+				function(ControllerExtension) {
+					return ControllerExtension.extend("ui.s2p.mm.purchorder.approve.Extension3", {
+						overrides: {
+							onInit() {
+								assert.strictEqual(
+									this.base.getView().getId(),
+									"testView2",
+									"View2 is available and ID of View2 is correct"
+								);
+								done2();
+							}
 						}
-					}
-				});
-			});
+					});
+				}
+			);
 
 			var oOtherChange1 = {
 				fileName: "id_1436877480126_1",
@@ -361,6 +379,111 @@ sap.ui.define([
 				assert.strictEqual(aCodeExtensions.length, 1, "one code extension should be returned");
 				assert.strictEqual(aCodeExtensions[0], "foo", "the correct module is returned");
 			});
+		});
+
+		QUnit.test("Given a Controller Extension with matching viewId and sViewId parameter", async function(assert) {
+			const sModuleName = "sap/ui/fl/qunit/ControllerExtension/1.0.0/codeExtensions/viewSpecificExtension";
+			FlQUnitUtils.stubSapUiRequire(sandbox, [{
+				name: [sModuleName],
+				stub: "viewSpecificExtension"
+			}]);
+			const oChange = createCodeExtChangeContent({
+				moduleName: sModuleName,
+				content: {
+					codeRef: "viewSpecificExtension.js",
+					viewId: "myViewId"
+				}
+			});
+			FlQUnitUtils.initializeFlexStateWithData(sandbox, sReference, { changes: [oChange] });
+			sandbox.stub(Utils, "getAppComponentForControl").returns(oAppComponent);
+			sandbox.stub(ManifestUtils, "getFlexReferenceForControl").returns(sReference);
+
+			const aCodeExtensions = await this.oExtensionProvider.getControllerExtensions(sControllerName, "myId", true, "myViewId");
+			assert.strictEqual(aCodeExtensions.length, 1, "one view-specific extension should be returned");
+			assert.strictEqual(aCodeExtensions[0], "viewSpecificExtension", "the view-specific extension module is returned");
+		});
+
+		QUnit.test("Given a Controller Extension with non-matching viewId and sViewId parameter", async function(assert) {
+			const sModuleName = "sap/ui/fl/qunit/ControllerExtension/1.0.0/codeExtensions/otherViewExtension";
+			FlQUnitUtils.stubSapUiRequire(sandbox, [{
+				name: [sModuleName],
+				stub: "otherViewExtension"
+			}]);
+			const oChange = createCodeExtChangeContent({
+				moduleName: sModuleName,
+				content: {
+					codeRef: "otherViewExtension.js",
+					viewId: "otherViewId"
+				}
+			});
+			FlQUnitUtils.initializeFlexStateWithData(sandbox, sReference, { changes: [oChange] });
+			sandbox.stub(Utils, "getAppComponentForControl").returns(oAppComponent);
+			sandbox.stub(ManifestUtils, "getFlexReferenceForControl").returns(sReference);
+
+			const aCodeExtensions = await this.oExtensionProvider.getControllerExtensions(sControllerName, "myId", true, "myViewId");
+			assert.strictEqual(aCodeExtensions.length, 0, "no extensions should be returned for non-matching viewId");
+		});
+
+		QUnit.test("Given multiple Controller Extensions with mixed viewIds and sViewId parameter", async function(assert) {
+			const sBaseModuleName = "sap/ui/fl/qunit/ControllerExtension/1.0.0/codeExtensions/baseExtension";
+			const sBaseModuleName2 = "sap/ui/fl/qunit/ControllerExtension/1.0.0/codeExtensions/baseExtension2";
+			const sViewSpecificModuleName = "sap/ui/fl/qunit/ControllerExtension/1.0.0/codeExtensions/viewSpecificExtension";
+			const sOtherViewModuleName = "sap/ui/fl/qunit/ControllerExtension/1.0.0/codeExtensions/otherViewExtension";
+
+			FlQUnitUtils.stubSapUiRequire(sandbox, [
+				{
+					name: [sBaseModuleName, sBaseModuleName2, sViewSpecificModuleName],
+					stub: ["baseExtension", "baseExtension2", "viewSpecificExtension"]
+				}
+			]);
+
+			const oBaseChange = createCodeExtChangeContent({
+				fileName: "baseChange",
+				moduleName: sBaseModuleName,
+				content: {
+					codeRef: "baseExtension.js"
+					// Note: no viewId in content
+				}
+			});
+
+			const oBaseChange2 = createCodeExtChangeContent({
+				fileName: "baseChange2",
+				moduleName: sBaseModuleName2,
+				content: {
+					codeRef: "baseExtension2.js"
+					// Note: no viewId in content
+				}
+			});
+
+			const oViewSpecificChange = createCodeExtChangeContent({
+				fileName: "viewSpecificChange",
+				moduleName: sViewSpecificModuleName,
+				content: {
+					codeRef: "viewSpecificExtension.js",
+					viewId: "myViewId"
+				}
+			});
+
+			const oOtherViewChange = createCodeExtChangeContent({
+				fileName: "otherViewChange",
+				moduleName: sOtherViewModuleName,
+				content: {
+					codeRef: "otherViewExtension.js",
+					viewId: "otherViewId"
+				}
+			});
+
+			FlQUnitUtils.initializeFlexStateWithData(sandbox, sReference, {
+				changes: [oBaseChange, oBaseChange2, oViewSpecificChange, oOtherViewChange]
+			});
+			sandbox.stub(Utils, "getAppComponentForControl").returns(oAppComponent);
+			sandbox.stub(ManifestUtils, "getFlexReferenceForControl").returns(sReference);
+
+			const aCodeExtensions = await this.oExtensionProvider.getControllerExtensions(sControllerName, "myId", true, "myViewId");
+			assert.strictEqual(aCodeExtensions.length, 3, "three extensions should be returned - both for base and one view-specific");
+			assert.strictEqual(aCodeExtensions[0], "baseExtension", "the base extension should be first");
+			assert.strictEqual(aCodeExtensions[1], "baseExtension2", "the second base extension should be second");
+			assert.strictEqual(aCodeExtensions[2], "viewSpecificExtension", "the view-specific extension should be third");
 		});
 	});
 
