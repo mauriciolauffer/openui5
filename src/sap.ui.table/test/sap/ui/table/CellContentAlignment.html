@@ -22,918 +22,1033 @@
 
 <script>
 
-	const sLongTextSuffix = "\nLorem ipsum dolor sit amet";
-	const sLongTextWithoutSpaces = "Loremipsumdolorsitamet";
-	const sColumnWidth = "150px";
+	sap.ui.define([
+		"sap/ui/table/Table",
+		"sap/ui/table/TreeTable",
+		"sap/ui/table/rowmodes/Fixed",
+		"sap/ui/table/Column",
+		"sap/m/Text",
+		"sap/m/Label",
+		"sap/m/Select",
+		"sap/ui/model/json/JSONModel",
+		"sap/ui/core/library"
+	], function (
+		Table,
+		TreeTable,
+		FixedRowMode,
+		Column,
+		Text,
+		Label,
+		Select,
+		JSONModel,
+		coreLibrary
+	) {
+		const sLongTextSuffix = "\nLorem ipsum dolor sit amet";
+		const sLongTextWithoutSpaces = "Loremipsumdolorsitamet";
+		const sColumnWidth = "150px";
+		const SortOrder = coreLibrary.SortOrder;
 
-	new sap.ui.table.Table({
-		rowMode: new sap.ui.table.rowmodes.Fixed({
-			rowCount: 1,
-			rowContentHeight: 40
-		}),
-		selectionMode: "None",
-		columns: [
-			new sap.ui.table.Column({
-				hAlign: "Begin",
-				label: new sap.m.Text({text: "Col-Begin"}),
-				template: new sap.m.Text({text: "Col-Begin"}),
-				width: sColumnWidth
+		new Table({
+			rowMode: new FixedRowMode({
+				rowCount: 1,
+				rowContentHeight: 40
 			}),
-			new sap.ui.table.Column({
-				hAlign: "End",
-				label: new sap.m.Text({text: "Col-End"}),
-				template: new sap.m.Text({text: "Col-End"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Left",
-				label: new sap.m.Text({text: "Col-Left"}),
-				template: new sap.m.Text({text: "Col-Left"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Right",
-				label: new sap.m.Text({text: "Col-Right"}),
-				template: new sap.m.Text({text: "Col-Right"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Center",
-				label: new sap.m.Text({text: "Col-Center"}),
-				template: new sap.m.Text({text: "Col-Center"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Begin",
-				label: new sap.m.Text({text: "Col-Begin"}),
-				template: new sap.m.Text({text: "Col-Begin"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				hAlign: "End",
-				label: new sap.m.Text({text: "Col-End"}),
-				template: new sap.m.Text({text: "Col-End"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Left",
-				label: new sap.m.Text({text: "Col-Left"}),
-				template: new sap.m.Text({text: "Col-Left"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Right",
-				label: new sap.m.Text({text: "Col-Right"}),
-				template: new sap.m.Text({text: "Col-Right"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Center",
-				label: new sap.m.Text({text: "Col-Center"}),
-				template: new sap.m.Text({text: "Col-Center"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Begin",
-				label: new sap.m.Text({text: "Col-Begin" + sLongTextSuffix, wrapping: false}),
-				template: new sap.m.Text({text: "Col-Begin" + sLongTextSuffix, wrapping: false}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				hAlign: "End",
-				label: new sap.m.Text({text: "Col-End" + sLongTextSuffix, wrapping: false}),
-				template: new sap.m.Text({text: "Col-End" + sLongTextSuffix, wrapping: false}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			})
-		],
-		rows: {
-			path: "/"
-		},
-		models: new sap.ui.model.json.JSONModel([{}])
-	}).placeAt("body");
+			selectionMode: "None",
+			columns: [
+				new Column({
+					hAlign: "Begin",
+					label: new Text({text: "Col-Begin"}),
+					template: new Text({text: "Col-Begin"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					hAlign: "End",
+					label: new Text({text: "Col-End"}),
+					template: new Text({text: "Col-End"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					hAlign: "Left",
+					label: new Text({text: "Col-Left"}),
+					template: new Text({text: "Col-Left"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					hAlign: "Right",
+					label: new Text({text: "Col-Right"}),
+					template: new Text({text: "Col-Right"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					hAlign: "Center",
+					label: new Text({text: "Col-Center"}),
+					template: new Text({text: "Col-Center"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					hAlign: "Begin",
+					label: new Text({text: "Col-Begin"}),
+					template: new Text({text: "Col-Begin"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					hAlign: "End",
+					label: new Text({text: "Col-End"}),
+					template: new Text({text: "Col-End"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					hAlign: "Left",
+					label: new Text({text: "Col-Left"}),
+					template: new Text({text: "Col-Left"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					hAlign: "Right",
+					label: new Text({text: "Col-Right"}),
+					template: new Text({text: "Col-Right"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					hAlign: "Center",
+					label: new Text({text: "Col-Center"}),
+					template: new Text({text: "Col-Center"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					hAlign: "Begin",
+					label: new Text({text: "Col-Begin" + sLongTextSuffix, wrapping: false}),
+					template: new Text({text: "Col-Begin" + sLongTextSuffix, wrapping: false}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					hAlign: "End",
+					label: new Text({text: "Col-End" + sLongTextSuffix, wrapping: false}),
+					template: new Text({text: "Col-End" + sLongTextSuffix, wrapping: false}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				})
+			],
+			rows: {
+				path: "/"
+			},
+			models: new JSONModel([{}])
+		}).placeAt("body");
 
-	new sap.ui.table.Table({
-		rowMode: new sap.ui.table.rowmodes.Fixed({
-			rowCount: 1
-		}),
-		selectionMode: "None",
-		columns: [
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Begin", textAlign: "Begin"}),
-				template: new sap.m.Text({text: "Cell-Begin", textAlign: "Begin"}),
-				width: sColumnWidth
+		new Table({
+			rowMode: new FixedRowMode({
+				rowCount: 1
 			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-End", textAlign: "End"}),
-				template: new sap.m.Text({text: "Cell-End", textAlign: "End"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Left", textAlign: "Left"}),
-				template: new sap.m.Text({text: "Cell-Left", textAlign: "Left"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Right", textAlign: "Right"}),
-				template: new sap.m.Text({text: "Cell-Right", textAlign: "Right"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Center", textAlign: "Center"}),
-				template: new sap.m.Text({text: "Cell-Center", textAlign: "Center"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Begin", textAlign: "Begin"}),
-				template: new sap.m.Text({text: "Cell-Begin", textAlign: "Begin"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-End", textAlign: "End"}),
-				template: new sap.m.Text({text: "Cell-End", textAlign: "End"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Left", textAlign: "Left"}),
-				template: new sap.m.Text({text: "Cell-Left", textAlign: "Left"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Right", textAlign: "Right"}),
-				template: new sap.m.Text({text: "Cell-Right", textAlign: "Right"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Center", textAlign: "Center"}),
-				template: new sap.m.Text({text: "Cell-Center", textAlign: "Center"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			})
-		],
-		rows: {
-			path: "/"
-		},
-		models: new sap.ui.model.json.JSONModel([{}])
-	}).placeAt("body");
+			selectionMode: "None",
+			columns: [
+				new Column({
+					label: new Text({text: "Cell-Begin", textAlign: "Begin"}),
+					template: new Text({text: "Cell-Begin", textAlign: "Begin"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					label: new Text({text: "Cell-End", textAlign: "End"}),
+					template: new Text({text: "Cell-End", textAlign: "End"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					label: new Text({text: "Cell-Left", textAlign: "Left"}),
+					template: new Text({text: "Cell-Left", textAlign: "Left"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					label: new Text({text: "Cell-Right", textAlign: "Right"}),
+					template: new Text({text: "Cell-Right", textAlign: "Right"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					label: new Text({text: "Cell-Center", textAlign: "Center"}),
+					template: new Text({text: "Cell-Center", textAlign: "Center"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					label: new Text({text: "Cell-Begin", textAlign: "Begin"}),
+					template: new Text({text: "Cell-Begin", textAlign: "Begin"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					label: new Text({text: "Cell-End", textAlign: "End"}),
+					template: new Text({text: "Cell-End", textAlign: "End"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					label: new Text({text: "Cell-Left", textAlign: "Left"}),
+					template: new Text({text: "Cell-Left", textAlign: "Left"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					label: new Text({text: "Cell-Right", textAlign: "Right"}),
+					template: new Text({text: "Cell-Right", textAlign: "Right"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					label: new Text({text: "Cell-Center", textAlign: "Center"}),
+					template: new Text({text: "Cell-Center", textAlign: "Center"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				})
+			],
+			rows: {
+				path: "/"
+			},
+			models: new JSONModel([{}])
+		}).placeAt("body");
 
-	new sap.ui.table.Table({
-		rowMode: new sap.ui.table.rowmodes.Fixed({
-			rowCount: 1
-		}),
-		selectionMode: "None",
-		columns: [
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Begin", textAlign: "Begin", width: "100%"}),
-				template: new sap.m.Text({text: "Cell-Begin", textAlign: "Begin", width: "100%"}),
-				width: sColumnWidth
+		new Table({
+			rowMode: new FixedRowMode({
+				rowCount: 1
 			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-End", textAlign: "End", width: "100%"}),
-				template: new sap.m.Text({text: "Cell-End", textAlign: "End", width: "100%"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Left", textAlign: "Left", width: "100%"}),
-				template: new sap.m.Text({text: "Cell-Left", textAlign: "Left", width: "100%"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Right", textAlign: "Right", width: "100%"}),
-				template: new sap.m.Text({text: "Cell-Right", textAlign: "Right", width: "100%"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Center", textAlign: "Center", width: "100%"}),
-				template: new sap.m.Text({text: "Cell-Center", textAlign: "Center", width: "100%"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Begin", textAlign: "Begin", width: "100%"}),
-				template: new sap.m.Text({text: "Cell-Begin", textAlign: "Begin", width: "100%"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-End", textAlign: "End", width: "100%"}),
-				template: new sap.m.Text({text: "Cell-End", textAlign: "End", width: "100%"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Left", textAlign: "Left", width: "100%"}),
-				template: new sap.m.Text({text: "Cell-Left", textAlign: "Left", width: "100%"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Right", textAlign: "Right", width: "100%"}),
-				template: new sap.m.Text({text: "Cell-Right", textAlign: "Right", width: "100%"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Center", textAlign: "Center", width: "100%"}),
-				template: new sap.m.Text({text: "Cell-Center", textAlign: "Center", width: "100%"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Label({text: "Label width = 100%"}),
-				template: new sap.m.Label({text: "Template width = 100%"})
-			})
-		],
-		rows: {
-			path: "/"
-		},
-		models: new sap.ui.model.json.JSONModel([{}])
-	}).placeAt("body");
+			selectionMode: "None",
+			columns: [
+				new Column({
+					label: new Text({text: "Cell-Begin", textAlign: "Begin", width: "100%"}),
+					template: new Text({text: "Cell-Begin", textAlign: "Begin", width: "100%"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					label: new Text({text: "Cell-End", textAlign: "End", width: "100%"}),
+					template: new Text({text: "Cell-End", textAlign: "End", width: "100%"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					label: new Text({text: "Cell-Left", textAlign: "Left", width: "100%"}),
+					template: new Text({text: "Cell-Left", textAlign: "Left", width: "100%"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					label: new Text({text: "Cell-Right", textAlign: "Right", width: "100%"}),
+					template: new Text({text: "Cell-Right", textAlign: "Right", width: "100%"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					label: new Text({text: "Cell-Center", textAlign: "Center", width: "100%"}),
+					template: new Text({text: "Cell-Center", textAlign: "Center", width: "100%"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					label: new Text({text: "Cell-Begin", textAlign: "Begin", width: "100%"}),
+					template: new Text({text: "Cell-Begin", textAlign: "Begin", width: "100%"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					label: new Text({text: "Cell-End", textAlign: "End", width: "100%"}),
+					template: new Text({text: "Cell-End", textAlign: "End", width: "100%"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					label: new Text({text: "Cell-Left", textAlign: "Left", width: "100%"}),
+					template: new Text({text: "Cell-Left", textAlign: "Left", width: "100%"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					label: new Text({text: "Cell-Right", textAlign: "Right", width: "100%"}),
+					template: new Text({text: "Cell-Right", textAlign: "Right", width: "100%"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					label: new Text({text: "Cell-Center", textAlign: "Center", width: "100%"}),
+					template: new Text({text: "Cell-Center", textAlign: "Center", width: "100%"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					label: new Label({text: "Label width = 100%"}),
+					template: new Label({text: "Template width = 100%"})
+				})
+			],
+			rows: {
+				path: "/"
+			},
+			models: new JSONModel([{}])
+		}).placeAt("body");
 
-	new sap.ui.table.Table({
-		rowMode: new sap.ui.table.rowmodes.Fixed({
-			rowCount: 1
-		}),
-		selectionMode: "None",
-		columns: [
-			new sap.ui.table.Column({
-				hAlign: "End",
-				label: new sap.m.Text({text: "Col-End\nCell-Begin", textAlign: "Begin"}),
-				template: new sap.m.Text({text: "Col-End\nCell-Begin", textAlign: "Begin"}),
-				width: sColumnWidth
+		new Table({
+			rowMode: new FixedRowMode({
+				rowCount: 1
 			}),
-			new sap.ui.table.Column({
-				hAlign: "Begin",
-				label: new sap.m.Text({text: "Col-Begin\nCell-End", textAlign: "End"}),
-				template: new sap.m.Text({text: "Col-Begin\nCell-End", textAlign: "End"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Right",
-				label: new sap.m.Text({text: "Col-Right\nCell-Left", textAlign: "Left"}),
-				template: new sap.m.Text({text: "Col-Right\nCell-Left", textAlign: "Left"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Left",
-				label: new sap.m.Text({text: "Col-Left\nCell-Right", textAlign: "Right"}),
-				template: new sap.m.Text({text: "Col-Left\nCell-Right", textAlign: "Right"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Begin",
-				label: new sap.m.Text({text: "Col-Begin\nCell-Center", textAlign: "Center"}),
-				template: new sap.m.Text({text: "Col-Begin\nCell-Center", textAlign: "Center"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Begin",
-				template: new sap.m.Text({text: "Col-Begin"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				hAlign: "End",
-				template: new sap.m.Text({text: "Col-End"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Left",
-				template: new sap.m.Text({text: "Col-Left"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Right",
-				template: new sap.m.Text({text: "Col-Right"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Center",
-				template: new sap.m.Text({text: "Col-Center"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Select(),
-				template: new sap.m.Text({text: "Non-fitting label"}),
-				width: "120px",
-				sorted: true,
-				filtered: true
-			})
-		],
-		rows: {
-			path: "/"
-		},
-		models: new sap.ui.model.json.JSONModel([{}])
-	}).placeAt("body");
+			selectionMode: "None",
+			columns: [
+				new Column({
+					hAlign: "End",
+					label: new Text({text: "Col-End\nCell-Begin", textAlign: "Begin"}),
+					template: new Text({text: "Col-End\nCell-Begin", textAlign: "Begin"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					hAlign: "Begin",
+					label: new Text({text: "Col-Begin\nCell-End", textAlign: "End"}),
+					template: new Text({text: "Col-Begin\nCell-End", textAlign: "End"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					hAlign: "Right",
+					label: new Text({text: "Col-Right\nCell-Left", textAlign: "Left"}),
+					template: new Text({text: "Col-Right\nCell-Left", textAlign: "Left"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					hAlign: "Left",
+					label: new Text({text: "Col-Left\nCell-Right", textAlign: "Right"}),
+					template: new Text({text: "Col-Left\nCell-Right", textAlign: "Right"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					hAlign: "Begin",
+					label: new Text({text: "Col-Begin\nCell-Center", textAlign: "Center"}),
+					template: new Text({text: "Col-Begin\nCell-Center", textAlign: "Center"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					hAlign: "Begin",
+					template: new Text({text: "Col-Begin"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					hAlign: "End",
+					template: new Text({text: "Col-End"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					hAlign: "Left",
+					template: new Text({text: "Col-Left"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					hAlign: "Right",
+					template: new Text({text: "Col-Right"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					hAlign: "Center",
+					template: new Text({text: "Col-Center"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					label: new Select(),
+					template: new Text({text: "Non-fitting label"}),
+					width: "120px",
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				})
+			],
+			rows: {
+				path: "/"
+			},
+			models: new JSONModel([{}])
+		}).placeAt("body");
 
-	new sap.ui.table.Table({
-		rowMode: new sap.ui.table.rowmodes.Fixed({
-			rowCount: 1
-		}),
-		selectionMode: "None",
-		columns: [
-			new sap.ui.table.Column({
-				hAlign: "End",
-				label: new sap.m.Text({text: "Col-End\nCell-Begin", textAlign: "Begin", width: "100%"}),
-				template: new sap.m.Text({text: "Col-End\nCell-Begin", textAlign: "Begin", width: "100%"}),
-				width: sColumnWidth
+		new Table({
+			rowMode: new FixedRowMode({
+				rowCount: 1
 			}),
-			new sap.ui.table.Column({
-				hAlign: "Begin",
-				label: new sap.m.Text({text: "Col-Begin\nCell-End", textAlign: "End", width: "100%"}),
-				template: new sap.m.Text({text: "Col-Begin\nCell-End", textAlign: "End", width: "100%"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Right",
-				label: new sap.m.Text({text: "Col-Right\nCell-Left", textAlign: "Left", width: "100%"}),
-				template: new sap.m.Text({text: "Col-Right\nCell-Left", textAlign: "Left", width: "100%"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Left",
-				label: new sap.m.Text({text: "Col-Left\nCell-Right", textAlign: "Right", width: "100%"}),
-				template: new sap.m.Text({text: "Col-Left\nCell-Right", textAlign: "Right", width: "100%"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Begin",
-				label: new sap.m.Text({text: "Col-Begin\nCell-Center", textAlign: "Center", width: "100%"}),
-				template: new sap.m.Text({text: "Col-Begin\nCell-Center", textAlign: "Center", width: "100%"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Label({text: "Label width = 100%"}),
-				template: new sap.m.Label({text: "Template width = 100%"})
-			})
-		],
-		rows: {
-			path: "/"
-		},
-		models: new sap.ui.model.json.JSONModel([{}])
-	}).placeAt("body");
+			selectionMode: "None",
+			columns: [
+				new Column({
+					hAlign: "End",
+					label: new Text({text: "Col-End\nCell-Begin", textAlign: "Begin", width: "100%"}),
+					template: new Text({text: "Col-End\nCell-Begin", textAlign: "Begin", width: "100%"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					hAlign: "Begin",
+					label: new Text({text: "Col-Begin\nCell-End", textAlign: "End", width: "100%"}),
+					template: new Text({text: "Col-Begin\nCell-End", textAlign: "End", width: "100%"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					hAlign: "Right",
+					label: new Text({text: "Col-Right\nCell-Left", textAlign: "Left", width: "100%"}),
+					template: new Text({text: "Col-Right\nCell-Left", textAlign: "Left", width: "100%"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					hAlign: "Left",
+					label: new Text({text: "Col-Left\nCell-Right", textAlign: "Right", width: "100%"}),
+					template: new Text({text: "Col-Left\nCell-Right", textAlign: "Right", width: "100%"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					hAlign: "Begin",
+					label: new Text({text: "Col-Begin\nCell-Center", textAlign: "Center", width: "100%"}),
+					template: new Text({text: "Col-Begin\nCell-Center", textAlign: "Center", width: "100%"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					label: new Label({text: "Label width = 100%"}),
+					template: new Label({text: "Template width = 100%"})
+				})
+			],
+			rows: {
+				path: "/"
+			},
+			models: new JSONModel([{}])
+		}).placeAt("body");
 
-	new sap.ui.table.TreeTable({
-		rowMode: new sap.ui.table.rowmodes.Fixed({
-			rowCount: 1
-		}),
-		selectionMode: "None",
-		columns: [
-			new sap.ui.table.Column({
-				hAlign: "Begin",
-				label: new sap.m.Text({text: "Col-Begin"}),
-				template: new sap.m.Text({text: "Col-Begin"}),
-				width: sColumnWidth
+		new TreeTable({
+			rowMode: new FixedRowMode({
+				rowCount: 1
 			}),
-			new sap.ui.table.Column({
-				hAlign: "Begin",
-				label: new sap.m.Text({text: "Col-Begin" + sLongTextSuffix}),
-				template: new sap.m.Text({text: "Col-Begin" + sLongTextSuffix}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				hAlign: "End",
-				label: new sap.m.Text({text: "Col-End" + sLongTextSuffix}),
-				template: new sap.m.Text({text: "Col-End" + sLongTextSuffix}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Left",
-				label: new sap.m.Text({text: "Col-Left" + sLongTextSuffix}),
-				template: new sap.m.Text({text: "Col-Left" + sLongTextSuffix}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Right",
-				label: new sap.m.Text({text: "Col-Right" + sLongTextSuffix}),
-				template: new sap.m.Text({text: "Col-Right" + sLongTextSuffix}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Center",
-				label: new sap.m.Text({text: "Col-Center" + sLongTextSuffix}),
-				template: new sap.m.Text({text: "Col-Center" + sLongTextSuffix}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Begin",
-				label: new sap.m.Text({text: "Col-Begin" + sLongTextSuffix}),
-				template: new sap.m.Text({text: "Col-Begin" + sLongTextSuffix}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				hAlign: "End",
-				label: new sap.m.Text({text: "Col-End" + sLongTextSuffix}),
-				template: new sap.m.Text({text: "Col-End" + sLongTextSuffix}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Left",
-				label: new sap.m.Text({text: "Col-Left" + sLongTextSuffix}),
-				template: new sap.m.Text({text: "Col-Left" + sLongTextSuffix}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Right",
-				label: new sap.m.Text({text: "Col-Right" + sLongTextSuffix}),
-				template: new sap.m.Text({text: "Col-Right" + sLongTextSuffix}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Center",
-				label: new sap.m.Text({text: "Col-Center" + sLongTextSuffix}),
-				template: new sap.m.Text({text: "Col-Center" + sLongTextSuffix}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			})
-		],
-		rows: {
-			path: "/"
-		},
-		models: new sap.ui.model.json.JSONModel([{o: {}}])
-	}).placeAt("body");
+			selectionMode: "None",
+			columns: [
+				new Column({
+					hAlign: "Begin",
+					label: new Text({text: "Col-Begin"}),
+					template: new Text({text: "Col-Begin"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					hAlign: "Begin",
+					label: new Text({text: "Col-Begin" + sLongTextSuffix}),
+					template: new Text({text: "Col-Begin" + sLongTextSuffix}),
+					width: sColumnWidth
+				}),
+				new Column({
+					hAlign: "End",
+					label: new Text({text: "Col-End" + sLongTextSuffix}),
+					template: new Text({text: "Col-End" + sLongTextSuffix}),
+					width: sColumnWidth
+				}),
+				new Column({
+					hAlign: "Left",
+					label: new Text({text: "Col-Left" + sLongTextSuffix}),
+					template: new Text({text: "Col-Left" + sLongTextSuffix}),
+					width: sColumnWidth
+				}),
+				new Column({
+					hAlign: "Right",
+					label: new Text({text: "Col-Right" + sLongTextSuffix}),
+					template: new Text({text: "Col-Right" + sLongTextSuffix}),
+					width: sColumnWidth
+				}),
+				new Column({
+					hAlign: "Center",
+					label: new Text({text: "Col-Center" + sLongTextSuffix}),
+					template: new Text({text: "Col-Center" + sLongTextSuffix}),
+					width: sColumnWidth
+				}),
+				new Column({
+					hAlign: "Begin",
+					label: new Text({text: "Col-Begin" + sLongTextSuffix}),
+					template: new Text({text: "Col-Begin" + sLongTextSuffix}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					hAlign: "End",
+					label: new Text({text: "Col-End" + sLongTextSuffix}),
+					template: new Text({text: "Col-End" + sLongTextSuffix}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					hAlign: "Left",
+					label: new Text({text: "Col-Left" + sLongTextSuffix}),
+					template: new Text({text: "Col-Left" + sLongTextSuffix}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					hAlign: "Right",
+					label: new Text({text: "Col-Right" + sLongTextSuffix}),
+					template: new Text({text: "Col-Right" + sLongTextSuffix}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					hAlign: "Center",
+					label: new Text({text: "Col-Center" + sLongTextSuffix}),
+					template: new Text({text: "Col-Center" + sLongTextSuffix}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				})
+			],
+			rows: {
+				path: "/"
+			},
+			models: new JSONModel([{o: {}}])
+		}).placeAt("body");
 
-	new sap.ui.table.TreeTable({
-		rowMode: new sap.ui.table.rowmodes.Fixed({
-			rowCount: 1
-		}),
-		selectionMode: "None",
-		columns: [
-			new sap.ui.table.Column({
-				hAlign: "End",
-				label: new sap.m.Text({text: "Col-End"}),
-				template: new sap.m.Text({text: "Col-End"}),
-				width: sColumnWidth
+		new TreeTable({
+			rowMode: new FixedRowMode({
+				rowCount: 1
 			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Begin" + sLongTextSuffix, textAlign: "Begin"}),
-				template: new sap.m.Text({text: "Cell-Begin" + sLongTextSuffix, textAlign: "Begin"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-End" + sLongTextSuffix, textAlign: "End"}),
-				template: new sap.m.Text({text: "Cell-End" + sLongTextSuffix, textAlign: "End"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Left" + sLongTextSuffix, textAlign: "Left"}),
-				template: new sap.m.Text({text: "Cell-Left" + sLongTextSuffix, textAlign: "Left"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Right" + sLongTextSuffix, textAlign: "Right"}),
-				template: new sap.m.Text({text: "Cell-Right" + sLongTextSuffix, textAlign: "Right"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Center" + sLongTextSuffix, textAlign: "Center"}),
-				template: new sap.m.Text({text: "Cell-Center" + sLongTextSuffix, textAlign: "Center"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Begin" + sLongTextSuffix, textAlign: "Begin"}),
-				template: new sap.m.Text({text: "Cell-Begin" + sLongTextSuffix, textAlign: "Begin"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-End" + sLongTextSuffix, textAlign: "End"}),
-				template: new sap.m.Text({text: "Cell-End" + sLongTextSuffix, textAlign: "End"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Left" + sLongTextSuffix, textAlign: "Left"}),
-				template: new sap.m.Text({text: "Cell-Left" + sLongTextSuffix, textAlign: "Left"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Right" + sLongTextSuffix, textAlign: "Right"}),
-				template: new sap.m.Text({text: "Cell-Right" + sLongTextSuffix, textAlign: "Right"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Center" + sLongTextSuffix, textAlign: "Center"}),
-				template: new sap.m.Text({text: "Cell-Center" + sLongTextSuffix, textAlign: "Center"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			})
-		],
-		rows: {
-			path: "/"
-		},
-		models: new sap.ui.model.json.JSONModel([{o: {}}])
-	}).placeAt("body");
+			selectionMode: "None",
+			columns: [
+				new Column({
+					hAlign: "End",
+					label: new Text({text: "Col-End"}),
+					template: new Text({text: "Col-End"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					label: new Text({text: "Cell-Begin" + sLongTextSuffix, textAlign: "Begin"}),
+					template: new Text({text: "Cell-Begin" + sLongTextSuffix, textAlign: "Begin"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					label: new Text({text: "Cell-End" + sLongTextSuffix, textAlign: "End"}),
+					template: new Text({text: "Cell-End" + sLongTextSuffix, textAlign: "End"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					label: new Text({text: "Cell-Left" + sLongTextSuffix, textAlign: "Left"}),
+					template: new Text({text: "Cell-Left" + sLongTextSuffix, textAlign: "Left"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					label: new Text({text: "Cell-Right" + sLongTextSuffix, textAlign: "Right"}),
+					template: new Text({text: "Cell-Right" + sLongTextSuffix, textAlign: "Right"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					label: new Text({text: "Cell-Center" + sLongTextSuffix, textAlign: "Center"}),
+					template: new Text({text: "Cell-Center" + sLongTextSuffix, textAlign: "Center"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					label: new Text({text: "Cell-Begin" + sLongTextSuffix, textAlign: "Begin"}),
+					template: new Text({text: "Cell-Begin" + sLongTextSuffix, textAlign: "Begin"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					label: new Text({text: "Cell-End" + sLongTextSuffix, textAlign: "End"}),
+					template: new Text({text: "Cell-End" + sLongTextSuffix, textAlign: "End"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					label: new Text({text: "Cell-Left" + sLongTextSuffix, textAlign: "Left"}),
+					template: new Text({text: "Cell-Left" + sLongTextSuffix, textAlign: "Left"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					label: new Text({text: "Cell-Right" + sLongTextSuffix, textAlign: "Right"}),
+					template: new Text({text: "Cell-Right" + sLongTextSuffix, textAlign: "Right"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					label: new Text({text: "Cell-Center" + sLongTextSuffix, textAlign: "Center"}),
+					template: new Text({text: "Cell-Center" + sLongTextSuffix, textAlign: "Center"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				})
+			],
+			rows: {
+				path: "/"
+			},
+			models: new JSONModel([{o: {}}])
+		}).placeAt("body");
 
-	new sap.ui.table.TreeTable({
-		rowMode: new sap.ui.table.rowmodes.Fixed({
-			rowCount: 1
-		}),
-		selectionMode: "None",
-		columns: [
-			new sap.ui.table.Column({
-				hAlign: "End",
-				label: new sap.m.Text({text: "Col-End", width: "100%"}),
-				template: new sap.m.Text({text: "Col-End", width: "100%"}),
-				width: sColumnWidth
+		new TreeTable({
+			rowMode: new FixedRowMode({
+				rowCount: 1
 			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Begin" + sLongTextSuffix, textAlign: "Begin", width: "100%"}),
-				template: new sap.m.Text({text: "Cell-Begin" + sLongTextSuffix, textAlign: "Begin", width: "100%"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-End" + sLongTextSuffix, textAlign: "End", width: "100%"}),
-				template: new sap.m.Text({text: "Cell-End" + sLongTextSuffix, textAlign: "End", width: "100%"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Left" + sLongTextSuffix, textAlign: "Left", width: "100%"}),
-				template: new sap.m.Text({text: "Cell-Left" + sLongTextSuffix, textAlign: "Left", width: "100%"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Right" + sLongTextSuffix, textAlign: "Right", width: "100%"}),
-				template: new sap.m.Text({text: "Cell-Right" + sLongTextSuffix, textAlign: "Right", width: "100%"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Center" + sLongTextSuffix, textAlign: "Center", width: "100%"}),
-				template: new sap.m.Text({text: "Cell-Center" + sLongTextSuffix, textAlign: "Center", width: "100%"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Begin" + sLongTextSuffix, textAlign: "Begin", width: "100%"}),
-				template: new sap.m.Text({text: "Cell-Begin" + sLongTextSuffix, textAlign: "Begin", width: "100%"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-End" + sLongTextSuffix, textAlign: "End", width: "100%"}),
-				template: new sap.m.Text({text: "Cell-End" + sLongTextSuffix, textAlign: "End", width: "100%"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Left" + sLongTextSuffix, textAlign: "Left", width: "100%"}),
-				template: new sap.m.Text({text: "Cell-Left" + sLongTextSuffix, textAlign: "Left", width: "100%"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Right" + sLongTextSuffix, textAlign: "Right", width: "100%"}),
-				template: new sap.m.Text({text: "Cell-Right" + sLongTextSuffix, textAlign: "Right", width: "100%"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Text({text: "Cell-Center" + sLongTextSuffix, textAlign: "Center", width: "100%"}),
-				template: new sap.m.Text({text: "Cell-Center" + sLongTextSuffix, textAlign: "Center", width: "100%"}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Label({text: "Label width = 100%"}),
-				template: new sap.m.Label({text: "Template width = 100%"})
-			})
-		],
-		rows: {
-			path: "/"
-		},
-		models: new sap.ui.model.json.JSONModel([{o: {}}])
-	}).placeAt("body");
+			selectionMode: "None",
+			columns: [
+				new Column({
+					hAlign: "End",
+					label: new Text({text: "Col-End", width: "100%"}),
+					template: new Text({text: "Col-End", width: "100%"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					label: new Text({text: "Cell-Begin" + sLongTextSuffix, textAlign: "Begin", width: "100%"}),
+					template: new Text({text: "Cell-Begin" + sLongTextSuffix, textAlign: "Begin", width: "100%"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					label: new Text({text: "Cell-End" + sLongTextSuffix, textAlign: "End", width: "100%"}),
+					template: new Text({text: "Cell-End" + sLongTextSuffix, textAlign: "End", width: "100%"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					label: new Text({text: "Cell-Left" + sLongTextSuffix, textAlign: "Left", width: "100%"}),
+					template: new Text({text: "Cell-Left" + sLongTextSuffix, textAlign: "Left", width: "100%"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					label: new Text({text: "Cell-Right" + sLongTextSuffix, textAlign: "Right", width: "100%"}),
+					template: new Text({text: "Cell-Right" + sLongTextSuffix, textAlign: "Right", width: "100%"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					label: new Text({text: "Cell-Center" + sLongTextSuffix, textAlign: "Center", width: "100%"}),
+					template: new Text({text: "Cell-Center" + sLongTextSuffix, textAlign: "Center", width: "100%"}),
+					width: sColumnWidth
+				}),
+				new Column({
+					label: new Text({text: "Cell-Begin" + sLongTextSuffix, textAlign: "Begin", width: "100%"}),
+					template: new Text({text: "Cell-Begin" + sLongTextSuffix, textAlign: "Begin", width: "100%"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					label: new Text({text: "Cell-End" + sLongTextSuffix, textAlign: "End", width: "100%"}),
+					template: new Text({text: "Cell-End" + sLongTextSuffix, textAlign: "End", width: "100%"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					label: new Text({text: "Cell-Left" + sLongTextSuffix, textAlign: "Left", width: "100%"}),
+					template: new Text({text: "Cell-Left" + sLongTextSuffix, textAlign: "Left", width: "100%"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					label: new Text({text: "Cell-Right" + sLongTextSuffix, textAlign: "Right", width: "100%"}),
+					template: new Text({text: "Cell-Right" + sLongTextSuffix, textAlign: "Right", width: "100%"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					label: new Text({text: "Cell-Center" + sLongTextSuffix, textAlign: "Center", width: "100%"}),
+					template: new Text({text: "Cell-Center" + sLongTextSuffix, textAlign: "Center", width: "100%"}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					label: new Label({text: "Label width = 100%"}),
+					template: new Label({text: "Template width = 100%"})
+				})
+			],
+			rows: {
+				path: "/"
+			},
+			models: new JSONModel([{o: {}}])
+		}).placeAt("body");
 
-	new sap.ui.table.TreeTable({
-		rowMode: new sap.ui.table.rowmodes.Fixed({
-			rowCount: 1
-		}),
-		selectionMode: "None",
-		columns: [
-			new sap.ui.table.Column({
-				hAlign: "Begin",
-				label: new sap.m.VBox({
-					items: [
-						new sap.m.Text({text: "Col-Begin\nVBox", wrapping: false}),
-						new sap.m.Text({text: sLongTextWithoutSpaces, wrapping: false})
-					]
-				}),
-				template: new sap.m.VBox({
-					items: [
-						new sap.m.Text({text: "Col-Begin\nVBox", wrapping: false}),
-						new sap.m.Text({text: sLongTextWithoutSpaces, wrapping: false})
-					]
-				}),
-				width: sColumnWidth
+		new TreeTable({
+			rowMode: new FixedRowMode({
+				rowCount: 1
 			}),
-			new sap.ui.table.Column({
-				hAlign: "End",
-				label: new sap.m.Text({text: "Col-End\nCell-Begin" + sLongTextSuffix, textAlign: "Begin"}),
-				template: new sap.m.Text({text: "Col-End\nCell-Begin" + sLongTextSuffix, textAlign: "Begin"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Begin",
-				label: new sap.m.Text({text: "Col-Begin\nCell-End" + sLongTextSuffix, textAlign: "End"}),
-				template: new sap.m.Text({text: "Col-Begin\nCell-End" + sLongTextSuffix, textAlign: "End"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Right",
-				label: new sap.m.Text({text: "Col-Right\nCell-Left" + sLongTextSuffix, textAlign: "Left"}),
-				template: new sap.m.Text({text: "Col-Right\nCell-Left" + sLongTextSuffix, textAlign: "Left"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Left",
-				label: new sap.m.Text({text: "Col-Left\nCell-Right" + sLongTextSuffix, textAlign: "Right"}),
-				template: new sap.m.Text({text: "Col-Left\nCell-Right" + sLongTextSuffix, textAlign: "Right"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Begin",
-				label: new sap.m.Text({text: "Col-Begin\nCell-Center" + sLongTextSuffix, textAlign: "Center"}),
-				template: new sap.m.Text({text: "Col-Begin\nCell-Center" + sLongTextSuffix, textAlign: "Center"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Begin",
-				label: new sap.m.VBox({
-					items: [
-						new sap.m.Text({text: "Col-Begin\nVBox"}),
-						new sap.m.Text({text: sLongTextWithoutSpaces})
-					]
+			selectionMode: "None",
+			columns: [
+				new Column({
+					hAlign: "Begin",
+					label: new VBox({
+						items: [
+							new Text({text: "Col-Begin\nVBox", wrapping: false}),
+							new Text({text: sLongTextWithoutSpaces, wrapping: false})
+						]
+					}),
+					template: new VBox({
+						items: [
+							new Text({text: "Col-Begin\nVBox", wrapping: false}),
+							new Text({text: sLongTextWithoutSpaces, wrapping: false})
+						]
+					}),
+					width: sColumnWidth
 				}),
-				template: new sap.m.VBox({
-					items: [
-						new sap.m.Text({text: "Col-Begin\nVBox"}),
-						new sap.m.Text({text: sLongTextWithoutSpaces})
-					]
+				new Column({
+					hAlign: "End",
+					label: new Text({text: "Col-End\nCell-Begin" + sLongTextSuffix, textAlign: "Begin"}),
+					template: new Text({text: "Col-End\nCell-Begin" + sLongTextSuffix, textAlign: "Begin"}),
+					width: sColumnWidth
 				}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				hAlign: "End",
-				label: new sap.m.VBox({
-					items: [
-						new sap.m.Text({text: "Col-End\nVBox"}),
-						new sap.m.Text({text: sLongTextWithoutSpaces})
-					]
+				new Column({
+					hAlign: "Begin",
+					label: new Text({text: "Col-Begin\nCell-End" + sLongTextSuffix, textAlign: "End"}),
+					template: new Text({text: "Col-Begin\nCell-End" + sLongTextSuffix, textAlign: "End"}),
+					width: sColumnWidth
 				}),
-				template: new sap.m.VBox({
-					items: [
-						new sap.m.Text({text: "Col-End\nVBox"}),
-						new sap.m.Text({text: sLongTextWithoutSpaces})
-					]
+				new Column({
+					hAlign: "Right",
+					label: new Text({text: "Col-Right\nCell-Left" + sLongTextSuffix, textAlign: "Left"}),
+					template: new Text({text: "Col-Right\nCell-Left" + sLongTextSuffix, textAlign: "Left"}),
+					width: sColumnWidth
 				}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Begin",
-				label: new sap.m.VBox({
-					items: [
-						new sap.m.Text({text: "Col-Begin\nVBox", wrapping: false}),
-						new sap.m.Text({text: sLongTextWithoutSpaces, wrapping: false})
-					]
+				new Column({
+					hAlign: "Left",
+					label: new Text({text: "Col-Left\nCell-Right" + sLongTextSuffix, textAlign: "Right"}),
+					template: new Text({text: "Col-Left\nCell-Right" + sLongTextSuffix, textAlign: "Right"}),
+					width: sColumnWidth
 				}),
-				template: new sap.m.VBox({
-					items: [
-						new sap.m.Text({text: "Col-Begin\nVBox", wrapping: false}),
-						new sap.m.Text({text: sLongTextWithoutSpaces, wrapping: false})
-					]
+				new Column({
+					hAlign: "Begin",
+					label: new Text({text: "Col-Begin\nCell-Center" + sLongTextSuffix, textAlign: "Center"}),
+					template: new Text({text: "Col-Begin\nCell-Center" + sLongTextSuffix, textAlign: "Center"}),
+					width: sColumnWidth
 				}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				hAlign: "End",
-				label: new sap.m.VBox({
-					items: [
-						new sap.m.Text({text: "Col-End\nVBox", wrapping: false}),
-						new sap.m.Text({text: sLongTextWithoutSpaces, wrapping: false})
-					]
+				new Column({
+					hAlign: "Begin",
+					label: new VBox({
+						items: [
+							new Text({text: "Col-Begin\nVBox"}),
+							new Text({text: sLongTextWithoutSpaces})
+						]
+					}),
+					template: new VBox({
+						items: [
+							new Text({text: "Col-Begin\nVBox"}),
+							new Text({text: sLongTextWithoutSpaces})
+						]
+					}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
 				}),
-				template: new sap.m.VBox({
-					items: [
-						new sap.m.Text({text: "Col-End\nVBox", wrapping: false}),
-						new sap.m.Text({text: sLongTextWithoutSpaces, wrapping: false})
-					]
+				new Column({
+					hAlign: "End",
+					label: new VBox({
+						items: [
+							new Text({text: "Col-End\nVBox"}),
+							new Text({text: sLongTextWithoutSpaces})
+						]
+					}),
+					template: new VBox({
+						items: [
+							new Text({text: "Col-End\nVBox"}),
+							new Text({text: sLongTextWithoutSpaces})
+						]
+					}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
 				}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			})
-		],
-		rows: {
-			path: "/"
-		},
-		models: new sap.ui.model.json.JSONModel([{o: {}}])
-	}).placeAt("body");
+				new Column({
+					hAlign: "Begin",
+					label: new VBox({
+						items: [
+							new Text({text: "Col-Begin\nVBox", wrapping: false}),
+							new Text({text: sLongTextWithoutSpaces, wrapping: false})
+						]
+					}),
+					template: new VBox({
+						items: [
+							new Text({text: "Col-Begin\nVBox", wrapping: false}),
+							new Text({text: sLongTextWithoutSpaces, wrapping: false})
+						]
+					}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					hAlign: "End",
+					label: new VBox({
+						items: [
+							new Text({text: "Col-End\nVBox", wrapping: false}),
+							new Text({text: sLongTextWithoutSpaces, wrapping: false})
+						]
+					}),
+					template: new VBox({
+						items: [
+							new Text({text: "Col-End\nVBox", wrapping: false}),
+							new Text({text: sLongTextWithoutSpaces, wrapping: false})
+						]
+					}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				})
+			],
+			rows: {
+				path: "/"
+			},
+			models: new JSONModel([{o: {}}])
+		}).placeAt("body");
 
-	new sap.ui.table.TreeTable({
-		rowMode: new sap.ui.table.rowmodes.Fixed({
-			rowCount: 1
-		}),
-		selectionMode: "None",
-		columns: [
-			new sap.ui.table.Column({
-				hAlign: "End",
-				label: new sap.m.VBox({
-					items: [
-						new sap.m.Text({text: "Col-End\nVBox", wrapping: false}),
-						new sap.m.Text({text: sLongTextWithoutSpaces, wrapping: false})
-					],
-					width: "100%"
-				}),
-				template: new sap.m.VBox({
-					items: [
-						new sap.m.Text({text: "Col-End\nVBox", wrapping: false}),
-						new sap.m.Text({text: sLongTextWithoutSpaces, wrapping: false})
-					],
-					width: "100%"
-				}),
-				width: sColumnWidth
+		new TreeTable({
+			rowMode: new FixedRowMode({
+				rowCount: 1
 			}),
-			new sap.ui.table.Column({
-				hAlign: "End",
-				label: new sap.m.Text({text: "Col-End\nCell-Begin" + sLongTextSuffix, textAlign: "Begin", width: "100%"}),
-				template: new sap.m.Text({text: "Col-End\nCell-Begin" + sLongTextSuffix, textAlign: "Begin", width: "100%"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Begin",
-				label: new sap.m.Text({text: "Col-Begin\nCell-End" + sLongTextSuffix, textAlign: "End", width: "100%"}),
-				template: new sap.m.Text({text: "Col-Begin\nCell-End" + sLongTextSuffix, textAlign: "End", width: "100%"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Right",
-				label: new sap.m.Text({text: "Col-Right\nCell-Left" + sLongTextSuffix, textAlign: "Left", width: "100%"}),
-				template: new sap.m.Text({text: "Col-Right\nCell-Left" + sLongTextSuffix, textAlign: "Left", width: "100%"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Left",
-				label: new sap.m.Text({text: "Col-Left\nCell-Right" + sLongTextSuffix, textAlign: "Right", width: "100%"}),
-				template: new sap.m.Text({text: "Col-Left\nCell-Right" + sLongTextSuffix, textAlign: "Right", width: "100%"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Begin",
-				label: new sap.m.Text({text: "Col-Begin\nCell-Center" + sLongTextSuffix, textAlign: "Center", width: "100%"}),
-				template: new sap.m.Text({text: "Col-Begin\nCell-Center" + sLongTextSuffix, textAlign: "Center", width: "100%"}),
-				width: sColumnWidth
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Begin",
-				label: new sap.m.VBox({
-					items: [
-						new sap.m.Text({text: "Col-Begin\nVBox"}),
-						new sap.m.Text({text: sLongTextWithoutSpaces})
-					],
-					width: "100%"
+			selectionMode: "None",
+			columns: [
+				new Column({
+					hAlign: "End",
+					label: new VBox({
+						items: [
+							new Text({text: "Col-End\nVBox", wrapping: false}),
+							new Text({text: sLongTextWithoutSpaces, wrapping: false})
+						],
+						width: "100%"
+					}),
+					template: new VBox({
+						items: [
+							new Text({text: "Col-End\nVBox", wrapping: false}),
+							new Text({text: sLongTextWithoutSpaces, wrapping: false})
+						],
+						width: "100%"
+					}),
+					width: sColumnWidth
 				}),
-				template: new sap.m.VBox({
-					items: [
-						new sap.m.Text({text: "Col-Begin\nVBox"}),
-						new sap.m.Text({text: sLongTextWithoutSpaces})
-					],
-					width: "100%"
+				new Column({
+					hAlign: "End",
+					label: new Text({text: "Col-End\nCell-Begin" + sLongTextSuffix, textAlign: "Begin", width: "100%"}),
+					template: new Text({text: "Col-End\nCell-Begin" + sLongTextSuffix, textAlign: "Begin", width: "100%"}),
+					width: sColumnWidth
 				}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				hAlign: "End",
-				label: new sap.m.VBox({
-					items: [
-						new sap.m.Text({text: "Col-End\nVBox"}),
-						new sap.m.Text({text: sLongTextWithoutSpaces})
-					],
-					width: "100%"
+				new Column({
+					hAlign: "Begin",
+					label: new Text({text: "Col-Begin\nCell-End" + sLongTextSuffix, textAlign: "End", width: "100%"}),
+					template: new Text({text: "Col-Begin\nCell-End" + sLongTextSuffix, textAlign: "End", width: "100%"}),
+					width: sColumnWidth
 				}),
-				template: new sap.m.VBox({
-					items: [
-						new sap.m.Text({text: "Col-End\nVBox"}),
-						new sap.m.Text({text: sLongTextWithoutSpaces})
-					],
-					width: "100%"
+				new Column({
+					hAlign: "Right",
+					label: new Text({text: "Col-Right\nCell-Left" + sLongTextSuffix, textAlign: "Left", width: "100%"}),
+					template: new Text({text: "Col-Right\nCell-Left" + sLongTextSuffix, textAlign: "Left", width: "100%"}),
+					width: sColumnWidth
 				}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				hAlign: "Begin",
-				label: new sap.m.VBox({
-					items: [
-						new sap.m.Text({text: "Col-Begin\nVBox", wrapping: false}),
-						new sap.m.Text({text: sLongTextWithoutSpaces, wrapping: false})
-					],
-					width: "100%"
+				new Column({
+					hAlign: "Left",
+					label: new Text({text: "Col-Left\nCell-Right" + sLongTextSuffix, textAlign: "Right", width: "100%"}),
+					template: new Text({text: "Col-Left\nCell-Right" + sLongTextSuffix, textAlign: "Right", width: "100%"}),
+					width: sColumnWidth
 				}),
-				template: new sap.m.VBox({
-					items: [
-						new sap.m.Text({text: "Col-Begin\nVBox", wrapping: false}),
-						new sap.m.Text({text: sLongTextWithoutSpaces, wrapping: false})
-					],
-					width: "100%"
+				new Column({
+					hAlign: "Begin",
+					label: new Text({text: "Col-Begin\nCell-Center" + sLongTextSuffix, textAlign: "Center", width: "100%"}),
+					template: new Text({text: "Col-Begin\nCell-Center" + sLongTextSuffix, textAlign: "Center", width: "100%"}),
+					width: sColumnWidth
 				}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				hAlign: "End",
-				label: new sap.m.VBox({
-					items: [
-						new sap.m.Text({text: "Col-End\nVBox", wrapping: false}),
-						new sap.m.Text({text: sLongTextWithoutSpaces, wrapping: false})
-					],
-					width: "100%"
+				new Column({
+					hAlign: "Begin",
+					label: new VBox({
+						items: [
+							new Text({text: "Col-Begin\nVBox"}),
+							new Text({text: sLongTextWithoutSpaces})
+						],
+						width: "100%"
+					}),
+					template: new VBox({
+						items: [
+							new Text({text: "Col-Begin\nVBox"}),
+							new Text({text: sLongTextWithoutSpaces})
+						],
+						width: "100%"
+					}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
 				}),
-				template: new sap.m.VBox({
-					items: [
-						new sap.m.Text({text: "Col-End\nVBox", wrapping: false}),
-						new sap.m.Text({text: sLongTextWithoutSpaces, wrapping: false})
-					],
-					width: "100%"
+				new Column({
+					hAlign: "End",
+					label: new VBox({
+						items: [
+							new Text({text: "Col-End\nVBox"}),
+							new Text({text: sLongTextWithoutSpaces})
+						],
+						width: "100%"
+					}),
+					template: new VBox({
+						items: [
+							new Text({text: "Col-End\nVBox"}),
+							new Text({text: sLongTextWithoutSpaces})
+						],
+						width: "100%"
+					}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
 				}),
-				width: sColumnWidth,
-				sorted: true,
-				filtered: true
-			}),
-			new sap.ui.table.Column({
-				label: new sap.m.Label({text: "Label width = 100%"}),
-				template: new sap.m.Label({text: "Template width = 100%"})
-			})
-		],
-		rows: {
-			path: "/"
-		},
-		models: new sap.ui.model.json.JSONModel([{o: {}}])
-	}).placeAt("body");
+				new Column({
+					hAlign: "Begin",
+					label: new VBox({
+						items: [
+							new Text({text: "Col-Begin\nVBox", wrapping: false}),
+							new Text({text: sLongTextWithoutSpaces, wrapping: false})
+						],
+						width: "100%"
+					}),
+					template: new VBox({
+						items: [
+							new Text({text: "Col-Begin\nVBox", wrapping: false}),
+							new Text({text: sLongTextWithoutSpaces, wrapping: false})
+						],
+						width: "100%"
+					}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					hAlign: "End",
+					label: new VBox({
+						items: [
+							new Text({text: "Col-End\nVBox", wrapping: false}),
+							new Text({text: sLongTextWithoutSpaces, wrapping: false})
+						],
+						width: "100%"
+					}),
+					template: new VBox({
+						items: [
+							new Text({text: "Col-End\nVBox", wrapping: false}),
+							new Text({text: sLongTextWithoutSpaces, wrapping: false})
+						],
+						width: "100%"
+					}),
+					width: sColumnWidth,
+					/** @deprecated As of version 1.120 */
+					sorted: true,
+					sortOrder: SortOrder.Ascending,
+					filtered: true
+				}),
+				new Column({
+					label: new Label({text: "Label width = 100%"}),
+					template: new Label({text: "Template width = 100%"})
+				})
+			],
+			rows: {
+				path: "/"
+			},
+			models: new JSONModel([{o: {}}])
+		}).placeAt("body");
+	});
 
 </script>
 </head>
