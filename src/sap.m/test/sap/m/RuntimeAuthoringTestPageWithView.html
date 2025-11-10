@@ -20,6 +20,7 @@
 	</script>
 
 	<script type="text/javascript">
+		jQuery.sap.require("sap.m.MessageBox");
 		jQuery.sap.require("sap.ui.rta.RuntimeAuthoring");
 
 		// Create the FakeLrep with localStorage
@@ -44,7 +45,7 @@
 				this.getView().bindElement("/ProductSet('HT-1000')");
 			},
 			onPress: function(oEvent) {
-				alert(oEvent.getSource());
+				sap.m.MessageBox.alert(oEvent.getSource());
 			},
 			onItemPress: function (oEvent) {
 				oEvent.getParameter("item").firePress();

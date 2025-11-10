@@ -9,6 +9,8 @@
 
 <script src="shared-config.js"></script>
 <script id="sap-ui-bootstrap"
+		data-sap-ui-async="true"
+		data-sap-ui-compat-version="edge"
 		data-sap-ui-libs="sap.m,sap.ui.table"
 		src="../../../../resources/sap-ui-core.js"></script>
 
@@ -21,8 +23,7 @@
 </style>
 
 <script>
-
-	sap.ui.define([
+	sap.ui.require([
 		"sap/ui/table/Table",
 		"sap/ui/table/TreeTable",
 		"sap/ui/table/rowmodes/Fixed",
@@ -30,6 +31,7 @@
 		"sap/m/Text",
 		"sap/m/Label",
 		"sap/m/Select",
+		"sap/m/VBox",
 		"sap/ui/model/json/JSONModel",
 		"sap/ui/core/library"
 	], function (
@@ -40,9 +42,12 @@
 		Text,
 		Label,
 		Select,
+		VBox,
 		JSONModel,
 		coreLibrary
 	) {
+		"use strict";
+
 		const sLongTextSuffix = "\nLorem ipsum dolor sit amet";
 		const sLongTextWithoutSpaces = "Loremipsumdolorsitamet";
 		const sColumnWidth = "150px";
@@ -1049,7 +1054,6 @@
 			models: new JSONModel([{o: {}}])
 		}).placeAt("body");
 	});
-
 </script>
 </head>
 <body id="body" class="sapUiBody sapUiSizeCompact">

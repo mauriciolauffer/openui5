@@ -18,7 +18,6 @@
 	</script>
 
 	<script>
-		var oSPCGrid;
 		sap.ui.getCore().attachInit(function () {
 			sap.ui.require([
 				'sap/ui/model/json/JSONModel',
@@ -151,7 +150,7 @@
 				var oModel = new JSONModel();
 				oModel.setData({modelData: aAppointments});
 
-				oSPCGrid = new SinglePlanningCalendarMonthGrid("SinglePlanningCalendarMonthGrid", {
+				var oSPCGrid = new SinglePlanningCalendarMonthGrid("SinglePlanningCalendarMonthGrid", {
 					startDate: UI5Date.getInstance(2018, 5, 18),
 					appointments : {
 						path : '/modelData',

@@ -8,6 +8,7 @@
 
 </script>
 <script>
+	jQuery.sap.require("sap.m.MessageBox");
 	var bCheckBoxSet = true;
 
 	var oModel = new sap.ui.model.json.JSONModel({
@@ -130,7 +131,7 @@
 		title : "{/TextTrue}",
 		text : "{/description1}",
 		titlePress: function() {
-			alert('ok');
+			sap.m.MessageBox.alert('ok');
 		},
 		titleActive : "{/true}"
 	});
@@ -145,7 +146,7 @@
 		title: "{/TextTrue}",
 		text: "{/description3}",
 		titlePress: function() {
-			alert('ok');
+			sap.m.MessageBox.alert('ok');
 		},
 		titleActive: {
 			path: "/formatterTest",

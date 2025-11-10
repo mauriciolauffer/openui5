@@ -10,6 +10,7 @@
 					data-sap-ui-libs="sap.m">
 	</script>
 	<script>
+		jQuery.sap.require("sap.m.MessageBox");
 		jQuery.sap.require("sap.m.MessageToast");
 
         var aDisplayTypesCollection = [
@@ -85,13 +86,13 @@
 			var sMessage = sEventType + " fired!";
 			switch (sKey) {
 				case "suppress":
-					console.log(sMessage);
+					jQuery.sap.log.info(sMessage);
 					break;
 				case "alert":
-					alert(sMessage);
+					sap.m.MessageBox.alert(sMessage);
 					break;
 				default:
-					console.log("Unknown key: " + sKey);
+					jQuery.sap.log.info("Unknown key: " + sKey);
 			}
 		}
 

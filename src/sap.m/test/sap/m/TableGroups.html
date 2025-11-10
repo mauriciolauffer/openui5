@@ -161,10 +161,10 @@
 			})
 		],
 		updateStarted : function(e) {
-			console.log("updateStarted", e.getParameters(), Date.now());
+			jQuery.sap.log.info("updateStarted", e.getParameters(), Date.now());
 		},
 		updateFinished : function(e) {
-			console.log("updateFinished", e.getParameters(), Date.now());
+			jQuery.sap.log.info("updateFinished", e.getParameters(), Date.now());
 		}
 	});
 

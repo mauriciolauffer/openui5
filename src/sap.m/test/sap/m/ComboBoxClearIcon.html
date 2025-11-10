@@ -18,7 +18,7 @@
 		var app = new sap.m.App("myApp");
 
 		var fnChange = function (event) {
-			console.log("change: ", event.getParameter("value"));
+			jQuery.sap.log.info("change: ", event.getParameter("value"));
 		};
 
 		// Add a css class to the body HTML element, in order to be used for caret stylization in visual tests run.

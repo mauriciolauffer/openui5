@@ -9,17 +9,20 @@
             data-sap-ui-libs="sap.m">
     </script>
     <script>
-		sap.ui.require(["sap/m/SplitButton"], function(SplitButton) {
+		sap.ui.require([
+			"sap/m/MessageBox",
+			"sap/m/SplitButton"
+		], function(MessageBox, SplitButton) {
 			new sap.m.App().addPage(new sap.m.Page({
 				title: "sap.m.SplitButton",
 				content: [
 					new sap.m.SplitButton({
 						text: "abc",
 						arrowPress: function(oEvent) {
-							alert("arrow down: " + oEvent.getParameter('down'));
+							MessageBox.alert("arrow down: " + oEvent.getParameter('down'));
 						},
 						press: function() {
-							alert("press");
+							MessageBox.alert("press");
 						}
 					})
 				]

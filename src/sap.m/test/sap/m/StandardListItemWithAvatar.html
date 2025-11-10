@@ -13,14 +13,15 @@
 
 	<script>
 
-		jQuery.sap.require("sap.ui.core.IconPool");
+	jQuery.sap.require("sap.ui.core.IconPool");
+	jQuery.sap.require("sap.m.MessageBox");
 
 			var av = new sap.m.Avatar( {
 					displaySize: "L",
 					displayShape: "Square",
 					badgeIcon: "sap-icon://camera",
 					imageFitType: "Cover",
-					press: function(){alert();}
+					press: function(){sap.m.MessageBox.alert("action press");}
 				});
 				av.setSrc("images/Lamp_avatar_01.jpg");
 
@@ -30,7 +31,7 @@
 					badgeIcon: "sap-icon://camera",
 					imageFitType: "Contain",
 					showBorder: true,
-					press: function(){alert("action press");}
+					press: function(){sap.m.MessageBox.alert("action press");}
 				});
 				av1.setSrc("images/Lamp_avatar_01.jpg");
 

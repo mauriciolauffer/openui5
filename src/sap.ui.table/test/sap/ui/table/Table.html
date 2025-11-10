@@ -40,6 +40,7 @@
 
 <script>
 	/*global TABLESETTINGS */
+	jQuery.sap.require("sap.m.MessageBox");
 
 	function pressHandler(oEvent) {
 		const bCellClick = oEvent.getId() === "cellClick";
@@ -61,7 +62,12 @@
 			title: "No Items found",
 			description: "Adjust your filter settings.",
 			additionalContent: [
-				new sap.m.Button({text: "Trigger Something", press: function() { alert("Something"); }})
+				new sap.m.Button({
+					text: "Trigger Something",
+					press: function() {
+						sap.m.MessageBox.alert("Something");
+					}
+				})
 			]
 		})
 	});
@@ -330,7 +336,7 @@
 	const oBindingInfo = oTable.getBindingInfo("rows");
 
 	function rebind() {
-		oTable.bindRows(oBindingInfo || {path: "/modelData"});
+		// oTable.bindRows(oBindingInfo || {path: "/modelData"});
 	}
 
 	function unbind() {

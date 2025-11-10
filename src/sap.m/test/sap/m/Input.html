@@ -1096,7 +1096,7 @@
 									new sap.ui.core.Item({text: "text 212"})
 								],
 								valueHelpRequest: function(oEvent){
-									console.log("Zzz: " + oEvent.getParameter("userInputValue"));
+									jQuery.sap.log.info("Zzz: " + oEvent.getParameter("userInputValue"));
 									sap.m.MessageBox.alert("Value help requested with valueForSearch: '" + oEvent.getParameter("_userInputValue") + "'");
 								}
 							}),

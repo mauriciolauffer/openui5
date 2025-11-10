@@ -15,24 +15,25 @@
 		</script>
 		<script>
 		sap.ui.getCore().attachInit(() => {
+			jQuery.sap.require("sap.m.MessageBox");
 			var oHeader = new sap.ui.unified.calendar.Header("H1",{
 				textButton0: "Day",
 				textButton1: "Month",
 				textButton2: "Year",
 				pressPrevious: function(oEvent){
-						alert("Previous");
-					},
+					sap.m.MessageBox.alert("Previous");
+				},
 				pressNext: function(oEvent){
-					alert("Previous");
+					sap.m.MessageBox.alert("Previous");
 				},
 				pressButton0: function(oEvent){
-					alert("Button 0");
+					sap.m.MessageBox.alert("Button 0");
 				},
 				pressButton1: function(oEvent){
-					alert("Button 1");
+					sap.m.MessageBox.alert("Button 1");
 				},
 				pressButton2: function(oEvent){
-					alert("Button2");
+					sap.m.MessageBox.alert("Button2");
 				}
 			}).placeAt("sample1");
 
