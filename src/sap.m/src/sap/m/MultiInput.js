@@ -1412,6 +1412,7 @@ function(
 		this.detachValueHelpRequest(this._onValueHelpRequested, this);
 
 		oClone = Input.prototype.clone.apply(this, arguments);
+		oClone.setProperty("selectedKey", '', true);
 
 		this.attachSuggestionItemSelected(this._onSuggestionItemSelected, this);
 		this.attachLiveChange(this._onLiveChange, this);
