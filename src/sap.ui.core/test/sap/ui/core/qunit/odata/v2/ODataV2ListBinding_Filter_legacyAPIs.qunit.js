@@ -92,6 +92,7 @@ sap.ui.define([
 		};
 		oBinding.attachChange(handler);
 		oBinding.attachRefresh(fnFilter);
+		oBinding.initialize();
 	});
 
 	QUnit.test("ListBinding clientside ODataFilter", function(assert){
@@ -143,6 +144,7 @@ sap.ui.define([
 		oBinding.attachRefresh(function() {
 			oBinding.getContexts();
 		});
+		oBinding.initialize();
 	});
 
 	QUnit.test("ListBinding filter (ODataFilter.convert)", function(assert){
@@ -277,5 +279,6 @@ sap.ui.define([
 		};
 		oBinding.attachChange(handler);
 		oBinding.attachRefresh(fnFilter);
+		oBinding.initialize();
 	});
 });

@@ -141,6 +141,17 @@ sap.ui.define(function() {
 					"test-resources/sap/ui/core/qunit/odata/ODataMetadata.qunit"
 				],
 				qunit: {
+					reorder: false
+				},
+				sinon: 1 // because MockServer is used which has a hard dependency to sinon V1
+			},
+			/** @deprecated As of version 1.48.0 */
+			ODataMetadataLegacyQUnit: {
+				title: "sap.ui.model.odata.ODataMetadata - Legacy QUnit Tests",
+				module: [
+					"test-resources/sap/ui/core/qunit/odata/ODataMetadata_legacyQUnit.qunit"
+				],
+				qunit: {
 					version: 2,
 					reorder: false
 				},

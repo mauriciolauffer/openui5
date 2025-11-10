@@ -33,6 +33,10 @@ sap.ui.define([
 ) {
 	"use strict";
 
+	// Note: this test module cannot be migrated to qunit 2.18+ without major refactoring due to unhandled promise
+	// rejection. 2.18+ reports even expected failures as "global failures", this can't be fixed in the tests itself,
+	// but only by handling rejected promises in productive code.
+
 	//add divs for control tests
 	var oTarget1 = document.createElement("div");
 	oTarget1.id = "target1";
@@ -1869,8 +1873,6 @@ sap.ui.define([
 			});
 
 		});
-
-
 	});
 
 	//*********************************************************************************************
