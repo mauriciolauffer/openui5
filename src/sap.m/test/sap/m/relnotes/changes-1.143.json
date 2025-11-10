@@ -3,6 +3,41 @@
     "date": "November 2025",
     "notes": [
       {
+        "id": "a6acddc06f93fde275423463ae59fcaae41b9a72",
+        "type": "FIX",
+        "text": " sap.m.TimePicker: Remove custom shadow overwriting"
+      },
+      {
+        "id": "79075e911f590881d6ca42a63c4f30492652c379",
+        "type": "FIX",
+        "text": " sap.m.ComboBox: Group header announced only once"
+      },
+      {
+        "id": "dfdb09dabb7f6a572605a1370fe3451478bec0a4",
+        "type": "FIX",
+        "text": " sap/ui/model/ClientTreeBinding#checkUpdate: only fire change if data has changed"
+      },
+      {
+        "id": "62e65461243e87d87f6b6fc2de72f003a69caec0",
+        "type": "FIX",
+        "text": " sap.m.Menu: fixed context menu appearance in RTL"
+      },
+      {
+        "id": "53debfc2c94a8b9892bd66c85fe1444a6e8c5694",
+        "type": "FIX",
+        "text": " sap.m.SinglePlanningCalendar: Add the browser event information to the UI5 event"
+      },
+      {
+        "id": "8dfbf713ff070df232d8acc6cef7753ac92f21e7",
+        "type": "FIX",
+        "text": " We've now removed the iframe content check while loading a PDF to display it"
+      },
+      {
+        "id": "db552e3375a6f87450cb861d2af0d7fcef1ec7dd",
+        "type": "FEATURE",
+        "text": " sap.m.MessageStrip: ColorSet and colorScheme properties are now added to customize appearances"
+      },
+      {
         "id": "25d37f64df4adf6837635cb96af9d72899f6c0ac",
         "type": "FIX",
         "text": " sap.m.Switch: change state when space is clicked together with shift or espace is prevented."
@@ -18,9 +53,19 @@
         "text": " sap.m.CheckBox: Condensed layout corrected"
       },
       {
+        "id": "77268798a8fd8f312bc60e5b8ab42e5f17a9a245",
+        "type": "FIX",
+        "text": " sap.m.SinglePlanningCalendar: Add the browser event information to the UI5 event"
+      },
+      {
         "id": "083c03cee5ec701dfb9f23233ffe378bac56e0d6",
         "type": "FIX",
         "text": " sap.m.DateTimePicker: fix test about timezone failing in safari"
+      },
+      {
+        "id": "bc1eb6ffbabdcf6288b460b47fe2c151579415c5",
+        "type": "FEATURE",
+        "text": " sap.m.MultiInput: disable mobile multi-select button when no tokens"
       },
       {
         "id": "a86deb067adc219ea98b536f345cb7d80655a95b",

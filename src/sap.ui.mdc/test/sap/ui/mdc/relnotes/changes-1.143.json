@@ -3,6 +3,16 @@
     "date": "November 2025",
     "notes": [
       {
+        "id": "c2a672b61b28da702220a86a0fd613b3ed9319a7",
+        "type": "FIX",
+        "text": " MDC.Chart: large numbers for measures are now correctly formatted"
+      },
+      {
+        "id": "90a4ba5bdc3ceba63120afa6fd7c1e4981ac60cf",
+        "type": "FEATURE",
+        "text": " table.ResponsiveTableType: Add \"popinDisplay\" setting"
+      },
+      {
         "id": "fe9703436b0fa0c2810ebdbc2a00c3a52f48de56",
         "type": "FIX",
         "text": " Table: Remove renderWhitespace restriction"

@@ -1,0 +1,17 @@
+{
+  "1.143.0": {
+    "date": "November 2025",
+    "notes": [
+      {
+        "id": "a6acddc06f93fde275423463ae59fcaae41b9a72",
+        "type": "FIX",
+        "text": " sap.m.TimePicker: Remove custom shadow overwriting"
+      },
+      {
+        "id": "cc46932c9eb62dcc8aedfbfbf1212d6b6863c98d",
+        "type": "FIX",
+        "text": " sap.uxap.ObjectPageSubSection: fix wrapping titles"
+      }
+    ]
+  }
+}

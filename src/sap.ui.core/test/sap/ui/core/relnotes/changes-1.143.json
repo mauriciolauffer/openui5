@@ -3,6 +3,11 @@
     "date": "November 2025",
     "notes": [
       {
+        "id": "dfdb09dabb7f6a572605a1370fe3451478bec0a4",
+        "type": "FIX",
+        "text": " sap/ui/model/ClientTreeBinding#checkUpdate: only fire change if data has changed"
+      },
+      {
         "id": "a020c4c4d88809984c84892f4832f43d77cca305",
         "type": "FIX",
         "text": " core/LabelEnablement: Verify control existence before keeping DOM after destroy"

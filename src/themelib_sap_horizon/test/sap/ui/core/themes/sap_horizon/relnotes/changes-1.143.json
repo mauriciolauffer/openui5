@@ -3,6 +3,11 @@
     "date": "November 2025",
     "notes": [
       {
+        "id": "cc46932c9eb62dcc8aedfbfbf1212d6b6863c98d",
+        "type": "FIX",
+        "text": " sap.uxap.ObjectPageSubSection: fix wrapping titles"
+      },
+      {
         "id": "794575eb56a3a0ac139179375c321c0e047c02e7",
         "type": "FIX",
         "text": " sap.ui.CalendarRow: Selected appointment has correct focus color"
