@@ -33,7 +33,7 @@ sap.ui.define(['./ColorPickerDisplayMode', "sap/ui/Device", "sap/ui/core/Lib"],
 
 		oRm.accessibilityState(oControl, {
 			role: "group",
-			roledescription: oRb.getText("COLOR_PICKER_TITLE")
+			label: oRb.getText("COLOR_PICKER_TITLE")
 		});
 
 		if (bResponsive) {
@@ -69,6 +69,19 @@ sap.ui.define(['./ColorPickerDisplayMode', "sap/ui/Device", "sap/ui/core/Lib"],
 		oRm.close("div");
 	};
 
+	ColorPickerRenderer.renderSliders = function(oRm, oControl) {
+		oRm.openStart("div");
+		oRm.class("sapUiCPSlidersWrapper");
+		oRm.accessibilityState({
+			role: "group",
+			label: oRb.getText("COLORPICKER_SLIDERS_GROUP_LABEL")
+		});
+		oRm.openEnd();
+		oRm.renderControl(oControl.getAggregation("_oSlider"));
+		oRm.renderControl(oControl.getAggregation("_oAlphaSlider"));
+		oRm.close("div");
+	};
+
 	ColorPickerRenderer.renderDefaultColorPicker = function(oRm, oControl) {
 		oRm.renderControl(oControl.getAggregation("_oCPBox"));
 		if (Device.system.phone) { //mobile
@@ -78,14 +91,12 @@ sap.ui.define(['./ColorPickerDisplayMode', "sap/ui/Device", "sap/ui/core/Lib"],
 			oRm.openStart("div");
 			oRm.class("sapUiCPSlidersPhone");
 			oRm.openEnd();
-			oRm.renderControl(oControl.getAggregation("_oSlider"));
-			oRm.renderControl(oControl.getAggregation("_oAlphaSlider"));
+			this.renderSliders(oRm, oControl);
 			oRm.close("div");
 			this.renderMobileSwatches(oRm, oControl);
 			oRm.close("div");
 		} else { //desktop or tablet
-			oRm.renderControl(oControl.getAggregation("_oSlider"));
-			oRm.renderControl(oControl.getAggregation("_oAlphaSlider"));
+			this.renderSliders(oRm, oControl);
 			this.renderDesktopSwatchesAndHexFields(oRm, oControl);
 		}
 
@@ -149,8 +160,7 @@ sap.ui.define(['./ColorPickerDisplayMode', "sap/ui/Device", "sap/ui/core/Lib"],
 
 	ColorPickerRenderer.renderLargeColorPicker = function(oRm, oControl) {
 		oRm.renderControl(oControl.getAggregation("_oCPBox"));
-		oRm.renderControl(oControl.getAggregation("_oSlider"));
-		oRm.renderControl(oControl.getAggregation("_oAlphaSlider"));
+		this.renderSliders(oRm, oControl);
 		this.renderDesktopSwatchesAndHexFields(oRm, oControl);
 		oRm.renderControl(oControl.oRGBorHSLRBUnifiedGroup);
 		oRm.openStart("div");
