@@ -340,6 +340,11 @@
 					"target": "tilesVariants"
 				},
 				{
+					"pattern": "tilesVariantsInContainer",
+					"name": "tilesVariantsInContainer",
+					"target": "tilesVariantsInContainer"
+				},
+				{
 					"pattern": "focusFullCard",
 					"name": "focusFullCard",
 					"target": "focusFullCard"
@@ -638,6 +643,11 @@
 				"tilesVariants": {
 					"id": "tilesVariants",
 					"name": "TilesVariants",
+					"level": 1
+				},
+				"tilesVariantsInContainer": {
+					"id": "tilesVariantsInContainer",
+					"name": "TilesVariantsInContainer",
 					"level": 1
 				},
 				"focusFullCard": {
