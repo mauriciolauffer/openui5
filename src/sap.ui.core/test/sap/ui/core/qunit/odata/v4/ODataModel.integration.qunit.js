@@ -6529,11 +6529,6 @@ sap.ui.define([
 
 			oTable.getBinding("items").resume();
 
-			that.expectCanceledError("Cache discarded as a new cache has been created")
-				.expectCanceledError(sODLB + ": /SalesOrderList: Failed to enhance query options"
-					+ " for auto-$expand/$select for child SalesOrderID",
-				"Cache discarded as a new cache has been created");
-
 			return Promise.all([
 				Promise.resolve().then(function () {
 					// code under test
@@ -19823,8 +19818,6 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					oTable = that.oView.byId("table"),
 					oTableBinding;
 
-				that.expectCanceledError("Cache discarded as a new cache has been created");
-
 				// Note: each of these is causing a "rebind"
 				sId0 = that.addToTable(oTable, "Name", assert);
 				sId1 = that.addToTable(oTable, "EQUIPMENT_2_EMPLOYEE/Name", assert);
@@ -19953,8 +19946,6 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					sId1,
 					oTable = that.oView.byId("table"),
 					oTableBinding;
-
-				that.expectCanceledError("Cache discarded as a new cache has been created");
 
 				// Note: each of these is causing a "rebind"
 				sId0 = that.addToTable(oTable, "Name", assert);
@@ -20976,8 +20967,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		// code under test
 		oBinding.setAggregation(undefined);
 
-		this.expectCanceledError("Cache discarded as a new cache has been created")
-			.expectEvents(assert, oBinding, [
+		this.expectEvents(assert, oBinding, [
 				[, "change", {detailedReason : "AddVirtualContext", reason : "filter"}],
 				[, "dataRequested"],
 				[, "change", {detailedReason : "RemoveVirtualContext", reason : "change"}],
@@ -21028,8 +21018,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 		await this.waitForChanges(assert, "set header context");
 
-		this.expectCanceledError("Cache discarded as a new cache has been created")
-			.expectRequest("BusinessPartners?$apply=filter(Country ne '')"
+		this.expectRequest("BusinessPartners?$apply=filter(Country ne '')"
 				+ "/groupby((Country))&$count=true&$skip=0&$top=100", {
 				"@odata.count" : "1",
 				value : [{Country : "A"}]
@@ -21039,9 +21028,11 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 		// code under test
 		oListBinding.setAggregation({groupLevels : ["Country", "Region", "Id"]});
-		oListBinding.resume();
 
-		await this.waitForChanges(assert, "resume");
+		await Promise.all([
+			oListBinding.resumeAsync(),
+			this.waitForChanges(assert, "resume")
+		]);
 
 		this.expectRequest("BusinessPartners?$apply=filter(Country eq 'A' and (Country ne ''))"
 				+ "/groupby((Region))&$count=true&$skip=0&$top=100", {
@@ -71112,9 +71103,6 @@ make root = ${bMakeRoot}`;
 		assert.strictEqual(oMessageStrip.getText(), "Some message");
 		assert.strictEqual(oMessageStrip.getVisible(), true);
 
-		if (bSuspended && bAutoExpandSelect) {
-			this.expectCanceledError("Cache discarded as a new cache has been created");
-		}
 		const sId0 = this.addToTable(oTable, "Name", assert, bSuspended); // Note: causes a "rebind"
 
 		sSelect = bAutoExpandSelect ? "$select=Name,Team_Id&" : "";
