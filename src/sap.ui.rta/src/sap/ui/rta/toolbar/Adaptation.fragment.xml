@@ -24,6 +24,9 @@
 						text="{parts: [{path: 'versions>/versions'}, {path: 'versions>/displayedVersion'}], formatter: '.formatVersionButtonText'}"
 						tooltip="{i18n>TOL_SHOW_VERSION_HISTORY}"
 						press=".showVersionHistory">
+					<layoutData>
+						<OverflowToolbarLayoutData priority="NeverOverflow"/>
+					</layoutData>
 				</Button>
 				<Button
 					id="sapUiRta_hardReloadButton"
