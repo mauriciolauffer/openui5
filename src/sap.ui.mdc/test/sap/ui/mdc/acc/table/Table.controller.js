@@ -23,8 +23,8 @@ sap.ui.define([
 	TableType,
 	coreLibrary,
 	Fragment,
-	JSONModel,
 	MessageType,
+	JSONModel,
 	Dialog
 ) {
 	"use strict";
