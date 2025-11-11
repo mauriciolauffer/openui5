@@ -65499,8 +65499,8 @@ make root = ${bMakeRoot}`;
 	QUnit.test(sTitle, function (assert) {
 		var iOldLogLevel = Log.getLevel(sODataMetaModel),
 			sVH_ProductTypeCode = "/sap/opu/odata4/sap/zui5_testv4/f4/sap/d_pr_type-fv/0001"
-				+ ";ps=%27default-zui5_epm_sample-0002%27"
-				+ ";va=%27com.sap.gateway.default.zui5_epm_sample.v0002.ET-PRODUCT.TYPE_CODE%27"
+				+ ";ps='default-zui5_epm_sample-0002'"
+				+ ";va='com.sap.gateway.default.zui5_epm_sample.v0002.ET-PRODUCT.TYPE_CODE'"
 				+ "/$metadata",
 			oModel = this.createSalesOrdersModel({
 				annotationURI : "/sap/opu/odata4/annotations_zui5_epm_sample.xml"
@@ -65511,7 +65511,7 @@ make root = ${bMakeRoot}`;
 				"/sap/opu/odata4/sap/zui5_testv4/f4/sap/d_pr_type-fv-ext/0001/$metadata"
 					: {source : "odata/v4/data/VH_ProductTypeCode_ext.xml"},
 				// fake "nested" value help
-				"/sap/opu/odata4/sap/zui5_testv4/f4/sap/d_pr_type-fv/0001;ps=%27N_A%27;va=%27com.sap.gateway.f4.d_pr_type-fv.v0001.D_PR_TYPE_FV.FIELD_VALUE%27/$metadata"
+				"/sap/opu/odata4/sap/zui5_testv4/f4/sap/d_pr_type-fv/0001;ps='N_A';va='com.sap.gateway.f4.d_pr_type-fv.v0001.D_PR_TYPE_FV.FIELD_VALUE'/$metadata"
 					: {source : "odata/v4/data/VH_FIELD_VALUE.xml"}
 			}),
 			oValueListModel,

@@ -2310,6 +2310,12 @@ sap.ui.define([
 			// code under test: query options and hash of sUrl and sBase are not mixed
 			_Helper.makeAbsolute(oFixture.sUrl + sSuffix, oFixture.sBase + "?d=e#f"),
 			oFixture.sResult + sSuffix);
+
+		assert.strictEqual(
+			// code under test: bServiceUrl removes filename, pathname ends with slash
+			_Helper.makeAbsolute(oFixture.sUrl + "/filename" + sSuffix, oFixture.sBase,
+				/*bServiceUrl*/true),
+			oFixture.sResult + "/" + sSuffix);
 	});
 });
 
