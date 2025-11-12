@@ -3,6 +3,11 @@
     "date": "November 2025",
     "notes": [
       {
+        "id": "05315efa2c7ac18cde5bc321b133955986a6855a",
+        "type": "FIX",
+        "text": " core/routing: no usage of history state API in Safari"
+      },
+      {
         "id": "dfdb09dabb7f6a572605a1370fe3451478bec0a4",
         "type": "FIX",
         "text": " sap/ui/model/ClientTreeBinding#checkUpdate: only fire change if data has changed"

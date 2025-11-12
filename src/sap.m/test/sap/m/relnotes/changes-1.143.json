@@ -3,6 +3,11 @@
     "date": "November 2025",
     "notes": [
       {
+        "id": "7f58605b40941dadbe763fe55ca10da8a91f6418",
+        "type": "FIX",
+        "text": " sap.m.MenuButton: fixed menuPosition functionality"
+      },
+      {
         "id": "a6acddc06f93fde275423463ae59fcaae41b9a72",
         "type": "FIX",
         "text": " sap.m.TimePicker: Remove custom shadow overwriting"
