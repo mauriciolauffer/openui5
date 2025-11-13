@@ -414,10 +414,10 @@ sap.ui.define([
 				},
 
 				/**
-				 * Defines the sort conditions.
+				 * Defines the XML baseline for sort conditions in SAPUI5 flexibility.
 				 *
-				 * <b>Note:</b> This property must not be bound. It is used exclusively for handling SAPUI5 flexibility changes. Do not use it
-				 * otherwise.
+				 * <b>Note:</b> This property must not be bound.
+				 * <b>Note:</b> This property must not be changed during runtime.
 				 *
 				 * @since 1.73
 				 */
@@ -426,10 +426,10 @@ sap.ui.define([
 				},
 
 				/**
-				 * Defines the filter conditions.
+				 * Defines the XML baseline for filter conditions in SAPUI5 flexibility.
 				 *
-				 * <b>Note:</b> This property must not be bound. It is used exclusively for handling SAPUI5 flexibility changes. Do not use it
-				 * otherwise.
+				 * <b>Note:</b> This property must not be bound.
+				 * <b>Note:</b> This property must not be changed during runtime.
 				 *
 				 * @since 1.80.0
 				 */
@@ -439,10 +439,10 @@ sap.ui.define([
 				},
 
 				/**
-				 * Defines the group conditions.
+				 * Defines the XML baseline for group conditions in SAPUI5 flexibility.
 				 *
-				 * <b>Note:</b> This property must not be bound. It is used exclusively for handling SAPUI5 flexibility changes. Do not use it
-				 * otherwise.
+				 * <b>Note:</b> This property must not be bound.
+				 * <b>Note:</b> This property must not be changed during runtime.
 				 *
 				 * @since 1.87
 				 */
@@ -451,10 +451,10 @@ sap.ui.define([
 				},
 
 				/**
-				 * Defines the aggregate conditions.
+				 * Defines the XML baseline for aggregate conditions in SAPUI5 flexibility.
 				 *
-				 * <b>Note:</b> This property must not be bound. It is exclusively used for handling SAPUI5 flexibility changes. Do not use it
-				 * otherwise.
+				 * <b>Note:</b> This property must not be bound.
+				 * <b>Note:</b> This property must not be changed during runtime.
 				 *
 				 * @since 1.87
 				 */
