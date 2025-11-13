@@ -7,121 +7,223 @@
 <title>sap.ui.table - Scrolling with variable row heights</title>
 <link rel="shortcut icon" type="image/x-icon" href="images/controls/sap.ui.table.Table.gif">
 
+<style>
+	html {
+		height: 100%;
+	}
+	body {
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+	}
+	#table {
+		flex-grow: 1;
+	}
+</style>
+
 <script src="shared-config.js"></script>
 <script id="sap-ui-bootstrap"
-		data-sap-ui-libs="sap.m, sap.ui.table, sap.ui.unified"
+		data-sap-ui-libs="sap.ui.table, sap.m"
+		data-sap-ui-bindingsyntax="complex"
 		src="../../../../resources/sap-ui-core.js"></script>
 
 <script src="Settings.js"></script>
 
 <script>
-	/*global TABLESETTINGS */
+sap.ui.require([
+	"sap/ui/table/Table",
+	"sap/ui/table/Column",
+	"sap/ui/table/rowmodes/Auto",
+	"sap/m/Button",
+	"sap/m/CheckBox",
+	"sap/m/ComboBox",
+	"sap/m/DatePicker",
+	"sap/m/Input",
+	"sap/m/Label",
+	"sap/m/Link",
+	"sap/m/MultiComboBox",
+	"sap/m/ObjectStatus",
+	"sap/m/OverflowToolbar",
+	"sap/m/Select",
+	"sap/m/Slider",
+	"sap/m/Text",
+	"sap/m/Title",
+	"sap/m/SegmentedButton",
+	"sap/m/SegmentedButtonItem",
+	"sap/m/ToolbarSeparator",
+	"sap/ui/core/Control",
+	"sap/ui/core/Core",
+	"sap/ui/core/HorizontalAlign",
+	"sap/ui/core/Icon",
+	"sap/ui/core/Item",
+	"sap/ui/model/Context",
+	"sap/ui/model/json/JSONModel",
+	"sap/ui/model/type/Boolean",
+	"sap/ui/model/type/Integer",
+	"test-resources/sap/ui/table/Settings"
+], function(
+	Table,
+	Column,
+	AutoRowMode,
+	Button,
+	CheckBox,
+	ComboBox,
+	DatePicker,
+	Input,
+	Label,
+	Link,
+	MultiComboBox,
+	ObjectStatus,
+	OverflowToolbar,
+	Select,
+	Slider,
+	Text,
+	Title,
+	SegmentedButton,
+	SegmentedButtonItem,
+	ToolbarSeparator,
+	Control,
+	Core,
+	HorizontalAlign,
+	Icon,
+	Item,
+	Context,
+	JSONModel,
+	BooleanType,
+	IntegerType,
+	TableSettings
+) {
+	"use strict";
 
-	// create table with supported sap.m controls
-	const oTable = new sap.ui.table.Table({
-		firstVisibleRow: 770000
+	const oTable = new Table({
+		firstVisibleRow: 770000,
+		selectionMode: "MultiToggle",
+		extension: [
+			new OverflowToolbar({
+				content: [
+					new Title({text: "Table with large data"}),
+					new ToolbarSeparator(),
+					new Label({
+						id: "row-count-label",
+						text: "Row Count"
+					}),
+					new Input({
+						ariaLabelledBy: "row-count-label",
+						width: "125px",
+						value: {
+							path: "config>/rowCount",
+							type: new IntegerType()
+						}
+					}),
+					new Label({
+						id: "scroll-granularity-label",
+						text: "Scroll Granularity"
+					}),
+					new Select({
+						ariaLabelledBy: "scroll-granularity-label",
+						width: "150px",
+						items: [
+							new Item({key: "Row", text: "Row"}),
+							new Item({key: "Pixel", text: "Pixel"})
+						],
+						selectedKey: {
+							path: "config>/scrollGranularity"
+						}
+					}),
+					new ToolbarSeparator()
+				]
+			}),
+			new OverflowToolbar({
+				enabled: false, // variable row heights not testable with the current setup
+				content: [
+					new Text({text: "Row Height Configuration: (not testable because not correctly set up in this test page)" }),
+					new Label({
+						id: "row-height-label",
+						text: "Max Row Height (actual height randomized)"
+					}),
+					new Slider({
+						ariaLabelledBy: "row-height-label",
+						width: "200px",
+						value: 0,
+						min: 0,
+						max: 250,
+						liveChange: function() {
+							configureRowHeights(this.getValue());
+						}
+					}),
+					new Text({
+						text: {
+							path: "config>/rowHeight",
+							formatter: function(sRowHeight) {
+								return "(" + sRowHeight + ")";
+							}
+						}
+					}),
+					new CheckBox({
+						text: "Alternating",
+						selected: {
+							path: "config>/alternatingRowHeights",
+							type: new BooleanType()
+						},
+						select: function() {
+							configureRowHeights();
+						}
+					})
+				]
+			}),
+			new OverflowToolbar({
+				content: [
+					new Text({text: "Automated Scrolling:" }),
+					new SegmentedButton({
+						items: [
+							new SegmentedButtonItem({key: "off", text: "Off"}),
+							new SegmentedButtonItem({key: "scrollbar_down", text: "Scrollbar Down"}),
+							new SegmentedButtonItem({key: "scrollbar_up", text: "Scrollbar Up"})
+						],
+						selectionChange: function(oEvent) {
+							const sKey = oEvent.getParameter("item").getKey();
+
+							clearInterval(window.iScrollAutomationIntervalId);
+							delete window.iScrollAutomationIntervalId;
+
+							if (sKey === "scrollbar_down") {
+								window.iScrollAutomationIntervalId = setInterval(function() {
+									const oVsb = oTable._getScrollExtension().getVerticalScrollbar();
+									if (oVsb) {
+										oVsb.scrollTop += oConfigModel.getProperty("/automatedScrolling/delta");
+									}
+								}, oConfigModel.getProperty("/automatedScrolling/interval"));
+							} else if (sKey === "scrollbar_up") {
+								window.iScrollAutomationIntervalId = setInterval(function() {
+									const oVsb = oTable._getScrollExtension().getVerticalScrollbar();
+									if (oVsb) {
+										oVsb.scrollTop -= oConfigModel.getProperty("/automatedScrolling/delta");
+									}
+								}, oConfigModel.getProperty("/automatedScrolling/interval"));
+							}
+						}
+					}),
+					new Label({
+						id: "scroll-speed-label",
+						text: "Speed"
+					}),
+					new Slider({
+						ariaLabelledBy: "scroll-speed-label",
+						width: "200px",
+						value: "{config>/automatedScrolling/delta}",
+						min: 1,
+						max: 50,
+						liveChange: function() {
+							oConfigModel.setProperty("/automatedScrolling/delta", this.getValue());
+						}
+					}),
+					new Text({text: "{config>/automatedScrolling/delta}pixel / {config>/automatedScrolling/interval}ms"})
+				]
+			})
+		],
+		footer: new Text({text: "Footer of the Table"}),
 	});
-	oTable.setTitle("Title of the Table");
-	oTable.setFooter("Footer of the Table");
-	oTable.setSelectionMode(sap.ui.table.SelectionMode.MultiToggle);
-
-	let iScrollAutomationIntervalId = null;
-	let iReverseScrollAutomationIntervalId = null;
-	const iScrollDelta = 1;
-	const iScrollInterval = 50;
-
-	oTable.setToolbar(new sap.m.OverflowToolbar({
-		content: [
-			new sap.m.ToggleButton({
-				id: "scrollDown",
-				text: "Scroll down",
-				press: function(oEvent) {
-					const bPressed = oEvent.getParameter("pressed");
-
-					sap.ui.getCore().byId("scrollUp").setPressed(false);
-					window.clearInterval(iReverseScrollAutomationIntervalId);
-					iReverseScrollAutomationIntervalId = null;
-
-					if (bPressed) {
-						iScrollAutomationIntervalId = window.setInterval(function() {
-							const oVsb = oTable._getScrollExtension().getVerticalScrollbar();
-							oVsb.scrollTop += iScrollDelta;
-						}, iScrollInterval);
-					} else {
-						window.clearInterval(iScrollAutomationIntervalId);
-						iScrollAutomationIntervalId = null;
-					}
-				}
-			}),
-			new sap.m.ToggleButton({
-				id: "scrollUp",
-				text: "Scroll up",
-				press: function(oEvent) {
-					const bPressed = oEvent.getParameter("pressed");
-
-					sap.ui.getCore().byId("scrollDown").setPressed(false);
-					window.clearInterval(iScrollAutomationIntervalId);
-					iScrollAutomationIntervalId = null;
-
-					if (bPressed) {
-						iReverseScrollAutomationIntervalId = window.setInterval(function() {
-							const oVsb = oTable._getScrollExtension().getVerticalScrollbar();
-							oVsb.scrollTop = oVsb.scrollTop - iScrollDelta;
-						}, iScrollInterval);
-					} else {
-						window.clearInterval(iReverseScrollAutomationIntervalId);
-						iReverseScrollAutomationIntervalId = null;
-					}
-				}
-			}),
-			new sap.m.ToolbarSeparator(),
-			new sap.m.Label({
-				id: "row-count-label",
-				text: "Row Count"
-			}),
-			new sap.m.Input({
-				ariaLabelledBy: "row-count-label",
-				width: "125px",
-				value: {
-					path: "config>/rowCount",
-					type: new sap.ui.model.type.Integer()
-				}
-			}),
-			new sap.m.Label({
-				id: "row-height-label",
-				text: "Row Height"
-			}),
-			new sap.m.Slider({
-				ariaLabelledBy: "row-height-label",
-				width: "200px",
-				value: 0,
-				min: 0,
-				max: 250,
-				liveChange: function() {
-					configureRowHeights(this.getValue());
-				}
-			}),
-			new sap.m.Text({
-				text: {
-					path: "config>/rowHeight",
-					formatter: function(sRowHeight) {
-						return "(" + sRowHeight + ")";
-					}
-				}
-			}),
-			new sap.m.CheckBox({
-				text: "Alternating",
-				selected: {
-					path: "config>/alternatingRowHeights",
-					type: new sap.ui.model.type.Boolean()
-				},
-				select: function() {
-					configureRowHeights();
-				}
-			}),
-			new sap.m.ToolbarSeparator()
-		]
-	}));
+	window.oTable = oTable;
 
 	function configureRowHeights(iHeight) {
 		const aData = oRowModel.getProperty("/custom");
@@ -133,7 +235,11 @@
 		}
 
 		aData.forEach(function(oData) {
-			oData.height = (bAlternatingRowHeights ? iHeight : iHeight * Math.random()) + "px";
+			if (iHeight > 0) {
+				oData.height = (bAlternatingRowHeights ? iHeight : iHeight * Math.random()) + "px";
+			} else {
+				oData.height = "auto";
+			}
 		});
 
 		oConfigModel.setProperty("/rowHeight", iHeight === 0 ? "auto" : iHeight + "px");
@@ -141,8 +247,7 @@
 		oTable.getBinding().refresh(true);
 	}
 
-	// Variable row heights test control
-	const VariableRowHeightControl = sap.ui.core.Control.extend("sap.ui.table.test.VariableRowHeightControl", {
+	const VariableRowHeightControl = Control.extend("sap.ui.table.test.VariableRowHeightControl", {
 		metadata: {
 			properties: {
 				height: {type: "string", defaultValue: "auto"},
@@ -187,150 +292,134 @@
 		}
 	});
 
-	// Create the columns.
-
-	// VariableRowHeightControl
-	oTable.addColumn(new sap.ui.table.Column({
-		label: new sap.m.Label({text: "VariableRowHeightControl"}),
+	// Columns
+	oTable.addColumn(new Column({
+		label: new Label({text: "VariableRowHeightControl"}),
 		template: new VariableRowHeightControl({
 			height: "{height}",
 			text: {
 				path: "config>/firstRowIndex",
 				formatter: function(iFirstRowIndex) {
-					const oRow = this.getParent();
-
-					if (oRow == null) {
-						return "";
-					}
-
-					const oTable = oRow.getParent();
-					const iRowAggregationIndex = oTable.indexOfRow(oRow);
-					const iRowIndex = iFirstRowIndex + iRowAggregationIndex;
-					return "Row #" + (iRowIndex + 1);
+					return "Row #" + (this.getParent().getIndex() + 1);
 				}
 			}
 		}),
 		width: "150px"
 	}));
 
-	// sap.m.Text
-	oTable.addColumn(new sap.ui.table.Column({
-		label: new sap.m.Label({text: "m.Text"}),
-		template: new sap.m.Text({text: "Einstein"}),
+	oTable.addColumn(new Column({
+		label: new Label({text: "m.Text"}),
+		template: new Text({text: "Einstein"}),
 		width: "120px"
 	}));
-
-	// sap.m.Label
-	oTable.addColumn(new sap.ui.table.Column({
-		label: new sap.m.Label({text: "m.Label"}),
-		template: new sap.m.Label({text: "Albert"}),
+	oTable.addColumn(new Column({
+		label: new Label({text: "m.Label"}),
+		template: new Label({text: "Albert"}),
 		width: "6em"
 	}));
+	oTable.addColumn(new Column({
+		label: new Label({text: "m.ObjectStatus"}),
+		template: new ObjectStatus({text: {
+			path: "config>/firstRowIndex",
+			formatter: function() {
+				const iIndex = this.getParent().getIndex();
 
-	// sap.m.ObjectStatus
-	oTable.addColumn(new sap.ui.table.Column({
-		label: new sap.m.Label({text: "m.ObjectStatus"}),
-		template: new sap.m.ObjectStatus({text: "Success", state: "Success"}),
+				if (iIndex % 3 === 0) {
+					return "Good";
+				} else if (iIndex % 3 === 1) {
+					return "Critical";
+				} else {
+					return "Error";
+				}
+			}
+		}, state: {
+			path: "config>/firstRowIndex",
+			formatter: function() {
+				const iIndex = this.getParent().getIndex();
+
+				if (iIndex % 3 === 0) {
+					return "Success";
+				} else if (iIndex % 3 === 1) {
+					return "Warning";
+				} else {
+					return "Error";
+				}
+			}
+		}}),
 		width: "200px"
 	}));
-
-	// sap.ui.core.Icon
-	oTable.addColumn(new sap.ui.table.Column({
+	oTable.addColumn(new Column({
 		resizable: false,
-		label: new sap.m.Label({text: "core.Icon"}),
-		template: new sap.ui.core.Icon({src: "sap-icon://account", decorative: false}),
+		label: new Label({text: "core.Icon"}),
+		template: new Icon({src: "sap-icon://account", decorative: false}),
 		width: "80px",
-		hAlign: sap.ui.core.HorizontalAlign.Center
+		hAlign: HorizontalAlign.Center
 	}));
-
-	// sap.m.Button
-	oTable.addColumn(new sap.ui.table.Column({
-		label: new sap.m.Label({text: "m.Button"}),
-		template: new sap.m.Button({text: "Button"}),
+	oTable.addColumn(new Column({
+		label: new Label({text: "m.Button"}),
+		template: new Button({text: "Button"}),
 		width: "100px"
 	}));
-
-	// sap.m.Input
-	oTable.addColumn(new sap.ui.table.Column({
-		label: new sap.m.Label({text: "m.Input"}),
-		template: new sap.m.Input({value: "Theory of relativity"}),
+	oTable.addColumn(new Column({
+		label: new Label({text: "m.Input"}),
+		template: new Input({value: "Theory of relativity"}),
 		width: "200px"
 	}));
-
-	// sap.m.DatePicker
-	oTable.addColumn(new sap.ui.table.Column({
-		label: new sap.m.Label({text: "m.DatePicker"}),
-		template: new sap.m.DatePicker({dateValue: new Date("1879-03-14")}),
+	oTable.addColumn(new Column({
+		label: new Label({text: "m.DatePicker"}),
+		template: new DatePicker({dateValue: new Date("1879-03-14")}),
 		width: "200px"
 	}));
-
-	// sap.m.Select
-	oTable.addColumn(new sap.ui.table.Column({
-		label: new sap.m.Label({text: "m.Select"}),
-		template: new sap.m.Select({
+	oTable.addColumn(new Column({
+		label: new Label({text: "m.Select"}),
+		template: new Select({
 			items: [
-				new sap.ui.core.Item({key: "v1", text: "Value 1"}),
-				new sap.ui.core.Item({key: "v2", text: "Value 2"}),
-				new sap.ui.core.Item({key: "v3", text: "Value 3"}),
-				new sap.ui.core.Item({key: "v4", text: "Value 4"})
+				new Item({key: "v1", text: "Value 1"}),
+				new Item({key: "v2", text: "Value 2"}),
+				new Item({key: "v3", text: "Value 3"}),
+				new Item({key: "v4", text: "Value 4"})
 			]
 		}),
 		width: "150px"
 	}));
-
-	// sap.m.Select
-	oTable.addColumn(new sap.ui.table.Column({
-		label: new sap.m.Label({text: "m.ComboBox"}),
-		template: new sap.m.ComboBox({
+	oTable.addColumn(new Column({
+		label: new Label({text: "m.ComboBox"}),
+		template: new ComboBox({
 			items: [
-				new sap.ui.core.Item({key: "v1", text: "Value 1"}),
-				new sap.ui.core.Item({key: "v2", text: "Value 2"}),
-				new sap.ui.core.Item({key: "v3", text: "Value 3"}),
-				new sap.ui.core.Item({key: "v4", text: "Value 4"})
+				new Item({key: "v1", text: "Value 1"}),
+				new Item({key: "v2", text: "Value 2"}),
+				new Item({key: "v3", text: "Value 3"}),
+				new Item({key: "v4", text: "Value 4"})
 			]
 		}),
 		width: "150px"
 	}));
-
-	// sap.m.Select
-	oTable.addColumn(new sap.ui.table.Column({
-		label: new sap.m.Label({text: "m.MultiComboBox"}),
-		template: new sap.m.MultiComboBox({
+	oTable.addColumn(new Column({
+		label: new Label({text: "m.MultiComboBox"}),
+		template: new MultiComboBox({
 			items: [
-				new sap.ui.core.Item({key: "v1", text: "Value 1"}),
-				new sap.ui.core.Item({key: "v2", text: "Value 2"}),
-				new sap.ui.core.Item({key: "v3", text: "Value 3"}),
-				new sap.ui.core.Item({key: "v4", text: "Value 4"})
+				new Item({key: "v1", text: "Value 1"}),
+				new Item({key: "v2", text: "Value 2"}),
+				new Item({key: "v3", text: "Value 3"}),
+				new Item({key: "v4", text: "Value 4"})
 			]
 		}),
 		width: "250px"
 	}));
-
-	// sap.m.Checkbox
-	oTable.addColumn(new sap.ui.table.Column({
-		label: new sap.m.Label({text: "m.Checkbox"}),
-		template: new sap.m.CheckBox({selected: true, text: "Genius"}),
+	oTable.addColumn(new Column({
+		label: new Label({text: "m.Checkbox"}),
+		template: new CheckBox({selected: true, text: "Genius"}),
 		width: "50px"
 	}));
-
-	// sap.m.Link
-	oTable.addColumn(new sap.ui.table.Column({
-		label: new sap.m.Label({text: "m.Link"}),
-		template: new sap.m.Link({href: "http://www.sap.com", text: "www.sap.com"}),
+	oTable.addColumn(new Column({
+		label: new Label({text: "m.Link"}),
+		template: new Link({href: "http://www.sap.com", text: "www.sap.com"}),
 		width: "150px"
 	}));
 
-	// sap.ui.unified.Currency
-	oTable.addColumn(new sap.ui.table.Column({
-		label: new sap.m.Label({text: "unified.Currency"}),
-		template: new sap.ui.unified.Currency({value: 123.45, currency: "EUR"}),
-		width: "200px"
-	}));
-
-	// set Model and bind Table
-	const oRowModel = new sap.ui.model.json.JSONModel({
+	const oRowModel = new JSONModel({
 		"default": {
-			height: undefined
+			height: "auto"
 		},
 		custom: [
 			{height: "auto"},
@@ -345,13 +434,33 @@
 			{height: "auto"}
 		]
 	});
-	const oConfigModel = new sap.ui.model.json.JSONModel({
-		rowWiseScrolling: false,
+
+	const oConfigModel = new JSONModel({
+		scrollGranularity: "Pixel",
+		automatedScrolling: {
+			delta: 1,
+			interval: 50
+		},
 		alternatingRowHeights: false,
 		rowCount: 1000000000,
 		firstRowIndex: 0,
 		rowHeight: "auto"
 	});
+	oConfigModel.bindProperty("/rowCount").attachChange(function() {
+		oTable.getBinding().refresh(true);
+	});
+	oConfigModel.bindProperty("/scrollGranularity").attachChange(function() {
+		const sScrollGranularity = oConfigModel.getProperty("/scrollGranularity");
+
+		if (sScrollGranularity === "Row") {
+			oTable._bVariableRowHeightEnabled = false;
+		} else {
+			oTable._bVariableRowHeightEnabled = true;
+		}
+
+		oTable.invalidate();
+	}).refresh(true);
+
 	oTable.setModel(oRowModel);
 	oTable.setModel(oConfigModel, "config");
 	oTable.bindRows("/");
@@ -372,13 +481,11 @@
 				if (iIndex % 2 > 0) {
 					sPath = "/custom/0";
 				}
-			} else {
-				if (iIndex % 10 > 0) {
-					sPath = "/custom/" + (iIndex % 10);
-				}
+			} else if (iIndex % 10 > 0) {
+				sPath = "/custom/" + (iIndex % 10);
 			}
 
-			aContexts.push(new sap.ui.model.Context(oRowModel, sPath));
+			aContexts.push(new Context(oRowModel, sPath));
 		}
 
 		const iOldFirstRowIndex = oConfigModel.getProperty("/firstRowIndex");
@@ -390,19 +497,19 @@
 
 		return aContexts;
 	};
-	oTable._bVariableRowHeightEnabled = true;
-	oTable.setRowMode("Auto");
+
+	oTable.setRowMode(new AutoRowMode());
 	oTable.placeAt("table");
 
-	TABLESETTINGS.init(oTable, function(oButton) {
-		oTable.getToolbar().addContent(oButton);
+	TableSettings.init(oTable, function(oButton) {
+		oTable.getExtension()[0].addContent(oButton);
 	});
+});
 </script>
 </head>
 
 <body class="sapUiBody sapUiSizeCozy">
-<h1 id="header">Test Page for <code>sap.ui.table.Table</code> with Variable Row Height (pixel based scrolling)</h1>
-<div id="table" style="min-height: 80vh"></div>
-<div id="content"></div>
+<h1 id="header">Test Page for <code>sap.ui.table.Table</code>: Scrolling with large data and different scroll granularities</h1>
+<div id="table"></div>
 </body>
 </html>
