@@ -876,11 +876,13 @@ sap.ui.define([
 
 	QUnit.test("Cancel with different event target", async function(assert) {
 		// Arrange
-		var sEditButtonId = this.oUploadSet.getItems()[1].sId + "-editButton";
+		var oItem = this.oUploadSet.getItems()[1];
+		var sEditButtonId = oItem.sId + "-editButton";
 		Element.getElementById(sEditButtonId).firePress();
 		await nextUIUpdate();
 
-		var oSpy = this.spy(UploadSet.prototype, "_handleItemEditCancelation");
+		var oCancelSpy = this.spy(UploadSet.prototype, "_handleItemEditCancelation");
+		var oFocusSpy = this.spy(oItem._oListItem, "focus");
 		var oEvent = {
 			target: {
 				closest: function(selector) {
@@ -892,11 +894,12 @@ sap.ui.define([
 		};
 
 		// Act
-		this.oUploadSet._handleClick(oEvent, this.oUploadSet.getItems()[1]);
+		this.oUploadSet._handleClick(oEvent, oItem);
 		await nextUIUpdate();
 
 		// Assert
-		assert.equal(oSpy.callCount, 1, "Cancel handling is done even for targets that are not the button itself.");
+		assert.equal(oCancelSpy.callCount, 1, "Cancel handling is done even for targets that are not the button itself.");
+		assert.ok(oFocusSpy.called, "focus() is called on the item's list item after cancel.");
 	});
 
 	QUnit.test("Test for nullable Queryselection check", async function(assert) {
