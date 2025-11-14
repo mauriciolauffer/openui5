@@ -43503,6 +43503,8 @@ make root = ${bMakeRoot}`;
 	// Scenario: Move a root node to the first position. The POST for moving the position requires
 	// a non-canonical URL. The NextSibling's complex type requires multiple keys.
 	// JIRA: CPOUI5ODATAV4-2228
+	//
+	// Copy a node via non-canonical URL (JIRA: CPOUI5ODATAV4-2933)
 	QUnit.test("Recursive Hierarchy: nextSibling (non-canonical path)", async function (assert) {
 		const oModel = this.createSpecialCasesModel({autoExpandSelect : true});
 		const sFriend = "/Artists(ArtistID='99',IsActiveEntity=false)/_Friend";
@@ -43615,6 +43617,75 @@ make root = ${bMakeRoot}`;
 			[undefined, 1, "Alpha"]
 		]);
 		assert.strictEqual(oBeta.getIndex(), 0);
+
+		this.expectRequest("#3 POST " + sFriend.slice(1)
+				+ "(ArtistID='1',IsActiveEntity=false)/special.cases.CopyAction"
+				+ "?$select=ArtistID,IsActiveEntity",
+				{ArtistID : "_1", IsActiveEntity : false})
+			.expectRequest("#3 PATCH $-1", { // Note: "$-1" references the previous request
+				headers : {
+					Prefer : "return=minimal"
+				},
+				payload : {
+					"BestFriend@odata.bind" : null
+				}
+			}, oNO_CONTENT)
+			.expectRequest("#3 POST $-2/special.cases.ChangeNextSibling", {
+				headers : {
+					Prefer : "return=minimal"
+				},
+				payload : {
+					// Note: add a non-key property for demonstrating the multi key scenario
+					NextSibling : {ArtistID : "1", Name : "Alpha"}
+				}
+			}, oNO_CONTENT)
+			.expectRequest("#3 " + sUrl
+				+ "&$filter=ArtistID eq '1' and IsActiveEntity eq false&$select=_/Limited_Rank", {
+				value : [{
+					_ : {Limited_Rank : "2"}
+				}]
+			})
+			.expectRequest("#3 " + sUrl + sSelect + "&$count=true&$skip=0&$top=3", {
+				"@odata.count" : "3",
+				value : [{
+					ArtistID : "2",
+					IsActiveEntity : false,
+					Name : "Beta",
+					_ : {
+						DrillState : "leaf",
+						NodeID : "2,false"
+					}
+				}, {
+					ArtistID : "_1",
+					IsActiveEntity : false,
+					Name : "Copy of Alpha",
+					_ : {
+						DrillState : "leaf",
+						NodeID : "_1,false"
+					}
+				}, {
+					ArtistID : "1",
+					IsActiveEntity : false,
+					Name : "Alpha",
+					_ : {
+						DrillState : "leaf",
+						NodeID : "1,false"
+					}
+				}]
+			})
+			//TODO is this still needed, now that '_1' was contained above?
+			.expectRequest("#4 " + sUrl
+				+ "&$filter=ArtistID eq '_1' and IsActiveEntity eq false&$select=_/Limited_Rank", {
+				value : [{
+					_ : {Limited_Rank : "1"}
+				}]
+			});
+
+		await Promise.all([
+			// code under test
+			oAlpha.move({copy : true, nextSibling : oAlpha, parent : null}),
+			this.waitForChanges(assert, "copy Alpha into the middle")
+		]);
 	});
 
 	//*********************************************************************************************
@@ -50283,6 +50354,7 @@ make root = ${bMakeRoot}`;
 					Name : "Epsilon"
 				}]
 			})
+			//TODO is this still needed, now that '_1' was contained above?
 			.expectRequest("#3 " + sBaseUrl + "&$filter=ID eq '_1'&$select=LimitedRank", {
 				value : [{
 					LimitedRank : "1" // Edm.Int64
