@@ -96,7 +96,7 @@ sap.ui.define(function() {
 				}
 			},
 			"base/util/LoaderExtensions": {
-				title: "sap.base.util.LoaderExtensions"
+				title: "sap/base/util/LoaderExtensions"
 			},
 			"jqueryCompatibilityCheck": {
 				page: "resources/sap/ui/test/starter/Test.qunit.html?testsuite={suite}&test={name}&sap-ui-xx-self-closing-check=true",

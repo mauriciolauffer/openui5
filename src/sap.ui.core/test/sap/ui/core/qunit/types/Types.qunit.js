@@ -83,7 +83,7 @@ sap.ui.define([
 	 * exception is thrown. Uses <code>future.active = false</code> to simulate the behavior of UI5 1.x.
 	 *
 	 * @param {object} assert The QUnit assert object
-	 * @param {sap.ui.model.type.Type} oType The type instance
+	 * @param {sap.ui.model.Type} oType The type instance
 	 * @param {"formatValue"|"parseValue"} sFunction The function to be called on the type instance
 	 * @param {any} vValue The value to be passed to the function
 	 * @param {sap.ui.model.FormatException|sap.ui.model.ParseException} oException The expected exception instance
@@ -105,7 +105,7 @@ sap.ui.define([
 	 * of UI5 2.x.
 	 *
 	 * @param {object} assert The QUnit assert object
-	 * @param {sap.ui.model.type.Type} oType The type instance
+	 * @param {sap.ui.model.Type} oType The type instance
 	 * @param {"formatValue"|"parseValue"} sFunction The function to be called on the type instance
 	 * @param {any} vValue The value to be passed to the function
 	 */

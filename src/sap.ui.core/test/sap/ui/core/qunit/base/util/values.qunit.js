@@ -9,7 +9,7 @@ sap.ui.define([
 ) {
 	"use strict";
 
-	QUnit.module("sap.base.util.values", function () {
+	QUnit.module("sap/base/util/values", function () {
 		QUnit.test("basic functionality", function (assert) {
 			assert.deepEqual(values({a: 'b', c: 'd'}), ['b', 'd']);
 			assert.deepEqual(values({a: 'b', c: 'd'}).sort(), ['d', 'b'].sort());

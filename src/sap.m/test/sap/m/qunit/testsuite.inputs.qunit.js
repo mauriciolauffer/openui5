@@ -35,7 +35,7 @@ sap.ui.define([
 	];
 	var oInputUtilTests = {
 		"inputUtils/highlightDOMElements": {
-			title: "QUnit Page for sap.m.inputs.highlightDOMElements",
+			title: "QUnit Page for sap.m.inputUtils.highlightDOMElements",
 			ui5: {
 				compatVersion: "1.81"
 			},
@@ -44,7 +44,7 @@ sap.ui.define([
 			}
 		},
 		"inputUtils/highlightItemsWithContains": {
-			title: "QUnit Page for sap.m.inputs.highlightItemsWithContains",
+			title: "QUnit Page for sap.m.inputUtils.highlightItemsWithContains",
 			ui5: {
 				compatVersion: "1.120"
 			},
@@ -53,7 +53,7 @@ sap.ui.define([
 			}
 		},
 		"inputUtils/wordStartsWithValue": {
-			title: "QUnit Page for sap.m.inputs.wordStartsWithValue",
+			title: "QUnit Page for sap.m.inputUtils.wordStartsWithValue",
 			ui5: {
 				compatVersion: "1.81"
 			},
@@ -62,7 +62,7 @@ sap.ui.define([
 			}
 		},
 		"inputUtils/completeTextSelected": {
-			title: "QUnit Page for sap.m.inputs.completeTextSelected",
+			title: "QUnit Page for sap.m.inputUtils.completeTextSelected",
 			ui5: {
 				compatVersion: "1.83"
 			},
@@ -71,7 +71,7 @@ sap.ui.define([
 			}
 		},
 		"inputUtils/scrollToItem": {
-			title: "QUnit Page for sap.m.inputs.scrollToItem",
+			title: "QUnit Page for sap.m.inputUtils.scrollToItem",
 			ui5: {
 				compatVersion: "1.84"
 			},
@@ -80,7 +80,7 @@ sap.ui.define([
 			}
 		},
 		"inputUtils/selectionRange": {
-			title: "QUnit Page for sap.m.inputs.selectionRange",
+			title: "QUnit Page for sap.m.inputUtils.selectionRange",
 			ui5: {
 				compatVersion: "1.88"
 			},
@@ -89,7 +89,7 @@ sap.ui.define([
 			}
 		},
 		"inputUtils/calculateSelectionStart": {
-			title: "QUnit Page for sap.m.inputs.calculateSelectionStart",
+			title: "QUnit Page for sap.m.inputUtils.calculateSelectionStart",
 			ui5: {
 				compatVersion: "1.88"
 			},

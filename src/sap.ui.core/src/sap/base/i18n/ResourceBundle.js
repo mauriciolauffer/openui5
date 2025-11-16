@@ -992,7 +992,7 @@ sap.ui.define([
 	 *
 	 * @private
 	 * @ui5-restricted sap.fiori, sap.support launchpad
-	 * @deprecated As of version 1.135. Use {@link sap.base.i18n.LanguageFallback.getFallbackLocales} instead.
+	 * @deprecated As of version 1.135. Use {@link sap/base/i18n/LanguageFallback.getFallbackLocales} instead.
 	 */
 	ResourceBundle._getFallbackLocales = LanguageFallback.getFallbackLocales;
 

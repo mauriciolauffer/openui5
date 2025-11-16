@@ -166,7 +166,7 @@ sap.ui.define([
 		// test processing will be completed in onExit of the view extension
 		this.done = assert.async();
 
-		// Extension Provider module - used for sap.ui.mvc.Controller ExtensionProvider Tests
+		// Extension Provider module - used for sap.ui.core.mvc.Controller ExtensionProvider Tests
 		var that = this;
 		sap.ui.predefine("sap/my/sync/ExtensionProvider", [], function() {
 			var ExtensionProvider = function() {};

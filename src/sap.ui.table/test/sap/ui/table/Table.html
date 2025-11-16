@@ -215,7 +215,7 @@
 	oColumn = new sap.ui.table.Column({label: new sap.m.Label({text: "m.MultiComboBox"}), template: oControl, width: "250px"});
 	oTable.addColumn(oColumn);
 
-	// sap.m.Checkbox
+	// sap.m.CheckBox
 	oControl = new sap.m.CheckBox({selected: "{checked}", text: "{lastName}"});
 	oColumn = new sap.ui.table.Column({label: new sap.m.Label({text: "m.Checkbox"}), template: oControl, width: "50px"}).data("clipboard", "checked");
 	oColumn.setCreationTemplate(new sap.m.HBox({items: [new sap.m.CheckBox({selected: "{checked}"}), new sap.m.Input({value: "{lastName}"})]}));

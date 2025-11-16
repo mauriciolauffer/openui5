@@ -24,7 +24,7 @@ function(library, Localization, Control, coreLibrary, Device, HyphenationSupport
 	// shortcut for sap.m.WrappingType
 	var WrappingType = library.WrappingType;
 
-	// shortcut for sap.m.EmptyIndicator
+	// shortcut for sap.m.EmptyIndicatorMode
 	var EmptyIndicatorMode = library.EmptyIndicatorMode;
 
 	/**
@@ -479,7 +479,7 @@ function(library, Localization, Control, coreLibrary, Device, HyphenationSupport
 	 * @returns {boolean} If it is an interactive Control
 	 *
 	 * @private
-	 * @ui5-restricted sap.m.OverflowToolBar, sap.m.Toolbar
+	 * @ui5-restricted sap.m.OverflowToolbar, sap.m.Toolbar
 	 */
 	Text.prototype._getToolbarInteractive = function () {
 		return false;

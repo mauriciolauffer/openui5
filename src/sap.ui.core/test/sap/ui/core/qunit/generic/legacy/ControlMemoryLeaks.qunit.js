@@ -284,9 +284,6 @@ sap.ui.define([
 			assert.ok(true, "WARNING: " + sControlName + " is known to have memory leaks and is ignored until they are fixed.");
 			return true;
 		}
-
-		// for testing:
-		// if (sControlName !== "sap.m.ViewSettingsPopover") return true;
 	}
 
 

@@ -17,7 +17,7 @@ sap.ui.define([
 	"use strict";
 
 	/**
-	 * @const Shortcut to sap.ui.core.library.aria.HasPopup
+	 * @const Shortcut to sap.ui.core.aria.HasPopup
 	 */
 	var HasPopup = coreLibrary.aria.HasPopup;
 
