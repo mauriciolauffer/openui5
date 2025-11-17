@@ -1,0 +1,42 @@
+{
+  "1.144.0": {
+    "date": "November 2025",
+    "notes": [
+      {
+        "id": "c26f467ad0f6db9d7c03caa0533011c1188af1be",
+        "type": "FIX",
+        "text": " We now ensure that the UploadSetWithTable plugin correctly handles file extraction while maintaining the original MIME type when you drag and drop files into the plugin"
+      },
+      {
+        "id": "de677d065980eca4104bafc991c63563c8ff673a",
+        "type": "FIX",
+        "text": " sap.m.SearchField: Fix Korean text display within OverflowToolbar"
+      },
+      {
+        "id": "f5aa4514ed4c7d8db05cc7b0fa1ef42b3d720987",
+        "type": "FIX",
+        "text": " sap.m.Toolbar: KBH for nested sap.m.Tokenizer corrected"
+      },
+      {
+        "id": "5876a1f1a54a54ebb41c404d52519b0c3673b903",
+        "type": "FIX",
+        "text": " We now ensure that ItemRenameCanceled event is fired when the Rename dialog is closed by pressing the Esc key in UploadSetwithTable"
+      },
+      {
+        "id": "820345191114c3c45320dcdb15691ba4ba7e3d76",
+        "type": "FIX",
+        "text": " We now ensure that the focus is set on the uploaded item when the renaming action is canceled in UploadSet"
+      },
+      {
+        "id": "d26788ae480302c2ffa24d6051732cba1239c47f",
+        "type": "FIX",
+        "text": " sap.m.ObjectStatus: state information is referenced in"
+      },
+      {
+        "id": "eb69b0de7c6974628c4cdf143b72241786f2d8b5",
+        "type": "FIX",
+        "text": " sap.m.IllustrationPool: gracefully remove DOM pool assets"
+      }
+    ]
+  }
+}

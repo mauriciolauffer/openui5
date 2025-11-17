@@ -1,0 +1,12 @@
+{
+  "1.144.0": {
+    "date": "November 2025",
+    "notes": [
+      {
+        "id": "ac695ce554d2e9fe327c511e1a712076c75ea1f1",
+        "type": "FIX",
+        "text": " SortFlex: Adjust customAggregation to include sort order"
+      }
+    ]
+  }
+}

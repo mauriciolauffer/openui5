@@ -1,0 +1,17 @@
+{
+  "1.144.0": {
+    "date": "November 2025",
+    "notes": [
+      {
+        "id": "61530344df4de95f2f2dbe795ce7a8cb51ef4935",
+        "type": "FIX",
+        "text": " sap/ui/model/ClientTreeBinding#cloneData: use a clone for this.oTreeData"
+      },
+      {
+        "id": "f8e1194e2e711cb8dc17b46d0c6413fca01245bd",
+        "type": "FIX",
+        "text": " sap.ui.test.Opa: Fix Safari polling interval test failure"
+      }
+    ]
+  }
+}

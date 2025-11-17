@@ -1,0 +1,22 @@
+{
+  "1.144.0": {
+    "date": "November 2025",
+    "notes": [
+      {
+        "id": "03f3c5a2c54e2b98053df2becd7236dc1457fe49",
+        "type": "FIX",
+        "text": " sap.uxap.ObjectPageSubSection: role region"
+      },
+      {
+        "id": "808cbd7d3fb5dcd257f3789228d950f4696cb4ae",
+        "type": "FIX",
+        "text": " sap.uxap.ObjectPageSection: Remove unnecessary attributes"
+      },
+      {
+        "id": "415635aabf3fe2b6527b6c81cd1ffbb73d6cfccc",
+        "type": "FIX",
+        "text": " sap.uxap.ObjectPageLayout: Fix wrong positioning"
+      }
+    ]
+  }
+}
