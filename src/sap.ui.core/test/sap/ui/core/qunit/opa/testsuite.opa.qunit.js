@@ -408,7 +408,7 @@ sap.ui.define([
 				title: "QUnit Page for sap.ui.test._BrowserLogCollector"
 			},
 			"OpaBuilder": {
-				title: "QUnit Page for sap.ui.test.OpaBuilder"
+				title: "QUnit Page for sap/ui/test/OpaBuilder"
 			}
 		}
 	};

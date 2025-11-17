@@ -44,7 +44,7 @@ sap.ui.define([
 	// shortcut for sap.m.IllustratedMessageType
 	var IllustratedMessageType = library.IllustratedMessageType;
 
-	// shortcut for sap.ui.core.IllustratedMessageType
+	// shortcut for sap.ui.core.TextAlign
 	var TextAlign = coreLibrary.TextAlign;
 
 	// shortcut for sap.ui.core.TitleLevel

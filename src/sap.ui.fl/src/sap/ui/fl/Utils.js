@@ -325,7 +325,7 @@ sap.ui.define([
 		},
 
 		/**
-		 * See {@link sap.ui.core.BaseTreeModifier#hasLocalIdSuffix} method
+		 * See {@link sap.ui.core.util.reflection.BaseTreeModifier#hasLocalIdSuffix} method
 		 */
 		hasLocalIdSuffix: BaseTreeModifier.hasLocalIdSuffix,
 

@@ -9,7 +9,7 @@ sap.ui.define([
 ) {
 	"use strict";
 
-	QUnit.module("sap.base.util.includes", function () {
+	QUnit.module("sap/base/util/includes", function () {
 		QUnit.test("lookup in array", function (assert) {
 			assert.strictEqual(includes(['foo'], 'foo'), true, "array with one item includes 'foo'");
 			assert.strictEqual(includes(['foo', 'bar'], 'bar'), true, "array with two items includes 'bar'");

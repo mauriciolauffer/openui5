@@ -5,7 +5,7 @@
 sap.ui.define(['sap/base/Log', 'sap/base/util/UriParameters'], function(Log, UriParameters) {
 	"use strict";
 
-	QUnit.module("sap.base.util.UriParameters");
+	QUnit.module("sap/base/util/UriParameters");
 
 	QUnit.test("empty query string", function(assert) {
 		var oUriParams = new UriParameters("/service");
