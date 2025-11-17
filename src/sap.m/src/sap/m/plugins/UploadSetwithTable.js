@@ -1357,7 +1357,8 @@ sap.ui.define([
 		return new Promise((resolve, reject) => {
 			const aEntriesPromises = [];
 			for (let i = 0; i < dataTransferItems.length; i++) {
-				aEntriesPromises.push(traverseFileTreePromise(dataTransferItems[i]?.webkitGetAsEntry()));
+				const oTransferItem = dataTransferItems[i];
+				aEntriesPromises.push(traverseFileTreePromise(oTransferItem?.webkitGetAsEntry(), oTransferItem));
 			}
 			Promise.all(aEntriesPromises)
 				.then( (entries) => {
@@ -1367,9 +1368,15 @@ sap.ui.define([
 				});
 		});
 
-		function traverseFileTreePromise(item) {
+		function traverseFileTreePromise(item, oDataTransferItem) {
 			return new Promise((resolve, reject) => {
 				if (item.isFile) {
+					if (oDataTransferItem && oDataTransferItem.getAsFile) {
+						const oFile = oDataTransferItem.getAsFile();
+						aFiles.push(oFile);
+						resolve(oFile);
+						return;
+					}
 					item.file((oFile) => {
 						aFiles.push(oFile);
 						resolve(oFile);
