@@ -27,6 +27,7 @@ sap.ui.define(function() {
 				page: "test-resources/sap/ui/core/qunit/compat_legacyAPIs/testsuite.compat.qunit.html"
 			},
 			component: {},
+			/** @deprecated As of version 1.88, together with XMLComposite */
 			composite: {},
 			"Messaging": {
 				page: "test-resources/sap/ui/core/qunit/messages/testsuite.messaging.base.qunit.html"
@@ -82,6 +83,7 @@ sap.ui.define(function() {
 				page: "test-resources/sap/ui/core/qunit/testsuites/testsuite.theming.qunit.html"
 			},
 			service: {},
+			/** @deprecated As of version 1.56, together with Template and TemplateView */
 			tmpl: {},
 			designtime: {},
 			dnd: {},
