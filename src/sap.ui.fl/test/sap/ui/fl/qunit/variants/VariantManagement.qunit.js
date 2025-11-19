@@ -17,12 +17,12 @@ sap.ui.define([
 	"sap/ui/fl/variants/VariantManagement",
 	"sap/ui/fl/variants/VariantManager",
 	"sap/ui/fl/variants/VariantModel",
+	"sap/ui/fl/write/_internal/flexState/FlexObjectManager",
 	"sap/ui/fl/Layer",
 	"sap/ui/fl/Utils",
 	"sap/ui/layout/Grid",
 	"sap/ui/qunit/utils/nextUIUpdate",
 	"sap/ui/thirdparty/sinon-4",
-	"test-resources/sap/ui/fl/qunit/FlQUnitUtils",
 	"test-resources/sap/ui/rta/qunit/RtaQunitUtils"
 ], function(
 	Localization,
@@ -41,12 +41,12 @@ sap.ui.define([
 	VariantManagement,
 	VariantManager,
 	VariantModel,
+	FlexObjectManager,
 	Layer,
 	Utils,
 	Grid,
 	nextUIUpdate,
 	sinon,
-	FlQUnitUtils,
 	RtaQunitUtils
 ) {
 	"use strict";
@@ -146,6 +146,14 @@ sap.ui.define([
 				}
 			);
 
+			this.oGetAppComponentForControlStub = sandbox.stub(Utils, "getAppComponentForControl").returns({
+				getLocalId: (sControlId) => sControlId,
+				getModel: () => this.oModel,
+				getId: () => "componentId"
+			});
+
+			sandbox.stub(VariantManager, "handleSaveEvent");
+
 			return this.oModel.initialize();
 		},
 		afterEach() {
@@ -220,6 +228,14 @@ sap.ui.define([
 			this.oVariantManagement.getFocusDomRef();
 
 			assert.ok(this._oVM.oVariantPopoverTrigger.getFocusDomRef.called);
+		});
+
+		QUnit.test("Check getDesignMode", function(assert) {
+			const oGetDesignModeStub = sandbox.stub(this._oVM, "getDesignMode").returns(true);
+			assert.ok(this.oVariantManagement.getDesignMode(), "then design mode is true");
+
+			oGetDesignModeStub.returns(false);
+			assert.notOk(this.oVariantManagement.getDesignMode(), false, "then design mode is false");
 		});
 
 		QUnit.test("Check onclick", function(assert) {
@@ -607,13 +623,17 @@ sap.ui.define([
 		});
 
 		QUnit.test("Checking _handleVariantSaveAs", function(assert) {
+			const fnDone = assert.async();
 			this.oVariantManagement.setModel(this.oModel, ControlVariantApplyAPI.getVariantModelName());
 
-			var bCalled = false;
-			this.oVariantManagement.attachSave(function(oEvent) {
-				bCalled = true;
+			this.oVariantManagement.attachEventOnce("save", function(oEvent) {
 				assert.ok(!oEvent.getParameter("public"));
-			});
+				this.oVariantManagement.attachEventOnce("save", function() {
+					assert.strictEqual(this._oVM.oInputName.getValueState(), "Error");
+					fnDone();
+				}.bind(this));
+				this._oVM._handleVariantSaveAs(" ");
+			}.bind(this));
 
 			this._oVM._createSaveAsDialog();
 
@@ -624,15 +644,11 @@ sap.ui.define([
 			assert.equal(this._oVM.oInputName.getValueState(), "None");
 			assert.ok(this._oVM.oSaveSave.getEnabled());
 
-			var aItems = this.oVariantManagement.getVariants();
+			const aItems = this.oVariantManagement.getVariants();
 			assert.ok(aItems);
 			assert.equal(aItems.length, 5);
 
 			this._oVM._handleVariantSaveAs("1");
-			assert.ok(bCalled);
-
-			this._oVM._handleVariantSaveAs(" ");
-			assert.equal(this._oVM.oInputName.getValueState(), "Error");
 		});
 
 		QUnit.test("Checking _handleVariantSaveAs with cancel", function(assert) {
@@ -655,11 +671,12 @@ sap.ui.define([
 		});
 
 		QUnit.test("Checking _handleVariantSave", function(assert) {
+			const fnDone = assert.async();
 			this.oVariantManagement.setModel(this.oModel, ControlVariantApplyAPI.getVariantModelName());
 
-			var bCalled = false;
 			this.oVariantManagement.attachSave(function() {
-				bCalled = true;
+				assert.ok(true, "save event called");
+				fnDone();
 			});
 
 			this._oVM._createSaveAsDialog();
@@ -672,7 +689,6 @@ sap.ui.define([
 			this._oVM._openSaveAsDialog();
 
 			this._oVM._handleVariantSave();
-			assert.ok(bCalled);
 		});
 
 		QUnit.test("Checking openManagementDialog", function(assert) {
@@ -838,23 +854,26 @@ sap.ui.define([
 			assert.equal(oItem._getOriginalTitle(), oItem.getTitle());
 		});
 
-		QUnit.test("Checking _handleManageSavePressed; deleted item is NOT selected", function(assert) {
+		QUnit.test("Checking _handleManageSavePressed; deleted item is NOT selected", async function(assert) {
+			const fnDone = assert.async();
 			this.oVariantManagement.setModel(this.oModel, ControlVariantApplyAPI.getVariantModelName());
+			sandbox.stub(FlexObjectManager, "saveFlexObjects").resolves();
 
 			this.oVariantManagement.attachManage(function(oEvent) {
-				var oData = oEvent.getParameters();
+				const oData = oEvent.getParameters();
 
-				var aDelItems = oData.deleted;
+				const aDelItems = oData.deleted;
 				assert.ok(oData.deleted);
 				assert.equal(aDelItems.length, 2);
 				assert.equal(aDelItems[0], "v1");
 				assert.equal(aDelItems[1], "v4");
 
-				var aRenamedItems = oData.renamed;
+				const aRenamedItems = oData.renamed;
 				assert.ok(aRenamedItems);
 				assert.equal(aRenamedItems.length, 1);
 				assert.equal(aRenamedItems[0].key, "v3");
 				assert.equal(aRenamedItems[0].name, "New 3");
+				fnDone();
 			});
 
 			this._oVM._createManagementDialog();
@@ -863,11 +882,11 @@ sap.ui.define([
 
 			this._oVM._openManagementDialog();
 
-			var oItemRen = this._oVM._getItemByKey("v3");
+			const oItemRen = this._oVM._getItemByKey("v3");
 			assert.ok(oItemRen);
 			oItemRen.setTitle("New 3");
 
-			var oItemDel = this._oVM._getItemByKey("v1");
+			const oItemDel = this._oVM._getItemByKey("v1");
 			assert.ok(oItemDel);
 
 			oItemDel.setTitle("New 1");
@@ -875,7 +894,7 @@ sap.ui.define([
 			this._oVM._handleManageDeletePressed(oItemDel);
 			this._oVM._handleManageDeletePressed(this._oVM._getItemByKey("v4"));
 
-			this._oVM._handleManageSavePressed();
+			await this._oVM._handleManageSavePressed();
 
 			assert.ok(!this._oVM.bFireSelect);
 		});
@@ -929,33 +948,25 @@ sap.ui.define([
 
 		QUnit.test("Checking _handleManageSavePressed; deleted item is selected", function(assert) {
 			const fnDone = assert.async();
-			this.oModel.fnManageClick = function() {
-				this.oVariantManagement.setCurrentVariantKey(this.oVariantManagement.getStandardVariantKey());
-			}.bind(this);
+			sandbox.stub(FlexObjectManager, "saveFlexObjects").resolves();
 
 			this.oVariantManagement.setModel(this.oModel, ControlVariantApplyAPI.getVariantModelName());
 
-			sandbox.stub(Utils, "getAppComponentForControl").returns({
-				getLocalId: (sControlId) => sControlId,
-				getModel: () => this.oModel,
-				getId: () => "componentId"
-			});
-
 			this.oVariantManagement.attachManage(function(oEvent) {
-				var oData = oEvent.getParameters();
+				const oData = oEvent.getParameters();
 
-				var aDelItems = oData.deleted;
+				const aDelItems = oData.deleted;
 				assert.ok(aDelItems);
 				assert.equal(aDelItems.length, 1);
 				assert.equal(aDelItems[0], "v1");
 
-				var aRenamedItems = oData.renamed;
+				const aRenamedItems = oData.renamed;
 				assert.ok(aRenamedItems);
 				assert.equal(aRenamedItems.length, 1);
 				assert.equal(aRenamedItems[0].key, "v3");
 				assert.equal(aRenamedItems[0].name, "New 3");
 
-				var aFavItems = oData.fav;
+				const aFavItems = oData.fav;
 				assert.ok(aFavItems);
 				assert.equal(aFavItems.length, 1);
 				assert.equal(aFavItems[0].key, "v4");
@@ -971,11 +982,11 @@ sap.ui.define([
 
 			this._oVM._openManagementDialog();
 
-			var oItemRen = this._oVM._getItemByKey("v3");
+			const oItemRen = this._oVM._getItemByKey("v3");
 			assert.ok(oItemRen);
 			oItemRen.setTitle("New 3");
 
-			var oItemDel = this._oVM._getItemByKey("v1");
+			const oItemDel = this._oVM._getItemByKey("v1");
 			assert.ok(oItemDel);
 
 			oItemDel.setTitle("New 1");
@@ -983,7 +994,7 @@ sap.ui.define([
 			this._oVM._handleManageDeletePressed(oItemDel);
 			this._oVM._handleManageDeletePressed(this._oVM._getItemByKey("v2")); // will not be deleted, because different layer
 
-			var oItemFav = this._oVM._getItemByKey("v4");
+			const oItemFav = this._oVM._getItemByKey("v4");
 			assert.ok(oItemFav);
 			this._oVM._handleManageFavoriteChanged(null, oItemFav);
 
@@ -1136,7 +1147,7 @@ sap.ui.define([
 			assert.ok(this._oVM._bRebindRequired);
 		});
 
-		QUnit.test("Checking _handleManageSavePressed; deleted item is default variant and Standard marked as non favorite", function(assert) {
+		QUnit.test("Checking _handleManageDeletePressed; deleted item is default variant and Standard marked as non favorite", function(assert) {
 			this.oModel.oData.One.variants[0].favorite = false;
 			this.oModel.oData.One.currentVariant = "v1";
 			this.oModel.oData.One.defaultVariant = "v1";
@@ -1194,8 +1205,9 @@ sap.ui.define([
 			assert.ok(this.oVariantManagement.getExecuteOnSelectionForStandardDefault());
 		});
 
-		QUnit.test("Check save in manage dialog with renaming", function(assert) {
+		QUnit.test("Check save in manage dialog with renaming", async function(assert) {
 			const fnOnManage = sandbox.stub();
+			sandbox.stub(FlexObjectManager, "saveFlexObjects").resolves();
 			this._oVM.attachManage(fnOnManage);
 
 			this.oModel.oData.One.variants[0].favorite = false;
@@ -1212,7 +1224,7 @@ sap.ui.define([
 
 			this._oVM._openManagementDialog();
 
-			this._oVM._handleManageSavePressed();
+			await this._oVM._handleManageSavePressed();
 			assert.ok(fnOnManage.calledOnce);
 
 			assert.ok(this._oVM.oManagementTable);
@@ -1231,7 +1243,7 @@ sap.ui.define([
 			this._oVM._checkVariantNameConstraints(oInput, "v2");
 
 			fnOnManage.resetHistory();
-			this._oVM._handleManageSavePressed();
+			await this._oVM._handleManageSavePressed();
 			assert.ok(fnOnManage.notCalled);
 
 			// setValue destroys the input while list binding is recreated....
@@ -1244,7 +1256,7 @@ sap.ui.define([
 			[, oInput] = this._oVM.oManagementTable.getItems()[1].getCells();
 
 			this._oVM._checkVariantNameConstraints(oInput, "2");
-			this._oVM._handleManageSavePressed();
+			await this._oVM._handleManageSavePressed();
 			assert.ok(fnOnManage.calledOnce);
 		});
 
@@ -1517,7 +1529,7 @@ sap.ui.define([
 			const sFallBackReference = oVariantManagement.getVariantManagementReference();
 			assert.equal(sFallBackReference, oVariantManagement.getId(), "Reference ID matches VM ID when no app component is found");
 
-			sinon.stub(Utils, "getAppComponentForControl").returns({
+			this.oGetAppComponentForControlStub.returns({
 				getLocalId(sControlId) {
 					return `appComponentId-${sControlId}`;
 				}
@@ -1525,7 +1537,6 @@ sap.ui.define([
 			const sReference = oVariantManagement.getVariantManagementReference();
 			assert.equal(sReference, "appComponentId-TestVM", "Local ID is returned when app component is found");
 
-			Utils.getAppComponentForControl.restore();
 			oVariantManagement.destroy();
 		});
 	});
