@@ -3223,6 +3223,9 @@ sap.ui.define([
 		this._onAfterInitialization("Destroyed");
 		this._onAfterFullInitialization("Destroyed");
 
+		// Cleanup plugins before the plugin owner is destroyed
+		MTableUtil.cleanupPluginsBeforeDestroy(this);
+
 		// Destroy destructible elements and delete references.
 		[
 			"_oTable",
