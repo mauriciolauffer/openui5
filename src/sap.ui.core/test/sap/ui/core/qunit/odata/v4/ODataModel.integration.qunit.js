@@ -68,6 +68,9 @@ sap.ui.define([
 		sODLB = "sap.ui.model.odata.v4.ODataListBinding",
 		sODPrB = "sap.ui.model.odata.v4.ODataPropertyBinding",
 		sPreviousFailed = "HTTP request was not processed because the previous request failed",
+		// allowed request properties in most used order
+		mRequestPropertyNames = ["payload", "headers", "groupId", "batchNo", "$ContentID", "method",
+			"changeSetNo"],
 		sSalesOrderService = "/sap/opu/odata4/sap/zui5_testv4/default/sap/zui5_epm_sample/0002/",
 		rSkip = /&\$skip=(\d+)/, // $skip=<number>
 		rStartsWithMethod = /^(DELETE|GET|PATCH|POST|PUT) (.*)$/,
@@ -1386,8 +1389,7 @@ sap.ui.define([
 			if (oParent) {
 				oPayload["EMPLOYEE_2_MANAGER@odata.bind"] = oParent.getPath().slice(1);
 			}
-			this.expectRequest({
-					url : "POST EMPLOYEES",
+			this.expectRequest("POST EMPLOYEES", {
 					payload : oPayload
 				}, {
 					ID : sId,
@@ -1737,8 +1739,7 @@ sap.ui.define([
 
 				return that.waitForChanges(assert);
 			}).then(function () {
-				that.expectRequest({
-						url : "POST SalesOrderList",
+				that.expectRequest("POST SalesOrderList", {
 						payload : {Note : "New 1"}
 					}, {
 						Note : "New 1",
@@ -1760,8 +1761,7 @@ sap.ui.define([
 
 				return that.waitForChanges(assert);
 			}).then(function () {
-				that.expectRequest({
-						url : "POST SalesOrderList",
+				that.expectRequest("POST SalesOrderList", {
 						payload : {Note : "New 2"}
 					}, {
 						Note : "New 2",
@@ -2472,14 +2472,20 @@ sap.ui.define([
 		 * this case you can control the response time (typically to control the order of the
 		 * responses).
 		 *
-		 * @param {string|object} vRequest
-		 *   Either a URL string as defined in "vRequest.url" or a request object with following
-		 *   properties
+		 * @param {string} sURL
+		 *   The request URL in the following format "#<batchNo>.<changeSetNo> <method> <URL>";
+		 *   "#<batchNo>.<changeSetNo> ", ".<changeSetNo>" and "<method> " are optional;
+		 *   "#.<changeSetNo> " can be used if a change set number is given without a batch number;
+		 *   spaces, double quotes, square brackets, and curly brackets inside the URL are
+		 *   percent-encoded automatically
+		 * @param {object} [vRequest]
+		 *   A request object with following properties; if the object is no request object, it is
+		 *   treated as <code>vResponse</code>
 		 * @param {string} [vRequest.$ContentID]
 		 *   The content ID of the request within the change set
 		 * @param {number} [vRequest.batchNo]
 		 *   The number of the ($direct or $batch) request within the test (starting with 1); use a
-		 *   negative number to expect a $direct request; see also "vRequest.url"
+		 *   negative number to expect a $direct request; see also <code>sURL</code>
 		 * @param {number} [vRequest.changeSetNo]
 		 *   The number of the change set within $batch (starting with 1)
 		 * @param {string} [vRequest.groupId]
@@ -2490,16 +2496,10 @@ sap.ui.define([
 		 *   "sap-cancel-on-close" is ignored and it is expected that the request does not have
 		 *   any additional headers
 		 * @param {"DELETE"|"GET"|"PATCH"|"POST"|"PUT"} [vRequest.method="GET"]
-		 *   The HTTP method, see also "vRequest.url"
+		 *   The HTTP method, see also <code>sURL</code>
 		 * @param {object} [vRequest.payload]
 		 *   The payload of the request; in case of a "POST" request the "payload" is defaulted to
 		 *   an empty object
-		 * @param {string} vRequest.url
-		 *   The request URL in the following format "#<batchNo>.<changeSetNo> <method> <URL>";
-		 *   "#<batchNo>.<changeSetNo> ", ".<changeSetNo>" and "<method> " are optional;
-		 *   "#.<changeSetNo> " can be used if a change set number is given without a batch number;
-		 *   spaces, double quotes, square brackets, and curly brackets inside the URL are
-		 *   percent-encoded automatically
 		 * @param {object|string|number|Error|Promise|function} [vResponse]
 		 *   The response message to be returned from the requestor or a promise on it or a function
 		 *   (invoked "just in time" when the request is actually sent) returning the response
@@ -2514,9 +2514,10 @@ sap.ui.define([
 		 * @returns {object} The test instance for chaining
 		 * @throws {Error} In case some sanity check fails, for example around "@odata.count" and
 		 *   $count, or in case the response is missing or unexpected (depending on the method and
-		 *   "Prefer" header), or if an empty payload object is given for a POST request
+		 *   "Prefer" header), or if an empty payload object is given for a POST request, or if an
+		 *   unsupported property is given in <code>vRequest</code>
 		 */
-		expectRequest : function (vRequest, vResponse, mResponseHeaders) {
+		expectRequest : function (sURL, vRequest, vResponse, mResponseHeaders) {
 			var iCount,
 				iLength,
 				aMatches,
@@ -2534,11 +2535,18 @@ sap.ui.define([
 				throw new Error(
 					`Unexpected response for ${vRequest.method} ${vRequest.url}: ${vResponse}`);
 			}
-
-			if (typeof vRequest === "string") {
-				vRequest = {
-					url : vRequest
-				};
+			if (typeof vRequest === "object"
+				&& mRequestPropertyNames.some((sProperty) => sProperty in vRequest)) {
+				for (const sProperty in vRequest) {
+					if (!mRequestPropertyNames.includes(sProperty)) {
+						throw new Error(`Unexpected property "${sProperty}" in request object`);
+					}
+				}
+				vRequest = {url : sURL, ...vRequest};
+			} else {
+				mResponseHeaders = vResponse;
+				vResponse = vRequest;
+				vRequest = {url : sURL};
 			}
 			if (vRequest.url.startsWith("#")) { // "#batchNo ..."
 				if (vRequest.batchNo || vRequest.changeSetNo) {
@@ -3049,16 +3057,13 @@ sap.ui.define([
 				.withArgs("Failed to read path /BusinessPartnerList('1')/CompanyName");
 
 			that.expectChange("note", ["Note 1 changed", "Note 2 changed", "Note 3 changed"])
-				.expectRequest({
-					url : "#.1 PATCH SalesOrderList('1')",
+				.expectRequest("#.1 PATCH SalesOrderList('1')", {
 					payload : {Note : "Note 1 changed"}
 				}, oError)
-				.expectRequest({
-					url : "#.2 PATCH SalesOrderList('2')",
+				.expectRequest("#.2 PATCH SalesOrderList('2')", {
 					payload : {Note : "Note 2 changed"}
 				}, oNO_RESPONSE)
-				.expectRequest({
-					url : "#.2 PATCH SalesOrderList('3')",
+				.expectRequest("#.2 PATCH SalesOrderList('3')", {
 					payload : {Note : "Note 3 changed"}
 				}, oNO_RESPONSE)
 				.expectRequest("BusinessPartnerList('1')/CompanyName", oNO_RESPONSE)
@@ -3109,9 +3114,8 @@ sap.ui.define([
 		const aTableRows = this.oView.byId("table").getItems();
 
 		this.expectChange("name", ["Woodstock"])
-			.expectRequest({
-				url : "PATCH Artists(ArtistID='42',IsActiveEntity=true)"
-					+ "/_Event(08-08-2024T01%3A02%3A03Z)",
+			.expectRequest("PATCH Artists(ArtistID='42',IsActiveEntity=true)"
+				+ "/_Event(08-08-2024T01%3A02%3A03Z)", {
 				payload : {Name : "Woodstock"}
 			}, createErrorInsideBatch({target : "Name"}))
 			.expectMessages([{
@@ -4602,10 +4606,9 @@ sap.ui.define([
 
 			// BCP 1980517597
 			that.expectChange("unit1", "t")
-				.expectRequest({
+				.expectRequest("PATCH SalesOrderList('1')"
+					+ "/SO_2_SOITEM(SalesOrderID='1',ItemPosition='10')?sap-client=123", {
 					headers : {"If-Match" : "etag0"},
-					url : "PATCH SalesOrderList('1')"
-						+ "/SO_2_SOITEM(SalesOrderID='1',ItemPosition='10')?sap-client=123",
 					payload : {QuantityUnit : "t"}
 				}, {
 					"@odata.etag" : "etag23",
@@ -4634,9 +4637,8 @@ sap.ui.define([
 			return that.checkValueState(assert, "unit1", "Warning", "Are you sure?");
 		}).then(function () {
 			that.expectChange("bp", "changed")
-				.expectRequest({
+				.expectRequest("PATCH BusinessPartnerList('4')?sap-client=123", {
 					headers : {"If-Match" : "ETag"},
-					url : "PATCH BusinessPartnerList('4')?sap-client=123",
 					payload : {CompanyName : "changed"}
 				}, oDONT_CARE);
 
@@ -5672,9 +5674,8 @@ sap.ui.define([
 		this.oLogMock.expects("error")
 			.withExactArgs("Failed to read path /EMPLOYEES('42')/Name", sinon.match(oError.message),
 				sODPrB);
-		this.expectRequest({
-				headers : {"sap-cancel-on-close" : "true"},
-				url : "EMPLOYEES('42')"
+		this.expectRequest("EMPLOYEES('42')", {
+				headers : {"sap-cancel-on-close" : "true"}
 			}, oError)
 			.expectMessages([{
 				code : "CODE",
@@ -5876,8 +5877,7 @@ sap.ui.define([
 		return this.createView(assert, sView, oModel).then(function () {
 			oTable = that.oView.byId("table");
 
-			that.expectRequest({
-					url : "PATCH EMPLOYEES('0')?foo=bar",
+			that.expectRequest("PATCH EMPLOYEES('0')?foo=bar", {
 					headers : {"If-Match" : "ETag0"},
 					payload : {AGE : 10}
 				}, oNO_CONTENT)
@@ -6182,11 +6182,10 @@ sap.ui.define([
 		]);
 
 		this.expectChange("name", "Frederic Spring")
-			.expectRequest({
+			.expectRequest("PATCH EMPLOYEES('1')", {
 				payload : {
 					Name : "Frederic Spring"
-				},
-				url : "PATCH EMPLOYEES('1')"
+				}
 			}, {
 				ID : "1",
 				Name : "Frederic Spring",
@@ -6286,14 +6285,13 @@ sap.ui.define([
 
 		this.expectChange("monthly", "2,345.67")
 			.expectChange("salary", "2345.67 EUR")
-			.expectRequest({
+			.expectRequest("PATCH EMPLOYEES('1')", {
 				payload : {
 					SALARY : {
 						BASIC_SALARY_CURR : "EUR",
 						MONTHLY_BASIC_SALARY_AMOUNT : "2345.67"
 					}
-				},
-				url : "PATCH EMPLOYEES('1')"
+				}
 			}, {
 				SALARY : {
 					BASIC_SALARY_CURR : "DEM", // side effect
@@ -6647,8 +6645,7 @@ sap.ui.define([
 			return that.waitForChanges(assert);
 		}).then(function () {
 			that.expectChange("name", ["Notebook Basic 15.2"])
-				.expectRequest({
-					url : "PATCH ProductList('HT-1000')",
+				.expectRequest("PATCH ProductList('HT-1000')", {
 					payload : {Name : "Notebook Basic 15.2"}
 				}, oDONT_CARE);
 
@@ -7209,8 +7206,7 @@ sap.ui.define([
 		this.expectChange("name", null);
 
 		return this.createView(assert, sView).then(function () {
-			that.expectRequest({
-					url : "POST ChangeTeamBudgetByID",
+			that.expectRequest("POST ChangeTeamBudgetByID", {
 					payload : {
 						Budget : "1234.1234",
 						TeamID : "TEAM_01"
@@ -7336,8 +7332,7 @@ sap.ui.define([
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "POST ChangeTeamBudgetByID",
+			that.expectRequest("POST ChangeTeamBudgetByID", {
 					payload : {
 						Budget : "1234.1234",
 						TeamID : "TEAM_01"
@@ -7440,8 +7435,7 @@ sap.ui.define([
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
-			that.expectRequest({
-				url : "POST ChangeTeamBudgetByID",
+			that.expectRequest("POST ChangeTeamBudgetByID", {
 				payload : {
 					Budget : "4321.1234",
 					TeamID : "TEAM_01"
@@ -7463,8 +7457,7 @@ sap.ui.define([
 			that.oLogMock.expects("error")
 				.withExactArgs("Failed to invoke /ChangeTeamBudgetByID(...)",
 					sinon.match(oError.message), sODCB);
-			that.expectRequest({
-					url : "POST ChangeTeamBudgetByID",
+			that.expectRequest("POST ChangeTeamBudgetByID", {
 					payload : {
 						Budget : "-42",
 						TeamID : "TEAM_01"
@@ -7796,8 +7789,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-				url : "POST HirePerson",
+			that.expectRequest("POST HirePerson", {
 				payload : {
 					Person : {
 						Address : {
@@ -7838,8 +7830,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			oPerson.Address.City = "Kashyyk";
 			sPerson = JSON.stringify(oPerson);
 
-			that.expectRequest({
-				url : "POST HirePerson",
+			that.expectRequest("POST HirePerson", {
 				payload : {
 					Person : {
 						Address : {
@@ -9271,8 +9262,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		}).then(function () {
 			assert.notOk(bDone, "not yet PATCHed");
 
-			that.expectRequest({
-					url : "PATCH BusinessPartnerList('42')",
+			that.expectRequest("PATCH BusinessPartnerList('42')", {
 					headers : {"If-Match" : "ETag"},
 					payload : {CompanyName : "Bar"}
 				}, {CompanyName : "Bar"});
@@ -9344,8 +9334,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		this.expectChange("text", "Jonathan Smith");
 
 		return this.createView(assert, sView, oModel).then(function () {
-			// that.expectRequest({
-			//         url : "PATCH EMPLOYEES('2')",
+			// that.expectRequest("PATCH EMPLOYEES('2')", {
 			//         payload : {Name : "Jonathan Schmidt"}
 			//     }, oNO_CONTENT)
 			that.expectChange("text", "Jonathan Schmidt");
@@ -9471,8 +9460,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			numericSeverity : 2
 		};
 		this.expectChange("name", "Team*")
-			.expectRequest({
-				url : "PATCH TEAMS('TEAM')",
+			.expectRequest("PATCH TEAMS('TEAM')", {
 				payload : {Name : "Team*"}
 			}, oDONT_CARE, {
 				"sap-messages" : JSON.stringify([oOriginalMessage])
@@ -10230,8 +10218,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			.expectChange("item", ["Old"]);
 
 		return this.createView(assert, sView, oModel).then(function () {
-			that.expectRequest({
-					url : "PATCH EntitiesWithComplexKey(Key1='foo',Key2=42)",
+			that.expectRequest("PATCH EntitiesWithComplexKey(Key1='foo',Key2=42)", {
 					headers : {"If-Match" : "ETag"},
 					payload : {Value : "New"}
 				}, {
@@ -10496,8 +10483,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			if (iCase > 0) {
 				that.expectChange("quantity", [,, "5.000"])
-					.expectRequest({
-						url : "POST SalesOrderList('42')/SO_2_SOITEM",
+					.expectRequest("POST SalesOrderList('42')/SO_2_SOITEM", {
 						payload : {Quantity : "5"}
 					}, {
 						ItemPosition : "0030",
@@ -10589,8 +10575,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			return that.waitForChanges(assert);
 		}).then(function () {
 			that.expectChange("value", "changed")
-				.expectRequest({
-					url : "PATCH EntitiesWithComplexKey(Key1='p1',Key2=2)",
+				.expectRequest("PATCH EntitiesWithComplexKey(Key1='p1',Key2=2)", {
 					payload : {Value : "changed"}
 				}, {
 					Key : {
@@ -10667,7 +10652,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		await this.waitForChanges(assert, "late properties");
 
 		this.expectChange("delta", "Hello, World!")
-			.expectRequest({
+			.expectRequest("PATCH EntitiesWithComplexKey(Key1='p1',Key2=p2)", {
 				payload : {
 					Delta : "Hello, World!",
 					"Delta@complexAnnotation" : {
@@ -10676,8 +10661,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					Theta : {
 						"Iota@simpleAnnotation" : "iota"
 					}
-				},
-				url : "PATCH EntitiesWithComplexKey(Key1='p1',Key2=p2)"
+				}
 			}, {
 				Delta : "hello, world", // like Brian Kernighan said
 				Key : {
@@ -10870,8 +10854,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			oBinding.attachCreateCompleted(onCreateCompleted);
 			oBinding.attachCreateSent(onCreateSent);
 
-			that.expectRequest({
-					url : "POST SalesOrderList",
+			that.expectRequest("POST SalesOrderList", {
 					payload : {Note : "bar"}
 				}, new Promise(function (_resolve, reject) {
 					fnRejectPost = reject;
@@ -10914,8 +10897,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		}).then(function () {
 			var oCreateSentPromise = expectCreateSent();
 
-			that.expectRequest({
-					url : "POST SalesOrderList",
+			that.expectRequest("POST SalesOrderList", {
 					payload : {Note : "baz"}
 				}, new Promise(function (resolve) {
 					fnResolvePost = resolve;
@@ -10965,8 +10947,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				oPromise = oEvent.getParameter("context").delete();
 			});
 
-			that.expectRequest({
-					url : "POST EMPLOYEES",
+			that.expectRequest("POST EMPLOYEES", {
 					payload : {Name : "Anonymous"}
 				}, createErrorInsideBatch())
 				.expectMessages([{
@@ -11025,15 +11006,13 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			oBinding = that.oView.byId("table").getBinding("items");
 
 			that.expectChange("note", ["new2", "new1", "#42"])
-				.expectRequest({
-					url : "POST SalesOrderList",
+				.expectRequest("POST SalesOrderList", {
 					payload : {Note : "new1"}
 				}, {
 					Note : "new1",
 					SalesOrderID : "43"
 				})
-				.expectRequest({
-					url : "POST SalesOrderList",
+				.expectRequest("POST SalesOrderList", {
 					payload : {Note : "new2"}
 				}, {
 					Note : "new2",
@@ -11068,12 +11047,10 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				.expectChange("note", "new3", -2)
 				.expectChange("note", "new2", -1)
 				.expectChange("note", ["new1", "#42"])
-				.expectRequest({
-					url : "POST SalesOrderList",
+				.expectRequest("POST SalesOrderList", {
 					payload : {Note : "new3"}
 				}, oError)
-				.expectRequest({
-					url : "POST SalesOrderList",
+				.expectRequest("POST SalesOrderList", {
 					payload : {Note : "new4"}
 				}, oNO_RESPONSE)
 				.expectRequest("SalesOrderList?$select=Note,SalesOrderID&$skip=0&$top=99",
@@ -11224,8 +11201,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 				return that.waitForChanges(assert);
 			}).then(function () {
-				that.expectRequest({
-						url : "POST SalesOrderList",
+				that.expectRequest("POST SalesOrderList", {
 						payload : {BuyerID : "24", Note : "baz"}
 					}, {
 						// no BuyerID (JIRA: CPOUI5ODATAV4-1503)
@@ -11370,15 +11346,13 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "POST SalesOrderList",
+			that.expectRequest("POST SalesOrderList", {
 					payload : {Note : "New 1"}
 				}, {
 					Note : "New 1",
 					SalesOrderID : "43"
 				})
-				.expectRequest({
-					url : "POST SalesOrderList",
+				.expectRequest("POST SalesOrderList", {
 					payload : {Note : "New 2"}
 				}, {
 					Note : "New 2",
@@ -11409,8 +11383,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "POST SalesOrderList",
+			that.expectRequest("POST SalesOrderList", {
 					payload : {Note : "New 3"}
 				}, {
 					Note : "New 3",
@@ -11502,8 +11475,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		return this.createTwiceSaveInBetween(assert).then(function () {
 			oCreatedContext = that.createThird();
 
-			that.expectRequest({
-					url : "POST SalesOrderList",
+			that.expectRequest("POST SalesOrderList", {
 					payload : {Note : "New 3"}
 				}, {
 					Note : "New 3",
@@ -11704,22 +11676,19 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "#2 POST BusinessPartnerList('4711')/BP_2_SO",
+			that.expectRequest("#2 POST BusinessPartnerList('4711')/BP_2_SO", {
 					payload : {Note : "New 1"}
 				}, {
 					Note : "New 1",
 					SalesOrderID : "43"
 				})
-				.expectRequest({
-					url : "#2 POST BusinessPartnerList('4711')/BP_2_SO",
+				.expectRequest("#2 POST BusinessPartnerList('4711')/BP_2_SO", {
 					payload : {Note : "New 2"}
 				}, {
 					Note : "New 2",
 					SalesOrderID : "44"
 				})
-				.expectRequest({
-					url : "#2 POST BusinessPartnerList('4711')/BP_2_SO",
+				.expectRequest("#2 POST BusinessPartnerList('4711')/BP_2_SO", {
 					payload : {Note : "New 3"}
 				}, {
 					Note : "New 3",
@@ -11790,8 +11759,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "POST SalesOrderList",
+			that.expectRequest("POST SalesOrderList", {
 					payload : {Note : "New 1"}
 				}, {
 					Note : "New 1",
@@ -11852,8 +11820,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			assert.strictEqual(aRows[1].getBindingContext(), oCreatedContext0, "2");
 			assert.strictEqual(oCreatedContext0.isTransient(), false);
 
-			that.expectRequest({
-					url : "POST SalesOrderList",
+			that.expectRequest("POST SalesOrderList", {
 					payload : {Note : "New 3 - Changed"}
 				}, {
 					Note : "New 3 - Changed",
@@ -11932,22 +11899,19 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "POST BusinessPartnerList('4711')/BP_2_SO",
+			that.expectRequest("POST BusinessPartnerList('4711')/BP_2_SO", {
 					payload : {Note : "New 1"}
 				}, {
 					Note : "New 1",
 					SalesOrderID : "43"
 				})
-				.expectRequest({
-					url : "POST BusinessPartnerList('4711')/BP_2_SO",
+				.expectRequest("POST BusinessPartnerList('4711')/BP_2_SO", {
 					payload : {Note : "New 2"}
 				}, {
 					Note : "New 2",
 					SalesOrderID : "44"
 				})
-				.expectRequest({
-					url : "POST BusinessPartnerList('4711')/BP_2_SO",
+				.expectRequest("POST BusinessPartnerList('4711')/BP_2_SO", {
 					payload : {Note : "New 3"}
 				}, {
 					Note : "New 3",
@@ -12063,15 +12027,13 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "POST BusinessPartnerList('4711')/BP_2_SO",
+			that.expectRequest("POST BusinessPartnerList('4711')/BP_2_SO", {
 					payload : {Note : "New 1"}
 				}, {
 					Note : "New 1",
 					SalesOrderID : "43"
 				})
-				.expectRequest({
-					url : "POST BusinessPartnerList('4711')/BP_2_SO",
+				.expectRequest("POST BusinessPartnerList('4711')/BP_2_SO", {
 					payload : {Note : "New 2"}
 				}, {
 					Note : "New 2",
@@ -12168,22 +12130,19 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "#2 POST SalesOrderList",
+			that.expectRequest("#2 POST SalesOrderList", {
 					payload : {Note : "New 1"}
 				}, {
 					Note : "New 1",
 					SalesOrderID : "44"
 				})
-				.expectRequest({
-					url : "#2 POST SalesOrderList",
+				.expectRequest("#2 POST SalesOrderList", {
 					payload : {Note : "New 2"}
 				}, {
 					Note : "New 2",
 					SalesOrderID : "45"
 				})
-				.expectRequest({
-					url : "#2 POST SalesOrderList",
+				.expectRequest("#2 POST SalesOrderList", {
 					payload : {Note : "New 3"}
 				}, {
 					Note : "New 3",
@@ -12209,8 +12168,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
-			that.expectRequest({
-					url : "PATCH SalesOrderList('46')",
+			that.expectRequest("PATCH SalesOrderList('46')", {
 					payload : {Note : "New 3 - Changed"}
 				}, {
 					Note : "New 3 - Changed",
@@ -12307,15 +12265,13 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "#2 POST SalesOrderList",
+			that.expectRequest("#2 POST SalesOrderList", {
 					payload : {Note : "New 1"}
 				}, {
 					Note : "New 1",
 					SalesOrderID : "43"
 				})
-				.expectRequest({
-					url : "#2 POST SalesOrderList",
+				.expectRequest("#2 POST SalesOrderList", {
 					payload : {Note : "New 2"}
 				}, {
 					Note : "New 2",
@@ -12494,8 +12450,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "POST BusinessPartnerList('4711')/BP_2_SO",
+			that.expectRequest("POST BusinessPartnerList('4711')/BP_2_SO", {
 					payload : {Note : "New 1"}
 				}, {
 					Note : "New 1",
@@ -12736,8 +12691,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "POST BusinessPartnerList('4711')/BP_2_SO",
+			that.expectRequest("POST BusinessPartnerList('4711')/BP_2_SO", {
 					payload : {Note : "New 1"}
 				}, {
 					Note : "New 1",
@@ -12897,8 +12851,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "POST SalesOrderList",
+			that.expectRequest("POST SalesOrderList", {
 					payload : {Note : "New 1"}
 				}, {
 					Note : "New 1",
@@ -12991,15 +12944,13 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "POST BusinessPartnerList('4711')/BP_2_SO",
+			that.expectRequest("POST BusinessPartnerList('4711')/BP_2_SO", {
 					payload : {Note : "New 1"}
 				}, {
 					Note : "New 1",
 					SalesOrderID : "43"
 				})
-				.expectRequest({
-					url : "POST BusinessPartnerList('4711')/BP_2_SO",
+				.expectRequest("POST BusinessPartnerList('4711')/BP_2_SO", {
 					payload : {Note : "New 2"}
 				}, {
 					Note : "New 2",
@@ -13119,22 +13070,19 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "#2 POST SalesOrderList",
+			that.expectRequest("#2 POST SalesOrderList", {
 					payload : {Note : "New 1"}
 				}, {
 					Note : "New 1",
 					SalesOrderID : "43"
 				})
-				.expectRequest({
-					url : "#2 POST SalesOrderList",
+				.expectRequest("#2 POST SalesOrderList", {
 					payload : {Note : "New 2"}
 				}, {
 					Note : "New 2",
 					SalesOrderID : "44"
 				})
-				.expectRequest({
-					url : "#2 POST SalesOrderList",
+				.expectRequest("#2 POST SalesOrderList", {
 					payload : {Note : "New 3"}
 				}, {
 					Note : "New 3",
@@ -13289,8 +13237,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "POST BusinessPartnerList('4711')/BP_2_SO",
+			that.expectRequest("POST BusinessPartnerList('4711')/BP_2_SO", {
 					payload : {Note : "New 1"}
 				}, {
 					Note : "New 1",
@@ -13381,22 +13328,19 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "#2 POST SalesOrderList",
+			that.expectRequest("#2 POST SalesOrderList", {
 					payload : {Note : "New 1"}
 				}, {
 					Note : "New 1",
 					SalesOrderID : "43"
 				})
-				.expectRequest({
-					url : "#2 POST SalesOrderList",
+				.expectRequest("#2 POST SalesOrderList", {
 					payload : {Note : "New 2"}
 				}, {
 					Note : "New 2",
 					SalesOrderID : "44"
 				})
-				.expectRequest({
-					url : "#2 POST SalesOrderList",
+				.expectRequest("#2 POST SalesOrderList", {
 					payload : {Note : "New 3"}
 				}, {
 					Note : "New 3",
@@ -13482,8 +13426,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "#2 POST BusinessPartnerList('4711')/BP_2_SO",
+			that.expectRequest("#2 POST BusinessPartnerList('4711')/BP_2_SO", {
 					payload : {Note : "New 1"}
 				}, {
 					Note : "New 1",
@@ -13582,15 +13525,13 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "#2 POST SalesOrderList",
+			that.expectRequest("#2 POST SalesOrderList", {
 					payload : {Note : "New 1"}
 				}, {
 					Note : "New 1",
 					SalesOrderID : "43"
 				})
-				.expectRequest({
-					url : "#2 POST SalesOrderList",
+				.expectRequest("#2 POST SalesOrderList", {
 					payload : {Note : "New 2"}
 				}, {
 					Note : "New 2",
@@ -13686,8 +13627,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "POST BusinessPartnerList",
+			that.expectRequest("POST BusinessPartnerList", {
 					payload : {
 						Address : {
 							City : "Heidelberg",
@@ -13764,8 +13704,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "POST SalesOrderList('42')/SO_2_SOITEM",
+			that.expectRequest("POST SalesOrderList('42')/SO_2_SOITEM", {
 					payload : {
 						Quantity : "2.000",
 						QuantityUnit : "EA"
@@ -13831,9 +13770,8 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			that.oLogMock.expects("error")
 				.withExactArgs("POST on 'SalesOrderList('42')/SO_2_SOITEM' failed; "
 					+ "will be repeated automatically", sinon.match(oError.message), sODLB);
-			that.expectRequest({
-					headers : {/*NO "sap-cancel-on-close"*/},
-					url : "POST SalesOrderList('42')/SO_2_SOITEM"
+			that.expectRequest("POST SalesOrderList('42')/SO_2_SOITEM", {
+					headers : {/*NO "sap-cancel-on-close"*/}
 				}, oError)
 				.expectMessages([{
 					code : "CODE",
@@ -13918,8 +13856,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				.withArgs("Failed to update path /BusinessPartnerList('1')/BP_2_SO('42')"
 					+ "/SO_2_SOITEM('0010')/Quantity", sinon.match(oError.message));
 			that.expectChange("quantity", "0.000")
-				.expectRequest({
-						url : "PATCH SalesOrderList('42')/SO_2_SOITEM('0010')",
+				.expectRequest("PATCH SalesOrderList('42')/SO_2_SOITEM('0010')", {
 						payload : {
 							Quantity : "0.000",
 							QuantityUnit : "DZ"
@@ -13994,8 +13931,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			.expectChange("amount", "1,000.00");
 
 		return this.createView(assert, sView, oModel).then(function () {
-			that.expectRequest({
-					url : "PATCH SalesOrderList('42')",
+			that.expectRequest("PATCH SalesOrderList('42')", {
 					headers : {"If-Match" : sEtag},
 					payload : {
 						GrossAmount : "1234.56",
@@ -14059,8 +13995,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				oBindingNote0 = aTableItems[0].getCells()[1].getBinding("value"),
 				oBindingNote1 = aTableItems[1].getCells()[1].getBinding("value");
 
-			that.expectRequest({
-					url : "PATCH SalesOrderList('41')",
+			that.expectRequest("PATCH SalesOrderList('41')", {
 					headers : {"If-Match" : "ETag0"},
 					payload : {
 						GrossAmount : "123.45",
@@ -14070,8 +14005,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					GrossAmount : "123.45",
 					Note : "Note02"
 				})
-				.expectRequest({
-					url : "PATCH SalesOrderList('42')",
+				.expectRequest("PATCH SalesOrderList('42')", {
 					headers : {"If-Match" : "ETag1"},
 					payload : {
 						GrossAmount : "456.78",
@@ -14143,13 +14077,11 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				oBindingAmount0 = aTableItems[0].getCells()[0].getBinding("value"),
 				oBindingAmount1 = aTableItems[1].getCells()[0].getBinding("value");
 
-			that.expectRequest({
-					url : "#2.1 PATCH SalesOrderList('41')",
+			that.expectRequest("#2.1 PATCH SalesOrderList('41')", {
 					headers : {"If-Match" : "ETag0"},
 					payload : {GrossAmount : "4.11"}
 				}, oNO_RESPONSE)
-				.expectRequest({
-					url : "#2.1 PATCH SalesOrderList('42')",
+				.expectRequest("#2.1 PATCH SalesOrderList('42')", {
 					headers : {"If-Match" : "ETag1"},
 					payload : {GrossAmount : "4.22"}
 				}, oError)
@@ -14311,14 +14243,12 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			aItems = that.oView.byId("table").getItems();
 
 			that.expectChange("amount", ["4.11", "4.22"])
-				.expectRequest({
+				.expectRequest("#.1 PATCH SalesOrderList('41')", {
 					$ContentID : "0.0",
-					url : "#.1 PATCH SalesOrderList('41')",
 					payload : {GrossAmount : "4.11"}
 				}, oError)
-				.expectRequest({
+				.expectRequest("#.1 PATCH SalesOrderList('42')", {
 					$ContentID : "1.0",
-					url : "#.1 PATCH SalesOrderList('42')",
 					payload : {GrossAmount : "4.22"}
 				}, oNO_RESPONSE)
 				.expectMessages([{
@@ -14398,8 +14328,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		return this.createView(assert, sView, oModel).then(function () {
 			oBinding = that.oView.byId("note").getBinding("value");
 
-			that.expectRequest({
-					url : "PATCH SalesOrderList('42')",
+			that.expectRequest("PATCH SalesOrderList('42')", {
 					headers : {"If-Match" : "ETag0"},
 					payload : {Note : "Changed Note"}
 				}, new Promise(function (resolve) {
@@ -14415,8 +14344,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "PATCH SalesOrderList('42')",
+			that.expectRequest("PATCH SalesOrderList('42')", {
 					headers : {"If-Match" : "ETag1"},
 					payload : {Note : "Changed Note while $batch is running"}
 				}, {
@@ -14476,8 +14404,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		return this.createView(assert, sView, oModel).then(function () {
 			oBinding = that.oView.byId("name").getBinding("value");
 
-			that.expectRequest({
-					url : "PATCH EMPLOYEES('1')",
+			that.expectRequest("PATCH EMPLOYEES('1')", {
 					headers : {"If-Match" : "ETag0"},
 					payload : {Name : "Jonathan Mueller"}
 				}, new Promise(function (resolve) {
@@ -14505,9 +14432,8 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
-			that.expectRequest({
+			that.expectRequest("POST EMPLOYEES('1')/" + sAction, {
 					headers : {"If-Match" : "ETag1"},
-					url : "POST EMPLOYEES('1')/" + sAction,
 					payload : {TeamID : "42"}
 				}, {
 					// ID : "1", // no key predicate here!
@@ -14556,9 +14482,8 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		return this.createView(assert, sView, oModel).then(function () {
 			oContext = that.oView.byId("name").getBindingContext();
 
-			that.expectRequest({
+			that.expectRequest("POST EMPLOYEES('1')/" + sAction, {
 					headers : {"If-Match" : "ETag0"},
-					url : "POST EMPLOYEES('1')/" + sAction,
 					payload : {TeamID : "42"}
 				}, new Promise(function (resolve) {
 					fnRespond = resolve.bind(null, {
@@ -14585,9 +14510,8 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		}).then(function () {
 			that.expectChange("name", "Jonathan Smith junior")
 				.expectChange("teamId", "42")
-				.expectRequest({
+				.expectRequest("POST EMPLOYEES('1')/" + sAction, {
 					headers : {"If-Match" : "ETag1"},
-					url : "POST EMPLOYEES('1')/" + sAction,
 					payload : {TeamID : "23"}
 				}, {
 					"@odata.etag" : "ETag2",
@@ -14640,8 +14564,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		return this.createView(assert, sView, oModel).then(function () {
 			oBinding = that.oView.byId("note").getBinding("value");
 
-			that.expectRequest({
-					url : "PATCH SalesOrderList('42')",
+			that.expectRequest("PATCH SalesOrderList('42')", {
 					headers : {"If-Match" : "ETag0"},
 					payload : {Note : "Changed Note"}
 				}, new Promise(function (resolve) {
@@ -14687,16 +14610,14 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			return that.waitForChanges(assert);
 		}).then(function () {
 			that.expectChange("note", "Changed Note From Server")
-				.expectRequest({
-					url : "#.1 PATCH SalesOrderList('42')",
+				.expectRequest("#.1 PATCH SalesOrderList('42')", {
 					headers : {"If-Match" : "ETag1"},
 					payload : {Note : "(1) Changed Note while $batch is running"}
 				}, {
 					"@odata.etag" : "ETag2",
 					Note : "(1) Changed Note From Server - 2"
 				})
-				.expectRequest({
-					url : "#.2 PATCH SalesOrderList('42')",
+				.expectRequest("#.2 PATCH SalesOrderList('42')", {
 					headers : {"If-Match" : "ETag1"},
 					payload : {Note : "(2) Changed Note while $batch is running"}
 				}, {
@@ -14755,8 +14676,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			oBinding42 = that.oView.byId("note42").getBinding("value");
 			oBinding77 = that.oView.byId("note77").getBinding("value");
 
-			that.expectRequest({
-					url : "PATCH SalesOrderList('42')",
+			that.expectRequest("PATCH SalesOrderList('42')", {
 					headers : {"If-Match" : "42ETag0"},
 					payload : {Note : "42Changed Note"}
 				}, new Promise(function (resolve) {
@@ -14790,24 +14710,21 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		}).then(function () {
 			//TODO suppress change event for outdated value "42Changed Note From Server"
 			that.expectChange("note42", "42Changed Note From Server")
-				.expectRequest({
-					url : "#.1 PATCH SalesOrderList('42')",
+				.expectRequest("#.1 PATCH SalesOrderList('42')", {
 					headers : {"If-Match" : "42ETag1"},
 					payload : {Note : "(1) 42Changed Note while $batch is running"}
 				}, {
 					"@odata.etag" : "42ETag2",
 					Note : "42Changed Note From Server - 1"
 				})
-				.expectRequest({
-					url : "#.1 PATCH SalesOrderList('77')",
+				.expectRequest("#.1 PATCH SalesOrderList('77')", {
 					headers : {"If-Match" : "77ETag0"},
 					payload : {Note : "(1) 77Changed Note while $batch is running"}
 				}, {
 					"@odata.etag" : "77ETag1",
 					Note : "(1) 77Changed Note From Server - 1"
 				})
-				.expectRequest({
-					url : "#.2 PATCH SalesOrderList('77')",
+				.expectRequest("#.2 PATCH SalesOrderList('77')", {
 					headers : {"If-Match" : "77ETag0"},
 					payload : {Note : "77Changed Note"}
 				}, {
@@ -14882,8 +14799,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					iPatchSent += 1;
 				});
 
-				that.expectRequest({
-						url : "PATCH SalesOrderList('42')",
+				that.expectRequest("PATCH SalesOrderList('42')", {
 						headers : {"If-Match" : "ETag0"},
 						payload : {Note : "Changed Note"}
 					}, new Promise(function (_resolve, reject) {
@@ -14928,8 +14844,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 						type : "Error"
 					}])
 					.expectChange("lifecycleStatus", "P")
-					.expectRequest({
-						url : "PATCH SalesOrderList('42')",
+					.expectRequest("PATCH SalesOrderList('42')", {
 						headers : {"If-Match" : "ETag0"},
 						payload : {
 							LifecycleStatus : "P",
@@ -15481,8 +15396,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "POST TEAMS('42')/TEAM_2_EMPLOYEES",
+			that.expectRequest("POST TEAMS('42')/TEAM_2_EMPLOYEES", {
 					payload : {
 						ID : null,
 						Name : "John Doe"
@@ -15639,9 +15553,8 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
+			that.expectRequest("POST " + sUrl, {
 					headers : {"If-Match" : "ETag"/*, NO "sap-cancel-on-close"*/},
-					url : "POST " + sUrl,
 					payload : {TeamID : "42"}
 				}, {TEAM_ID : "42"})
 				.expectChange("teamId", "42");
@@ -15677,9 +15590,8 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			that.oLogMock.expects("error").withExactArgs(//TODO: prevent log -> CPOUI5ODATAV4-127
 				"Failed to read path /" + sUrl + "(...)/TEAM_ID", sinon.match(oError.message),
 				sODPrB);
-			that.expectRequest({
+			that.expectRequest("POST " + sUrl, {
 					headers : {"If-Match" : "ETag"/*, NO "sap-cancel-on-close"*/},
-					url : "POST " + sUrl,
 					payload : {TeamID : ""}
 				}, oError) // simulates failure
 				.expectMessages([{
@@ -15784,9 +15696,8 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			var oAction,
 				oDefaults = aResults[0];
 
-			that.expectRequest({
-					url : "POST Artists/special.cases.Create"
-						+ "?$select=ArtistID,IsActiveEntity,Messages,Name",
+			that.expectRequest("POST Artists/special.cases.Create"
+					+ "?$select=ArtistID,IsActiveEntity,Messages,Name", {
 					payload : {
 						ArtistID : "ABC",
 						IsActiveEntity : false,
@@ -15901,10 +15812,9 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			return that.checkValueState(assert, "nameCreated", "Success", "Just Another Message");
 		}).then(function () {
 			that.expectChange("nameCreated", "TAFKAP")
-				.expectRequest({
+				.expectRequest("PATCH Artists(ArtistID='ABC',IsActiveEntity=false)", {
 					headers : {"If-Match" : "ETagAfterRefresh"},
-					payload : {Name : "TAFKAP"},
-					url : "PATCH Artists(ArtistID='ABC',IsActiveEntity=false)"
+					payload : {Name : "TAFKAP"}
 				}, {
 					// "@odata.etag" : "ETagAfterPatch",
 					ArtistID : "ABC",
@@ -15981,11 +15891,10 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					}
 				}, oPredicates);
 
-			that.expectRequest({
-					url : "POST TEAMS('42')/TEAM_2_EMPLOYEES('2')/"
-						+ "com.sap.gateway.default.iwbep.tea_busi.v0001.AcChangeTeamOfEmployee"
-						+ "?$select=ID,__CT__FAKE__Message/__FAKE__Messages"
-						+ "&$expand=EMPLOYEE_2_TEAM($select=Team_Id)",
+			that.expectRequest("POST TEAMS('42')/TEAM_2_EMPLOYEES('2')/"
+					+ "com.sap.gateway.default.iwbep.tea_busi.v0001.AcChangeTeamOfEmployee"
+					+ "?$select=ID,__CT__FAKE__Message/__FAKE__Messages"
+					+ "&$expand=EMPLOYEE_2_TEAM($select=Team_Id)", {
 					payload : {TeamID : "TEAM_02"}
 				}, oResponse)
 				.expectMessages([{
@@ -16043,9 +15952,8 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			.expectChange("teamId", ["77", "77", "77"]);
 
 		return this.createView(assert, sView, oModel).then(function () {
-			that.expectRequest({
-					url : "POST EMPLOYEES('0')/com.sap.gateway.default.iwbep.tea_busi.v0001"
-						+ ".AcChangeTeamOfEmployee",
+			that.expectRequest("POST EMPLOYEES('0')"
+					+ "/com.sap.gateway.default.iwbep.tea_busi.v0001.AcChangeTeamOfEmployee", {
 					payload : {TeamID : "42"}
 				}, {TEAM_ID : "42"})
 				.expectRequest("EMPLOYEES?$filter=(TEAM_ID eq '77') and ID eq '0'"
@@ -16100,10 +16008,9 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			.expectChange("isManager", null);
 
 		return this.createView(assert, sView).then(function () {
-			that.expectRequest({
+			that.expectRequest("POST EMPLOYEES('1')"
+					+ "/com.sap.gateway.default.iwbep.tea_busi.v0001.__FAKE__AcOverload", {
 					headers : bHasETag ? {"If-Match" : "*"} : {},
-					url : "POST EMPLOYEES('1')/com.sap.gateway.default.iwbep.tea_busi.v0001"
-						+ ".__FAKE__AcOverload",
 					payload : {Message : "The quick brown fox jumps over the lazy dog"}
 				}, {Is_Manager : true})
 				.expectChange("isManager", "Yes");
@@ -16995,10 +16902,9 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
+			that.expectRequest("PATCH EMPLOYEES('01')", {
 					headers : {"If-Match" : "ETag"},
-					payload : {Name : "foo"},
-					url : "PATCH EMPLOYEES('01')"
+					payload : {Name : "foo"}
 				}, oDONT_CARE);
 
 			return Promise.all([
@@ -17315,10 +17221,10 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			oContext = that.oView.byId("contentType").getBindingContext();
 
 			that.expectChange("url", null)
-				.expectRequest({
-					// prefixed with container since Products is in a different metadata document
-					url : "PATCH com.sap.gateway.default.iwbep.tea_busi_product.v0001.Container%2F"
-						+ "Products(42)",
+				// prefixed with container since Products is in a different metadata document
+				.expectRequest(
+					"PATCH com.sap.gateway.default.iwbep.tea_busi_product.v0001.Container%2F"
+						+ "Products(42)", {
 					payload : {
 						ProductPicture : {
 							Picture : null
@@ -17524,8 +17430,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		for (let i = 0; i < 3; i += 1) {
 			this.expectChange("link", null)
 				.expectChange("link", sLink)
-				.expectRequest({
-					url : "PATCH Artists(ArtistID='42',IsActiveEntity=true)",
+				.expectRequest("PATCH Artists(ArtistID='42',IsActiveEntity=true)", {
 					payload : {Picture : null}
 				}, oDONT_CARE)
 				.expectRequest("Artists(ArtistID='42',IsActiveEntity=true)?$select=Picture", {
@@ -17573,8 +17478,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		return this.createView(assert, "", oModel).then(function () {
 			var oListBinding = oModel.bindList("/Products");
 
-			that.expectRequest({
-					url : "POST Products",
+			that.expectRequest("POST Products", {
 					payload : oPayload
 				}, Object.assign({ID : "42"}, oPayload));
 
@@ -17588,8 +17492,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				that.waitForChanges(assert, "POST")
 			]);
 		}).then(function () {
-			that.expectRequest({
-					url : "PATCH Products(42)",
+			that.expectRequest("PATCH Products(42)", {
 					payload : {
 						"@annotation" : "baz*",
 						"@annotation@annotation" : "bazbaz*",
@@ -17650,8 +17553,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				.expectChange("name", ["New Team"])
 				.expectChange("instanceAnnotation", [undefined])
 				.expectChange("propertyAnnotation", [undefined])
-				.expectRequest({
-					url : "POST TEAMS",
+				.expectRequest("POST TEAMS", {
 					payload : {Budget : "42.1", Name : "New Team"}
 				}, {
 					"@a.b" : "A & B",
@@ -17719,8 +17621,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			.expectChange("quantityUnit", "EA");
 
 		return this.createView(assert, sView, oModel).then(function () {
-			that.expectRequest({
-					url : "PATCH SalesOrderList('42')/SO_2_SOITEM('10')",
+			that.expectRequest("PATCH SalesOrderList('42')/SO_2_SOITEM('10')", {
 					headers : {"If-Match" : "ETag"},
 					payload : {
 						Quantity : "11.000",
@@ -17753,8 +17654,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			return that.waitForChanges(assert, "no PATCH yet");
 		}).then(function () {
-			that.expectRequest({
-					url : "PATCH SalesOrderList('42')/SO_2_SOITEM('10')",
+			that.expectRequest("PATCH SalesOrderList('42')/SO_2_SOITEM('10')", {
 					headers : {"If-Match" : "changed"},
 					payload : {
 						QuantityUnit : "DZ"
@@ -17798,8 +17698,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			.expectChange("room", ["1.01"]);
 
 		return this.createView(assert, sView, oModel).then(function () {
-			that.expectRequest({
-					url : "PATCH EMPLOYEES('1')",
+			that.expectRequest("PATCH EMPLOYEES('1')", {
 					headers : {"If-Match" : "ETag"},
 					payload : {ROOM_ID : "1.02"}
 				}, oDONT_CARE)
@@ -17970,13 +17869,11 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 	parameters : {$$groupId : \'group2\'}}"\
 />';
 
-		this.expectRequest({
-				headers : {"sap-cancel-on-close" : "true"},
-				url : "EMPLOYEES('2')/Name"
+		this.expectRequest("EMPLOYEES('2')/Name", {
+				headers : {"sap-cancel-on-close" : "true"}
 			}, {value : "Frederic Fall"})
-			.expectRequest({
-				headers : {"sap-cancel-on-close" : "true"},
-				url : "EMPLOYEES('3')/Name"
+			.expectRequest("EMPLOYEES('3')/Name", {
+				headers : {"sap-cancel-on-close" : "true"}
 			}, {value : "Jonathan Smith"})
 			.expectChange("text1", "Frederic Fall")
 			.expectChange("text2", "Jonathan Smith");
@@ -18941,8 +18838,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		return this.createView(assert, sView, oModel).then(function () {
 			var oText = that.oView.byId("table").getItems()[0].getCells()[0];
 
-			that.expectRequest({
-					url : "PATCH BusinessPartnerList('1')",
+			that.expectRequest("PATCH BusinessPartnerList('1')", {
 					headers : {"If-Match" : "ETag"},
 					payload : {CompanyName : "Bar, Inc"}
 				}, oDONT_CARE);
@@ -19076,9 +18972,8 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					payload : {Name : "Frederic Spring"},
-					url : "PATCH EMPLOYEES('2')"
+			that.expectRequest("PATCH EMPLOYEES('2')", {
+					payload : {Name : "Frederic Spring"}
 				}, {
 					"#com.sap.gateway.default.iwbep.tea_busi.v0001.AcSetIsAvailable" : {
 						title : "Third Title"
@@ -19098,9 +18993,8 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				oContext = that.oView.byId("form").getObjectBinding().getBoundContext(),
 				oActionBinding = oModel.bindContext(sActionName + "(...)", oContext);
 
-			that.expectRequest({
-					payload : {TeamID : "TEAM_02"},
-					url : "POST EMPLOYEES('2')/" + sActionName
+			that.expectRequest("POST EMPLOYEES('2')/" + sActionName, {
+					payload : {TeamID : "TEAM_02"}
 				}, {
 					"#com.sap.gateway.default.iwbep.tea_busi.v0001.AcSetIsAvailable" : {
 						title : "Fourth Title"
@@ -19160,9 +19054,8 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					payload : {Name : "Frederic Spring"},
-					url : "PATCH EMPLOYEES('2')"
+			that.expectRequest("PATCH EMPLOYEES('2')", {
+					payload : {Name : "Frederic Spring"}
 				}, {
 					"#com.sap.gateway.default.iwbep.tea_busi.v0001.AcSetIsAvailable" : {}
 					// ID : "2",
@@ -19180,9 +19073,8 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				oContext = that.oView.byId("form").getObjectBinding().getBoundContext(),
 				oActionBinding = oModel.bindContext(sActionName + "(...)", oContext);
 
-			that.expectRequest({
-					payload : {TeamID : "TEAM_02"},
-					url : "POST EMPLOYEES('2')/" + sActionName
+			that.expectRequest("POST EMPLOYEES('2')/" + sActionName, {
+					payload : {TeamID : "TEAM_02"}
 				}, {
 					ID : "2",
 					Name : "Frederic Winter"
@@ -21477,9 +21369,8 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		return this.createView(assert, sView, oModel).then(function () {
 			var oContext = that.oView.byId("businessPartner").getBindingContext();
 
-			that.expectRequest({
-					headers : {"If-Match" : "ETag"},
-					url : "DELETE BusinessPartnerList('0100000000')"
+			that.expectRequest("DELETE BusinessPartnerList('0100000000')", {
+					headers : {"If-Match" : "ETag"}
 				})
 				.expectChange("companyName", "") // defaulting to null in the cache
 				.expectChange("phoneNumber", null);
@@ -21557,9 +21448,8 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 				oModel.resetChanges("update");
 			} else {
-				that.expectRequest({
-					headers : {"If-Match" : "ETag"},
-					url : "DELETE SalesOrderList('0500000000')"
+				that.expectRequest("DELETE SalesOrderList('0500000000')", {
+					headers : {"If-Match" : "ETag"}
 				});
 			}
 
@@ -21692,15 +21582,13 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				assert.notOk(oRowContext.hasPendingChanges());
 			} else {
 				if (bChange) {
-					that.expectRequest({
+					that.expectRequest("PATCH SalesOrderList('0500000000')", {
 						headers : {"If-Match" : "ETag4"},
-						url : "PATCH SalesOrderList('0500000000')",
 						payload : {Note : "Note (changed)"}
 					}, oDONT_CARE);
 				}
-				that.expectRequest({
-						headers : {"If-Match" : bChange ? "*" : "ETag4"},
-						url : "DELETE SalesOrderList('0500000000')"
+				that.expectRequest("DELETE SalesOrderList('0500000000')", {
+						headers : {"If-Match" : bChange ? "*" : "ETag4"}
 					});
 			}
 
@@ -21815,9 +21703,8 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			that.oLogMock.expects("error")
 				.withArgs("Failed to update path " + sQuantityTarget);
-			that.expectRequest({
-					payload : {Quantity : "3", QuantityUnit : "DZ"},
-					url : "PATCH " + sItemPath
+			that.expectRequest("PATCH " + sItemPath, {
+					payload : {Quantity : "3", QuantityUnit : "DZ"}
 				}, oError)
 				.expectChange("quantity", ["1.000"])
 				.expectMessages([oStateMessage, oTransitionMessage]);
@@ -21857,14 +21744,12 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				that.expectChange("note", "Note")
 					.expectMessages([oStateMessage, oTransitionMessage]);
 			} else {
-				that.expectRequest({
+				that.expectRequest("PATCH SalesOrderList('1')", {
 						headers : {"If-Match" : "etag"},
-						url : "PATCH SalesOrderList('1')",
 						payload : {Note : "Note (changed)"}
 					}, oDONT_CARE)
-					.expectRequest({
-						headers : {"If-Match" : "*"},
-						url : "DELETE SalesOrderList('1')"
+					.expectRequest("DELETE SalesOrderList('1')", {
+						headers : {"If-Match" : "*"}
 					}, oFixture.error
 						? createErrorInsideBatch({
 							details : [{
@@ -22197,8 +22082,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			assert.strictEqual(oBinding.getLength(), 17);
 
 			if (oFixture.success) {
-				that.expectRequest({
-						url : "PATCH SalesOrderList('2')",
+				that.expectRequest("PATCH SalesOrderList('2')", {
 						payload : {Note : "Note 2 (changed)"}
 					}, oDONT_CARE)
 					.expectRequest("DELETE SalesOrderList('2')")
@@ -22607,12 +22491,10 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 		return this.createView(assert, sView, oModel).then(function () {
 			that.expectChange("id", ["new1", "new2", "1"])
-				.expectRequest({
-					url : "POST SalesOrderList",
+				.expectRequest("POST SalesOrderList", {
 					payload : {SalesOrderID : "new1"}
 				}, {SalesOrderID : "new1"})
-				.expectRequest({
-					url : "POST SalesOrderList",
+				.expectRequest("POST SalesOrderList", {
 					payload : {SalesOrderID : "new2"}
 				}, {SalesOrderID : "new2"});
 
@@ -22644,8 +22526,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			return that.waitForChanges(assert, "create w/ a pending delete");
 		}).then(function () {
 			that.expectRequest("DELETE SalesOrderList('new1')")
-				.expectRequest({
-					url : "POST SalesOrderList",
+				.expectRequest("POST SalesOrderList", {
 					payload : {SalesOrderID : "new3"}
 				}, {SalesOrderID : "new3"});
 
@@ -22866,9 +22747,8 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			that.checkMoreButton(assert, "[4/6]");
 
 			that.oLogMock.expects("error").withArgs("Failed to delete /SalesOrderList('1')");
-			that.expectRequest({
-					headers : {"If-Match" : "etag1"},
-					url : "#6 DELETE SalesOrderList('1')"
+			that.expectRequest("#6 DELETE SalesOrderList('1')", {
+					headers : {"If-Match" : "etag1"}
 				}, createErrorInsideBatch())
 				// from the binding's reset due to the failed DELETE
 				.expectRequest("#7 SalesOrderList?$count=true"
@@ -24409,8 +24289,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			}, new Error("Cannot refresh " + aCurrentContexts[1] + " when using data aggregation"));
 
 			that.expectChange("lifecycleStatus", [, "Z*"])
-				.expectRequest({
-					url : "PATCH SalesOrderList('26')",
+				.expectRequest("PATCH SalesOrderList('26')", {
 					payload : {LifecycleStatus : "Z*"}
 				}, {GrossAmount : "1", LifecycleStatus : "*Z*", SalesOrderID : "26"})
 				.expectRequest("SalesOrderList('26')?$select=Note", {Note : "Late"})
@@ -30309,9 +30188,8 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		const oNodeNew = oListBinding.create({ID : "New"}, true);
 
 		this.expectChange("selected", [,, undefined])
-			.expectRequest({
-				payload : {ID : "New"},
-				url : "#2 POST EMPLOYEES?custom=baz"
+			.expectRequest("#2 POST EMPLOYEES?custom=baz", {
+				payload : {ID : "New"}
 			}, {ID : "New"})
 			.expectRequest("#2 " + sCountUrl, 3);
 
@@ -30781,8 +30659,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				[undefined, 2, "1", "0", "500", "DEM", "42", "10"]
 			]);
 
-			that.expectRequest({
-					url : "PATCH EMPLOYEES('0')",
+			that.expectRequest("PATCH EMPLOYEES('0')", {
 					payload : {
 						SALARY : {
 							BONUS_CURR : "EUR",
@@ -30790,8 +30667,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 						}
 					}
 				}, oNO_CONTENT)
-				.expectRequest({
-					url : "PATCH EMPLOYEES('1')",
+				.expectRequest("PATCH EMPLOYEES('1')", {
 					payload : {
 						SALARY : {
 							BONUS_CURR : "DEM",
@@ -30821,9 +30697,8 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			assert.strictEqual(oRootAmountBinding.getValue(), "3456");
 			assert.strictEqual(oChildAmountBinding.getValue(), "900");
 
-			that.expectRequest({
-					url : "POST TEAMS('42')/TEAM_2_EMPLOYEES('0')/" + sAction
-						+ "?$expand=EMPLOYEE_2_TEAM($select=Team_Id)",
+			that.expectRequest("POST TEAMS('42')/TEAM_2_EMPLOYEES('0')/" + sAction
+					+ "?$expand=EMPLOYEE_2_TEAM($select=Team_Id)", {
 					payload : {TeamID : "23"}
 				}, {
 					EMPLOYEE_2_TEAM : {
@@ -30837,9 +30712,8 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					},
 					TEAM_ID : "23" // "side effect"
 				})
-				.expectRequest({
-					url : "POST TEAMS('42')/TEAM_2_EMPLOYEES('1')/" + sAction
-						+ "?$expand=EMPLOYEE_2_TEAM($select=Team_Id)",
+				.expectRequest("POST TEAMS('42')/TEAM_2_EMPLOYEES('1')/" + sAction
+					+ "?$expand=EMPLOYEE_2_TEAM($select=Team_Id)", {
 					payload : {TeamID : "42"}
 				}, {
 					EMPLOYEE_2_TEAM : {
@@ -31099,12 +30973,11 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			assert.strictEqual(oBeta.getSibling(-1), null, "CPOUI5ODATAV4-2558");
 			assert.strictEqual(oKappa.getSibling(), oLambda, "CPOUI5ODATAV4-2558");
 
-			that.expectRequest({
+			that.expectRequest("#3 PATCH EMPLOYEES('2')", {
 					headers : {
 						"If-Match" : "etag_kappa",
 						Prefer : "return=minimal"
 					},
-					url : "#3 PATCH EMPLOYEES('2')",
 					payload : {Name : "κ (Kappa)"}
 				}, oNO_CONTENT)
 				.expectRequest("#3 EMPLOYEES('2')?$select=AGE,ID,Name", {
@@ -31291,8 +31164,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				[false, 1, "0", "", "Alpha", 60]
 			]);
 
-			that.expectRequest({
-					url : "#6 POST EMPLOYEES",
+			that.expectRequest("#6 POST EMPLOYEES", {
 					payload : {
 						// not needed: "EMPLOYEE_2_MANAGER@odata.bind" : null,
 						AGE : 99,
@@ -31456,23 +31328,21 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			// 9 Aleph (moved here)
 			// 0 Alpha (collapsed)
 			//   (1 Beta) (still expanded, but does not matter)
-			that.expectRequest({
+			that.expectRequest("#10 PATCH EMPLOYEES('9')", {
 					headers : {
 						Prefer : "return=minimal"
 					},
 					payload : {
 						"EMPLOYEE_2_MANAGER@odata.bind" : null
-					},
-					url : "#10 PATCH EMPLOYEES('9')"
+					}
 				}, oNO_CONTENT)
-				.expectRequest({
+				.expectRequest("#10 POST EMPLOYEES('9')" + sNextSiblingAction, {
 					headers : {
 						Prefer : "return=minimal"
 					},
 					payload : {
 						NextSibling : {ID : "0"}
-					},
-					url : "#10 POST EMPLOYEES('9')" + sNextSiblingAction
+					}
 				}, oNO_CONTENT)
 				.expectRequest("#10 " + sTopLevelsUrl.slice(0, -1) + ",ExpandLevels="
 					+ JSON.stringify([{NodeID : "1", Levels : 1}, {NodeID : "0", Levels : 0}])
@@ -31536,8 +31406,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			// 10 Beth (created)
 			// 0 Alpha (collapsed)
 			//   (1 Beta) (still expanded, but does not matter)
-			that.expectRequest({
-					url : "#11 POST EMPLOYEES",
+			that.expectRequest("#11 POST EMPLOYEES", {
 					payload : {
 						// not needed: "EMPLOYEE_2_MANAGER@odata.bind" : null,
 						Name : "Beth"
@@ -31688,20 +31557,18 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		assert.strictEqual(oBeta.getSibling(-1), null, "cannot move up");
 		assert.strictEqual(oBeta.getSibling(+1), null, "cannot move down");
 
-		this.expectRequest({
+		this.expectRequest("#5 PATCH EMPLOYEES('2')", {
 				headers : {
 					Prefer : "return=minimal"
 				},
-				url : "#5 PATCH EMPLOYEES('2')",
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('0')"
 				}
 			}, oNO_CONTENT)
-			.expectRequest({
+			.expectRequest("#5 POST EMPLOYEES('2')" + sNextSiblingAction, {
 				headers : {
 					Prefer : "return=minimal"
 				},
-				url : "#5 POST EMPLOYEES('2')" + sNextSiblingAction,
 				payload : {
 					NextSibling : {ID : "1"}
 				}
@@ -31818,10 +31685,9 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			oTable = that.oView.byId("list");
 			oListBinding = oTable.getBinding("items");
 
-			that.expectRequest({
-					groupId : "$auto.heroes",
-					url : "EMPLOYEES('3')"
-						+ "?$select=AGE,ID,Name,ROOM_ID,__CT__FAKE__Message/__FAKE__Messages"
+			that.expectRequest("EMPLOYEES('3')"
+					+ "?$select=AGE,ID,Name,ROOM_ID,__CT__FAKE__Message/__FAKE__Messages", {
+					groupId : "$auto.heroes"
 				}, {
 					"@odata.etag" : "etag3",
 					AGE : 57,
@@ -32306,8 +32172,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			assert.strictEqual(oAlpha.isAncestorOf(oAleph), false, "JIRA: CPOUI5ODATAV4-2337");
 			assert.strictEqual(oAleph.isAncestorOf(oAlpha), false, "JIRA: CPOUI5ODATAV4-2337");
 
-			that.expectRequest({
-					url : "#4 POST EMPLOYEES",
+			that.expectRequest("#4 POST EMPLOYEES", {
 					payload : {
 						// not needed: "EMPLOYEE_2_MANAGER@odata.bind" : null,
 						Name : "Beth"
@@ -32427,8 +32292,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				[undefined, 2, "3", "0", "Lambda", 157]
 			], 10);
 
-			that.expectRequest({
-					url : "#8 POST EMPLOYEES",
+			that.expectRequest("#8 POST EMPLOYEES", {
 					payload : {
 						"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('0')",
 						Name : "gIMEL"
@@ -35220,8 +35084,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			that.expectChange("etag", [, undefined])
 				.expectChange("name", [, "Beta"])
-				.expectRequest({
-					url : "POST " + sFriend.slice(1),
+				.expectRequest("POST " + sFriend.slice(1), {
 					payload : {
 						"BestFriend@odata.bind" : "../Artists(ArtistID='0',IsActiveEntity=false)",
 						Name : "Beta"
@@ -35326,8 +35189,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			that.expectChange("etag", [, undefined, "etag1.0"])
 				.expectChange("name", [, "Gamma", "Beta: β"])
-				.expectRequest({
-					url : "#5 POST " + sFriend.slice(1),
+				.expectRequest("#5 POST " + sFriend.slice(1), {
 					payload : {
 						"BestFriend@odata.bind" : "../Artists(ArtistID='0',IsActiveEntity=false)",
 						Name : "Gamma"
@@ -35389,12 +35251,11 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			]);
 			checkCreatedPersisted(assert, oGamma, oGammaCreated);
 
-			that.expectRequest({
+			that.expectRequest("#7 PATCH Artists(ArtistID='2',IsActiveEntity=false)", {
 					headers : {
 						"If-Match" : "etag2.0",
 						Prefer : "return=minimal"
 					},
-					url : "#7 PATCH Artists(ArtistID='2',IsActiveEntity=false)",
 					payload : {
 						"BestFriend@odata.bind" : "Artists(ArtistID='1',IsActiveEntity=false)"
 					}
@@ -35519,12 +35380,11 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				oRoot.move({parent : oGamma});
 			}, new Error("Unsupported parent context: " + oGamma));
 
-			that.expectRequest({
+			that.expectRequest("#8 PATCH Artists(ArtistID='2',IsActiveEntity=false)", {
 					headers : {
 						"If-Match" : "etag2.1",
 						Prefer : "return=minimal"
 					},
-					url : "#8 PATCH Artists(ArtistID='2',IsActiveEntity=false)",
 					payload : {
 						"BestFriend@odata.bind" : "Artists(ArtistID='0',IsActiveEntity=false)"
 					}
@@ -35855,12 +35715,11 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				that.waitForChanges(assert, "move canceled")
 			]);
 		}).then(function () {
-			that.expectRequest({
+			that.expectRequest("#14 PATCH Artists(ArtistID='1',IsActiveEntity=false)", {
 					headers : {
 						"If-Match" : "etag1.4",
 						Prefer : "return=minimal"
 					},
-					url : "#14 PATCH Artists(ArtistID='1',IsActiveEntity=false)",
 					payload : {
 						"BestFriend@odata.bind" : "Artists(ArtistID='2',IsActiveEntity=false)"
 					}
@@ -35930,8 +35789,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 
 			that.expectChange("etag", [undefined, "etag0.3", "etag2.4"])
 				.expectChange("name", ["Aleph", "Alpha #2", "Gamma #2"])
-				.expectRequest({
-					url : "#15 POST " + sFriend.slice(1),
+				.expectRequest("#15 POST " + sFriend.slice(1), {
 					payload : {
 						// not needed: "BestFriend@odata.bind" : null,
 						Name : "Aleph"
@@ -36075,12 +35933,11 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			]);
 			oBeta = oListBinding.getCurrentContexts()[2];
 
-			that.expectRequest({
+			that.expectRequest("#19 PATCH Artists(ArtistID='1',IsActiveEntity=false)", {
 					headers : {
 						"If-Match" : "etag1.6",
 						Prefer : "return=minimal"
 					},
-					url : "#19 PATCH Artists(ArtistID='1',IsActiveEntity=false)",
 					payload : {
 						"BestFriend@odata.bind" : null
 					}
@@ -36118,12 +35975,11 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 					[undefined, undefined, 2, "etag2.5", "Gamma #3", "2,false"]
 				]);
 		}).then(function () {
-			that.expectRequest({
+			that.expectRequest("#20 PATCH Artists(ArtistID='2',IsActiveEntity=false)", {
 					headers : {
 						"If-Match" : "etag2.5",
 						Prefer : "return=minimal"
 					},
-					url : "#20 PATCH Artists(ArtistID='2',IsActiveEntity=false)",
 					payload : {
 						"BestFriend@odata.bind" : "Artists(ArtistID='0',IsActiveEntity=false)"
 					}
@@ -36343,8 +36199,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		//   6 Iota (loaded soon)
 		//   7 Kappa (loaded later)
 		// 8 Aleph (created)
-		this.expectRequest({
-				url : "POST " + sFriend.slice(1),
+		this.expectRequest("POST " + sFriend.slice(1), {
 				payload : {
 					// not needed: "BestFriend@odata.bind" : null,
 					Name : "Aleph"
@@ -36497,8 +36352,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		//   6 Iota
 		//   7 Kappa (loaded later)
 		// 8 Aleph (created)
-		this.expectRequest({
-				url : "POST " + sFriend.slice(1),
+		this.expectRequest("POST " + sFriend.slice(1), {
 				payload : {
 					"BestFriend@odata.bind" : "../Artists(ArtistID='0',IsActiveEntity=false)",
 					Name : "New"
@@ -37260,11 +37114,10 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			oBeta = null;
 		} else { // "A failed move must not leave the node collapsed"
 			this.expectEvents(assert, "sap.ui.model.odata.v4.ODataListBinding: /EMPLOYEES", [])
-				.expectRequest({
+				.expectRequest("#2 PATCH EMPLOYEES('0')", {
 					headers : {
 						Prefer : "return=minimal"
 					},
-					url : "#2 PATCH EMPLOYEES('0')",
 					payload : {
 						"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('9')"
 					}
@@ -37313,19 +37166,17 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		this.expectEvents(assert, "sap.ui.model.odata.v4.ODataListBinding: /EMPLOYEES", [
 				[, "change", {reason : "change"}]
 			])
-			.expectRequest({
+			.expectRequest("PATCH EMPLOYEES('0')", {
 				batchNo : bMoveCollapsed ? 2 : 3,
 				headers : {
 					Prefer : "return=minimal"
 				},
-				url : "PATCH EMPLOYEES('0')",
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('9')"
 				}
 			}, oNO_CONTENT)
-			.expectRequest({
-				batchNo : bMoveCollapsed ? 2 : 3,
-				url : sBaseUrl + "&$filter=ID eq '0'&$select=LimitedRank"
+			.expectRequest(sBaseUrl + "&$filter=ID eq '0'&$select=LimitedRank", {
+				batchNo : bMoveCollapsed ? 2 : 3
 			}, {
 				value : [{
 					LimitedRank : "1" // Edm.Int64
@@ -37382,19 +37233,17 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		this.expectEvents(assert, "sap.ui.model.odata.v4.ODataListBinding: /EMPLOYEES", [
 				[, "change", {reason : "change"}]
 			])
-			.expectRequest({
+			.expectRequest("PATCH EMPLOYEES('2')", {
 				batchNo : bMoveCollapsed ? 3 : 4,
 				headers : {
 					Prefer : "return=minimal"
 				},
-				url : "PATCH EMPLOYEES('2')",
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('1')"
 				}
 			}, oNO_CONTENT)
-			.expectRequest({
-				batchNo : bMoveCollapsed ? 3 : 4,
-				url : sBaseUrl + "&$filter=ID eq '2'&$select=LimitedRank"
+			.expectRequest(sBaseUrl + "&$filter=ID eq '2'&$select=LimitedRank", {
+				batchNo : bMoveCollapsed ? 3 : 4
 			}, {
 				value : [{
 					LimitedRank : "4" // Edm.Int64
@@ -37452,19 +37301,17 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		this.expectEvents(assert, "sap.ui.model.odata.v4.ODataListBinding: /EMPLOYEES", [
 				[, "change", {reason : "change"}]
 			])
-			.expectRequest({
+			.expectRequest("PATCH EMPLOYEES('0')", {
 				batchNo : bMoveCollapsed ? 4 : 5,
 				headers : {
 					Prefer : "return=minimal"
 				},
-				url : "PATCH EMPLOYEES('0')",
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('9')"
 				}
 			}, oNO_CONTENT)
-			.expectRequest({
-				batchNo : bMoveCollapsed ? 4 : 5,
-				url : sBaseUrl + "&$filter=ID eq '0'&$select=LimitedRank"
+			.expectRequest(sBaseUrl + "&$filter=ID eq '0'&$select=LimitedRank", {
+				batchNo : bMoveCollapsed ? 4 : 5
 			}, {
 				value : [{
 					LimitedRank : "1" // Edm.Int64
@@ -37648,11 +37495,10 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		//   2 Epsilon
 		// 8 Eta
 		//   9 Theta
-		this.expectRequest({
+		this.expectRequest("#3 PATCH EMPLOYEES('3')", {
 				headers : {
 					Prefer : "return=minimal"
 				},
-				url : "#3 PATCH EMPLOYEES('3')",
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('1')"
 				}
@@ -37749,11 +37595,10 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		//     1.1 Gamma
 		//     3 Zeta
 		//     1.2 Delta
-		this.expectRequest({
+		this.expectRequest("#4 PATCH EMPLOYEES('1')", {
 				headers : {
 					Prefer : "return=minimal"
 				},
-				url : "#4 PATCH EMPLOYEES('1')",
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('8')"
 				}
@@ -37861,11 +37706,10 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		//       1.1 Gamma
 		//       3 Zeta
 		//       1.2 Delta
-		this.expectRequest({
+		this.expectRequest("#5 PATCH EMPLOYEES('1')", {
 				headers : {
 					Prefer : "return=minimal"
 				},
-				url : "#5 PATCH EMPLOYEES('1')",
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('9')"
 				}
@@ -37986,11 +37830,10 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		//       1.2 Delta
 		//     0 Alpha (moved here)
 		//       2 Epsilon
-		this.expectRequest({
+		this.expectRequest("#6 PATCH EMPLOYEES('0')", {
 				headers : {
 					Prefer : "return=minimal"
 				},
-				url : "#6 PATCH EMPLOYEES('0')",
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('9')"
 				}
@@ -38183,14 +38026,13 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				//       3.1.1 Zeta
 				//         1 Beta (moved here)
 				//     3.2 Eta
-				this.expectRequest({
+				this.expectRequest("#10 PATCH EMPLOYEES('1')", {
 						headers : {
 							Prefer : "return=minimal"
 						},
 						payload : {
 							"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('3.1.1')"
-						},
-						url : "#10 PATCH EMPLOYEES('1')"
+						}
 					}, oNO_CONTENT)
 					.expectRequest("#10 " + sBaseUrl + "&$filter=ID eq '1'&$select=LimitedRank", {
 						value : [{
@@ -38279,14 +38121,13 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				//         3.1.1 Zeta
 				//       3.2 Eta
 				//   2 Gamma
-				this.expectRequest({
+				this.expectRequest("#10 PATCH EMPLOYEES('3')", {
 						headers : {
 							Prefer : "return=minimal"
 						},
 						payload : {
 							"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('1')"
-						},
-						url : "#10 PATCH EMPLOYEES('3')"
+						}
 					}, oNO_CONTENT)
 					.expectRequest("#10 " + sBaseUrl + "&$filter=ID eq '3'&$select=LimitedRank", {
 						value : [{
@@ -38375,14 +38216,13 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				//   2 Gamma
 				//   3 Delta
 				//     3.2 Eta
-				this.expectRequest({
+				this.expectRequest("#10 PATCH EMPLOYEES('3.1')", {
 						headers : {
 							Prefer : "return=minimal"
 						},
 						payload : {
 							"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('1')"
-						},
-						url : "#10 PATCH EMPLOYEES('3.1')"
+						}
 					}, oNO_CONTENT)
 					.expectRequest("#10 " + sBaseUrl + "&$filter=ID eq '3.1'&$select=LimitedRank", {
 						value : [{
@@ -38518,14 +38358,13 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				//     3.2 Eta
 				// 3.1 Epsilon (moved here)
 				//   3.1.1 Zeta
-				this.expectRequest({
+				this.expectRequest("#10 PATCH EMPLOYEES('3.1')", {
 						headers : {
 							Prefer : "return=minimal"
 						},
 						payload : {
 							"EMPLOYEE_2_MANAGER@odata.bind" : null
-						},
-						url : "#10 PATCH EMPLOYEES('3.1')"
+						}
 					}, oNO_CONTENT)
 					.expectRequest("#10 " + sBaseUrl + "&$filter=ID eq '3.1'&$select=LimitedRank", {
 						value : [{
@@ -38655,14 +38494,13 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				//     3.2 Eta
 				//       3.1 Epsilon (moved here)
 				//         3.1.1 Zeta
-				this.expectRequest({
+				this.expectRequest("#10 PATCH EMPLOYEES('3.1')", {
 						headers : {
 							Prefer : "return=minimal"
 						},
 						payload : {
 							"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('3.2')"
-						},
-						url : "#10 PATCH EMPLOYEES('3.1')"
+						}
 					}, oNO_CONTENT)
 					.expectRequest("#10 " + sBaseUrl + "&$filter=ID eq '3.1'&$select=LimitedRank", {
 						value : [{
@@ -38751,14 +38589,13 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				//     (3.2 Eta)
 				//       (3.1 Epsilon (moved here))
 				//         (3.1.1 Zeta)
-				this.expectRequest({
+				this.expectRequest("#10 PATCH EMPLOYEES('3.1')", {
 						headers : {
 							Prefer : "return=minimal"
 						},
 						payload : {
 							"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('3.2')"
-						},
-						url : "#10 PATCH EMPLOYEES('3.1')"
+						}
 					}, oNO_CONTENT)
 					.expectRequest("#10 " + sBaseUrl + "&$filter=ID eq '3.1'&$select=LimitedRank", {
 						value : [] // filtered out
@@ -38818,23 +38655,21 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				//     3.1 Epsilon
 				//       3.1.1 Zeta
 				//     3.2 Eta
-				this.expectRequest({
+				this.expectRequest("#10 PATCH EMPLOYEES('1')", {
 						headers : {
 							Prefer : "return=minimal"
 						},
 						payload : {
 							"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('0')"
-						},
-						url : "#10 PATCH EMPLOYEES('1')"
+						}
 					}, oNO_CONTENT)
-					.expectRequest({
+					.expectRequest("#10 POST EMPLOYEES('1')" + sNextSiblingAction, {
 						headers : {
 							Prefer : "return=minimal"
 						},
 						payload : {
 							NextSibling : {ID : "3"}
-						},
-						url : "#10 POST EMPLOYEES('1')" + sNextSiblingAction
+						}
 					}, oNO_CONTENT)
 					.expectRequest("#10 " + sBaseUrl + "&$filter=ID eq '1'&$select=LimitedRank", {
 						value : [{
@@ -38986,14 +38821,13 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		const oListBinding = oTable.getBinding("rows");
 		const oBeta = oListBinding.getCurrentContexts()[1];
 
-		this.expectRequest({
+		this.expectRequest("#2 PATCH EMPLOYEES('2')", {
 				headers : {
 					Prefer : "return=minimal"
 				},
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : null
-				},
-				url : "#2 PATCH EMPLOYEES('2')"
+				}
 			}, oNO_CONTENT)
 			.expectRequest("#2 " + sUrl + "&$filter=ID eq '2'&$select=LimitedRank", {
 				value : [{
@@ -40131,8 +39965,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		const create = async (sId, sName, oParent) => {
 			const sParentId = oParent.getProperty("ArtistID");
 			iCount += 1;
-			this.expectRequest({
-					url : "POST " + sFriend + "?custom=foo",
+			this.expectRequest("POST " + sFriend + "?custom=foo", {
 					payload : {
 						"BestFriend@odata.bind" :
 							`../Artists(ArtistID='${sParentId}',IsActiveEntity=false)`,
@@ -41203,8 +41036,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			[undefined, 1, "Epsilon"]
 		], 4);
 
-		this.expectRequest({
-				url : "#3 POST EMPLOYEES?custom=foo",
+		this.expectRequest("#3 POST EMPLOYEES?custom=foo", {
 				payload : {Name : "Zeta"}
 			}, {ID : "6", Name : "Zeta"})
 			.expectRequest("#3 " + sCountUrl, 6)
@@ -41235,8 +41067,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			this.waitForChanges(assert, "(2a) create Zeta")
 		]);
 
-		this.expectRequest({
-				url : "#5 POST EMPLOYEES?custom=foo",
+		this.expectRequest("#5 POST EMPLOYEES?custom=foo", {
 				payload : {Name : "Eta"}
 			}, {ID : "7", Name : "Eta"})
 			.expectRequest("#5 " + sCountUrl, 7)
@@ -41250,8 +41081,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			this.waitForChanges(assert, "(2b) create Eta")
 		]);
 
-		this.expectRequest({
-				url : "#7 POST EMPLOYEES?custom=foo",
+		this.expectRequest("#7 POST EMPLOYEES?custom=foo", {
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('1')",
 					Name : "Theta"
@@ -41526,8 +41356,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		this.oLogMock.expects("error")
 			.withExactArgs("POST on 'EMPLOYEES' failed; will be repeated automatically",
 				sinon.match("Request intentionally failed"), sODLB);
-		this.expectRequest({
-				url : "#2 POST EMPLOYEES",
+		this.expectRequest("#2 POST EMPLOYEES", {
 				payload : {Name : "Bar"}
 			}, createErrorInsideBatch())
 			.expectRequest("#2 " + sCountUrl, oNO_RESPONSE)
@@ -41587,8 +41416,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		this.oLogMock.expects("error")
 			.withExactArgs("POST on 'EMPLOYEES' failed; will be repeated automatically",
 				sinon.match("Request intentionally failed"), sODLB);
-		this.expectRequest({
-				url : "#3 POST EMPLOYEES",
+		this.expectRequest("#3 POST EMPLOYEES", {
 				payload : {Name : "Delta"}
 			}, createErrorInsideBatch())
 			.expectRequest("#3 " + sCountUrl, oNO_RESPONSE)
@@ -41622,8 +41450,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		assert.strictEqual(oBinding.getCount(), 3);
 		assert.strictEqual(iCountAtCreateCompleted, 3, "failed creation calls createCompleted");
 
-		this.expectRequest({
-				url : "#4 POST EMPLOYEES",
+		this.expectRequest("#4 POST EMPLOYEES", {
 				payload : {Name : "Delta"}
 			}, {ID : "4", Name : "Delta"})
 			.expectRequest("#4 " + sCountUrl, 4)
@@ -41889,8 +41716,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		], 3);
 		const oAlpha = oBinding.getCurrentContexts()[0];
 
-		this.expectRequest({
-				url : "POST EMPLOYEES",
+		this.expectRequest("POST EMPLOYEES", {
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('1')",
 					Name : "New1"
@@ -41915,8 +41741,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			this.waitForChanges(assert, "(1) create New1")
 		]);
 
-		this.expectRequest({
-				url : "POST EMPLOYEES",
+		this.expectRequest("POST EMPLOYEES", {
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('11')",
 					Name : "New2"
@@ -42318,11 +42143,10 @@ make root = ${bMakeRoot}`;
 		// 9 Aleph (loaded later)
 		// 10 Beth (loaded later)
 		//   10.1 Gimel (loaded later)
-		this.expectRequest({
+		this.expectRequest("#3 PATCH Artists(ArtistID='1',IsActiveEntity=false)", {
 				headers : {
 					Prefer : "return=minimal"
 				},
-				url : "#3 PATCH Artists(ArtistID='1',IsActiveEntity=false)",
 				payload : {
 					"BestFriend@odata.bind" : "Artists(ArtistID='3',IsActiveEntity=false)"
 				}
@@ -42523,11 +42347,10 @@ make root = ${bMakeRoot}`;
 		// 9 Aleph
 		//   10 Beth (now moved beneath Aleph)
 		//     10.1 Gimel
-		this.expectRequest({
+		this.expectRequest("#6 PATCH Artists(ArtistID='10',IsActiveEntity=false)", {
 				headers : {
 					Prefer : "return=minimal"
 				},
-				url : "#6 PATCH Artists(ArtistID='10',IsActiveEntity=false)",
 				payload : {
 					"BestFriend@odata.bind" : "Artists(ArtistID='9',IsActiveEntity=false)"
 				}
@@ -42557,11 +42380,10 @@ make root = ${bMakeRoot}`;
 				[undefined, 3, "10.1", "Gimel"]
 			]);
 
-		this.expectRequest({
+		this.expectRequest("#7 PATCH Artists(ArtistID='10.1',IsActiveEntity=false)", {
 				headers : {
 					Prefer : "return=minimal"
 				},
-				url : "#7 PATCH Artists(ArtistID='10.1',IsActiveEntity=false)",
 				payload : {
 					"BestFriend@odata.bind" : "Artists(ArtistID='9',IsActiveEntity=false)"
 				}
@@ -42605,11 +42427,10 @@ make root = ${bMakeRoot}`;
 		//   4 Lambda
 		// 9 Aleph
 		//   10 Beth
-		this.expectRequest({
+		this.expectRequest("#8 PATCH Artists(ArtistID='10.1',IsActiveEntity=false)", {
 				headers : {
 					Prefer : "return=minimal"
 				},
-				url : "#8 PATCH Artists(ArtistID='10.1',IsActiveEntity=false)",
 				payload : {
 					"BestFriend@odata.bind" : "Artists(ArtistID='0',IsActiveEntity=false)"
 				}
@@ -42670,11 +42491,10 @@ make root = ${bMakeRoot}`;
 		assert.strictEqual(oBeta.getProperty("Name"), "Beta", "double check that index was right");
 
 		if (bMakeRoot) {
-			this.expectRequest({
+			this.expectRequest("#9 PATCH Artists(ArtistID='1',IsActiveEntity=false)", {
 					headers : {
 						Prefer : "return=minimal"
 					},
-					url : "#9 PATCH Artists(ArtistID='1',IsActiveEntity=false)",
 					payload : {
 						"BestFriend@odata.bind" : null
 					}
@@ -42824,25 +42644,23 @@ make root = ${bMakeRoot}`;
 		// code under test: no move happens
 		oAlpha.move();
 
-		this.expectRequest({
+		this.expectRequest("#2 PATCH EMPLOYEES('4')", {
 				headers : {
 					"If-Match" : "Delta's ETag",
 					Prefer : "return=minimal"
 				},
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('1')"
-				},
-				url : "#2 PATCH EMPLOYEES('4')"
+				}
 			}, oNO_CONTENT)
-			.expectRequest({
+			.expectRequest("#2 POST EMPLOYEES('4')" + sNextSiblingAction, {
 				headers : {
 					"If-Match" : "Delta's ETag",
 					Prefer : "return=minimal"
 				},
 				payload : {
 					NextSibling : {ID : "3"}
-				},
-				url : "#2 POST EMPLOYEES('4')" + sNextSiblingAction
+				}
 			}, oNO_CONTENT)
 			.expectRequest("#2 " + sUrl + "&$filter=ID eq '4'&$select=LimitedRank", {
 				value : [{
@@ -42901,23 +42719,21 @@ make root = ${bMakeRoot}`;
 			[undefined, 2, "Gamma"]
 		], 5);
 
-		this.expectRequest({
+		this.expectRequest("#3 PATCH EMPLOYEES('4')", {
 				headers : {
 					Prefer : "return=minimal"
 				},
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : null
-				},
-				url : "#3 PATCH EMPLOYEES('4')"
+				}
 			}, oNO_CONTENT)
-			.expectRequest({
+			.expectRequest("#3 POST EMPLOYEES('4')" + sNextSiblingAction, {
 				headers : {
 					Prefer : "return=minimal"
 				},
 				payload : {
 					NextSibling : null
-				},
-				url : "#3 POST EMPLOYEES('4')" + sNextSiblingAction
+				}
 			}, oNO_CONTENT)
 			.expectRequest("#3 " + sUrl + "&$filter=ID eq '4'&$select=LimitedRank", {
 				value : [{
@@ -43098,23 +42914,21 @@ make root = ${bMakeRoot}`;
 		], 4);
 		const oBeta = oListBinding.getCurrentContexts()[1];
 
-		this.expectRequest({
+		this.expectRequest("#3 PATCH EMPLOYEES('2')", {
 				headers : {
 					Prefer : "return=minimal"
 				},
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : null
-				},
-				url : "#3 PATCH EMPLOYEES('2')"
+				}
 			}, oNO_CONTENT)
-			.expectRequest({
+			.expectRequest("#3 POST EMPLOYEES('2')" + sNextSiblingAction, {
 				headers : {
 					Prefer : "return=minimal"
 				},
 				payload : {
 					NextSibling : null
-				},
-				url : "#3 POST EMPLOYEES('2')" + sNextSiblingAction
+				}
 			}, oNO_CONTENT)
 			.expectRequest("#3 " + sUrl.slice(0, -1) + ",ExpandLevels="
 				+ JSON.stringify([{NodeID : "1", Levels : 1}])
@@ -43255,11 +43069,10 @@ make root = ${bMakeRoot}`;
 			[undefined, 2, "Gamma"]
 		], 4);
 
-		this.expectRequest({
+		this.expectRequest("#2 POST EMPLOYEES", {
 				payload : {
 					Name : "Epsilon"
-				},
-				url : "#2 POST EMPLOYEES"
+				}
 			}, {
 				ID : "5",
 				Name : "Epsilon"
@@ -43291,23 +43104,21 @@ make root = ${bMakeRoot}`;
 		], 5);
 		const [, oAlpha, oBeta] = oListBinding.getCurrentContexts();
 
-		this.expectRequest({
+		this.expectRequest("#4 PATCH EMPLOYEES('2')", {
 				headers : {
 					Prefer : "return=minimal"
 				},
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('1')"
-				},
-				url : "#4 PATCH EMPLOYEES('2')"
+				}
 			}, oNO_CONTENT)
-			.expectRequest({
+			.expectRequest("#4 POST EMPLOYEES('2')" + sNextSiblingAction, {
 				headers : {
 					Prefer : "return=minimal"
 				},
 				payload : {
 					NextSibling : null
-				},
-				url : "#4 POST EMPLOYEES('2')" + sNextSiblingAction
+				}
 			}, oNO_CONTENT)
 			.expectRequest("#4 " + sUrl + "&$filter=ID eq '2'&$select=LimitedRank", {
 				value : [{
@@ -43406,14 +43217,13 @@ make root = ${bMakeRoot}`;
 		//     2 Beta (moved here)
 		//   4 Delta
 		// 5 Epsilon
-		this.expectRequest({
+		this.expectRequest("#6 PATCH EMPLOYEES('2')", {
 				headers : {
 					Prefer : "return=minimal"
 				},
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('3')"
-				},
-				url : "#6 PATCH EMPLOYEES('2')"
+				}
 			}, oNO_CONTENT)
 			.expectRequest("#6 " + sUrl + "&$filter=ID eq '2'&$select=LimitedRank", {
 				value : [{
@@ -43447,14 +43257,13 @@ make root = ${bMakeRoot}`;
 		this.expectRequest("#7 POST EMPLOYEES('5')/"
 				+ "com.sap.gateway.default.iwbep.tea_busi.v0001.__FAKE__AcCopy?$select=ID",
 				{ID : "_6"})
-			.expectRequest({
+			.expectRequest("#7 PATCH $-1", {
 				headers : {
 					Prefer : "return=minimal"
 				},
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('1')"
-				},
-				url : "#7 PATCH $-1"
+				}
 			}, oNO_CONTENT)
 			.expectRequest("#7 " + sUrl + "&$filter=ID eq '5'&$select=LimitedRank", {
 				value : [{
@@ -43541,14 +43350,13 @@ make root = ${bMakeRoot}`;
 		this.expectRequest("#9 POST EMPLOYEES('5')"
 				+ "/com.sap.gateway.default.iwbep.tea_busi.v0001.__FAKE__AcCopy?$select=ID",
 				{ID : "_7"})
-			.expectRequest({
+			.expectRequest("#9 PATCH $-1", {
 				headers : {
 					Prefer : "return=minimal"
 				},
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : null
-				},
-				url : "#9 PATCH $-1"
+				}
 			}, oNO_CONTENT)
 			.expectRequest("#9 " + sUrl + "&$filter=ID eq '5'&$select=LimitedRank", {
 				value : [{
@@ -43629,14 +43437,13 @@ make root = ${bMakeRoot}`;
 		this.expectRequest("#11 POST EMPLOYEES('5')"
 				+ "/com.sap.gateway.default.iwbep.tea_busi.v0001.__FAKE__AcCopy?$select=ID",
 				{ID : "_8"})
-			.expectRequest({
+			.expectRequest("#11 PATCH $-1", {
 				headers : {
 					Prefer : "return=minimal"
 				},
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('5')"
-				},
-				url : "#11 PATCH $-1"
+				}
 			}, oNO_CONTENT)
 			.expectRequest("#11 " + sUrl + "&$filter=ID eq '5'&$select=LimitedRank", {
 				value : [{
@@ -43749,25 +43556,23 @@ make root = ${bMakeRoot}`;
 		const oListBinding = oTable.getBinding("rows");
 		const [oAlpha, oBeta] = oListBinding.getCurrentContexts();
 
-		this.expectRequest({
+		this.expectRequest("#2 PATCH Artists(ArtistID='2',IsActiveEntity=false)", {
 				headers : {
 					Prefer : "return=minimal"
 				},
 				payload : {
 					"BestFriend@odata.bind" : null
-				},
-				url : "#2 PATCH Artists(ArtistID='2',IsActiveEntity=false)"
+				}
 			}, oNO_CONTENT)
-			.expectRequest({
+			.expectRequest("#2 POST " + sFriend.slice(1)
+				+ "(ArtistID='2',IsActiveEntity=false)/special.cases.ChangeNextSibling", {
 				headers : {
 					Prefer : "return=minimal"
 				},
 				payload : {
 					// Note: add a non-key property for demonstrating the multi key scenario
 					NextSibling : {ArtistID : "1", Name : "Alpha"}
-				},
-				url : "#2 POST " + sFriend.slice(1)
-					+ "(ArtistID='2',IsActiveEntity=false)/special.cases.ChangeNextSibling"
+				}
 			}, oNO_CONTENT)
 			.expectRequest("#2 " + sUrl
 				+ "&$filter=ArtistID eq '2' and IsActiveEntity eq false&$select=_/Limited_Rank", {
@@ -43912,8 +43717,7 @@ make root = ${bMakeRoot}`;
 
 		const [oAlpha, oGamma] = oListBinding.getAllCurrentContexts();
 
-		this.expectRequest({
-				url : "#2 POST EMPLOYEES",
+		this.expectRequest("#2 POST EMPLOYEES", {
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('3')",
 					Name : "FilteredOut"
@@ -44010,8 +43814,7 @@ make root = ${bMakeRoot}`;
 			[undefined, 2, "3", "Gamma"]
 		]);
 
-		this.expectRequest({
-				url : "#5 POST EMPLOYEES",
+		this.expectRequest("#5 POST EMPLOYEES", {
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('1')",
 					Name : "Delta"
@@ -44061,8 +43864,7 @@ make root = ${bMakeRoot}`;
 				[undefined, 1, "2", "Beta"]
 			]);
 
-		this.expectRequest({
-				url : "#7 POST EMPLOYEES",
+		this.expectRequest("#7 POST EMPLOYEES", {
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('4')",
 					Name : "Epsilon"
@@ -44128,8 +43930,7 @@ make root = ${bMakeRoot}`;
 			[undefined, 1, "2", "Beta"]
 		]);
 
-		this.expectRequest({
-				url : "#9 POST EMPLOYEES",
+		this.expectRequest("#9 POST EMPLOYEES", {
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('5')",
 					Name : "Zeta"
@@ -44194,8 +43995,7 @@ make root = ${bMakeRoot}`;
 		], 6);
 		oZeta = oListBinding.getCurrentContexts()[1];
 
-		this.expectRequest({
-				url : "#11 POST EMPLOYEES",
+		this.expectRequest("#11 POST EMPLOYEES", {
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('6')",
 					Name : "Eta"
@@ -44345,8 +44145,7 @@ make root = ${bMakeRoot}`;
 		const oListBinding = oTable.getBinding("rows");
 		const [oAlpha] = oListBinding.getAllCurrentContexts();
 
-		this.expectRequest({
-				url : "POST EMPLOYEES",
+		this.expectRequest("POST EMPLOYEES", {
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('1')",
 					Name : "Epsilon"
@@ -44480,14 +44279,13 @@ make root = ${bMakeRoot}`;
 		const oListBinding = oTable.getBinding("rows");
 		const [oAlpha, oBeta] = oListBinding.getAllCurrentContexts();
 
-		this.expectRequest({
+		this.expectRequest("#2 PATCH EMPLOYEES('1.1')", {
 				headers : {
 					Prefer : "return=minimal"
 				},
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('1')"
-				},
-				url : "#2 PATCH EMPLOYEES('1.1')"
+				}
 			}, oNO_CONTENT)
 			.expectRequest("#2 " + sUrl + "&$filter=ID eq '1.1'&$select=LimitedRank", {
 				value : [{
@@ -44633,8 +44431,7 @@ make root = ${bMakeRoot}`;
 		]);
 		const oListBinding = oTable.getBinding("rows");
 
-		this.expectRequest({
-				url : "#2 POST Artists",
+		this.expectRequest("#2 POST Artists", {
 				payload : {
 					Name : "FilteredOut"
 				}
@@ -44676,8 +44473,7 @@ make root = ${bMakeRoot}`;
 			[false, 1, "2", "Beta", "2,false"]
 		]);
 
-		this.expectRequest({
-				url : "#4 POST Artists",
+		this.expectRequest("#4 POST Artists", {
 				payload : {
 					Name : "Gamma"
 				}
@@ -45564,8 +45360,7 @@ make root = ${bMakeRoot}`;
 		const oAlpha = oTable.getRows()[0].getBindingContext();
 		const oBeta = oTable.getRows()[1].getBindingContext();
 
-		this.expectRequest({
-				url : "POST Artists",
+		this.expectRequest("POST Artists", {
 				payload : {
 					"BestFriend@odata.bind" : "Artists(ArtistID='1',IsActiveEntity=false)",
 					Name : "Iota"
@@ -45606,8 +45401,7 @@ make root = ${bMakeRoot}`;
 			[true, 2, "1", "Beta"]
 		], 13);
 
-		this.expectRequest({
-				url : "POST Artists",
+		this.expectRequest("POST Artists", {
 				payload : {
 					"BestFriend@odata.bind" : "Artists(ArtistID='0',IsActiveEntity=false)",
 					Name : "Rho"
@@ -46412,17 +46206,17 @@ make root = ${bMakeRoot}`;
 		//     5 Zeta (not loaded)
 		//   3 Delta
 		//   6 Eta (not loaded)
-		this.expectRequest({
+		this.expectRequest("#8 PATCH Artists(ArtistID='4',IsActiveEntity=false)", {
 				headers : {
 					"If-Match" : "etag4.1",
 					Prefer : "return=minimal"
 				},
 				payload : {
 					"BestFriend@odata.bind" : "Artists(ArtistID='0',IsActiveEntity=false)"
-				},
-				url : "#8 PATCH Artists(ArtistID='4',IsActiveEntity=false)"
+				}
 			}, oNO_CONTENT)
-			.expectRequest({
+			.expectRequest("#8 POST " + sFriend.slice(1)
+				+ "(ArtistID='4',IsActiveEntity=false)/special.cases.ChangeNextSibling", {
 				headers : {
 					"If-Match" : "etag4.1",
 					Prefer : "return=minimal"
@@ -46430,9 +46224,7 @@ make root = ${bMakeRoot}`;
 				payload : {
 					// Note: add a non-key property for demonstrating the multi key scenario
 					NextSibling : {ArtistID : "3", Name : "Delta #1"}
-				},
-				url : "#8 POST " + sFriend.slice(1)
-					+ "(ArtistID='4',IsActiveEntity=false)/special.cases.ChangeNextSibling"
+				}
 			}, oNO_CONTENT)
 			.expectRequest("#8 " + sBaseUrl + "&$filter=ArtistID eq '4' and IsActiveEntity eq false"
 				+ "&$select=_/Limited_Rank", {
@@ -46933,8 +46725,7 @@ make root = ${bMakeRoot}`;
 
 			that.expectChange("id", [, "", "1"])
 				.expectChange("name", [, "1st new child", "Beta"])
-				.expectRequest({
-					url : "POST Artists",
+				.expectRequest("POST Artists", {
 					payload : {
 						"BestFriend@odata.bind" : "Artists(ArtistID='0',IsActiveEntity=false)",
 						Name : "1st new child"
@@ -46971,8 +46762,7 @@ make root = ${bMakeRoot}`;
 		}).then(function () {
 			that.expectChange("id", [, "", "11"])
 				.expectChange("name", [, "2nd new child", "First new child"])
-				.expectRequest({
-					url : "POST Artists",
+				.expectRequest("POST Artists", {
 					payload : {
 						"BestFriend@odata.bind" : "Artists(ArtistID='0',IsActiveEntity=false)",
 						Name : "2nd new child"
@@ -47100,11 +46890,10 @@ make root = ${bMakeRoot}`;
 
 			that.expectChange("id", [, "11", "1"])
 				.expectChange("name", [, "First new child", "Beta"])
-				.expectRequest({
+				.expectRequest("DELETE Artists(ArtistID='12',IsActiveEntity=false)", {
 					headers : {
 						"If-Match" : "etag2.0"
-					},
-					url : "DELETE Artists(ArtistID='12',IsActiveEntity=false)"
+					}
 				});
 
 			return Promise.all([
@@ -47208,8 +46997,7 @@ make root = ${bMakeRoot}`;
 			[undefined, 2, "Beta"]
 		]);
 
-		this.expectRequest({
-				url : "POST EMPLOYEES?foo=bar",
+		this.expectRequest("POST EMPLOYEES?foo=bar", {
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('1')",
 					Name : "Gamma"
@@ -47434,8 +47222,7 @@ make root = ${bMakeRoot}`;
 			oEquipmentsBinding.create();
 		}, new Error("Deep create is not supported with data aggregation"));
 
-		this.expectRequest({
-				url : "POST EMPLOYEES",
+		this.expectRequest("POST EMPLOYEES", {
 				payload : {Name : "foo"}
 			}, {ID : "42", Name : "foo"})
 			.expectRequest("EMPLOYEES('42')/EMPLOYEE_2_EQUIPMENTS?$select=Category,ID"
@@ -47450,8 +47237,7 @@ make root = ${bMakeRoot}`;
 		]);
 
 		this.expectChange("category", ["D", "C"])
-			.expectRequest({
-				url : "POST EMPLOYEES('42')/EMPLOYEE_2_EQUIPMENTS",
+			.expectRequest("POST EMPLOYEES('42')/EMPLOYEE_2_EQUIPMENTS", {
 				payload : {Category : "D"}
 			}, {Category : "D", ID : 24});
 
@@ -47746,12 +47532,10 @@ make root = ${bMakeRoot}`;
 		await this.createView(assert, sView, oModel);
 
 		this.expectChange("name", [, "Beta"])
-			.expectRequest({
-				url : "POST EMPLOYEES",
+			.expectRequest("POST EMPLOYEES", {
 				payload : {"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('0')", Name : "Gamma"}
 			}, {DrillState : "leaf", ID : "0.1", Name : "Gamma"})
-			.expectRequest({
-				url : "POST EMPLOYEES",
+			.expectRequest("POST EMPLOYEES", {
 				payload : {"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('0')", Name : "Beta"}
 			}, {DrillState : "leaf", ID : "0.0", Name : "Beta"});
 
@@ -49264,26 +49048,24 @@ make root = ${bMakeRoot}`;
 			[true, 2, "1.1", "Beta*"]
 		], 5);
 
-		this.expectRequest({
-				groupId : "$auto.Heroes",
-				url : "#6 Artists?custom=foo&$apply=" + sFilterSearch
-					+ "/descendants($root/Artists,OrgChart,_/NodeID"
-					+ ",filter(ArtistID eq '1' and IsActiveEntity eq false))"
-					+ "&$filter=ArtistID eq '1.1.1' and IsActiveEntity eq false"
-					+ "&$select=ArtistID,IsActiveEntity&$top=1"
+		this.expectRequest("#6 Artists?custom=foo&$apply=" + sFilterSearch
+				+ "/descendants($root/Artists,OrgChart,_/NodeID"
+				+ ",filter(ArtistID eq '1' and IsActiveEntity eq false))"
+				+ "&$filter=ArtistID eq '1.1.1' and IsActiveEntity eq false"
+				+ "&$select=ArtistID,IsActiveEntity&$top=1", {
+				groupId : "$auto.Heroes"
 			}, {
 				value : [{
 					ArtistID : "1.1.1",
 					IsActiveEntity : false
 				}]
 			})
-			.expectRequest({
-				groupId : "$auto.Heroes",
-				url : "#6 " + sUnifiedUrl + ",ExpandLevels=" + JSON.stringify([
-						{NodeID : "1,false", Levels : 1},
-						{NodeID : "1.1,false", Levels : 1},
-						{NodeID : "1.1.1,false", Levels : 1}
-					]) + ")&$skip=4&$top=1"
+			.expectRequest("#6 " + sUnifiedUrl + ",ExpandLevels=" + JSON.stringify([
+					{NodeID : "1,false", Levels : 1},
+					{NodeID : "1.1,false", Levels : 1},
+					{NodeID : "1.1.1,false", Levels : 1}
+				]) + ")&$skip=4&$top=1", {
+				groupId : "$auto.Heroes"
 			}, {
 				value : [{
 					ArtistID : "9",
@@ -50273,8 +50055,7 @@ make root = ${bMakeRoot}`;
 		]);
 		const [oAlpha, oBeta] = oListBinding.getCurrentContexts();
 
-		this.expectRequest({
-				url : "POST EMPLOYEES",
+		this.expectRequest("POST EMPLOYEES", {
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('0')",
 					Name : "Gamma"
@@ -50455,14 +50236,13 @@ make root = ${bMakeRoot}`;
 		this.expectRequest("#2 POST EMPLOYEES('1')"
 				+ "/com.sap.gateway.default.iwbep.tea_busi.v0001.__FAKE__AcCopy?$select=ID",
 				{ID : "_1"})
-			.expectRequest({
+			.expectRequest("#2 PATCH $-1", { // Note: "$-1" references the previous request
 				headers : {
 					Prefer : "return=minimal"
 				},
 				payload : {
 					"EMPLOYEE_2_MANAGER@odata.bind" : "EMPLOYEES('9')"
-				},
-				url : "#2 PATCH $-1" // Note: "$-1" references the previous request
+				}
 			}, oNO_CONTENT)
 			.expectRequest("#2 " + sBaseUrl + "&$filter=ID eq '1'&$select=LimitedRank", {
 				value : [{ // Note: Beta's position did change
@@ -50645,8 +50425,7 @@ make root = ${bMakeRoot}`;
 
 			return that.waitForChanges(assert, "no private annotation in transient entity");
 		}).then(function () {
-			that.expectRequest({
-					url : "POST EMPLOYEES",
+			that.expectRequest("POST EMPLOYEES", {
 					payload : {
 						Name : "New Employee",
 						SALARY : {
@@ -51213,8 +50992,7 @@ make root = ${bMakeRoot}`;
 		return this.createView(assert, sView, oModel).then(function () {
 			var oText = that.oView.byId("Name");
 
-			that.expectRequest({
-					url : "PATCH TEAMS('1')",
+			that.expectRequest("PATCH TEAMS('1')", {
 					payload : {Name : "New Name"}
 				}, {
 					Team_Id : "1",
@@ -51267,11 +51045,10 @@ make root = ${bMakeRoot}`;
 		const oEditAction
 			= oModel.bindContext(sAction + "(...)", oContext, {$$inheritExpandSelect : true});
 
-		this.expectRequest({
+		this.expectRequest("POST SalesOrderList('1')/" + sAction + "?$select=Note,SalesOrderID", {
 				headers : {
 					"If-Match" : "*"
-				},
-				url : "POST SalesOrderList('1')/" + sAction + "?$select=Note,SalesOrderID"
+				}
 			}, {
 				"@odata.etag" : "etag1.1",
 				Note : "1st note (draft)",
@@ -51477,8 +51254,7 @@ make root = ${bMakeRoot}`;
 			}).then(function () {
 				return that.checkValueState(assert, "name", "Success", "Just A Message");
 			}).then(function () {
-				that.expectRequest({
-						url : "PATCH Artists(ArtistID='42',IsActiveEntity=false)",
+				that.expectRequest("PATCH Artists(ArtistID='42',IsActiveEntity=false)", {
 						payload : {Name : "foo"}
 					}, {Name : "foo"})
 					.expectChange("name", "foo");
@@ -51755,9 +51531,8 @@ make root = ${bMakeRoot}`;
 			return that.waitForChanges(assert, "BCP: 2170181227, reset filter");
 		}).then(function () {
 			that.expectChange("name", "The Beatles (modified)")
-				.expectRequest({
+				.expectRequest("PATCH Artists(ArtistID='42',IsActiveEntity=false)", {
 					headers : {Prefer : "return=minimal"},
-					url : "PATCH Artists(ArtistID='42',IsActiveEntity=false)",
 					payload : {Name : "The Beatles (modified)"}
 				}, oNO_CONTENT);
 
@@ -51956,9 +51731,8 @@ make root = ${bMakeRoot}`;
 			// 4a. Patch the inactive entity to see that $$patchWithoutSideEffects works.
 
 			that.expectChange("name", "The Beatles (modified)")
-				.expectRequest({
+				.expectRequest("PATCH Artists(ArtistID='42',IsActiveEntity=false)", {
 					headers : {Prefer : "return=minimal"},
-					url : "PATCH Artists(ArtistID='42',IsActiveEntity=false)",
 					payload : {Name : "The Beatles (modified)"}
 				}, {
 					ArtistID : "42",
@@ -51973,9 +51747,8 @@ make root = ${bMakeRoot}`;
 			// 4b. Patch a property reachable via a navigation property
 
 			that.expectChange("bestFriend", "Sgt. Pepper (modified)")
-				.expectRequest({
+				.expectRequest("PATCH Artists(ArtistID='23',IsActiveEntity=true)", {
 					headers : {Prefer : "return=minimal"},
-					url : "PATCH Artists(ArtistID='23',IsActiveEntity=true)",
 					payload : {Name : "Sgt. Pepper (modified)"}
 				}, oNO_CONTENT);
 
@@ -52485,8 +52258,8 @@ make root = ${bMakeRoot}`;
 			that.oLogMock.expects("error")
 				.withArgs("Failed to drill-down into ('42-0')/CurrencyCode"
 					+ ", invalid segment: CurrencyCode"); //TODO we'd better avoid this :-(
-			that.expectRequest({
-					url : "PATCH Artists(ArtistID='42',IsActiveEntity=false)/_Publication('42-0')",
+			that.expectRequest("PATCH Artists(ArtistID='42',IsActiveEntity=false)"
+					+ "/_Publication('42-0')", {
 					payload : {Price : "8.88"}
 				}, {
 					Price : "8.88"
@@ -52763,8 +52536,7 @@ make root = ${bMakeRoot}`;
 			var oInactiveArtistContext = that.oView.getBindingContext();
 
 			that.expectChange("name", "TAFKAP")
-				.expectRequest({
-					url : "PATCH Artists(ArtistID='42',IsActiveEntity=false)",
+				.expectRequest("PATCH Artists(ArtistID='42',IsActiveEntity=false)", {
 					headers : {"If-Match" : "ETag0"},
 					payload : {Name : "TAFKAP"}
 				}, oDONT_CARE);
@@ -53197,12 +52969,11 @@ make root = ${bMakeRoot}`;
 			oDraftOperation = oModel.bindContext("special.cases." + sDraftOperation + "(...)",
 				oActiveArtistContext, {$$inheritExpandSelect : true});
 
-			that.expectRequest({
+			that.expectRequest("Artists(ArtistID='42',IsActiveEntity=true)/special.cases."
+					+ sDraftOperation + (bAction ? "" : "()")
+					+ "?$select=ArtistID,IsActiveEntity,Messages,Name", {
 					headers : bAction ? {"If-Match" : "activETag"} : {},
-					method : bAction ? "POST" : "GET",
-					url : "Artists(ArtistID='42',IsActiveEntity=true)/special.cases."
-						+ sDraftOperation + (bAction ? "" : "()")
-						+ "?$select=ArtistID,IsActiveEntity,Messages,Name"
+					method : bAction ? "POST" : "GET"
 				}, {
 					"@odata.etag" : "inactivETag",
 					ArtistID : "42",
@@ -53270,21 +53041,19 @@ make root = ${bMakeRoot}`;
 					oInactiveArtistContext, {$$inheritExpandSelect : true});
 
 				that.expectChange("name", ["Mrs Eliot"])
-					.expectRequest({
+					.expectRequest("#6 PATCH Artists(ArtistID='42',IsActiveEntity=false)", {
 						headers : {
 							"If-Match" : "inactivETag",
 							Prefer : "return=minimal"
 						},
-						payload : {Name : "Mrs Eliot"},
-						url : "#6 PATCH Artists(ArtistID='42',IsActiveEntity=false)"
+						payload : {Name : "Mrs Eliot"}
 					}, oNO_CONTENT, {ETag : "inactivETag*"})
-					.expectRequest({
+					.expectRequest("#6 POST Artists(ArtistID='42',IsActiveEntity=false)"
+						+ "/special.cases.ActivationAction"
+						+ "?$select=ArtistID,IsActiveEntity,Messages,Name", {
 						headers : {
 							"If-Match" : "inactivETag"
-						},
-						url : "#6 POST Artists(ArtistID='42',IsActiveEntity=false)"
-							+ "/special.cases.ActivationAction"
-							+ "?$select=ArtistID,IsActiveEntity,Messages,Name"
+						}
 					}, {
 						"@odata.etag" : "activETag*",
 						ArtistID : "42",
@@ -53483,11 +53252,10 @@ make root = ${bMakeRoot}`;
 					that.waitForChanges(assert)
 				]);
 			}).then(function () {
-				that.expectRequest({
+				that.expectRequest("DELETE Artists(ArtistID='42',IsActiveEntity=false)", {
 						headers : {
 							"If-Match" : "inactivETag"
-						},
-						url : "DELETE Artists(ArtistID='42',IsActiveEntity=false)"
+						}
 					})
 					.expectMessages([{
 						message : sMessage1,
@@ -53650,8 +53418,7 @@ make root = ${bMakeRoot}`;
 			.expectChange("Team_Id", ["42"]);
 
 		return this.createView(assert, sView, oModel).then(function () {
-			that.expectRequest({
-					url : "POST TEAMS",
+			that.expectRequest("POST TEAMS", {
 					payload : {Team_Id : "new"}
 				}, {Team_Id : "newer"})
 				.expectChange("Team_Id", ["new"])
@@ -53669,9 +53436,8 @@ make root = ${bMakeRoot}`;
 
 			assert.strictEqual(oCreatedContext.getPath(), "/TEAMS('newer')");
 
-			that.expectRequest({
-					url : "POST TEAMS('newer')/com.sap.gateway.default.iwbep.tea_busi.v0001."
-						+ "AcChangeManagerOfTeam",
+			that.expectRequest("POST TEAMS('newer')/com.sap.gateway.default.iwbep.tea_busi.v0001."
+					+ "AcChangeManagerOfTeam", {
 					payload : {ManagerID : "01"}
 				}, oDONT_CARE);
 			oAction.setParameter("ManagerID", "01");
@@ -53712,8 +53478,7 @@ make root = ${bMakeRoot}`;
 
 		return this.createView(assert, sView, oModel).then(function () {
 			// create new relative entity
-			that.expectRequest({
-					url : "POST TEAMS('42')/TEAM_2_EMPLOYEES",
+			that.expectRequest("POST TEAMS('42')/TEAM_2_EMPLOYEES", {
 					payload : {ID : null}
 				}, {ID : "7"})
 				.expectRequest("TEAMS('42')/TEAM_2_EMPLOYEES('7')?$select=ID", {ID : "7"})
@@ -53730,10 +53495,9 @@ make root = ${bMakeRoot}`;
 
 			assert.strictEqual(oCreatedContext.getPath(), "/TEAMS('42')/TEAM_2_EMPLOYEES('7')");
 
-			that.expectRequest({
-					url : "POST TEAMS('42')/TEAM_2_EMPLOYEES('7')/"
-						+ "com.sap.gateway.default.iwbep.tea_busi.v0001.AcChangeTeamOfEmployee"
-						+ "?$expand=EMPLOYEE_2_TEAM($select=Team_Id)",
+			that.expectRequest("POST TEAMS('42')/TEAM_2_EMPLOYEES('7')/"
+					+ "com.sap.gateway.default.iwbep.tea_busi.v0001.AcChangeTeamOfEmployee"
+					+ "?$expand=EMPLOYEE_2_TEAM($select=Team_Id)", {
 					payload : {TeamID : "02"}
 				}, {
 					EMPLOYEE_2_TEAM : {
@@ -53784,8 +53548,7 @@ make root = ${bMakeRoot}`;
 			.expectChange("ItemPosition", []);
 
 		return this.createView(assert, sView, oModel).then(function () {
-			that.expectRequest({
-					url : "POST SalesOrderList",
+			that.expectRequest("POST SalesOrderList", {
 					payload : {SalesOrderID : "newID"}
 				}, {SalesOrderID : "43"})
 				.expectChange("SalesOrderID", ["newID"]) // from create()
@@ -53807,8 +53570,7 @@ make root = ${bMakeRoot}`;
 			return that.waitForChanges(assert);
 		}).then(function () {
 			// create a sales order line item
-			that.expectRequest({
-					url : "POST SalesOrderList('43')/SO_2_SOITEM",
+			that.expectRequest("POST SalesOrderList('43')/SO_2_SOITEM", {
 					payload : {
 						SalesOrderID : "43",
 						ItemPosition : "newPos"
@@ -54957,8 +54719,7 @@ make root = ${bMakeRoot}`;
 		return this.createView(assert, sView, oModel).then(function () {
 			oBinding = that.oView.byId("name").getBinding("value");
 
-			that.expectRequest({
-					url : "PATCH EMPLOYEES('1')",
+			that.expectRequest("PATCH EMPLOYEES('1')", {
 					payload : {Name : ""}
 				}, {
 					ID : "1",
@@ -54994,8 +54755,7 @@ make root = ${bMakeRoot}`;
 		}).then(function () {
 			return that.checkValueState(assert, "name", "Warning", "Enter a name");
 		}).then(function () {
-			that.expectRequest({
-					url : "PATCH EMPLOYEES('1')",
+			that.expectRequest("PATCH EMPLOYEES('1')", {
 					payload : {Name : "Hugo"}
 				}, {
 					ID : "1",
@@ -55059,8 +54819,7 @@ make root = ${bMakeRoot}`;
 			oBinding = that.oView.byId("table").getItems()[0].getCells()[0].getBinding("value");
 			oContext = that.oView.byId("form").getBindingContext();
 
-			that.expectRequest({
-					url : "PATCH EMPLOYEES('1')",
+			that.expectRequest("PATCH EMPLOYEES('1')", {
 					payload : {Name : ""}
 				}, {
 					ID : "1",
@@ -55138,8 +54897,7 @@ make root = ${bMakeRoot}`;
 		return this.createView(assert, sView, oModel).then(function () {
 			oBinding = that.oView.byId("table").getItems()[0].getCells()[0].getBinding("value");
 
-			that.expectRequest({
-					url : "PATCH EMPLOYEES('1')",
+			that.expectRequest("PATCH EMPLOYEES('1')", {
 					payload : {Name : ""}
 				}, {
 					ID : "1",
@@ -55220,8 +54978,7 @@ make root = ${bMakeRoot}`;
 				.withArgs("Failed to request side effects");
 
 			that.expectChange("netAmount", "-1.00")
-				.expectRequest({
-					url : "#2 PATCH SalesOrderList('42')?sap-client=123",
+				.expectRequest("#2 PATCH SalesOrderList('42')?sap-client=123", {
 					headers : {"If-Match" : "ETag0", Prefer : "return=minimal"},
 					payload : {NetAmount : "-1"}
 				}, createErrorInsideBatch({message : "Value -1 not allowed"}))
@@ -55258,8 +55015,7 @@ make root = ${bMakeRoot}`;
 			return that.waitForChanges(assert);
 		}).then(function () {
 			that.expectChange("netAmount", "200.00")
-				.expectRequest({
-					url : "#3 PATCH SalesOrderList('42')?sap-client=123",
+				.expectRequest("#3 PATCH SalesOrderList('42')?sap-client=123", {
 					headers : {"If-Match" : "ETag0", Prefer : "return=minimal"},
 					payload : {NetAmount : "200"}
 				}, oNO_CONTENT, {ETag : "ETag1"});
@@ -55288,8 +55044,7 @@ make root = ${bMakeRoot}`;
 					assert.strictEqual(vResult, undefined);
 				});
 
-			that.expectRequest({
-					url : "#4 PATCH SalesOrderList('42')?sap-client=123",
+			that.expectRequest("#4 PATCH SalesOrderList('42')?sap-client=123", {
 					headers : {
 						"If-Match" : "ETag1", // new ETag is used!
 						Prefer : "return=minimal"
@@ -55375,8 +55130,7 @@ make root = ${bMakeRoot}`;
 			oTable = that.oView.byId("table");
 
 			that.expectChange("listNote", ["Note (entered)"])
-				.expectRequest({
-					url : "PATCH SalesOrderList('42')",
+				.expectRequest("PATCH SalesOrderList('42')", {
 					headers : {"If-Match" : "ETag0", Prefer : "return=minimal"},
 					payload : {Note : "Note (entered)"}
 				}, oNO_CONTENT);
@@ -55399,8 +55153,7 @@ make root = ${bMakeRoot}`;
 			return that.waitForChanges(assert);
 		}).then(function () {
 			that.expectChange("formNote", "Note (entered)")
-				.expectRequest({
-					url : "PATCH SalesOrderList('42')",
+				.expectRequest("PATCH SalesOrderList('42')", {
 					headers : {"If-Match" : "ETag1", Prefer : "return=minimal"},
 					payload : {Note : "Note (entered)"}
 				}, oNO_CONTENT);
@@ -55462,8 +55215,7 @@ make root = ${bMakeRoot}`;
 
 			that.oView.byId("name").getBinding("value").setValue("TAFKAP");
 
-			that.expectRequest({
-					url : "#2 PATCH Artists(ArtistID='42',IsActiveEntity=true)",
+			that.expectRequest("#2 PATCH Artists(ArtistID='42',IsActiveEntity=true)", {
 					headers : {"If-Match" : "ETag0"},
 					payload : {Name : "TAFKAP"}
 				}, oDONT_CARE)
@@ -55634,10 +55386,9 @@ make root = ${bMakeRoot}`;
 			]);
 		}).then(function () {
 			that.expectChange("company", "changed")
-				.expectRequest({
+				.expectRequest("PATCH BusinessPartnerList('42')", {
 					headers : {"If-Match" : "ETag"},
-					payload : {CompanyName : "changed"},
-					url : "PATCH BusinessPartnerList('42')"
+					payload : {CompanyName : "changed"}
 				}, oDONT_CARE);
 
 			that.oView.byId("company").getBinding("value").setValue("changed");
@@ -55777,12 +55528,11 @@ make root = ${bMakeRoot}`;
 		oKeptContext.setKeepAlive(true);
 
 		this.expectChange("name", ["New Team"])
-			.expectRequest({
+			.expectRequest("#2 PATCH TEAMS('TEAM_01')", {
 				headers : {
 					"If-Match" : "etag1.0",
 					Prefer : "return=minimal"
 				},
-				url : "#2 PATCH TEAMS('TEAM_01')",
 				payload : {Name : "New Team"}
 			}, oNO_CONTENT, {ETag : "etag1.1"})
 			.expectRequest("#2 TEAMS?$select=Budget,Name,Team_Id&$filter=Team_Id eq 'TEAM_01'", {
@@ -56431,8 +56181,7 @@ make root = ${bMakeRoot}`;
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "POST Artists(ArtistID='42',IsActiveEntity=true)/_Publication",
+			that.expectRequest("POST Artists(ArtistID='42',IsActiveEntity=true)/_Publication", {
 					payload : {PublicationID : "New 1"}
 				}, {
 					Price : "3.33",
@@ -57256,10 +57005,9 @@ make root = ${bMakeRoot}`;
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
-			that.expectRequest({
+			that.expectRequest("PATCH SalesOrderList('42')", {
 					headers : {"If-Match" : "ETag2"}, // uses ETag from side effect!
-					payload : {Note : "User input"},
-					url : "PATCH SalesOrderList('42')"
+					payload : {Note : "User input"}
 				}, {
 					Note : "Server response",
 					SalesOrderID : "42"
@@ -57303,8 +57051,7 @@ make root = ${bMakeRoot}`;
 			.expectChange("pos", ["0010"]);
 
 		return this.createView(assert, sView, oModel).then(function () {
-			that.expectRequest({
-					url : "#2 POST SalesOrderList('1')/" + sAction,
+			that.expectRequest("#2 POST SalesOrderList('1')/" + sAction, {
 					headers : {"If-Match" : "ETag"}
 				}, oDONT_CARE)
 				.expectRequest("#2 SalesOrderList('1')?$select=SO_2_SOITEM"
@@ -57337,8 +57084,7 @@ make root = ${bMakeRoot}`;
 		var oStatusBinding = this.oView.byId("status0").getBinding("value");
 
 		this.expectChange("status0", "Busy")
-			.expectRequest({
-				url : "PATCH EMPLOYEES('3')",
+			.expectRequest("PATCH EMPLOYEES('3')", {
 				headers : {"If-Match" : "ETag3"},
 				payload : {
 					ROOM_ID : "31", // <-- retry
@@ -57351,8 +57097,7 @@ make root = ${bMakeRoot}`;
 		var oRoomIdBinding = this.oView.byId("roomId0").getBinding("value");
 
 		this.expectChange("roomId0", "32")
-			.expectRequest({
-				url : "PATCH EMPLOYEES('3')",
+			.expectRequest("PATCH EMPLOYEES('3')", {
 				headers : {"If-Match" : "ETag3"},
 				payload : {
 					ROOM_ID : "32" // <-- new change wins over retry
@@ -57364,16 +57109,14 @@ make root = ${bMakeRoot}`;
 		var sAction = "com.sap.gateway.default.iwbep.tea_busi.v0001.AcChangeTeamOfEmployee",
 			oRoomIdBinding = this.oView.byId("roomId0").getBinding("value");
 
-		this.expectRequest({
-				url : "PATCH EMPLOYEES('3')",
+		this.expectRequest("PATCH EMPLOYEES('3')", {
 				headers : {"If-Match" : "ETag3"},
 				payload : {
 					ROOM_ID : "31" // <-- retry
 				}
 			}, oDONT_CARE)
-			.expectRequest({
+			.expectRequest("POST EMPLOYEES('3')/" + sAction, {
 				headers : {"If-Match" : "ETag3"},
-				url : "POST EMPLOYEES('3')/" + sAction,
 				payload : {TeamID : "23"}
 			}, oDONT_CARE);
 
@@ -57390,46 +57133,42 @@ make root = ${bMakeRoot}`;
 
 		this.expectChange("roomId0", null)
 			.expectChange("status0", null)
-			.expectRequest({
-				url : "PATCH EMPLOYEES('3')",
+			.expectRequest("PATCH EMPLOYEES('3')", {
 				headers : {"If-Match" : "ETag3"},
 				payload : {
 					ROOM_ID : "31" // <-- retry
 				}
 			}, oDONT_CARE)
-			.expectRequest({
-				url : "DELETE EMPLOYEES('3')",
+			.expectRequest("DELETE EMPLOYEES('3')", {
 				headers : {"If-Match" : "*"}
 			});
 
 		return oRoomIdBinding.getContext().delete();
 	}, function () { // ODataModel#submitBatch restarts all PATCHes
-		this.expectRequest({
+		this.expectRequest("#4.1 PATCH EMPLOYEES('4')", {
 				$ContentID : "0.0",
 				groupId : "$auto",
 				headers : {"If-Match" : "ETag4"},
 				payload : {
 					ROOM_ID : "41" // <-- retry
-				},
-				url : "#4.1 PATCH EMPLOYEES('4')"
+				}
 			}, oDONT_CARE)
-			.expectRequest({
+			.expectRequest("#4.1 PATCH EMPLOYEES('3')", {
 				$ContentID : "1.0",
 				groupId : "$auto",
 				headers : {"If-Match" : "ETag3"},
 				payload : {
 					ROOM_ID : "31" // <-- retry
-				},
-				url : "#4.1 PATCH EMPLOYEES('3')"
+				}
 			}, oDONT_CARE)
-			.expectRequest({
+			// new changeset via submitBatch("$auto")
+			.expectRequest("#4.2 POST ChangeTeamBudgetByID", {
 				$ContentID : undefined,
 				groupId : "$auto",
 				payload : {
 					Budget : "1234.1234",
 					TeamID : "TEAM_01"
-				},
-				url : "#4.2 POST ChangeTeamBudgetByID" // new changeset via submitBatch("$auto")
+				}
 			}, oDONT_CARE);
 
 		return Promise.all([
@@ -57464,19 +57203,17 @@ make root = ${bMakeRoot}`;
 	}, function (_assert, oForm0Binding) {
 		// Context#requestSideEffects restarts all PATCHes within the same $batch as the side effect
 		// Note: order of PATCHes not preserved, but should not be critical
-		this.expectRequest({
+		this.expectRequest("#4 PATCH EMPLOYEES('4')", {
 				headers : {"If-Match" : "ETag4"},
 				payload : {
 					ROOM_ID : "41" // <-- retry
-				},
-				url : "#4 PATCH EMPLOYEES('4')"
+				}
 			}, oDONT_CARE)
-			.expectRequest({
+			.expectRequest("#4 PATCH EMPLOYEES('3')", {
 				headers : {"If-Match" : "ETag3"},
 				payload : {
 					ROOM_ID : "31" // <-- retry
-				},
-				url : "#4 PATCH EMPLOYEES('3')"
+				}
 			}, oDONT_CARE)
 			.expectRequest("#4 EMPLOYEES('3')?$select=STATUS", {
 				STATUS : "Busy"
@@ -57526,13 +57263,11 @@ make root = ${bMakeRoot}`;
 
 				that.expectChange("roomId0", "31")
 					.expectChange("roomId1", "41")
-					.expectRequest({
-						url : "PATCH EMPLOYEES('3')",
+					.expectRequest("PATCH EMPLOYEES('3')", {
 						headers : {"If-Match" : "ETag3"},
 						payload : {ROOM_ID : "31"}
 					}, createErrorInsideBatch())
-					.expectRequest({
-						url : "PATCH EMPLOYEES('4')",
+					.expectRequest("PATCH EMPLOYEES('4')", {
 						headers : {"If-Match" : "ETag4"},
 						payload : {ROOM_ID : "41"}
 					}, oNO_RESPONSE)
@@ -57619,8 +57354,7 @@ make root = ${bMakeRoot}`;
 
 				that.expectChange("age", "67")
 					.expectChange("roomId", "42")
-					.expectRequest({
-						url : "PATCH EMPLOYEES('3')",
+					.expectRequest("PATCH EMPLOYEES('3')", {
 						headers : {"If-Match" : "ETag0"},
 						payload : {
 							AGE : 67,
@@ -57653,8 +57387,7 @@ make root = ${bMakeRoot}`;
 				assert.strictEqual(iCount, 3, "propertyChange fired sync");
 				assert.strictEqual(mParameters.resolvedPath, "/EMPLOYEES('3')/ROOM_ID");
 
-				that.expectRequest({
-						url : "PATCH EMPLOYEES('3')",
+				that.expectRequest("PATCH EMPLOYEES('3')", {
 						headers : {"If-Match" : "ETag0"},
 						payload : {
 							AGE : 67,
@@ -57691,8 +57424,7 @@ make root = ${bMakeRoot}`;
 				var oStatusBinding = that.oView.byId("status").getBinding("value");
 
 				that.expectChange("status", "Busy")
-					.expectRequest({
-						url : "PATCH EMPLOYEES('3')",
+					.expectRequest("PATCH EMPLOYEES('3')", {
 						headers : {"If-Match" : "ETag1"},
 						payload : {STATUS : "Busy"}
 					}, oDONT_CARE);
@@ -57739,8 +57471,7 @@ make root = ${bMakeRoot}`;
 
 			that.expectChange("age", "67")
 				.expectChange("roomId", "42")
-				.expectRequest({
-					url : "PATCH EMPLOYEES('3')",
+				.expectRequest("PATCH EMPLOYEES('3')", {
 					headers : {"If-Match" : "ETag0"},
 					payload : {
 						AGE : 67,
@@ -57774,17 +57505,15 @@ make root = ${bMakeRoot}`;
 				fnReject(createErrorInsideBatch());
 			}
 
-			that.expectRequest({
-					url : "#3 PATCH EMPLOYEES('3')",
+			that.expectRequest("#3 PATCH EMPLOYEES('3')", {
 					headers : {"If-Match" : "ETag0"},
 					payload : {
 						AGE : 67,
 						ROOM_ID : "42"
 					}
 				}, oDONT_CARE)
-				.expectRequest({
+				.expectRequest("#3 POST EMPLOYEES('3')/" + sAction, {
 					headers : {"If-Match" : "ETag0"},
-					url : "#3 POST EMPLOYEES('3')/" + sAction,
 					payload : {TeamID : "23"}
 				}, oDONT_CARE);
 
@@ -57857,8 +57586,7 @@ make root = ${bMakeRoot}`;
 			return that.waitForChanges(assert);
 		}).then(function () {
 			// create new relative entity
-			that.expectRequest({
-					url : "POST TEAMS('23')/TEAM_2_EMPLOYEES",
+			that.expectRequest("POST TEAMS('23')/TEAM_2_EMPLOYEES", {
 					payload : {ID : null}
 				}, {
 					ID : "7",
@@ -57972,8 +57700,7 @@ make root = ${bMakeRoot}`;
 				that.oLogMock.expects("error").twice() // Note: twice, w/ different class name :-(
 					.withArgs("Failed to update path /SalesOrderList('0500000000')/SO_2_BP/"
 						+ "BP_2_PRODUCT('1')/Name", sinon.match(oError.message));
-				that.expectRequest({
-						url : "PATCH ProductList('1')",
+				that.expectRequest("PATCH ProductList('1')", {
 						headers : {"If-Match" : "ETag"},
 						payload : {Name : "A product with no name"}
 					}, oError)
@@ -58017,8 +57744,7 @@ make root = ${bMakeRoot}`;
 				that.oLogMock.expects("error").withExactArgs("Failed to delete"
 						+ " /SalesOrderList('0500000000')/SO_2_BP/BP_2_PRODUCT('1')",
 						sinon.match(oError.message), sContext);
-				that.expectRequest({
-						url : "DELETE ProductList('1')",
+				that.expectRequest("DELETE ProductList('1')", {
 						headers : {"If-Match" : "ETag"/*, NO "sap-cancel-on-close" */}
 					}, oError)
 					.expectMessages([{
@@ -58047,8 +57773,7 @@ make root = ${bMakeRoot}`;
 					that.waitForChanges(assert)
 				]);
 			}).then(function () {
-				that.expectRequest({
-						url : "PATCH ProductList('1')",
+				that.expectRequest("PATCH ProductList('1')", {
 						headers : {"If-Match" : "ETag"},
 						payload : {Name : "A product name leads to PATCH success with a message"}
 					}, {
@@ -58560,8 +58285,7 @@ make root = ${bMakeRoot}`;
 				.expectChange("weight0", "23.400")
 				.expectChange("weight1", "23.400")
 				.expectChange("weightMeasure", "23.400")
-				.expectRequest({
-					url : "PATCH ProductList('HT-1000')?sap-client=123",
+				.expectRequest("PATCH ProductList('HT-1000')?sap-client=123", {
 					headers : {"If-Match" : "ETag"},
 					payload : {WeightMeasure : "23.4", WeightUnit : "KG"}
 				}, oDONT_CARE);
@@ -58587,8 +58311,7 @@ make root = ${bMakeRoot}`;
 				.expectChange("weightMeasure", "34.510")
 				.expectChange("weight0", "34.510")
 				.expectChange("weight1", "34.510")
-				.expectRequest({
-					url : "PATCH ProductList('HT-1000')?sap-client=123",
+				.expectRequest("PATCH ProductList('HT-1000')?sap-client=123", {
 					headers : {"If-Match" : "ETag"},
 					payload : {WeightMeasure : "34.51", WeightUnit : "KG"}
 				}, oDONT_CARE);
@@ -58601,8 +58324,7 @@ make root = ${bMakeRoot}`;
 			that.expectChange("weightMeasure", "0.000")
 				.expectChange("weight0", "0.000")
 				.expectChange("weight1", "0.000")
-				.expectRequest({
-					url : "PATCH ProductList('HT-1000')?sap-client=123",
+				.expectRequest("PATCH ProductList('HT-1000')?sap-client=123", {
 					headers : {"If-Match" : "ETag"},
 					payload : {WeightMeasure : "0", WeightUnit : "KG"}
 				}, oDONT_CARE);
@@ -58757,8 +58479,7 @@ make root = ${bMakeRoot}`;
 				.expectChange("price1", "42.00")
 				.expectChange("price1", "42")
 				.expectChange("amount", "42")
-				.expectRequest({
-					url : "PATCH ProductList('HT-1000')?sap-client=123",
+				.expectRequest("PATCH ProductList('HT-1000')?sap-client=123", {
 					headers : {"If-Match" : "ETag"},
 					payload : {Price : "42", CurrencyCode : "JPY"}
 				}, oDONT_CARE);
@@ -58770,8 +58491,7 @@ make root = ${bMakeRoot}`;
 			that.expectChange("amount", "0")
 				.expectChange("price0", "0")
 				.expectChange("price1", "0")
-				.expectRequest({
-					url : "PATCH ProductList('HT-1000')?sap-client=123",
+				.expectRequest("PATCH ProductList('HT-1000')?sap-client=123", {
 					headers : {"If-Match" : "ETag"},
 					payload : {Price : "0", CurrencyCode : "JPY"}
 				}, oDONT_CARE);
@@ -59282,11 +59002,9 @@ make root = ${bMakeRoot}`;
 			assert.strictEqual(oBinding.getCount(), 3, "count of elements");
 			assert.strictEqual(oBinding.getLength(), 2, "length of the table");
 
-			that.expectRequest({
-					url : "#2.2 BusinessPartnerList?$count=true&$select=BusinessPartnerID"
-						+ "&$filter=not (BusinessPartnerID eq '4710')" //TODO this is missing!
-						+ "&$skip=2&$top=1"
-				}, {
+			that.expectRequest("#2.2 BusinessPartnerList?$count=true&$select=BusinessPartnerID"
+					+ "&$filter=not (BusinessPartnerID eq '4710')" //TODO this is missing!
+					+ "&$skip=2&$top=1", {
 					"@odata.count" : "3",
 					value : [{BusinessPartnerID : "4713"}]
 				});
@@ -59458,14 +59176,13 @@ make root = ${bMakeRoot}`;
 		await this.createView(assert, sView, oModel);
 
 		this.expectChange("salary", "1,234.89")
-			.expectRequest({
+			.expectRequest("PATCH TEAMS('42')/TEAM_2_EMPLOYEES('1')", {
 				payload : {
 					SALARY : {
 						BASIC_SALARY_CURR : "EUR",
 						MONTHLY_BASIC_SALARY_AMOUNT : "1234.89"
 					}
-				},
-				url : "PATCH TEAMS('42')/TEAM_2_EMPLOYEES('1')"
+				}
 			}, oDONT_CARE);
 
 		// code under test
@@ -59777,9 +59494,8 @@ make root = ${bMakeRoot}`;
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					payload : {Name : "Best Team Ever"},
-					url : "PATCH TEAMS('TEAM_01')"
+			that.expectRequest("PATCH TEAMS('TEAM_01')", {
+					payload : {Name : "Best Team Ever"}
 				}, {
 					Name : "Best Team Ever",
 					Team_Id : "TEAM_01",
@@ -59830,9 +59546,8 @@ make root = ${bMakeRoot}`;
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					payload : {Name : "Best Team Ever"},
-					url : "PATCH TEAMS('TEAM_01')"
+			that.expectRequest("PATCH TEAMS('TEAM_01')", {
+					payload : {Name : "Best Team Ever"}
 				}, createErrorInsideBatch())
 				.expectMessages([{
 					code : "CODE",
@@ -59878,9 +59593,8 @@ make root = ${bMakeRoot}`;
 			oBinding = oContext.getBinding();
 
 			that.expectChange("name", "Foo")
-				.expectRequest({
-					payload : {Name : "Foo"},
-					url : "PATCH TEAMS('TEAM_01')"
+				.expectRequest("PATCH TEAMS('TEAM_01')", {
+					payload : {Name : "Foo"}
 				}, createErrorInsideBatch())
 				.expectMessages([{
 					code : "CODE",
@@ -59915,9 +59629,8 @@ make root = ${bMakeRoot}`;
 			assert.strictEqual(iPatchSent, 1);
 			assert.strictEqual(iPatchCompleted, 1);
 
-			that.expectRequest({
-					payload : {Name : "Foo"},
-					url : "PATCH TEAMS('TEAM_01')"
+			that.expectRequest("PATCH TEAMS('TEAM_01')", {
+					payload : {Name : "Foo"}
 				}, oDONT_CARE);
 
 			return Promise.all([
@@ -59961,15 +59674,13 @@ make root = ${bMakeRoot}`;
 			oContextBinding.attachPatchSent(function () {
 				iPatchSent += 1;
 			});
-			that.expectRequest({
+			that.expectRequest("PATCH TEAMS('TEAM_01')", {
 					headers : {"If-Match" : "*"},
-					payload : {MEMBER_COUNT : 99, Name : "Best Team Ever"},
-					url : "PATCH TEAMS('TEAM_01')"
+					payload : {MEMBER_COUNT : 99, Name : "Best Team Ever"}
 				}, oDONT_CARE)
-				.expectRequest({
+				.expectRequest("PATCH TEAMS('TEAM_02')", {
 					headers : {"If-Match" : "*"},
-					payload : {Name : "Yet another team!"},
-					url : "PATCH TEAMS('TEAM_02')"
+					payload : {Name : "Yet another team!"}
 				}, oDONT_CARE);
 
 			return Promise.all([
@@ -60115,9 +59826,8 @@ make root = ${bMakeRoot}`;
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					headers : {"If-Match" : "*"},
-					url : "DELETE SalesOrderList('1')"
+			that.expectRequest("DELETE SalesOrderList('1')", {
+					headers : {"If-Match" : "*"}
 				});
 			if (bKeepAlive) {
 				that.expectRequest("SalesOrderList?$count=true&$filter=not (SalesOrderID eq '1')"
@@ -60148,8 +59858,7 @@ make root = ${bMakeRoot}`;
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
-			that.expectRequest({
-					url : "PATCH SalesOrderList('3')",
+			that.expectRequest("PATCH SalesOrderList('3')", {
 					payload : {Note : "Note 3 (changed)"}
 				}, oDONT_CARE);
 
@@ -60232,9 +59941,8 @@ make root = ${bMakeRoot}`;
 				+ " /Artists(ArtistID='1',IsActiveEntity=true)/BestFriend/_Publication('P1')/Price",
 				"Request canceled: PATCH Artists(ArtistID='2',IsActiveEntity=true)"
 				+ "/_Publication('P1'); group: update");
-			that.expectRequest({
-					headers : {"If-Match" : "*"},
-					url : "DELETE Artists(ArtistID='2',IsActiveEntity=true)"
+			that.expectRequest("DELETE Artists(ArtistID='2',IsActiveEntity=true)", {
+					headers : {"If-Match" : "*"}
 				})
 				.expectChange("id", null)
 				.expectChange("name", "The Beatles")
@@ -60318,9 +60026,8 @@ make root = ${bMakeRoot}`;
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					headers : {"If-Match" : "*"},
-					url : "DELETE Artists(ArtistID='1',IsActiveEntity=false)"
+			that.expectRequest("DELETE Artists(ArtistID='1',IsActiveEntity=false)", {
+					headers : {"If-Match" : "*"}
 				})
 				.expectChange("id", null)
 				.expectChange("active", null)
@@ -60400,15 +60107,14 @@ make root = ${bMakeRoot}`;
 			$$inheritExpandSelect : bInheritExpandSelect
 		});
 
-		this.expectRequest({
+		this.expectRequest("POST TEAMS('TEAM_01')/TEAM_2_EMPLOYEES('1')" + "/" + sChangeTeamAction
+				+ (bInheritExpandSelect
+					? "?$select=Age,ID,Name,TEAM_ID"
+					: "?$select=Age,ID")
+				+ "&$expand=EMPLOYEE_2_TEAM($select=Team_Id)", {
 				payload : {
 					TeamID : sTeamId
-				},
-				url : "POST TEAMS('TEAM_01')/TEAM_2_EMPLOYEES('1')" + "/" + sChangeTeamAction
-					+ (bInheritExpandSelect
-						? "?$select=Age,ID,Name,TEAM_ID"
-						: "?$select=Age,ID")
-					+ "&$expand=EMPLOYEE_2_TEAM($select=Team_Id)"
+				}
 			}, oResponse);
 
 		if (sTeamId === "TEAM_02" && sEmployeeId === "1" && bInheritExpandSelect) {
@@ -60469,9 +60175,8 @@ make root = ${bMakeRoot}`;
 		}).then(function () {
 			oTable.setBindingContext(null);
 
-			that.expectRequest({
-					headers : {"If-Match" : "*"},
-					url : "DELETE ProductList('P1')"
+			that.expectRequest("DELETE ProductList('P1')", {
+					headers : {"If-Match" : "*"}
 				});
 
 			return Promise.all([
@@ -60515,13 +60220,11 @@ make root = ${bMakeRoot}`;
 
 			return that.waitForChanges(assert, "object page");
 		}).then(function () {
-			that.expectRequest({
-					headers : {"If-Match" : "etag"},
-					url : "DELETE SalesOrderList('1')?sap-client=123"
+			that.expectRequest("DELETE SalesOrderList('1')?sap-client=123", {
+					headers : {"If-Match" : "etag"}
 				})
-				.expectRequest({
-					headers : {"If-Match" : "*"},
-					url : "DELETE SalesOrderList('1')?sap-client=123"
+				.expectRequest("DELETE SalesOrderList('1')?sap-client=123", {
+					headers : {"If-Match" : "*"}
 				})
 				.expectChange("id", null);
 
@@ -60532,9 +60235,8 @@ make root = ${bMakeRoot}`;
 				that.waitForChanges(assert, "delete")
 			]);
 		}).then(function () {
-			that.expectRequest({
-					headers : {"If-Match" : "*"},
-					url : "DELETE SalesOrderList('42')?sap-client=123"
+			that.expectRequest("DELETE SalesOrderList('42')?sap-client=123", {
+					headers : {"If-Match" : "*"}
 				}, createError())
 				.expectMessages([{
 					message : "Communication error: 500 ",
@@ -60667,9 +60369,8 @@ make root = ${bMakeRoot}`;
 			var oBinding = that.oView.byId("table").getItems()[0].getCells()[1].getBinding("value");
 
 			that.expectChange("soCurrencyCode", ["USD"])
-				.expectRequest({
+				.expectRequest("PATCH SalesOrderList('1')", {
 					headers : {"If-Match" : "ETag"},
-					url : "PATCH SalesOrderList('1')",
 					payload : {CurrencyCode : "USD"}
 				}, {
 					CurrencyCode : "USD",
@@ -60995,9 +60696,9 @@ make root = ${bMakeRoot}`;
 		return this.createView(assert, sView, oModel).then(function () {
 			var oForm = that.oView.byId("form");
 
-			that.expectRequest({
-					url : "POST SalesOrderList('1')/SO_2_SOITEM(SalesOrderID='1',ItemPosition='10')"
-						+ "/SOITEM_2_SO/" + sAction, // TODO reduce operation path
+			that.expectRequest("POST SalesOrderList('1')"
+					+ "/SO_2_SOITEM(SalesOrderID='1',ItemPosition='10')/SOITEM_2_SO/"
+					+ sAction, {// TODO reduce operation path
 					headers : {"If-Match" : "ETag"}
 				}, {
 					LifecycleStatus : "C",
@@ -61197,8 +60898,7 @@ make root = ${bMakeRoot}`;
 			oListBinding = that.oView.byId("table").getBinding("items");
 
 			that.expectChange("note", ["New", "Foo", "Bar"])
-				.expectRequest({
-					url : "POST SalesOrderList('1')/SO_2_SOITEM",
+				.expectRequest("POST SalesOrderList('1')/SO_2_SOITEM", {
 					payload : {Note : "New"}
 				}, {
 					ItemPosition : "30",
@@ -61335,9 +61035,8 @@ make root = ${bMakeRoot}`;
 
 			that.expectChange("count", bEmpty ? "1" : "4")
 				.expectChange("note", ["First new row"]);
-			that.expectRequest({
-					payload : {Note : "First new row"},
-					url : "#2 POST SalesOrderList('1')/SO_2_SOITEM"
+			that.expectRequest("#2 POST SalesOrderList('1')/SO_2_SOITEM", {
+					payload : {Note : "First new row"}
 				}, bSuccess ? {
 					ItemPosition : "0",
 					Note : "First *new* row",
@@ -61520,9 +61219,8 @@ make root = ${bMakeRoot}`;
 			oFormBinding = that.oView.byId("form").getObjectBinding();
 			that.oLogMock.expects("error")
 				.withArgs("Failed to update path /SalesOrderList('1')/CurrencyCode");
-			that.expectRequest({
-					payload : {CurrencyCode : "invalid"},
-					url : "PATCH SalesOrderList('1')"
+			that.expectRequest("PATCH SalesOrderList('1')", {
+					payload : {CurrencyCode : "invalid"}
 				}, oError)
 				.expectChange("soCurrencyCode", "invalid")
 				.expectMessages([{
@@ -61671,8 +61369,7 @@ make root = ${bMakeRoot}`;
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
-			that.expectRequest({
-					url : "POST BusinessPartnerList",
+			that.expectRequest("POST BusinessPartnerList", {
 					payload : {Address : {City : "Heidelberg"}}
 				}, {
 					Address : null,
@@ -61697,16 +61394,14 @@ make root = ${bMakeRoot}`;
 	// JIRA: CPOUI5UISERVICESV3-1936
 [{
 	expectations : function () {
-		this.expectRequest({
-				payload : {Note : "Created"},
-				url : "#3 POST BusinessPartnerList('4711')/BP_2_SO"
+		this.expectRequest("#3 POST BusinessPartnerList('4711')/BP_2_SO", {
+				payload : {Note : "Created"}
 			}, {
 				Note : "Created",
 				SalesOrderID : "43"
 			})
-			.expectRequest({
-				payload : {Note : "Created as well"},
-				url : "#3 POST BusinessPartnerList('4711')/BP_2_SO"
+			.expectRequest("#3 POST BusinessPartnerList('4711')/BP_2_SO", {
+				payload : {Note : "Created as well"}
 			}, {
 				Note : "Created as well",
 				SalesOrderID : "44"
@@ -61746,13 +61441,11 @@ make root = ${bMakeRoot}`;
 		this.oLogMock.expects("error").withArgs("$batch failed");
 		this.oLogMock.expects("error").withArgs("Failed to request side effects");
 
-		this.expectRequest({
-				payload : {Note : "Created"},
-				url : "#3 POST BusinessPartnerList('4711')/BP_2_SO"
+		this.expectRequest("#3 POST BusinessPartnerList('4711')/BP_2_SO", {
+				payload : {Note : "Created"}
 			}, oCausingError)
-			.expectRequest({
-				payload : {Note : "Created as well"},
-				url : "#3 POST BusinessPartnerList('4711')/BP_2_SO"
+			.expectRequest("#3 POST BusinessPartnerList('4711')/BP_2_SO", {
+				payload : {Note : "Created as well"}
 			}, oNO_RESPONSE)
 			.expectRequest("#3 BusinessPartnerList('4711')?$select=BP_2_SO"
 				+ "&$expand=BP_2_SO($select=Note,SalesOrderID)", oNO_RESPONSE)
@@ -61800,13 +61493,11 @@ make root = ${bMakeRoot}`;
 
 			that.expectChange("id", ["", "", "0500000001"])
 				.expectChange("note", ["Created as well", "Created", "Test"])
-				.expectRequest({
-					payload : {Note : "Created"},
-					url : "#2 POST BusinessPartnerList('4711')/BP_2_SO"
+				.expectRequest("#2 POST BusinessPartnerList('4711')/BP_2_SO", {
+					payload : {Note : "Created"}
 				}, createError())
-				.expectRequest({
-					payload : {Note : "Created as well"},
-					url : "#2 POST BusinessPartnerList('4711')/BP_2_SO"
+				.expectRequest("#2 POST BusinessPartnerList('4711')/BP_2_SO", {
+					payload : {Note : "Created as well"}
 				}, oNO_RESPONSE)
 				.expectMessages([{
 					message : "Communication error: 500 ",
@@ -61898,9 +61589,8 @@ make root = ${bMakeRoot}`;
 				.withExactArgs("POST on 'SalesOrderList' failed; will be repeated automatically",
 					sinon.match("Request intentionally failed"), sODLB);
 
-			that.expectRequest({
-					payload : {Note : "Created"},
-					url : "POST SalesOrderList"
+			that.expectRequest("POST SalesOrderList", {
+					payload : {Note : "Created"}
 				}, createErrorInsideBatch())
 				.expectMessages([{
 					code : "CODE",
@@ -61940,9 +61630,8 @@ make root = ${bMakeRoot}`;
 					sinon.match(sPreviousFailed),
 					sODLB);
 
-			that.expectRequest({
-					payload : {Note : "Created"},
-					url : "#3 POST SalesOrderList"
+			that.expectRequest("#3 POST SalesOrderList", {
+					payload : {Note : "Created"}
 				}, oError)
 				.expectRequest("#3 SalesOrderList?$select=Note,SalesOrderID&$skip=1&$top=2",
 					oNO_RESPONSE)
@@ -62013,9 +61702,8 @@ make root = ${bMakeRoot}`;
 				.withExactArgs("POST on 'BusinessPartnerList('4711')/BP_2_SO' failed; "
 					+ "will be repeated automatically", sinon.match.string, sODLB);
 
-			that.expectRequest({
-					payload : {Note : "Created"},
-					url : "POST BusinessPartnerList('4711')/BP_2_SO"
+			that.expectRequest("POST BusinessPartnerList('4711')/BP_2_SO", {
+					payload : {Note : "Created"}
 				}, new Promise(function (_resolve, reject) {
 					fnRespond = reject.bind(null, createError()); // take care of timing
 				}))
@@ -62042,9 +61730,8 @@ make root = ${bMakeRoot}`;
 					technical : true,
 					type : "Error"
 				}])
-				.expectRequest({
-					payload : {Note : "Created"},
-					url : "#3 POST BusinessPartnerList('4711')/BP_2_SO"
+				.expectRequest("#3 POST BusinessPartnerList('4711')/BP_2_SO", {
+					payload : {Note : "Created"}
 				}, {
 					Note : "Created",
 					SalesOrderID : "43"
@@ -62100,9 +61787,8 @@ make root = ${bMakeRoot}`;
 				+ "/BusinessPartnerList('4711')/CompanyName");
 			that.oLogMock.expects("error").withArgs("$batch failed");
 
-			that.expectRequest({
-					payload : {CompanyName : "SAP SE"},
-					url : "PATCH BusinessPartnerList('4711')"
+			that.expectRequest("PATCH BusinessPartnerList('4711')", {
+					payload : {CompanyName : "SAP SE"}
 				}, new Promise(function (_resolve, reject) {
 					fnRespond = reject.bind(null, createError()); // take care of timing
 				}))
@@ -62128,9 +61814,8 @@ make root = ${bMakeRoot}`;
 					technical : true,
 					type : "Error"
 				}])
-				.expectRequest({
-					payload : {CompanyName : "SAP SE"},
-					url : "#3 PATCH BusinessPartnerList('4711')"
+				.expectRequest("#3 PATCH BusinessPartnerList('4711')", {
+					payload : {CompanyName : "SAP SE"}
 				}, oDONT_CARE)
 				.expectRequest("#3 BusinessPartnerList('4711')"
 					+ "?$select=BusinessPartnerID,CompanyName", {
@@ -62833,8 +62518,7 @@ make root = ${bMakeRoot}`;
 
 		return this.createView(assert, sView, oModel).then(function () {
 			that.expectChange("note", "modified")
-				.expectRequest({
-					url : "PATCH SalesOrderList('4711')",
+				.expectRequest("PATCH SalesOrderList('4711')", {
 					payload : {Note : "modified"}
 				}, createErrorInsideBatch({target : "Note"}))
 				.expectMessages([{
@@ -62853,8 +62537,7 @@ make root = ${bMakeRoot}`;
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "PATCH SalesOrderList('4711')",
+			that.expectRequest("PATCH SalesOrderList('4711')", {
 					payload : {Note : "modified"}
 				}, {
 					Note : "modified",
@@ -62887,9 +62570,8 @@ make root = ${bMakeRoot}`;
 			.expectChange("name", "Frederic Fall");
 
 		return this.createView(assert, sView, oModel).then(function () {
-			that.expectRequest({
-					headers : mHeaders,
-					url : "EMPLOYEES(0)/Name"
+			that.expectRequest("EMPLOYEES(0)/Name", {
+					headers : mHeaders
 				}, {value : "Frederic Fall"});
 
 			// code under test
@@ -62944,16 +62626,14 @@ make root = ${bMakeRoot}`;
 
 		oModel = this.createTeaBusiModel({autoExpandSelect : true, earlyRequests : bEarlyRequests});
 
-		this.expectRequest({
-					headers : mExpectedHeaders,
-					url : "EMPLOYEES(0)/Name"
+		this.expectRequest("EMPLOYEES(0)/Name", {
+					headers : mExpectedHeaders
 				}, {value : "Frederic Fall"})
 			.expectChange("name", "Frederic Fall");
 
 		return this.createView(assert, sView, oModel).then(function () {
-			that.expectRequest({
-					headers : mExpectedHeaders,
-					url : "EMPLOYEES(0)/Name"
+			that.expectRequest("EMPLOYEES(0)/Name", {
+					headers : mExpectedHeaders
 				}, {value : "Frederic Fall"});
 
 			that.oView.byId("name").getBinding("text").refresh();
@@ -63597,9 +63277,8 @@ make root = ${bMakeRoot}`;
 			]);
 		}).then(function () {
 			that.expectChange("name", "Palpatine")
-				.expectRequest({
-					payload : {Name : "Palpatine"},
-					url : "PATCH TEAMS('TEAM_02')"
+				.expectRequest("PATCH TEAMS('TEAM_02')", {
+					payload : {Name : "Palpatine"}
 				}, oDONT_CARE);
 
 			oInput.getBinding("value").setValue("Palpatine");
@@ -63687,9 +63366,8 @@ make root = ${bMakeRoot}`;
 			var oInput = oTable.getItems()[0].getCells()[0]; // Note: different instance now!
 
 			that.expectChange("name", ["Palpatine"])
-				.expectRequest({
-					payload : {Name : "Palpatine"},
-					url : "PATCH EMPLOYEES('2')"
+				.expectRequest("PATCH EMPLOYEES('2')", {
+					payload : {Name : "Palpatine"}
 				}, oDONT_CARE);
 
 			oInput.getBinding("value").setValue("Palpatine");
@@ -63771,8 +63449,7 @@ make root = ${bMakeRoot}`;
 			assert.strictEqual(oNewContext.getIndex(), 0);
 			assertIndices(assert, oListBinding.getCurrentContexts(), [-1, 0, 1]);
 
-			that.expectRequest({
-					url : "POST TEAMS",
+			that.expectRequest("POST TEAMS", {
 					payload : {Name : "Team 00", Team_Id : "Team_00"}
 				}, {Name : "Team 00", Team_Id : "Team_00"});
 
@@ -64444,25 +64121,22 @@ make root = ${bMakeRoot}`;
 			.expectChange("status", ["N0", "N1", "N2"]);
 
 		return this.createView(assert, sView, oModel).then(function () {
-			that.expectRequest({
+			that.expectRequest("#2.1 POST SalesOrderList('0')/" + sAction, {
 					headers : {
 						Prefer : "handling=strict"
-					},
-					url : "#2.1 POST SalesOrderList('0')/" + sAction
+					}
 				}, oError, {
 					"Preference-Applied" : "handling=strict"
 				})
-				.expectRequest({
+				.expectRequest("#2.1 POST SalesOrderList('1')/" + sAction, {
 					headers : {
 						Prefer : "handling=strict"
-					},
-					url : "#2.1 POST SalesOrderList('1')/" + sAction
+					}
 				}, oNO_RESPONSE)
-				.expectRequest({
+				.expectRequest("#2.1 POST SalesOrderList('2')/" + sAction, {
 					headers : {
 						Prefer : "handling=strict"
-					},
-					url : "#2.1 POST SalesOrderList('2')/" + sAction
+					}
 				}, oNO_RESPONSE)
 				.expectRequest("#2.2 POST RegenerateEPMData", oNO_RESPONSE)
 				.expectRequest("#2 SalesOrderList?$select=LifecycleStatus,SalesOrderID"
@@ -64626,20 +64300,18 @@ make root = ${bMakeRoot}`;
 			that.oLogMock.expects("error")
 				.withExactArgs("Failed to invoke /GetProductStock(...)",
 					sinon.match("Not an action: /GetProductStock(...)"), sODCB);
-			that.expectRequest({
+			that.expectRequest("POST SalesOrderList('0')/" + sAction, {
 					headers : {
 						Prefer : "handling=strict"
-					},
-					url : "POST SalesOrderList('0')/" + sAction
+					}
 				}, {
 					LifecycleStatus : "C",
 					SalesOrderID : "0"
 				})
-				.expectRequest({
+				.expectRequest("POST RegenerateEPMData", {
 					headers : {
 						Prefer : "handling=strict"
-					},
-					url : "POST RegenerateEPMData"
+					}
 				}, {})
 				.expectRequest("GetProductStock()", {})
 				.expectChange("status", "C")
@@ -64766,11 +64438,10 @@ make root = ${bMakeRoot}`;
 					}]
 				})
 				.expectChange("status", "C")
-				.expectRequest({
+				.expectRequest("POST SalesOrderList('42')/" + sGoodsAction, {
 					headers : {
 						Prefer : "handling=strict"
-					},
-					url : "POST SalesOrderList('42')/" + sGoodsAction
+					}
 				}, oError, {
 					"Preference-Applied" : "handling=strict"
 				})
@@ -65134,9 +64805,8 @@ make root = ${bMakeRoot}`;
 			that.expectChange("category", ["F2", "F1"])
 				.expectChange("equipmentID", [null, "11"])
 				.expectChange("equipmentName", ["", "F1-11"])
-				.expectRequest({
-					payload : {Category : "F2"},
-					url : "POST EMPLOYEES('1')/EMPLOYEE_2_EQUIPMENTS"
+				.expectRequest("POST EMPLOYEES('1')/EMPLOYEE_2_EQUIPMENTS", {
+					payload : {Category : "F2"}
 				}, createErrorInsideBatch({
 					message : "Invalid category",
 					target : "Category",
@@ -65169,9 +64839,8 @@ make root = ${bMakeRoot}`;
 			that.expectChange("category", ["F3"])
 				.expectChange("equipmentID", ["33"])
 				.expectChange("equipmentName", ["F3-33"])
-				.expectRequest({
-					payload : {Category : "F3"},
-					url : "POST EMPLOYEES('1')/EMPLOYEE_2_EQUIPMENTS"
+				.expectRequest("POST EMPLOYEES('1')/EMPLOYEE_2_EQUIPMENTS", {
+					payload : {Category : "F3"}
 				}, {
 					Category : "F3",
 					ID : 33,
@@ -65800,8 +65469,7 @@ make root = ${bMakeRoot}`;
 			var oBinding = that.oView.byId("table").getBinding("items");
 
 			that.expectChange("name", [, "John Doe"])
-				.expectRequest({
-					url : "POST EMPLOYEES",
+				.expectRequest("POST EMPLOYEES", {
 					payload : {Name : "John Doe"}
 				}, oDONT_CARE);
 
@@ -65830,15 +65498,13 @@ make root = ${bMakeRoot}`;
 		this.expectChange("name", []);
 
 		return this.createView(assert, sView, oModel).then(function () {
-			that.expectRequest({
-					url : "POST EMPLOYEES",
+			that.expectRequest("POST EMPLOYEES", {
 					payload : {Name : "John Doe"}
 				}, {
 					ID : "new1",
 					Name : "John Doe"
 				})
-				.expectRequest({
-					url : "POST EMPLOYEES",
+				.expectRequest("POST EMPLOYEES", {
 					payload : {Name : "Jane Doe"}
 				}, {
 					ID : "new2",
@@ -66025,8 +65691,7 @@ make root = ${bMakeRoot}`;
 			that.expectChange("count", "2")
 				.expectChange("note", [, "Note 1"])
 				.expectChange("inactive", [, false])
-				.expectRequest({
-					url : "POST SalesOrderList('42')/SO_2_SOITEM",
+				.expectRequest("POST SalesOrderList('42')/SO_2_SOITEM", {
 					payload : {Note : "Note 1"}
 				}, createErrorInsideBatch())
 				.expectMessages([{
@@ -66062,20 +65727,19 @@ make root = ${bMakeRoot}`;
 			assert.strictEqual(oContext1.isInactive(), false);
 			assert.strictEqual(oContext1.isTransient(), true);
 
-			that.expectRequest({
+			that.expectRequest("#3.1 POST SalesOrderList('42')/SO_2_SOITEM", {
 					$ContentID : undefined,
 					groupId : sGroupId,
-					payload : {Note : "Note 1"},
-					url : "#3.1 POST SalesOrderList('42')/SO_2_SOITEM"
+					payload : {Note : "Note 1"}
 				}, {
 					SalesOrderID : "42",
 					ItemPosition : "0020",
 					Note : "Note 1"
 				})
-				.expectRequest({
+				// new changeset via submitBatch("$auto")
+				.expectRequest("#3.2 POST RegenerateEPMData", {
 					$ContentID : undefined,
-					groupId : sGroupId,
-					url : "#3.2 POST RegenerateEPMData" // new changeset via submitBatch("$auto")
+					groupId : sGroupId
 				}, oDONT_CARE)
 				.expectChange("position", [, "0020"]);
 
@@ -66133,8 +65797,7 @@ make root = ${bMakeRoot}`;
 			that.expectChange("count", "3")
 				.expectChange("note", [,, "Note 3"])
 				.expectChange("inactive", [,, false])
-				.expectRequest({
-					url : "POST SalesOrderList('42')/SO_2_SOITEM",
+				.expectRequest("POST SalesOrderList('42')/SO_2_SOITEM", {
 					payload : {Note : "Note 3"}
 				}, {
 					SalesOrderID : "42",
@@ -66659,8 +66322,7 @@ make root = ${bMakeRoot}`;
 		assert.strictEqual(oBinding.getCount(), 0);
 		assert.strictEqual(oKeptAliveContext1.getIndex(), undefined);
 
-		this.expectRequest({
-				url : "POST SalesOrderList",
+		this.expectRequest("POST SalesOrderList", {
 				payload : {Note : "foobar"}
 			}, {
 				Note : "foobar*",
@@ -67119,9 +66781,8 @@ make root = ${bMakeRoot}`;
 			assert.strictEqual(oKeptContext.getProperty("BuyerID"), "42a", "change kept alive");
 
 			that.expectChange("buyerId", "42b")
-				.expectRequest({
+				.expectRequest("PATCH SalesOrderList('1')", {
 					headers : {"If-Match" : "etag1"},
-					url : "PATCH SalesOrderList('1')",
 					payload : {BuyerID : "42b"}
 				}, {"@odata.etag" : "etag2", BuyerID : "42c", SalesOrderID : "1"})
 				.expectChange("buyerId", "42c");
@@ -67451,19 +67112,17 @@ make root = ${bMakeRoot}`;
 			that.checkMoreButton(assert, oFixture.bFilter ? "[3/44]" : "[3/104]");
 
 			if (!oFixture.bDeferred) {
-				that.expectRequest({
-						groupId : "$auto.foo",
-						url : "#" + iBatch + " DELETE SalesOrderList('1')"
+				that.expectRequest("#" + iBatch + " DELETE SalesOrderList('1')", {
+						groupId : "$auto.foo"
 					});
 			}
 
 			if (oFixture.bFilter) {
-				that.expectRequest({
-						groupId : oFixture.bDeferred ? "$auto" : "$auto.foo",
-						url : "#" + iBatch + " SalesOrderList?$count=true"
-							+ "&$filter=(GrossAmount gt 1000) and not (SalesOrderID eq '1'"
-								+ " or SalesOrderID eq 'new')"
-							+ "&$top=0"
+				that.expectRequest("#" + iBatch + " SalesOrderList?$count=true"
+						+ "&$filter=(GrossAmount gt 1000) and not (SalesOrderID eq '1'"
+							+ " or SalesOrderID eq 'new')"
+						+ "&$top=0", {
+						groupId : oFixture.bDeferred ? "$auto" : "$auto.foo"
 					}, {
 						"@odata.count" : oFixture.bCountHasChanged ? "41" : "42",
 						value : []
@@ -67522,11 +67181,10 @@ make root = ${bMakeRoot}`;
 		return this.createKeepAliveScenario(assert, true).then(function (oKeptContext) {
 			that.checkMoreButton(assert, "[2/27]");
 
-			that.expectRequest({
+			that.expectRequest("#4 DELETE SalesOrderList('1')", {
 					headers : {
 						"If-Match" : "etag1"
-					},
-					url : "#4 DELETE SalesOrderList('1')"
+					}
 				}, createErrorInsideBatch(null, 404))
 				.expectRequest("#4 SalesOrderList?$count=true"
 					+ "&$filter=(GrossAmount gt 123) and not (SalesOrderID eq '1')&$top=0",
@@ -68360,8 +68018,7 @@ make root = ${bMakeRoot}`;
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "POST TEAMS('1')/TEAM_2_EMPLOYEES",
+			that.expectRequest("POST TEAMS('1')/TEAM_2_EMPLOYEES", {
 					payload : {Name : "John Doe"}
 				}, {ID : "2", Name : "John Doe"})
 				.expectRequest("TEAMS('1')/TEAM_2_EMPLOYEES('2')/EMPLOYEE_2_EQUIPMENTS?"
@@ -68416,8 +68073,7 @@ make root = ${bMakeRoot}`;
 
 			return that.waitForChanges(assert);
 		}).then(function () {
-			that.expectRequest({
-					url : "POST TEAMS('1')/TEAM_2_EMPLOYEES",
+			that.expectRequest("POST TEAMS('1')/TEAM_2_EMPLOYEES", {
 					payload : {Name : "John Doe"}
 				}, {ID : "2", Name : "John Doe"})
 				.expectRequest("TEAMS('1')/TEAM_2_EMPLOYEES('2')/EMPLOYEE_2_MANAGER"
@@ -69305,8 +68961,7 @@ make root = ${bMakeRoot}`;
 				sUrl += ",sendsAutographs";
 				oResponse.sendsAutographs = true;
 			}
-			that.expectRequest({
-					url : "POST " + sUrl,
+			that.expectRequest("POST " + sUrl, {
 					headers : {"If-Match" : "etag.active1"}
 				}, oResponse)
 				.expectMessages([{
@@ -69340,7 +68995,7 @@ make root = ${bMakeRoot}`;
 			return that.checkValueState(assert, "defaultChannel", "Information", "Draft message");
 		}).then(function () {
 			that.expectChange("defaultChannel", "Channel 3")
-				.expectRequest({
+				.expectRequest("PATCH Artists(ArtistID='A1',IsActiveEntity=false)", {
 					batchNo : oFixture.patchNo,
 					headers : {
 						"If-Match" : "etag.draft1",
@@ -69348,13 +69003,11 @@ make root = ${bMakeRoot}`;
 					},
 					payload : {
 						defaultChannel : "Channel 3"
-					},
-					url : "PATCH Artists(ArtistID='A1',IsActiveEntity=false)"
+					}
 				}, oNO_CONTENT) // no need to update the ETag when requesting side effects
-				.expectRequest({
-					batchNo : oFixture.patchNo,
-					url : "Artists(ArtistID='A1',IsActiveEntity=false)"
-						+ "?$select=Messages,defaultChannel"
+				.expectRequest("Artists(ArtistID='A1',IsActiveEntity=false)"
+					+ "?$select=Messages,defaultChannel", {
+					batchNo : oFixture.patchNo
 				}, {
 					"@odata.etag" : "etag.draft2",
 					Messages : [{
@@ -69546,11 +69199,10 @@ make root = ${bMakeRoot}`;
 				})
 				.expectChange("defaultChannel", ["01", "02"])
 				.expectChange("listName", ["The Who", "The Rolling Stones"])
-				.expectRequest({
-					groupId : "$auto.heroes",
-					url : "Artists(ArtistID='3',IsActiveEntity=false)"
-						+ "?$select=ArtistID,HasDraftEntity,IsActiveEntity,Messages,Name,"
-						+ "lastUsedChannel"
+				.expectRequest("Artists(ArtistID='3',IsActiveEntity=false)"
+					+ "?$select=ArtistID,HasDraftEntity,IsActiveEntity,Messages,Name,"
+					+ "lastUsedChannel", {
+					groupId : "$auto.heroes"
 				}, {
 					"@odata.etag" : "etag3",
 					ArtistID : "3",
@@ -69595,9 +69247,8 @@ make root = ${bMakeRoot}`;
 		}).then(function () {
 			that.expectChange("name", "The Beatles (changed)")
 				.expectChange("listName", [,, "The Beatles (changed)"])
-				.expectRequest({
+				.expectRequest("PATCH Artists(ArtistID='3',IsActiveEntity=false)", {
 					headers : {"If-Match" : "etag3"},
-					url : "PATCH Artists(ArtistID='3',IsActiveEntity=false)",
 					payload : {Name : "The Beatles (changed)"}
 				}, {
 					"@odata.etag" : "etag3.1",
@@ -69700,8 +69351,7 @@ make root = ${bMakeRoot}`;
 		}).then(function () {
 			that.expectChange("name", "The Beatles (changed)")
 				.expectChange("listName", ["The Beatles (changed)"])
-				.expectRequest({
-					url : "PATCH Artists(ArtistID='1',IsActiveEntity=false)?foo=bar",
+				.expectRequest("PATCH Artists(ArtistID='1',IsActiveEntity=false)?foo=bar", {
 					payload : {Name : "The Beatles (changed)"}
 				}, {
 					ArtistID : "1",
@@ -69773,8 +69423,7 @@ make root = ${bMakeRoot}`;
 			return that.waitForChanges(assert, "getKeepAliveContext");
 		}).then(function () {
 			that.expectChange("name", "The Beatles (changed)")
-				.expectRequest({
-					url : "PATCH Artists(ArtistID='1',IsActiveEntity=false)",
+				.expectRequest("PATCH Artists(ArtistID='1',IsActiveEntity=false)", {
 					payload : {Name : "The Beatles (changed)"}
 				}, oDONT_CARE);
 
@@ -70351,8 +70000,7 @@ make root = ${bMakeRoot}`;
 				oSetPropertyPromise2 = aContexts[1].setProperty("Note", "updated", "update");
 
 				sNewNote = "from server";
-				that.expectRequest({
-						url : "PATCH SalesOrderList('2')",
+				that.expectRequest("PATCH SalesOrderList('2')", {
 						payload : {Note : "updated"}
 					}, {ID : "2", Note : sNewNote})
 					.expectChange("listNote", [, sNewNote]);
@@ -70569,11 +70217,10 @@ make root = ${bMakeRoot}`;
 			assert.strictEqual(oItemsTableBinding.getAllCurrentContexts()[0], oInactiveCreationRow);
 
 			that.expectChange("itemPosition", ["0111"])
-				.expectRequest({
+				.expectRequest("POST SalesOrderList('42')/SO_2_SOITEM", {
 					payload : {
 						ItemPosition : "0111"
-					},
-					url : "POST SalesOrderList('42')/SO_2_SOITEM"
+					}
 				}, oDONT_CARE);
 
 			// code under test
@@ -70651,11 +70298,10 @@ make root = ${bMakeRoot}`;
 		}).then(function () {
 			assert.strictEqual(oKeptAliveItem.getProperty("Note"), "First SalesOrder###");
 
-			that.expectRequest({
+			that.expectRequest("PATCH SalesOrderList('42')", {
 					payload : {
 						Note : "update"
-					},
-					url : "PATCH SalesOrderList('42')"
+					}
 				}, oDONT_CARE);
 
 			return Promise.all([
@@ -70869,9 +70515,8 @@ make root = ${bMakeRoot}`;
 		return this.createView(assert).then(function () {
 			var oBinding = that.oModel.bindList("/EMPLOYEES");
 
-			that.expectRequest({
-					payload : {AGE : 42},
-					url : "POST EMPLOYEES"
+			that.expectRequest("POST EMPLOYEES", {
+					payload : {AGE : 42}
 				}, {
 					AGE : 42,
 					// intentionally no ID!
@@ -70950,9 +70595,8 @@ make root = ${bMakeRoot}`;
 
 			oOperationBinding.setParameter("EmployeeID", "1");
 
-			that.expectRequest({
-					payload : {EmployeeID : "1"},
-					url : "POST FireEmployee"
+			that.expectRequest("POST FireEmployee", {
+					payload : {EmployeeID : "1"}
 				}, new Promise(function (resolve) {
 					fnResolveOperation0 = resolve.bind(null, oNO_CONTENT);
 				}));
@@ -70966,9 +70610,8 @@ make root = ${bMakeRoot}`;
 
 			oOperationBinding.setParameter("EmployeeID", "2");
 
-			that.expectRequest({
-					payload : {EmployeeID : "2"},
-					url : "POST FireEmployee"
+			that.expectRequest("POST FireEmployee", {
+					payload : {EmployeeID : "2"}
 				}, new Promise(function (resolve) {
 					fnResolveOperation1 = resolve.bind(null, oNO_CONTENT);
 				}));
@@ -71867,9 +71510,8 @@ make root = ${bMakeRoot}`;
 
 			return that.waitForChanges(assert, "patch");
 		}).then(function () {
-			that.expectRequest({
-					url : "PATCH SalesOrderList('1')"
-						+ "/SO_2_SOITEM(SalesOrderID='1',ItemPosition='10')",
+			that.expectRequest("PATCH SalesOrderList('1')"
+					+ "/SO_2_SOITEM(SalesOrderID='1',ItemPosition='10')", {
 					payload : {Note : "modified"}
 				}, new Promise(function (_resolve, reject) { fnReject = reject; }))
 				.expectRequest("SalesOrderList('1')?$select=SO_2_SOITEM"
@@ -71929,8 +71571,7 @@ make root = ${bMakeRoot}`;
 		}).then(function () {
 			that.oLogMock.expects("error").twice().withArgs(sinon.match("Failed to update path"));
 			that.expectChange("note", "Note 1 (changed)")
-				.expectRequest({
-					url : "PATCH SalesOrderList('1')",
+				.expectRequest("PATCH SalesOrderList('1')", {
 					payload : {Note : "Note 1 (changed)"}
 				}, new Promise(function (_resolve, reject) { fnReject = reject; }));
 
@@ -72149,12 +71790,10 @@ make root = ${bMakeRoot}`;
 			oContextB.setProperty("Name", "New B Team");
 			oContextC.setProperty("Name", "New C Team");
 
-			that.expectRequest({
-					url : "POST TEAMS",
+			that.expectRequest("POST TEAMS", {
 					payload : {Name : "New A Team", Team_Id : "TEAM_A"}
 				}, {Name : "New 'A' Team", Team_Id : "TEAM_A"})
-				.expectRequest({
-					url : "POST TEAMS",
+				.expectRequest("POST TEAMS", {
 					payload : {Name : "New C Team", Team_Id : "TEAM_C"}
 				}, {Name : "New 'C' Team", Team_Id : "TEAM_C"})
 				.expectChange("name", [,, "New 'A' Team"]);
@@ -72252,12 +71891,10 @@ make root = ${bMakeRoot}`;
 			oContextA = oBinding.create({Name : "New Team A", Team_Id : "TEAM_A"}, true);
 			oContextB = oBinding.create({Name : "New Team B", Team_Id : "TEAM_B"}, true);
 
-			that.expectRequest({
-					url : "POST " + sTeams,
+			that.expectRequest("POST " + sTeams, {
 					payload : {Name : "New Team A", Team_Id : "TEAM_A"}
 				}, {Name : "New 'A' Team", Team_Id : "TEAM_A"})
-				.expectRequest({
-					url : "POST " + sTeams,
+				.expectRequest("POST " + sTeams, {
 					payload : {Name : "New Team B", Team_Id : "TEAM_B"}
 				}, {Name : "New 'B' Team", Team_Id : "TEAM_B"})
 				.expectChange("name", ["New 'B' Team", "New 'A' Team"]);
@@ -72389,12 +72026,10 @@ make root = ${bMakeRoot}`;
 			oContextC.setProperty("Name", "New C Team");
 			oContextD.setProperty("Name", "New D Team");
 
-			that.expectRequest({
-					url : "POST " + sTeams,
+			that.expectRequest("POST " + sTeams, {
 					payload : {Name : "New C Team", Team_Id : "TEAM_C"}
 				}, {Name : "New 'C' Team", Team_Id : "TEAM_C"})
-				.expectRequest({
-					url : "POST " + sTeams,
+				.expectRequest("POST " + sTeams, {
 					payload : {Name : "New D Team", Team_Id : "TEAM_D"}
 				}, {Name : "New 'D' Team", Team_Id : "TEAM_D"})
 				.expectChange("name", ["New 'D' Team", "New 'C' Team"]);
@@ -72523,8 +72158,7 @@ make root = ${bMakeRoot}`;
 				.expectChange("selectionCount", "2")
 				.expectChange("id", ["NEW", "TEAM_01", "TEAM_02", "TEAM_03"])
 				.expectChange("memberCount", ["0", "9", "10", "11"])
-				.expectRequest({
-					url : "POST TEAMS",
+				.expectRequest("POST TEAMS", {
 					payload : {
 						MEMBER_COUNT : 0,
 						Team_Id : "NEW"
@@ -72750,11 +72384,10 @@ make root = ${bMakeRoot}`;
 				]);
 			}
 
-			that.expectRequest({
+			that.expectRequest("DELETE TEAMS('TEAM_03')", {
 					headers : {
 						"If-Match" : "*"
-					},
-					url : "DELETE TEAMS('TEAM_03')"
+					}
 				})
 				.expectChange("selectionCount", "2");
 
@@ -72863,8 +72496,7 @@ make root = ${bMakeRoot}`;
 				oCreatedPromise = checkCanceled(assert, oCreatedPromise);
 				assert.strictEqual(oBinding.getSelectionCount(), 0);
 			} else {
-				that.expectRequest({
-						url : "POST TEAMS",
+				that.expectRequest("POST TEAMS", {
 						payload : {
 							MEMBER_COUNT : 0,
 							Team_Id : "NEW"
@@ -72969,8 +72601,7 @@ make root = ${bMakeRoot}`;
 			oBinding = oModel.bindList("/TEAMS", null, [],
 				[new Filter("MEMBER_COUNT", FilterOperator.GT, 10)]);
 
-			that.expectRequest({
-					url : "POST TEAMS",
+			that.expectRequest("POST TEAMS", {
 					payload : {
 						MEMBER_COUNT : 0,
 						Team_Id : "NEW"
@@ -73115,18 +72746,15 @@ make root = ${bMakeRoot}`;
 				"/TEAMS('TEAM_05')"
 			]);
 
-			that.expectRequest({
-					url : "#2 POST TEAMS",
+			that.expectRequest("#2 POST TEAMS", {
 					payload : {Name : "New Team A", Team_Id : "TEAM_A"}
 				}, {Name : "New 'A' Team", Team_Id : "TEAM_A"})
 				.expectChange("name", [, "New 'A' Team"])
-				.expectRequest({
-					url : "#2 POST TEAMS",
+				.expectRequest("#2 POST TEAMS", {
 					payload : {Name : "New Team B", Team_Id : "TEAM_B"}
 				}, {"@odata.etag" : "b", Name : "New 'B' Team", Team_Id : "TEAM_B"})
 				.expectChange("name", ["New 'B' Team"])
-				.expectRequest({
-					url : "#2 POST TEAMS",
+				.expectRequest("#2 POST TEAMS", {
 					payload : {Name : "New Team C", Team_Id : "TEAM_C"}
 				}, {Name : "n/c", Team_Id : "TEAM_C"})
 				// .expectChange("name", "New 'C' Team", -1) // would happen w/ bSkipRefresh
@@ -73324,31 +72952,27 @@ make root = ${bMakeRoot}`;
 				"/TEAMS('TEAM_09')"
 			]);
 
-			that.expectRequest({
+			that.expectRequest("#3.1 POST TEAMS", {
 					groupId : "update",
-					url : "#3.1 POST TEAMS",
 					payload : {Name : "New A", Team_Id : "TEAM_A"}
 				}, {Name : "'A' Team", Team_Id : "TEAM_A"})
 				// Note: GET not yet processed, binding still "empty"
 				.expectChange("name", ["'A' Team"])
-				.expectRequest({
+				.expectRequest("#3.1 POST TEAMS", {
 					groupId : "update",
-					url : "#3.1 POST TEAMS",
 					payload : {Name : "New B", Team_Id : "TEAM_B"}
 				}, {"@odata.etag" : "b", Name : "'B' Team", Team_Id : "TEAM_B"})
 				.expectChange("name", [, "'B' Team"])
-				.expectRequest({
+				.expectRequest("#3.1 POST TEAMS", {
 					groupId : "update",
-					url : "#3.1 POST TEAMS",
 					payload : {Name : "New C", Team_Id : "TEAM_C"}
 				}, {Name : "n/c", Team_Id : "TEAM_C"})
 				.expectChange("name", [,, "'C' Team"])
-				.expectRequest({
-					groupId : "$auto",
-					// Note: expect no separate refresh immediately after creation
-					// Note: TEAM_C is not an inline creation row!
-					url : "#4 TEAMS?$count=true&$select=Name,Team_Id"
-						+ "&$filter=not (Team_Id eq 'TEAM_A' or Team_Id eq 'TEAM_B')&$skip=5&$top=9"
+				// Note: expect no separate refresh immediately after creation
+				// Note: TEAM_C is not an inline creation row!
+				.expectRequest("#4 TEAMS?$count=true&$select=Name,Team_Id"
+					+ "&$filter=not (Team_Id eq 'TEAM_A' or Team_Id eq 'TEAM_B')&$skip=5&$top=9", {
+					groupId : "$auto"
 				}, {
 					"@odata.count" : "10",
 					value : [
@@ -73396,10 +73020,9 @@ make root = ${bMakeRoot}`;
 				"/TEAMS('TEAM_B')"
 			]);
 
-			that.expectRequest({
-					groupId : "$auto",
-					url : "#5 TEAMS?$select=Name,Team_Id"
-					+ "&$filter=Team_Id eq 'TEAM_A' or Team_Id eq 'TEAM_B'&$top=2"
+			that.expectRequest("#5 TEAMS?$select=Name,Team_Id"
+					+ "&$filter=Team_Id eq 'TEAM_A' or Team_Id eq 'TEAM_B'&$top=2", {
+					groupId : "$auto"
 				}, {
 					value : [
 						{Name : "Team 'A'", Team_Id : "TEAM_A"}
@@ -73407,10 +73030,9 @@ make root = ${bMakeRoot}`;
 					]
 				})
 				// prefetch compensates for exclusive filter (JIRA: CPOUI5ODATAV4-1521)
-				.expectRequest({
-					groupId : "$auto",
-					url : "#5 TEAMS?$count=true&$select=Name,Team_Id"
-					+ "&$filter=not (Team_Id eq 'TEAM_A' or Team_Id eq 'TEAM_B')&$skip=5&$top=9"
+				.expectRequest("#5 TEAMS?$count=true&$select=Name,Team_Id"
+					+ "&$filter=not (Team_Id eq 'TEAM_A' or Team_Id eq 'TEAM_B')&$skip=5&$top=9", {
+					groupId : "$auto"
 				}, {
 					"@odata.count" : "10",
 					value : [
@@ -73910,9 +73532,8 @@ make root = ${bMakeRoot}`;
 				.expectChange("name", ["New A"])
 				.expectChange("salary", [null])
 				.expectChange("salaryCurrency", [""])
-				.expectRequest({
-					payload : {Name : "New A"},
-					url : "POST EMPLOYEES"
+				.expectRequest("POST EMPLOYEES", {
+					payload : {Name : "New A"}
 				}, new Promise(function (_resolve, reject) {
 					fnRespond0 = reject.bind(null, createError()); // take care of timing
 				}));
@@ -73937,15 +73558,14 @@ make root = ${bMakeRoot}`;
 					technical : true,
 					type : "Error"
 				}])
-				.expectRequest({
+				.expectRequest("POST EMPLOYEES", {
 					// Note: PATCH is merged into POST
 					payload : {
 						SALARY : {
 							BASIC_SALARY_CURR : "GBP"
 						},
 						Name : "New A"
-					},
-					url : "POST EMPLOYEES"
+					}
 				}, new Promise(function (resolve) {
 					fnRespond1 = resolve.bind(null, {
 						"@odata.etag" : "etag0",
@@ -73986,7 +73606,7 @@ make root = ${bMakeRoot}`;
 					.expectChange("name", ["New Employee 'A'"])
 					.expectChange("salaryCurrency", ["DEM"]);
 			}
-			that.expectRequest({
+			that.expectRequest("PATCH EMPLOYEES('A')", {
 					headers : {"If-Match" : bSkipRefresh ? "etag0" : "etag1"},
 					// Note: up-to-date currency value is used!
 					payload : {
@@ -73994,8 +73614,7 @@ make root = ${bMakeRoot}`;
 							MONTHLY_BASIC_SALARY_AMOUNT : "1234",
 							BASIC_SALARY_CURR : bSkipRefresh ? "EUR" : "DEM"
 						}
-					},
-					url : "PATCH EMPLOYEES('A')"
+					}
 				}, {
 					"@odata.etag" : "etag2",
 					SALARY : {
@@ -74171,8 +73790,7 @@ make root = ${bMakeRoot}`;
 			]);
 		}).then(function () {
 			if (sCase === "context") {
-				that.expectRequest({
-						url : "POST TEAMS",
+				that.expectRequest("POST TEAMS", {
 						payload : {
 							BudgetCurrency : "EUR",
 							Name : "Team #1 edited",
@@ -74223,8 +73841,7 @@ make root = ${bMakeRoot}`;
 				that.waitForChanges(assert, "resetChanges")
 			]);
 		}).then(function () {
-			that.expectRequest({
-				url : "POST TEAMS",
+			that.expectRequest("POST TEAMS", {
 				payload : {
 					BudgetCurrency : "EUR",
 					Name : "Team #2 inactive",
@@ -74674,12 +74291,11 @@ make root = ${bMakeRoot}`;
 			.withArgs("Failed to update path " + sPublicationPath + "/PublicationID");
 		this.oLogMock.expects("error")
 			.withArgs("Failed to update path " + sPublicationPath + "/Price");
-		this.expectRequest({
+		this.expectRequest("#2 PATCH " + sPublicationPath.slice(1), {
 				headers : {
 					"If-None-Match" : "*",
 					Prefer : "return=minimal"
 				},
-				url : "#2 PATCH " + sPublicationPath.slice(1),
 				payload : {
 					CurrencyCode : "$MD", // default value from $metadata
 					Price : "12",
@@ -74781,12 +74397,11 @@ make root = ${bMakeRoot}`;
 				oPromise = (oContext ?? oArtistContext).resetChanges();
 			}
 		} else {
-			this.expectRequest({
+			this.expectRequest("#3 PATCH " + sPublicationPath.slice(1), {
 					headers : {
 						"If-None-Match" : "*",
 						Prefer : "return=minimal"
 					},
-					url : "#3 PATCH " + sPublicationPath.slice(1),
 					payload : {
 						CurrencyCode : "$MD", // default value from $metadata
 						Price : bMerge ? "11" : "12",
@@ -74920,12 +74535,11 @@ make root = ${bMakeRoot}`;
 		assert.strictEqual(oOrderContext.created(), undefined, "JIRA: CPOUI5ODATAV4-2856");
 		assert.strictEqual(oOrderContext.isTransient(), undefined, "JIRA: CPOUI5ODATAV4-2856");
 
-		this.expectRequest({
+		this.expectRequest("#2 PATCH SalesOrderList('1')/SO_2_BP", {
 				headers : {
 					"If-None-Match" : "*",
 					Prefer : "return=minimal"
 				},
-				url : "#2 PATCH SalesOrderList('1')/SO_2_BP",
 				payload : {Address : {City : "Heidelberg"}}
 			}, oNO_CONTENT, {ETag : "etag2"});
 		const oSalesOrder = {
@@ -74997,12 +74611,11 @@ make root = ${bMakeRoot}`;
 		} else {
 			this.expectChange("city", ["Walldorf"]);
 		}
-		this.expectRequest({
+		this.expectRequest("PATCH BusinessPartnerList('2')", {
 				headers : {
 					"If-Match" : "etag2",
 					Prefer : "return=minimal"
 				},
-				url : "PATCH BusinessPartnerList('2')",
 				payload : {Address : {City : "Walldorf"}}
 			}, oNO_CONTENT, {ETag : "etag3"});
 
@@ -75151,8 +74764,7 @@ make root = ${bMakeRoot}`;
 				.concat(that.waitForChanges(assert, "patch transient items"))
 			);
 		}).then(function () {
-			that.expectRequest({
-					url : "POST SalesOrderList",
+			that.expectRequest("POST SalesOrderList", {
 					payload : {
 						SO_2_SOITEM : [
 							{Note : "AA", SOITEM_2_PRODUCT : {Name : "PA"}},
@@ -75259,10 +74871,9 @@ make root = ${bMakeRoot}`;
 			}]);
 
 			that.expectChange("note", ["AAAA"])
-				.expectRequest({
+				.expectRequest("PATCH SalesOrderList('new')"
+					+ "/SO_2_SOITEM(SalesOrderID='new',ItemPosition='0010')", {
 					headers : {"If-Match" : "etag10"},
-					url : "PATCH SalesOrderList('new')"
-						+ "/SO_2_SOITEM(SalesOrderID='new',ItemPosition='0010')",
 					payload : {Note : "AAAA"}
 				}, oDONT_CARE);
 
@@ -75400,8 +75011,7 @@ make root = ${bMakeRoot}`;
 		}).then(function () {
 			that.oLogMock.expects("error")
 				.withArgs("POST on 'SalesOrderList' failed; will be repeated automatically");
-			that.expectRequest({
-					url : "POST SalesOrderList",
+			that.expectRequest("POST SalesOrderList", {
 					payload : {
 						SO_2_SOITEM : [
 							{Note : "AA"},
@@ -75422,8 +75032,7 @@ make root = ${bMakeRoot}`;
 				that.waitForChanges(assert, "submit -> error")
 			]);
 		}).then(function () {
-			that.expectRequest({
-					url : "POST SalesOrderList",
+			that.expectRequest("POST SalesOrderList", {
 					payload : {
 						SO_2_SOITEM : [
 							{Note : "AA"},
@@ -75611,10 +75220,9 @@ make root = ${bMakeRoot}`;
 			}]);
 
 			that.expectChange("note", [, "BBBB"])
-				.expectRequest({
+				.expectRequest("PATCH SalesOrderList('new')"
+					+ "/SO_2_SOITEM(SalesOrderID='new',ItemPosition='0020')", {
 					headers : {"If-Match" : "etag20"},
-					url : "PATCH SalesOrderList('new')"
-						+ "/SO_2_SOITEM(SalesOrderID='new',ItemPosition='0020')",
 					payload : {Note : "BBBB"}
 				}, oDONT_CARE);
 
@@ -75755,8 +75363,7 @@ make root = ${bMakeRoot}`;
 
 			return that.waitForChanges(assert, "create order");
 		}).then(function () {
-			that.expectRequest({
-					url : "POST SalesOrderList",
+			that.expectRequest("POST SalesOrderList", {
 					payload : {SO_2_SOITEM : []}
 				}, {
 					SalesOrderID : "new1",
@@ -75928,8 +75535,7 @@ make root = ${bMakeRoot}`;
 				aEquipmentsContexts0 = aEquipmentsBindings[0].getCurrentContexts(),
 				aEquipmentsContexts1 = aEquipmentsBindings[1].getCurrentContexts();
 
-			that.expectRequest({
-					url : "POST TEAMS",
+			that.expectRequest("POST TEAMS", {
 					payload : {
 						TEAM_2_EMPLOYEES : [{
 							Name : "Peter Burke",
@@ -76093,8 +75699,7 @@ make root = ${bMakeRoot}`;
 
 			return that.waitForChanges(assert, "patch transient");
 		}).then(function () {
-			that.expectRequest({
-					url : "POST EMPLOYEES",
+			that.expectRequest("POST EMPLOYEES", {
 					payload : {
 						EMPLOYEE_2_TEAM : {
 							Name : "Team 2",
@@ -76191,8 +75796,7 @@ make root = ${bMakeRoot}`;
 				oItemsBinding.create();
 			}, new Error("Unexpected ODataContextBinding in deep create"));
 
-			that.expectRequest({
-					url : "POST SalesOrderList",
+			that.expectRequest("POST SalesOrderList", {
 					payload : {Note : "Note"}
 				}, {
 					Note : "Note*",
@@ -76250,8 +75854,7 @@ make root = ${bMakeRoot}`;
 		await this.createView(assert, sView, oModel);
 
 		this.expectChange("teamId", ["new"])
-			.expectRequest({
-				url : "POST TEAMS",
+			.expectRequest("POST TEAMS", {
 				payload : {Team_Id : "new", TEAM_2_EMPLOYEES : []}
 			}, {Team_Id : "new", TEAM_2_EMPLOYEES : []});
 
@@ -76264,8 +75867,7 @@ make root = ${bMakeRoot}`;
 		]);
 
 		this.expectChange("employeeId", ["E1"])
-			.expectRequest({
-				url : "POST TEAMS('new')/TEAM_2_EMPLOYEES",
+			.expectRequest("POST TEAMS('new')/TEAM_2_EMPLOYEES", {
 				payload : {ID : "E1"}
 			}, {ID : "E1", Team_Id : "new"})
 			// the binding does not get the data from the deep create using another binding
@@ -76987,15 +76589,13 @@ make root = ${bMakeRoot}`;
 			that.oLogMock.expects("error")
 				.withArgs("Failed to update path /SalesOrderList('1')/SO_2_BP/Address/PostalCode");
 
-			that.expectRequest({
-					url : "#2.1 PATCH SalesOrderList('1')",
+			that.expectRequest("#2.1 PATCH SalesOrderList('1')", {
 					payload : {
 						GrossAmount : "400",
 						Note : "RAISE_ERROR"
 					}
 				}, createErrorInsideBatch())
-				.expectRequest({
-					url : "#2.1 PATCH BusinessPartnerList('23')",
+				.expectRequest("#2.1 PATCH BusinessPartnerList('23')", {
 					payload : {
 						Address : {
 							City : "Trill",
@@ -77530,9 +77130,8 @@ make root = ${bMakeRoot}`;
 			oActionBinding = oModel.bindContext(sActionName + "(...)", oContext);
 			oActionBinding.setParameter("TeamID", "TEAM_02");
 
-			that.expectRequest({
-					payload : {TeamID : "TEAM_02"},
-					url : "POST EMPLOYEES('2')/" + sActionName
+			that.expectRequest("POST EMPLOYEES('2')/" + sActionName, {
+					payload : {TeamID : "TEAM_02"}
 				}, {
 					ID : "2",
 					Name : "Frederic Fall",
@@ -77549,9 +77148,8 @@ make root = ${bMakeRoot}`;
 
 			assert.strictEqual(oReturnValueContext.getProperty("Name"), "Frederic Fall");
 
-			that.expectRequest({
-					payload : {TeamID : "TEAM_0815"},
-					url : "POST EMPLOYEES('2')/" + sActionName
+			that.expectRequest("POST EMPLOYEES('2')/" + sActionName, {
+					payload : {TeamID : "TEAM_0815"}
 				}, {
 					// ID : "2", // no key predicate here!
 					Name : "n/a",
@@ -77628,9 +77226,8 @@ make root = ${bMakeRoot}`;
 			return that.waitForChanges(assert, "bind RVC");
 		}).then(function () {
 			that.expectChange("user", "invalid")
-				.expectRequest({
-					url : "PATCH Artists(ArtistID='1',IsActiveEntity=false)"
-						+ "/DraftAdministrativeData",
+				.expectRequest("PATCH Artists(ArtistID='1',IsActiveEntity=false)"
+						+ "/DraftAdministrativeData", {
 					payload : {InProcessByUser : "invalid"}
 				}, createErrorInsideBatch({
 					details : [{
@@ -78115,8 +77712,7 @@ make root = ${bMakeRoot}`;
 				that.waitForChanges(assert, "reset one patched+deleted entity")
 			]);
 		}).then(function () {
-			that.expectRequest({
-					url : "#2 PATCH SalesOrderList('2')",
+			that.expectRequest("#2 PATCH SalesOrderList('2')", {
 					payload : {Note : "Order 2 changed"}
 				}, new Promise(function (resolve) {
 					fnResolvePatch = resolve;
@@ -78324,9 +77920,8 @@ make root = ${bMakeRoot}`;
 			assert.ok(oOrders.hasPendingChanges());
 			assert.ok(oModel.hasPendingChanges());
 
-			that.expectRequest({
-					url : "PATCH SalesOrderList('2')"
-						+ "/SO_2_SOITEM(SalesOrderID='2',ItemPosition='20')",
+			that.expectRequest("PATCH SalesOrderList('2')"
+						+ "/SO_2_SOITEM(SalesOrderID='2',ItemPosition='20')", {
 					payload : {Note : "Item 2.20 changed"}
 				}, oDONT_CARE);
 
@@ -78421,9 +78016,8 @@ make root = ${bMakeRoot}`;
 		}).then(function (aResults) {
 			oActiveContext = aResults[0];
 
-			that.expectRequest({
-					headers : {"If-Match" : "ETag"},
-					url : "DELETE Artists(ArtistID='42',IsActiveEntity=false)"
+			that.expectRequest("DELETE Artists(ArtistID='42',IsActiveEntity=false)", {
+					headers : {"If-Match" : "ETag"}
 				}, undefined, {
 					"sap-messages" : JSON.stringify([{
 						code : "foo-42",
@@ -78463,9 +78057,8 @@ make root = ${bMakeRoot}`;
 		}).then(function () {
 			that.oLogMock.expects("error")
 				.withArgs("Failed to delete /Artists(ArtistID='42',IsActiveEntity=false)");
-			that.expectRequest({
-					headers : {"If-Match" : "ETag"},
-					url : "DELETE Artists(ArtistID='42',IsActiveEntity=false)"
+			that.expectRequest("DELETE Artists(ArtistID='42',IsActiveEntity=false)", {
+					headers : {"If-Match" : "ETag"}
 				}, createErrorInsideBatch({target : "ArtistID"}))
 				.expectMessages([{
 					message : sMessage1,
@@ -78515,9 +78108,8 @@ make root = ${bMakeRoot}`;
 		await this.createView(assert, "", oModel);
 
 		let fnResolveCreate;
-		this.expectRequest({
-				headers : {/*NO "sap-cancel-on-close"*/},
-				url : "POST EMPLOYEES"
+		this.expectRequest("POST EMPLOYEES", {
+				headers : {/*NO "sap-cancel-on-close"*/}
 			}, new Promise(function (resolve) {
 				fnResolveCreate = resolve.bind(null, oDONT_CARE);
 			}));
@@ -78554,9 +78146,8 @@ make root = ${bMakeRoot}`;
 	<Text id="id" text="{SalesOrderID}"/>
 </Table>`;
 
-		this.expectRequest({
-				groupId : "$auto",
-				url : "#1 SalesOrderList?$select=SalesOrderID&$skip=0&$top=100"
+		this.expectRequest("#1 SalesOrderList?$select=SalesOrderID&$skip=0&$top=100", {
+				groupId : "$auto"
 			}, {value : [
 				{SalesOrderID : "1"},
 				{SalesOrderID : "2"},
@@ -78570,13 +78161,11 @@ make root = ${bMakeRoot}`;
 		await this.createView(assert, sView, oModel);
 
 		const sAction = "com.sap.gateway.default.zui5_epm_sample.v0002.SalesOrder_Confirm";
-		this.expectRequest({
-				groupId : "$single",
-				url : "#2 POST SalesOrderList('1')/" + sAction
+		this.expectRequest("#2 POST SalesOrderList('1')/" + sAction, {
+				groupId : "$single"
 			}, oDONT_CARE)
-			.expectRequest({
-				groupId : "$single",
-				url : "#3 POST SalesOrderList('2')/" + sAction
+			.expectRequest("#3 POST SalesOrderList('2')/" + sAction, {
+				groupId : "$single"
 			}, oDONT_CARE)
 			.expectRequest("#-4 POST SalesOrderList('3')/" + sAction, oDONT_CARE);
 
@@ -78599,13 +78188,11 @@ make root = ${bMakeRoot}`;
 			this.waitForChanges(assert)
 		]);
 
-		this.expectRequest({
-				groupId : "$single",
-				url : "#5 DELETE SalesOrderList('1')"
+		this.expectRequest("#5 DELETE SalesOrderList('1')", {
+				groupId : "$single"
 			})
-			.expectRequest({
-				groupId : "$single",
-				url : "#6 DELETE SalesOrderList('2')"
+			.expectRequest("#6 DELETE SalesOrderList('2')", {
+				groupId : "$single"
 			})
 			.expectRequest("#-7 DELETE SalesOrderList('3')")
 			.expectChange("id", ["4", "5", "6"]);
@@ -78618,19 +78205,16 @@ make root = ${bMakeRoot}`;
 			this.waitForChanges(assert)
 		]);
 
-		this.expectRequest({
+		this.expectRequest("#8 DELETE SalesOrderList('4')", {
 				groupId : "$single",
-				headers : {"If-Match" : "*"},
-				url : "#8 DELETE SalesOrderList('4')"
+				headers : {"If-Match" : "*"}
 			})
-			.expectRequest({
+			.expectRequest("#9 DELETE SalesOrderList('5')", {
 				groupId : "$single",
-				headers : {"If-Match" : "*"},
-				url : "#9 DELETE SalesOrderList('5')"
+				headers : {"If-Match" : "*"}
 			})
-			.expectRequest({
-				headers : {"If-Match" : "*"},
-				url : "#-10 DELETE SalesOrderList('6')"
+			.expectRequest("#-10 DELETE SalesOrderList('6')", {
+				headers : {"If-Match" : "*"}
 			});
 
 		await Promise.all([
@@ -78660,11 +78244,10 @@ make root = ${bMakeRoot}`;
 		const oOperationBinding = oModel.bindContext("special.cases.Create(...)",
 			oListBinding.getHeaderContext(), {$$inheritExpandSelect : true});
 
-		this.expectRequest({
+		this.expectRequest("POST Artists/special.cases.Create?$select=Messages", {
 				payload : {
 					Name : "Jane Doe"
-				},
-				url : "POST Artists/special.cases.Create?$select=Messages"
+				}
 			}, {
 				ArtistID : "23",
 				IsActiveEntity : false,
@@ -78699,10 +78282,9 @@ make root = ${bMakeRoot}`;
 		const sAction = "com.sap.gateway.default.iwbep.tea_busi.v0001.AcChangeTeamOfEmployee";
 		const oAction = oModel.bindContext(sAction + "(...)", oContext);
 
-		this.expectRequest({
+		this.expectRequest("#1 POST EMPLOYEES('0')/" + sAction, {
 				headers : {"If-Match" : "*"},
-				payload : {TeamID : "42"},
-				url : "#1 POST EMPLOYEES('0')/" + sAction
+				payload : {TeamID : "42"}
 			}, oDONT_CARE)
 			.expectRequest("#1 EMPLOYEES('0')?$select=ID", {ID : "0"});
 
@@ -78736,10 +78318,9 @@ make root = ${bMakeRoot}`;
 			$$inheritExpandSelect : true
 		});
 
-		this.expectRequest({
+		this.expectRequest("POST EMPLOYEES('0')/" + sAction
+				+ "?$select=__CT__FAKE__Message/__FAKE__Messages", {
 				headers : {"If-Match" : "*"},
-				url : "POST EMPLOYEES('0')/" + sAction
-					+ "?$select=__CT__FAKE__Message/__FAKE__Messages",
 				payload : {TeamID : "42"}
 			}, oDONT_CARE);
 
@@ -79266,12 +78847,12 @@ make root = ${bMakeRoot}`;
 		await this.waitForChanges(assert, "de-/select '1' and '3'");
 
 		const sExpectedGroupId = sMethod === "refresh" && !bSuspend ? "$auto.foo" : "$auto";
-		this.expectRequest({ // ODLB#validateSelection
-				groupId : sExpectedGroupId,
-				url : "#2 SalesOrderList?custom=baz&$apply=A.P.P.L.E."
-					+ "&$filter=LifecycleStatus eq 'N' and (SalesOrderID ge '1') and"
-						+ " (SalesOrderID eq '1' or SalesOrderID eq '3')"
-					+ "&$search=foo&$select=SalesOrderID&$top=2"
+		// ODLB#validateSelection
+		this.expectRequest("#2 SalesOrderList?custom=baz&$apply=A.P.P.L.E."
+				+ "&$filter=LifecycleStatus eq 'N' and (SalesOrderID ge '1') and"
+					+ " (SalesOrderID eq '1' or SalesOrderID eq '3')"
+				+ "&$search=foo&$select=SalesOrderID&$top=2", {
+				groupId : sExpectedGroupId
 			}, {
 				value : [
 					{SalesOrderID : "1"}
@@ -79279,12 +78860,12 @@ make root = ${bMakeRoot}`;
 				]
 			});
 		if (sMethod === "refresh" || sMethod === "requestSideEffects") {
-			this.expectRequest({ // ODLB#refreshKeptElements via "refresh"
-					groupId : sExpectedGroupId,
-					url : "#2 SalesOrderList?$apply=A.P.P.L.E.&"
-						+ "$expand=SO_2_BP($select=BusinessPartnerID)"
-						+ "&$filter=SalesOrderID eq '1' or SalesOrderID eq '3'&custom=baz"
-						+ "&$select=Note,SalesOrderID&$top=2"
+			// ODLB#refreshKeptElements via "refresh"
+			this.expectRequest("#2 SalesOrderList?$apply=A.P.P.L.E.&"
+					+ "$expand=SO_2_BP($select=BusinessPartnerID)"
+					+ "&$filter=SalesOrderID eq '1' or SalesOrderID eq '3'&custom=baz"
+					+ "&$select=Note,SalesOrderID&$top=2", {
+					groupId : sExpectedGroupId
 				}, {
 					value : [
 						{Note : "SO 1", SalesOrderID : "1", SO_2_BP : /*not relevant*/null},
@@ -79301,9 +78882,8 @@ make root = ${bMakeRoot}`;
 			sRefreshUrl = sRefreshUrl.replace("LifecycleStatus,Note desc",
 				"LifecycleStatus,SalesOrderID");
 		}
-		this.expectRequest({ // "refresh"
-				groupId : sExpectedGroupId,
-				url : "#2 " + sRefreshUrl
+		this.expectRequest("#2 " + sRefreshUrl, { // "refresh"
+				groupId : sExpectedGroupId
 			}, {
 				"@odata.count" : "3",
 				value : [
@@ -79405,8 +78985,7 @@ make root = ${bMakeRoot}`;
 				"SO 1 (foo)"
 			])
 			.expectChange("selected", [,, null])
-			.expectRequest({
-				url : "POST SalesOrderList",
+			.expectRequest("POST SalesOrderList", {
 				payload : {Note : "SO 3 (bar) - created persisted"}
 			}, {
 				Note : "SO 3 (bar) - created persisted",
@@ -79433,8 +79012,7 @@ make root = ${bMakeRoot}`;
 				"SO 1 (foo)"
 			])
 			.expectChange("selected", [,,, null])
-			.expectRequest({
-				url : "POST SalesOrderList",
+			.expectRequest("POST SalesOrderList", {
 				payload : {Note : "SO 4 (foo) - created persisted"}
 			}, {
 				Note : "SO 4 (foo) - created persisted",
@@ -79669,8 +79247,7 @@ make root = ${bMakeRoot}`;
 
 		await this.waitForChanges(assert, "form bound to oContext3");
 
-		this.expectRequest({
-				url : "PATCH SalesOrderList('2')?custom=foo",
+		this.expectRequest("PATCH SalesOrderList('2')?custom=foo", {
 				payload : {LifecycleStatus : "P"}
 			}, oDONT_CARE)
 			.expectChange("status", [, "P"]);
@@ -79914,8 +79491,7 @@ make root = ${bMakeRoot}`;
 		const oListBinding = oTable.getBinding("rows");
 
 		if (bCreateAtEnd) {
-			this.expectRequest({
-					url : "POST SalesOrderList",
+			this.expectRequest("POST SalesOrderList", {
 					payload : {ID : "N"}
 				}, oDONT_CARE);
 
@@ -80253,8 +79829,7 @@ make root = ${bMakeRoot}`;
 
 		this.expectChange("id", ["5"])
 			.expectChange("count", "5")
-			.expectRequest({
-				url : "POST SalesOrderList",
+			.expectRequest("POST SalesOrderList", {
 				payload : {SalesOrderID : "5"}
 			}, {
 				SalesOrderID : "5"
@@ -80312,8 +79887,7 @@ make root = ${bMakeRoot}`;
 
 		this.expectChange("id", ["6"])
 			.expectChange("count", "5")
-			.expectRequest({
-				url : "POST SalesOrderList",
+			.expectRequest("POST SalesOrderList", {
 				payload : {SalesOrderID : "6"}
 			}, {
 				SalesOrderID : "6"
@@ -80403,15 +79977,13 @@ make root = ${bMakeRoot}`;
 		await this.waitForChanges(assert, "create inactive items");
 
 		this.expectChange("note", ["bar", "foo"])
-			.expectRequest({
-				url : "POST SalesOrderList",
+			.expectRequest("POST SalesOrderList", {
 				payload : {Note : "foo"}
 			}, {
 				Note : "foo",
 				SalesOrderID : "1"
 			})
-			.expectRequest({
-				url : "POST SalesOrderList",
+			.expectRequest("POST SalesOrderList", {
 				payload : {Note : "bar"}
 			}, {
 				Note : "bar",
@@ -80545,9 +80117,8 @@ make root = ${bMakeRoot}`;
 		}
 		let fnResolveBestFriend;
 		let fnResolveSiblingEntity;
-		this.expectRequest({
-				batchNo : bAutoExpandSelect ? 3 : 1, // Note: #expectRequest out-of-order here!
-				url : sMainUrl + "&$skip=0&$top=2"
+		this.expectRequest(sMainUrl + "&$skip=0&$top=2", {
+				batchNo : bAutoExpandSelect ? 3 : 1 // Note: #expectRequest out-of-order here!
 			}, {
 				"@odata.count" : "8",
 				value : [{
@@ -80570,10 +80141,9 @@ make root = ${bMakeRoot}`;
 			.expectChange("sibling", [])
 			.expectChange("detailName")
 			.expectChange("detailFriendName")
-			.expectRequest({
-				batchNo : bAutoExpandSelect ? 1 : 2,
-				url : sUrl + "&$expand=BestFriend($select=ArtistID,IsActiveEntity,Name)"
-					+ sFilterSort + "&$select=ArtistID,IsActiveEntity&$skip=0&$top=2"
+			.expectRequest(sUrl + "&$expand=BestFriend($select=ArtistID,IsActiveEntity,Name)"
+				+ sFilterSort + "&$select=ArtistID,IsActiveEntity&$skip=0&$top=2", {
+				batchNo : bAutoExpandSelect ? 1 : 2
 			}, new Promise(function (resolve) {
 				fnResolveBestFriend = resolve.bind(null, {
 					value : [{
@@ -80592,10 +80162,9 @@ make root = ${bMakeRoot}`;
 					}]
 				});
 			}))
-			.expectRequest({
-				batchNo : bAutoExpandSelect ? 2 : 3,
-				url : sUrl + "&$expand=SiblingEntity($select=ArtistID,IsActiveEntity,Name)"
-					+ sFilterSort + "&$select=ArtistID,IsActiveEntity&$skip=0&$top=2"
+			.expectRequest(sUrl + "&$expand=SiblingEntity($select=ArtistID,IsActiveEntity,Name)"
+				+ sFilterSort + "&$select=ArtistID,IsActiveEntity&$skip=0&$top=2", {
+				batchNo : bAutoExpandSelect ? 2 : 3
 			}, new Promise(function (resolve) {
 				fnResolveSiblingEntity = resolve.bind(null, {
 					value : [{
@@ -80942,8 +80511,7 @@ make root = ${bMakeRoot}`;
 			.expectChange("friendBusy__AS_COMPOSITE", [true])
 			.expectChange("friendBusy__AS_COMPOSITE", [true])
 			.expectChange("sibling", [""])
-			.expectRequest({
-				url : "#18 POST Artists?custom=foo",
+			.expectRequest("#18 POST Artists?custom=foo", {
 				payload : {Name : "Artist X"}
 			}, {
 				ArtistID : "240",
@@ -81122,9 +80690,8 @@ make root = ${bMakeRoot}`;
 
 		assert.strictEqual(sCity, "Heidelberg");
 
-		this.expectRequest({
-				groupId : "$single",
-				url : "#4 " + sFriendUrl + "&$skip=0&$top=2"
+		this.expectRequest("#4 " + sFriendUrl + "&$skip=0&$top=2", {
+				groupId : "$single"
 			}, {
 				value : [{
 					"@odata.etag" : "etag.10.1",
@@ -81150,11 +80717,10 @@ make root = ${bMakeRoot}`;
 			});
 		if (bReset) {
 			// reset requests kept-alive element
-			this.expectRequest({
-					groupId : "$auto",
-					url : "#5 Artists?$select=Address/City,ArtistID,IsActiveEntity,Name"
-						+ "&$expand=BestFriend($select=ArtistID,IsActiveEntity,Name)"
-						+ "&$filter=ArtistID eq '10' and IsActiveEntity eq true"
+			this.expectRequest("#5 Artists?$select=Address/City,ArtistID,IsActiveEntity,Name"
+					+ "&$expand=BestFriend($select=ArtistID,IsActiveEntity,Name)"
+					+ "&$filter=ArtistID eq '10' and IsActiveEntity eq true", {
+					groupId : "$auto"
 				}, {
 					value : [{
 						"@odata.etag" : "etag.10.1",
@@ -81177,9 +80743,8 @@ make root = ${bMakeRoot}`;
 
 			oArtistA.setKeepAlive(true); // set kept-alive to reset (instead of recreate) the cache
 		}
-		this.expectRequest({
-				groupId : "$auto",
-				url : "#5 " + sMainUrl + "&$skip=0&$top=2"
+		this.expectRequest("#5 " + sMainUrl + "&$skip=0&$top=2", {
+				groupId : "$auto"
 			}, {
 				value : [{
 					"@odata.etag" : "etag.10.1",
