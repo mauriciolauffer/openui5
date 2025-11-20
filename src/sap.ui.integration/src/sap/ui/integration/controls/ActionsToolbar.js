@@ -304,7 +304,7 @@ sap.ui.define([
 
 	/**
 	 * @private
-	 * @ui5-restricted sap.f.BaseHeader
+	 * @ui5-restricted sap.f.cards.BaseHeader
 	 */
 	ActionsToolbar.prototype.updateVisibility = function () {
 		this._updateVisibility();
