@@ -67,6 +67,7 @@
 	  },
 	  "content": {
 		"chartType": "Line",
+		"tooltips": true,
 		"chartProperties": {
 		  "title": {
 			"text": "Line chart",
