@@ -87,6 +87,7 @@ sap.ui.define([
 					"xx-waitForTheme": "init"
 				}
 			},
+			"HeaderSelector": {},
 			// Menus
 			"ColumnHeaderMenuAdapter": {
 				group: "Menus",
@@ -286,6 +287,10 @@ sap.ui.define([
 
 			// Plugins
 			"PluginBase": {
+				group: "Plugins",
+				module: "./plugins/{name}.qunit"
+			},
+			"SelectionPlugin": {
 				group: "Plugins",
 				module: "./plugins/{name}.qunit"
 			},
