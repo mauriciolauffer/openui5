@@ -269,7 +269,8 @@ sap.ui.define([
 						source: oItem.getUrl(),
 						sourceType: "vds"
 					})
-				]
+				],
+				width: "100%"
 			});
 
 			return oVdsViewer;
