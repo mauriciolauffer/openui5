@@ -3,9 +3,19 @@
     "date": "November 2025",
     "notes": [
       {
+        "id": "1116778bfea04abd349738c593b216cfa92e3e69",
+        "type": "FIX",
+        "text": " sap.uxap.ObjectPageSubSection: fix height of header"
+      },
+      {
         "id": "03f3c5a2c54e2b98053df2becd7236dc1457fe49",
         "type": "FIX",
         "text": " sap.uxap.ObjectPageSubSection: role region"
+      },
+      {
+        "id": "59cd68a39e36371adbaf69538d94bffa1fa4eee8",
+        "type": "FIX",
+        "text": " sap.uxap.ObjectPageLayout: Fix wrong title in AnchorBar"
       },
       {
         "id": "808cbd7d3fb5dcd257f3789228d950f4696cb4ae",

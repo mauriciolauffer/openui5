@@ -3,6 +3,26 @@
     "date": "November 2025",
     "notes": [
       {
+        "id": "c4bec3aa4f51d00bea986edf2bd5c632e39cc7cd",
+        "type": "FIX",
+        "text": " sap.m.Button: Prevent duplicate shortcut announcements in screen readers"
+      },
+      {
+        "id": "9964c9a8507d919c7e7fc92bcf94091bc2088eca",
+        "type": "FIX",
+        "text": " sap/ui/model/ClientTreeBinding#cloneData: do not use structuredClone"
+      },
+      {
+        "id": "f1b8b843e145816dcedf29e91212498497d09b14",
+        "type": "FIX",
+        "text": " URLListValidator: Correctly handle URL with userinfo"
+      },
+      {
+        "id": "fd443517be269a58bae580baa7c765702f77c48f",
+        "type": "FIX",
+        "text": " sap.ui.core.support.techinfo: Tech Info Dialog now reopens after ESC close"
+      },
+      {
         "id": "61530344df4de95f2f2dbe795ce7a8cb51ef4935",
         "type": "FIX",
         "text": " sap/ui/model/ClientTreeBinding#cloneData: use a clone for this.oTreeData"

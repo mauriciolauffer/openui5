@@ -12,16 +12,6 @@
             "reference": "2280141877"
           }
         ]
-      },
-      {
-        "id": "de40c35969c5b082fa2e81de99055931a07ec09d",
-        "type": "FIX",
-        "text": " sap.f.DynamicPage: Issue with table sizing fixed"
-      },
-      {
-        "id": "bd709f9a00b1d2e4877418d8fc8e20e6b7eb2c58",
-        "type": "FIX",
-        "text": " sap.f.DynamicPage: Correct header repositioning in both directions"
       }
     ]
   }

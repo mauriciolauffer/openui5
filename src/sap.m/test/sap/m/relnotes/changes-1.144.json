@@ -3,6 +3,11 @@
     "date": "November 2025",
     "notes": [
       {
+        "id": "55595f1b3d83004a227f0b91d29d17290c6af4f6",
+        "type": "FIX",
+        "text": " We've now resolved a loading issue for the vds file using the width configuration in the FilePreview dialog"
+      },
+      {
         "id": "c26f467ad0f6db9d7c03caa0533011c1188af1be",
         "type": "FIX",
         "text": " We now ensure that the UploadSetWithTable plugin correctly handles file extraction while maintaining the original MIME type when you drag and drop files into the plugin"
@@ -18,6 +23,16 @@
         "text": " sap.m.Toolbar: KBH for nested sap.m.Tokenizer corrected"
       },
       {
+        "id": "1968f0c89f2b050d11eae164e7683fcb6c15d4cc",
+        "type": "FIX",
+        "text": " VariantManagement: Replace table MOM binding with cloned binding"
+      },
+      {
+        "id": "4e286a0f14a1b13ec203b66c3756579589b25423",
+        "type": "FIX",
+        "text": " sap.m.PlanningCalendarHeader: add visible label to the view switch"
+      },
+      {
         "id": "5876a1f1a54a54ebb41c404d52519b0c3673b903",
         "type": "FIX",
         "text": " We now ensure that ItemRenameCanceled event is fired when the Rename dialog is closed by pressing the Esc key in UploadSetwithTable"
@@ -31,6 +46,16 @@
         "id": "d26788ae480302c2ffa24d6051732cba1239c47f",
         "type": "FIX",
         "text": " sap.m.ObjectStatus: state information is referenced in"
+      },
+      {
+        "id": "3d1e803aeb2a23af9344fe5a5edef55d272e29f3",
+        "type": "FIX",
+        "text": " sap.m.MultiInput: correct value after clonning"
+      },
+      {
+        "id": "10044d9ccc8107ad9254b66657096d064ef1170c",
+        "type": "FIX",
+        "text": " sap.m.RadioButton: focus outline is now correctly aligned with wrapping"
       },
       {
         "id": "eb69b0de7c6974628c4cdf143b72241786f2d8b5",
