@@ -1,5 +1,5 @@
 {
-	"_version": "1.25.0",
+	"_version": "%LATEST_SCHEMA_VERSION%",
 	"sap.app": {
 		"id": "card.explorer.sample.table.card.employees",
 		"title": "Employees",

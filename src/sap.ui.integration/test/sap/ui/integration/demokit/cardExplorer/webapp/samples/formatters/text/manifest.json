@@ -1,5 +1,5 @@
 {
-	"_version": "1.28.0",
+	"_version": "%LATEST_SCHEMA_VERSION%",
 	"sap.app": {
 		"id": "card.explorer.format.text.card",
 		"type": "card",

@@ -1,5 +1,5 @@
 {
-	"_version": "1.37.0",
+	"_version": "%LATEST_SCHEMA_VERSION%",
 	"sap.app": {
 		"id": "my.component.sample.componentPreload",
 		"type": "card",
