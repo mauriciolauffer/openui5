@@ -82,14 +82,14 @@ sap.ui.define([
 			/**
 			 * @deprecated since 1.124
 			 */
-			"valueHelp.FilterBar": {
+			"vh.FilterBar": {
 				group: "FilterBar",
 				module: "./vh/FilterBar.qunit"
 			},
 			/**
 			 * @deprecated since 1.124
 			 */
-			"valueHelp.CollectiveSearchSelect": {
+			"vh.CollectiveSearchSelect": {
 				group: "FilterBar",
 				module: "./vh/CollectiveSearchSelect.qunit"
 			},
