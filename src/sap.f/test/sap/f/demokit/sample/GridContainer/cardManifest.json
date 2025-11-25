@@ -1,4 +1,5 @@
 {
+	"_version": "1.81.0",
 	"sap.card": {
 		"type": "List",
 		"header": {
