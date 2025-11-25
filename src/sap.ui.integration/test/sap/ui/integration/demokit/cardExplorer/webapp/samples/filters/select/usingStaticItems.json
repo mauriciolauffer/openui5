@@ -1,4 +1,5 @@
 {
+	"_version": "%LATEST_SCHEMA_VERSION%",
 	"sap.app": {
 		"id": "card.explorer.filters.usingStaticItems",
 		"type": "card",

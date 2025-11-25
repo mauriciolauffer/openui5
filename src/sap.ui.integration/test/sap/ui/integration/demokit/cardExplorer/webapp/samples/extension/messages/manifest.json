@@ -1,5 +1,6 @@
 
 {
+	"_version": "%LATEST_SCHEMA_VERSION%",
 	"sap.app": {
 		"id": "card.explorer.object.messages",
 		"type": "card",

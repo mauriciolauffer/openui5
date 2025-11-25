@@ -1,4 +1,5 @@
 {
+	"_version": "%LATEST_SCHEMA_VERSION%",
 	"sap.app": {
 		"type": "card",
 		"id": "card.explorer.dynamicActionsStrip"

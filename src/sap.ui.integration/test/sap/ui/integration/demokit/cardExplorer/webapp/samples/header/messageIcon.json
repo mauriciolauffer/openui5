@@ -1,5 +1,5 @@
 {
-	"_version": "1.79.0",
+	"_version": "%LATEST_SCHEMA_VERSION%",
 	"sap.app": {
 		"id": "card.explorer.header.message.icon.card",
 		"type": "card",
