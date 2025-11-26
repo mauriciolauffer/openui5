@@ -5,7 +5,6 @@
 
 @_sap_ui_rta_Overlay_ResizeHandleColor: var(--sapSelectedColor); /* #8fb5ff */
 @_sap_ui_rta_Overlay_ErrorBorderColor: var(--sapErrorBorderColor); /* #ff0000 */
-@_sap_ui_rta_Overlay_BoxShadow: @sapUiUx3ToolPopupShadow; /* 0px 6px 12px 0px fade(black, 30) */
 
 .sapUiRtaRoot {
 
@@ -81,7 +80,7 @@
 
 	.sapUiDtOverlaySelected {
 		transition: box-shadow .25s;
-		box-shadow: @_sap_ui_rta_Overlay_BoxShadow;
+		box-shadow: var(--sapContent_Shadow2);
 
 		&.sapUiRtaErrorBg::after {
 			outline: 0.125rem solid @_sap_ui_rta_Overlay_ErrorBorderColor; /* 2px */
