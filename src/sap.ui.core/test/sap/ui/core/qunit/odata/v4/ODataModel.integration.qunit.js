@@ -57814,7 +57814,7 @@ make root = ${bMakeRoot}`;
 						details : [{
 							code : "bound_delete",
 							message : "Must not delete mock data",
-							"@Common.longtextUrl" : "./Messages(1)/LongText",
+							"@Common.longtextUrl" : "Messages(1)/LongText",
 							"@Common.numericSeverity" : 4,
 							target : ""
 						}]
