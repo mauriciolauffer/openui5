@@ -1,6 +1,7 @@
-/*******************************************************************************
- * STYLE ADAPTATIONS OF COMMONS CONTROLS FOR SAP.UI.TABLE.TABLE
- ******************************************************************************/
+/* ============================================================= */
+/* STYLE ADAPTATIONS OF COMMONS CONTROLS FOR SAP.UI.TABLE.TABLE  */
+/* Base theme                                                    */
+/* ============================================================= */
 
 .sapUiTableDataCell > .sapUiTableCellInner {
 
@@ -30,17 +31,17 @@
 
 	> .sapUiTf.sapUiTfErr.sapUiTfStd,
 	> .sapUiTfCombo.sapUiTfErr.sapUiTfStd {
-		background-color: @sapUiFieldInvalidBackground;
+		background-color: var(--sapField_InvalidBackground);
 	}
 
 	> .sapUiTf.sapUiTfWarn.sapUiTfStd,
 	> .sapUiTfCombo.sapUiTfWarn.sapUiTfStd {
-		background-color: @sapUiFieldWarningBackground;
+		background-color: var(--sapField_WarningBackground);
 	}
 
 	> .sapUiTf.sapUiTfSucc.sapUiTfStd,
 	> .sapUiTfCombo.sapUiTfSucc.sapUiTfStd {
-		background-color: @sapUiFieldSuccessBackground;
+		background-color: var(--sapField_SuccessBackground);
 	}
 
 	> .sapUiTfCombo {
@@ -62,29 +63,6 @@
 	> .sapUiLnk:focus {
 		outline-offset: -1px;
 	}
-
-}
-
-html[data-sap-ui-browser^="ie"] .sapUiTableDataCell > .sapUiTableCellInner,
-html[data-sap-ui-browser^="ed"] .sapUiTableDataCell > .sapUiTableCellInner {
-
-	> .sapUiLnk:focus {
-		outline: none;
-		position: relative;
-	}
-
-	> .sapUiLnk:focus:before {
-		content: " ";
-		box-sizing: border-box;
-		width: 100%;
-		height: 100%;
-		position: absolute;
-		left: 0;
-		top: 0;
-		border: 1px dashed @sapUiContentFocusColor;
-		pointer-events: none;
-	}
-
 }
 
 .sapUiAnalyticalTable .sapUiTableDataCell > .sapUiTableCellInner > .sapUiTv {
@@ -102,10 +80,9 @@ tr.sapUiTableRowHvr {
 	.sapUiLnk,
 	.sapUiLnk:visited,
 	.sapUiLnk:hover {
-		color: @sapUiListTextColor;
-		background-color: @sapUiListHoverBackground;
+		color: var(--sapList_TextColor);
+		background-color: var(--sapList_Hover_Background);
 	}
-
 }
 
 .sapUiTableTbr .sapUiTb,
@@ -114,7 +91,7 @@ tr.sapUiTableRowHvr {
 }
 
 .sapUiTableTbr > .sapUiTb {
-	background-color: @sapUiListBackground;
+	background-color: var(--sapList_Background);
 }
 
 .sapUiTableHeaderCell {
@@ -127,7 +104,7 @@ tr.sapUiTableRowHvr {
 		width: 100%;
 		font-weight: normal;
 		font-size: 0.875rem;
-		color: @sapUiListTextColor;
+		color: var(--sapList_TextColor);
 	}
 
 	.sapUiImg {
@@ -146,7 +123,6 @@ tr.sapUiTableRowHvr {
 	.sapUiLnk,
 	.sapUiLnk:visited,
 	.sapUiLnk:hover {
-		color: @sapUiListTextColor;
+		color: var(--sapList_TextColor);
 	}
-
 }
