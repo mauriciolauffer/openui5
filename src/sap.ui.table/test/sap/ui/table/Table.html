@@ -336,7 +336,7 @@
 	const oBindingInfo = oTable.getBindingInfo("rows");
 
 	function rebind() {
-		// oTable.bindRows(oBindingInfo || {path: "/modelData"});
+		oTable.bindRows(oBindingInfo || {path: "/modelData"});
 	}
 
 	function unbind() {
