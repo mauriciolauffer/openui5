@@ -282,10 +282,10 @@ sap.ui.define([
 		assert.ok("vStatistics" in oRequestor);
 		assert.strictEqual(oRequestor.bWithCredentials, bWithCredentials);
 
-		oHelperMock.expects("buildQuery").withExactArgs(undefined).returns("");
+		oHelperMock.expects("buildQuery").withExactArgs("~mQueryParams~").returns("");
 
 		// code under test
-		oRequestor = _Requestor.create(sServiceUrl, oModelInterface);
+		oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, "~mQueryParams~", "4.0");
 
 		assert.deepEqual(oRequestor.mHeaders, {});
 		assert.strictEqual(oRequestor.vStatistics, undefined);
@@ -295,11 +295,11 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.test("constructor, 4.01", function (assert) {
-		this.mock(_Helper).expects("buildQuery").withExactArgs(null).returns("?~");
+		this.mock(_Helper).expects("buildQuery").withExactArgs("~mQueryParams~").returns("?~");
 
 		// code under test
-		const oRequestor
-			= _Requestor.create(sServiceUrl, oModelInterface, "~mHeaders~", null, "4.01");
+		const oRequestor = _Requestor.create(sServiceUrl, oModelInterface, "~mHeaders~",
+			"~mQueryParams~", "4.01");
 
 		assert.deepEqual(oRequestor.mBatchQueue, {});
 		assert.strictEqual(oRequestor.isBatchSent(), false);
@@ -320,7 +320,7 @@ sap.ui.define([
 		assert.strictEqual(oRequestor.iSessionTimer, 0);
 		assert.strictEqual(oRequestor.iSerialNumber, 0);
 		assert.strictEqual(oRequestor.sServiceUrl, sServiceUrl);
-		assert.strictEqual(oRequestor.vStatistics, null);
+		assert.strictEqual(oRequestor.vStatistics, undefined);
 		assert.ok("vStatistics" in oRequestor);
 		assert.strictEqual(oRequestor.bWithCredentials, undefined);
 
@@ -355,7 +355,7 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.test("destroy", function () {
-		var oRequestor = _Requestor.create(sServiceUrl, oModelInterface);
+		var oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0");
 
 		this.mock(oRequestor).expects("clearSessionContext").withExactArgs();
 
@@ -366,7 +366,7 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("getServiceUrl", function (assert) {
 		var oRequestor = _Requestor.create(sServiceUrl, oModelInterface,
-				{foo : "must be ignored"});
+				{foo : "must be ignored"}, {}, "4.0");
 
 		// code under test
 		assert.strictEqual(oRequestor.getServiceUrl(), sServiceUrl);
@@ -504,7 +504,7 @@ sap.ui.define([
 				getOwner : mustBeMocked,
 				getUnlockedCopy : mustBeMocked
 			},
-			oRequestor = _Requestor.create(sServiceUrl, oModelInterface);
+			oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0");
 
 		this.mock(oGroupLock).expects("getGroupId").withExactArgs().returns("myGroup");
 		this.mock(oRequestor).expects("getGroupSubmitMode").withExactArgs("myGroup")
@@ -530,7 +530,7 @@ sap.ui.define([
 		groupId : "unknown", submitMode : "API"
 	}].forEach(function (oFixture) {
 		QUnit.test("getGroupSubmitMode, success" + oFixture.groupId, function (assert) {
-			var oRequestor = _Requestor.create(sServiceUrl, oModelInterface);
+			var oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0");
 
 			this.mock(oModelInterface).expects("getGroupProperty")
 				.withExactArgs(oFixture.groupId, "submit")
@@ -619,7 +619,7 @@ sap.ui.define([
 			oRequestor;
 
 		// code under test
-		oRequestor = _Requestor.create(sServiceUrl);
+		oRequestor = _Requestor.create(sServiceUrl, null, {}, {}, "4.0");
 
 		assert.strictEqual(oRequestor.getServiceUrl(), sServiceUrl, "parameter sServiceUrl");
 		assert.deepEqual(oRequestor.mHeaders, {}, "parameter mHeaders");
@@ -665,7 +665,7 @@ sap.ui.define([
 				oHelperMock = this.mock(_Helper),
 				oReadFailure = {},
 				oRequestor = _Requestor.create("/Service/", oModelInterface,
-					{"X-CSRF-Token" : "Fetch"}, undefined, "4.01"),
+					{"X-CSRF-Token" : "Fetch"}, {}, "4.01"),
 				mResolvedHeaders = {foo : "bar"},
 				oResponsePayload = {value : "response payload"},
 				bSuccess = o.bRequestSucceeds !== false && !o.bReadFails && !o.bDoNotDeliverToken,
@@ -792,7 +792,7 @@ sap.ui.define([
 
 		QUnit.test(sTitle, function (assert) {
 			var oPromise,
-				oRequestor = _Requestor.create(sServiceUrl, oModelInterface),
+				oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0"),
 				oResult = {},
 				oSecurityTokenPromise = new Promise(function (resolve) {
 					setTimeout(function () {
@@ -827,7 +827,7 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("sendRequest: fail, unsupported OData service version", function (assert) {
 		var oError = {},
-			oRequestor = _Requestor.create("/", oModelInterface);
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 
 		this.mock(jQuery).expects("ajax")
 			.withArgs("/Employees")
@@ -851,7 +851,7 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.test("sendRequest(), store CSRF token from server", function (assert) {
-		var oRequestor = _Requestor.create("/", oModelInterface);
+		var oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 
 		this.mock(jQuery).expects("ajax")
 			.withExactArgs("/", sinon.match({headers : {"X-CSRF-Token" : "Fetch"}}))
@@ -871,7 +871,7 @@ sap.ui.define([
 	//*********************************************************************************************
 	// BCP:2180370654
 	QUnit.test("sendRequest: ignore unexpected ETag response header in $batch", function (assert) {
-		var oRequestor = _Requestor.create("/", oModelInterface);
+		var oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 
 		this.mock(jQuery).expects("ajax")
 			.withExactArgs("/$batch", sinon.match({headers : {"X-CSRF-Token" : "Fetch"}}))
@@ -891,7 +891,7 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("sendRequest(): setSessionContext", function (assert) {
 		var oJQueryMock = this.mock(jQuery),
-			oRequestor = _Requestor.create("/", oModelInterface);
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 
 		oJQueryMock.expects("ajax")
 			.withExactArgs("/", sinon.match.object)
@@ -912,7 +912,7 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("sendRequest(): error & session", function (assert) {
 		var oJQueryMock = this.mock(jQuery),
-			oRequestor = _Requestor.create("/", oModelInterface),
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0"),
 			that = this;
 
 		oJQueryMock.expects("ajax")
@@ -967,7 +967,7 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("sendRequest(): error in session", function (assert) {
 		var oJQueryMock = this.mock(jQuery),
-			oRequestor = _Requestor.create("/", oModelInterface),
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0"),
 			that = this;
 
 		oJQueryMock.expects("ajax")
@@ -1016,7 +1016,8 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.test("sendRequest(), keep old CSRF token in case none is sent", function (assert) {
-		var oRequestor = _Requestor.create("/", oModelInterface, {"X-CSRF-Token" : "abc123"});
+		var oRequestor
+				= _Requestor.create("/", oModelInterface, {"X-CSRF-Token" : "abc123"}, {}, "4.0");
 
 		this.mock(jQuery).expects("ajax")
 			.withExactArgs("/", sinon.match({headers : {"X-CSRF-Token" : "abc123"}}))
@@ -1033,7 +1034,7 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("sendRequest(), keep fetching CSRF token in case none is sent", function (assert) {
 		var oMock = this.mock(jQuery),
-			oRequestor = _Requestor.create("/", oModelInterface);
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 
 		oMock.expects("ajax")
 			.withExactArgs("/", sinon.match({headers : {"X-CSRF-Token" : "Fetch"}}))
@@ -1059,7 +1060,7 @@ sap.ui.define([
 		var bFirstRequest = true,
 			jqFirstTokenXHR,
 			iHeadRequestCount = 0,
-			oRequestor = _Requestor.create("/Service/", oModelInterface);
+			oRequestor = _Requestor.create("/Service/", oModelInterface, {}, {}, "4.0");
 
 		this.mock(_Helper).expects("parseRawHeaders").thrice()
 			.withExactArgs("~getAllResponseHeaders~").returns("~mHeaders~");
@@ -1110,8 +1111,8 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.test("sendRequest(), withCredentials for CORS", function (assert) {
-		var oRequestor = _Requestor.create("/", oModelInterface, /*mHeaders*/undefined,
-				/*mQueryParams*/undefined, /*sODataVersion*/undefined,
+		var oRequestor = _Requestor.create("/", oModelInterface, /*mHeaders*/{},
+				/*mQueryParams*/{}, /*sODataVersion*/"4.0",
 				/*bWithCredentials*/true);
 
 		this.mock(jQuery).expects("ajax")
@@ -1135,7 +1136,7 @@ sap.ui.define([
 	// 3b) Rejecting promise rejects all 3 requests
 [false, true].forEach((bResolve) => {
 	QUnit.test(`sendRequest: 503, "Retry-After" handling, bResolve=${bResolve}`, function (assert) {
-		const oRequestor = _Requestor.create("/Service/", oModelInterface);
+		const oRequestor = _Requestor.create("/Service/", oModelInterface, {}, {}, "4.0");
 		let fnReject;
 		let fnResolve;
 		const oRetryAfterPromise = new Promise((resolve, reject) => {
@@ -1286,7 +1287,7 @@ sap.ui.define([
 	// because not existing "Retry-After" header value or because not existing "Retry-After" handler
 [null, "42"].forEach((sRetryAfter) => {
 	QUnit.test('sendRequest(): 503 "Retry-After" -> as error: ' + sRetryAfter, function (assert) {
-		const oRequestor = _Requestor.create("/Service/", oModelInterface);
+		const oRequestor = _Requestor.create("/Service/", oModelInterface, {}, {}, "4.0");
 		const oJQueryMock = this.mock(jQuery);
 		oJQueryMock.expects("ajax").withArgs("/Service/Foo").callsFake(() => {
 			const jqXHR = new jQuery.Deferred();
@@ -1337,9 +1338,9 @@ sap.ui.define([
 				oGroupLock,
 				oPayload = {foo : 42},
 				oPromise,
-				oRequestor = _Requestor.create(sServiceUrl, oModelInterface, undefined, {
+				oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {
 					foo : "URL params are ignored for normal requests"
-				}),
+				}, "4.0"),
 				oResponse = {body : {}, messages : {}, resourcePath : "Employees?custom=value"},
 				sResourcePath = vStatistics
 					? "~Employees~?custom=value&sap-statistics=false"
@@ -1395,7 +1396,7 @@ sap.ui.define([
 			"sap-cancel-on-close" : "true"
 		}
 	}, {
-		defaultHeaders : undefined,
+		defaultHeaders : {},
 		requestHeaders : undefined,
 		result : {"sap-cancel-on-close" : "true"}
 	}, {
@@ -1403,7 +1404,7 @@ sap.ui.define([
 		requestHeaders : undefined,
 		result : {"Accept-Language" : "ab-CD", "sap-cancel-on-close" : "true"}
 	}, {
-		defaultHeaders : undefined,
+		defaultHeaders : {},
 		requestHeaders : {"Accept-Language" : "ab-CD"},
 		result : {"Accept-Language" : "ab-CD", "sap-cancel-on-close" : "true"}
 	}, {
@@ -1415,7 +1416,8 @@ sap.ui.define([
 			var mDefaultHeaders = clone(mHeaders.defaultHeaders),
 				oPromise,
 				mRequestHeaders = clone(mHeaders.requestHeaders),
-				oRequestor = _Requestor.create(sServiceUrl, oModelInterface, mDefaultHeaders),
+				oRequestor
+					= _Requestor.create(sServiceUrl, oModelInterface, mDefaultHeaders, {}, "4.0"),
 				oResult = {},
 				// add predefined request headers for OData V4
 				mResultHeaders = Object.assign({}, {
@@ -1458,7 +1460,7 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.test("request, onCreateGroup", function () {
-		var oRequestor = _Requestor.create("/", oModelInterface);
+		var oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 
 		this.mock(oModelInterface).expects("onCreateGroup").withExactArgs("groupId");
 
@@ -1470,7 +1472,7 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("request, getGroupProperty", function () {
 		var oGroupLock = this.createGroupLock(),
-			oRequestor = _Requestor.create("/", oModelInterface);
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 
 		this.mock(oModelInterface).expects("getGroupProperty")
 			.withExactArgs("groupId", "submit")
@@ -1483,7 +1485,7 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.test("request, getOrCreateBatchQueue", function (assert) {
-		var oRequestor = _Requestor.create("/", oModelInterface),
+		var oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0"),
 			aRequests = [];
 
 		this.mock(oRequestor).expects("getOrCreateBatchQueue")
@@ -1523,7 +1525,7 @@ sap.ui.define([
 		QUnit.test(sTitle, function (assert) {
 			var oConvertedResponse = {},
 				sMetaPath = "~",
-				oRequestor = _Requestor.create(sServiceUrl, oModelInterface, undefined, undefined,
+				oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {},
 					oFixture.sODataVersion),
 				oResponsePayload = {};
 
@@ -1555,7 +1557,7 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.test("sendRequest: optional OData-Version header for empty response", function (assert) {
-		var oRequestor = _Requestor.create(sServiceUrl, oModelInterface);
+		var oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0");
 
 		this.mock(jQuery).expects("ajax")
 			.withExactArgs(sServiceUrl + "SalesOrderList('0500000676')", sinon.match.object)
@@ -1575,7 +1577,7 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.test("sendRequest: GET returns '204 No Content'", function (assert) {
-		var oRequestor = _Requestor.create(sServiceUrl, oModelInterface);
+		var oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0");
 
 		this.mock(jQuery).expects("ajax")
 			.withExactArgs(sServiceUrl + "SalesOrderList('0500000676')", sinon.match.object)
@@ -1596,8 +1598,7 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("request: fail to convert payload, $direct", function (assert) {
 		var oError = {},
-			oRequestor = _Requestor.create(sServiceUrl, oModelInterface, undefined, undefined,
-				"2.0"),
+			oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "2.0"),
 			oResponsePayload = {};
 
 		this.mock(jQuery).expects("ajax")
@@ -1622,7 +1623,7 @@ sap.ui.define([
 	//*********************************************************************************************
 ["42", "1a"].forEach(function (sCount) {
 	QUnit.test("request: text/plain, $direct; $count=" + sCount, function (assert) {
-		var oRequestor = _Requestor.create(sServiceUrl, oModelInterface),
+		var oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0"),
 			oResponse = {
 				body : sCount,
 				messages : "~messages~",
@@ -1657,7 +1658,7 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("request: sOriginalPath, $direct", function () {
 		var sOriginalPath = "TEAM('0')/TEAM_2_EMPLOYEES",
-			oRequestor = _Requestor.create("/", oModelInterface);
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 
 		this.mock(oRequestor).expects("sendRequest")
 			.withExactArgs("POST", "EMPLOYEES", sinon.match.object, sinon.match.string,
@@ -1673,7 +1674,7 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.test("request: 'R#V#C', $direct", async function (assert) {
-		const oRequestor = _Requestor.create("/", oModelInterface);
+		const oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 		const oGroupLock = this.createGroupLock("$direct");
 		this.mock(oRequestor).expects("convertResourcePath").withExactArgs("EMPLOYEES")
 			.returns("converted/EMPLOYEES");
@@ -1718,7 +1719,7 @@ sap.ui.define([
 			});
 		}
 
-		const oRequestor = _Requestor.create("/", oModelInterface);
+		const oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 		const aRequests = [["~unrealistic~"], ["~side-effects~"]];
 		aRequests[0].iSerialNumber = 0;
 		aRequests[1].iSerialNumber = 10;
@@ -1777,7 +1778,7 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("request: sOriginalPath, $batch", function () {
 		var sOriginalPath = "TEAM('0')/TEAM_2_EMPLOYEES",
-			oRequestor = _Requestor.create("/", oModelInterface),
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0"),
 			oResponse = {
 				headers : "~headers~",
 				status : 500
@@ -1803,7 +1804,7 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("request(...): batch group id and change sets", function () {
 		var oGroupLock,
-			oRequestor = _Requestor.create("/", oModelInterface);
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 
 		// Integrative test: use a real group lock because it depends on oRequestor.iSerialNumber
 		oRequestor.request("PATCH", "EntitySet1", oRequestor.lockGroup("groupId", {}),
@@ -1896,7 +1897,7 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("request(...): mQueryOptions, $batch", function () {
 		var mQueryOptions = {$select : ["foo"]},
-			oRequestor = _Requestor.create("/", oModelInterface);
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 
 		oRequestor.request("GET", "EntitySet", this.createGroupLock("groupId"),
 			undefined, undefined, undefined, undefined, undefined, undefined, false, mQueryOptions);
@@ -1916,7 +1917,7 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("request(...): mQueryOptions, $direct", function () {
 		var mQueryOptions = {},
-			oRequestor = _Requestor.create("/", oModelInterface);
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 
 		this.mock(oRequestor).expects("addQueryString")
 			.withExactArgs("EntitySet('42')?foo=bar", "/EntitySet", sinon.match.same(mQueryOptions))
@@ -1936,7 +1937,7 @@ sap.ui.define([
 		var oBatchError = new Error("Service Unavailable"),
 			mQueryOptions = {$select : ["foo"]},
 			fnReporter = sinon.spy(),
-			oRequestor = _Requestor.create("/", oModelInterface);
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 
 		this.mock(oRequestor.oModelInterface).expects("getReporter").withExactArgs()
 			.returns(fnReporter);
@@ -1980,7 +1981,7 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("request(...): throw error if $single queue not empty", function (assert) {
 		var mQueryOptions = {$select : ["foo"]},
-			oRequestor = _Requestor.create("/", oModelInterface);
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 
 		oRequestor.mBatchQueue["$single"] = [];
 
@@ -1999,7 +2000,7 @@ sap.ui.define([
 	QUnit.test("processBatch: fail, unsupported OData service version", function (assert) {
 		var oError = {},
 			oGetProductsPromise,
-			oRequestor = _Requestor.create("/Service/", oModelInterface),
+			oRequestor = _Requestor.create("/Service/", oModelInterface, {}, {}, "4.0"),
 			oResponse = {
 				headers : {
 					"Content-Length" : "42",
@@ -2052,7 +2053,7 @@ sap.ui.define([
 					method : "HEAD"
 				},
 				oRequestor = _Requestor.create("/Service/", oModelInterface, mHeaders,
-					{"sap-client" : "123"}, /*sODataVersion*/undefined, bWithCredentials),
+					{"sap-client" : "123"}, /*sODataVersion*/"4.0", bWithCredentials),
 				oTokenRequiredResponse = {};
 
 			if (sOldSecurityToken) {
@@ -2156,7 +2157,7 @@ sap.ui.define([
 		var mHeaders = {"X-CSRF-Token" : "old"},
 			mRequestHeaders = {},
 			oRequestor = _Requestor.create("/Service/", oModelInterface, mHeaders,
-				{"sap-client" : "123"});
+				{"sap-client" : "123"}, "4.0");
 
 		this.mock(_Helper).expects("parseRawHeaders").twice()
 			.withExactArgs("~getAllResponseHeaders~").returns("~mHeaders~");
@@ -2237,7 +2238,8 @@ sap.ui.define([
 			.withExactArgs(sinon.match.same(oFixture.headers));
 
 		// code under test
-		oRequestor = _Requestor.create("/Service/", oModelInterface, {"Accept-Language" : "en"});
+		oRequestor = _Requestor.create("/Service/", oModelInterface, {"Accept-Language" : "en"},
+			{}, "4.0");
 
 		assert.notStrictEqual(oRequestor.oSecurityTokenPromise, null);
 
@@ -2265,7 +2267,7 @@ sap.ui.define([
 				+ securityTokenHandler, "foo", sClassName);
 
 		// code under test
-		oRequestor = _Requestor.create();
+		oRequestor = _Requestor.create("n/a", null, {}, {}, "4.0");
 
 		return oRequestor.oSecurityTokenPromise.then(function () {
 			assert.notOk(true);
@@ -2297,7 +2299,7 @@ sap.ui.define([
 				+ securityTokenHandler, oError, sClassName);
 
 		// code under test
-		oRequestor = _Requestor.create();
+		oRequestor = _Requestor.create("n/a", null, {}, {}, "4.0");
 
 		return oRequestor.oSecurityTokenPromise.then(function () {
 			assert.notOk(true);
@@ -2309,7 +2311,7 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.test("processBatch(...): with empty group", function (assert) {
-		var oRequestor = _Requestor.create("/Service/", oModelInterface),
+		var oRequestor = _Requestor.create("/Service/", oModelInterface, {}, {}, "4.0"),
 			that = this;
 
 		this.mock(oRequestor).expects("mergeGetRequests").never();
@@ -2353,7 +2355,7 @@ sap.ui.define([
 			oJSONMock = this.mock(JSON),
 			aPromises = [],
 			oRequestor = _Requestor.create("/Service/", oModelInterface,
-				{"Accept-Language" : "ab-CD"}),
+				{"Accept-Language" : "ab-CD"}, {}, "4.0"),
 			aResults = [{foo1 : "bar1"}, {foo2 : "bar2"}, {}, {foo3 : "bar3"}],
 			bWaitingIsOver,
 			fnSubmit = () => {
@@ -2615,7 +2617,7 @@ sap.ui.define([
 				sinon.match({method : "GET", url : "Products"})
 			],
 			oPromise,
-			oRequestor = _Requestor.create("/", oModelInterface),
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0"),
 			oResponse = createResponse({});
 
 		oRequestor.request("GET", "Products", this.createGroupLock());
@@ -2689,7 +2691,7 @@ sap.ui.define([
 			fnMergePatch7 = this.stub(),
 			fnMergePatch8 = this.stub(),
 			aPromises = [],
-			oRequestor = _Requestor.create("/", oModelInterface),
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0"),
 			fnSubmit0 = this.spy(),
 			fnSubmit1 = this.spy(),
 			fnSubmit2 = this.spy(),
@@ -2848,7 +2850,7 @@ sap.ui.define([
 					$submit : undefined
 				}],
 				oGetProductsPromise,
-				oRequestor = _Requestor.create("/Service/", oModelInterface, undefined, undefined,
+				oRequestor = _Requestor.create("/Service/", oModelInterface, {}, {},
 					oFixture.sODataVersion);
 
 			this.mock(oRequestor).expects("doConvertResponse")
@@ -2880,8 +2882,7 @@ sap.ui.define([
 		var oBody = {d : {foo : "bar"}},
 			oError = {},
 			oGetProductsPromise,
-			oRequestor = _Requestor.create("/Service/", oModelInterface, undefined, undefined,
-				"2.0"),
+			oRequestor = _Requestor.create("/Service/", oModelInterface, {}, {}, "2.0"),
 			oResponse = createResponse(oBody);
 
 		this.mock(oRequestor).expects("doConvertResponse")
@@ -2908,7 +2909,7 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("processBatch: report unbound messages", function () {
 		var mHeaders = {"SAP-Messages" : {}},
-			oRequestor = _Requestor.create("/Service/", oModelInterface),
+			oRequestor = _Requestor.create("/Service/", oModelInterface, {}, {}, "4.0"),
 			oRequestPromise = oRequestor.request("GET", "Products(42)", this.createGroupLock(), {},
 				undefined, undefined, undefined, undefined, "original/resource/path");
 
@@ -2930,7 +2931,7 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("processBatch: support ETag header", function (assert) {
 		var mHeaders = {"SAP-Messages" : {}, ETag : "ETag"},
-			oRequestor = _Requestor.create("/Service/", oModelInterface),
+			oRequestor = _Requestor.create("/Service/", oModelInterface, {}, {}, "4.0"),
 			oRequestPromise = oRequestor.request("PATCH", "Products(42)", this.createGroupLock());
 
 		this.mock(oRequestor).expects("sendBatch") // arguments don't matter
@@ -2953,7 +2954,7 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("processBatch: missing ETag header", function (assert) {
 		var mHeaders = {"SAP-Messages" : {}},
-			oRequestor = _Requestor.create("/Service/", oModelInterface),
+			oRequestor = _Requestor.create("/Service/", oModelInterface, {}, {}, "4.0"),
 			oRequestPromise = oRequestor.request("DELETE", "Products(42)", this.createGroupLock());
 
 		this.mock(oRequestor).expects("sendBatch") // arguments don't matter
@@ -2977,7 +2978,7 @@ sap.ui.define([
 	QUnit.test("processBatch(...): $batch failure", function (assert) {
 		var oBatchError = new Error("$batch request failed"),
 			aPromises = [],
-			oRequestor = _Requestor.create("/", oModelInterface),
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0"),
 			aRequests,
 			bWaitingIsOver;
 
@@ -3058,7 +3059,7 @@ sap.ui.define([
 				statusText : "Not found"
 			}],
 			aPromises = [],
-			oRequestor = _Requestor.create("/", oModelInterface);
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 
 		function unexpected() {
 			assert.ok(false);
@@ -3119,7 +3120,7 @@ sap.ui.define([
 				statusText : "Not found"
 			}],
 			aPromises = [],
-			oRequestor = _Requestor.create("/", oModelInterface);
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 
 		function unexpected() {
 			assert.ok(false);
@@ -3189,7 +3190,7 @@ sap.ui.define([
 			fnMergePatch1 = this.stub(),
 			oProduct = {},
 			aPromises = [],
-			oRequestor = _Requestor.create("/", oModelInterface),
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0"),
 			aRequests;
 
 		fnMergePatch1.returns("~oOldData~");
@@ -3282,8 +3283,8 @@ sap.ui.define([
 			},
 			aExpectedResponses = [],
 			sGroupId = "groupId",
-			oRequestor = _Requestor.create("/Service/", oModelInterface, undefined,
-				{"sap-client" : "123"}),
+			oRequestor = _Requestor.create("/Service/", oModelInterface, {},
+				{"sap-client" : "123"}, "4.0"),
 			oResult = "abc",
 			sResponseContentType = "multipart/mixed; boundary=foo";
 
@@ -3336,7 +3337,7 @@ sap.ui.define([
 		var aBatchRequests = [],
 			sGroupId = "foo",
 			oOptimisticBatchResult = {},
-			oRequestor = _Requestor.create("/Service/", oModelInterface);
+			oRequestor = _Requestor.create("/Service/", oModelInterface, {}, {}, "4.0");
 
 		this.mock(oRequestor).expects("getGroupSubmitMode")
 			.withExactArgs(sGroupId)
@@ -3366,7 +3367,7 @@ sap.ui.define([
 			oJQueryMock = this.mock(jQuery),
 			aPromises = [],
 			sServiceUrl0 = "/Service/",
-			oRequestor = _Requestor.create(sServiceUrl0, oModelInterface),
+			oRequestor = _Requestor.create(sServiceUrl0, oModelInterface, {}, {}, "4.0"),
 			bWaitingIsOver;
 
 		// expects a jQuery.ajax for a batch request and returns a mock for it to be resolved later
@@ -3474,7 +3475,7 @@ sap.ui.define([
 	//*****************************************************************************************
 	QUnit.test("batchRequestSent/-ResponseReceived, waitFor... #1", function (assert) {
 		//********** Part 1: no running change requests
-		var oRequestor = _Requestor.create("/Service/");
+		var oRequestor = _Requestor.create("/Service/", null, {}, {}, "4.0");
 
 		assert.deepEqual(oRequestor.mRunningChangeRequests, {});
 
@@ -3495,7 +3496,7 @@ sap.ui.define([
 	//*****************************************************************************************
 	QUnit.test("batchRequestSent/-ResponseReceived, waitFor... #2", function (assert) {
 		//********** Part 2: one running change request
-		var oRequestor = _Requestor.create("/Service/"),
+		var oRequestor = _Requestor.create("/Service/", null, {}, {}, "4.0"),
 			aRequests = [],
 			oSyncPromise,
 			bWaitingIsOver;
@@ -3527,7 +3528,7 @@ sap.ui.define([
 	QUnit.test("batchRequestSent/-ResponseReceived, waitFor... #3", function (assert) {
 		//********** Part 3: two running change requests for the same group
 		var oFinalPromise,
-			oRequestor = _Requestor.create("/Service/"),
+			oRequestor = _Requestor.create("/Service/", null, {}, {}, "4.0"),
 			aRequests0 = [],
 			aRequests1 = [],
 			oSyncPromise0,
@@ -3601,7 +3602,7 @@ sap.ui.define([
 				isLocked : mustBeMocked,
 				isModifying : mustBeMocked
 			},
-			oRequestor = _Requestor.create("/Service/"),
+			oRequestor = _Requestor.create("/Service/", null, {}, {}, "4.0"),
 			that = this;
 
 		// Adds a group lock with corresponding mocks to oRequestor.aLockedGroupLocks. With these
@@ -3678,8 +3679,8 @@ sap.ui.define([
 			oProduct0 = {},
 			oPromise,
 			bResetInactive = {},
-			oRequestor = _Requestor.create("/Service/", oModelInterface, undefined,
-				{"sap-client" : "123"}),
+			oRequestor = _Requestor.create("/Service/", oModelInterface, {},
+				{"sap-client" : "123"}, "4.0"),
 			oRequestorMock = this.mock(oRequestor);
 
 		function unexpected() {
@@ -3768,8 +3769,8 @@ sap.ui.define([
 		var fnCancel = function () {},
 			oProduct0 = {},
 			oPromise,
-			oRequestor = _Requestor.create("/Service/", oModelInterface, undefined,
-				{"sap-client" : "123"});
+			oRequestor = _Requestor.create("/Service/", oModelInterface, {},
+				{"sap-client" : "123"}, "4.0");
 
 		function unexpected() {
 			assert.ok(false);
@@ -3801,12 +3802,13 @@ sap.ui.define([
 
 	//*****************************************************************************************
 	QUnit.test("cancelChanges: unused group", function () {
-		_Requestor.create("/Service/", oModelInterface).cancelChanges("unusedGroupId");
+		_Requestor.create("/Service/", oModelInterface, {}, {}, "4.0")
+			.cancelChanges("unusedGroupId");
 	});
 
 	//*****************************************************************************************
 	QUnit.test("cancelGroupLocks", function () {
-		var oRequestor = _Requestor.create("/Service/", oModelInterface),
+		var oRequestor = _Requestor.create("/Service/", oModelInterface, {}, {}, "4.0"),
 			oGroupLock0 = oRequestor.lockGroup("group0", {/*oOwner*/}, true), // not modifying
 			oGroupLock1 = oRequestor.lockGroup("group1", {/*oOwner*/}, true, true),
 			oGroupLock2 = oRequestor.lockGroup("group2", {/*oOwner*/}, true, true);
@@ -3823,7 +3825,7 @@ sap.ui.define([
 
 	//*****************************************************************************************
 	QUnit.test("cancelGroupLocks with group ID", function () {
-		var oRequestor = _Requestor.create("/Service/", oModelInterface),
+		var oRequestor = _Requestor.create("/Service/", oModelInterface, {}, {}, "4.0"),
 			oGroupLock0 = oRequestor.lockGroup("group0", {/*oOwner*/}, true, true),
 			oGroupLock1 = oRequestor.lockGroup("group1", {/*oOwner*/}, true, true),
 			oGroupLock2 = oRequestor.lockGroup("group1", {/*oOwner*/}, true), // not modifying
@@ -3842,7 +3844,7 @@ sap.ui.define([
 	//*****************************************************************************************
 	QUnit.test("hasChanges: correct for multiple change sets in one group", function (assert) {
 		var oEntity = {},
-			oRequestor = _Requestor.create("/Service/", oModelInterface);
+			oRequestor = _Requestor.create("/Service/", oModelInterface, {}, {}, "4.0");
 
 		oRequestor.request("PATCH", "Products('0')", this.createGroupLock(),
 			{"If-Match" : {}}, {Name : "foo"});
@@ -3858,7 +3860,7 @@ sap.ui.define([
 	QUnit.test("hasChanges: correct for multiple change sets in one group w/o a match",
 			function (assert) {
 		var oEntity = {},
-			oRequestor = _Requestor.create("/Service/", oModelInterface);
+			oRequestor = _Requestor.create("/Service/", oModelInterface, {}, {}, "4.0");
 
 		oRequestor.request("PATCH", "Products('0')", this.createGroupLock(),
 			{"If-Match" : {}}, {Name : "foo"});
@@ -3874,7 +3876,7 @@ sap.ui.define([
 	//*****************************************************************************************
 	QUnit.test("hasPendingChanges: '$inactive.*' groups are no pending changes", function (assert) {
 		var fnCancel = function () { throw new Error(); },
-			oRequestor = _Requestor.create("/Service/", oModelInterface);
+			oRequestor = _Requestor.create("/Service/", oModelInterface, {}, {}, "4.0");
 
 		// must not count as pending change
 		oRequestor.request("POST", "ActionImport('42')", this.createGroupLock("$inactive.foo"),
@@ -3889,7 +3891,7 @@ sap.ui.define([
 	QUnit.test("hasPendingChanges: correct for multiple change sets in one group",
 			function (assert) {
 		var fnCancel = function () { throw new Error(); },
-			oRequestor = _Requestor.create("/Service/", oModelInterface);
+			oRequestor = _Requestor.create("/Service/", oModelInterface, {}, {}, "4.0");
 
 		oRequestor.request("DELETE", "Products('42')", this.createGroupLock());
 		oRequestor.addChangeSet("groupId");
@@ -3906,7 +3908,7 @@ sap.ui.define([
 	QUnit.test("removeChangeRequest", function (assert) {
 		var fnCancel = this.spy(),
 			oPromise,
-			oRequestor = _Requestor.create("/Service/", oModelInterface),
+			oRequestor = _Requestor.create("/Service/", oModelInterface, {}, {}, "4.0"),
 			oTestPromise;
 
 		oPromise = oRequestor.request("PATCH", "Products('0')", this.createGroupLock(),
@@ -3942,7 +3944,7 @@ sap.ui.define([
 			oProduct0 = {},
 			oPromise,
 			aPromises,
-			oRequestor = _Requestor.create("/Service/", oModelInterface);
+			oRequestor = _Requestor.create("/Service/", oModelInterface, {}, {}, "4.0");
 
 		function unexpected() {
 			assert.ok(false);
@@ -3981,7 +3983,7 @@ sap.ui.define([
 	//*****************************************************************************************
 	QUnit.test("removeChangeRequest after processBatch", function (assert) {
 		var oPromise,
-			oRequestor = _Requestor.create("/Service/", oModelInterface);
+			oRequestor = _Requestor.create("/Service/", oModelInterface, {}, {}, "4.0");
 
 		oPromise = oRequestor.request("PATCH", "Products('0')", this.createGroupLock(),
 			{"If-Match" : {/* oEntity */}}, {Name : "bar"});
@@ -4013,7 +4015,7 @@ sap.ui.define([
 					body : {Name : "bar"}
 				})
 			],
-			oRequestor = _Requestor.create("/Service/", oModelInterface),
+			oRequestor = _Requestor.create("/Service/", oModelInterface, {}, {}, "4.0"),
 			oTestPromise;
 
 		this.spy(oRequestor, "cancelChangesByFilter");
@@ -4055,7 +4057,7 @@ sap.ui.define([
 		var oBody = {},
 			fnCancel = this.spy(),
 			oEntity = {},
-			oRequestor = _Requestor.create("/Service/", oModelInterface),
+			oRequestor = _Requestor.create("/Service/", oModelInterface, {}, {}, "4.0"),
 			oTestPromise;
 
 		oTestPromise = oRequestor.request("POST", "Products", this.createGroupLock(), {}, oBody,
@@ -4081,7 +4083,7 @@ sap.ui.define([
 	//*****************************************************************************************
 	QUnit.test("removePost after processBatch", function (assert) {
 		var oPayload = {},
-			oRequestor = _Requestor.create("/Service/", oModelInterface);
+			oRequestor = _Requestor.create("/Service/", oModelInterface, {}, {}, "4.0");
 
 		oRequestor.request("POST", "Products", this.createGroupLock(), {}, oPayload);
 
@@ -4101,7 +4103,7 @@ sap.ui.define([
 
 	//*****************************************************************************************
 	QUnit.test("isChangeSetOptional", function (assert) {
-		var oRequestor = _Requestor.create("/");
+		var oRequestor = _Requestor.create("/", null, {}, {}, "4.0");
 
 		assert.strictEqual(oRequestor.isChangeSetOptional(), true);
 	});
@@ -4115,7 +4117,7 @@ sap.ui.define([
 					body : {Name : "bar"}
 				})
 			],
-			oRequestor = _Requestor.create("/Service/", oModelInterface);
+			oRequestor = _Requestor.create("/Service/", oModelInterface, {}, {}, "4.0");
 
 		oRequestor.request("POST", "Products", this.createGroupLock(), {}, {Name : "bar"});
 		this.mock(oRequestor).expects("isChangeSetOptional").withExactArgs().returns(true);
@@ -4133,7 +4135,7 @@ sap.ui.define([
 		var oBody1 = {},
 			oBody2 = {},
 			mHeaders = {},
-			oRequestor = _Requestor.create("/Service/", oModelInterface),
+			oRequestor = _Requestor.create("/Service/", oModelInterface, {}, {}, "4.0"),
 			oRequestorMock = this.mock(oRequestor);
 
 		oRequestor.request("POST", "Employees", this.createGroupLock("$parked.$auto"),
@@ -4182,7 +4184,7 @@ sap.ui.define([
 		var oBody1 = {key : "value 1"},
 			oBody2 = {key : "value 2"},
 			oEntity = {},
-			oRequestor = _Requestor.create("/Service/", oModelInterface),
+			oRequestor = _Requestor.create("/Service/", oModelInterface, {}, {}, "4.0"),
 			oRequestorMock = this.mock(oRequestor),
 			oYetAnotherEntity = {};
 
@@ -4250,7 +4252,7 @@ sap.ui.define([
 		var oBody1 = {key : "value 1"},
 			oBody2 = {key : "value 2"},
 			oEntity = {},
-			oRequestor = _Requestor.create("/Service/", oModelInterface),
+			oRequestor = _Requestor.create("/Service/", oModelInterface, {}, {}, "4.0"),
 			oRequestorMock = this.mock(oRequestor),
 			oYetAnotherEntity = {};
 
@@ -4289,7 +4291,7 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("request: $cached as groupId fails synchronously", function (assert) {
 		var oGroupLock = {getGroupId : mustBeMocked},
-			oRequestor = _Requestor.create("/");
+			oRequestor = _Requestor.create("/", null, {}, {}, "4.0");
 
 		this.mock(oGroupLock).expects("getGroupId").withExactArgs().returns("$cached");
 		assert.throws(function () {
@@ -4310,7 +4312,7 @@ sap.ui.define([
 				getGroupId : mustBeMocked,
 				isCanceled : mustBeMocked
 			},
-			oRequestor = _Requestor.create("/");
+			oRequestor = _Requestor.create("/", null, {}, {}, "4.0");
 
 		this.mock(oGroupLock).expects("getGroupId").withExactArgs().returns("$auto");
 		this.mock(oGroupLock).expects("isCanceled").withExactArgs().returns(true);
@@ -4332,7 +4334,7 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("doConvertResponse (V4)", function (assert) {
 		var oPayload = {},
-			oRequestor = _Requestor.create("/");
+			oRequestor = _Requestor.create("/", null, {}, {}, "4.0");
 
 		// code under test
 		assert.strictEqual(oRequestor.doConvertResponse(oPayload), oPayload);
@@ -4341,7 +4343,7 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("convertResourcePath (V4)", function (assert) {
 		var sResourcePath = {},
-			oRequestor = _Requestor.create("/");
+			oRequestor = _Requestor.create("/", null, {}, {}, "4.0");
 
 		// code under test
 		assert.strictEqual(oRequestor.convertResourcePath(sResourcePath), sResourcePath);
@@ -4350,7 +4352,7 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("convertQueryOptions", function (assert) {
 		var oExpand = {},
-			oRequestor = _Requestor.create("/");
+			oRequestor = _Requestor.create("/", null, {}, {}, "4.0");
 
 		this.mock(oRequestor).expects("convertExpand")
 			.withExactArgs(sinon.match.same(oExpand), undefined).returns("expand");
@@ -4410,7 +4412,7 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("convertExpandOptions", function (assert) {
 		var oExpand = {},
-			oRequestor = _Requestor.create("/~/");
+			oRequestor = _Requestor.create("/~/", null, {}, {}, "4.0");
 
 		this.mock(oRequestor).expects("convertExpand")
 			.withExactArgs(sinon.match.same(oExpand), undefined).returns("expand");
@@ -4426,7 +4428,7 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("convertExpand", function (assert) {
 		var oOptions = {},
-			oRequestor = _Requestor.create("/~/");
+			oRequestor = _Requestor.create("/~/", null, {}, {}, "4.0");
 
 		["Address", null].forEach(function (vValue) {
 			assert.throws(function () {
@@ -4450,7 +4452,7 @@ sap.ui.define([
 			var oConvertedQueryParams = {},
 				sMetaPath = "/Foo",
 				oQueryParams = {},
-				oRequestor = _Requestor.create("/~/"),
+				oRequestor = _Requestor.create("/~/", null, {}, {}, "4.0"),
 				oRequestorMock = this.mock(oRequestor);
 
 			oRequestorMock.expects("convertQueryOptions")
@@ -4532,7 +4534,7 @@ sap.ui.define([
 			+ "&sap-client=003"
 		}].forEach(function (oFixture) {
 			var sJSON = JSON.stringify(oFixture.o),
-				oRequestor = _Requestor.create("/~/");
+				oRequestor = _Requestor.create("/~/", null, {}, {}, "4.0");
 
 			assert.strictEqual(
 				oRequestor.buildQueryString("/Foo", oFixture.o, undefined, true), "?" + oFixture.s,
@@ -4547,7 +4549,7 @@ sap.ui.define([
 			oProperty = {
 				$Type : "Edm.Foo"
 			},
-			oRequestor = _Requestor.create("/"),
+			oRequestor = _Requestor.create("/", null, {}, {}, "4.0"),
 			sResult,
 			vValue = {};
 
@@ -4563,14 +4565,14 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.test("ready()", function (assert) {
-		var oRequestor = _Requestor.create("/");
+		var oRequestor = _Requestor.create("/", null, {}, {}, "4.0");
 
 		assert.strictEqual(oRequestor.ready().getResult(), undefined);
 	});
 
 	//*********************************************************************************************
 	QUnit.test("fetchType", function (assert) {
-		var oRequestor = _Requestor.create("/", oModelInterface),
+		var oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0"),
 			oRequestorMock = this.mock(oRequestor),
 			mTypeForMetaPath = {},
 			oType = {};
@@ -4593,7 +4595,7 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.test("fetchType: no type", function (assert) {
-		var oRequestor = _Requestor.create("/", oModelInterface),
+		var oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0"),
 			mTypeForMetaPath = {};
 
 		this.mock(oRequestor).expects("fetchTypeForPath")
@@ -4609,7 +4611,7 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.test("fetchType: message annotation", function (assert) {
-		var oRequestor = _Requestor.create("/", oModelInterface),
+		var oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0"),
 			oMessageAnnotation = {},
 			mTypeForMetaPath = {},
 			oType = {};
@@ -4631,7 +4633,7 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.test("fetchType: complex key", function (assert) {
-		var oRequestor = _Requestor.create("/", oModelInterface),
+		var oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0"),
 			oRequestorMock = this.mock(oRequestor),
 			bKey1Done = false,
 			bKey2Done = false,
@@ -4677,7 +4679,7 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("fetchTypeForPath", function (assert) {
 		var oPromise = {},
-			oRequestor = _Requestor.create("/", oModelInterface);
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 
 		this.mock(oRequestor.oModelInterface).expects("fetchMetadata")
 			.withExactArgs("/EMPLOYEES/EMPLOYEE_2_TEAM/").returns(oPromise);
@@ -4695,7 +4697,7 @@ sap.ui.define([
 		mHeaders : {}
 	}].forEach(function (oFixture, i) {
 		QUnit.test("doCheckVersionHeader, success cases - " + i, function (assert) {
-			var oRequestor = _Requestor.create("/"),
+			var oRequestor = _Requestor.create("/", null, {}, {}, "4.0"),
 				fnGetHeader = this.spy(function (sHeaderKey) {
 					return oFixture.mHeaders[sHeaderKey];
 				});
@@ -4778,7 +4780,7 @@ sap.ui.define([
 				}]
 			},
 			mParameters = {ID : "1", Foo : 42, "n/a" : NaN},
-			oRequestor = _Requestor.create("/");
+			oRequestor = _Requestor.create("/", null, {}, {}, "4.0");
 
 		// code under test
 		assert.strictEqual(
@@ -4813,7 +4815,7 @@ sap.ui.define([
 					$isCollection : true
 				}]
 			},
-			oRequestor = _Requestor.create("/"),
+			oRequestor = _Requestor.create("/", null, {}, {}, "4.0"),
 			oRequestorMock = this.mock(oRequestor);
 
 		oRequestorMock.expects("formatPropertyAsLiteral")
@@ -4831,7 +4833,7 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("getPathAndAddQueryOptions: Function w/o parameters", function (assert) {
 		var oOperationMetadata = {$kind : "Function"},
-			oRequestor = _Requestor.create("/");
+			oRequestor = _Requestor.create("/", null, {}, {}, "4.0");
 
 		this.mock(oRequestor).expects("formatPropertyAsLiteral").never();
 
@@ -4847,7 +4849,7 @@ sap.ui.define([
 				$kind : "Function",
 				$Parameter : [{$Name : "foo", $isCollection : true}]
 			},
-			oRequestor = _Requestor.create("/");
+			oRequestor = _Requestor.create("/", null, {}, {}, "4.0");
 
 		this.mock(oRequestor).expects("formatPropertyAsLiteral").never();
 
@@ -4861,7 +4863,7 @@ sap.ui.define([
 
 	//*****************************************************************************************
 	QUnit.test("isActionBodyOptional", function (assert) {
-		var oRequestor = _Requestor.create("/");
+		var oRequestor = _Requestor.create("/", null, {}, {}, "4.0");
 
 		assert.strictEqual(oRequestor.isActionBodyOptional(), false);
 	});
@@ -4878,7 +4880,7 @@ sap.ui.define([
 				type : "Warning"
 			}],
 			sMessages = JSON.stringify(aMessages),
-			oRequestor = _Requestor.create("/sServiceUrl/", oModelInterface),
+			oRequestor = _Requestor.create("/sServiceUrl/", oModelInterface, {}, {}, "4.0"),
 			sResourcePath = "Product(42)/to_bar";
 
 		oHelperMock.expects("clone").withExactArgs(aMessages[0]).returns("~clone0~");
@@ -4904,7 +4906,7 @@ sap.ui.define([
 
 	//*****************************************************************************************
 	QUnit.test("reportHeaderMessages without messages", function () {
-		var oRequestor = _Requestor.create("/", oModelInterface);
+		var oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 
 		this.mock(_Helper).expects("clone").never();
 		this.mock(_Helper).expects("makeAbsolute").never();
@@ -4916,7 +4918,7 @@ sap.ui.define([
 
 	//*****************************************************************************************
 	QUnit.test("reportHeaderMessages for 'R#V#C'", function () {
-		const oRequestor = _Requestor.create("/", oModelInterface);
+		const oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 		this.mock(_Helper).expects("clone").never();
 		this.mock(_Helper).expects("makeAbsolute").never();
 		this.mock(oModelInterface).expects("reportTransitionMessages").never();
@@ -4931,7 +4933,7 @@ sap.ui.define([
 
 	//*****************************************************************************************
 	QUnit.test("getModelInterface", function (assert) {
-		var oRequestor = _Requestor.create("/", oModelInterface);
+		var oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 
 		// code under test
 		assert.strictEqual(oRequestor.getModelInterface(), oModelInterface);
@@ -4940,7 +4942,7 @@ sap.ui.define([
 	//*****************************************************************************************
 	QUnit.test("getOrCreateBatchQueue", function (assert) {
 		var aBatchQueue,
-			oRequestor = _Requestor.create("/", oModelInterface);
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 
 		function checkBatchQueue(oBatchQueue0, sGroupId) {
 			assert.strictEqual(oRequestor.mBatchQueue[sGroupId], oBatchQueue0);
@@ -4974,7 +4976,7 @@ sap.ui.define([
 
 	//*****************************************************************************************
 	QUnit.test("getSerialNumber", function (assert) {
-		var oRequestor = _Requestor.create("/", oModelInterface);
+		var oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 
 		// code under test
 		assert.strictEqual(oRequestor.getSerialNumber(), 1);
@@ -4985,7 +4987,7 @@ sap.ui.define([
 	QUnit.test("addChangeSet", function (assert) {
 		var aChangeSet0 = [],
 			oGetRequest = {},
-			oRequestor = _Requestor.create("/", oModelInterface),
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0"),
 			aRequests = [aChangeSet0, oGetRequest];
 
 		aRequests.iChangeSet = 0;
@@ -5103,7 +5105,7 @@ sap.ui.define([
 		title : "multiple change sets"
 	}].forEach(function (oFixture) {
 		QUnit.test("cleanUpChangeSets, " + oFixture.title, function (assert) {
-			var oRequestor = _Requestor.create("/", oModelInterface),
+			var oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0"),
 				that = this;
 
 			function checkRequests(aActualRequests, aExpectedRequests) {
@@ -5146,7 +5148,7 @@ sap.ui.define([
 		var oEntity1 = {"@odata.etag" : "etag1"},
 			oEntity2 = {},
 			oEntity3 = {"@odata.etag" : "etag3"},
-			oRequestor = _Requestor.create("/", oModelInterface),
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0"),
 			aRequests = [[
 					{method : "PATCH", url : "Products('1')", body : {Name : "p1"},
 						headers : {"If-Match" : oEntity1}},
@@ -5174,7 +5176,7 @@ sap.ui.define([
 	//*****************************************************************************************
 [false, true].forEach(function (bTimeout) {
 	QUnit.test("clearSessionContext: bTimeout=" + bTimeout, function (assert) {
-		var oRequestor = _Requestor.create(sServiceUrl, oModelInterface),
+		var oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0"),
 			iSessionTimer = {/*a number*/};
 
 		oRequestor.mHeaders["SAP-ContextId"] = "context";
@@ -5196,7 +5198,7 @@ sap.ui.define([
 
 	//*****************************************************************************************
 	QUnit.test("copySecurityTokenPromise: no oSecurityTokenPromise", function (assert) {
-		const oRequestor = _Requestor.create(sServiceUrl, oModelInterface);
+		const oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0");
 		assert.notOk("X-CSRF-Token" in oRequestor.mHeaders);
 		assert.strictEqual(oRequestor.oSecurityTokenPromise, null);
 
@@ -5209,7 +5211,7 @@ sap.ui.define([
 
 	//*****************************************************************************************
 	QUnit.test("copySecurityTokenPromise: copies", async function (assert) {
-		const oRequestor = _Requestor.create(sServiceUrl, oModelInterface);
+		const oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0");
 		const oOtherRequestor = {
 			oSecurityTokenPromise : Promise.resolve().then(() => {
 				oOtherRequestor.mHeaders = {
@@ -5231,7 +5233,7 @@ sap.ui.define([
 
 	//*****************************************************************************************
 	QUnit.test("copySecurityTokenPromise: nothing to copy", async function (assert) {
-		const oRequestor = _Requestor.create(sServiceUrl, oModelInterface);
+		const oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0");
 		const oOtherRequestor = {
 			mHeaders : {},
 			oSecurityTokenPromise : Promise.resolve()
@@ -5250,7 +5252,7 @@ sap.ui.define([
 
 	//*****************************************************************************************
 	QUnit.test("copySecurityTokenPromise: rejection", async function (assert) {
-		const oRequestor = _Requestor.create(sServiceUrl, oModelInterface);
+		const oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0");
 		const oSecurityTokenPromise = Promise.reject();
 		const oOtherRequestor = {
 			oSecurityTokenPromise : oSecurityTokenPromise
@@ -5269,7 +5271,7 @@ sap.ui.define([
 
 	//*****************************************************************************************
 	QUnit.test("setContinueOnError", function (assert) {
-		const oRequestor = _Requestor.create(sServiceUrl, oModelInterface);
+		const oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0");
 		const aRequests = [];
 		this.mock(oRequestor).expects("getOrCreateBatchQueue").withExactArgs("groupId")
 			.returns(aRequests);
@@ -5284,7 +5286,7 @@ sap.ui.define([
 
 	//*****************************************************************************************
 	QUnit.test("setContinueOnError: check fails", function (assert) {
-		const oRequestor = _Requestor.create(sServiceUrl, oModelInterface);
+		const oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0");
 		const aRequests = [];
 		this.mock(oRequestor).expects("getOrCreateBatchQueue").withExactArgs("groupId")
 			.returns(aRequests);
@@ -5303,7 +5305,7 @@ sap.ui.define([
 
 	//*****************************************************************************************
 	QUnit.test("setSessionContext: SAP-Http-Session-Timeout=null", function (assert) {
-		var oRequestor = _Requestor.create(sServiceUrl, oModelInterface);
+		var oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0");
 
 		this.mock(oRequestor).expects("clearSessionContext").withExactArgs();
 
@@ -5316,7 +5318,7 @@ sap.ui.define([
 
 	//*****************************************************************************************
 	QUnit.test("setSessionContext: SAP-Http-Session-Timeout=60", function (assert) {
-		var oRequestor = _Requestor.create(sServiceUrl, oModelInterface),
+		var oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0"),
 			iSessionTimer = {};
 
 		this.mock(oRequestor).expects("clearSessionContext").withExactArgs();
@@ -5334,7 +5336,7 @@ sap.ui.define([
 	//*****************************************************************************************
 	["59", "0", "-100", "", "FooBar42", "60.0", " "].forEach(function (sTimeout) {
 		QUnit.test("setSessionContext: unsupported header: " + sTimeout, function (assert) {
-			var oRequestor = _Requestor.create(sServiceUrl, oModelInterface);
+			var oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0");
 
 			this.mock(oRequestor).expects("clearSessionContext").withExactArgs();
 			this.oLogMock.expects("warning")
@@ -5351,7 +5353,7 @@ sap.ui.define([
 
 	//*****************************************************************************************
 	QUnit.test("setSessionContext: no SAP-ContextId", function () {
-		var oRequestor = _Requestor.create(sServiceUrl, oModelInterface);
+		var oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0");
 
 		this.mock(window).expects("setInterval").never();
 		this.mock(oRequestor).expects("clearSessionContext").withExactArgs();
@@ -5372,7 +5374,7 @@ sap.ui.define([
 			},
 			oExpectation,
 			oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {"sap-client" : "120"},
-				/*sODataVersion*/undefined, bWithCredentials);
+				"n/a", bWithCredentials);
 
 		if (bWithCredentials) {
 			oAjaxSettings.xhrFields = {withCredentials : true};
@@ -5398,7 +5400,7 @@ sap.ui.define([
 
 			return new Promise(function (resolve) {
 				var oExpectation,
-					oRequestor = _Requestor.create(sServiceUrl, oModelInterface);
+					oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0");
 
 				oExpectation = that.mock(window).expects("setInterval")
 					.withExactArgs(sinon.match.func, 115000);
@@ -5445,7 +5447,7 @@ sap.ui.define([
 	QUnit.test("setSessionContext: session termination", function () {
 		var oClock,
 			oExpectation,
-			oRequestor = _Requestor.create(sServiceUrl, oModelInterface);
+			oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0");
 
 		oClock = sinon.useFakeTimers();
 		try {
@@ -5471,7 +5473,7 @@ sap.ui.define([
 	QUnit.test("keep the session alive", function (assert) {
 		var oClock,
 			oJQueryMock = this.mock(jQuery),
-			oRequestor = _Requestor.create(sServiceUrl, oModelInterface),
+			oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0"),
 			sResourcePath = "Employees('1')/namespace.Prepare",
 			that = this;
 
@@ -5521,7 +5523,7 @@ sap.ui.define([
 
 	//*****************************************************************************************
 	QUnit.test("waitForBatchResponseReceived", function (assert) {
-		var oRequestor = _Requestor.create(sServiceUrl, oModelInterface),
+		var oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0"),
 			oSyncPromise;
 
 		oRequestor.mBatchQueue = {
@@ -5541,7 +5543,7 @@ sap.ui.define([
 	//*****************************************************************************************
 	QUnit.test("waitForRunningChangeRequests", function (assert) {
 		var oPromise,
-			oRequestor = _Requestor.create(sServiceUrl, oModelInterface),
+			oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0"),
 			aRequests = [];
 
 		assert.strictEqual(oRequestor.waitForRunningChangeRequests("groupId"),
@@ -5572,7 +5574,7 @@ sap.ui.define([
 			},
 			oGroupLock = {},
 			oPromise = {},
-			oRequestor = _Requestor.create(sServiceUrl, oModelInterface);
+			oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0");
 
 		this.mock(oRequestor).expects("getGroupSubmitMode")
 			.withExactArgs("direct").returns("Direct");
@@ -5594,7 +5596,7 @@ sap.ui.define([
 	//*****************************************************************************************
 	QUnit.test("addChangeToGroup: $batch", function (assert) {
 		var oChange = {},
-			oRequestor = _Requestor.create(sServiceUrl, oModelInterface),
+			oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0"),
 			aRequests = [[], [{}]];
 
 		aRequests.iChangeSet = 1;
@@ -5619,7 +5621,7 @@ sap.ui.define([
 		var oGroupLock,
 			aLockedGroupLocks = [],
 			oOwner = {},
-			oRequestor = _Requestor.create(sServiceUrl, oModelInterface);
+			oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0");
 
 		oRequestor.aLockedGroupLocks = aLockedGroupLocks;
 		this.mock(oRequestor).expects("getSerialNumber").returns(42);
@@ -5642,7 +5644,7 @@ sap.ui.define([
 		var fnCancel = {},
 			oGroupLock,
 			aLockedGroupLocks = [{}, {}],
-			oRequestor = _Requestor.create(sServiceUrl, oModelInterface),
+			oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0"),
 			oOwner = {};
 
 		oRequestor.aLockedGroupLocks = aLockedGroupLocks;
@@ -5671,7 +5673,7 @@ sap.ui.define([
 			oBazPromise,
 			oFooGroupLock,
 			oFooPromise,
-			oRequestor = _Requestor.create(sServiceUrl, oModelInterface),
+			oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0"),
 			oRequestorMock = this.mock(oRequestor),
 			that = this;
 
@@ -5737,7 +5739,7 @@ sap.ui.define([
 	//*********************************************************************************************
 	QUnit.test("submitBatch: delay $batch", function () {
 		var oPromise,
-			oRequestor = _Requestor.create(sServiceUrl, oModelInterface),
+			oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0"),
 			oRequestorMock = this.mock(oRequestor),
 			oSetTimeoutExpectation;
 
@@ -5765,7 +5767,7 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.test("checkHeaderNames", function (assert) {
-		var oRequestor = _Requestor.create(sServiceUrl, oModelInterface);
+		var oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0");
 
 		// code under test
 		oRequestor.checkHeaderNames({allowed : "123"});
@@ -5793,14 +5795,14 @@ sap.ui.define([
 		var sErrorMessage = "Unexpected open requests",
 			oGroupLockMock0,
 			oGroupLockMock1,
-			oRequestor = _Requestor.create(sServiceUrl, oModelInterface);
+			oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0");
 
 		oRequestor.mBatchQueue["groupId"] = []; // empty batch queue: no error
 
 		// code under test
 		oRequestor.checkForOpenRequests();
 
-		oRequestor = _Requestor.create(sServiceUrl, oModelInterface);
+		oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0");
 		oRequestor.mBatchQueue["groupId"] = [[]]; // cancelled change request: no error
 
 		// code under test
@@ -5820,7 +5822,7 @@ sap.ui.define([
 			oRequestor.checkForOpenRequests();
 		}, new Error(sErrorMessage));
 
-		oRequestor = _Requestor.create(sServiceUrl, oModelInterface);
+		oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0");
 		oRequestor.aLockedGroupLocks = [{isLocked : function () {}}, {isLocked : function () {}}];
 
 		oGroupLockMock0 = this.mock(oRequestor.aLockedGroupLocks[0]);
@@ -5848,7 +5850,7 @@ sap.ui.define([
 			oClone9 = {$expand : {np2 : null}},
 			oHelperMock = this.mock(_Helper),
 			aMergedRequests,
-			oRequestor = _Requestor.create(sServiceUrl, oModelInterface),
+			oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0"),
 			oRequestorMock = this.mock(oRequestor),
 			aRequests = [[
 				// change set
@@ -5998,7 +6000,7 @@ sap.ui.define([
 	QUnit.test("addQueryString", function (assert) {
 		var mConvertedQueryOptions = {},
 			mQueryOptions = {},
-			oRequestor = _Requestor.create(sServiceUrl, oModelInterface);
+			oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0");
 
 		this.mock(oRequestor).expects("convertQueryOptions").twice()
 			.withExactArgs("/meta/path", sinon.match.same(mQueryOptions), false, true)
@@ -6022,7 +6024,7 @@ sap.ui.define([
 	QUnit.test("addQueryString with placeholders, partial", function (assert) {
 		var mConvertedQueryOptions = {$bar : "bar~c", $foo : "foo~c"},
 			mQueryOptions = {$bar : "bar", $foo : "foo"},
-			oRequestor = _Requestor.create(sServiceUrl, oModelInterface);
+			oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0");
 
 		this.mock(oRequestor).expects("convertQueryOptions")
 			.withExactArgs("/meta/path", sinon.match.same(mQueryOptions), false, true)
@@ -6044,7 +6046,7 @@ sap.ui.define([
 		var mConvertedQueryOptions = {$bar : "bar~c", $foo : "foo~c"},
 			oHelperMock = this.mock(_Helper),
 			mQueryOptions = {$bar : "bar", $foo : "foo"},
-			oRequestor = _Requestor.create(sServiceUrl, oModelInterface);
+			oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0");
 
 		this.mock(oRequestor).expects("convertQueryOptions")
 			.withExactArgs("/meta/path", sinon.match.same(mQueryOptions), false, true)
@@ -6063,7 +6065,7 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.test("checkConflictingStrictRequest", function (assert) {
-		var oRequestor = _Requestor.create("/~/"),
+		var oRequestor = _Requestor.create("/~/", null, {}, {}, "4.0"),
 			oRequest = {
 				headers : {foo : "bar"}
 			},
@@ -6105,7 +6107,7 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.test("checkConflictingStrictRequest: null", function (assert) {
-		const oRequestor = _Requestor.create("/~/");
+		const oRequestor = _Requestor.create("/~/", null, {}, {}, "4.0");
 
 		function failure(aRequests) {
 			aRequests.iChangeSet = aRequests.length - 1;
@@ -6142,7 +6144,7 @@ sap.ui.define([
 
 	//*********************************************************************************************
 	QUnit.test("checkConflictingStrictRequest: odata.continue-on-error", function (assert) {
-		const oRequestor = _Requestor.create("/~/");
+		const oRequestor = _Requestor.create("/~/", null, {}, {}, "4.0");
 
 		function failure(oRequest, aRequests, iChangeSetNo) {
 			aRequests.iChangeSet = aRequests.length - 1;
@@ -6199,7 +6201,7 @@ sap.ui.define([
 				$submit : undefined
 			},
 			aRequests = [[]],
-			oRequestor = _Requestor.create("/~/"),
+			oRequestor = _Requestor.create("/~/", null, {}, {}, "4.0"),
 			oGroupLock = oRequestor.lockGroup("groupId", {}),
 			oRequestorMock = this.mock(oRequestor);
 
@@ -6237,7 +6239,7 @@ sap.ui.define([
 
 	//*****************************************************************************************
 	QUnit.test("sendOptimisticBatch: w/o optimistic batch", function (assert) {
-		var oRequestor = _Requestor.create("/", oModelInterface),
+		var oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0"),
 			oGetPromise = Promise.resolve(/*no first batch*/),
 			sKey = window.location.href;
 
@@ -6262,7 +6264,7 @@ sap.ui.define([
 		var oOptimisticBatch = {requests : "~aRequests~", groupId : "~sGroupId~"},
 			oGetPromise = Promise.resolve(oOptimisticBatch),
 			sKey = window.location.href,
-			oRequestor = _Requestor.create("/", oModelInterface);
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 
 		this.mock(CacheManager).expects("get")
 			.withExactArgs("sap.ui.model.odata.v4.optimisticBatch:" + sKey)
@@ -6289,7 +6291,7 @@ sap.ui.define([
 	QUnit.test("sendOptimisticBatch: CacheManager.get rejects", function (assert) {
 		var done = assert.async(),
 			oError = new Error("CacheManager.get rejected"),
-			oRequestor = _Requestor.create("/", oModelInterface),
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0"),
 			fnReporter = function (oError0) {
 				assert.strictEqual(oError0, oError);
 				assert.strictEqual(oRequestor.oOptimisticBatch, null);
@@ -6312,7 +6314,7 @@ sap.ui.define([
 	//*****************************************************************************************
 	QUnit.test("sendOptimisticBatch: #processBatch before read finished", function (assert) {
 		var oOptimisticBatch = {requests : "~aRequests~", groupId : "~sGroupId~"},
-			oRequestor = _Requestor.create("/", oModelInterface),
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0"),
 			that = this,
 			oGetPromise = new Promise(function (fnResolve) {
 				that.mock(oRequestor).expects("sendBatch").never();
@@ -6344,7 +6346,7 @@ sap.ui.define([
 		var oCacheManagerMock = this.mock(CacheManager),
 			sKey = window.location.href,
 			oModelInterfaceMock = this.mock(oModelInterface),
-			oRequestor = _Requestor.create("/", oModelInterface);
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 
 		assert.strictEqual(oRequestor.oOptimisticBatch, null);
 
@@ -6404,7 +6406,7 @@ sap.ui.define([
 				return vEnablerResult;
 			}),
 			sKey = window.location.href,
-			oRequestor = _Requestor.create("/", oModelInterface),
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0"),
 			that = this;
 
 		oRequestor.oOptimisticBatch = {key : sKey}; // simulate sendOptimisticBatch just happen
@@ -6447,7 +6449,7 @@ sap.ui.define([
 				bar : "not saved"
 			}],
 			aPromises = [],
-			oRequestor = _Requestor.create("/", oModelInterface),
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0"),
 			oSetPromise,
 			that = this;
 
@@ -6501,7 +6503,7 @@ sap.ui.define([
 				assert.strictEqual(oError0, oError);
 				done();
 			},
-			oRequestor = _Requestor.create("/", oModelInterface);
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 
 		// simulate first app start w/o optimistic batch sent
 		oRequestor.oOptimisticBatch = {key : sKey};
@@ -6538,7 +6540,7 @@ sap.ui.define([
 				assert.strictEqual(oError0, oError);
 				done();
 			},
-			oRequestor = _Requestor.create("/", oModelInterface);
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 
 		// simulate first app start w/o optimistic batch sent
 		oRequestor.oOptimisticBatch = {key : sKey};
@@ -6583,7 +6585,7 @@ sap.ui.define([
 				result : "~optimisticBatchResult~"
 			},
 			fnEnabler = bEnabled === undefined ? undefined : sinon.stub().resolves(bEnabled),
-			oRequestor = _Requestor.create("/", oModelInterface),
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0"),
 			fnReporter = function (oError0) {
 				assert.strictEqual(oError0, oError);
 				done();
@@ -6651,7 +6653,7 @@ sap.ui.define([
 				result : "~optimisticBatchResult~"
 			},
 			fnEnabler = sinon.stub().rejects(oError),
-			oRequestor = _Requestor.create("/", oModelInterface),
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0"),
 			fnReporter = function (oError0) {
 				assert.strictEqual(oError0, oError);
 			};
@@ -6702,7 +6704,7 @@ sap.ui.define([
 				assert.strictEqual(oError0, oError);
 				done();
 			},
-			oRequestor = _Requestor.create("/", oModelInterface);
+			oRequestor = _Requestor.create("/", oModelInterface, {}, {}, "4.0");
 
 		oRequestor.oOptimisticBatch = oOptimisticBatch;
 		this.mock(_Requestor).expects("matchesOptimisticBatch")
@@ -6738,7 +6740,7 @@ sap.ui.define([
 
 	//*****************************************************************************************
 	QUnit.test("hasOnlyPatchesWithoutSideEffects", function (assert) {
-		var oRequestor = _Requestor.create(sServiceUrl, oModelInterface),
+		var oRequestor = _Requestor.create(sServiceUrl, oModelInterface, {}, {}, "4.0"),
 			oRequestorMock = this.mock(oRequestor);
 
 		oRequestorMock.expects("getGroupSubmitMode").withExactArgs("myGroup").returns("API");
