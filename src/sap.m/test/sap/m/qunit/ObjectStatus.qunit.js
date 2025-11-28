@@ -792,6 +792,33 @@ sap.ui.define([
 		oObjectStatus.destroy();
 	});
 
+	QUnit.test("Bound icon is updated correctlly", async function(assert) {
+		// Arrange
+		var oModel = new sap.ui.model.json.JSONModel({
+			icon: IconPool.getIconURI("status-inactive")
+		});
+		var oOS = new ObjectStatus({
+			icon: "{/icon}"
+		});
+		oOS.setModel(oModel);
+		oOS.placeAt("qunit-fixture");
+		await nextUIUpdate();
+
+		// Assert - initial icon
+		assert.strictEqual(oOS._oImageControl.getSrc(), "sap-icon://status-inactive", "Initial bound icon is correct");
+
+		// Act - change bound value
+		oModel.setProperty("/icon", "sap-icon://download");
+		await nextUIUpdate();
+
+		// Assert - updated icon
+		assert.strictEqual(oOS._oImageControl.getSrc(), "sap-icon://download", "Updated bound icon is correct");
+
+		// Cleanup
+		oOS.destroy();
+		oModel.destroy();
+	});
+
 	QUnit.test("Internal icon ARIA for non-icon-only ObjectStatus", async function (assert) {
 		// Arrange
 		var oObjectStatus = new ObjectStatus({
