@@ -45,8 +45,8 @@ sap.ui.define([
 		Message, Controller, View, ChangeReason, Filter, FilterOperator, FilterType, Sorter,
 		OperationMode, Decimal, AnnotationHelper, ODataListBinding, ODataMetaModel, ODataModel,
 		ODataPropertyBinding, ValueListType, _Helper, Security, TestUtils, XMLHelper) {
-	/*eslint no-sparse-arrays: 0, "max-len": ["error", {"code": 100,
-		"ignorePattern": "/sap/opu/odata4/|\" :$|\" : \\{$|\\{meta>"}], */
+	/*eslint no-sparse-arrays: 0,
+		"max-len": ["error", {"code": 100, "ignorePattern": "\\{meta>"}] */
 	"use strict";
 
 		// system query options for collection responses, but not inside $expand
@@ -3226,7 +3226,8 @@ sap.ui.define([
 	}">\
 	<Text id="text" text="{Name}"/>\
 </Table>',
-		{"EMPLOYEES?$select=Name&$filter=AGE gt 21 and (TEAM_ID eq 42)&$orderby=AGE,Name desc&$skip=0&$top=100" :
+		{["EMPLOYEES?$select=Name&$filter=AGE gt 21 and (TEAM_ID eq 42)&$orderby=AGE,Name desc"
+			+ "&$skip=0&$top=100"] :
 			{value : [{Name : "Frederic Fall"}, {Name : "Jonathan Smith"}]}},
 		{text : ["Frederic Fall", "Jonathan Smith"]}
 	);
@@ -18891,7 +18892,9 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		text="{= %{#com.sap.gateway.default.iwbep.tea_busi.v0001.AcSetIsAvailable}\
 			? \'set to available\' : \'\'}"/>\
 </FlexBox>', {
-			"EMPLOYEES('2')?$select=AGE,ID,Name,com.sap.gateway.default.iwbep.tea_busi.v0001.AcSetIsAvailable,com.sap.gateway.default.iwbep.tea_busi.v0001.AcSetIsOccupied" : {
+			["EMPLOYEES('2')?$select=AGE,ID,Name"
+					+ ",com.sap.gateway.default.iwbep.tea_busi.v0001.AcSetIsAvailable"
+					+ ",com.sap.gateway.default.iwbep.tea_busi.v0001.AcSetIsOccupied"] : {
 				"#com.sap.gateway.default.iwbep.tea_busi.v0001.AcSetIsAvailable" : {},
 				AGE : 32,
 				Name : "Frederic Fall"
@@ -58241,7 +58244,8 @@ make root = ${bMakeRoot}`;
 <FlexBox binding="{/Artists(ArtistID=\'42\',IsActiveEntity=true)}">\
 	<Text id="publicationCount" text="{:= %{_Publication}.length }"/>\
 </FlexBox>',
-		{"Artists(ArtistID='42',IsActiveEntity=true)?$select=ArtistID,IsActiveEntity&$expand=_Publication($select=PublicationID)" : {
+		{["Artists(ArtistID='42',IsActiveEntity=true)?$select=ArtistID,IsActiveEntity"
+				+ "&$expand=_Publication($select=PublicationID)"] : {
 			ArtistID : "42",
 			IsActiveEntity : true,
 			_Publication : [{PublicationID : "n/a"}, {}, {}]
@@ -65349,7 +65353,9 @@ make root = ${bMakeRoot}`;
 				"/sap/opu/odata4/sap/zui5_testv4/f4/sap/d_pr_type-fv-ext/0001/$metadata"
 					: {source : "odata/v4/data/VH_ProductTypeCode_ext.xml"},
 				// fake "nested" value help
-				"/sap/opu/odata4/sap/zui5_testv4/f4/sap/d_pr_type-fv/0001;ps='N_A';va='com.sap.gateway.f4.d_pr_type-fv.v0001.D_PR_TYPE_FV.FIELD_VALUE'/$metadata"
+				["/sap/opu/odata4/sap/zui5_testv4/f4/sap/d_pr_type-fv/0001;ps='N_A'"
+						+ ";va='com.sap.gateway.f4.d_pr_type-fv.v0001.D_PR_TYPE_FV.FIELD_VALUE'"
+						+ "/$metadata"]
 					: {source : "odata/v4/data/VH_FIELD_VALUE.xml"}
 			}),
 			oValueListModel,
