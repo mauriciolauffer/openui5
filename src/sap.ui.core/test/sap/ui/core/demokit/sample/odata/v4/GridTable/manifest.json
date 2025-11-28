@@ -41,7 +41,7 @@
 				"sap.ui.core" : {},
 				"sap.ui.table" : {}
 			},
-			"minUI5Version" : "1.105"
+			"minUI5Version" : "1.105.0"
 		},
 		"handleValidation" : true,
 		"models" : {
