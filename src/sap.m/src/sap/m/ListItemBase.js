@@ -398,7 +398,7 @@ function(
 
 	ListItemBase.prototype.getAccessibilityDescription = function(oBundle) {
 		var aOutput = [],
-			sType = this.getType(),
+			sType = this.getEffectiveType(),
 			sHighlight = this.getHighlight(),
 			bIsTree = this.getListProperty("ariaRole") === "tree";
 
@@ -703,7 +703,7 @@ function(
 	 * @private
 	 */
 	ListItemBase.prototype.getTypeControl = function(bCreateIfNotExist) {
-		var sType = this.getType();
+		var sType = this.getEffectiveType();
 
 		if (sType == ListItemType.Detail || sType == ListItemType.DetailAndActive) {
 			return this.getDetailControl(bCreateIfNotExist);
@@ -739,10 +739,12 @@ function(
 			return false;
 		}
 
-		return this.isIncludedIntoSelection() || (
-			this.getType() != ListItemType.Inactive &&
-			this.getType() != ListItemType.Detail
-		);
+		if (this.isIncludedIntoSelection()) {
+			return true;
+		}
+
+		const sType = this.getEffectiveType();
+		return (sType != ListItemType.Inactive && sType != ListItemType.Detail);
 	};
 
 	ListItemBase.prototype.exit = function() {
@@ -929,7 +931,7 @@ function(
 	 * @return {boolean}
 	 */
 	ListItemBase.prototype.hasActiveType = function() {
-		var sType = this.getType();
+		const sType = this.getEffectiveType();
 		return (sType == ListItemType.Active ||
 				sType == ListItemType.Navigation ||
 				sType == ListItemType.DetailAndActive);
@@ -948,7 +950,7 @@ function(
 		this._active = bActive;
 		this._activeHandling($This);
 
-		if (this.getType() == ListItemType.Navigation) {
+		if (this.getEffectiveType() == ListItemType.Navigation) {
 			this._activeHandlingNav($This);
 		}
 
@@ -1128,7 +1130,7 @@ function(
 	};
 
 	ListItemBase.prototype.onsapenter = function(oEvent) {
-		var oList = this.getList();
+		const oList = this.getList();
 		if (oEvent.isMarked() || !oList) {
 			return;
 		}
@@ -1151,19 +1153,21 @@ function(
 			oEvent.setMarked();
 			this.setActive(true);
 
-			setTimeout(function() {
+			setTimeout(() => {
 				this.setActive(false);
-			}.bind(this), 180);
+			}, 180);
 
 			// fire own press event
-			setTimeout(function() {
+			setTimeout(() => {
 				this.fireTap();
 				this.firePress();
-			}.bind(this), 0);
+			}, 0);
 		}
 
-		// let the parent know item is pressed
-		oList.onItemPress(this, oEvent.srcControl);
+		// let the parent know that an active item is pressed
+		if (this.getEffectiveType() !== ListItemType.Inactive) {
+			oList.onItemPress(this, oEvent.srcControl);
+		}
 	};
 
 	ListItemBase.prototype.onsapdelete = function(oEvent) {
@@ -1191,7 +1195,7 @@ function(
 
 		// Ctrl+E fires detail event or handle editing
 		if (oEvent.code == "KeyE" && (oEvent.metaKey || oEvent.ctrlKey) && oEvent.target === this.getDomRef()) {
-			if (this.getType().startsWith("Detail") && (this.hasListeners("detailPress") || this.hasListeners("detailTap")) && this._getMaxActionsCount() === -1) {
+			if (this.getEffectiveType().startsWith("Detail") && (this.hasListeners("detailPress") || this.hasListeners("detailTap")) && this._getMaxActionsCount() === -1) {
 				this.fireDetailTap();
 				this.fireDetailPress();
 			} else {
@@ -1291,13 +1295,31 @@ function(
 		}
 	};
 
+	ListItemBase.prototype.getEffectiveType = function() {
+		let sType = this.getType();
+		if (sType !== ListItemType.Navigation && this._hasNavigationAction()) {
+			sType = ListItemType.Navigation;
+		}
+		return sType;
+	};
+
+	ListItemBase.prototype._hasNavigationAction = function() {
+		return this.getActions().some((oAction) => {
+			return oAction.isA("sap.m.ListItemAction") && oAction.getType() === ListItemActionType.Navigation && oAction.getVisible();
+		});
+	};
+
+	ListItemBase.prototype._getEffectiveActions = function() {
+		return this.getActions().filter((oAction) => oAction.isA("sap.m.ListItemAction") && oAction.isEffective());
+	};
+
 	ListItemBase.prototype._getMaxActionsCount = function() {
 		const oList = this.getList();
 		return oList ? oList._getItemActionCount() : -1;
 	};
 
 	ListItemBase.prototype._getVisibleActions = function() {
-		return this.getActions().filter((oAction) => oAction.getVisible());
+		return this._getEffectiveActions().filter((oAction) => oAction.getVisible());
 	};
 
 	ListItemBase.prototype._getActionByType = function(sListItemActionType) {
@@ -1309,7 +1331,7 @@ function(
 	};
 
 	ListItemBase.prototype._getActionsToRender = function() {
-		const aActions = this.getActions();
+		const aActions = this._getEffectiveActions();
 		let iMaxActionsCount = this._getMaxActionsCount();
 		if (aActions.length <= iMaxActionsCount) {
 			return aActions; // all actions fit the available space
@@ -1324,13 +1346,13 @@ function(
 
 	ListItemBase.prototype._getOverflowActions = function() {
 		const aActionsToRender = this._getActionsToRender();
-		return this.getActions().flatMap((oAction) => {
+		return this._getEffectiveActions().flatMap((oAction) => {
 			return oAction.getVisible() && !aActionsToRender.includes(oAction) ? [oAction] : [];
 		});
 	};
 
 	ListItemBase.prototype._onOverflowButtonPress = function(oEvent) {
-		const ListItemAction = this.getActions()[0].constructor;
+		const ListItemAction = this._getEffectiveActions()[0].constructor;
 		ListItemAction._showMenu(this._getOverflowActions(), oEvent.getSource());
 	};
 
