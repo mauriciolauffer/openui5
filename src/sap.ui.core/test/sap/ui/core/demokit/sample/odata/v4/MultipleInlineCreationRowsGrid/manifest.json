@@ -38,7 +38,7 @@
 			}
 		},
 		"dependencies" : {
-			"minUI5Version" : "1.97",
+			"minUI5Version" : "1.97.0",
 			"libs" : {
 				"sap.f" : {},
 				"sap.m" : {},
