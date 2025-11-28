@@ -2486,6 +2486,7 @@ sap.ui.define([
 			aTabItems.push(new IconTabFilter({
 				key: i.toString(),
 				id: 'idTab' + i,
+				tooltip: 'Tooltip ' + i,
 				text : 'Tab ' + i,
 				content: new Text({
 					text: 'Content ' + i
@@ -2619,7 +2620,7 @@ sap.ui.define([
 		oIconTabHeader.$().trigger("focusin");
 	});
 
-	QUnit.test("Overlow button aria-expanded/collapsed", function (assert) {
+	QUnit.test("Overflow button aria-expanded/collapsed", function (assert) {
 		var oOverflowButton = this.oIconTabBar.getAggregation("_header")._getOverflow();
 
 		assert.strictEqual(oOverflowButton.$().attr("aria-expanded"), "false", "aria-expanded=false");
@@ -2633,6 +2634,16 @@ sap.ui.define([
 		this.clock.tick(500);
 
 		assert.strictEqual(oOverflowButton.$().attr("aria-expanded"), "false", "aria-expanded=false");
+	});
+
+	QUnit.test("Tooltip should be rendered in the select list", function (assert) {
+		// Arrange
+
+		this.oIconTabBar._getIconTabHeader()._getOverflow()._expandButtonPress();
+		Core.applyChanges();
+
+		// Assert
+		assert.strictEqual(document.getElementsByClassName("sapMITBSelectItem")[0].getAttribute("title"), "Tooltip 12", "'title' attribute is correctly set");
 	});
 
 	QUnit.module("ARIA", {
