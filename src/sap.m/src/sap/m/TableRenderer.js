@@ -398,23 +398,16 @@ sap.ui.define(["sap/base/i18n/Localization", "sap/ui/core/Renderer", "sap/ui/cor
 		rm.class("sapMLIB").class("sapMListTblRow").class("sapMLIBTypeInactive").class("sapMListTblRowNoData");
 		if (Device.system.desktop) {
 			rm.attr("tabindex", "-1");
-			rm.class("sapMLIBFocusable").class("sapMTableRowCustomFocus");
+			rm.class("sapMLIBFocusable");
 		}
 		if (!oControl._headerHidden || (!oControl.getHeaderText() && !oControl.getHeaderToolbar())) {
 			rm.class("sapMLIBShowSeparator");
 		}
 		rm.openEnd();
 
-		const bHasVisibleColumns = oControl.getColumns().some((oColumn) => oColumn.getVisible());
-		if (bHasVisibleColumns) {
-			rm.openStart("td").attr("role", "none").class("sapMListTblHighlightCell").openEnd().close("td");
-		}
-
-		var bRenderDummyColumn = oControl.shouldRenderDummyColumn();
 		rm.openStart("td", oControl.getId("nodata-text"));
-		rm.attr("colspan", oControl.getColCount() - bRenderDummyColumn - (bHasVisibleColumns ? 2 /* Highlight and Navigated cells are rendered always */ : 0));
+		rm.attr("colspan", oControl.getColCount()); // no data cell must span all columns
 		rm.class("sapMListTblCell").class("sapMListTblCellNoData");
-
 		if (oControl.getNoData() === null || ( typeof oControl.getNoData() === "string" || !oControl.getNoData().isA("sap.m.IllustratedMessage"))) {
 			rm.class("sapMListTblCellNoIllustratedMessage");
 		}
@@ -432,15 +425,6 @@ sap.ui.define(["sap/base/i18n/Localization", "sap/ui/core/Renderer", "sap/ui/cor
 		}
 
 		rm.close("td");
-
-		if (bHasVisibleColumns) {
-			rm.openStart("td").attr("role", "presentation").class("sapMListTblNavigatedCell").openEnd().close("td");
-		}
-
-		if (bRenderDummyColumn) {
-			ColumnListItemRenderer.renderDummyCell(rm, oControl);
-		}
-
 		rm.close("tr");
 	};
 
