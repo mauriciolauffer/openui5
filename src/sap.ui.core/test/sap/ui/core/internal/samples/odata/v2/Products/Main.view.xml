@@ -13,7 +13,7 @@
 					<Title level="H1" text="Products V2"/>
 					<ToolbarSpacer/>
 					<Button id="resetChanges" icon="sap-icon://sys-cancel-2"
-						press="onResetChanges" text="Reset Changes"
+						press=".onResetChanges" text="Reset Changes"
 						tooltip="Reset Products Changes"/>
 					<Link href="{ui>/unitsOfMeasureURL}" text="Unit Codes" target="unitCodes"/>
 					<Link href="{ui>/currenciesURL}" text="Currency Codes" target="currencyCodes"/>

@@ -21,15 +21,15 @@
 							<ToolbarLayoutData shrinkable="false" />
 						</layoutData>
 					</Label>
-					<Input id="salesOrderID" submit="onSelectSalesOrder" value="{ui>/salesOrderID}">
+					<Input id="salesOrderID" submit=".onSelectSalesOrder" value="{ui>/salesOrderID}">
 						<layoutData>
 							<ToolbarLayoutData maxWidth="10em" shrinkable="true" />
 						</layoutData>
 					</Input>
-					<Button id="selectSalesOrder" press="onSelectSalesOrder"
+					<Button id="selectSalesOrder" press=".onSelectSalesOrder"
 						text="Show Sales Order" tooltip="Show the sales order" type="Accept" />
 					<ToolbarSpacer/>
-					<Button id="showSalesOrderTable" press="onShowTable" text="Use Table"
+					<Button id="showSalesOrderTable" press=".onShowTable" text="Use Table"
 						tooltip="Show the sales order table" type="Emphasized" />
 					<Link href="test-resources/sap/ui/core/internal/samples/odata/v2/SalesOrders/MIT.SalesOrders(V2).Messages.html"
 						target="_blank" text="Test Messages" />
@@ -52,7 +52,7 @@
 						},
 						sorter : [{path : 'SalesOrderID', descending : true}]
 					}"
-					mode="SingleSelectMaster" selectionChange="onSelectSalesOrder">
+					mode="SingleSelectMaster" selectionChange=".onSelectSalesOrder">
 					<headerToolbar>
 						<Toolbar>
 							<Title id="salesOrdersTitle" level="H2"
@@ -62,20 +62,20 @@
 								</layoutData>
 							</Title>
 							<Button icon="sap-icon://add" id="createSalesOrder"
-								press="onCreateSalesOrder" tooltip="Create sales order"
+								press=".onCreateSalesOrder" tooltip="Create sales order"
 								visible="{= !${ui>/inlineCreationRows} }" />
 							<Button enabled="{ui>/salesOrderSelected}" icon="sap-icon://delete"
-								id="delete::SalesOrderList" press="onDeleteSalesOrder"
+								id="delete::SalesOrderList" press=".onDeleteSalesOrder"
 								tooltip="Delete selected sales order"/>
 							<Button icon="sap-icon://synchronize"
-								id="refresh::SalesOrderSet" press="onRefreshSalesOrders"
+								id="refresh::SalesOrderSet" press=".onRefreshSalesOrders"
 								tooltip="Refresh sales orders table" />
 							<Label labelFor="salesOrdersSort" text="Sort: ">
 								<layoutData>
 									<ToolbarLayoutData shrinkable="false" />
 								</layoutData>
 							</Label>
-							<Select change="onSortSalesOrdersTable" id="salesOrdersSort">
+							<Select change=".onSortSalesOrdersTable" id="salesOrdersSort">
 								<core:Item key="desc" text="Descending" />
 								<core:Item key="asc" text="Ascending" />
 							</Select>
@@ -84,12 +84,12 @@
 									<ToolbarLayoutData shrinkable="false" />
 								</layoutData>
 							</Label>
-							<Input id="salesOrdersFilter" submit="onFilterSalesOrdersTable"
+							<Input id="salesOrdersFilter" submit=".onFilterSalesOrdersTable"
 								value="{ui>/salesOrdersFilter}" width="12em" />
-							<Button id="salesOrdersFilterGo" press="onFilterSalesOrdersTable"
+							<Button id="salesOrdersFilterGo" press=".onFilterSalesOrdersTable"
 								text="Go" type="Emphasized" />
 							<ToolbarSpacer />
-							<Button id="showSalesOrderInput" press="onShowTable" text="Use Input"
+							<Button id="showSalesOrderInput" press=".onShowTable" text="Use Input"
 								tooltip="Show sales order input field" />
 						</Toolbar>
 					</headerToolbar>
@@ -200,7 +200,7 @@
 						},
 						parameters : {transitionMessagesOnly : true, usePreliminaryContext : true},
 						path : 'ToLineItems'
-					}" rowSelectionChange="onSelectItem" selectionMode="Single" threshold="0">
+					}" rowSelectionChange=".onSelectItem" selectionMode="Single" threshold="0">
 					<t:rowMode>
 						<trm:Fixed rowCount="4"/>
 					</t:rowMode>
@@ -216,14 +216,14 @@
 								</layoutData>
 							</Title>
 							<Button icon="sap-icon://add"
-								id="createItem::ToLineItems" press="onCreateItem"
+								id="createItem::ToLineItems" press=".onCreateItem"
 								tooltip="Create a sales order item"
 								visible="{= !${ui>/inlineCreationRows} }" />
 							<Button enabled="{ui>/itemSelected}" icon="sap-icon://delete"
-								id="deleteItem::ToLineItems" press="onDeleteItem"
+								id="deleteItem::ToLineItems" press=".onDeleteItem"
 								tooltip="Delete the selected sales order item" />
 							<Button enabled="{= !!${SalesOrderID}}" icon="sap-icon://synchronize"
-								id="refresh::ToLineItems" press="onRefreshItems"
+								id="refresh::ToLineItems" press=".onRefreshItems"
 								tooltip="Refresh sales order items table" />
 							<ToolbarSpacer/>
 							<Label labelFor="itemFilter" text="Filter">
@@ -231,7 +231,7 @@
 									<ToolbarLayoutData shrinkable="false" />
 								</layoutData>
 							</Label>
-							<Select change="onFilterMessages" id="itemFilter"
+							<Select change=".onFilterMessages" id="itemFilter"
 								items="{ui>/itemFilter}" selectedKey="Show all">
 								<core:ListItem icon="{ui>icon}" key="{ui>type}" text="{ui>text}" />
 								<layoutData>
@@ -240,16 +240,16 @@
 							</Select>
 							<ToolbarSpacer/>
 							<Button enabled="{= %{ui>/salesOrderItemsCount} > 0}"
-								id="fixAllQuantities::ToLineItems" press="onFixAllQuantities"
+								id="fixAllQuantities::ToLineItems" press=".onFixAllQuantities"
 								text="Fix Quantities" tooltip="Fix all faulty quantities" />
 							<Button enabled="{= %{ui>/salesOrderItemsCount} > 0}"
-								id="fixItems::ToLineItems" press="onFixItems" text="Fix Items"
+								id="fixItems::ToLineItems" press=".onFixItems" text="Fix Items"
 								tooltip="Fix all faulty items" />
 							<Button enabled="{ui>/itemSelected}" id="cloneItem::ToLineItems"
-								press="onCloneItem" text="Clone Item"
+								press=".onCloneItem" text="Clone Item"
 								tooltip="Clone the selected line item" />
 							<ToggleButton id="transitionMessagesOnly"
-								press="onTransitionMessagesOnly" pressed="true"
+								press=".onTransitionMessagesOnly" pressed="true"
 								text="Transition Messages Only"
 								tooltip="Message handling is done by the parent entity" />
 						</Toolbar>
@@ -260,7 +260,7 @@
 					<t:rowActionTemplate>
 						<t:RowAction>
 							<t:RowActionItem id="showProductDetails::ToLineItems"
-								press="onShowProductDetails" type="Navigation" />
+								press=".onShowProductDetails" type="Navigation" />
 						</t:RowAction>
 					</t:rowActionTemplate>
 					<t:columns>
@@ -414,7 +414,7 @@
 							<Label text="Actions" />
 							<t:template>
 								<Button enabled="{= ${ProductID} === 'HT-1000'}"
-									id="fixQuantity::ToLineItems" press="onFixQuantity" text="Fix"
+									id="fixQuantity::ToLineItems" press=".onFixQuantity" text="Fix"
 									tooltip="Fix quantity issues"
 								/>
 							</t:template>
@@ -427,13 +427,13 @@
 					<Dialog id="createSalesOrderItemDialog" title="Create a New Sales Order Item">
 						<buttons>
 							<Button id="saveCreatedItem::createSalesOrderItemDialog"
-								press="onSaveCreatedItem" text="Save"
+								press=".onSaveCreatedItem" text="Save"
 								tooltip="Save the new sales order item" type="Accept" />
 							<Button id="discardCreatedItem::createSalesOrderItemDialog"
-								press="onDiscardCreatedItem" text="Discard"
+								press=".onDiscardCreatedItem" text="Discard"
 								tooltip="Discard the new sales order item" type="Reject" />
 							<Button id="closeCreatedItem::createSalesOrderItemDialog"
-								press="onCloseCreatedItemDialog" text="Close"
+								press=".onCloseCreatedItemDialog" text="Close"
 								tooltip="Close the sales order item creation dialog" />
 						</buttons>
 						<form:SimpleForm ariaLabelledBy="createSalesOrderItemDialog" editable="true"
@@ -461,7 +461,7 @@
 					</Dialog>
 					<Dialog binding="{ToProduct}" id="productDetailsDialog" title="Product Details">
 						<buttons>
-							<Button press="onCloseProductDetails" text="Close"
+							<Button press=".onCloseProductDetails" text="Close"
 								tooltip="Close the product details dialog" type="Accept" />
 						</buttons>
 						<form:SimpleForm ariaLabelledBy="productDetailsDialog" editable="true"
@@ -474,7 +474,7 @@
 					</Dialog>
 					<Dialog contentWidth="50%" id="messageDetails" title="Message Details">
 						<buttons>
-							<Button press="onCloseMessageDetails" text="Close"
+							<Button press=".onCloseMessageDetails" text="Close"
 								tooltip="Close the message details dialog" type="Emphasized" />
 						</buttons>
 						<form:SimpleForm ariaLabelledBy="messageDetails" editable="false"
@@ -513,11 +513,11 @@
 		<footer>
 			<OverflowToolbar>
 				<Button icon="sap-icon://message-popup" id="messagePopoverButton"
-					press="onMessagePopoverPress" text="{ui>/messageCount}" tooltip="Show Messages"
+					press=".onMessagePopoverPress" text="{ui>/messageCount}" tooltip="Show Messages"
 					type="Emphasized">
 					<dependents>
-						<MessagePopover activeTitlePress="onMessageSelected"
-							afterClose="onMessagePopoverClosed" id="messagePopover"
+						<MessagePopover activeTitlePress=".onMessageSelected"
+							afterClose=".onMessagePopoverClosed" id="messagePopover"
 							items="{
 								events : {
 									change : '.updateMessageCount'
@@ -535,15 +535,15 @@
 								}" title="{messages>message}"
 								type="{messages>type}">
 								<Link binding="{messages>}" data:message="{messages>}"
-									press="onShowMessageDetails" text="Technical Details" />
+									press=".onShowMessageDetails" text="Technical Details" />
 							</MessageItem>
 						</MessagePopover>
 					</dependents>
 				</Button>
 				<ToolbarSpacer />
-				<Button id="saveSalesOrder" press="onSaveSalesOrder" text="Save"
+				<Button id="saveSalesOrder" press=".onSaveSalesOrder" text="Save"
 					tooltip="Save the sales order" type="Emphasized" />
-				<Button id="resetChanges" press="onResetChanges" text="Reset Changes" />
+				<Button id="resetChanges" press=".onResetChanges" text="Reset Changes" />
 			</OverflowToolbar>
 		</footer>
 	</Page>
