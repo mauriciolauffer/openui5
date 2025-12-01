@@ -1,9 +1,10 @@
-/* ==================================================== */
-/* CSS for control sap.ui.dev/FormattedTextView.control */
-/* ==================================================== */
+/* ===================================================== */
+/* CSS for control sap.ui.dev/FormattedTextView.control  */
+/* Base theme                                            */
+/* ===================================================== */
 
 .sapUiFTV {
-	font-family: @sapUiFontFamily;
+	font-family: var(--sapFontFamily);
 	font-size: @sapUiFontSize;
 	vertical-align: top;
 	line-height: @sapUiLineHeight;
@@ -17,7 +18,7 @@
 
 /* Do not invert for table */
 .sapUiInverted-CTX .sapUiTable .sapUiFTV {
-	color: @sapUiBaseText;
+	color: var(--sapTextColor);
 }
 
 .sapUiFTV strong,
@@ -41,17 +42,17 @@
 
 /* success state */
 .sapUiFTVSucc {
-	background-color: @sapUiFieldSuccessBackground;
+	background-color: var(--sapField_SuccessBackground);
 }
 
 /* invalid state */
 .sapUiFTVErr {
-	color: @sapUiFieldInvalidColor;
-	border-color: @sapUiFieldInvalidColor;
-	background-color: @sapUiFieldInvalidBackground;
+	color: var(--sapField_InvalidColor);
+	border-color: var(--sapField_InvalidColor);
+	background-color: var(--sapField_InvalidBackground);
 }
 
 /* warning state */
 .sapUiFTVWarn {
-	background-color: @sapUiFieldWarningBackground;
+	background-color: var(--sapField_WarningBackground);
 }
