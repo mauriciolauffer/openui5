@@ -1,7 +1,17 @@
 {
   "1.144.0": {
-    "date": "November 2025",
+    "date": "December 2025",
     "notes": [
+      {
+        "id": "2997dbb13bea8120035b2dbd27a61cf85e33d08b",
+        "type": "FIX",
+        "text": " MDC.FilterBar propagate internal model to buttons again"
+      },
+      {
+        "id": "aa3b5cfc21a1d5719cc5ff93e57487ccf799483c",
+        "type": "FEATURE",
+        "text": " Field: read-only and disabled mode with display only unit/currency"
+      },
       {
         "id": "948b5d1ed11dbc4ad96cbd8db2523292c80ed22c",
         "type": "FIX",

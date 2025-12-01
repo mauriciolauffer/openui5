@@ -1,7 +1,27 @@
 {
   "1.144.0": {
-    "date": "November 2025",
+    "date": "December 2025",
     "notes": [
+      {
+        "id": "68b3bd5d4a4182319e1d10f1f8c67c5f2840a304",
+        "type": "FIX",
+        "text": " OPA: Fix _promiseWaiter handling of null executors"
+      },
+      {
+        "id": "13d864ee1f510e64460c51309ae615fe3215f479",
+        "type": "FIX",
+        "text": " sap/ui/model/ClientTreeBinding#cloneData: Use wrapped structuredClone"
+      },
+      {
+        "id": "51206d2add1b677fc21729ae1fa91fe30ced93c8",
+        "type": "FEATURE",
+        "text": " Upgrade to CLDR version 48.0.0"
+      },
+      {
+        "id": "eb83016f50bb73536b34d1898ddc00cf3505ac96",
+        "type": "FIX",
+        "text": " test/sap/ui/core/qunit/i18n/UI5Date.qunit.js: Fix failing test for JS Date API \"toTemporalInstant\""
+      },
       {
         "id": "c4bec3aa4f51d00bea986edf2bd5c632e39cc7cd",
         "type": "FIX",

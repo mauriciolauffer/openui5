@@ -1,7 +1,12 @@
 {
   "1.144.0": {
-    "date": "November 2025",
+    "date": "December 2025",
     "notes": [
+      {
+        "id": "37079788953eabcd8bc368d5440382dcc9ed1681",
+        "type": "FIX",
+        "text": " sap.uxap.ObjectPageSection: Fix sticky headers when title on left"
+      },
       {
         "id": "1116778bfea04abd349738c593b216cfa92e3e69",
         "type": "FIX",

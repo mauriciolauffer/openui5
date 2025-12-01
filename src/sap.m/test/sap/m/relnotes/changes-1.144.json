@@ -1,7 +1,42 @@
 {
   "1.144.0": {
-    "date": "November 2025",
+    "date": "December 2025",
     "notes": [
+      {
+        "id": "2ac42b96f6dde53c4c1b9b5d308bbf3c7744588f",
+        "type": "FIX",
+        "text": " We've now fixed two ActionTile issues, one where the focus was consistently on the header link, and second where pressing the Enter key was not opening the right dialog box"
+      },
+      {
+        "id": "c59e69192b8a3ca7a5a2af81d1c2f9bf983e3603",
+        "type": "FIX",
+        "text": " sap.m.IconTabBar: Tooltips are now cloned to the select list"
+      },
+      {
+        "id": "96d4984e374aa07cd2344fef701181e8d0598def",
+        "type": "FIX",
+        "text": " sap.m.DateTimeField: Update ValueStateHeader for mobile devices"
+      },
+      {
+        "id": "b7ac77dad17b0096ca77e60cebd218a9581a0d8a",
+        "type": "FIX",
+        "text": " sap.m.ObjectStatus: Bound icon is updated correctly"
+      },
+      {
+        "id": "eaae231bdc8ac7e12d404842753942a0477c95c2",
+        "type": "FIX",
+        "text": " sap.m.SinglePlanningCalendar: Replacing the onmouseup event handler with ontap"
+      },
+      {
+        "id": "d7ee2316ca900623b5422970a7333cdfffc1f729",
+        "type": "FIX",
+        "text": " sap.m.TimePicker: fixed Dialog title on mobile devices"
+      },
+      {
+        "id": "7ee1c77f9c2b364132a7beea0144b3ff4762cefb",
+        "type": "FIX",
+        "text": " sap.m.Toolbar: exclude disabled controls from Toolbar navigation"
+      },
       {
         "id": "55595f1b3d83004a227f0b91d29d17290c6af4f6",
         "type": "FIX",

@@ -1,7 +1,17 @@
 {
   "1.144.0": {
-    "date": "November 2025",
+    "date": "December 2025",
     "notes": [
+      {
+        "id": "c8d201b928293d5f2f96f44cde839356bde64254",
+        "type": "FIX",
+        "text": " Integration Cards: Space between title and subtitle is by design"
+      },
+      {
+        "id": "a82dd7705b36a29ffd0c86624ed18f748e62bae3",
+        "type": "FIX",
+        "text": " sap.f.DynamicPage: update title positioning"
+      },
       {
         "id": "4496d08f6f1dcc15477c9cf787c2f3a6633df9a2",
         "type": "FEATURE",
