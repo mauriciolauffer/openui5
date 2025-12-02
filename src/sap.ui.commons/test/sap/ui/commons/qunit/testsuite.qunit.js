@@ -81,6 +81,10 @@ sap.ui.define(function() {
 				title: "DropdownBox - sap.ui.commons",
 				_alternativeTitle: "QUnit Page for DropdownBox - sap.ui.commons"
 			},
+			FileUploader: {
+				title: "FileUploader - sap.ui.commons",
+				_alternativeTitle: "QUnit Page for FileUploader - sap.ui.commons"
+			},
 			Form: {
 				title: "QUnit Test for Form",
 				_alternativeTitle: "QUnit tests: sap.ui.commons.form.Form"

@@ -2155,7 +2155,7 @@ sap.ui.define([
 			var oReader;
 
 			if (window.File && this.FUEl && this.FUEl.files.length) {
-				var oReader = new FileReader();
+				oReader = new FileReader();
 				oReader.readAsArrayBuffer(this.FUEl.files[0].slice(0, 1));
 
 				oReader.onload = function() {
