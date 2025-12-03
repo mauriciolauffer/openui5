@@ -740,7 +740,7 @@ function(
 				bHasValidationErrorListeners = false,
 				oEventProvider;
 
-			if (oBindingValueState && oBindingValueState.oValue && this._bValueStatePreset) {
+			if (oBindingValueState && oBindingValueState.oValue) {
 				return;
 			}
 
@@ -1145,7 +1145,6 @@ function(
 		StepInput.prototype._liveChange = function () {
 			this._disableButtons(this._parseNumber(this._getInput().getValue()), this._getMax(), this._getMin());
 			this._verifyValue();
-			this._bValueStatePreset = false;
 		};
 
 		/**
