@@ -360,7 +360,7 @@ sap.ui.define([
 	 *
 	 * @param {function} fnFunction
 	 *   The function to be called when the event occurs
-	 * @param {object} [oListener]
+	 * @param {object} [oListener=this]
 	 *   Context object to call the event handler with; defaults to this
 	 *   <code>sap.ui.model.Binding</code> itself
 	 * @returns {this}
@@ -402,7 +402,7 @@ sap.ui.define([
 	 *
 	 * @param {function} fnFunction
 	 *   Function to be called when the event occurs
-	 * @param {object} [oListener]
+	 * @param {object} [oListener=this]
 	 *   Context object to call the event handler with; defaults to this
 	 *   <code>sap.ui.model.Binding</code> itself
 	 * @returns {this}
@@ -438,7 +438,7 @@ sap.ui.define([
 	 *
 	 * @param {function} fnFunction
 	 *   The function to be called when the event occurs
-	 * @param {object} [oListener]
+	 * @param {object} [oListener=this]
 	 *   Context object to call the event handler with; defaults to this
 	 *   <code>sap.ui.model.Binding</code> itself
 	 * @returns {this}
@@ -483,7 +483,7 @@ sap.ui.define([
 	 *
 	 * @param {function} fnFunction
 	 *   The function to be called when the event occurs
-	 * @param {object} [oListener]
+	 * @param {object} [oListener=this]
 	 *   Context object to call the event handler with; defaults to this
 	 *   <code>sap.ui.model.Binding</code> itself
 	 * @returns {this}
@@ -527,7 +527,7 @@ sap.ui.define([
 	 *
 	 * @param {function} fnFunction
 	 *   Function to be called when the event occurs
-	 * @param {object} [oListener]
+	 * @param {object} [oListener=this]
 	 *   Context object to call the event handler with; defaults to this
 	 *   <code>sap.ui.model.Binding</code> itself
 	 * @returns {this}
@@ -568,7 +568,7 @@ sap.ui.define([
 	 * Determines if the binding should be updated by comparing the current model against a
 	 * specified model.
 	 *
-	 * @param {object} oModel The model instance to compare against
+	 * @param {sap.ui.model.Model} oModel The model instance to compare against
 	 * @returns {boolean} Whether this binding should be updated
 	 * @protected
 	 */
@@ -736,7 +736,7 @@ sap.ui.define([
 	 *
 	 * @param {function} fnFunction
 	 *   The function to be called when the event occurs
-	 * @param {object} [oListener]
+	 * @param {object} [oListener=this]
 	 *   Context object to call the event handler with; defaults to this
 	 *   <code>sap.ui.model.Binding</code> itself
 	 * @returns {this}
@@ -754,7 +754,7 @@ sap.ui.define([
 	 * of this <code>sap.ui.model.Binding</code>.
 	 *
 	 * @param {function} fnFunction The function to be called when the event occurs
-	 * @param {object} [oListener] Object on which to call the given function.
+	 * @param {object} [oListener] Object on which to call the given function
 	 * @returns {this} Reference to <code>this</code> in order to allow method chaining
 	 * @protected
 	 * @since 1.105.0
