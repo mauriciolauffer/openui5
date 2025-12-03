@@ -52325,6 +52325,7 @@ make root = ${bMakeRoot}`;
 			.expectChange("price", []);
 
 		return this.createView(assert, sView, oModel).then(function () {
+			that.bIgnoreOrder4GET = true; // avoid flaky test (JIRA: CPOUI5ODATAV4-3251)
 			that.expectRequest("Artists(ArtistID='42',IsActiveEntity=true)/_Publication"
 					+ "?$select=Price,PublicationID&$skip=0&$top=100", {
 					value : [{
@@ -58356,6 +58357,7 @@ make root = ${bMakeRoot}`;
 </FlexBox>',
 			that = this;
 
+		this.bIgnoreOrder4GET = true; // avoid flaky test (JIRA: CPOUI5ODATAV4-3251)
 		this.expectRequest("ProductList(\'HT-1000\')?sap-client=123"
 			+ "&$select=ProductID,WeightMeasure,WeightUnit", {
 				"@odata.etag" : "ETag",
@@ -58541,6 +58543,7 @@ make root = ${bMakeRoot}`;
 </FlexBox>',
 			that = this;
 
+		this.bIgnoreOrder4GET = true; // avoid flaky test (JIRA: CPOUI5ODATAV4-3251)
 		this.expectRequest("ProductList(\'HT-1000\')?sap-client=123"
 			+ "&$select=CurrencyCode,Price,ProductID", {
 				"@odata.etag" : "ETag",
@@ -68502,6 +68505,7 @@ make root = ${bMakeRoot}`;
 			oObjectPage = that.oView.byId("objectPage");
 			oOldRoot = fnCreateContext(oModel);
 
+			that.bIgnoreOrder4GET = true; // avoid flaky test (JIRA: CPOUI5ODATAV4-3251)
 			that.expectRequest("TEAMS('42')/TEAM_2_EMPLOYEES?$select=AGE,ID&$skip=0&$top=100", {
 					value : [{
 						AGE : 31,
@@ -69319,6 +69323,7 @@ make root = ${bMakeRoot}`;
 			.expectChange("lastUsedChannel");
 
 		return this.createView(assert, sView, oModel).then(function () {
+			that.bIgnoreOrder4GET = true; // avoid flaky test (JIRA: CPOUI5ODATAV4-3251)
 			that.expectRequest("Artists?$select=ArtistID,IsActiveEntity,Name,defaultChannel"
 					+ "&$skip=0&$top=2", {
 					value : [{
@@ -69667,6 +69672,7 @@ make root = ${bMakeRoot}`;
 			.expectChange("friend");
 
 		return this.createView(assert, sView, oModel).then(function () {
+			that.bIgnoreOrder4GET = true; // avoid flaky test (JIRA: CPOUI5ODATAV4-3251)
 			that.expectRequest("#1 Artists?$select=ArtistID,IsActiveEntity,Name"
 					+ "&$expand=BestFriend($select=ArtistID,IsActiveEntity,Name)&$skip=0&$top=1", {
 					value : [{
