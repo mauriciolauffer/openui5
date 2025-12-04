@@ -274,7 +274,8 @@ function(
 				 * prevent the sticky elements of the control from becoming fixed at the top of the viewport.</li>
 				 * <li>If sticky column headers are enabled in the <code>sap.m.Table</code> control, setting focus on the column headers will let the table scroll to the top.</li>
 				 * <li>A transparent toolbar design is not supported for sticky bars. The toolbar will automatically get an intransparent background color.</li>
-				 * <li>This feature supports only the default height of the toolbar control.</li>
+				 * <li>This feature supports only the default height of the toolbar control and the column headers.</li>
+				 * <li>When sticky group headers are enabled, wrapping in the column headers is not supported.</li>
 				 * </ul>
 				 *
 				 * @since 1.58
