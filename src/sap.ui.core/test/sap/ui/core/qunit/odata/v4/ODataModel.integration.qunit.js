@@ -18126,6 +18126,35 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 	});
 
 	//*********************************************************************************************
+	// Scenario: A function import is called where multiple overloads are present. No issue because
+	// 12.4 Function Overloads says "All unbound functions with the same function name within a
+	// schema MUST specify the same return type."
+	//
+	// github.com/UI5/openui5/issues/4369
+	// JIRA: CPOUI5ODATAV4-3265
+	QUnit.test("Function w/ overloads", async function (assert) {
+		const sView = `
+<Table id="table" items="{/__FAKE__FuGetEmployees()}">
+	<Text id="name" text="{Name}"/>
+	<Text id="entryDate" text="{ENTRYDATE}"/>
+</Table>`;
+
+		this.expectRequest("__FAKE__FuGetEmployees()?$skip=0&$top=100", {
+				value : [{
+					Name : "Jonathan Smith",
+					ENTRYDATE : "2000-01-01"
+				}, {
+					Name : "Frederic Fall",
+					ENTRYDATE : "2011-05-04"
+				}]
+			})
+			.expectChange("name", ["Jonathan Smith", "Frederic Fall"])
+			.expectChange("entryDate", ["Jan 1, 2000", "May 4, 2011"]);
+
+		await this.createView(assert, sView);
+	});
+
+	//*********************************************************************************************
 	// Scenario: Behaviour of a deferred bound function
 	QUnit.test("Bound function", function (assert) {
 		var sView = '\
