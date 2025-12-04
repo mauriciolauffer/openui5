@@ -3334,7 +3334,17 @@ sap.ui.define([
 		 * <b>Note:</b> The <code>icon</code> and <code>text</code> properties must not be set in <code>sap.m.ListItemAction</code> for this action type.
 		 * @public
 		 */
-		Delete : "Delete"
+		Delete : "Delete",
+
+		/**
+		 * Makes the corresponding list item behave as if its <code>type</code> property were set to <code>Navigation</code>.
+		 *
+		 * @see sap.m.ListItemAction#isEffective
+		 * @since 1.144
+		 * @private
+		 * @ui5-restricted sap.ui.mdc
+		 */
+		Navigation : "Navigation"
 	};
 
 	/**
