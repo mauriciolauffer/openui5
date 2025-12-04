@@ -27206,12 +27206,11 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 	//*********************************************************************************************
 	// Scenario: Binding-specific parameter $$aggregation is used and single entities are shown on
 	// leaf level. Allow Context#setKeepAlive only on single entity and ensure that properties of a
-	// single entity can be modified independent whether the single entity is currently visible in
-	// the list.
+	// single entity can be modified even if the single entity is currently not visible in the list.
+	// ODataListBinding#refresh also refreshes the kept-alive entity even if the binding was
+	// suspended. The kept-alive context gets destroyed if the entity was deleted on the server.
 	// JIRA: CPOUI5ODATAV4-2757
-[false, true].forEach((bCollapse) => {
-	QUnit.test("Data Aggregation: keep alive single entity, modify Region (node "
-			+ (bCollapse ? "NOT " : "") + "visible in the list)", async function (assert) {
+	QUnit.test("Data Aggregation: keep alive single entity", async function (assert) {
 		const oModel = this.createAggregationModel({autoExpandSelect : true});
 		const sView = `
 <t:Table id="table" rows="{path : '/BusinessPartners',
@@ -27244,10 +27243,10 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				+ "&$skip=0&$top=3", {
 				"@odata.count" : "26",
 				value : [
-						{Country : "A"},
-						{Country : "B"},
-						{Country : "C"}
-					]
+					{Country : "A"},
+					{Country : "B"},
+					{Country : "C"}
+				]
 			})
 			.expectChange("country", ["A", "B", "C"])
 			.expectChange("id", [null, null, null])
@@ -27271,9 +27270,9 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 				+ "&$count=true&$skip=0&$top=3", {
 				"@odata.count" : "2",
 				value : [
-						{Id : 26, Name : "Foo", Currency : "EUR", SalesAmount : "60"},
-						{Id : 25, Name : "Bar", Currency : "EUR", SalesAmount : "40"}
-					]
+					{Id : 26, Name : "Foo", Currency : "EUR", SalesAmount : "60"},
+					{Id : 25, Name : "Bar", Currency : "EUR", SalesAmount : "40"}
+				]
 			})
 			.expectChange("country", [, "A", "A"])
 			.expectChange("id", [, "26", "25"])
@@ -27290,48 +27289,103 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 			.expectRequest("BusinessPartners(26)?$select=Region", {Region : "Late"})
 			.expectChange("region", "Late");
 
-		const oContext26 = oListBinding.getCurrentContexts()[1];
+		const [, oContext26, oContext25] = oListBinding.getCurrentContexts();
 		this.oView.byId("details").setBindingContext(oContext26);
 
 		await this.waitForChanges(assert, "show details for Id 26");
 
 		// code under test
 		oContext26.setKeepAlive(true);
+		oContext25.setKeepAlive(true);
 
 		assert.strictEqual(oContext26.isKeepAlive(), true);
+		assert.strictEqual(oContext25.isKeepAlive(), true);
 
 		assert.throws(() => {
 			// code under test
 			oListBinding.getKeepAliveContext("/BusinessPartners(24)");
 		}, new Error("Unsupported $$aggregation at " + oListBinding));
 
-		if (bCollapse) {
-			this.expectChange("country", [, "B", "C"])
-				.expectChange("id", [, null, null])
-				.expectChange("name", [, null, null])
-				.expectChange("salesAmount", [, null, null])
-				.expectChange("currency", [, null, null]);
-				// detailId and region remain unchanged
+		this.expectChange("country", [, "B", "C"])
+			.expectChange("id", [, null, null])
+			.expectChange("name", [, null, null])
+			.expectChange("salesAmount", [, null, null])
+			.expectChange("currency", [, null, null]);
+			// detailId and region remain unchanged
 
-			await Promise.all([
-				oContextA.collapse(),
-				this.waitForChanges(assert, "collapse Country 'A'")
-			]);
+		await Promise.all([
+			// code under test
+			oContextA.collapse(),
+			this.waitForChanges(assert, "collapse Country 'A'")
+		]);
 
-			assert.strictEqual(oContext26.oBinding, oListBinding, "context not destroyed");
-			assert.strictEqual(oContext26.getProperty("Name"), "Foo", "data still available");
-		}
+		assert.strictEqual(oContext26.getBinding(), oListBinding, "context not destroyed");
+		assert.strictEqual(oContext26.getProperty("Name"), "Foo", "data still available");
 
 		this.expectChange("region", "Modified")
 			.expectRequest("PATCH BusinessPartners(26)", {
 				payload : {Region : "Modified"}
 			}, oNO_CONTENT);
 
+		// code under test
 		oContext26.setProperty("Region", "Modified");
 
 		await this.waitForChanges(assert, "modify Region of Id 26");
+
+		this.expectRequest("#5 BusinessPartners?"
+				+ "$select=Country,Currency,Id,Name,Region,SalesAmount"
+				+ "&$filter=Id eq 25 or Id eq 26&$top=2", {
+				value : [{ // simulate that Id 25 was deleted in the meantime
+					Country : "A refreshed",
+					Currency : "EUR",
+					Id : 26,
+					Name : "Foo",
+					Region : "Refreshed",
+					SalesAmount : "61"
+				}]
+			})
+			.expectRequest("#5 BusinessPartners?$apply=groupby((Country))&$count=true"
+				+ "&$skip=0&$top=3", {
+				"@odata.count" : "26",
+				value : [
+					{Country : "A refreshed"},
+					{Country : "B refreshed"},
+					{Country : "C refreshed"}
+				]
+			})
+			.expectChange("region", "Refreshed")
+			.expectChange("country", ["A refreshed", "B refreshed", "C refreshed"]);
+
+		await Promise.all([
+			// code under test
+			oListBinding.requestRefresh(),
+			this.waitForChanges(assert, "refresh list")
+		]);
+
+		assert.strictEqual(oContext25.getBinding(), undefined, "context for Id 25 destroyed");
+		assert.strictEqual(oContext26.getBinding(), oListBinding, "context for Id 26 still alive");
+		assert.strictEqual(oContext26.getProperty("SalesAmount"), "61", "data still available");
+
+		this.expectRequest("BusinessPartners?$apply=filter(Country eq 'A refreshed')"
+				+ "/groupby((Id,Name),aggregate(SalesAmount,Currency))"
+				+ "&$count=true&$skip=0&$top=3", {
+				"@odata.count" : "1",
+				value : [{Id : 26, Name : "Foo", Currency : "EUR", SalesAmount : "61"}]
+			})
+			.expectChange("country", [, "A refreshed", "B refreshed"])
+			.expectChange("id", [, "26"])
+			.expectChange("name", [, "Foo"])
+			.expectChange("salesAmount", [, "61"])
+			.expectChange("currency", [, "EUR"]);
+
+		await Promise.all([
+			// code under test
+			oListBinding.getCurrentContexts()[0].expand(),
+			this.waitForChanges(assert, "expand Country 'A refreshed'")
+		]);
+
+		assert.strictEqual(oListBinding.getCurrentContexts()[1], oContext26, "still the same");
 	});
-});
 
 	//*********************************************************************************************
 	// Scenario: Binding-specific parameter $$aggregation is used; no visual grouping, but single
@@ -74381,7 +74435,7 @@ make root = ${bMakeRoot}`;
 				that.waitForChanges(assert)
 			]);
 		}).then(function () {
-			assert.strictEqual(oContext.oBinding, undefined);
+			assert.strictEqual(oContext.getBinding(), undefined);
 			assert.deepEqual(oDetailBinding.getCurrentContexts(), []);
 		});
 	});
