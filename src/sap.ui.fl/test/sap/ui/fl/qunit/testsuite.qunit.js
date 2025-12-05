@@ -90,6 +90,17 @@ sap.ui.define([
 					only: ["sap/ui/fl/initial/_internal/ManifestUtils"]
 				}
 			},
+			"initial/_internal/preprocessors/ComponentLifecycleHooks": {
+				group: "Initial Internal",
+				coverage: {
+					only: ["sap/ui/fl/initial/_internal/preprocessors/ComponentLifecycleHooks"]
+				},
+				ui5: {
+					resourceroots: {
+						"rta/qunit": "test-resources/sap/ui/rta/qunit/"
+					}
+				}
+			},
 			"initial/_internal/preprocessors/ControllerExtension": {
 				group: "Initial Internal",
 				coverage: {
@@ -648,17 +659,6 @@ sap.ui.define([
 				group: "Apply Internal",
 				coverage: {
 					only: ["sap/ui/fl/apply/_internal/flexState/compVariants/CompVariantManagementState"]
-				}
-			},
-			"apply/_internal/preprocessors/ComponentLifecycleHooks": {
-				group: "Apply Internal",
-				coverage: {
-					only: ["sap/ui/fl/apply/_internal/preprocessors/ComponentLifecycleHooks"]
-				},
-				ui5: {
-					resourceroots: {
-						"rta/qunit": "test-resources/sap/ui/rta/qunit/"
-					}
 				}
 			},
 			"apply/_internal/extensionPoint/Processor": {
