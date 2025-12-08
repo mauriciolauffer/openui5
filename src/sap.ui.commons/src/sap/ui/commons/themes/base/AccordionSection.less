@@ -1,3 +1,8 @@
+/* ======================================================== */
+/* CSS for control sap.ui.commons/AccordionSection.control  */
+/* Base theme                                               */
+/* ======================================================== */
+
 .sapUiAcdSection {
 	/* do not add a border, padding or margin, as this invalidates size settings */
 	display: inline-block;
@@ -5,23 +10,22 @@
 	vertical-align: top;
 	position: relative; /* enable positioning for children */
 	top: -1px;
-  	width: 100%;
+	width: 100%;
 }
 
-.sapUiAcdSection-down{
+.sapUiAcdSection-down {
 	top: 20px;
 }
 
 .sapUiAcdSection.sapUiAcdSectionDis {
-	color: @sapUiContentDisabledTextColor;
-	-moz-user-select: none;
+	color: var(--sapContent_DisabledTextColor);
 	-webkit-user-select: none;
 	user-select: none;
 }
 
 .sapUiAcdSectionMinArrow {
 	/* the 'collapse' icon on the left-hand side of the panel header */
-	background-image: url(img/accordion/expanded.gif);
+	background-image: url('img/accordion/expanded.gif');
 	vertical-align: top;
 	width: 8px;
 	height: 12px;
@@ -30,7 +34,7 @@
 }
 
 .sapUiAcdSectionColl .sapUiAcdSectionMinArrow {
-	background-image: url(img/accordion/collapsed.gif);
+	background-image: url('img/accordion/collapsed.gif');
 	background-repeat: no-repeat;
 }
 
@@ -94,13 +98,13 @@
 	/* 'position' will be set by the renderer if required. Do not set any positioning here! */
 	/* It will be set to 'absolute' if sizes are set, in order to extend the content to fully use the available space.
 	Otherwise to 'relative', and let its children take the necessary space */
-	margin-bottom: 0px; /* will be overwritten in the sapUiAcdSectionFlexHeight case */
+	margin-bottom: 0; /* will be overwritten in the sapUiAcdSectionFlexHeight case */
 	border: 0;
 	border-bottom: 10px solid @sapUiWhiteBorder;
-	left: 0px;
-	right: 0px;
-	bottom: 0px;    /* must equal the footer height */
-	top: 25px;      /* must equal the header height */
+	left: 0;
+	right: 0;
+	bottom: 0; /* must equal the footer height */
+	top: 25px; /* must equal the header height */
 	overflow: auto; /* this triggers the Panel's scrollbars when required */
 }
 
@@ -118,9 +122,9 @@
 
 .sapUiAcdSectionNoPad .sapUiAcdSectionCont {
 	/* remove the padding if set so via API */
-	padding: 0px;
+	padding: 0;
 }
 
 .sapUiAcdSectionFlexHeight .sapUiAcdSectionCont {
-	margin-bottom: 0px; /* footer height */
+	margin-bottom: 0; /* footer height */
 }
