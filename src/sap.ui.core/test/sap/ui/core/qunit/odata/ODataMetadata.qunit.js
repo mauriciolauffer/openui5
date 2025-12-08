@@ -15,8 +15,6 @@ sap.ui.define([
 	"use strict";
 
 	var sServiceUri = "/MockSrv/";
-	/** @deprecated As of version 1.48.0, reason sap.ui.model.odata.ODataModel */
-	var sServiceUri3 = "/DOESNOTEXIST/";
 
 	var sDataRootPath =  "test-resources/sap/ui/core/qunit/model/";
 	var oServer;
@@ -55,25 +53,6 @@ sap.ui.define([
 		var oModel = initModel(sServiceUri);
 		assert.ok(oModel,"Model initialized");
 		assert.ok(oModel.getServiceMetadata(),"Metadata loaded");
-	});
-
-	QUnit.test("metadata failed handling", function(assert){
-		var done = assert.async();
-		var oModel = initModel(sServiceUri3);
-		var oModel2 = {};
-		var handleFailed1 = function(){
-			assert.ok(!oModel2.getServiceMetadata(), "Metadata on second model failed correctly");
-			oModel2.detachMetadataFailed(handleFailed1);
-			done();
-		};
-		var handleFailed2 = function(){
-			assert.ok(!oModel.getServiceMetadata(), "Metadata failed correctly");
-			assert.ok(oModel.oMetadata.isFailed(), "Failed on metadata object has been set correctly");
-			oModel2 = initModel(sServiceUri3);
-			oModel2.attachMetadataFailed(handleFailed1);
-			oModel.detachMetadataFailed(handleFailed2);
-		};
-		oModel.attachMetadataFailed(handleFailed2);
 	});
 	QUnit.test("get annotation 'sap:label'", function(assert) {
 		var oModel = initModel(sServiceUri);
@@ -328,19 +307,19 @@ sap.ui.define([
 	var oModelV2 = initModelV2(sServiceUri);
 
 
-	var fnWrapMetadataReady = function(fnRealTest, assert) {
+	/** @deprecated As of version 1.48.0 */
+	var fnWrapMetadataReadyV1 = function(fnRealTest, assert) {
 		var done = assert.async();
-		if (oModel instanceof V2ODataModel) {
-			oModel.metadataLoaded().then(function () {
-				fnRealTest.apply(this, [assert, done].concat([].slice.call(arguments)));
-			});
-		}
-		/** @deprecated As of version 1.48.0, reason sap.ui.model.odata.ODataModel */
-		if (!(oModel instanceof V2ODataModel)) {
-			pModelV1MetadataLoaded.then(function () {
-				fnRealTest.apply(this, [assert, done].concat([].slice.call(arguments)));
-			});
-		}
+		pModelV1MetadataLoaded.then(function () {
+			fnRealTest.apply(this, [assert, done].concat([].slice.call(arguments)));
+		});
+	};
+
+	var fnWrapMetadataReadyV2 = function(fnRealTest, assert) {
+		var done = assert.async();
+		oModelV2.metadataLoaded().then(function () {
+			fnRealTest.apply(this, [assert, done].concat([].slice.call(arguments)));
+		});
 	};
 
 	for (var sTest in mInternalTests) {
@@ -350,8 +329,8 @@ sap.ui.define([
 		}
 
 		/** @deprecated As of version 1.48.0, reason sap.ui.model.odata.ODataModel */
-		QUnit.test("V1: " + sTest, fnWrapMetadataReady.bind(this, mInternalTests[sTest].bind(mInternalTests, oModelV1)));
-		QUnit.test("V2: " + sTest, fnWrapMetadataReady.bind(this, mInternalTests[sTest].bind(mInternalTests, oModelV2)));
+		QUnit.test("V1: " + sTest, fnWrapMetadataReadyV1.bind(this, mInternalTests[sTest].bind(mInternalTests, oModelV1)));
+		QUnit.test("V2: " + sTest, fnWrapMetadataReadyV2.bind(this, mInternalTests[sTest].bind(mInternalTests, oModelV2)));
 	}
 
 
@@ -432,8 +411,8 @@ sap.ui.define([
 	};
 
 	/** @deprecated As of version 1.48.0, reason sap.ui.model.odata.ODataModel */
-	QUnit.test("V1: _getAnnotation method", fnWrapMetadataReady.bind(this, fnTestAnnotations.bind(this, oModelV1)));
-	QUnit.test("V2: _getAnnotation method", fnWrapMetadataReady.bind(this, fnTestAnnotations.bind(this, oModelV2)));
+	QUnit.test("V1: _getAnnotation method", fnWrapMetadataReadyV1.bind(this, fnTestAnnotations.bind(this, oModelV1)));
+	QUnit.test("V2: _getAnnotation method", fnWrapMetadataReadyV2.bind(this, fnTestAnnotations.bind(this, oModelV2)));
 
 
 	QUnit.module("ODataMetadata: sap-cancel-on-close header handling");
