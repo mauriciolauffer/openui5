@@ -191,7 +191,7 @@ sap.ui.define([
 	 *   the event object when firing the event
 	 * @param {function} fnFunction
 	 *   The function to be called when the event occurs
-	 * @param {object} [oListener]
+	 * @param {object} [oListener=this]
 	 *   Context object to call the event handler with. Defaults to this
 	 *   <code>sap.ui.model.Model</code> itself
 	 *
@@ -277,7 +277,7 @@ sap.ui.define([
 	 *   the event object when firing the event
 	 * @param {function} fnFunction
 	 *   The function to be called when the event occurs
-	 * @param {object} [oListener]
+	 * @param {object} [oListener=this]
 	 *   Context object to call the event handler with. Defaults to this
 	 *   <code>sap.ui.model.Model</code> itself.
 	 *
@@ -362,7 +362,7 @@ sap.ui.define([
 	 *   the event object when firing the event
 	 * @param {function} fnFunction
 	 *   The function to be called when the event occurs
-	 * @param {object} [oListener]
+	 * @param {object} [oListener=this]
 	 *   Context object to call the event handler with. Defaults to this
 	 *   <code>sap.ui.model.Model</code> itself
 	 *
@@ -463,7 +463,7 @@ sap.ui.define([
 	 *   the event object when firing the event
 	 * @param {function} fnFunction
 	 *   The function to be called when the event occurs
-	 * @param {object} [oListener]
+	 * @param {object} [oListener=this]
 	 *   Context object to call the event handler with. Defaults to this
 	 *   <code>sap.ui.model.Model</code> itself
 	 *
@@ -579,7 +579,7 @@ sap.ui.define([
 	 *   the event object when firing the event
 	 * @param {function} fnFunction
 	 *   The function to be called when the event occurs
-	 * @param {object} [oListener]
+	 * @param {object} [oListener=this]
 	 *   Context object to call the event handler with. Defaults to this
 	 *   <code>sap.ui.model.Model</code> itself
 	 *
@@ -739,7 +739,7 @@ sap.ui.define([
 	 * @param {string} sPath The path pointing to the property that should be bound
 	 * @param {sap.ui.model.Context} [oContext] The context object for this databinding
 	 * @param {object} [mParameters] Additional model-specific parameters
-	 * @param {object} [oEvents] Event handlers can be passed to the binding ({change:myHandler})
+	 * @param {Object<string, function>} [oEvents] Event handlers can be passed to the binding ({change:myHandler})
 	 *
 	 * @return {sap.ui.model.ContextBinding} The newly created binding
 	 * @public
