@@ -3,6 +3,61 @@
     "date": "December 2025",
     "notes": [
       {
+        "id": "eec695418e127cee89923979b7f5c2a08584e152",
+        "type": "FIX",
+        "text": " sap.m.ComboBox: prevent picker from closing during loadItems."
+      },
+      {
+        "id": "ac1b91b820a0ab7a11d1f0fa0c5e80841aa99ba2",
+        "type": "FIX",
+        "text": " sap.m.MessageView: Sample adjustment"
+      },
+      {
+        "id": "ba8073b7b1648b781248218099aac3c9cbdc594a",
+        "type": "FIX",
+        "text": " sap.m.Avatar: prevent event bubbling when LightBox is present"
+      },
+      {
+        "id": "e1ad9bd76707a2f70519d1305e541f08e561770c",
+        "type": "FIX",
+        "text": " sap.m.ComboBox: Value state popup is now hidden when the picker is opened"
+      },
+      {
+        "id": "552a3c267fc1bf877a729d4ea0e6ba28924bec0b",
+        "type": "FIX",
+        "text": " We now trigger a fetch call to load PDF content and determine PDF availability in the PDFViewer"
+      },
+      {
+        "id": "3e4249a9922f04eeddd2fa6bcc4aa1d4f1261649",
+        "type": "FIX",
+        "text": " sap.m.StepInput: change validation behaviour of the StepInput when it has a binding model with Value State:"
+      },
+      {
+        "id": "74a610e9957a360f5db31514ac07983beacb165d",
+        "type": "FIX",
+        "text": " sap.m.StepInput: change validation behaviour of the StepInput when it has a binding model with Value State:\""
+      },
+      {
+        "id": "fc1451f459927df04654df737a627126fdca2755",
+        "type": "FIX",
+        "text": " sap.m.StepInput: change validation behaviour of the StepInput when it has a binding model with Value State:"
+      },
+      {
+        "id": "41702dbfa6e119cdb9b26ec4339dd919e01d37a8",
+        "type": "FIX",
+        "text": " xConfig: Reverts \"Remove correct value\""
+      },
+      {
+        "id": "c03cee33f2f3ac32c8d2922fb3d9d76473f1bf0f",
+        "type": "FIX",
+        "text": " We've now fixed an issue in FeedListItem where screen reader was not announcing the current item number and total count"
+      },
+      {
+        "id": "8f897d451a8498c9cc50992704a9e88ed4f9dbae",
+        "type": "FIX",
+        "text": " sap.m.SplitContainer: Fixed box-shadow parameter"
+      },
+      {
         "id": "2ac42b96f6dde53c4c1b9b5d308bbf3c7744588f",
         "type": "FIX",
         "text": " We've now fixed two ActionTile issues, one where the focus was consistently on the header link, and second where pressing the Enter key was not opening the right dialog box"

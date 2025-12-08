@@ -3,6 +3,11 @@
     "date": "December 2025",
     "notes": [
       {
+        "id": "f5c93fa709483a12e88cfbe189aadac3ca94bd6f",
+        "type": "FIX",
+        "text": " Field: if ComboBox-Like wrong accessibility info"
+      },
+      {
         "id": "2997dbb13bea8120035b2dbd27a61cf85e33d08b",
         "type": "FIX",
         "text": " MDC.FilterBar propagate internal model to buttons again"

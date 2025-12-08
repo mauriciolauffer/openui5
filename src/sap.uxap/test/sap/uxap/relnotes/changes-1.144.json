@@ -3,6 +3,11 @@
     "date": "December 2025",
     "notes": [
       {
+        "id": "fdb7d8fc3337ac8bf4ed695f04203d6f7ce958e3",
+        "type": "FIX",
+        "text": " sap.uxap.ObjectPageSection: fix right padding of section heading"
+      },
+      {
         "id": "37079788953eabcd8bc368d5440382dcc9ed1681",
         "type": "FIX",
         "text": " sap.uxap.ObjectPageSection: Fix sticky headers when title on left"

@@ -1,0 +1,17 @@
+{
+  "1.144.0": {
+    "date": "December 2025",
+    "notes": [
+      {
+        "id": "b45c8bf9713776b09d60eb48261e72a87afb5f77",
+        "type": "FIX",
+        "text": " sap.m.TextArea: Readonly outline fixed"
+      },
+      {
+        "id": "aea1069ae29560d63737beb1e542889707d43d0f",
+        "type": "FIX",
+        "text": " sap.m.Tokenizer: Return padding removed by mistake"
+      }
+    ]
+  }
+}

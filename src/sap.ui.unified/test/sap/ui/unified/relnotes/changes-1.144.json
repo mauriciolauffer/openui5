@@ -1,0 +1,12 @@
+{
+  "1.144.0": {
+    "date": "December 2025",
+    "notes": [
+      {
+        "id": "d953b1457de0c2458bf54729531bf79dee064b48",
+        "type": "FIX",
+        "text": " sap.ui.unified.ColorPicker: add presentation role to color grid"
+      }
+    ]
+  }
+}
