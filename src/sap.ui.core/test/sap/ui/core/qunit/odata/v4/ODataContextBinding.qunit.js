@@ -1495,7 +1495,9 @@ sap.ui.define([
 		this.mock(oBinding).expects("_fireChange").never();
 		this.mock(oBinding).expects("fetchCache").never();
 		this.mock(oBinding).expects("createReadGroupLock").never();
-		this.mock(oBinding).expects("refreshDependentBindings").never();
+		this.mock(oBinding).expects("refreshDependentBindings")
+			.withExactArgs("", undefined, true, undefined)
+			.returns(SyncPromise.resolve());
 
 		// code under test (as called by ODataBinding#refresh)
 		assert.strictEqual(oBinding.refreshInternal("", undefined, true).isFulfilled(), true);
@@ -3981,8 +3983,13 @@ sap.ui.define([
 			oBinding.oOperation.bAction = bAction;
 			oBinding.oOperation.mRefreshParameters = {};
 
+			this.mock(oBinding).expects("refreshDependentBindings")
+				.exactly(bAction === false ? 0 : 1)
+				.withExactArgs("~sResourcePathPrefix~", "~sGroupId~", "~bCheckUpdate~",
+					"~bKeepCacheOnError~")
+				.returns(SyncPromise.resolve());
 			this.mock(oBinding).expects("createReadGroupLock").exactly(bAction === false ? 1 : 0)
-				.withExactArgs("myGroup", true)
+				.withExactArgs("~sGroupId~", true)
 				.callsFake(function () {
 					oBinding.oReadGroupLock = oGroupLock;
 				});
@@ -3993,7 +4000,8 @@ sap.ui.define([
 				.returns(oInvokePromise);
 
 			// code under test
-			oPromise = oBinding.refreshInternal("", "myGroup");
+			oPromise = oBinding.refreshInternal("~sResourcePathPrefix~", "~sGroupId~",
+				"~bCheckUpdate~", "~bKeepCacheOnError~");
 
 			assert.strictEqual(oBinding.oReadGroupLock, undefined);
 
