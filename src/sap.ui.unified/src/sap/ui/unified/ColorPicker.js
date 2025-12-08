@@ -763,6 +763,9 @@ sap.ui.define([
 				// Control container div
 				oRm.openStart("div", oControl);
 				oRm.class(CONSTANTS.CPBoxClass);
+				oRm.accessibilityState({
+					role: "presentation"
+				});
 				oRm.openEnd();
 
 				// Handle
