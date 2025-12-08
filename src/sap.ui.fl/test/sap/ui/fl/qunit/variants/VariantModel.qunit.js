@@ -28,6 +28,7 @@ sap.ui.define([
 	"sap/ui/fl/Utils",
 	"sap/ui/model/resource/ResourceModel",
 	"sap/ui/thirdparty/sinon-4",
+	"test-resources/sap/ui/fl/qunit/FlQUnitUtils",
 	"test-resources/sap/ui/rta/qunit/RtaQunitUtils"
 ], function(
 	_omit,
@@ -57,6 +58,7 @@ sap.ui.define([
 	Utils,
 	ResourceModel,
 	sinon,
+	FlQUnitUtils,
 	RtaQunitUtils
 ) {
 	"use strict";
@@ -80,15 +82,6 @@ sap.ui.define([
 			variantName: mVariantProperties.title,
 			contexts: mVariantProperties.contexts
 		});
-	}
-
-	function stubFlexObjectsSelector(aFlexObjects) {
-		var oFlexObjectsSelector = FlexState.getFlexObjectsDataSelector();
-		var oGetFlexObjectsStub = sandbox.stub(oFlexObjectsSelector, "get");
-		oGetFlexObjectsStub.callsFake(function(...aArgs) {
-			return aFlexObjects.concat(oGetFlexObjectsStub.wrappedMethod.apply(this, aArgs));
-		});
-		oFlexObjectsSelector.checkUpdate();
 	}
 
 	QUnit.module("Given an instance of VariantModel", {
@@ -115,7 +108,7 @@ sap.ui.define([
 					variantReference: "variant1"
 				});
 				oPersistedUIChange.setProperty("state", States.LifecycleState.PERSISTED);
-				stubFlexObjectsSelector([
+				FlQUnitUtils.stubFlexObjectsSelector(sandbox, [
 					createVariant({
 						author: VariantUtil.DEFAULT_AUTHOR,
 						key: sVMReference,
@@ -1344,7 +1337,7 @@ sap.ui.define([
 			var oResourceModel = new ResourceModel({ bundleUrl: oResourceBundle.oUrlInfo.url });
 			this.oVariantManagement.setModel(oResourceModel, "i18n");
 			var sTitleBinding = "{i18n>VARIANT_MANAGEMENT_AUTHOR}";
-			stubFlexObjectsSelector(createTranslationVariants.call(this, sTitleBinding));
+			FlQUnitUtils.stubFlexObjectsSelector(sandbox, createTranslationVariants.call(this, sTitleBinding));
 			this.oVariantManagement.setModel(this.oModel, ControlVariantApplyAPI.getVariantModelName());
 			return this.oVariantManagement.waitForInit().then(function() {
 				assert.strictEqual(
@@ -1365,7 +1358,7 @@ sap.ui.define([
 			oResourceModel._oResourceBundle.aPropertyFiles[0].mProperties["test.with.dots"] = "Text From Key With Dots";
 			this.oVariantManagement.setModel(oResourceModel, "i18n");
 			var sTitleBinding = "{i18n>test.with.dots}";
-			stubFlexObjectsSelector(createTranslationVariants.call(this, sTitleBinding));
+			FlQUnitUtils.stubFlexObjectsSelector(sandbox, createTranslationVariants.call(this, sTitleBinding));
 			this.oVariantManagement.setModel(this.oModel, ControlVariantApplyAPI.getVariantModelName());
 			return this.oVariantManagement.waitForInit().then(function() {
 				assert.strictEqual(
@@ -1381,7 +1374,7 @@ sap.ui.define([
 			var oResourceModel = new ResourceModel({ bundleUrl: oResourceBundle.oUrlInfo.url });
 			this.oVariantManagement.setModel(oResourceModel, "i18n");
 			var sTitleBinding = "{anotherResourceModel>VARIANT_MANAGEMENT_AUTHOR}";
-			stubFlexObjectsSelector(createTranslationVariants.call(this, sTitleBinding));
+			FlQUnitUtils.stubFlexObjectsSelector(sandbox, createTranslationVariants.call(this, sTitleBinding));
 			this.oVariantManagement.setModel(this.oModel, ControlVariantApplyAPI.getVariantModelName());
 			this.oVariantManagement.attachModelContextChange(function() {
 				assert.strictEqual(

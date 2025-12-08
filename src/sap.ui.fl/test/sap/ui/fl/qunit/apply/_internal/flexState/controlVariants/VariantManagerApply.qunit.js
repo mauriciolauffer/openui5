@@ -20,6 +20,7 @@ sap.ui.define([
 	"sap/ui/fl/variants/VariantModel",
 	"sap/ui/fl/Layer",
 	"sap/ui/thirdparty/sinon-4",
+	"test-resources/sap/ui/fl/qunit/FlQUnitUtils",
 	"test-resources/sap/ui/rta/qunit/RtaQunitUtils"
 ], function(
 	Deferred,
@@ -40,6 +41,7 @@ sap.ui.define([
 	VariantModel,
 	Layer,
 	sinon,
+	FlQUnitUtils,
 	RtaQunitUtils
 ) {
 	"use strict";
@@ -60,16 +62,6 @@ sap.ui.define([
 			variantName: mVariantProperties.title,
 			contexts: mVariantProperties.contexts
 		});
-	}
-
-	function stubFlexObjectsSelector(aFlexObjects) {
-		const oFlexObjectsSelector = FlexState.getFlexObjectsDataSelector();
-		const oGetFlexObjectsStub = sandbox.stub(oFlexObjectsSelector, "get");
-		oGetFlexObjectsStub.callsFake(function(...aArgs) {
-			return aFlexObjects.concat(oGetFlexObjectsStub.wrappedMethod.apply(this, aArgs));
-		});
-		oFlexObjectsSelector.checkUpdate();
-		return oGetFlexObjectsStub;
 	}
 
 	QUnit.module("VariantManagerApply", {
@@ -118,7 +110,7 @@ sap.ui.define([
 				layer: Layer.USER
 			});
 
-			this.oFlexObjectsSelectorStub = stubFlexObjectsSelector([
+			this.oFlexObjectsSelectorStub = FlQUnitUtils.stubFlexObjectsSelector(sandbox, [
 				this.oVariant1,
 				this.oVariant2,
 				this.oVariant3,
@@ -374,7 +366,7 @@ sap.ui.define([
 			oUIChange3.setState(States.LifecycleState.PERSISTED);
 			oUIChange3.markSuccessful("result");
 			this.oFlexObjectsSelectorStub.restore();
-			this.oFlexObjectsSelectorStub = stubFlexObjectsSelector([
+			this.oFlexObjectsSelectorStub = FlQUnitUtils.stubFlexObjectsSelector(sandbox, [
 				createVariant({
 					author: VariantUtil.DEFAULT_AUTHOR,
 					key: sVMReference,

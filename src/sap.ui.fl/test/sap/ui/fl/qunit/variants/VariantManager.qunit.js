@@ -24,6 +24,7 @@ sap.ui.define([
 	"sap/ui/fl/Layer",
 	"sap/ui/fl/Utils",
 	"sap/ui/thirdparty/sinon-4",
+	"test-resources/sap/ui/fl/qunit/FlQUnitUtils",
 	"test-resources/sap/ui/rta/qunit/RtaQunitUtils"
 ], function(
 	BaseEvent,
@@ -48,6 +49,7 @@ sap.ui.define([
 	Layer,
 	Utils,
 	sinon,
+	FlQUnitUtils,
 	RtaQunitUtils
 ) {
 	"use strict";
@@ -97,22 +99,13 @@ sap.ui.define([
 		});
 	}
 
-	function stubFlexObjectsSelector(aFlexObjects) {
-		var oFlexObjectsSelector = FlexState.getFlexObjectsDataSelector();
-		var oGetFlexObjectsStub = sandbox.stub(oFlexObjectsSelector, "get");
-		oGetFlexObjectsStub.callsFake(function(...aArgs) {
-			return aFlexObjects.concat(oGetFlexObjectsStub.wrappedMethod.apply(this, aArgs));
-		});
-		oFlexObjectsSelector.checkUpdate();
-	}
-
 	QUnit.module("VariantManager", {
 		async beforeEach() {
 			this.oSettingsStub = sandbox.stub(Settings, "getInstanceOrUndef").callsFake(() => {
 				const oSettings = this.oSettingsStub.wrappedMethod();
 				return oSettings || { getUserId: () => "test user" };
 			});
-			stubFlexObjectsSelector([
+			FlQUnitUtils.stubFlexObjectsSelector(sandbox, [
 				createVariant({
 					author: ControlVariantWriteUtils.DEFAULT_AUTHOR,
 					key: sVMReference,

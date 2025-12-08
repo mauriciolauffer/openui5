@@ -32,6 +32,7 @@ sap.ui.define([
 	"sap/ui/layout/Grid",
 	"sap/ui/qunit/utils/nextUIUpdate",
 	"sap/ui/thirdparty/sinon-4",
+	"test-resources/sap/ui/fl/qunit/FlQUnitUtils",
 	"test-resources/sap/ui/rta/qunit/RtaQunitUtils"
 ], function(
 	Localization,
@@ -65,6 +66,7 @@ sap.ui.define([
 	Grid,
 	nextUIUpdate,
 	sinon,
+	FlQUnitUtils,
 	RtaQunitUtils
 ) {
 	"use strict";
@@ -97,17 +99,11 @@ sap.ui.define([
 		// dialog check
 		assert.ok(oVariantManagementControl.getManageDialog().isA("sap.m.Dialog"));
 		assert.notOk(oVariantManagementControl.getManageDialog().bIsDestroyed, "then the dialog is not destroyed");
-		assert.deepEqual(oVariantManagementControl.getManageDialog(), oVariantManagementControl.oManagementDialog, "then getManageDialog returns the manage dialog");
-	}
-
-	function stubFlexObjectsSelector(aFlexObjects) {
-		const oFlexObjectsSelector = FlexState.getFlexObjectsDataSelector();
-		const oGetFlexObjectsStub = sandbox.stub(oFlexObjectsSelector, "get");
-		oGetFlexObjectsStub.callsFake(function(...aArgs) {
-			return aFlexObjects.concat(oGetFlexObjectsStub.wrappedMethod.apply(this, aArgs));
-		});
-		oFlexObjectsSelector.checkUpdate();
-		return oGetFlexObjectsStub;
+		assert.deepEqual(
+			oVariantManagementControl.getManageDialog(),
+			oVariantManagementControl.oManagementDialog,
+			"then getManageDialog returns the manage dialog"
+		);
 	}
 
 	QUnit.module("sap.ui.fl.variants.VariantManagement", {
@@ -1646,7 +1642,7 @@ sap.ui.define([
 			}).placeAt("qunit-fixture");
 			await nextUIUpdate();
 			this.oVMControl = Element.getElementById(this.oComp.createId(this.sVMReference));
-			stubFlexObjectsSelector([
+			FlQUnitUtils.stubFlexObjectsSelector(sandbox, [
 				FlexObjectFactory.createFlVariant({
 					reference: sFlexReference,
 					variantManagementReference: this.sVMReference,
