@@ -1,0 +1,42 @@
+{
+	"sap.app": {
+		"id": "cardsdemo.object.imageFitPositionBound",
+		"type": "card"
+	},
+	"sap.card": {
+		"type": "Object",
+		"data": {
+			"json": {
+				"firstName": "Donna",
+				"lastName": "Moore",
+				"fit": "contain",
+				"position": "end",
+				"height": "200px",
+				"src": "https://images.csmonitor.com/csmarchives/2010/06/0609-bubble-science.jpg?alias=standard_900x600nc"
+			}
+		},
+		"header": {
+			"icon": {
+				"src": "{photo}"
+			},
+			"title": "{firstName} {lastName}"
+		},
+		"content": {
+			"groups": [
+				{
+					"alignment": "Stretch",
+					"items": [
+						{
+							"type": "Image",
+							"src": "{/src}",
+							"fullWidth": true,
+							"height": "{/height}",
+							"imageFit": "{/fit}",
+							"imagePosition": "{/position}"
+						}
+					]
+				}
+			]
+		}
+	}
+}

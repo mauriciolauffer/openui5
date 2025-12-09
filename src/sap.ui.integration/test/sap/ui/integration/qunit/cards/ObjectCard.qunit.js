@@ -3746,6 +3746,62 @@ sap.ui.define([
 		});
 	});
 
+	QUnit.test("Image properties (imageFit, imagePosition, height) work correctly when bound to data", async function (assert) {
+		// Arrange
+		this.oCard.setManifest({
+			"sap.app": {
+				"id": "test.cards.object.imagePropertiesBound",
+				"type": "card"
+			},
+			"sap.card": {
+				"type": "Object",
+				"data": {
+					"json": {
+						"fit": "contain",
+						"position": "center",
+						"height": "200px",
+						"src": "images/grass.jpg"
+					}
+				},
+				"header": {
+					"title": "Test Image Properties with Data Binding"
+				},
+				"content": {
+					"groups": [
+						{
+							"alignment": "Stretch",
+							"items": [
+								{
+									"type": "Image",
+									"src": "{/src}",
+									"fullWidth": true,
+									"height": "{/height}",
+									"imageFit": "{/fit}",
+									"imagePosition": "{/position}"
+								}
+							]
+						}
+					]
+				}
+			}
+		});
+
+		// Act
+		await nextCardReadyEvent(this.oCard);
+		await nextUIUpdate();
+
+		const oObjectContent = this.oCard.getAggregation("_content");
+		const oContent = oObjectContent.getAggregation("_content");
+		const oImage = oContent.getItems()[0].getItems()[0];
+
+		// Assert
+		assert.ok(oImage.isA("sap.m.Image"), "Image control is created");
+		assert.strictEqual(oImage.getHeight(), "200px", "height property is correctly bound and resolved");
+		assert.strictEqual(oImage.getBackgroundSize(), "contain", "imageFit property is correctly bound and resolved");
+		assert.strictEqual(oImage.getBackgroundPosition(), "center", "imagePosition property is correctly bound and resolved");
+		assert.strictEqual(oImage.getMode(), "Background", "Image mode is set to 'Background' when imageFit or imagePosition is used");
+	});
+
 	QUnit.module("Test deprecated image overlay subTitle", {
 		beforeEach: function() {
 			this.oCard = new Card({
