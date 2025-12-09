@@ -1670,6 +1670,7 @@ sap.ui.define([
 		checkFocus(getCell(0, 0, null, null, oTable), assert);
 
 		oTable.unbindRows();
+		await nextUIUpdate();
 		oTable.focus();
 		assert.ok(fnFocusSpy.calledWith(), "Focus event called without any parameter");
 		checkFocus(oTable.getDomRef("noDataCnt"), assert);
@@ -1709,6 +1710,8 @@ sap.ui.define([
 
 		oTable.setShowOverlay(false);
 		oTable.setShowNoData(false);
+		oTable.getRowMode().setRowCount(0);
+		await nextUIUpdate();
 		assert.strictEqual(oTable.getFocusDomRef(), oTable.getDomRef(), "No focusable elements");
 
 		oTable.destroy();
@@ -3603,6 +3606,7 @@ sap.ui.define([
 		assert.equal(oTable.getFirstVisibleRow(), 0, "'firstVisibleRow' set to 0 when sorting");
 	});
 
+	/** @deprecated As of version 1.64 */
 	QUnit.module("Callbacks", {
 		afterEach: function() {
 			destroyTable();
@@ -3616,15 +3620,17 @@ sap.ui.define([
 		let iCallCountUpdateTableCellOnTable = 0;
 		let iCallCountUpdateTableCell = 0;
 		const fnTest = function() {
-			assert.equal(iCallCountUpdateTableCellOnTable, 20, "UpdateTableCell callback called on table ok");
-			assert.equal(iCallCountUpdateTableCell, 20, "UpdateTableCell callback called on cell ok");
+			assert.equal(iCallCountUpdateTableCellOnTable, 4, "UpdateTableCell callback called on table ok");
+			assert.equal(iCallCountUpdateTableCell, 4, "UpdateTableCell callback called on cell ok");
+			iCallCountUpdateTableCellOnTable = 0;
+			iCallCountUpdateTableCell = 0;
 			oTable.attachEventOnce("rowsUpdated", fnTestScroll);
 			oTable.setFirstVisibleRow(5);
 		};
 
 		const fnTestScroll = function() {
-			assert.equal(iCallCountUpdateTableCellOnTable, 40, "UpdateTableCell callback called on table ok");
-			assert.equal(iCallCountUpdateTableCell, 40, "UpdateTableCell callback called on cell ok");
+			assert.equal(iCallCountUpdateTableCellOnTable, 2, "UpdateTableCell callback called on table ok");
+			assert.equal(iCallCountUpdateTableCell, 2, "UpdateTableCell callback called on cell ok");
 			done();
 		};
 
@@ -3634,22 +3640,19 @@ sap.ui.define([
 		TextView.prototype._updateTableCell = function() { iCallCountUpdateTableCell++; };
 
 		oTable = new Table({
+			visibleRowCount: 1,
 			columns: [
 				new Column({template: new TextView()}),
 				new Column({template: new TextView()})
-			]
+			],
+			models: new JSONModel({modelData: aData})
 		});
 
 		// implement _updateTableCell for table instance
 		oTable._updateTableCell = function() { iCallCountUpdateTableCellOnTable++; };
-
 		oTable.attachEventOnce("rowsUpdated", fnTest);
-		const oModel = new JSONModel();
-		oModel.setData({modelData: aData});
-		oTable.setModel(oModel);
 		oTable.placeAt("qunit-fixture");
 		await nextUIUpdate();
-
 		oTable.bindRows("/modelData");
 	});
 
@@ -5703,12 +5706,12 @@ sap.ui.define([
 		assert.ok(oInvalidateSpy.notCalled, "Change from text to sap.m.IllustratedMessage: Table not invalidated");
 
 		await this.waitForNoColumnsMessage(this.oTable);
-		assert.equal(oInvalidateSpy.callCount, 1,
+		assert.ok(oInvalidateSpy.called,
 			"Change from text to sap.m.IllustratedMessage: Table invalidated after loading default NoColumns IllustratedMessage");
 
 		oInvalidateSpy.resetHistory();
 		this.oTable.setNoData("Hello");
-		assert.equal(oInvalidateSpy.callCount, 1, "Change from sap.m.IllustratedMessage to text: Table invalidated");
+		assert.ok(oInvalidateSpy.called, "Change from sap.m.IllustratedMessage to text: Table invalidated");
 		await this.oTable.qunit.whenRenderingFinished();
 		this.assertNoContentMessage(assert, this.oTable, TableUtils.getResourceText("TBL_NO_COLUMNS"));
 

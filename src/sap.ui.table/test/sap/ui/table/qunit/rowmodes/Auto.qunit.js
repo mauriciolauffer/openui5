@@ -484,7 +484,7 @@ sap.ui.define([
 			this.resetRowsUpdatedSpy();
 		}).then(this.oTable.qunit.$resize({height: "500px"})).then(() => {
 			return this.checkRowsUpdated(assert, [
-				TableUtils.RowsUpdateReason.Resize
+				TableUtils.RowsUpdateReason.Render
 			]);
 		}).finally(this.oTable.qunit.resetSize);
 	});
@@ -497,7 +497,7 @@ sap.ui.define([
 			document.body.dispatchEvent(new Event("transitionend"));
 		}).then(TableQUnitUtils.wait).then(() => {
 			return this.checkRowsUpdated(assert, [
-				TableUtils.RowsUpdateReason.Animation
+				TableUtils.RowsUpdateReason.Render
 			]);
 		});
 	});

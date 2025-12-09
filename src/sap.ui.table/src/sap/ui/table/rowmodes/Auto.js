@@ -548,7 +548,7 @@ sap.ui.define([
 		}
 
 		if (iOldComputedRowCount !== iNewComputedRowCount) {
-			this.updateTable(sReason);
+			this.invalidate();
 		} else {
 			// TODO: The check for reason=Zoom can be removed once the table is changed to a div-based layout.
 			if (oOldRowCount !== iNewRowCount || sReason === TableUtils.RowsUpdateReason.Zoom) {
@@ -628,11 +628,7 @@ sap.ui.define([
 	 * @this sap.ui.table.rowmodes.Auto
 	 */
 	TableDelegate.onBeforeRendering = function(oEvent) {
-		const bRenderedRows = oEvent && oEvent.isMarked("renderRows");
-
-		if (!bRenderedRows) {
-			this.stopAutoRowMode();
-		}
+		this.stopAutoRowMode();
 	};
 
 	/**
@@ -640,11 +636,7 @@ sap.ui.define([
 	 * @this sap.ui.table.rowmodes.Auto
 	 */
 	TableDelegate.onAfterRendering = function(oEvent) {
-		const bRenderedRows = oEvent && oEvent.isMarked("renderRows");
-
-		if (!bRenderedRows) {
-			this.startAutoRowMode();
-		}
+		this.startAutoRowMode();
 	};
 
 	function signalStartTableUpdate(oRowMode) {
