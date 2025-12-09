@@ -160,13 +160,12 @@ sap.ui.define([
 	 * @returns {string} The alternative text
 	 */
 	ImageContent.prototype.getAltText = function () {
-		var oContent = this.getAggregation("_content");
+		const oContent = this.getAggregation("_content");
 		if (oContent && oContent.getAlt() !== "") {
 			return oContent.getAlt();
-		} else if (oContent && oContent.getAccessibilityInfo()) {
-			return oContent.getAccessibilityInfo().description;
 		} else {
-			return "";
+			const sText = oContent?.getAccessibilityInfo()?.description;
+			return sText || "";
 		}
 	};
 
