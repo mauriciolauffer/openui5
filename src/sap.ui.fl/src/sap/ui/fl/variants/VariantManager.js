@@ -429,7 +429,6 @@ sap.ui.define([
 				})
 			);
 			await VariantManagerApply.updateCurrentVariant({
-				variantManagementReference: sVMReference,
 				newVariantReference: sNewDefaultVariantReference,
 				vmControl: oVMControl,
 				appComponent: Utils.getAppComponentForControl(oVMControl)
@@ -652,7 +651,6 @@ sap.ui.define([
 		});
 
 		await VariantManagerApply.updateCurrentVariant({
-			variantManagementReference: mPropertyBag.variantManagementReference,
 			newVariantReference: mPropertyBag.sourceVariantReference,
 			appComponent: mPropertyBag.appComponent,
 			vmControl: mPropertyBag.vmControl

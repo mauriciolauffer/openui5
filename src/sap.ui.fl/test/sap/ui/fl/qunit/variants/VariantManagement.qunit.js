@@ -1698,7 +1698,6 @@ sap.ui.define([
 				await VariantManagementState.waitForVariantSwitch(sFlexReference, this.sVMReference);
 				assert.strictEqual(oCallListenerStub.callCount, 0, "the listeners are not notified again");
 				assert.deepEqual(mPropertyBag, {
-					variantManagementReference: this.oVMControl.getVariantManagementReference(),
 					newVariantReference: this.sVMReference,
 					appComponent: this.oComp,
 					vmControl: this.oVMControl,

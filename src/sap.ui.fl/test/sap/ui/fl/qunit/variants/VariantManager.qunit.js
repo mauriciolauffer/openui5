@@ -279,13 +279,11 @@ sap.ui.define([
 			const mPropertyBag = {
 				variant: oVariant,
 				sourceVariantReference: "sourceVariant",
-				variantManagementReference: sVMReference,
 				appComponent: oComponent,
 				vmControl: this.oVMControl
 			};
 			await VariantManager.removeVariant(mPropertyBag);
 			assert.deepEqual(fnUpdateCurrentVariantStub.getCall(0).args[0], {
-				variantManagementReference: mPropertyBag.variantManagementReference,
 				newVariantReference: mPropertyBag.sourceVariantReference,
 				appComponent: mPropertyBag.appComponent,
 				vmControl: this.oVMControl
@@ -460,7 +458,6 @@ sap.ui.define([
 			sandbox.stub(FlexObjectManager, "saveFlexObjects").callsFake((oPropertyBag) => {
 				assert.strictEqual(oUpdateVariantStub.callCount, 1, "the variant was switched");
 				assert.deepEqual(oUpdateVariantStub.lastCall.args[0], {
-					variantManagementReference: sVMReference,
 					newVariantReference: "variant1",
 					appComponent: oComponent,
 					vmControl: this.oVMControl
