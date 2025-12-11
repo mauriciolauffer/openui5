@@ -3676,7 +3676,7 @@ sap.ui.define([
 	});
 
 	//*********************************************************************************************
-	QUnit.test("Cache#visitResponse: reportStateMessages; single entity", function (assert) {
+	QUnit.test("Cache#visitResponse: reportStateMessages; single entity", function () {
 		var oCache = new _Cache(this.oRequestor, "SalesOrderList('0500000001')", {}, false,
 				"original/resource/path"),
 			aMessagesInBusinessPartner = [{/* any message object */}],
@@ -3736,15 +3736,6 @@ sap.ui.define([
 
 		// code under test
 		oCache.visitResponse(oData, mTypeForMetaPath);
-
-		assert.notOk("$created" in aMessagesInBusinessPartner);
-		assert.notOk("$count" in aMessagesInBusinessPartner);
-		assert.notOk("$created" in aMessagesSalesOrder);
-		assert.notOk("$count" in aMessagesSalesOrder);
-		assert.notOk("$created" in aMessagesSalesOrderSchedules0);
-		assert.notOk("$count" in aMessagesSalesOrderSchedules0);
-		assert.notOk("$created" in aMessagesSalesOrderSchedules1);
-		assert.notOk("$count" in aMessagesSalesOrderSchedules1);
 	});
 
 	//*********************************************************************************************
@@ -4088,6 +4079,8 @@ sap.ui.define([
 				"/EntitySet/Navigation" : oType
 			};
 
+		mExpectedMessages[""].$count = 1;
+		mExpectedMessages[""].$created = 0;
 		this.mock(oCache).expects("checkSharedRequest").withExactArgs();
 		this.oModelInterfaceMock.expects("reportStateMessages")
 			.withExactArgs("original/resource/path", mExpectedMessages, undefined);
@@ -4153,6 +4146,10 @@ sap.ui.define([
 				"/EntitySet/Navigation/foo/baz" : oType
 			};
 
+		for (const sKey in mExpectedMessages) {
+			mExpectedMessages[sKey].$count = 1;
+			mExpectedMessages[sKey].$created = 0;
+		}
 		this.mock(oCache).expects("checkSharedRequest").withExactArgs().exactly(4);
 		this.oModelInterfaceMock.expects("reportStateMessages")
 			.withExactArgs("original/resource/path", mExpectedMessages, undefined);
@@ -4219,6 +4216,10 @@ sap.ui.define([
 				"/EntitySet/Navigation/foo/bar" : oType
 			};
 
+		for (const sKey in mExpectedMessages) {
+			mExpectedMessages[sKey].$count = 1;
+			mExpectedMessages[sKey].$created = 0;
+		}
 		this.mock(oCache).expects("checkSharedRequest").withExactArgs().thrice();
 		this.oModelInterfaceMock.expects("reportStateMessages")
 			.withExactArgs("original/resource/path", mExpectedMessages, ["(1)"]);
@@ -4267,6 +4268,8 @@ sap.ui.define([
 
 		oCache.bSharedRequest = bSharedRequest;
 		oCache.sReportedMessagesPath = "~sReportedMessagesPath~";
+		mExpectedMessages[""].$count = 1;
+		mExpectedMessages[""].$created = 0;
 		this.mock(oCache).expects("checkSharedRequest").withExactArgs();
 		this.oModelInterfaceMock.expects("reportStateMessages").exactly(bSharedRequest ? 0 : 1)
 			.withExactArgs("original/resource/path", mExpectedMessages, undefined);

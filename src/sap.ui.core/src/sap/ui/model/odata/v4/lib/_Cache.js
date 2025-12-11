@@ -2619,7 +2619,7 @@ sap.ui.define([
 					}
 					return; // ignore other annotations
 				}
-				if (Array.isArray(vPropertyValue) && sProperty !== sMessageProperty) {
+				if (Array.isArray(vPropertyValue)) {
 					vPropertyValue.$created = 0; // number of (client-side) created elements
 					// compute count
 					const sCount = oInstance[sProperty + "@odata.count"];
