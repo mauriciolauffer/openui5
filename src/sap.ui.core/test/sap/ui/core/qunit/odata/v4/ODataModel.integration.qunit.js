@@ -27209,6 +27209,7 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 	// single entity can be modified even if the single entity is currently not visible in the list.
 	// ODataListBinding#refresh also refreshes the kept-alive entity even if the binding was
 	// suspended. The kept-alive context gets destroyed if the entity was deleted on the server.
+	// In case of a side-effects refresh the kept-alive entities are also refreshed.
 	// JIRA: CPOUI5ODATAV4-2757
 	QUnit.test("Data Aggregation: keep alive single entity", async function (assert) {
 		const oModel = this.createAggregationModel({autoExpandSelect : true});
@@ -27385,6 +27386,43 @@ constraints:{'maxLength':5},formatOptions:{'parseKeepsEmptyString':true}\
 		]);
 
 		assert.strictEqual(oListBinding.getCurrentContexts()[1], oContext26, "still the same");
+
+		this.expectRequest("#7 BusinessPartners?"
+				+ "$select=Country,Currency,Id,Name,Region,SalesAmount"
+				+ "&$filter=Id eq 26", {
+				value : [{
+					Country : "A",
+					Currency : "EUR",
+					Id : 26,
+					Name : "Foo",
+					Region : "side-effects refresh",
+					SalesAmount : "61"
+				}]
+			})
+			.expectRequest("#7 BusinessPartners?$apply=groupby((Country))&$count=true"
+				+ "&$skip=0&$top=3", {
+				"@odata.count" : "26",
+				value : [
+					{Country : "A"},
+					{Country : "B"},
+					{Country : "C"}
+				]
+			})
+			// First update kept-alive entity
+			.expectChange("country", [, "A"])
+			.expectChange("region", "side-effects refresh")
+			// then refresh the list - collapses "A"
+			.expectChange("country", ["A", "B", "C"])
+			.expectChange("id", [, null])
+			.expectChange("name", [, null])
+			.expectChange("salesAmount", [, null])
+			.expectChange("currency", [, null]);
+
+		return Promise.all([
+			// code under test
+			oListBinding.getHeaderContext().requestSideEffects([""]),
+			this.waitForChanges(assert, "side-effects refresh")
+		]);
 	});
 
 	//*********************************************************************************************
