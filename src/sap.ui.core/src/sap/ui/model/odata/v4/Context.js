@@ -2310,9 +2310,11 @@ sap.ui.define([
 	 * of version 1.144.0), see {@link #isAggregated}. Such a kept-alive context
 	 * <ul>
 	 *   <li> can be used as a binding context,
-	 *   <li> can be used for updating data (see {@link #setProperty}), and
+	 *   <li> can be used for updating data (see {@link #setProperty}),
 	 *   <li> is refreshed when its list binding's
-	 *     {@link sap.ui.model.odata.v4.ODataListBinding#refresh}) is called.
+	 *     {@link sap.ui.model.odata.v4.ODataListBinding#refresh}) is called, and
+	 *   <li> is refreshed when {@link #requestSideEffects}) is called on its list binding's header
+	 *     context.
 	 * </ul>
 	   Other APIs are not supported.
 	 *
