@@ -2307,8 +2307,14 @@ sap.ui.define([
 	 * Note: This is only supported if the model uses the <code>autoExpandSelect</code> parameter.
 	 *
 	 * Note: This can be used for single entities in a data aggregation scenario (@experimental as
-	 * of version 1.144.0), see {@link #isAggregated}. Such a context can be used as a binding
-	 * context and for updating (see {@link #setProperty}). Other APIs are not supported.
+	 * of version 1.144.0), see {@link #isAggregated}. Such a kept-alive context
+	 * <ul>
+	 *   <li> can be used as a binding context,
+	 *   <li> can be used for updating data (see {@link #setProperty}), and
+	 *   <li> is refreshed when its list binding's
+	 *     {@link sap.ui.model.odata.v4.ODataListBinding#refresh}) is called.
+	 * </ul>
+	   Other APIs are not supported.
 	 *
 	 * @param {boolean} bKeepAlive
 	 *   Whether to keep the context alive

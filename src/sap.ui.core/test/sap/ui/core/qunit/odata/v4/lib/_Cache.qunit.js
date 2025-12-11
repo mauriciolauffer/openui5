@@ -14786,11 +14786,22 @@ sap.ui.define([
 		}
 	},
 	sFilter : "~Foo~"
+}, {
+	sTitle : "refreshKeptElements with aggregated data",
+	bAggregated : true,
+	bDropApply : true, // always true if called from _AggregationCache#refreshKeptElements
+	mKeptAliveElementsByPredicate : {
+		"('Foo')" : {bAggregated : false, key : "Foo", "@$ui5._" : {predicate : "('Foo')"}},
+		"('Bar')" : {bAggregated : true, key : "Bar", "@$ui5._" : {predicate : "('Bar')"}},
+		"('Baz')" : {bAggregated : false, key : "Baz", "@$ui5._" : {predicate : "('Baz')"}}
+	},
+	sFilter : "~Baz~ or ~Foo~",
+	iTop : 2
 }].forEach(function (oFixture) {
 	QUnit.test(oFixture.sTitle, function (assert) {
 		var mByPredicate = {},
 			oCache = _Cache.create(this.oRequestor, "Employees", {}),
-			oCacheMock = this.mock(oCache),
+			oCacheMock,
 			oGroupLock = {},
 			bHasLateExpandSelect = "iTop" in oFixture, // just to have some variance
 			oHelperMock = this.mock(_Helper),
@@ -14808,6 +14819,10 @@ sap.ui.define([
 			mTypes = {};
 
 		oCache.mLateExpandSelect = bHasLateExpandSelect ? mLateExpandSelect : undefined;
+		if (oFixture.bAggregated) {
+			oCache.isAggregated = mustBeMocked;
+		}
+		oCacheMock = this.mock(oCache);
 		oHelperMock.expects("updateAll").never(); // except... see below
 		oCacheMock.expects("removeElement").never(); // except... see below
 		Object.keys(oFixture.mKeptAliveElementsByPredicate).forEach(function (sPredicate) {
@@ -14819,12 +14834,18 @@ sap.ui.define([
 				.exactly("key" in oElement || oElement.bChanges ? 1 : 0)
 				.withExactArgs(sPredicate, "~bIgnorePendingChanges~")
 				.returns(oElement.bChanges);
-			oHelperMock.expects("getKeyFilter").exactly("key" in oElement ? 1 : 0)
+			if (oElement.bAggregated !== undefined) {
+				oCacheMock.expects("isAggregated")
+					.withExactArgs(sinon.match.same(oElement))
+					.returns(oElement.bAggregated);
+			}
+			oHelperMock.expects("getKeyFilter")
+				.exactly("key" in oElement && !oElement.bAggregated ? 1 : 0)
 				.withExactArgs(sinon.match.same(oElement), oCache.sMetaPath,
 					sinon.match.same(mTypes))
 				.returns("~" + oElement.key + "~");
 
-			if (!oElement.bDeleted && "key" in oElement) {
+			if (!oElement.bDeleted && "key" in oElement && !oElement.bAggregated) {
 				// this is only needed in case the kept entity is still available after refresh
 				oResponse.value.push(oElement);
 				mByPredicate[sPredicate] = oElement;

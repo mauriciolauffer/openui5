@@ -3564,7 +3564,8 @@ sap.ui.define([
 			return _Helper.getPrivateAnnotation(oElement, "predicate") === sPredicate
 				&& Object.keys(oElement).length > 1 // entity has key properties
 				&& !oElement["@$ui5.context.isDeleted"]
-				&& !that.hasPendingChangesForPath(sPredicate, bIgnorePendingChanges);
+				&& !that.hasPendingChangesForPath(sPredicate, bIgnorePendingChanges)
+				&& !that.isAggregated?.(oElement); // no refresh needed for aggregated elements
 		}
 
 		this.checkSharedRequest();
