@@ -142,6 +142,9 @@ sap.ui.define([
 		 * @see sap.ui.core.Control
 		 * @see sap.ui.core.Fragment
 		 *
+		 * @param {string} [sId] ID for the new control, generated automatically if no ID is given
+		 * @param {object} [mSettings] Initial settings for the new control
+		 *
 		 * @class Base Class for XMLComposite controls.
 		 * @extends sap.ui.core.Control
 		 *
