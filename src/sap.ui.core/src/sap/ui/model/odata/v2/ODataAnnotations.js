@@ -186,7 +186,7 @@ sap.ui.define([
 	 * Returns a promise that resolves when the added annotation sources were successfully
 	 * processed.
 	 *
-	 * @returns {Promise} A promise that resolves after the last added sources have been processed
+	 * @returns {Promise<void>} A promise that resolves after the last added sources have been processed
 	 * @public
 	 */
 	ODataAnnotations.prototype.loaded = function() {
@@ -215,7 +215,8 @@ sap.ui.define([
 	 *   Annotation source or array of annotation sources; an annotation source is either a string
 	 *   containing a URL or an object of type
 	 *   {@link sap.ui.model.odata.v2.ODataAnnotations.Source}.
-	 * @returns {Promise} The promise to (load,) parse and merge the given source(s). The Promise
+	 * @returns {Promise<Array<{source: sap.ui.model.odata.v2.ODataAnnotations.Source, data: any}|Error>>}
+	 *   The promise to (load,) parse and merge the given source(s). The Promise
 	 *   resolves with an array of maps containing the properties <code>source</code> and
 	 *   <code>data</code>; see the parameters of the <code>success</code> event for more
 	 *   details. In case at least one source could not be (loaded,) parsed or merged, the promise
@@ -325,7 +326,7 @@ sap.ui.define([
 	 * @param {function}
 	 *            fnFunction The function to be called, when the event occurs
 	 * @param {object}
-	 *            [oListener] Context object to call the event handler with, defaults to this
+	 *            [oListener=this] Context object to call the event handler with, defaults to this
 	 *            <code>ODataAnnotations</code> itself
 	 * @returns {this} Reference to <code>this</code> to allow method chaining
 	 * @public
@@ -386,7 +387,7 @@ sap.ui.define([
 	 * @param {function}
 	 *            fnFunction The function to be called, when the event occurs
 	 * @param {object}
-	 *            [oListener] Context object to call the event handler with, defaults to this
+	 *            [oListener=this] Context object to call the event handler with, defaults to this
 	 *            <code>ODataAnnotations</code> itself
 	 * @returns {this} Reference to <code>this</code> to allow method chaining
 	 * @public
@@ -448,7 +449,7 @@ sap.ui.define([
 	 * @param {function}
 	 *            fnFunction The function to be called, when the event occurs
 	 * @param {object}
-	 *            [oListener] Context object to call the event handler with, defaults to this
+	 *            [oListener=this] Context object to call the event handler with, defaults to this
 	 *            <code>ODataAnnotations</code> itself
 	 * @returns {this} Reference to <code>this</code> to allow method chaining
 	 * @public
@@ -508,7 +509,7 @@ sap.ui.define([
 	 * @param {function}
 	 *            fnFunction The function to be called, when the event occurs
 	 * @param {object}
-	 *            [oListener] Context object to call the event handler with, defaults to this
+	 *            [oListener=this] Context object to call the event handler with, defaults to this
 	 *            <code>ODataAnnotations</code> itself
 	 * @returns {this} Reference to <code>this</code> to allow method chaining
 	 * @public
@@ -548,7 +549,7 @@ sap.ui.define([
 	 * @param {function}
 	 *            fnFunction The function to be called, when the event occurs
 	 * @param {object}
-	 *            [oListener] Context object to call the event handler with, defaults to this
+	 *            [oListener=this] Context object to call the event handler with, defaults to this
 	 *            <code>ODataAnnotations</code> itself
 	 * @returns {this} Reference to <code>this</code> to allow method chaining
 	 * @public
@@ -588,7 +589,7 @@ sap.ui.define([
 	 * @param {function}
 	 *            fnFunction The function to be called, when the event occurs
 	 * @param {object}
-	 *            [oListener] Context object to call the event handler with, defaults to this
+	 *            [oListener=this] Context object to call the event handler with, defaults to this
 	 *            <code>ODataAnnotations</code> itself
 	 * @returns {this} Reference to <code>this</code> to allow method chaining
 	 * @public
