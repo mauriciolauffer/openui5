@@ -152,7 +152,9 @@
 				new sap.m.ObjectAttribute({
 					text : "Ñagçyfox Contract #D1234567890"
 				}) ],
-				markFavorite : true
+				markers: [
+					new sap.m.ObjectMarker({type: sap.m.ObjectMarkerType.Favorite})
+				]
 			});
 
 	var oh4PressHandler = function(oEvent) {
@@ -291,7 +293,6 @@
 		}),
 		new sap.m.ProgressIndicator("oh10-pi", {
 			visible : true,
-			enabled : true,
 			state : sap.ui.core.ValueState.NEUTRAL,
 			displayValue : '80%',
 			percentValue : 80,
@@ -305,7 +306,6 @@
 		}),
 		new sap.m.ProgressIndicator("oh10-pi2", {
 			visible : true,
-			enabled : true,
 			state : sap.ui.core.ValueState.NEUTRAL,
 			displayValue : '80%',
 			percentValue : 80,
@@ -500,29 +500,33 @@
 		numberState : sap.ui.core.ValueState.Error,
 		showTitleSelector : true,
 		titleSelectorPress : oh16EventHandler,
-		statuses : [ new sap.m.ObjectStatus({
-			text : "Order Shipping slow"
-		}), new sap.m.ProgressIndicator("oh18-pi", {
-			visible : true,
-			enabled : true,
-			state : sap.ui.core.ValueState.NEUTRAL,
-			displayValue : '56%',
-			percentValue : 56,
-			showValue : true,
-			height : '22px' //1.375rem
-		}), new sap.m.ObjectStatus({
-			text : "Productivity High"
-		}), new sap.m.ProgressIndicator("oh18-pi2", {
-			visible : true,
-			enabled : true,
-			state : sap.ui.core.ValueState.NEUTRAL,
-			displayValue : '90%',
-			percentValue : 90,
-			showValue : true,
-			height : '22px' //1.375rem
-		}), new sap.m.ObjectStatus({
-			text : "Quality Good"
-		}) ],
+		statuses : [
+			new sap.m.ObjectStatus({
+				text : "Order Shipping slow"
+			}),
+			new sap.m.ProgressIndicator("oh18-pi", {
+				visible : true,
+				state : sap.ui.core.ValueState.NEUTRAL,
+				displayValue : '56%',
+				percentValue : 56,
+				showValue : true,
+				height : '22px' //1.375rem
+			}),
+			new sap.m.ObjectStatus({
+				text : "Productivity High"
+			}),
+			new sap.m.ProgressIndicator("oh18-pi2", {
+				visible : true,
+				state : sap.ui.core.ValueState.NEUTRAL,
+				displayValue : '90%',
+				percentValue : 90,
+				showValue : true,
+				height : '22px' //1.375rem
+			}),
+			new sap.m.ObjectStatus({
+				text : "Quality Good"
+			})
+		],
 		attributes : [ new sap.m.ObjectAttribute({
 			text : "Order Shipping Flag"
 		}), new sap.m.ObjectAttribute({
