@@ -3,6 +3,46 @@
     "date": "December 2025",
     "notes": [
       {
+        "id": "52aa81894f293e2272ca0765f6f8e723167b9e6a",
+        "type": "FEATURE",
+        "text": " sap.m.StepInput: Flexible input precision is now allowed, and an error state is set"
+      },
+      {
+        "id": "b513d37970dbd377d67af99a8efe9121d2460d3c",
+        "type": "FIX",
+        "text": " We've now added tooltips for the play/pause and the radio buttons of SlideTile control"
+      },
+      {
+        "id": "0a7a33537197ed262c2734b31857ea00cc2b0e62",
+        "type": "FIX",
+        "text": " sap.m.Menu: fix context menu positioning in RTA with keyboard"
+      },
+      {
+        "id": "a0dd70d07b4b5fcf9722b7045be598e5e4c4318c",
+        "type": "FIX",
+        "text": " sap.m.ObjectStatus: state information is referenced in"
+      },
+      {
+        "id": "a60dac40326fcd9f05c8ae0b75c3c1c5cf3de38d",
+        "type": "FIX",
+        "text": " sap.m.Dialog: Screen reader and focus handling are improved"
+      },
+      {
+        "id": "40f07d6bebaebbae626778887a54411664d43482",
+        "type": "FIX",
+        "text": " core/Icon: getAccessibilityInfo returns empty object for decorative"
+      },
+      {
+        "id": "c173ba793a19b31072b5c925683cc3121ab979db",
+        "type": "FIX",
+        "text": " sap.m.RadioButton: Order of the buttons in the same group is now determined by document order"
+      },
+      {
+        "id": "4257afeec79d7fb173048629ebd54cf5c484816f",
+        "type": "FIX",
+        "text": " sap.m.MenuButton: Fix MenuButton menuPosition to handle viewport collision detection"
+      },
+      {
         "id": "eec695418e127cee89923979b7f5c2a08584e152",
         "type": "FIX",
         "text": " sap.m.ComboBox: prevent picker from closing during loadItems."

@@ -3,6 +3,11 @@
     "date": "December 2025",
     "notes": [
       {
+        "id": "a09ca7515ba7df4c0278a751ab2e9da6701a6f81",
+        "type": "FEATURE",
+        "text": " sap.ui.unified.FileUploader: Control redesign"
+      },
+      {
         "id": "b45c8bf9713776b09d60eb48261e72a87afb5f77",
         "type": "FIX",
         "text": " sap.m.TextArea: Readonly outline fixed"

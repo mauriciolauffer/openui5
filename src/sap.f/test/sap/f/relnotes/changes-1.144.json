@@ -3,6 +3,11 @@
     "date": "December 2025",
     "notes": [
       {
+        "id": "adedabfa93c6128675febf4b02f898a456552293",
+        "type": "FIX",
+        "text": " Integration Cards: Chart is focusable"
+      },
+      {
         "id": "c8d201b928293d5f2f96f44cde839356bde64254",
         "type": "FIX",
         "text": " Integration Cards: Space between title and subtitle is by design"

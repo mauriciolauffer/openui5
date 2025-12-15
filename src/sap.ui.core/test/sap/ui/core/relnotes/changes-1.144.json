@@ -3,6 +3,26 @@
     "date": "December 2025",
     "notes": [
       {
+        "id": "52aa81894f293e2272ca0765f6f8e723167b9e6a",
+        "type": "FEATURE",
+        "text": " sap.m.StepInput: Flexible input precision is now allowed, and an error state is set"
+      },
+      {
+        "id": "4cf933d1f6511274af009ac58499160a617db814",
+        "type": "FIX",
+        "text": " XMLComposite: fix JSDoc for correct TypeScript constructor"
+      },
+      {
+        "id": "30d4578b48ac08b4275ae3cef18cfb23c5074c80",
+        "type": "FIX",
+        "text": " sap.ui.test.RecordReplay: Correct JSDoc type for clearTextFirst"
+      },
+      {
+        "id": "40f07d6bebaebbae626778887a54411664d43482",
+        "type": "FIX",
+        "text": " core/Icon: getAccessibilityInfo returns empty object for decorative"
+      },
+      {
         "id": "68b3bd5d4a4182319e1d10f1f8c67c5f2840a304",
         "type": "FIX",
         "text": " OPA: Fix _promiseWaiter handling of null executors"
