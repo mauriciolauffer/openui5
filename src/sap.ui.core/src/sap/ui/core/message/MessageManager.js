@@ -41,15 +41,15 @@ sap.ui.define([
 	 * @alias sap.ui.core.message.MessageManager
 	 * @deprecated since 1.118. Please use {@link module:sap/ui/core/Messaging Messaging} instead.
 	 *
-	 * @borrows module:sap/ui/core/Messaging.addMessages as addMessages
-     * @borrows module:sap/ui/core/Messaging.removeMessages as removeMessages
-     * @borrows module:sap/ui/core/Messaging.removeAllMessages as removeAllMessages
-     * @borrows module:sap/ui/core/Messaging.updateMessages as updateMessages
-     * @borrows module:sap/ui/core/Messaging.getMessageModel as getMessageModel
-     * @borrows module:sap/ui/core/Messaging.registerMessageProcessor as registerMessageProcessor
-     * @borrows module:sap/ui/core/Messaging.unregisterMessageProcessor as unregisterMessageProcessor
-     * @borrows module:sap/ui/core/Messaging.registerObject as registerObject
-     * @borrows module:sap/ui/core/Messaging.unregisterObject as unregisterObject
+	 * @borrows module:sap/ui/core/Messaging.addMessages as #addMessages
+     * @borrows module:sap/ui/core/Messaging.removeMessages as #removeMessages
+     * @borrows module:sap/ui/core/Messaging.removeAllMessages as #removeAllMessages
+     * @borrows module:sap/ui/core/Messaging.updateMessages as #updateMessages
+     * @borrows module:sap/ui/core/Messaging.getMessageModel as #getMessageModel
+     * @borrows module:sap/ui/core/Messaging.registerMessageProcessor as #registerMessageProcessor
+     * @borrows module:sap/ui/core/Messaging.unregisterMessageProcessor as #unregisterMessageProcessor
+     * @borrows module:sap/ui/core/Messaging.registerObject as #registerObject
+     * @borrows module:sap/ui/core/Messaging.unregisterObject as #unregisterObject
 	 */
 	var MessageManager = BaseObject.extend("sap.ui.core.message.MessageManager", /** @lends sap.ui.core.message.MessageManager.prototype */ {
 
