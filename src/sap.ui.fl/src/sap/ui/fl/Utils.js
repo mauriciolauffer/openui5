@@ -559,6 +559,8 @@ sap.ui.define([
 			 * @returns {sap.ui.fl.Utils.FakePromise|Promise} <code>FakePromise</code> if no promise is returned by the resolve handler
 			 * @private
 			 * @ui5-restricted sap.ui.fl, sap.ui.rta, ui5 internal tests
+			 * @name sap.ui.fl.Utils.FakePromise#then
+			 * @function
 			 */
 			Utils.FakePromise.prototype.then = function(fnSuccess, fnError) {
 				if (!this.bContinueWithFakePromise) {
@@ -580,6 +582,8 @@ sap.ui.define([
 			 *
 			 * @private
 			 * @ui5-restricted sap.ui.fl, sap.ui.rta
+			 * @name sap.ui.fl.Utils.FakePromise#catch
+			 * @function
 			 */
 			Utils.FakePromise.prototype.catch = function(fn) {
 				if (!this.bContinueWithFakePromise) {
