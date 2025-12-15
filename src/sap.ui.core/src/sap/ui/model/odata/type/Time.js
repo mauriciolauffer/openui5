@@ -333,7 +333,7 @@ sap.ui.define([
 	/**
 	 * Returns the type's name.
 	 *
-	 * @returns {string}
+	 * @returns {"sap.ui.model.odata.type.Time"}
 	 *   the type's name
 	 * @public
 	 */
