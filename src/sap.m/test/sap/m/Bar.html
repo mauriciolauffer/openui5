@@ -94,20 +94,14 @@
 				text: "Label",
 				enabled: true
 			});
-			var button4 = new sap.m.Button('button4', {
-				type: sap.m.ButtonType.Default,
+			var segmentedButtonItem = new sap.m.SegmentedButtonItem('segmentedButtonItem', {
 				text: "Label",
-				enabled: true
 			});
-			var button5 = new sap.m.Button('button5', {
-				type: sap.m.ButtonType.Default,
+			var segmentedButtonItem2 = new sap.m.SegmentedButtonItem('segmentedButtonItem2', {
 				text: "Label",
-				enabled: true
 			});
-			var button6 = new sap.m.Button('button6', {
-				type: sap.m.ButtonType.Default,
+			var segmentedButtonItem3 = new sap.m.SegmentedButtonItem('segmentedButtonItem3', {
 				text: "Label",
-				enabled: true
 			});
 
 			var Bar7 = new sap.m.Bar({
@@ -122,8 +116,8 @@
 			var Bar8 = new sap.m.Bar({
 				contentLeft: [new sap.m.Button({icon: "images/favorite_grey_24.png"})],
 				contentMiddle: [new sap.m.SegmentedButton('SegmentedBar', {
-									buttons: [button4, button5, button6],
-									selectedButton: button5
+									items: [segmentedButtonItem, segmentedButtonItem2, segmentedButtonItem3],
+									selectedButton: segmentedButtonItem2
 								})],
 				contentRight: [new sap.m.Button({icon: "images/favorite_grey_24.png"})]
 			});
