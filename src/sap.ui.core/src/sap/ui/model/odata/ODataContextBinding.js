@@ -26,8 +26,8 @@ sap.ui.define(['sap/ui/model/ContextBinding', 'sap/ui/model/ChangeReason'],
 	 */
 	var ODataContextBinding = ContextBinding.extend("sap.ui.model.odata.ODataContextBinding", /** @lends sap.ui.model.odata.ODataContextBinding.prototype */ {
 
-		constructor : function(oModel, sPath, oContext, mParameters, oEvents){
-			ContextBinding.call(this, oModel, sPath, oContext, mParameters, oEvents);
+		constructor : function(oModel, sPath, oContext, mParameters){
+			ContextBinding.call(this, oModel, sPath, oContext, mParameters);
 		}
 	});
 
