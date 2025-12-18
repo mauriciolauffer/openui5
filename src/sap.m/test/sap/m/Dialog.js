@@ -1631,6 +1631,8 @@ sap.ui.define([
 			]
 		})
 	});
+
+
 	var oMessage = new MessageItem({
 		type: 'Error',
 		title: 'Error message',
@@ -1655,6 +1657,68 @@ sap.ui.define([
 		}
 	});
 
+	//=================================================================
+	// Real use cases
+	//=================================================================
+
+	var oDialogWithKFS = new Dialog("popWithKFS", {
+		title: "Dialog Title",
+		contentWidth: "320px",
+		contentHeight: "100px",
+		content: [
+			new Text({
+				text: "This is the first line of text.This is the first line of text.This is the first line of text.This is the first line of text.This is the first line of text.This is the first line of text.This is the first line of text.This is the first line of text.This is the first line of text.This is the first line of text."
+			}),
+			new Text({
+				text: "This is the second line of text. This is the second line of text. This is the second line of text. This is the second line of text.This is the second line of text. This is the second line of text. This is the second line of text. This is the second line of text."
+			})
+		]
+	});
+
+	var oDialogWithSAndButton = new Dialog("popWithSAndButton", {
+		title: "Dialog Title",
+		contentWidth: "320px",
+		contentHeight: "100px",
+		content: [
+			new Text({
+				text: "This is the first line of text.This is the first line of text.This is the first line of text.This is the first line of text.This is the first line of text.This is the first line of text.This is the first line of text.This is the first line of text.This is the first line of text.This is the first line of text."
+			}),
+			new Button({
+				text: "A Button inside Scroller",
+				press: function () {
+					jQuery.sap.log.info("Button inside Scroller pressed!");
+				}
+			}),
+			new Text({
+				text: "This is the second line of text. This is the second line of text. This is the second line of text. This is the second line of text.This is the second line of text."
+			})
+		]
+	});
+
+	var oDialogWithKFSAndFooter = new Dialog({
+		title: "Dialog Title",
+		contentWidth: "320px",
+		contentHeight: "100px",
+		initialFocus: "btnClose",
+		footer: new Toolbar({
+			content: [
+				new Button("btnClose",{
+					text: "Close",
+					press: function () {
+						oDialogWithKFSAndFooter.close();
+					}
+				})
+			]
+		}),
+		content: [
+			new Text({
+				text: "This is the first line of text.This is the first line of text.This is the first line of text.This is the first line of text.This is the first line of text.This is the first line of text.This is the first line of text.This is the first line of text.This is the first line of text.This is the first line of text."
+			}),
+			new Text({
+				text: "This is the second line of text. This is the second line of text. This is the second line of text. This is the second line of text.This is the second line of text. This is the second line of text. This is the second line of text. This is the second line of text."
+			})
+		]
+	});
 
 	//=================================================================
 
@@ -2161,6 +2225,28 @@ sap.ui.define([
 				width: _buttonWidth,
 				press: function () {
 					oPopoverDialog.open();
+				}
+			}),
+
+			new HTML({content: "<h1>Inital Focus</h1>"}),
+
+			new Button({
+				text: "Dialog with Keyboard Focusable Scroller",
+				press: function () {
+					oDialogWithKFS.open();
+				}
+			}),
+
+			new Button({
+				text: "Dialog with Scroller with Button inside",
+				press: function () {
+					oDialogWithSAndButton.open();
+				}
+			}),
+			new Button({
+				text: "Dialog with Keyboard Focusable Scroller and Footer",
+				press: function () {
+					oDialogWithKFSAndFooter.open();
 				}
 			})
 		]
