@@ -5,24 +5,19 @@ sap.ui.define([
 	"sap/base/Log",
 	"sap/m/MessageBox",
 	"sap/ui/core/Component",
-	"sap/ui/core/library",
 	"sap/ui/core/ListItem",
-	"sap/ui/core/mvc/View",
+	"sap/ui/core/mvc/XMLView",
 	"sap/ui/core/sample/common/Controller",
 	"sap/ui/util/XMLHelper"
-], function (Log, MessageBox, Component, library, ListItem, View, Controller, XMLHelper) {
+], function (Log, MessageBox, Component, ListItem, XMLView, Controller, XMLHelper) {
 	"use strict";
-
-	var MainController,
-		// shortcut for sap.ui.core.mvc.ViewType
-		ViewType = library.mvc.ViewType;
 
 	function alertError(oError) {
 		Log.error(oError, oError.stack, "sap.ui.core.sample.ViewTemplate.scenario.Main");
 		MessageBox.alert(oError.message, {icon : MessageBox.Icon.ERROR, title : "Error"});
 	}
 
-	MainController = Controller.extend("sap.ui.core.sample.ViewTemplate.scenario.Main", {
+	return Controller.extend("sap.ui.core.sample.ViewTemplate.scenario.Main", {
 		/**
 		 * Function is called by <code>onSourceCode</code> before the source code is pretty printed.
 		 * It returns the XML of the detail view.
@@ -108,10 +103,11 @@ sap.ui.define([
 				that = this;
 
 			oMetaModel.loaded().then(function () {
-				var sMetadataPath = oMetaModel.getODataEntitySet(that._getSelectedSet(), true);
+				var sMetadataPath = oMetaModel.getODataEntitySet(that._getSelectedSet(), true),
+					oViewPromise;
 
 				Component.getOwnerComponentFor(that.getView()).runAsOwner(function () {
-					View.create({
+					oViewPromise = XMLView.create({
 						preprocessors : {
 							xml : {
 								bindingContexts : {
@@ -123,7 +119,6 @@ sap.ui.define([
 								bindTexts : that.getView().getModel("ui").getProperty("/bindTexts")
 							}
 						},
-						type : ViewType.XML,
 						viewName : "sap.ui.core.sample.ViewTemplate.scenario.Detail"
 					}).then(function (oDetailView) {
 						var oDetailBox = that.byId("detailBox"),
@@ -140,9 +135,9 @@ sap.ui.define([
 						that.onSourceCode();
 					});
 				});
+
+				return oViewPromise;
 			}).catch(alertError);
 		}
 	});
-
-	return MainController;
 });

@@ -3,16 +3,12 @@
  */
 sap.ui.define([
 	"sap/m/HBox",
-	"sap/ui/core/library",
 	"sap/ui/core/UIComponent",
-	"sap/ui/core/mvc/View",
+	"sap/ui/core/mvc/XMLView",
 	"sap/ui/model/json/JSONModel",
 	"sap/ui/test/TestUtils"
-], function (HBox, library, UIComponent, View, JSONModel, TestUtils) {
+], function (HBox, UIComponent, XMLView, JSONModel, TestUtils) {
 	"use strict";
-
-	// shortcut for sap.ui.core.mvc.ViewType
-	var ViewType = library.mvc.ViewType;
 
 	return UIComponent.extend("sap.ui.core.sample.odata.v4.ServerDrivenPaging.Component", {
 		metadata : {
@@ -30,13 +26,11 @@ sap.ui.define([
 				bRealOData : TestUtils.isRealOData()
 			});
 
-			View.create({
-				async : true,
+			XMLView.create({
 				models : {
 					undefined : oModel,
 					ui : this.oUiModel
 				},
-				type : ViewType.XML,
 				viewName : "sap.ui.core.sample.odata.v4.ServerDrivenPaging.Main"
 			}).then(function (oView) {
 				oLayout.addItem(oView);
