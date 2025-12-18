@@ -1,5 +1,5 @@
 {
-	"_version" : "1.0.0",
+	"_version" : "2.0.0",
 	"sap.app" : {
 		"dataSources" : {
 			"default" : {
@@ -14,7 +14,7 @@
 	},
 	"sap.ui5" : {
 		"dependencies" : {
-			"minUI5Version" : "1.53"
+			"minUI5Version" : "1.136.0"
 		},
 		"models" : {
 			"" : {
