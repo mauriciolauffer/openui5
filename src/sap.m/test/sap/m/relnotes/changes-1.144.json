@@ -3,6 +3,21 @@
     "date": "December 2025",
     "notes": [
       {
+        "id": "b6f48c99198b74f7a577facff888913f9260b5e8",
+        "type": "FIX",
+        "text": " sap.m.Panel: Expand on SPACE keydown"
+      },
+      {
+        "id": "d5eb213d062bd7563dec5460ebb90818e3d173b7",
+        "type": "FIX",
+        "text": " sap.m.SinglePlanningCalendar: update view switch label visibility on resize"
+      },
+      {
+        "id": "7efadc6e094c9f5b989e9621624bc83fd6d4c51c",
+        "type": "FIX",
+        "text": " sap.m.ViewSettingsDialog: Remove redundant announcements from sort and group list items"
+      },
+      {
         "id": "52aa81894f293e2272ca0765f6f8e723167b9e6a",
         "type": "FEATURE",
         "text": " sap.m.StepInput: Flexible input precision is now allowed, and an error state is set"

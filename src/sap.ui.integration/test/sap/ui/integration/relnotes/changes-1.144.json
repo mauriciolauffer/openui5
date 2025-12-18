@@ -3,6 +3,11 @@
     "date": "December 2025",
     "notes": [
       {
+        "id": "995e40b90381047bf74bedfb626361e65be68857",
+        "type": "FIX",
+        "text": " Integration Cards: ObjectGroupItem of type Image properties now support binding"
+      },
+      {
         "id": "adedabfa93c6128675febf4b02f898a456552293",
         "type": "FIX",
         "text": " Integration Cards: Chart is focusable"
