@@ -32,18 +32,19 @@ sap.ui.define(['sap/base/util/LoaderExtensions'], function(LoaderExtensions) {
 		});
 	});
 
+	/**
+	 * @deprecated As of version 1.120, together with the declareModule private API
+	 */
 	QUnit.test("getAllRequiredModules (filter out deprecated modules)", function(assert) {
 		privateLoaderAPI.declareModule("my/dummy/module.js", () => "This module is deprecated");
 
 		const aUnfilteredModules = LoaderExtensions.getAllRequiredModules();
 		assert.ok(Array.isArray(aUnfilteredModules), "should return an array");
-		/** @deprecated */
 		assert.ok(aUnfilteredModules.includes("sap.ui.core.CSSSize"), "unfiltered result contains deprecated pseudo module");
 		assert.ok(aUnfilteredModules.includes("my.dummy.module"), "unfiltered result contains deprecated module");
 
 		const aFilteredModules = LoaderExtensions.getAllRequiredModules(/* omitDeprecated */ true);
 		assert.ok(Array.isArray(aFilteredModules), "should return an array");
-		/** @deprecated */
 		assert.notOk(aFilteredModules.includes("sap.ui.core.CSSSize"), "filtered result does not contain deprecated pseudo module");
 		assert.notOk(aFilteredModules.includes("my.dummy.module"), "filtered result does not contain deprecated module");
 	});
