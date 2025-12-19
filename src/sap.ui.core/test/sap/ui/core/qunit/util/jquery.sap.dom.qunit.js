@@ -3,8 +3,9 @@ sap.ui.define([
 	"sap/base/util/LoaderExtensions",
 	"jquery.sap.dom",
 	"sap/ui/test/utils/nextUIUpdate",
+	"sap/ui/Device",
 	"sap/ui/qunit/QUnitUtils" // implicit dependency, implements jQuery#_sapTest_dataEvents
-], function (LoaderExtensions, jQuery, nextUIUpdate /*, qutils */) {
+], function (LoaderExtensions, jQuery, nextUIUpdate, Device /*, qutils */) {
 	"use strict";
 
 	return LoaderExtensions.loadResource("static/jquery.sap.dom.html", {
@@ -334,423 +335,429 @@ sap.ui.define([
 			assert.ok(!oFocusableItem, "no focusable item should be found in the hidden container2");
 		});
 
-		QUnit.test("Basic scroll container detection - vertical scrolling", function(assert) {
-			// Create a scrollable container
-			const oScrollContainer = document.createElement('div');
-			oScrollContainer.style.cssText = "height: 100px; overflow-y: auto; width: 200px;";
 
-			// Add content that exceeds container height
-			const oContent = document.createElement('div');
-			oContent.style.height = "300px";
-			oContent.textContent = "Scrollable content";
+		// The following tests are related to scrollable containers being
+		// focusable. They are excluded from Safari because scrolling
+		// containers can't hold the focus there.
+		if (!Device.browser.safari) {
+			QUnit.test("Basic scroll container detection - vertical scrolling", function(assert) {
+				// Create a scrollable container
+				const oScrollContainer = document.createElement('div');
+				oScrollContainer.style.cssText = "height: 100px; overflow-y: auto; width: 200px;";
 
-			oScrollContainer.appendChild(oContent);
-			const oContainer = document.getElementById('container3');
-			oContainer.appendChild(oScrollContainer);
+				// Add content that exceeds container height
+				const oContent = document.createElement('div');
+				oContent.style.height = "300px";
+				oContent.textContent = "Scrollable content";
+
+				oScrollContainer.appendChild(oContent);
+				const oContainer = document.getElementById('container3');
+				oContainer.appendChild(oScrollContainer);
 
 
-			// Test the function
-			let oResult = jQuery(oContainer).firstFocusableDomRef();
-			assert.strictEqual(oResult, null, "Should return null when the option 'includeScroller' is not set");
+				// Test the function
+				let oResult = jQuery(oContainer).firstFocusableDomRef();
+				assert.strictEqual(oResult, null, "Should return null when the option 'includeScroller' is not set");
 
-			// Test the function
-			oResult = jQuery(oContainer).firstFocusableDomRef({
-				includeScroller: true
-			});
-			assert.strictEqual(oResult, oScrollContainer, "Should return the scroll container as focusable");
-			oContainer.innerHTML = "";
-		});
-
-		QUnit.test("Basic scroll container detection - horizontal scrolling", function(assert) {
-			const oScrollContainer = document.createElement('div');
-			oScrollContainer.style.cssText = "width: 100px; overflow-x: auto; height: 50px;";
-
-			const oContent = document.createElement('div');
-			oContent.style.width = "300px";
-			oContent.textContent = "Very long content that should cause horizontal scrolling";
-
-			oScrollContainer.appendChild(oContent);
-			const oContainer = document.getElementById('container3');
-			oContainer.appendChild(oScrollContainer);
-
-			let oResult = jQuery(oContainer).firstFocusableDomRef();
-			assert.strictEqual(oResult, null, "Should return null when the option 'includeScroller' is not set");
-
-			oResult = jQuery(oContainer).firstFocusableDomRef({
-				includeScroller: true
-			});
-			assert.strictEqual(oResult, oScrollContainer, "Should return horizontally scrollable container as focusable");
-			oContainer.innerHTML = "";
-		});
-
-		QUnit.test("Non-scrollable container should not be focusable", function(assert) {
-			const oContainer = document.createElement('div');
-			oContainer.style.cssText = "height: 100px; overflow: hidden; width: 200px;";
-
-			const oContent = document.createElement('div');
-			oContent.style.height = "50px"; // Content smaller than container
-			oContent.textContent = "Non-scrollable content";
-
-			oContainer.appendChild(oContent);
-			const oParentContainer = document.getElementById('container3');
-			oParentContainer.appendChild(oContainer);
-
-			const oResult = jQuery(oParentContainer).firstFocusableDomRef({
-				includeScroller: true
-			});
-			assert.strictEqual(oResult, null, "Should not return non-scrollable container as focusable");
-			oParentContainer.innerHTML = "";
-		});
-
-		QUnit.test("focusable elements are picked up according to their position in the DOM", function(assert) {
-			const oButton = document.createElement('button');
-			oButton.textContent = "Focusable Button";
-
-			const oScrollContainer = document.createElement('div');
-			oScrollContainer.style.cssText = "height: 100px; overflow-y: auto; width: 200px;";
-
-			const oContent = document.createElement('div');
-			oContent.style.height = "300px";
-			oScrollContainer.appendChild(oContent);
-
-			// Add button first, then scroll container
-			const oContainer = document.getElementById('container3');
-			oContainer.appendChild(oButton);
-			oContainer.appendChild(oScrollContainer);
-
-			const oResult = jQuery(oContainer).firstFocusableDomRef({
-				includeScroller: true
-			});
-			assert.strictEqual(oResult, oButton, "Should prefer traditional focusable elements over scroll containers");
-			oContainer.innerHTML = "";
-		});
-
-		QUnit.test("Nested scroll containers", function(assert) {
-			const oOuterContainer = document.createElement('div');
-			oOuterContainer.style.cssText = "height: 200px; overflow-y: auto; width: 300px;";
-
-			const oInnerContainer = document.createElement('div');
-			oInnerContainer.style.cssText = "height: 100px; overflow-y: auto; width: 200px; margin: 10px;";
-
-			const oInnerContent = document.createElement('div');
-			oInnerContent.style.height = "300px";
-			oInnerContent.textContent = "Inner scrollable content";
-
-			const oOuterContent = document.createElement('div');
-			oOuterContent.style.height = "500px";
-			oOuterContent.textContent = "Outer content";
-
-			oInnerContainer.appendChild(oInnerContent);
-			oOuterContainer.appendChild(oInnerContainer);
-			oOuterContainer.appendChild(oOuterContent);
-
-			const oContainer = document.getElementById('container3');
-			oContainer.appendChild(oOuterContainer);
-
-			const oResult = jQuery(oContainer).firstFocusableDomRef({
-				includeScroller: true
-			});
-			assert.strictEqual(oResult, oInnerContainer, "Should return the inner scroll container first");
-
-			// Test lastFocusableDomRef
-			const oLastResult = jQuery(oContainer).lastFocusableDomRef({
-				includeScroller: true
-			});
-			assert.strictEqual(oLastResult, oInnerContainer, "Should find the inner scroll container by going backwards");
-			oContainer.innerHTML = "";
-		});
-
-		QUnit.test("Hidden scroll containers should be ignored", function(assert) {
-			const oScrollContainer = document.createElement('div');
-			oScrollContainer.style.cssText = "height: 100px; overflow-y: auto; width: 200px; display: none;";
-
-			const oContent = document.createElement('div');
-			oContent.style.height = "300px";
-			oScrollContainer.appendChild(oContent);
-
-			const oContainer = document.getElementById('container3');
-			oContainer.appendChild(oScrollContainer);
-
-			const oResult = jQuery(oContainer).firstFocusableDomRef({
-				includeScroller: true
-			});
-			assert.strictEqual(oResult, null, "Should ignore hidden scroll containers");
-			oContainer.innerHTML = "";
-		});
-
-		QUnit.test("Scroll containers with overflow: scroll (always visible scrollbars)", function(assert) {
-			const oScrollContainer = document.createElement('div');
-			oScrollContainer.style.cssText = "height: 100px; overflow: scroll; width: 200px;";
-
-			const oContent = document.createElement('div');
-			oContent.style.height = "300px";
-			oScrollContainer.appendChild(oContent);
-
-			const oContainer = document.getElementById('container3');
-			oContainer.appendChild(oScrollContainer);
-
-			let oResult = jQuery(oContainer).firstFocusableDomRef();
-			assert.strictEqual(oResult, null, "Should return null when the option 'includeScroller' is not set");
-
-			oResult = jQuery(oContainer).firstFocusableDomRef({
-				includeScroller: true
-			});
-			assert.strictEqual(oResult, oScrollContainer, "Should detect scroll containers with overflow: scroll");
-			oContainer.innerHTML = "";
-		});
-
-		QUnit.test("Deep DOM tree traversal", function(assert) {
-			const done = assert.async();
-			const oRoot = document.getElementById('container3');
-			let oCurrent = oRoot;
-
-			// Create a deep nested structure (50 levels)
-			for (let i = 0; i < 50; i++) {
-				const oDiv = document.createElement('div');
-				oDiv.className = "level-" + i;
-				oCurrent.appendChild(oDiv);
-				oCurrent = oDiv;
-			}
-
-			// Add a scrollable container at the end
-			const oScrollContainer = document.createElement('div');
-			oScrollContainer.style.cssText = "height: 100px; overflow-y: auto; width: 200px;";
-			const oContent = document.createElement('div');
-			oContent.style.height = "300px";
-			oScrollContainer.appendChild(oContent);
-			oCurrent.appendChild(oScrollContainer);
-
-			// Performance test
-			const startTime = performance.now();
-			const oResult = jQuery(oRoot).firstFocusableDomRef({
-				includeScroller: true
-			});
-			const endTime = performance.now();
-
-			assert.strictEqual(oResult, oScrollContainer, "Should find deep scroll container");
-			assert.ok(endTime - startTime < 100, "Should complete traversal within reasonable time (< 100ms)");
-			oRoot.innerHTML = "";
-			done();
-		});
-
-		QUnit.test("Multiple scroll containers - order preference", function(assert) {
-			const oFirstContainer = document.createElement('div');
-			oFirstContainer.id = "first-scroll";
-			oFirstContainer.style.cssText = "height: 100px; overflow-y: auto; width: 200px;";
-
-			const oFirstContent = document.createElement('div');
-			oFirstContent.style.height = "300px";
-			oFirstContainer.appendChild(oFirstContent);
-
-			const oSecondContainer = document.createElement('div');
-			oSecondContainer.id = "second-scroll";
-			oSecondContainer.style.cssText = "height: 100px; overflow-y: auto; width: 200px;";
-
-			const oSecondContent = document.createElement('div');
-			oSecondContent.style.height = "300px";
-			oSecondContainer.appendChild(oSecondContent);
-
-			const oContainer = document.getElementById('container3');
-			oContainer.appendChild(oFirstContainer);
-			oContainer.appendChild(oSecondContainer);
-
-			const oFirstResult = jQuery(oContainer).firstFocusableDomRef({
-				includeScroller: true
-			});
-			const oLastResult = jQuery(oContainer).lastFocusableDomRef({
-				includeScroller: true
+				// Test the function
+				oResult = jQuery(oContainer).firstFocusableDomRef({
+					includeScroller: true
+				});
+				assert.strictEqual(oResult, oScrollContainer, "Should return the scroll container as focusable");
+				oContainer.innerHTML = "";
 			});
 
-			assert.strictEqual(oFirstResult, oFirstContainer, "firstFocusableDomRef should return first scroll container");
-			assert.strictEqual(oLastResult, oSecondContainer, "lastFocusableDomRef should return last scroll container");
-			oContainer.innerHTML = "";
-		});
+			QUnit.test("Basic scroll container detection - horizontal scrolling", function(assert) {
+				const oScrollContainer = document.createElement('div');
+				oScrollContainer.style.cssText = "width: 100px; overflow-x: auto; height: 50px;";
 
-		QUnit.test("Traditional focusable elements have priority over scroll containers", function(assert) {
-			const oScrollContainer = document.createElement('div');
-			oScrollContainer.id = "scroll-container";
-			oScrollContainer.style.cssText = "height: 100px; overflow-y: auto; width: 200px;";
+				const oContent = document.createElement('div');
+				oContent.style.width = "300px";
+				oContent.textContent = "Very long content that should cause horizontal scrolling";
 
-			const oScrollContent = document.createElement('div');
-			oScrollContent.style.height = "300px";
+				oScrollContainer.appendChild(oContent);
+				const oContainer = document.getElementById('container3');
+				oContainer.appendChild(oScrollContainer);
 
-			const oButton = document.createElement('button');
-			oButton.id = "inner-button";
-			oButton.textContent = "Click me";
+				let oResult = jQuery(oContainer).firstFocusableDomRef();
+				assert.strictEqual(oResult, null, "Should return null when the option 'includeScroller' is not set");
 
-			oScrollContent.appendChild(oButton);
-			oScrollContainer.appendChild(oScrollContent);
-
-			const oContainer = document.getElementById('container3');
-			oContainer.appendChild(oScrollContainer);
-
-			const oResult = jQuery(oContainer).firstFocusableDomRef({
-				includeScroller: true
+				oResult = jQuery(oContainer).firstFocusableDomRef({
+					includeScroller: true
+				});
+				assert.strictEqual(oResult, oScrollContainer, "Should return horizontally scrollable container as focusable");
+				oContainer.innerHTML = "";
 			});
 
-			assert.strictEqual(oResult, oButton, "Should return button over scroll container");
-			assert.strictEqual(oResult.id, "inner-button", "Should return the inner button");
+			QUnit.test("Non-scrollable container should not be focusable", function(assert) {
+				const oContainer = document.createElement('div');
+				oContainer.style.cssText = "height: 100px; overflow: hidden; width: 200px;";
 
-			oContainer.innerHTML = "";
-		});
+				const oContent = document.createElement('div');
+				oContent.style.height = "50px"; // Content smaller than container
+				oContent.textContent = "Non-scrollable content";
 
-		QUnit.test("Complex nested scenario with mixed elements", function(assert) {
-			// Root container
-			const oRoot = document.createElement('div');
+				oContainer.appendChild(oContent);
+				const oParentContainer = document.getElementById('container3');
+				oParentContainer.appendChild(oContainer);
 
-			// First section: scroll container with no traditional focusable elements
-			const oScrollSection1 = document.createElement('div');
-			oScrollSection1.id = "scroll-1";
-			oScrollSection1.style.cssText = "height: 100px; overflow-y: auto; width: 200px; margin: 5px;";
-			const oScrollContent1 = document.createElement('div');
-			oScrollContent1.style.height = "300px";
-			oScrollContent1.textContent = "Scroll content 1";
-			oScrollSection1.appendChild(oScrollContent1);
-
-			// Second section: nested scroll containers with a button deep inside
-			const oScrollSection2 = document.createElement('div');
-			oScrollSection2.id = "scroll-2";
-			oScrollSection2.style.cssText = "height: 150px; overflow-y: auto; width: 250px; margin: 5px;";
-
-			const oInnerScroll = document.createElement('div');
-			oInnerScroll.id = "inner-scroll";
-			oInnerScroll.style.cssText = "height: 80px; overflow-y: auto; width: 200px; margin: 10px;";
-
-			const oButton = document.createElement('button');
-			oButton.id = "deep-button";
-			oButton.textContent = "Deep Button";
-
-			const oScrollContent2 = document.createElement('div');
-			oScrollContent2.style.height = "400px";
-			oScrollContent2.textContent = "Outer scroll content";
-
-			const oInnerScrollContent = document.createElement('div');
-			oInnerScrollContent.style.height = "200px";
-			oInnerScrollContent.appendChild(oButton);
-
-			oInnerScroll.appendChild(oInnerScrollContent);
-			oScrollSection2.appendChild(oInnerScroll);
-			oScrollSection2.appendChild(oScrollContent2);
-
-			oRoot.appendChild(oScrollSection1);
-			oRoot.appendChild(oScrollSection2);
-
-			const oContainer = document.getElementById('container3');
-			oContainer.appendChild(oRoot);
-
-			let oResult = jQuery(oRoot).firstFocusableDomRef({
-				includeScroller: true
-			});
-			assert.strictEqual(oResult, oScrollSection1, "Should find first scroll container first");
-
-			oResult = jQuery(oRoot).lastFocusableDomRef({
-				includeScroller: true
-			});
-			assert.strictEqual(oResult, oButton, "Should find the button as the last focusable element");
-
-			oContainer.innerHTML = "";
-		});
-
-		QUnit.test("Scroll container fallback when no traditional focusable elements", function(assert) {
-			const oScrollContainer1 = document.createElement('div');
-			oScrollContainer1.id = "scroll-1";
-			oScrollContainer1.style.cssText = "height: 100px; overflow-y: auto; width: 200px;";
-
-			const oScrollContainer2 = document.createElement('div');
-			oScrollContainer2.id = "scroll-2";
-			oScrollContainer2.style.cssText = "height: 100px; overflow-y: auto; width: 200px;";
-
-			const oContent1 = document.createElement('div');
-			oContent1.style.height = "300px";
-			oContent1.textContent = "Content 1";
-
-			const oContent2 = document.createElement('div');
-			oContent2.style.height = "300px";
-			oContent2.textContent = "Content 2";
-
-			oScrollContainer1.appendChild(oContent1);
-			oScrollContainer2.appendChild(oContent2);
-
-			const oContainer = document.getElementById('container3');
-			oContainer.appendChild(oScrollContainer1);
-			oContainer.appendChild(oScrollContainer2);
-
-			const oFirstResult = jQuery(oContainer).firstFocusableDomRef({
-				includeScroller: true
-			});
-			const oLastResult = jQuery(oContainer).lastFocusableDomRef({
-				includeScroller: true
+				const oResult = jQuery(oParentContainer).firstFocusableDomRef({
+					includeScroller: true
+				});
+				assert.strictEqual(oResult, null, "Should not return non-scrollable container as focusable");
+				oParentContainer.innerHTML = "";
 			});
 
-			assert.strictEqual(oFirstResult, oScrollContainer1, "Should return first scroll container");
-			assert.strictEqual(oLastResult, oScrollContainer2, "Should return last scroll container");
-			oContainer.innerHTML = "";
-		});
+			QUnit.test("focusable elements are picked up according to their position in the DOM", function(assert) {
+				const oButton = document.createElement('button');
+				oButton.textContent = "Focusable Button";
 
-		QUnit.test('Element becomes scrollable when clientHeight decreases', function(assert) {
-			const oContentContainer = document.createElement('div');
-			oContentContainer.style.height = '200px';
-			oContentContainer.style.width = '200px';
-			oContentContainer.style.overflow = 'auto';
+				const oScrollContainer = document.createElement('div');
+				oScrollContainer.style.cssText = "height: 100px; overflow-y: auto; width: 200px;";
 
-			const oContent = document.createElement('div');
-			oContent.style.height = '100px'; // Content smaller than container
-			oContent.textContent = 'Content';
+				const oContent = document.createElement('div');
+				oContent.style.height = "300px";
+				oScrollContainer.appendChild(oContent);
 
-			oContentContainer.appendChild(oContent);
+				// Add button first, then scroll container
+				const oContainer = document.getElementById('container3');
+				oContainer.appendChild(oButton);
+				oContainer.appendChild(oScrollContainer);
 
-			const oContainer = document.getElementById('container3');
-			oContainer.appendChild(oContentContainer);
-
-			let oResult = jQuery(oContainer).firstFocusableDomRef({
-				includeScroller: true
+				const oResult = jQuery(oContainer).firstFocusableDomRef({
+					includeScroller: true
+				});
+				assert.strictEqual(oResult, oButton, "Should prefer traditional focusable elements over scroll containers");
+				oContainer.innerHTML = "";
 			});
 
-			// First check - should NOT be scrollable (content fits)
-			assert.strictEqual(oResult, null, 'Container should not be found because it is not scrollable yet');
+			QUnit.test("Nested scroll containers", function(assert) {
+				const oOuterContainer = document.createElement('div');
+				oOuterContainer.style.cssText = "height: 200px; overflow-y: auto; width: 300px;";
 
-			// Make container smaller - now content doesn't fit
-			oContentContainer.style.height = '50px';
+				const oInnerContainer = document.createElement('div');
+				oInnerContainer.style.cssText = "height: 100px; overflow-y: auto; width: 200px; margin: 10px;";
 
-			// Second check - should be scrollable and cache should be invalidated
-			oResult = jQuery(oContainer).firstFocusableDomRef({
-				includeScroller: true
+				const oInnerContent = document.createElement('div');
+				oInnerContent.style.height = "300px";
+				oInnerContent.textContent = "Inner scrollable content";
+
+				const oOuterContent = document.createElement('div');
+				oOuterContent.style.height = "500px";
+				oOuterContent.textContent = "Outer content";
+
+				oInnerContainer.appendChild(oInnerContent);
+				oOuterContainer.appendChild(oInnerContainer);
+				oOuterContainer.appendChild(oOuterContent);
+
+				const oContainer = document.getElementById('container3');
+				oContainer.appendChild(oOuterContainer);
+
+				const oResult = jQuery(oContainer).firstFocusableDomRef({
+					includeScroller: true
+				});
+				assert.strictEqual(oResult, oInnerContainer, "Should return the inner scroll container first");
+
+				// Test lastFocusableDomRef
+				const oLastResult = jQuery(oContainer).lastFocusableDomRef({
+					includeScroller: true
+				});
+				assert.strictEqual(oLastResult, oInnerContainer, "Should find the inner scroll container by going backwards");
+				oContainer.innerHTML = "";
 			});
-			assert.strictEqual(oResult, oContentContainer, 'Container should be found as focusable element after height decrease');
 
-			oContainer.innerHTML = '';
-		});
+			QUnit.test("Hidden scroll containers should be ignored", function(assert) {
+				const oScrollContainer = document.createElement('div');
+				oScrollContainer.style.cssText = "height: 100px; overflow-y: auto; width: 200px; display: none;";
 
-		QUnit.test('Element becomes non-scrollable when clientHeight increases', function(assert) {
-			const oContentContainer = document.createElement('div');
-			oContentContainer.style.height = '50px'; // Small container
-			oContentContainer.style.width = '200px';
-			oContentContainer.style.overflow = 'auto';
+				const oContent = document.createElement('div');
+				oContent.style.height = "300px";
+				oScrollContainer.appendChild(oContent);
 
-			const oContent = document.createElement('div');
-			oContent.style.height = '200px'; // Content larger than container
-			oContent.textContent = 'Tall content';
+				const oContainer = document.getElementById('container3');
+				oContainer.appendChild(oScrollContainer);
 
-			oContentContainer.appendChild(oContent);
-
-			const oContainer = document.getElementById('container3');
-			oContainer.appendChild(oContentContainer);
-
-			let oResult = jQuery(oContainer).firstFocusableDomRef({
-				includeScroller: true
+				const oResult = jQuery(oContainer).firstFocusableDomRef({
+					includeScroller: true
+				});
+				assert.strictEqual(oResult, null, "Should ignore hidden scroll containers");
+				oContainer.innerHTML = "";
 			});
-			assert.strictEqual(oResult, oContentContainer, 'Container should be found as focusable element initially');
 
-			// Make container taller - now content fits
-			oContentContainer.style.height = '250px';
+			QUnit.test("Scroll containers with overflow: scroll (always visible scrollbars)", function(assert) {
+				const oScrollContainer = document.createElement('div');
+				oScrollContainer.style.cssText = "height: 100px; overflow: scroll; width: 200px;";
 
-			oResult = jQuery(oContainer).firstFocusableDomRef({
-				includeScroller: true
+				const oContent = document.createElement('div');
+				oContent.style.height = "300px";
+				oScrollContainer.appendChild(oContent);
+
+				const oContainer = document.getElementById('container3');
+				oContainer.appendChild(oScrollContainer);
+
+				let oResult = jQuery(oContainer).firstFocusableDomRef();
+				assert.strictEqual(oResult, null, "Should return null when the option 'includeScroller' is not set");
+
+				oResult = jQuery(oContainer).firstFocusableDomRef({
+					includeScroller: true
+				});
+				assert.strictEqual(oResult, oScrollContainer, "Should detect scroll containers with overflow: scroll");
+				oContainer.innerHTML = "";
 			});
-			assert.strictEqual(oResult, null, 'Container should not be scrollable after height increase');
 
-			oContainer.innerHTML = '';
-		});
+			QUnit.test("Deep DOM tree traversal", function(assert) {
+				const done = assert.async();
+				const oRoot = document.getElementById('container3');
+				let oCurrent = oRoot;
+
+				// Create a deep nested structure (50 levels)
+				for (let i = 0; i < 50; i++) {
+					const oDiv = document.createElement('div');
+					oDiv.className = "level-" + i;
+					oCurrent.appendChild(oDiv);
+					oCurrent = oDiv;
+				}
+
+				// Add a scrollable container at the end
+				const oScrollContainer = document.createElement('div');
+				oScrollContainer.style.cssText = "height: 100px; overflow-y: auto; width: 200px;";
+				const oContent = document.createElement('div');
+				oContent.style.height = "300px";
+				oScrollContainer.appendChild(oContent);
+				oCurrent.appendChild(oScrollContainer);
+
+				// Performance test
+				const startTime = performance.now();
+				const oResult = jQuery(oRoot).firstFocusableDomRef({
+					includeScroller: true
+				});
+				const endTime = performance.now();
+
+				assert.strictEqual(oResult, oScrollContainer, "Should find deep scroll container");
+				assert.ok(endTime - startTime < 100, "Should complete traversal within reasonable time (< 100ms)");
+				oRoot.innerHTML = "";
+				done();
+			});
+
+			QUnit.test("Multiple scroll containers - order preference", function(assert) {
+				const oFirstContainer = document.createElement('div');
+				oFirstContainer.id = "first-scroll";
+				oFirstContainer.style.cssText = "height: 100px; overflow-y: auto; width: 200px;";
+
+				const oFirstContent = document.createElement('div');
+				oFirstContent.style.height = "300px";
+				oFirstContainer.appendChild(oFirstContent);
+
+				const oSecondContainer = document.createElement('div');
+				oSecondContainer.id = "second-scroll";
+				oSecondContainer.style.cssText = "height: 100px; overflow-y: auto; width: 200px;";
+
+				const oSecondContent = document.createElement('div');
+				oSecondContent.style.height = "300px";
+				oSecondContainer.appendChild(oSecondContent);
+
+				const oContainer = document.getElementById('container3');
+				oContainer.appendChild(oFirstContainer);
+				oContainer.appendChild(oSecondContainer);
+
+				const oFirstResult = jQuery(oContainer).firstFocusableDomRef({
+					includeScroller: true
+				});
+				const oLastResult = jQuery(oContainer).lastFocusableDomRef({
+					includeScroller: true
+				});
+
+				assert.strictEqual(oFirstResult, oFirstContainer, "firstFocusableDomRef should return first scroll container");
+				assert.strictEqual(oLastResult, oSecondContainer, "lastFocusableDomRef should return last scroll container");
+				oContainer.innerHTML = "";
+			});
+
+			QUnit.test("Traditional focusable elements have priority over scroll containers", function(assert) {
+				const oScrollContainer = document.createElement('div');
+				oScrollContainer.id = "scroll-container";
+				oScrollContainer.style.cssText = "height: 100px; overflow-y: auto; width: 200px;";
+
+				const oScrollContent = document.createElement('div');
+				oScrollContent.style.height = "300px";
+
+				const oButton = document.createElement('button');
+				oButton.id = "inner-button";
+				oButton.textContent = "Click me";
+
+				oScrollContent.appendChild(oButton);
+				oScrollContainer.appendChild(oScrollContent);
+
+				const oContainer = document.getElementById('container3');
+				oContainer.appendChild(oScrollContainer);
+
+				const oResult = jQuery(oContainer).firstFocusableDomRef({
+					includeScroller: true
+				});
+
+				assert.strictEqual(oResult, oButton, "Should return button over scroll container");
+				assert.strictEqual(oResult.id, "inner-button", "Should return the inner button");
+
+				oContainer.innerHTML = "";
+			});
+
+			QUnit.test("Complex nested scenario with mixed elements", function(assert) {
+				// Root container
+				const oRoot = document.createElement('div');
+
+				// First section: scroll container with no traditional focusable elements
+				const oScrollSection1 = document.createElement('div');
+				oScrollSection1.id = "scroll-1";
+				oScrollSection1.style.cssText = "height: 100px; overflow-y: auto; width: 200px; margin: 5px;";
+				const oScrollContent1 = document.createElement('div');
+				oScrollContent1.style.height = "300px";
+				oScrollContent1.textContent = "Scroll content 1";
+				oScrollSection1.appendChild(oScrollContent1);
+
+				// Second section: nested scroll containers with a button deep inside
+				const oScrollSection2 = document.createElement('div');
+				oScrollSection2.id = "scroll-2";
+				oScrollSection2.style.cssText = "height: 150px; overflow-y: auto; width: 250px; margin: 5px;";
+
+				const oInnerScroll = document.createElement('div');
+				oInnerScroll.id = "inner-scroll";
+				oInnerScroll.style.cssText = "height: 80px; overflow-y: auto; width: 200px; margin: 10px;";
+
+				const oButton = document.createElement('button');
+				oButton.id = "deep-button";
+				oButton.textContent = "Deep Button";
+
+				const oScrollContent2 = document.createElement('div');
+				oScrollContent2.style.height = "400px";
+				oScrollContent2.textContent = "Outer scroll content";
+
+				const oInnerScrollContent = document.createElement('div');
+				oInnerScrollContent.style.height = "200px";
+				oInnerScrollContent.appendChild(oButton);
+
+				oInnerScroll.appendChild(oInnerScrollContent);
+				oScrollSection2.appendChild(oInnerScroll);
+				oScrollSection2.appendChild(oScrollContent2);
+
+				oRoot.appendChild(oScrollSection1);
+				oRoot.appendChild(oScrollSection2);
+
+				const oContainer = document.getElementById('container3');
+				oContainer.appendChild(oRoot);
+
+				let oResult = jQuery(oRoot).firstFocusableDomRef({
+					includeScroller: true
+				});
+				assert.strictEqual(oResult, oScrollSection1, "Should find first scroll container first");
+
+				oResult = jQuery(oRoot).lastFocusableDomRef({
+					includeScroller: true
+				});
+				assert.strictEqual(oResult, oButton, "Should find the button as the last focusable element");
+
+				oContainer.innerHTML = "";
+			});
+
+			QUnit.test("Scroll container fallback when no traditional focusable elements", function(assert) {
+				const oScrollContainer1 = document.createElement('div');
+				oScrollContainer1.id = "scroll-1";
+				oScrollContainer1.style.cssText = "height: 100px; overflow-y: auto; width: 200px;";
+
+				const oScrollContainer2 = document.createElement('div');
+				oScrollContainer2.id = "scroll-2";
+				oScrollContainer2.style.cssText = "height: 100px; overflow-y: auto; width: 200px;";
+
+				const oContent1 = document.createElement('div');
+				oContent1.style.height = "300px";
+				oContent1.textContent = "Content 1";
+
+				const oContent2 = document.createElement('div');
+				oContent2.style.height = "300px";
+				oContent2.textContent = "Content 2";
+
+				oScrollContainer1.appendChild(oContent1);
+				oScrollContainer2.appendChild(oContent2);
+
+				const oContainer = document.getElementById('container3');
+				oContainer.appendChild(oScrollContainer1);
+				oContainer.appendChild(oScrollContainer2);
+
+				const oFirstResult = jQuery(oContainer).firstFocusableDomRef({
+					includeScroller: true
+				});
+				const oLastResult = jQuery(oContainer).lastFocusableDomRef({
+					includeScroller: true
+				});
+
+				assert.strictEqual(oFirstResult, oScrollContainer1, "Should return first scroll container");
+				assert.strictEqual(oLastResult, oScrollContainer2, "Should return last scroll container");
+				oContainer.innerHTML = "";
+			});
+
+			QUnit.test('Element becomes scrollable when clientHeight decreases', function(assert) {
+				const oContentContainer = document.createElement('div');
+				oContentContainer.style.height = '200px';
+				oContentContainer.style.width = '200px';
+				oContentContainer.style.overflow = 'auto';
+
+				const oContent = document.createElement('div');
+				oContent.style.height = '100px'; // Content smaller than container
+				oContent.textContent = 'Content';
+
+				oContentContainer.appendChild(oContent);
+
+				const oContainer = document.getElementById('container3');
+				oContainer.appendChild(oContentContainer);
+
+				let oResult = jQuery(oContainer).firstFocusableDomRef({
+					includeScroller: true
+				});
+
+				// First check - should NOT be scrollable (content fits)
+				assert.strictEqual(oResult, null, 'Container should not be found because it is not scrollable yet');
+
+				// Make container smaller - now content doesn't fit
+				oContentContainer.style.height = '50px';
+
+				// Second check - should be scrollable and cache should be invalidated
+				oResult = jQuery(oContainer).firstFocusableDomRef({
+					includeScroller: true
+				});
+				assert.strictEqual(oResult, oContentContainer, 'Container should be found as focusable element after height decrease');
+
+				oContainer.innerHTML = '';
+			});
+
+			QUnit.test('Element becomes non-scrollable when clientHeight increases', function(assert) {
+				const oContentContainer = document.createElement('div');
+				oContentContainer.style.height = '50px'; // Small container
+				oContentContainer.style.width = '200px';
+				oContentContainer.style.overflow = 'auto';
+
+				const oContent = document.createElement('div');
+				oContent.style.height = '200px'; // Content larger than container
+				oContent.textContent = 'Tall content';
+
+				oContentContainer.appendChild(oContent);
+
+				const oContainer = document.getElementById('container3');
+				oContainer.appendChild(oContentContainer);
+
+				let oResult = jQuery(oContainer).firstFocusableDomRef({
+					includeScroller: true
+				});
+				assert.strictEqual(oResult, oContentContainer, 'Container should be found as focusable element initially');
+
+				// Make container taller - now content fits
+				oContentContainer.style.height = '250px';
+
+				oResult = jQuery(oContainer).firstFocusableDomRef({
+					includeScroller: true
+				});
+				assert.strictEqual(oResult, null, 'Container should not be scrollable after height increase');
+
+				oContainer.innerHTML = '';
+			});
+		}
 
 		QUnit.module("Others");
 
