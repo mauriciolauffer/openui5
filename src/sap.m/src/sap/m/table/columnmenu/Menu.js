@@ -22,6 +22,7 @@ sap.ui.define([
 	"sap/ui/core/Lib",
 	"sap/ui/core/library",
 	"sap/ui/core/StaticArea",
+	"sap/ui/core/TitleLevel",
 	"sap/ui/layout/form/Form",
 	"sap/ui/layout/form/FormContainer",
 	"sap/ui/layout/form/FormElement",
@@ -57,6 +58,7 @@ sap.ui.define([
 	Library,
 	coreLibrary,
 	StaticArea,
+	TitleLevel,
 	Form,
 	FormContainer,
 	FormElement,
@@ -569,7 +571,7 @@ sap.ui.define([
 
 		this._oItemsContainer.setListHeader(new OverflowToolbar({
 			content: [
-				new Title({text: sTitle})
+				new Title({text: sTitle, level: TitleLevel.H3})
 			]
 		}));
 		this._oItemsContainer.getHeader().addContentRight(new Button({
@@ -701,7 +703,7 @@ sap.ui.define([
 		if (aQuickActions.length) {
 			oList = new List({
 				headerToolbar: new OverflowToolbar({
-					content: [new Title({text: sTitle})]
+					content: [new Title({text: sTitle, level: TitleLevel.H3})]
 				}),
 				keyboardMode: "Edit",
 				items: []
