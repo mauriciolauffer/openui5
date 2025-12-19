@@ -6,7 +6,7 @@
 sap.ui.define(['sap/base/util/LoaderExtensions'], function(LoaderExtensions) {
 	"use strict";
 
-	var privateLoaderAPI = sap.ui.loader._;
+	const privateLoaderAPI = sap.ui.loader._;
 
 	QUnit.module("sap/base/util/LoaderExtensions");
 
@@ -32,15 +32,20 @@ sap.ui.define(['sap/base/util/LoaderExtensions'], function(LoaderExtensions) {
 		});
 	});
 
-	QUnit.test("getAllRequiredModules (filtered)", function(assert) {
+	QUnit.test("getAllRequiredModules (filter out deprecated modules)", function(assert) {
+		privateLoaderAPI.declareModule("my/dummy/module.js", () => "This module is deprecated");
+
 		const aUnfilteredModules = LoaderExtensions.getAllRequiredModules();
 		assert.ok(Array.isArray(aUnfilteredModules), "should return an array");
-		/* @deprecated */
-		assert.ok(aUnfilteredModules.includes("sap.ui.core.CSSSize"), "unfiltered result contains deprecated module");
+		/** @deprecated */
+		assert.ok(aUnfilteredModules.includes("sap.ui.core.CSSSize"), "unfiltered result contains deprecated pseudo module");
+		assert.ok(aUnfilteredModules.includes("my.dummy.module"), "unfiltered result contains deprecated module");
 
 		const aFilteredModules = LoaderExtensions.getAllRequiredModules(/* omitDeprecated */ true);
 		assert.ok(Array.isArray(aFilteredModules), "should return an array");
-		assert.notOk(aFilteredModules.includes("sap.ui.core.CSSSize"), "filtered result does not contain deprecated module");
+		/** @deprecated */
+		assert.notOk(aFilteredModules.includes("sap.ui.core.CSSSize"), "filtered result does not contain deprecated pseudo module");
+		assert.notOk(aFilteredModules.includes("my.dummy.module"), "filtered result does not contain deprecated module");
 	});
 
 	QUnit.test("toURL - resolve ui5:// pseudo protocol", function(assert) {
