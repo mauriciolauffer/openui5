@@ -7,7 +7,7 @@ sap.ui.define(['./library'],
         "use strict";
 
         /**
-         * GeoMap renderer.
+         * Geomap renderer.
          * @namespace
          */
         const GeomapRenderer = {
