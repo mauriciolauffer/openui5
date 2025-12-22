@@ -15,7 +15,7 @@ sap.ui.define([
 	"sap/ui/core/Item",
 	"sap/ui/core/Element",
 	"sap/ui/core/StaticArea",
-	"sap/ui/core/TitleLevel",
+	"sap/ui/core/library",
 	"sap/ui/dom/containsOrEquals",
 	"sap/ui/qunit/QUnitUtils",
 	"sap/ui/qunit/utils/createAndAppendDiv",
@@ -37,7 +37,7 @@ sap.ui.define([
 	CoreItem,
 	Element,
 	StaticArea,
-	TitleLevel,
+	coreLibrary,
 	containsOrEquals,
 	QUnitUtils,
 	createAndAppendDiv,
@@ -256,7 +256,7 @@ sap.ui.define([
 		let oGenericListTitle = this.oColumnMenu._oQuickGenericList.getHeaderToolbar().getTitleControl();
 		assert.equal(oGenericListTitle.getText(), this.oColumnMenu._getResourceText("table.COLUMNMENU_QUICK_GENERIC_ONLY_TITLE"),
 					"Quick actions list title is correct");
-		assert.equal(oGenericListTitle.getLevel(), TitleLevel.H3, "Quick actions list title has correct heading level");
+		assert.equal(oGenericListTitle.getLevel(), coreLibrary.TitleLevel.H3, "Quick actions list title has correct heading level");
 		sActionsListTitle = this.oColumnMenu._oItemsContainer._oNavigationList.getHeaderToolbar().getTitleControl().getText();
 		assert.equal(sActionsListTitle, this.oColumnMenu._getResourceText("table.COLUMNMENU_LIST_ITEMS_TITLE"), "Items list title is correct");
 		this.oColumnMenu.close();
@@ -269,7 +269,7 @@ sap.ui.define([
 		oGenericListTitle = this.oColumnMenu._oQuickGenericList.getHeaderToolbar().getTitleControl();
 		assert.equal(oGenericListTitle.getText(), this.oColumnMenu._getResourceText("table.COLUMNMENU_QUICK_GENERIC_TITLE"),
 					"Quick actions list title is correct");
-		assert.equal(oGenericListTitle.getLevel(), TitleLevel.H3, "Quick actions list title has correct heading level");
+		assert.equal(oGenericListTitle.getLevel(), coreLibrary.TitleLevel.H3, "Quick actions list title has correct heading level");
 
 	});
 
