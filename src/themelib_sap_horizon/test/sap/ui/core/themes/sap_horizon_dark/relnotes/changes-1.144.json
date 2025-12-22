@@ -3,6 +3,11 @@
     "date": "December 2025",
     "notes": [
       {
+        "id": "ecfff06d9675d120d1c6f82077cd21b4cd3fb297",
+        "type": "FEATURE",
+        "text": " sap.m.ToolPage: Breakpoint-based responsive behavior has now been introduced"
+      },
+      {
         "id": "7f9cb3608813d05b35fc260d608c71063282e63a",
         "type": "FEATURE",
         "text": " sap.ui.unified.Calendar: accessibility of the Calendar is improved:"
