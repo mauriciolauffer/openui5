@@ -1232,6 +1232,10 @@ sap.ui.define([
 			return ExtensionHelper["getAriaAttributesFor" + sType](this, mParams);
 		},
 
+		onAfterRendering: function() {
+			this.updateAriaStateForOverlayAndNoData();
+		},
+
 		/**
 		 * Delegate for the focusin event.
 		 *
