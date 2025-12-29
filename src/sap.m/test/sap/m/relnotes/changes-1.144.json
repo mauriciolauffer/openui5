@@ -3,9 +3,19 @@
     "date": "December 2025",
     "notes": [
       {
+        "id": "2ce2132dd5659fc38c244c83eff6a48f7cde2095",
+        "type": "FIX",
+        "text": " sap.m.Toolbar: Correct sap.m.MenuButton navigation"
+      },
+      {
         "id": "926262f04ca6918a2abb525c0e4fb8ec6acb2035",
         "type": "FIX",
         "text": " jquery/Focusable: consider scroll container as focus candidate"
+      },
+      {
+        "id": "8744ff17497970ab76d46bd461b5a939b1d4f951",
+        "type": "FIX",
+        "text": " sap.m.ObjectHeader: Remove deprecated API usage"
       },
       {
         "id": "b6f48c99198b74f7a577facff888913f9260b5e8",
