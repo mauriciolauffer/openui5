@@ -2043,7 +2043,7 @@ sap.ui.define([
 		}
 
 		function fnMockStandardVariant(bExecuteOnSelect) {
-			var oMockedStandardVariant = new FlexObjectFactory.createFromFileContent({
+			var oMockedStandardVariant = FlexObjectFactory.createFromFileContent({
 				fileName: "fileId_123",
 				fileType: "variant",
 				reference: sComponentId,
