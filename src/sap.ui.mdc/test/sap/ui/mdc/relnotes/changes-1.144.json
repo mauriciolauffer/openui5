@@ -1,7 +1,12 @@
 {
   "1.144.0": {
-    "date": "December 2025",
+    "date": "January 2026",
     "notes": [
+      {
+        "id": "ebfb47c4f9fc9f6bc18f70a2cc049dc3a7e14cca",
+        "type": "FIX",
+        "text": " VariantManagement: \"expanded\" not announced"
+      },
       {
         "id": "f5c93fa709483a12e88cfbe189aadac3ca94bd6f",
         "type": "FIX",

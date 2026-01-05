@@ -1,7 +1,12 @@
 {
   "1.144.0": {
-    "date": "December 2025",
+    "date": "January 2026",
     "notes": [
+      {
+        "id": "95aee513158abaa9c59282b047129f4312a7dd4f",
+        "type": "FIX",
+        "text": " sap.f.CardHeader: header does not wrap when placed in a flexbox"
+      },
       {
         "id": "995e40b90381047bf74bedfb626361e65be68857",
         "type": "FIX",

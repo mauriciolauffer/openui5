@@ -1,7 +1,22 @@
 {
   "1.144.0": {
-    "date": "December 2025",
+    "date": "January 2026",
     "notes": [
+      {
+        "id": "630004062bd47ef3a46fdb6bb766c12b09b5d467",
+        "type": "FIX",
+        "text": "sap.m.MultiComboBox: Restore previous value state after selection"
+      },
+      {
+        "id": "e9865e3df99d28e54c4dc7824d301b5b65b4bc8f",
+        "type": "FIX",
+        "text": " sap.m.Input: InputBase getLabels is returning labels correctly (without duplicates)"
+      },
+      {
+        "id": "7d7ed90b8660c21a6bc96f089ab3e6bd61ddc37d",
+        "type": "FIX",
+        "text": " sap.m.QuickViewBase: NavContainer is added as an aggregation"
+      },
       {
         "id": "2ce2132dd5659fc38c244c83eff6a48f7cde2095",
         "type": "FIX",
@@ -11,6 +26,11 @@
         "id": "926262f04ca6918a2abb525c0e4fb8ec6acb2035",
         "type": "FIX",
         "text": " jquery/Focusable: consider scroll container as focus candidate"
+      },
+      {
+        "id": "ebfb47c4f9fc9f6bc18f70a2cc049dc3a7e14cca",
+        "type": "FIX",
+        "text": " VariantManagement: \"expanded\" not announced"
       },
       {
         "id": "8744ff17497970ab76d46bd461b5a939b1d4f951",
