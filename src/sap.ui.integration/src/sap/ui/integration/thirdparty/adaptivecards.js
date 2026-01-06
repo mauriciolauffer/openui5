@@ -2342,7 +2342,7 @@ var Image = /** @class */ (function (_super) {
 			imageElement.onerror = function (e) {
 				if (_this.renderedElement) {
 					var card = _this.getRootElement();
-					_this.renderedElement.innerHTML = "";
+					_this.renderedElement.replaceChildren();
 					if (card && card.designMode) {
 						var errorElement = document.createElement("div");
 						errorElement.style.display = "flex";
@@ -2747,7 +2747,7 @@ var Media = /** @class */ (function (_super) {
 			event.cancelBubble = true;
 			if (this.renderedElement) {
 				var mediaPlayerElement = this.renderMediaPlayer();
-				this.renderedElement.innerHTML = "";
+				this.renderedElement.replaceChildren();
 				this.renderedElement.appendChild(mediaPlayerElement);
 				mediaPlayerElement.play();
 				mediaPlayerElement.focus();
@@ -4725,7 +4725,7 @@ var ActionCollection = /** @class */ (function () {
 		return true;
 	};
 	ActionCollection.prototype.refreshContainer = function () {
-		this._actionCardContainer.innerHTML = "";
+		this._actionCardContainer.replaceChildren();
 		if (!this._actionCard) {
 			this._actionCardContainer.style.marginTop = "0px";
 			return;
