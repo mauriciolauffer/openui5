@@ -118,7 +118,7 @@ sap.ui.define(["exports", "sap/ui/webc/common/thirdparty/base/UI5Element", "sap/
         const subMenu = item.item._subMenu;
         const menuItem = item.item;
         if (subMenu && subMenu.busy) {
-          subMenu.innerHTML = "";
+          subMenu.replaceChildren();
           const fragment = this._clonedItemsFragment(menuItem);
           subMenu.appendChild(fragment);
         }
