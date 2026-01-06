@@ -1224,7 +1224,7 @@ sap.ui.define([
 
             var fnRenderContent = function (oThis) {
                 var oContentDomRef = oThis.getDomRef("content");
-                oContentDomRef.innerHTML = "";
+                oContentDomRef.replaceChildren();
 
                 var aContent = oThis.getContent();
                 var rm = sap.ui.getCore().createRenderManager();
@@ -1247,7 +1247,7 @@ sap.ui.define([
                 } else {
                     jQuery(oButtons).removeClass("sapUiUx3TPButtonRowHidden");
                     jQuery(oSeparator).removeClass("sapUiUx3TPButtonRowHidden");
-                    oButtons.innerHTML = "";
+                    oButtons.replaceChildren();
                     var rm = sap.ui.getCore().createRenderManager();
 
                     for (var i = 0; i < aButtons.length; i++) {

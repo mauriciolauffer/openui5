@@ -827,7 +827,7 @@ sap.ui.define([
 				this._iLastArrowPos = parseInt(this._bRtl ? arrow.style.right : arrow.style.left);
 			}
 
-			oListDomRef.innerHTML = "";
+			oListDomRef.replaceChildren();
 			var rm = sap.ui.getCore().createRenderManager();
 
 			NavigationBarRenderer.renderItems(rm, this);
