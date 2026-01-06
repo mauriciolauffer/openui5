@@ -147,7 +147,7 @@ sap.ui.define('sap/ui/debug/DebugEnv', [
 			oControlTreeRoot.style.width = "200px";
 			this.oControlTreeWindow.document.body.appendChild(oControlTreeRoot);
 		} else {
-			oControlTreeRoot.innerHTML = "";
+			oControlTreeRoot.replaceChildren();
 		}
 		this.oControlTreeRoot = oControlTreeRoot;
 
@@ -173,7 +173,7 @@ sap.ui.define('sap/ui/debug/DebugEnv', [
 			oPropertyWindowRoot.style.bottom = "1px";
 			this.oPropertyListWindow.document.body.appendChild(oPropertyWindowRoot);
 		} else {
-			oPropertyWindowRoot.innerHTML = "";
+			oPropertyWindowRoot.replaceChildren();
 		}
 		this.oPropertyWindowRoot = oPropertyWindowRoot;
 
